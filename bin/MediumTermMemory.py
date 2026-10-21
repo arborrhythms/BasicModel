@@ -71,3 +71,19 @@ class MediumTermMemory:
         else:
             self.entries[token] = replace(entry, occurrences=tuple(
                 address for address in entry.occurrences if address != occurrence))
+
+    def merge(self, token, into, *, when):
+        """A kept bind joins the pending object to its chosen antecedent."""
+        source, target = self.token_of(token), self.token_of(into)
+        if source is None or target is None:
+            raise ValueError('MTM merge requires two retained tokens')
+        if source == target:
+            return target
+        previous, antecedent = self.entries[source], self.entries[target]
+        self.entries[target] = replace(antecedent,
+            occurrences=antecedent.occurrences + previous.occurrences,
+            count=antecedent.count + previous.count, when=when)
+        for occurrence in previous.occurrences:
+            self._tokens[occurrence] = target
+        del self.entries[source]
+        return target

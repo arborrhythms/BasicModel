@@ -212,8 +212,9 @@ def test_reference_evidence_credits_the_departure_without_changing_exact_reconst
     from SentenceCredit import components, comparison, score_function
     registry, like = Error(), torch.zeros(1)
     registry.add('reconstruction.exact', like, category='reconstruction')
-    parts = torch.stack([components(registry, like+100, like, reference=like+1),
-                         components(registry, like+200, like, reference=like)], 1)
+    # Only a supplied referent's answer error enters A; local bind prices do not.
+    parts = torch.stack([components(registry, like+100, like, answer=like+1),
+                         components(registry, like+200, like, answer=like)], 1)
     audit = comparison(parts, torch.ones(1, dtype=torch.bool))
     assert audit['keep_costs'].tolist() == [[1., 0.]] and bool(audit['wins'].all())
     assert audit['advantage'].tolist() == [-1.] and audit['deciding'] == ['answer']

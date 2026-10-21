@@ -1429,6 +1429,21 @@ still come from the frames in this round; offering pool entries outside
 the recency window by content (the "familiar" grade, a definite
 description reaching far back) is step 2 or later and is written there.
 
+**Gradient through a bind (Alec, 2026-10-21).** "For the answer gradient to
+propagate through the bind, the intuit and later operators need to see
+MTM in their gradient." The pool stores pointers only; its read is
+differentiable at the point of use. A token's working vector is built
+without detaching from: LTM0 rows as data (no producer to reach); the
+current sentence's live STM1 values with their graph (so an answer
+reaches the composition that produced them); minted bank rows detached
+(rebuildable fold caches, which a gradient would only be overwritten
+in). The discrete choice of candidate is credited by the score function
+of the sentence's R + A, like every chooser operation (§19, finding A);
+the chosen value is pathwise. No pool read enters the compiled body; reads
+happen at closes and in thinking. In step 1b no consumer reads a bound
+value pathwise (the referent judge compares identities), so the
+differentiable read lands with `intuit` (item 3, intuit spec §5).
+
 **Capacity and decay.** At capacity, evict the entry with the oldest
 `when`; its rows stay in LTM as unlinked occurrences and a later mention
 opens a new token (losing track). When item 5 reclaims a row,
@@ -1669,3 +1684,171 @@ kept wrong equality row before or after the arrival neither binds nor
 re-opens the site; a gap site with no candidate remains open. Then the
 eight-file set, both decomposition arms and both eight-seat MM gates on
 the frozen hash. No second full sweep.
+
+## 19. Claude's ninth review: the §10.4 rounds (`51cce2005` to `d29480774`; 2026-10-21)
+
+Read with the earlier review of `3d453e6bb`
+(`benchmarks/2026-10-21-item3-5-anonymous-bind-v3/claude-review.md`),
+whose findings this builds on rather than repeats.
+
+**Accepted.**
+
+- The §10.4 core: equality rows neither select nor revoke a binding; a
+  named site's first bind opens an anonymous token; an arrival re-runs
+  `bind` for its pending sites with the same `score`, `choice_cost` and
+  chooser credit; refinement sets the kind only when it is `None`;
+  trials leave the pool untouched; a bind to a native individual makes no
+  entry; no pool read enters the compiled body.
+- The follow-up `a93f93c0e` repairs the earlier review's findings 3, 5, 6
+  and 7: historical sites refine only tokens accessible through the
+  current frames' occurrence records; a native arrival refines through
+  the token's introduction without a synthetic companion row; witnesses
+  wrap only integer identities; an arrival with no selection is audited
+  `no_selected_candidate`; admission copies the scored records. My run on
+  `d29480774`: arrival, review, MTM, Part-closing and occurrence-view
+  files 53 passed, 1 failed, the retained pooled reproduction.
+- The decomposition fixture's `select` seam applies the certificate's own
+  declared `open_names=('what',)` rule where §10.4 moved that decision;
+  same scope, not an extension (Alec to acknowledge).
+- Declared, accepted for this landing: arrival menus do not enter the
+  delayed mentions or answer supervision; carried to item 0's
+  mention-ranking evidence. Not applied, rightly: per-token deduplication
+  (the frame guard bounds the reach; §10.4 intends revision). The
+  first-wins kind needs no rule once finding B below holds.
+
+**Finding A (decision for Alec): the operation chooser can remove a site.**
+Both reverse failures, and the forward streams kept at A = 0, have one
+root. The decided site definition (§3, site 2) makes an operand that
+interprets to no object of its own a site; the code lets the formation
+decide. `ClauseJournal.finish_clause` drops the forward name from mint
+requests (`request['mode'] != 'mint'`), and `constituents()` collects
+only order-1 nodes, so an order-0 (field) formation of the objectless
+word has no site at all. And `ReferenceClose.preview` still charges the
+anonymous outcome, a success under §10.4, the failed-bind price (+1),
+while a mint with no candidates pays 0. Recommendation:
+
+1. The site belongs to the word. A no-object leaf keeps its pronoun-mode
+   request and its forward name under every formation: a mint of an
+   objectless word is its first bind (it opens the named anonymous
+   token), and an order-0 formation of it is collected as an order-1
+   site (an objectless word has no order-0 content, so its only reading
+   is a reference).
+2. The anonymous outcome is priced as a mint (0 with no candidates, the
+   redundancy cost otherwise); +1 stays only for a gap site left open.
+
+Every reading of the first premise then carries the named site and pays
+the same site and arrival costs; R decides as before. Forcing scope,
+assertions, keep law, budget and the objective's terms are unchanged.
+The earlier review's options: forcing the operation choice fixes the
+certificate but leaves the bias in production; repricing alone cannot
+reach the field reading; moving the certificate to item 0 abandons a gate
+the mechanism should pass.
+
+**Decided (Alec, 2026-10-21) on finding A:** "The bind price should be the
+failure to understand, which is conditioned in the same way as all other
+chooser operations." In code terms: the closing reference credit (the
+resolver plan's `cost`: +1 for a site with no candidates or no selection,
+`choice_cost` for a selection, the mint redundancy cost, and the arrival
+re-run's costs; `plan['cost'] * components.weight` into `SentenceCredit`'s
+third component) leaves A, so it no longer enters the keep or the credit
+comparison. A bind's choice is credited by the sentence's R + A
+advantage through the same path as the operation chooser's choices.
+Judging a supplied referent (`answer_loss`) and the supervised mention
+loss when a referent is known stay: those are failures to understand a
+supplied answer. No site rule, forcing or assertion changes; whether the
+chooser should form a named site is conditioned by outcomes like any
+operation. The recommendation above (the site belongs to the word,
+anonymous priced as a mint) is not adopted.
+
+**Decided (Alec, 2026-10-21, later): binding is not forced to close.** "We
+should not be forcing binding to close. If it closes and such is
+advantageous for the understanding, then we learn. If not, we have the
+power of an open question." Production forces closure today in three
+places: `ReferenceClose.select` takes the argmax over candidates, so any
+accessible candidate closes the site; a named site with no candidate
+always opens an anonymous token (§10.4 as written); an arrival always
+refines. Consequences, in code terms: **open** is an option on every
+bind menu, the dummy antecedent with a fixed zero logit that a candidate
+must beat (mention ranking's ε); a named site's menu is its candidates,
+a new anonymous token and open; an arrival's re-run may leave the site
+as it is. The choice is made and credited like every chooser operation:
+greedy in the exploit trial, eligible for departure in the explore trial,
+credited by the sentence's R + A (finding A's decision), so whether to
+close is learned. An open site keeps its name and pending status: the
+thought loop can ask it and a later arrival can close it.
+
+**Decided (Alec, 2026-10-21, later still; refines the paragraph above).**
+"Open (in the sense of adding to the object store) doesn't even need to
+be optional: we can do that as an artifact of creating a noun. Binding,
+though, should probably only happen when an object is added to that
+store, and is a prerequisite for learning the VP (which tracks changes to
+that identity)." So: every noun mention (a determiner's lowered token, a
+name's or an objectless word's site) adds an object to MTM at its
+occurrence, automatically and unpriced. Binding happens when that object
+is added: it either links to an existing object (the accessible store
+objects and minted individuals; when linked, the new object joins the
+antecedent's token, finding B's direction) or remains its own object (the
+dummy antecedent: a fixed zero logit that a candidate must strictly
+beat). An arrival's re-run uses the same menu. A gap (an elided role, no
+noun) binds or stays open, as G3 certifies. Bind choices are greedy in
+the exploit trial, eligible for the explore trial's departure, and
+credited by R + A, so closing is learned; step 4's VP teacher depends on
+the identities binding makes. **The pending-premise certificate's
+closure forcing is removed** (Alec: "Remove the forcing"): no fixture
+forces x to `three`; the certificate asserts that no row binds x
+wrongly, each pending x being bound to `three` or left its own object
+with its name pending, and its current strict assertions move verbatim to
+item 0 as a learning certificate (how often the trained keep closes x on
+`three`).
+
+**Finding B (mechanism): refinement writes the wrong direction.** §10.3's
+bind write is "the mention joins the antecedent's entry". In a refinement
+the pending site's token T is the mention and the selected candidate is
+the antecedent, but `commit` calls `mtm.bind(T, candidate)`, moving the
+candidate into T; when the candidate is the introduction of another token
+B, `forget` deletes B and unlinks B's earlier uses (the retained
+reproduction). Repair: `MediumTermMemory.merge(token, into, *, when)`;
+when the selected candidate belongs to a token B other than T, merge T
+into B: T's occurrences are appended to B in order and mapped to B, the
+counts summed, T's entry retired; B's key, kind and earlier uses are
+untouched. An unpooled candidate keeps today's append to T; a native
+candidate keeps the follow-up's kind-through-introduction. This is the
+kept bind's own decision, not a read-time revision merge; one owner per
+occurrence, keys stay introductions, nothing stored but pointers. The
+retained reproduction is ported to read the site's token through
+`token_of`, with its four semantic checks unchanged (kind three, value
+the full description, B's earlier use and occurrence prefix unchanged).
+A later arrival that re-binds the site moves its occurrence to the new
+antecedent's token, so the first-wins kind needs no revision rule.
+
+**Finding C (mechanism): the bootstrap zero-R failure is a 3.5 regression,
+introduced by `67c5b203f`.** It is not a pre-existing XOR defect, as the
+earlier review supposed. Replays of `bootstrap-diagnostic-01`'s initial
+RNG on `test_both_training_trials_share_bootstrap_snapshot` (my harness,
+run directories under `/tmp`):
+
+| Source | Result |
+|---|---|
+| `d29480774` (HEAD) | fails: R = .0070 in rows 0 and 2, both trials, as recorded |
+| `f9faae610` (the §10.2 source) | passes |
+| `67c5b203f` (the carrier follow-up) | fails identically |
+| `67c5b203f` with only `Models.py` reverted to `f9faae610` | passes |
+| `67c5b203f` with only `Language.py`, or only `ReferenceClose.py`, reverted | fails |
+
+The cause is the `_capture_reading_programs` hunk that carries the mixing
+reader's staged OBJECT ids (`_ar_grammar_object_ids`) into the captured
+program's `concept_ids`. Downstream, the reconstruction reads the first
+word's meaning through that identity: the decoder returns it with the
+object's support (unit norm over 135 coordinates) where the target is the
+word's bank row (108), the earlier review's 1/√135 against 1/√108. My
+§16 acceptance of the carrier missed this. Repair: the carried OBJECT id
+is a reference for the close and the seat plan, never the content the
+reconstruction decodes; trace the reader that takes the captured
+`concept_ids` as content and give it the word's row. Regression pair, both
+on the repaired source: the bootstrap test at `bootstrap-diagnostic-01`'s
+initial RNG (zero R) and the eight-seat MM fresh draw (zero seats).
+
+**Order.** A as decided, B and C; then freeze
+and every gate on the new hash (twelve fresh with captures, the eight-file
+set, both decomposition arms, both eight-seat MM draws), then my review
+and publication. No second full sweep.

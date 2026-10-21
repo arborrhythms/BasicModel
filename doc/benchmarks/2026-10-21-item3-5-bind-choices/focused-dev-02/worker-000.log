@@ -1,0 +1,86 @@
+....................F..F.F.FF.FF........................................ [ 58%]
+...................................................                      [100%]
+=================================== FAILURES ===================================
+_________ test_arrival_bind_refines_and_reads_three_through_the_token __________
+test/test_reference_arrivals.py:92: in test_arrival_bind_refines_and_reads_three_through_the_token
+    assert entry.kind == words['three'] and entry.count == 2
+E   AssertionError: assert (2 == 2 and 3 == 2)
+E    +  where 2 = Token(occurrences=(('ltm', 'address-v1', 6722543677319378513), ('ltm', 'address-v1', -4641033302401945218), ('ltm', 'address-v1', 7737524838193717520)), kind=2, count=3, when=9).kind
+E    +  and   3 = Token(occurrences=(('ltm', 'address-v1', 6722543677319378513), ('ltm', 'address-v1', -4641033302401945218), ('ltm', 'address-v1', 7737524838193717520)), kind=2, count=3, when=9).count
+_______________ test_gap_without_a_word_and_candidate_stays_open _______________
+test/test_reference_arrivals.py:143: in test_gap_without_a_word_and_candidate_stays_open
+    assert plan['items'][0]['reference'] is None
+E   AssertionError: assert ('ltm', 'address-v1', 7506832297101765789) is None
+_____________ test_bound_use_does_not_assign_a_kind_before_arrival _____________
+test/test_reference_arrivals.py:173: in test_bound_use_does_not_assign_a_kind_before_arrival
+    assert plan['items'][0]['reference'] == token
+E   AssertionError: assert ('ltm', 'addr...3115727082221) == ('ltm', 'addr...3677319378513)
+E     
+E     At index 2 diff: 929043115727082221 != 6722543677319378513
+E     Use -v to get more diff
+___________ test_named_trial_plans_only_refine_the_kept_close[False] ___________
+test/test_reference_arrivals.py:227: in test_named_trial_plans_only_refine_the_kept_close
+    assert pool.entries[token].count == 2 and pool.entries[token].kind == words['three']
+E   AssertionError: assert (3 == 2)
+E    +  where 3 = Token(occurrences=(('ltm', 'address-v1', 6722543677319378513), ('ltm', 'address-v1', -333381716561690737), ('ltm', 'address-v1', -5284066160171494554)), kind=2, count=3, when=9).count
+___________ test_named_trial_plans_only_refine_the_kept_close[True] ____________
+test/test_reference_arrivals.py:227: in test_named_trial_plans_only_refine_the_kept_close
+    assert pool.entries[token].count == 2 and pool.entries[token].kind == words['three']
+E   AssertionError: assert (3 == 2)
+E    +  where 3 = Token(occurrences=(('ltm', 'address-v1', 6722543677319378513), ('ltm', 'address-v1', -333381716561690737), ('ltm', 'address-v1', -5284066160171494554)), kind=2, count=3, when=9).count
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_________ test_named_bind_to_a_native_individual_creates_no_pool_entry _________
+test/test_reference_arrivals.py:247: in test_named_bind_to_a_native_individual_creates_no_pool_entry
+    assert plan['items'][0]['reference'] == native
+E   AssertionError: assert ('ltm', 'address-v1', 6722543677319378513) == 4
+_______ test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind _______
+test/test_reference_arrivals.py:262: in test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind
+    assert plan['items'][0]['reference'] == store.occurrence_of(antecedent)
+E   AssertionError: assert ('ltm', 'addr...7406946228817) == ('ltm', 'addr...1716561690737)
+E     
+E     At index 2 diff: 5014767406946228817 != -333381716561690737
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_mentions.py:42: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(all_correct) == 0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token
+FAILED test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open
+FAILED test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival
+FAILED test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]
+FAILED test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]
+FAILED test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry
+FAILED test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind
+7 failed, 116 passed, 2 warnings in 55.10s

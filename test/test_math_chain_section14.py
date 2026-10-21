@@ -348,7 +348,81 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
 
 @pytest.mark.parametrize('reverse', [False, True])
 def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager_reading):
-    """Certificate e, FORCED grammar, zero budget preserves pending arrivals."""
+    """Certificate e: live bind choices may close correctly or remain pending."""
+    import json
+    from forced_math_grammar import ForcedGrammar
+    from math_chain_ordinary import ordinary_model, train_documents
+    from math_chain_corpus import ChainDocument
+    from BindingAnswers import matches
+    model = ordinary_model(tmp_path, budget=0)
+    sentences = ('y is x plus two.', 'x is three.')
+    if reverse:
+        sentences = sentences[::-1]
+    documents = [ChainDocument(str(i), sentences) for i in range(8)]
+    pending, report = [], []
+    batches = 0
+
+    def check(store, index, names):
+        value = store.meaning_of(index)
+        correct = matches(model, value, 'three')
+        slots = open_slots(value)
+        forwards = bindings(value).get('_forward_references', ())
+        report.append(dict(occurrence=store.occurrence_of(index), open=slots,
+            refs=value.role_refs, bound_correct=correct,
+            pending_x=any(identity in names for _, identity in forwards)))
+        if correct:
+            assert not slots and not bindings(value).get('_pending')
+        else:
+            assert any(identity in names and ('referent', role) in slots
+                       for role, identity in forwards), 'x must bind to three or retain its named open referent'
+            assert not any(kind == 'referent' and role in {r for r, name in
+                bindings(store.raw_meaning_of(index)).get('_forward_references', ()) if name in names}
+                for kind, role in bindings(value).get('_bound_roles', ())), 'x bound to a wrong antecedent'
+
+    def after(model, split, rows, result, observed, observer):
+        nonlocal batches
+        batches += 1
+        store = model.symbolSpace.ltm_store
+        names = set(model._concept_owner().word_concepts('x'))
+        if batches == 1 and not reverse:
+            for index in range(len(store)):
+                if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                    continue
+                value = store.meaning_of(index)
+                forwards = () if value is None else bindings(value).get('_forward_references', ())
+                if forwards and all(identity in names for _, identity in forwards):
+                    pending.append((index, store.occurrence_of(index)))
+            assert len(pending) >= 2, 'the first premise must persist pending x constituents in the batch'
+        if batches == 2:
+            for index, address in pending:
+                assert store.occurrence_of(index) == address
+                check(store, index, names)
+            if reverse:
+                for index in range(len(store)):
+                    if store.KINDS[int(store.record_kind[index])] == 'estimate':
+                        continue
+                    raw = bindings(store.raw_meaning_of(index)).get('_forward_references', ())
+                    read = bindings(store.meaning_of(index)).get('_forward_references', ())
+                    if any(identity in names for _, identity in (*raw, *read)):
+                        check(store, index, names)
+    try:
+        with ForcedGrammar(model, open_names=('x',)) as forced:
+            rows = train_documents(model, documents, tmp_path, after=after)
+        (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True, reverse=reverse,
+            closure_forced=False, attention_budget=0,
+            ending='correct binding or named open referent',
+            bound=sum(item['bound_correct'] for item in report),
+            open=sum(not item['bound_correct'] for item in report),
+            resolved=report, rows=rows, choices=forced.records), indent=2)+'\n')
+        assert len({row['departure'] for row in rows if row['departure'] >= 0}) > 1
+    finally:
+        model.End()
+
+
+@pytest.mark.phase('pending_premise_learning')
+@pytest.mark.parametrize('reverse', [False, True])
+def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_reading, restore_phase):
+    """Item 0 learning evidence: live closure with the strict arrival assertions."""
     import json
     from forced_math_grammar import ForcedGrammar
     from math_chain_ordinary import ordinary_model, train_documents
@@ -358,6 +432,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     # referent. Exercise the other specified ending (budget exhaustion),
     # leaving the pending column for the next sentence's address upsert.
     model = ordinary_model(tmp_path, budget=0)
+    restore_phase(lambda path: model.load_weights(str(path), require_match=True))
     sentences = ('y is x plus two.', 'x is three.')
     if reverse:
         sentences = sentences[::-1]
@@ -437,7 +512,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                         bound_correct=carries_three(int(store.row(index)['row_id']))))
                 assert sum(item['bound_correct'] for item in report) >= 2
     try:
-        with ForcedGrammar(model, open_names=('x',), named_bindings={'x':'three'}) as forced:
+        with ForcedGrammar(model, open_names=('x',)) as forced:
             rows = train_documents(model, documents, tmp_path, after=after)
         (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True, reverse=reverse,
             attention_budget=0, ending='budget exhaustion preserves pending reference',

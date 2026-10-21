@@ -1,0 +1,34 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index dc4e37053..3de97796a 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -12751,18 +12751,17 @@ class LanguageSpace(nn.Module):
+             if len(operation.operand_roles) != 2:
+                 return None
+             try:
+-                if not supplied_values:
+-                    canonical = registry.form(
+-                        face, left_ref, right_ref, mode=mode, polarity=polarity)
+-                else:
+-                    supplied = {'argin1': (leaves[left_index], left_ref),
+-                                'argin2': (leaves[right_index], right_ref)}
+-                    source = ConceptualMeaning.from_payload(leaves[left_index][None],
+-                        depth=1, layout='infix', mode=mode, polarity=polarity)
+-                    canonical = registry._form_candidate(operation,
+-                        registry.descriptors[operation.semantic_id],
+-                        dict(zip(operation.operand_roles, (supplied[role] for role in form.permutation))),
+-                        source=source)
++                # Carried OBJECT ids are references for the close, not the
++                # word's content. Its captured leaf owns the numeric read;
++                # resolving the id here can materialize a different support.
++                supplied = {'argin1': (leaves[left_index], left_ref),
++                            'argin2': (leaves[right_index], right_ref)}
++                source = ConceptualMeaning.from_payload(leaves[left_index][None],
++                    depth=1, layout='infix', mode=mode, polarity=polarity)
++                canonical = registry._form_candidate(operation,
++                    registry.descriptors[operation.semantic_id],
++                    dict(zip(operation.operand_roles, (supplied[role] for role in form.permutation))),
++                    source=source)
+             except RuntimeError:
+                 # A deliberately small ConceptualSpace may retain the
+                 # structural family while lacking room to reserve every native

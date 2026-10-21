@@ -1491,3 +1491,87 @@ reconstruction audit at production width, the collision rule for property
 rows and the merge rule, and word pairs at the sentence rung. The dense
 chooser signal is not wanted (the forward stays a tree, plan §12.2);
 sparse presences stay a perception item.
+
+## `intuit`: a learned thought operation as the completeness fallback (future work, Alec, 2026-10-21; unscheduled)
+
+Alec, 2026-10-21: the top-down path from the conceptual space to the
+answer is a reasoner that uses tools, or not, to produce the next
+conceptual state; unfolding that state over words is near-deterministic.
+The thought grammar is that reasoner's structured output: each step
+selects one operator of the catalogue plus pointers into STM, MTM and
+LTM, credited by the keep. To preserve completeness, one of the choices
+can be a learned map from meaning to meaning: given LTM and STM as
+context it should be as capable as a modern transformer, and giving it
+the catalogue's tools is what lets it stay small.
+
+**Why this is cheaper than a dense model, in three parts.** Knowledge
+leaves the weights: facts are rows and edges, retrieved at no parameter
+cost. The grammar is given, not learned: a selector over a fixed minimal
+catalogue has parameters proportional to the state width times the
+number of operators plus the pointer attention, with nothing per word
+pair; the vocabulary lives in the bank. Depth is bought with work, not
+layers: a loop with a small policy replaces stacked layers, and each
+step is charged by the work meter. The cost is that discrete choices
+are credited through the keep and the explore suffix rather than by
+backpropagation through a dense map.
+
+**What it is, in code names.** Not a query (queries reduce to the hard
+tools) but one more thought operation: a `ThoughtExecutorDescriptor`
+`('intuit', 'conceptual-guess', ('description',), Mind.SERIAL, ...)` in
+`Queries.py` and one rule in the grammar's `<thought>` section,
+`intuit_argout1 = intuit.thought(intuit_argin1)`. Read scope: serial,
+LTM, priming, budget, and MTM. Write target: serial, one meaning (a
+conceptual point with its role structure) into the open slot; the
+generate section unfolds it into words as for any concluded idea, so the
+operator needs no inverse of its own (like `lower`). Its executor is a
+learned module reading the serial state, the retrieved rows and the
+pool's tokens; its evidence kind is its own ("intuition"), a two-lane
+pair the module emits, so a row it writes carries that provenance as
+inference and `isTrue` can check it afterwards: intuit, then verify.
+Cost: its tick on the work meter plus its own size; credit: the keep's
+R + A like every step, so the chooser reaches for it only where the hard
+chain fails or costs more. Fifteen operators, one soft.
+
+**The measurement that decides whether it is needed (item 0).** On the
+graded math-English corpus, parameter count at matched accuracy: the
+structured chooser with the catalogue, against the same chooser with an
+`intuit` operator of a given size, against that transformer alone with
+and without STM and LTM as context. How often `intuit` is chosen at
+matched accuracy is the diagnostic: a large or frequently used soft
+operator means an operator or a piece of state is missing from the
+catalogue, which is the finding to act on. Transparency follows the same
+line: what `intuit` knows lives in weights; what it writes is a row that
+the hard tools can verify.
+
+**Amendment (Claude, 2026-10-21, same day): the map already exists.**
+The learned meaning-to-meaning map is not new. For a question, the
+target meaning is the question's meaning with its slot filled, reached
+by the hard operators. For the production objective (next sentence),
+`SymbolExpectation.expect_next_meaning` already maps the current
+conceptual state to the next sentence's meaning (`predict_next_end_state`
+hands its root to the answer path; `sentence_prediction_cost` trains it
+against the arriving sentence); its core is `ActivationPredictor`
+(`Expectation.py`, hidden 64), forecasting both lanes of each symbol's
+next activation, retained as estimate rows outside generic retrieval and
+the keep. Under the minimal-operators rule, `intuit` is therefore that
+predictor exposed as a choosable thought operation, not a second learned
+module: the forecast read into the serial slot, composed into a meaning
+by the grammar (the predictor has no slot structure), written with
+evidence kind "intuition" and confirmed by `isTrue` or the keep. The
+capacity question in the measurement above is that predictor's size.
+
+**Decided (Alec, 2026-10-21, later); supersedes the amendment above.**
+`intuit` is its own predictor, not the expectation predictor exposed:
+the retired ARMA(p, q) reintroduced over the STM vectors, deterministic,
+read top-down; expectation stays the bottom-up gain field. Scheduled as
+part of item 3 ([spec](plans/2026-10-21-intuit.md)); the item-0
+measurement above stays here.
+
+**Revised (Alec, 2026-10-21, later).** `intuit` is one layer of order-0
+prediction in the parallel calculus (union, intersection, negation as
+lane exchange): a max–min composition of the knowing field with a
+two-lane implication relation held as LTM1 rows and learned by the
+calculus itself, with no parameters; it leaves the knowing set from
+which the answer and output are composed ([spec §5](plans/2026-10-21-intuit.md)).
+The measurement above becomes relation rows and fan-out at matched
+accuracy, not parameter count.

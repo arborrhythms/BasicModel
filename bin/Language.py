@@ -12594,7 +12594,8 @@ class LanguageSpace(nn.Module):
             leaf_orders = concept_ids.new_tensor([
                 owner._concept_source_order(int(identity)) for identity in concept_ids])
         selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders,
-            no_object=[owner.interpret.no_object(int(identity)) for identity in concept_ids])
+            no_object=[int(word_rows[leaf]) >= 0 and owner.interpret.no_object(int(identity))
+                       for leaf, identity in enumerate(concept_ids)])
         for leaf, (order, mode) in selected_requests.items():
             if order < 0:
                 continue

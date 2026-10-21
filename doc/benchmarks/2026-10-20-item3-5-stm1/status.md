@@ -1,5 +1,16 @@
 # Step 1b: current gates and carry ledger
 
+**Active §19 round, 2026-10-21.** Base `d29480774`; the next candidate
+implements the zero-logit dummy, unpriced object opening, sentence R + A bind
+credit, antecedent-directed merging and the WORD-carrier bootstrap repair.
+The revised §14 gate permits only correct or named-open x; strict closure
+is registered as item 0 learning evidence. The [current receipt](../2026-10-21-item3-5-bind-choices/README.md)
+retains all development failures, the exact zero-R replay pass and the six
+unchanged arrival failures that need review under the new dummy decision.
+Freeze and all evidence by the new source hash are next. Earlier sources'
+passes below are historical; publication remains pending.
+
+
 **Review follow-up, 2026-10-21.** Intermediate source `a93f93c0e`
 repairs the occurrence witness, native-arrival synthetic row, missing
 selection audit, scored-arrival alias and historical-site frame access.

@@ -27,7 +27,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     interpreter = getattr(getattr(registry, 'space', None), 'interpret', None)
     no_object = set() if interpreter is None else {
         leaf for leaf, identity in enumerate(program.concept_ids)
-        if interpreter.no_object(int(identity))}
+        if int(program.word_rows[leaf]) >= 0 and interpreter.no_object(int(identity))}
+    # A staged OBJECT address is retained even in the mixing reader, whose
+    # WORD lane is absent. It must not be interpreted again as an objectless
+    # word: that would replace the captured bank value with an empty subject
+    # and bootstrap an extra occurrence context for the next reconstruction.
     refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
     native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)

@@ -1,0 +1,6 @@
+[collect] 4 selectors; limit 360s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.47 GiB
+[worker-000] 9 selectors; limit 360s, 8.0 GiB
+[worker-000] exit 0; 35.9s; peak 0.79 GiB
+Result: passed, exit 0; 9/9 cases completed.
+doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/result.json

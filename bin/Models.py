@@ -12645,8 +12645,7 @@ class BasicModel(BaseModel):
         # The mixing reader stages admitted OBJECT identities beside the
         # same grammar atoms that _pushed_word_slab consumes. Its WORD lane
         # is intentionally absent; that does not make these objects unknown.
-        # Carry the actual source IDs, without identifying a dimmed value or
-        # treating its physical bank row as an allocator address.
+        # These are references for the close, not WORD interpretation inputs.
         grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
         grammar_ids = getattr(isp, '_ar_grammar_object_ids', None)
         if (torch.is_tensor(grammar_rows) and torch.is_tensor(grammar_ids)
@@ -19555,9 +19554,12 @@ class BasicModel(BaseModel):
             plans = []
             for b, clause in enumerate(clauses):
                 document, position = source_at(self, b, int(sid))
+                draw = getattr(self, '_sentence_departure', None)
+                departure = (-1 if admit or self._sentence_trial != 'explore' or draw is None
+                             else int(draw['bind_round'][b]))
                 plans.append(resolver.preview(clause,
                     () if disc is None else tuple(disc.situation_references(b)),
-                    document=document, position=position, stream=b))
+                    document=document, position=position, stream=b, departure=departure))
             result['reference_plans'] = plans
         return result
 
@@ -19892,14 +19894,10 @@ class BasicModel(BaseModel):
                              prefix='expectation.', weight=self.inter_loss_weight)
         if getattr(self, '_component_reading', False):
             components = self._concept_owner().components
-            reference_cost = torch.stack([plan['cost'] for plan in observation['reference_plans']])
-            errors.add('expectation.reference', reference_cost, weight=components.weight,
-                       category='expectation')
-            # The resolver's weights are predictor-owned. Its observed
-            # membership error also credits the selected grammar operation
-            # at the closing, without changing reconstruction's certificate
-            # or allowing the rest of E to choose a departure.
-            observation['reference_credit'] = reference_cost * components.weight
+            # Local resolver costs are diagnostics. A closing bind is a
+            # chooser decision, credited only by the sentence's R + A.
+            observation['reference_cost'] = torch.stack([
+                plan['cost'] for plan in observation['reference_plans']])
             estimates = (None if pending is None else [
                 None if item is None else item.prediction for item in pending])
             component_cost = components.cost(observation['meanings'], estimates, active,
@@ -19978,10 +19976,14 @@ class BasicModel(BaseModel):
             for row, meaning in enumerate(observation['meanings']):
                 answer = answers[row] if row < len(answers) else None
                 referent = answer is not None and answer.available and answer.kind == 'referent'
+                judged = meaning
+                if meaning is not None and referent and observation.get('reference_plans'):
+                    judged = self._concept_owner().components.reference_close.answer_meaning(
+                        observation['reference_plans'][row], meaning)
                 values.append(cost.new_zeros(()) if not bool(active[row]) else
                     (cost[row] if cost.ndim else cost) if not referent else
-                    cost.new_ones(()) if meaning is None else binding_cost(
-                        self, meaning, answer.what, stream=row))
+                    cost.new_ones(()) if judged is None else binding_cost(
+                        self, judged, answer.what, stream=row))
                 if (registry is not None and bool(active[row]) and meaning is not None
                         and referent
                         and observation.get('reference_plans')):
@@ -20672,9 +20674,17 @@ class BasicModel(BaseModel):
                         decisions = field_trials[0].reads
                         candidate_rounds = (torch.stack([read['alternatives'] > 0 for read in decisions], -1)
                             if decisions else present.new_zeros(B, 0))
+                    bind_rounds = None
+                    if observations and observations[0].get('reference_plans'):
+                        decisions = [plan['decisions'] for plan in observations[0]['reference_plans']]
+                        width = max(map(len, decisions), default=0)
+                        bind_rounds = present.new_zeros(B, width)
+                        for b, menu in enumerate(decisions):
+                            for index, decision in enumerate(menu):
+                                bind_rounds[b, index] = len(decision['candidates']) > 1
                     draw = departure(greedy_attention, eligible, active=present,
                         sentence_ids=sentence_ids, sentence=sid, compose_round=fork.slot,
-                        candidates=candidate_rounds)
+                        candidates=candidate_rounds, binds=bind_rounds)
                     self._sentence_departure = draw
                     forced = (torch.arange(actions.shape[1],device=words.device)[None]
                               == draw['compose_round'][:,None])
@@ -20817,8 +20827,7 @@ class BasicModel(BaseModel):
                 from SentenceCredit import components
                 parts = components(self._sentence_cost_registry,
                     self._sentence_expectation_comparison, path[1][6][:,sid].sum(-1)*0,
-                    answer=self._sentence_answer_cost,
-                    reference=observation.get('reference_credit'))
+                    answer=self._sentence_answer_cost)
                 cost_parts.append(parts)
                 cost = parts[:, 0] + parts[:, 2]
                 observations.append(observation)
@@ -20865,6 +20874,27 @@ class BasicModel(BaseModel):
                     loss = loss + taught.mean()
                 if trial == 'explore':
                     loss = loss + self._compose_score_function_loss(path, torch.stack(paired_costs, -1))
+                    plans = observations[-1].get('reference_plans')
+                    if plans:
+                        from SentenceCredit import score_function
+                        draw = self._sentence_departure
+                        probabilities = []
+                        for plan in plans:
+                            chosen = next((d for d in plan['decisions'] if d['departed']), None)
+                            probabilities.append(plan['cost'].new_zeros(()) if chosen is None else
+                                chosen['probabilities'][chosen['selected']])
+                        policy, details = score_function(torch.stack(probabilities)[:, None],
+                            (draw['walk_count'] * draw['walk_rounds'])[:, None],
+                            (draw['bind_round'] >= 0)[:, None], torch.stack(paired_costs, -1))
+                        self._last_bind_score_function = details
+                        registry.add('expectation.bind_score_function', policy, category='expectation')
+                        # The resolver retains its sole parameter owner, also
+                        # used by known-referent supervision. Its chooser
+                        # credit is the same sentence R + A surrogate.
+                        credit = (policy * present).sum() / present.sum().clamp_min(1)
+                        self._sentence_reader_costs['expectation'] = (
+                            self._sentence_reader_costs.get('expectation', 0) + credit)
+                        loss = loss + credit
                     if field_trials[-1] is not None and field_trials[-1].backup is not None:
                         backup = field_trials[-1].backup
                         from SentenceCredit import score_function
@@ -20961,6 +20991,9 @@ class BasicModel(BaseModel):
             audit['actions'] = tuple(path.detach() for path in paths)
             audit['narrowing_actions'] = tuple(None if r is None else r.actions.detach() for r in attention_trials)
             audit['readers'] = tuple(reader_observations)
+            audit['bind_choices'] = tuple(tuple(tuple({key: value.detach() if torch.is_tensor(value)
+                else value for key, value in decision.items()} for decision in plan['decisions'])
+                for plan in observation.get('reference_plans', ())) for observation in observations)
             self._last_sentence_credit = audit
             self.__dict__.setdefault('_sentence_credit_audits', []).append(audit)
             from SentenceUnderstanding import SentenceUnderstanding

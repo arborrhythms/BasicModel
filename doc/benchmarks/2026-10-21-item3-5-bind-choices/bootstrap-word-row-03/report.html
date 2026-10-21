@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>30.93345454102382</pre></td><td><pre>test/test_operators_final_b.py:165: in test_both_training_trials_share_bootstrap_snapshot
+    assert not audit[&#x27;components&#x27;][..., 0].any()
+E   assert not tensor(True)
+E    +  where tensor(True) = &lt;built-in method any of Tensor object at 0x1347c1950&gt;()
+E    +    where &lt;built-in method any of Tensor object at 0x1347c1950&gt; = tensor([[0.0070, 0.0070],\n        [0.0000, 0.0000],\n        [0.0070, 0.0070],\n        [0.0000, 0.0000]]).any</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 30.531s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+batch = 0 (Δ=0.371s, 100.00%)
+runEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).
+Training throughput: 1 batches in 0.369s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+</pre></td></tr></table></body></html>

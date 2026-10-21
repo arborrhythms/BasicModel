@@ -1,0 +1,209 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+    "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+    "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+    "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+    "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+  ],
+  "completed": [
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+    "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+    "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+    "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+    "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.json"
+      ],
+      "pid": 76025,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 852691032,
+      "elapsed_seconds": 35.85694087482989,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+        "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+        "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+        "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+        "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+      ],
+      "completed": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+        "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+        "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+        "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+        "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 31.05831625009887,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 30.284s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.374s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.372s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\nbatch = 0 (\u0394=0.371s, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 0.370s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.23156345821917057,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003866415936499834,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00474775000475347,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0045952091459184885,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0047883340157568455,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004498875001445413,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004750082967802882,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003631582949310541,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 360.0,
+    "suite_seconds": 420.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07",
+  "elapsed_seconds": 40.38173820800148,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 852691032,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/collect.json"
+    ],
+    "pid": 76001,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 506692832,
+    "elapsed_seconds": 3.7475289590656757,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+        "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+        "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+        "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+        "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

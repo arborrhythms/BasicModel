@@ -89,6 +89,28 @@ them, and what is a row at all**
   table below: no address columns). Psychologically LTM1 is the episodic trace
   and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
   with minting on recurrence as consolidation.
+- **One store in strata; a relation references rows (Alec, 2026-10-21;
+  supersedes "references are to symbols, never to rows" above and LTM2's
+  "only minted concepts").** "`S1 R S2` in LTM2 should now be `R` in LTM1
+  with two references to LTM objects in LTM0: `S1` and `S2`." The names
+  shift by one and give each stratum's order: **LTM0** holds one concept
+  per row (today's LTM1: occurrences, no identity, order 0); **LTM1** is a
+  stratum of the same store holding relation rows, three positions
+  (argument, kind `R`, argument), each outer position a reference to an
+  LTM0 object: an occurrence by its address, or a minted concept by its
+  symbol; **LTM2** holds relations whose arguments include an LTM1 row
+  (attribution or a conditional over a relation). A relation sits at the
+  lowest order at which it can occur: "Felix is a cat" is an LTM1 row,
+  decided by the kind's order-0 intersection (Orders §2). Definitions,
+  membership, subsumption and derivation pairs are LTM1 rows; the order-0
+  meronomy stays in the perceptual tree. Every stratum keeps the same
+  metadata: `.when`, the two lanes, the access count, `surprise`. This is
+  step 2's row work; step 1b's Part store stands until then.
+  Consequences, recommended: a sentence or token that is a relation's
+  argument is referenced by its occurrence, so minting at the close for
+  relation arguments (bind plan §10.1) ends with step 2 and minting is by
+  recurrence only; an LTM0 row is protected from forgetting while an LTM1
+  row references it (item 5's value counts incoming references).
 - **Shared identity and self-reference (Alec, 2026-10-20).** Several
   references can tie to one identity present in STM1. They share its
   finite wide concept vector; they do not recursively unfold it into

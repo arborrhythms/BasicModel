@@ -45,7 +45,7 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
 
 
 def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
-              compose_round=None, candidates=None):
+              compose_round=None, candidates=None, binds=None):
     """Uniform walk, then uniform eligible round; the chooser draws the action."""
     from WalkTrials import departure_at
     if narrowing is None:
@@ -56,8 +56,10 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
             owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
             attention &= (owners == sentence) & (narrowing.round_words >= 0)
     groups = [attention.sum(-1), compose.sum(-1)]
-    if candidates is not None:
-        groups.append(candidates.sum(-1))
+    if candidates is not None or binds is not None:
+        groups.append(compose.new_zeros(compose.shape[0]) if candidates is None else candidates.sum(-1))
+    if binds is not None:
+        groups.append(binds.sum(-1))
     counts = torch.stack(groups, -1) * active[:, None]
     available = counts > 0
     walk = departure_at(available)
@@ -75,19 +77,22 @@ def departure(narrowing, compose, *, active, sentence_ids=None, sentence=0,
     at_attention, at_compose = walk == 0, walk == 1
     candidate_round = (departure_at(candidates) if candidates is not None and candidates.shape[1]
                        else torch.full_like(walk, -1))
+    bind_round = (departure_at(binds) if binds is not None and binds.shape[1]
+                  else torch.full_like(walk, -1))
     return dict(round=chosen, rounds=counts.sum(-1), walk=walk,
         walk_count=walk_count, walk_rounds=walk_rounds, narrowing=at_attention,
         attention_round=torch.where(at_attention, chosen, -1),
         compose_round=torch.where(at_compose, chosen-width, -1),
-        candidate_round=torch.where(walk == 2, candidate_round, -1))
+        candidate_round=torch.where(walk == 2, candidate_round, -1),
+        bind_round=torch.where(walk == 3, bind_round, -1))
 
 
-def components(registry, expectation, like, *, answer=None, reference=None):
-    """Closing reference credit joins A; reconstruction and E stay separate."""
+def components(registry, expectation, like, *, answer=None):
+    """Only a supplied answer contributes A; bind menus carry no price."""
     def value(v):
         return torch.zeros_like(like) if v is None else v.detach().expand_as(like)
     return torch.stack((value(registry.total(objective='reconstruction')),
-        value(expectation), value(answer) + value(reference)), -1)
+        value(expectation), value(answer)), -1)
 
 
 def comparison(parts, active):

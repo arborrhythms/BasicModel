@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.json"
+  ],
+  "pid": 76025,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 852691032,
+  "elapsed_seconds": 35.85694087482989,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-word-carrier-07/worker-000.log"
+}

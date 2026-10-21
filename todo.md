@@ -20,27 +20,17 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §18 / §10.4 round:** intermediate repair source `a93f93c0e`
-fixes occurrence witnesses, native-arrival row materialization, arrival
-audit/copy isolation and uncued historical-site refinement. Its
-[review handoff](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/review-handoff.md)
-retains the pooled-candidate ownership failure and bootstrap zero-R failure.
-Alec deferred the named-site forcing/objective decision to review time;
-neither is changed. This source has development checks only. Frozen
-`3d453e6bb` completes all requested
-gates: 10/12 fresh first draws pass, with two reverse D2 failures exactly
-replayed; 48 focused regressions pass; the eight-file set is 110 passed,
-three failed, one existing prerequisite skip. Both original decomposition
-arms pass all eight companion proof chains; both eight-seat MM draws pass
-with zero seat requests. All 23 run manifests match the frozen source.
-The [receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/README.md)
-retains the missing reverse antecedent candidate, nested occurrence-witness
-error and bootstrap zero-R failure. No earlier pass is promoted or failed
-run replaced. Assertions, keep and objective stay unchanged. Claude's
-completed review says not to land. Resolving the review findings and
-failures precedes the next source freeze and publication of both mains,
-the WikiOracle bump and October 20 docs. No second full sweep or learning
-claim.
+**Active §19 round:** the bind chooser now has a zero-logit dummy and a
+sentence-level departure, credited only by R + A. Refinement preserves the
+chosen antecedent's pool entry. The carried OBJECT IDs stay references;
+WORD-carrier checks prevent their reinterpretation as empty lexical content.
+The retained bootstrap RNG passes zero R in development. The revised pending
+certificate removes named closure forcing; its old strict assertions move
+verbatim to item 0. [Current receipt](doc/benchmarks/2026-10-21-item3-5-bind-choices/README.md)
+retains every diagnostic failure, the six unchanged arrival failures under
+the dummy decision, and the remaining source-specific gates. Freeze, all
+new-source evidence, Claude review and publication remain. No earlier-source
+pass is promoted, second full sweep is run, or learning claim is made.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
@@ -131,6 +121,25 @@ integration is implemented in this step, including the expression reader. The pe
 beside the lanes at the row conversion.
 Production keeps the prime ON and uncapped,
 P/S/R/D=0 and φ=.5.
+
+*Ninth review (Claude, plan §19):* the §10.4 core and its follow-up
+repairs accepted; three repairs before the next freeze: bind is priced
+by the failure to understand like every chooser operation (Alec: the
+closing reference credit leaves A); refinement merges the pending token
+into the chosen antecedent's token; the bootstrap zero-R failure is a
+regression of the carrier hunk in `67c5b203f` (replay-bisected), to be
+repaired. Alec, later: every noun adds an object to MTM automatically;
+binding links it to an existing object or leaves it its own (a zero-logit
+dummy), learned like any choice; the pending-premise certificate's
+closure forcing is removed (no wrong binding is asserted; the strict
+closure assertions move verbatim to item 0). Then every gate on the new hash.
+
+**Naming sweep at the step 1b landing (Alec, 2026-10-21: "rename when
+you think best"):** LTM1 → LTM0 (the occurrence store: order 0, no
+identity), LTM2 → LTM1 (relations), the stale LTM3 retired; LTM1 is a
+stratum of the LTM0 store (Alec), LTM2 = relations over relations;
+renamed in place in the live contract docs, a naming line in the other
+docs' amendment block, code comments by Codex in the same landing.
 
 **Necessary deferral, accepted after evaluation:** the copular-identity
 certificate needs its producing lesson. Item 3.5 owns stage 4e → NP
@@ -748,6 +757,14 @@ not by a passing identity lesson.
      `surprise`; the document and the stream become context wholes in
      WholeSpace; every other column and sidecar key is derivable, moved,
      cached or deleted per the table; LTM1 carries no identity.
+     *Step 2 also carries (Alec, 2026-10-21; [two truths §1](doc/specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):*
+     one LTM store in strata: LTM0 rows (one concept, occurrences), LTM1
+     relation rows `R` with two references to LTM0 objects (occurrence
+     addresses or minted symbols; "S1 R S2"), LTM2 relations over LTM1
+     rows; today's Part store merges in as the LTM1 stratum; a relation's
+     argument needs no mint (recommended: §10.1's close-time mint ends,
+     minting by recurrence only), and a referenced LTM0 row is protected
+     from forgetting while referenced.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.
@@ -866,6 +883,13 @@ not by a passing identity lesson.
    order 0 and geometric only at order 0, read points declared per
    consumer (placement: the order-0 stratum before the geometric channel;
    `bind`: the request's order; attention and the chooser: all strata).
+   *Added 2026-10-21 (Alec):* **`intuit`, one layer of order-0
+   prediction in the parallel calculus** ([spec §5](doc/plans/2026-10-21-intuit.md#5-revised-design-alec-2026-10-21-later-one-layer-of-order-0-prediction-in-the-parallel-calculus)):
+   union, intersection and negation (lane exchange) as one max–min layer
+   over remembered `S1 → S2` LTM1 rows (Mamdani: fire at the meet ratio,
+   union of clipped consequents; no parameters; after step 2); it leaves the knowing set, from
+   which the answer and output are composed; expectation stays the
+   bottom-up gain and its three top-down reads move to `intuit`.
    *Takes from item 4 (Alec, 2026-10-19,
    [spec §3.1](doc/specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
    the invertible-path program — exact inverted targets for the maps,
@@ -994,6 +1018,13 @@ not by a passing identity lesson.
    The explicit slow reconstruction-cache probe fails its nonzero
    compose-gradient assertion on the current baseline; the cache claim remains
    unverified by that probe ([audit](doc/benchmarks/2026-09-25-item9-parity/README.md#validation)).
+- **Item 0 binding evidence:** `test_live_pending_premise_closes_in_both_orders`
+  retains the strict §14 arrival assertions verbatim, with `open_names=('x',)`
+  and no named closure forcing. Its `pending_premise_learning` artifact is
+  unregistered. Measure live closure at the trained checkpoint; correct-or-open
+  is the step-1b mechanism gate. Arrival menus remain excluded from delayed
+  mention training and answer supervision, carried here under bind plan §19.
+
 - **0. The full training session**: the long FineWeb run, only with items 11–2
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising

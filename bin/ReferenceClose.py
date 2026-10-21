@@ -405,7 +405,42 @@ class ReferenceClose(nn.Module):
 
     def select(self, choices, logits, *, forward_identity=None, individuals=None):
         """The ordinary resolver choice; fixtures may force this operation seam."""
-        return int(logits.detach().argmax()) if choices else None
+        if not choices or not bool((logits.detach() > 0).any()):
+            return None
+        return int(logits.detach().argmax())
+
+    def choose(self, plan, choices, features, logits, *, forward_identity=None, individuals=None):
+        """The zero-logit dummy wins ties; a departure takes the next option.
+
+        Candidate indices at the fixture seam retain their existing meaning.
+        The recorded menu includes the dummy at index zero, including when
+        there are no accessible candidates. Preview owns this live graph.
+        """
+        menu = torch.cat((logits.new_zeros(1), logits))
+        greedy = self.select(choices, logits, forward_identity=forward_identity,
+                             individuals=individuals)
+        greedy = 0 if greedy is None else greedy + 1
+        ranked = menu.detach().argsort(descending=True, stable=True).tolist()
+        alternate = next((index for index in ranked if index != greedy), greedy)
+        departed = bool(choices) and len(plan['decisions']) == plan['departure']
+        selected = alternate if departed else greedy
+        probabilities = menu.softmax(0)
+        decision = dict(candidates=(None, *choices), features=features,
+            logits=menu, probabilities=probabilities, greedy=greedy,
+            selected=selected, next=alternate, departed=departed,
+            forward_identity=forward_identity)
+        plan['decisions'].append(decision)
+        return (None if selected == 0 else selected-1), decision
+
+    @staticmethod
+    def has_word(node):
+        """A noun occurrence has a lexical carrier; an elided role has none."""
+        request = node.reference_request or {}
+        if request.get('forward_identity') is not None or node.subject_word_id >= 0:
+            return True
+        # Lowering itself introduces the noun token. An elided role can
+        # retain a cue's composition without having a word of its own.
+        return node.composition is not None and node.composition.formal_name == 'lower'
 
     def bind_site(self, meaning, role, frames, *, stream=None):
         """The thought and closing faces read the same native candidates."""
@@ -510,6 +545,30 @@ class ReferenceClose(nn.Module):
             losses.append(self.mention_loss(item, correct))
         losses = [value for value in losses if value is not None]
         return torch.stack(losses).sum() if losses else None
+
+    def answer_meaning(self, plan, meaning):
+        """The supplied-referent judge observes this trial's selected binding.
+
+        This view writes nothing. Arrival menus deliberately stay outside
+        answer supervision. An unlinked object supplies no answer identity.
+        """
+        from ThoughtReferences import bindings, fill, open_slots
+        roles = {role for kind, role in (*open_slots(meaning),
+            *bindings(meaning).get('_bound_roles', ())) if kind == 'referent'}
+        result = meaning
+        for item in plan['items']:
+            identity, role = item['selected'], item['role']
+            if role not in roles or identity is None or item['mode'] == 'mint':
+                continue
+            if isinstance(identity, tuple) and identity[:1] == ('new',):
+                continue
+            candidate = plan['individuals'][identity]
+            if isinstance(identity, tuple) and self._derivation_symbol(identity) is None:
+                continue
+            result = fill(result, dict(reference=('sym', identity) if isinstance(identity, int) else identity,
+                binding_value=candidate['value'], support_true=1., support_false=0.),
+                operation='bind', slots=(('referent', role),))
+        return result
 
     def resolved(self, row, role, reference, errors):
         """A later fill trains the recorded menu for this exact occurrence."""
@@ -627,7 +686,7 @@ class ReferenceClose(nn.Module):
                     result.add(name)
         return tuple(sorted(result))
 
-    def preview(self, clause, frames, *, document=None, position=None, stream=None):
+    def preview(self, clause, frames, *, document=None, position=None, stream=None, departure=-1):
         """One decision per constituent; no allocation, writes or statistics."""
         if position is not None and frames:
             from ReferenceContext import exclude_replaced_occurrences
@@ -639,6 +698,8 @@ class ReferenceClose(nn.Module):
         individuals = self.individuals(records)
         pending_names = self.pending_names(clause, individuals, stream)
         items, cost = [], self.policy.new_zeros(())
+        plan = dict(items=items, records=records, pending_names=pending_names,
+                    decisions=[], departure=int(departure))
         for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
             request = node.reference_request
@@ -660,30 +721,29 @@ class ReferenceClose(nn.Module):
                 # a determiner word to either operation.
                 if choices:
                     cost = cost + phi[:, 1].amax().clamp(0, 1)
-            elif choices:
-                # Both trial graphs precede either optimizer step. Own the
-                # parameter values used by this graph, as the shared chooser
-                # does, while retaining their gradient connection.
-                probabilities = logits.softmax(0)
-                index = self.select(choices, logits,
-                    forward_identity=request.get('forward_identity'), individuals=individuals)
-                selected = None if index is None else choices[index]
-                # The evidence cost trains the operation chooser; the
-                # posterior cross entropy trains learned salience and cues.
-                cost = cost + (1 if index is None else self.choice_cost(phi, logits, index))
             else:
-                cost = cost + 1
-            anonymous = mode != 'mint' and selected is None and request.get('forward_identity') is not None
-            if anonymous:
+                index, decision = self.choose(plan, choices, phi, logits,
+                    forward_identity=request.get('forward_identity'), individuals=individuals)
+                probabilities = decision['probabilities']
+                selected = None if index is None else choices[index]
+                # Retained for diagnosis only; these local costs do not
+                # enter R, A, the keep or a training objective.
+                cost = cost + (1 if index is None else self.choice_cost(phi, logits, index))
+            own_object = mode != 'mint' and selected is None and self.has_word(node)
+            anonymous = own_object and request.get('forward_identity') is not None
+            if own_object:
                 selected = ('new', len(items))
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
-                individuals[selected] = dict(content=content*0, value=content*0,
+                value = content*0 if anonymous else content
+                individuals[selected] = dict(content=value, value=value,
                     role=role, position=(latest[0]+1, len(items)))
             items.append(dict(**site, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
-                probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous))
-        plan = dict(items=items, cost=cost, records=records, pending_names=pending_names)
+                probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous,
+                own_object=own_object))
+        plan['cost'] = cost
+        plan['individuals'] = individuals
         self._arrival_plan(clause, plan, individuals, stream=stream)
         return plan
 
@@ -797,7 +857,8 @@ class ReferenceClose(nn.Module):
             cue = self.cue(request.get('cue'))
             choices, phi, logits = self.score(content, predicate, cue, request.get('role', 0),
                                               menu, stream=stream)
-            index = self.select(choices, logits, forward_identity=request['forward_identity'], individuals=menu)
+            index, decision = self.choose(plan, choices, phi, logits,
+                forward_identity=request['forward_identity'], individuals=menu)
             selected = None if index is None else choices[index]
             occurrence = None
             if isinstance(selected, int):
@@ -811,7 +872,7 @@ class ReferenceClose(nn.Module):
                 features=phi, cue=cue, role=request.get('role', 0),
                 forward_identity=request['forward_identity'],
                 candidate_occurrence=occurrence,
-                probabilities=None if not choices else logits.softmax(0)))
+                probabilities=decision['probabilities']))
 
     @torch.no_grad()
     def prepare(self, clause, plan):
@@ -849,9 +910,11 @@ class ReferenceClose(nn.Module):
             term = node.composition or Composition(node.point, order=node.order)
             native = self.address(reference)
             alias = minted.get(selected) if isinstance(selected, tuple) else None
-            updated = replace(term, reference=-1 if native is None else native,
+            source = (term.reference if item.get('own_object') and not item.get('anonymous')
+                      else -1)
+            updated = replace(term, reference=source if native is None else native,
                               order=node.order, binding=alias)
-            if item['mode'] == 'mint' or item.get('anonymous'):
+            if item['mode'] == 'mint' or item.get('own_object'):
                 minted[selected] = updated
             if item.get('anonymous'):
                 anonymous.add(selected)
@@ -926,10 +989,7 @@ class ReferenceClose(nn.Module):
                 raise RuntimeError('kept reference constituent has no closing address')
             occurrence = self.store.occurrence_of(location)
             reference = item['reference']
-            if item.get('anonymous'):
-                reference = occurrence
-                allocated[('new', number)] = reference
-            elif item['mode'] == 'mint':
+            if item['mode'] == 'mint' or item.get('own_object'):
                 symbol = written.get(('symbol', id(node)))
                 reference = symbol if symbol in alloc.individuals else occurrence
                 allocated[('new', number)] = reference
@@ -941,7 +1001,7 @@ class ReferenceClose(nn.Module):
                 kind = self._derivation_symbol(occurrence)
                 if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
                     kind = self._derivation_symbol(reference)
-                if item['mode'] == 'mint' or item.get('anonymous'):
+                if item['mode'] == 'mint' or item.get('own_object'):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
                              when=int(encoder().decode_index(stamp(self.store))))
                 else:
@@ -981,16 +1041,18 @@ class ReferenceClose(nn.Module):
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
                     and selected != token and mtm.token_of(token) is not None):
                 from RowTime import encoder, stamp
-                mtm.bind(token, selected, kind=self._derivation_symbol(selected),
-                         when=int(encoder().decode_index(stamp(self.store))))
+                when = int(encoder().decode_index(stamp(self.store)))
+                if mtm.token_of(selected) not in (None, mtm.token_of(token)):
+                    mtm.merge(token, selected, when=when)
+                else:
+                    mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when)
             item['reference'] = selected if selected is not None else token
             audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
                 reference=item['reference'], selected=item['selected'], candidates=item['candidates'],
                 missing_reason=('no_selected_candidate' if selected is None else
                                 None if mtm.token_of(token) is not None else 'no_accessible_individual')))
-        # Refinement can reassign a candidate's introducing occurrence. Attach
-        # this close's uses afterwards, to the identity that now owns their
-        # chosen antecedent; detaching an introduction must not lose new uses.
+        # Refinement may join a pending token to another antecedent. Attach
+        # this close's uses to the owner of their chosen occurrence afterwards.
         for reference, occurrence, kind in uses:
             mtm.bind(reference, occurrence, kind=kind,
                      when=int(encoder().decode_index(stamp(self.store))))
