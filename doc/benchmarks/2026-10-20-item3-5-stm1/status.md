@@ -1,6 +1,9 @@
 # Step 1b: current gates and carry ledger
 
 **Active §14 round, publication held for the reference contract/ports.**
+At Alec's 2026-10-21 request, the
+[review note for Claude](../2026-10-20-item3-5-inline-lowering/claude-review.md)
+describes every implemented change and the proposed, unapplied ports.
 D2 passes both requested reverse replays on `eb75de56a`. The eight §10.2
 changes are committed on `f9faae610`; both exact D1 replays now tie on R+A
 and keep greedy, and all twelve fresh initializations pass (six per order,

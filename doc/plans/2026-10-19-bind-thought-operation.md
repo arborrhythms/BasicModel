@@ -1258,3 +1258,11 @@ scoped results are not promoted to the follow-up source. Final arrival and
 scoped/decomposition evidence must cover the eventual frozen source by
 hash; publication to both mains and the WikiOracle bump remain pending.
 No second full sweep. Item 0 and the separate 5.5 gates keep their ledger.
+
+**Review preparation (Codex, 2026-10-21, requested by Alec):**
+[the step-by-step account](../benchmarks/2026-10-20-item3-5-inline-lowering/claude-review.md)
+identifies each implemented change, its source and evidence, the exact
+additional ports proposed but not applied, and the unresolved working-group
+read. Alec's request to describe the work for Claude is not recorded as
+approval of the extra ports. No further production or assertion change was
+made while preparing this note; publication remains held.

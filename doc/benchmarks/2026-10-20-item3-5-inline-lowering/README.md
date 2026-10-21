@@ -3,6 +3,10 @@
 **Current: publication held; [review questions](review-required.md).**
 Implementation `f9faae610`; follow-up carrier/participant repair `67c5b203f`.
 
+[Step-by-step account for Claude (2026-10-21)](claude-review.md) separates
+the committed changes, evidence by source, proposed unapplied ports and
+the unresolved working-group mechanism.
+
 Base `93788f9d2`; D2 source `eb75de56a` passes both requested saved
 reverse replays ([receipt](../2026-10-20-item3-5-stm1/review3/d2-replays.md)).
 This receipt owns the §10.2 production round, its gates, paired D1

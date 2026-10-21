@@ -32,6 +32,8 @@ never replaced. Targeted checks: 37 passed, five old -1 assertions failed;
 two working-identity merge certificates still fail. The
 [review questions and exact proposed ports](doc/benchmarks/2026-10-20-item3-5-inline-lowering/review-required.md)
 are recorded for Alec/Claude; no additional existing assertion is changed.
+The [step-by-step review note](doc/benchmarks/2026-10-20-item3-5-inline-lowering/claude-review.md)
+records the implemented work and unapplied proposals at Alec's request.
 After those are resolved, the final source still needs its arrival and
 scoped/decomposition evidence by hash. Earlier results are not promoted to
 the follow-up source. No full second sweep, objective change or learning

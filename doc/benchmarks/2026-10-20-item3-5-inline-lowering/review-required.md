@@ -6,6 +6,12 @@ Publication is held. No assertion beyond D2 and the three declared ports
 has changed; no seat reservation, pool masking, fixture resizing or new
 objective was introduced.
 
+Alec requested a careful description for Claude before proceeding. The
+[step-by-step review note](claude-review.md) records the implementation,
+exact proposed port sequence and source-specific evidence. This reply is
+not treated as approval of additional ports; all proposals below remain
+unapplied.
+
 ## 1. Additional representation ports need a declared scope
 
 The instruction permits three named reference-close ports and prohibits
