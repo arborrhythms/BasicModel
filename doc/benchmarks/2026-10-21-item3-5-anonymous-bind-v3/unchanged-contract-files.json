@@ -1,0 +1,36 @@
+{
+  "base": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "files": [
+    {
+      "path": "bin/SentenceCredit.py",
+      "unchanged": true,
+      "sha256": "d5e95b33c74541b7312d8d0c7d756883cedb8ff57c093f8726c96c088b51a47a"
+    },
+    {
+      "path": "test/test_math_chain_section14.py",
+      "unchanged": true,
+      "sha256": "aaafe1c2fc197ccf70d80581d17a5be5cc4b8ee214fc68c4fa1d6a0eab243c65"
+    },
+    {
+      "path": "test/test_bind_thought.py",
+      "unchanged": true,
+      "sha256": "b99b5531665b61eabd6463eb9460b13a8536f7a45c5a0c0c44fce3954e6b6ba1"
+    },
+    {
+      "path": "test/test_operators_final_b.py",
+      "unchanged": true,
+      "sha256": "1c823a6e73cfada965b0a47dbe1140d9f92476ec19b19c47956152e15d954b92"
+    },
+    {
+      "path": "test/test_math_chain_decomposition.py",
+      "unchanged": true,
+      "sha256": "c6919e344b11aaa1eee19bfb632744bcb3ff366b6b2a9f73fe14fd8395706144"
+    },
+    {
+      "path": "data/MM_grammar.xml",
+      "unchanged": true,
+      "sha256": "21ee7cd3e5ea6489902ab08e8efaacb723e7b527655eef836b4f37358df83702"
+    }
+  ]
+}

@@ -1,12 +1,15 @@
 # Step 1b §10.2: inline lowering and occurrence identities
 
-**§18 update:** accepted MTM remains `eac2fe87b`. Anonymous-bind source
-`823f157cd` passes twelve fresh arrival draws and 48 regressions. Its
-[full ledger](../2026-10-21-item3-5-anonymous-bind-v2/README.md) retains the
-bootstrap zero-R failure and four decomposition failures. The latter's
-open-name fixture seam is repaired; the [third freeze](../2026-10-21-item3-5-anonymous-bind-v3/README.md)
-owns all new gates. The bootstrap discrepancy also fails on accepted MTM
-under identical replay and remains open. No earlier result is promoted.
+**§18 / §10.4 update:** accepted MTM remains `eac2fe87b`. The
+[third frozen source `3d453e6bb`](../2026-10-21-item3-5-anonymous-bind-v3/README.md)
+completes all requested gates: 10/12 fresh first draws pass, 48 focused
+regressions pass, and the eight-file set records 110 passes, three failures
+and one existing skip. Both original decomposition arms and both eight-seat
+MM draws pass. Reverse draws 2 and 3 exactly replay; their retained
+order-0 complement is absent from the next bind menu. A nested occurrence
+witness and bootstrap zero-R discrepancy remain open as well. Every failed
+run is retained; no result is promoted. Claude's review and resolution of
+these failures precede publication. The §17 evidence below is historical.
 
 
 

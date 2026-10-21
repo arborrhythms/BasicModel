@@ -1,19 +1,22 @@
 # Step 1b: current gates and carry ledger
 
 **Active §18 / §10.4 round, 2026-10-21.** Accepted MTM remains
-`eac2fe87b`. Anonymous-bind source `823f157cd` passes all twelve fresh
-first draws and 48 additional regression cases. Its eight-file set is
-112 passed, one failed, one existing copular prerequisite skip. The
-[bootstrap probe](../2026-10-21-item3-5-anonymous-bind-v2/bootstrap-failure.md)
-reproduces the unchanged zero-R assertion failure identically on accepted
-`eac2fe87b`; no assertion, objective or production change follows it.
-Both decomposition lengths fail in both arms because the separate fixture
-forces `what` open only during composition. Connecting that same open-name
-rule to closing bind restores the original length-1 zero-arm replay.
-The [third freeze](../2026-10-21-item3-5-anonymous-bind-v3/README.md) owns
-all new gate evidence. No result is promoted, all failures remain, and the
-bootstrap discrepancy is still open. Claude's review and publication
-remain pending. No second full sweep or learning claim.
+`eac2fe87b`. All requested gates have completed on frozen `3d453e6bb`:
+10/12 fresh first draws pass, with reverse 2 and 3 failing unchanged D2
+and exactly replaying. The first kept reading has no pending x site and
+its order-0 three complement is missing from the next frame's menu.
+The eight-file set is 110 passed, three failed, one existing prerequisite
+skip; its other failures are a nested occurrence witness and the unchanged
+bootstrap zero-R assertion. The 48 focused regressions and both unchanged
+merge certificates pass. Both original decomposition arms pass all eight
+companion proof chains; both original eight-seat MM draws pass with zero
+seat requests. All 23 run manifests match the frozen source. The
+[full receipt](../2026-10-21-item3-5-anonymous-bind-v3/README.md) retains
+every failure and probe. No earlier pass is promoted. Claude's completed
+review says not to land. The A decomposition confirms that reference credit
+keeps the nameless first reading; the forcing/objective decision is with
+Alec. Review findings and failures must be resolved before publication. No second full sweep, assertion
+or objective change, or learning claim.
 
 **Historical §17 evidence follows.**
 

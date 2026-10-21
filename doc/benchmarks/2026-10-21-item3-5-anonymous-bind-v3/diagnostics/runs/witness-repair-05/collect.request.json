@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_reference_witness_address.py",
+    "test/test_reference_occurrence_views.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

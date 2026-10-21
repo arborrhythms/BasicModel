@@ -1,0 +1,24 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_occurrence_bind_witness_is_a_locatable_address ______________
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py:12: in test_occurrence_bind_witness_is_a_locatable_address
+    assert all(f.store.location(witness) is not None
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py:12: in <genexpr>
+    assert all(f.store.location(witness) is not None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:250: in location
+    if len(reference) == 2 and reference[0] == 'sym' and self.parts.contains(reference[1]):
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/PartStore.py:59: in contains
+    return 0 <= int(symbol) < self.capacity and bool((self.refs[int(symbol)] > 0).all())
+                ^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address
+1 failed, 1 warning in 2.16s

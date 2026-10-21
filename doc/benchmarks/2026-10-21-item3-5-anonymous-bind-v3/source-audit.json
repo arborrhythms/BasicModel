@@ -1,0 +1,142 @@
+{
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "checks": [
+    {
+      "run": "bootstrap-reviewed-source-06",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "decomposition-enabled-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "decomposition-zero-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-1",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-2",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-3",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-4",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-5",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-forward-6",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-1",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-2",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-3",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-4",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-5",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "fresh-final-reverse-6",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "mm-fresh-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "mm-saved-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "native-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "regressions-final",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "reverse-frames-02",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "reverse-replay-01",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "reverse3-replay-03",
+      "files": 825,
+      "mismatches": []
+    },
+    {
+      "run": "witness-repro-04",
+      "files": 825,
+      "mismatches": []
+    }
+  ],
+  "helpers": {
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/arrival_capture.py": "2fa57ee848c3bebab1a0eef83c9d4353df7bfc1ac01214a084fcc5587ad61518",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/arrival_keep_probe.py": "016afc4e837f8f56a23d97772103848cae8056018a7f2c6c739fe926309d2148",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/arrival_tables.py": "fd764c1683203f397ec3aa0371018169f8d04f6c120e0d13906dabf077d6aceb",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/bind_gate.py": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/bootstrap_probe.py": "6a75d9d8b035d0719e3193ee2e2ec984736b128f8e1d0fc8b4f265f270904b59",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/capacity_probe.py": "26a68fd30f91f55d13d259a0bcb6cc49fa1041b0b7038861ddc1ff07e10b631a",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/fresh_arrivals.py": "d01d4e2c2d3b4cdea3c5f091214d1a899139f7c967be12702deac6c68f8bdaa5",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/fresh_tables.py": "5706134ad89a2bc7be404d6cb6f22fd419bfa402e1cf197e400f18a3e2da5652",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/mm_gates.py": "f96a485f538deee15caa7db041643dfdb676532084b23c5f0fc346815ce60d8d",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/question_tables.py": "ea258587a42198bd112f6b8066b181f0942f972c2f4314f232c54bceee1eedcd",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reference_probe.py": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/regression_gate.py": "979c61cc17ae49302d4681d5e8c39c7709b01af026cfd80869ca8a2847ee1f8d",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/run_review_certificates.py": "21ce43110f35a36d0ffb3ace95bb09da29f5030390ba71916895b716de2f7b00",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/source_audit.py": "02e7855fc9503d9532dcc245ccaa0129f461726eaa678bf58eab4d4a47ccdcf5",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/closing_probe.py": "7f74a5436fd9b376ae8bcfd82b944a525cbe74dd71f22cca0c8e80c4b1d55233",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py": "18d74ed907a1ebc83cf618909a22d8303db9509aab140ee12260c024a54efd9a",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py": "bd2cf36ee2c9dba1d7058c0d7d871045a486d19fbf4814d3b836b9add3715da1",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/closing_episode_state.py": "39d975fe62bfc275391e1a8c0237e442afd5fd88c2ae7193dde84788af815431"
+  },
+  "production_diff": [],
+  "matched": true
+}

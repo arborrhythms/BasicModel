@@ -1,0 +1,97 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/worker-000.json"
+      ],
+      "pid": 63079,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 437814472,
+      "elapsed_seconds": 3.8520877088885754,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+      ],
+      "completed": [
+        "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+      ],
+      "reports": [
+        {
+          "nodeid": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.022207624977454543,
+          "message": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py:12: in test_occurrence_bind_witness_is_a_locatable_address\n    assert all(f.store.location(witness) is not None\ndoc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py:12: in <genexpr>\n    assert all(f.store.location(witness) is not None\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:250: in location\n    if len(reference) == 2 and reference[0] == 'sym' and self.parts.contains(reference[1]):\n                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/PartStore.py:59: in contains\n    return 0 <= int(symbol) < self.capacity and bool((self.refs[int(symbol)] > 0).all())\n                ^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120.0,
+    "suite_seconds": 150.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04",
+  "elapsed_seconds": 8.309093749849126,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 437814472,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/collect.json"
+    ],
+    "pid": 63068,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 430376160,
+    "elapsed_seconds": 3.7221951249521226,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

@@ -1,0 +1,75 @@
+........Fs..F                                                            [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_initial_binding_distribution_includes_every_retained_candidate _
+test/test_math_chain_section14.py:215: in test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+    rows = train_documents(model, documents, tmp_path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:57: in record
+    observer.after_batch(model, split, rows, result)
+test/math_chain_observer.py:133: in after_batch
+    known_witnesses=bool(witnesses) and all(store.location(ref) is not None for ref in witnesses),
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_observer.py:133: in <genexpr>
+    known_witnesses=bool(witnesses) and all(store.location(ref) is not None for ref in witnesses),
+                                            ^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:250: in location
+    if len(reference) == 2 and reference[0] == 'sym' and self.parts.contains(reference[1]):
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/PartStore.py:59: in contains
+    return 0 <= int(symbol) < self.capacity and bool((self.refs[int(symbol)] > 0).all())
+                ^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=7.735s)
+batch = 16 (Δ=4.807s)
+batch = 24 (Δ=7.571s)
+batch = 32 (Δ=8.172s)
+batch = 40 (Δ=4.851s)
+batch = 48 (Δ=7.739s)
+batch = 56 (Δ=8.294s)
+batch = 64 (Δ=9.054s)
+batch = 72 (Δ=5.230s)
+batch = 80 (Δ=7.943s)
+batch = 88 (Δ=8.135s)
+batch = 96 (Δ=8.315s)
+batch = 104 (Δ=9.524s)
+batch = 0 (Δ=15.089s)
+__________ test_forced_ordinary_pending_premise_in_both_orders[True] ___________
+test/test_math_chain_section14.py:441: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/arrival_capture.py:180: in observed_train
+    return train(model, documents, folder, after=observed_after, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:74: in record
+    after(model, split, rows, result, observations, observer)
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/arrival_capture.py:156: in observed_after
+    return after(*args) if after is not None else None
+           ^^^^^^^^^^^^
+test/test_math_chain_section14.py:403: in after
+    assert not any(identity in names for _, identity in forwards)
+E   assert not True
+E    +  where True = any(<generator object test_forced_ordinary_pending_premise_in_both_orders.<locals>.after.<locals>.<genexpr> at 0x1454e83c0>)
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up)
+batch = 8 (Δ=20.877s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]
+2 failed, 10 passed, 1 skipped, 1 warning in 188.90s (0:03:08)

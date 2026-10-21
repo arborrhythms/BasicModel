@@ -1,0 +1,8 @@
+{
+  "receipt": "mm-saved-final",
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+  "exit": 0,
+  "initial_rng": "doc/benchmarks/2026-10-20-item3-5-stm1/rng-119/test_mm_grammar_learns_xor_signal/initial-rng.pt",
+  "initial_rng_sha256": "0f9b2d07ee3d0d3c1fb88629e4915aa3321c862428b5a6911b60569b937585ff"
+}

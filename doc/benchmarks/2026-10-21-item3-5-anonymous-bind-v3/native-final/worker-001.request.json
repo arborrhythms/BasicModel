@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/native-final/worker-001.recycle.json"
+}

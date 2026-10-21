@@ -1,0 +1,21 @@
+{
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "batches": [
+    {
+      "readings": true,
+      "field": true,
+      "credit": true,
+      "words": true,
+      "reference_close_audit": true,
+      "mtm": true
+    },
+    {
+      "readings": true,
+      "field": true,
+      "credit": true,
+      "words": true,
+      "reference_close_audit": true,
+      "mtm": true
+    }
+  ]
+}

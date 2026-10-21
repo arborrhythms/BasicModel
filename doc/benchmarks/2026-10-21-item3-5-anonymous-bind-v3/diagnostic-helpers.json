@@ -1,0 +1,11 @@
+{
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "note": "Post-freeze observers and accounting helpers; isolated witness-repair-05 is development evidence in diagnostics/runs, excluded from frozen-source gate claims.",
+  "files": {
+    "diagnostics/summarize_fresh.py": "d62c57d46d3a5e92b2dfff17febc48ea662151bfa54a229aed5110780be1e426",
+    "diagnostics/test_witness_repro.py": "38467e169bbfb44b44473468dce94b640f66e48947ce4a87bbcbc75cbbc063ca",
+    "diagnostics/reference_cost_breakdown.py": "8994431013e66c75ecb368ec5fef22d44f669805cbdbc2ed5e5bbc345e52489b",
+    "diagnostics/arrival_frames_probe.py": "b3afd414cc11faaf64a700b1c0964a3925e15f2c098aa68e852b3aeec7fbef54",
+    "diagnostics/resume_fresh.py": "732ff141a2237705d76f6e31c84f81b3887ab31a453a47ce1c8df2ced31fc435"
+  }
+}

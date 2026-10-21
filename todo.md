@@ -20,19 +20,20 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §18 / §10.4 round:** source `823f157cd` passes all twelve fresh
-arrival draws and 48 MTM/anonymous/PartClosing/occurrence cases. The
-eight-file set is 112 passed, one failed, one copular prerequisite skip;
-the unchanged bootstrap zero-R assertion also fails identically on accepted
-`eac2fe87b` under captured replay. All four decomposition cases fail because
-their fixture's open-name rule did not reach closing bind. That seam is
-repaired, preserving its scope; the original length-1 zero-arm replay passes.
-The [third freeze receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/README.md)
-owns the next complete gate round. Nothing is promoted from earlier
-sources, and every failure remains. The bootstrap discrepancy still needs
-disposition; no assertion or objective change is applied. Claude's review
-precedes both-main publication, the WikiOracle bump and October 20 docs.
-No second full sweep or learning claim.
+**Active §18 / §10.4 round:** frozen `3d453e6bb` completes all requested
+gates: 10/12 fresh first draws pass, with two reverse D2 failures exactly
+replayed; 48 focused regressions pass; the eight-file set is 110 passed,
+three failed, one existing prerequisite skip. Both original decomposition
+arms pass all eight companion proof chains; both eight-seat MM draws pass
+with zero seat requests. All 23 run manifests match the frozen source.
+The [receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/README.md)
+retains the missing reverse antecedent candidate, nested occurrence-witness
+error and bootstrap zero-R failure. No earlier pass is promoted or failed
+run replaced. Assertions, keep and objective stay unchanged. Claude's
+completed review says not to land; the forcing/objective decision is with
+Alec. Resolving the review findings and failures precedes publication of both mains,
+the WikiOracle bump and October 20 docs. No second full sweep or learning
+claim.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on

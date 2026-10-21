@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/witness-repro-04/worker-000.recycle.json"
+}

@@ -1,0 +1,15 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/test_witness_repro.py::test_occurrence_bind_witness_is_a_locatable_address"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

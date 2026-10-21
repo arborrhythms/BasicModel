@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reverse3-replay-03/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reverse3-replay-03/worker-000.json"
+  ],
+  "pid": 62647,
+  "exit_code": 1,
+  "reason": "exit",
+  "peak_memory_bytes": 3032944168,
+  "elapsed_seconds": 38.47444595908746,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reverse3-replay-03/worker-000.log"
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item35-witness-repair-te_zd4j8/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/runs/witness-repair-05/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/runs/witness-repair-05/worker-000.json"
+  ],
+  "pid": 64813,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 441255280,
+  "elapsed_seconds": 3.837426792131737,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/diagnostics/runs/witness-repair-05/worker-000.log"
+}

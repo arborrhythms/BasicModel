@@ -1,0 +1,87 @@
+{
+  "source": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
+  "baseline": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+  "initial_parameters_equal": true,
+  "baseline_batches": [
+    {
+      "credit": true,
+      "field": true,
+      "mtm": true,
+      "reference_audit": true,
+      "trials": [
+        {
+          "trial": true,
+          "component_reading": true,
+          "word_values": true,
+          "word_valid": true,
+          "word_rows": true,
+          "meaning_start": true,
+          "reconstruction": true,
+          "decoder_trace": true,
+          "registry": true,
+          "clauses": true,
+          "programs": true,
+          "reference_credit": true,
+          "answer_cost": true
+        },
+        {
+          "trial": true,
+          "component_reading": true,
+          "word_values": true,
+          "word_valid": true,
+          "word_rows": true,
+          "meaning_start": true,
+          "reconstruction": true,
+          "decoder_trace": true,
+          "registry": true,
+          "clauses": true,
+          "programs": true,
+          "reference_credit": true,
+          "answer_cost": true
+        }
+      ]
+    },
+    {
+      "credit": true,
+      "field": true,
+      "mtm": true,
+      "reference_audit": true,
+      "trials": [
+        {
+          "trial": true,
+          "component_reading": true,
+          "word_values": true,
+          "word_valid": true,
+          "word_rows": true,
+          "meaning_start": true,
+          "reconstruction": true,
+          "decoder_trace": true,
+          "registry": true,
+          "clauses": true,
+          "programs": true,
+          "reference_credit": true,
+          "answer_cost": true
+        },
+        {
+          "trial": true,
+          "component_reading": true,
+          "word_values": true,
+          "word_valid": true,
+          "word_rows": true,
+          "meaning_start": true,
+          "reconstruction": true,
+          "decoder_trace": true,
+          "registry": true,
+          "clauses": true,
+          "programs": true,
+          "reference_credit": true,
+          "answer_cost": true
+        }
+      ]
+    }
+  ],
+  "baseline_primed_note": "The baseline observer serialized primed as a string; the later bank probe serializes explicit fields. No equality is claimed across those two representations.",
+  "explicit_bank_and_all_batches_equal_to_823f157cd": true,
+  "outcome": "failed",
+  "production_diff_823_to_3d": []
+}

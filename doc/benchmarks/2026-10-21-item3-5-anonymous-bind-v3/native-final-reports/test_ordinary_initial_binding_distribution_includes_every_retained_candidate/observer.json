@@ -1,0 +1,100 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 0,
+    "episodes": 6
+  },
+  "operations": {
+    "bind": 4,
+    "conclude": 4,
+    "exist": 2,
+    "not": 20
+  },
+  "credit": {
+    "reconstruction_and_answer": 6,
+    "nonzero_graph": 2,
+    "ties": 4,
+    "nonzero_chooser_gradients": 2
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "costs": [
+        0.23862943649291993,
+        0.23862943649291993
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 2,
+      "costs": [
+        0.23862943649291993,
+        0.23862943649291993
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 3,
+      "costs": [
+        0.22414343357086183,
+        0.22414343357086183
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 4,
+      "costs": [
+        0.23862943649291993,
+        0.0
+      ],
+      "graph": true,
+      "surrogate": -0.3820016086101532,
+      "raw_chooser_gradient_l2": 0.2669758120037492
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 5,
+      "costs": [
+        0.23862943649291993,
+        0.0
+      ],
+      "graph": true,
+      "surrogate": -0.3820016086101532,
+      "raw_chooser_gradient_l2": 0.2669758120037492
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 6,
+      "costs": [
+        0.23862943649291993,
+        0.23862943649291993
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.5339516240074984,
+  "raw_chooser_gradient_l2_max": 0.2669758120037492
+}
