@@ -140,13 +140,15 @@ all LTM1 rows agreed; `exact-replay-comparison.json` records that limitation.
 | Failing row | Stream 2's unverified constituent, with role 2 open on word 14 (`is`) |
 | Pending reference specified by the certificate | Word 12 (`x`), in the separate question at row 6 |
 | Conflict | The live explore suffix may open another name. The forward arm explicitly excludes those unrelated variables; the reverse arm asserts over every non-estimate row |
-| Decision (Alec, §13 round) | Keep the universal over every non-estimate row, but reject forward-name IDs for x only; also require every pending x row's referent slot to be filled. Row 5 / word 14 (`is`) is outside the certificate's own forward-arm scope. D2 is authorized and queued after D1 |
+| Decision (Alec, §13 / §14 round) | Keep the universal over every non-estimate row, but reject forward-name IDs for x only; also require every pending x row's referent slot to be filled. Row 5 / word 14 (`is`) is outside the certificate's own forward-arm scope. D2 is applied in the §14 round, with arrival-14 and fresh-both-reverse-5 replays next |
 
 No assertion, forced scope, budget or initialization changed in this
 diagnosis. The separate raw-graph count was subsequently ported to the
-working read in §6.5 and accepted in plan §13. D2 has not yet been applied:
-the ordered round stopped at the D1 probe below. Publication and the
-six-fresh-per-order acceptance run remain pending.
+working read in §6.5 and accepted in plan §13. After accepting the D1
+probe, Alec's §14 order applies D2 before §10.2. It checks the working
+forward names in every row, and uses raw forward names only to identify
+the rows whose pending x referent slots must now be closed. Publication
+and the six-fresh-per-order acceptance run remain pending.
 
 ### 6.3 Fresh forward initialization 2: a changing name key and a surface read
 

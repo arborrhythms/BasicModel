@@ -391,11 +391,20 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                 assert correct, 'the arriving x is three must supply the bound referent'
                 assert not bindings(value).get('_pending')
             if reverse:
+                names = set(model._concept_owner().word_concepts('x'))
                 for index in range(len(store)):
                     if store.KINDS[int(store.record_kind[index])] == 'estimate':
                         continue
                     value = store.meaning_of(index)
-                    assert not bindings(value).get('_forward_references')
+                    forwards = bindings(value).get('_forward_references', ())
+                    # Explore may open an unrelated name (the captured
+                    # row 5 names word 14, "is"). Universally require x
+                    # to resolve, matching the forward arm's name scope.
+                    assert not any(identity in names for _, identity in forwards)
+                    original = store.raw_meaning_of(index)
+                    pending_names = bindings(original).get('_forward_references', ())
+                    if any(identity in names for _, identity in pending_names):
+                        assert not any(kind == 'referent' for kind, _ in open_slots(value))
                 # The second sentence does not contain "three". Its actual
                 # committed graph must carry that earlier referent through
                 # the bound x operand, rather than merely lose the variable.

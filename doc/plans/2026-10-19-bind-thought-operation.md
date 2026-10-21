@@ -1148,3 +1148,66 @@ once in six, twice). MM_grammar at one fresh initialization: passed
 **Order.** D1 probe (and the judge repair if it names one) and D2 →
 six per order → the §10.2 round → publication of both mains with the
 October 20 docs and a clean tree. No second full sweep.
+
+## 14. Claude's fifth review: the D1 probe on `93788f9d2` (2026-10-20, late night)
+
+**Accepted.** The probe is complete and exact: both saved failures replay
+with identical initial parameters, buffers, all RNG states including the
+private corpus generator, and identical final LTM1/Part rows
+(`review3/arrival-keep-validation.json`); both trials of all eight streams
+are recorded in the step-0 shape (`arrival-keep.jsonl`, one table per
+document). Codex's stop at the decision boundary is the order I asked
+for. Correction to §13 accepted: `fresh-both-forward-4` does not leave
+`three` open; its kept reading binds x to symbol 14 (`is`) and attaches
+`three` under `adverb`; only arrival-21 leaves `three` as an open role
+(forward word 59).
+
+**What the probe establishes.** In both deciding streams the greedy
+reading is `x open = [description child headed by three]`, formed by the
+chooser's mint on the complement (`_formation_records`: `choice mint,
+reference -1, role 2`); the explore reading binds the complement to an
+existing symbol (`choice bind, reference 14` / `-15`). A is 0 for both:
+`ChainDocument` supplies no answer target, `_sentence_answer_error`
+returns before the referent judge, and neither trial has an order-1
+`ReferenceClose` request (thinking §14.2 records zero answer cost without
+an answer; step 0's cause 1 was a supplied target mis-read, which is not
+this). E is excluded from keep by decision. R is `reconstruction.free_bytes`
+at weight .1: .3607 against .3006, six units against five of the tied
+byte cost, so the explore reading is kept by one byte. Under the current
+objective R + A legitimately prefers it. This is the contract case, not
+a judge defect of the step-0 class.
+
+**D1, for Alec; recommendation first.**
+
+1. **Do the §10.2 round before deciding the contract, with D2 applied
+   now.** Both failing readings are the chooser's mint on the complement,
+   the formation whose `-1` cut §10.2 change 1 removes (the operand keeps
+   `current['ref']`, here the object of `three`). Deciding a certificate
+   contract against readings that the next decided round changes is
+   premature. Codex: after D2, implement §10.2, replay the two captured
+   initializations on that source first (a cheap check of whether the
+   greedy reading now ties or wins), then run the twelve fresh
+   initializations per order on the §10.2 source. If forward failures
+   remain they are captured as before and the contract is decided on the
+   readings that actually occur.
+2. **If a contract change is then needed**, split rather than loosen:
+   the step-1b certificate asserts the mechanism in both arms, the
+   pending x row is filled by the arrival's retained referent and the
+   kept arrival's graph carries `three` as a bound symbol, a word leaf or
+   its own retained forward name (the reverse arm's `carries_three`
+   extended to forward names); the original strict assertion
+   (`matches(model, value, 'three')` on the kept reading) is kept
+   verbatim as a separate certificate under item 0's learning evidence,
+   where the semantic reading of an unlabelled premise belongs.
+3. **Not recommended:** a new objective term for an open input role or
+   for binding a complement to a marker symbol (an objective change
+   outside this item; it would not repair forward-4 either), forcing the
+   departure (the certificate's own `departures > 1` assertion), or
+   supplying answer targets to the premises (turns a mechanism
+   certificate into a supervised one).
+
+**Decided (Alec, 2026-10-20): option 1.** D2 → §10.2 (its eight changes and gates; the
+three reference-close ports; replay of `fresh-both-forward-4` and
+arrival-21 on that source) → twelve fresh initializations per order →
+eight-file set and both decomposition arms → contract decision only if
+failures remain → publication. No second full sweep.

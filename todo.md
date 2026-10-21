@@ -20,17 +20,15 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §13 round (base `266189eda`): stopped at D1's decision boundary.**
-The [paired arrival probe](doc/benchmarks/2026-10-20-item3-5-stm1/closing-read-causes.md#66-d1-which-arrival-trial-wins-and-is-an-answer-score-missing)
-exactly reproduces both failures. A=0 because no answer target is supplied
-and neither deciding trial has a reference-closing request; lower R keeps
-explore. `arrival-21` leaves `three` open; `fresh-both-forward-4` instead
-attaches it as a modifier and binds x to `is`. A missing supplied-answer
-score is not the cause. A cost/arrival-contract decision is required
-before repair; no assertion or production change was made. Alec has
-decided D2's name-scoped reverse assertion, queued after D1, then all
-twelve fresh initializations, the eight-file set, the separate §10.2
-round and publication. Every failed run is retained; no second full sweep.
+**Active §14 round (base `93788f9d2`):** the exact D1 probe is accepted;
+Alec decided to implement §10.2 before revisiting its contract. D2's
+name-scoped reverse assertion is applied, with the two saved replays next.
+Then §10.2's eight changes and gates in its own receipt, both D1 replays
+with paired R/A, all twelve fresh initializations, and the eight-file set
+plus both decomposition arms by commit hash. Any remaining forward
+contract question is decided on that source before publication to both
+mains. The forward assertion and objective remain unchanged. Every failed
+run is retained; no second full sweep or learning claim.
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
 `codex/item3-5-first-pass`; its
@@ -75,7 +73,14 @@ mechanism repairs and the line-422 working-read port accepted; A stays
 open on the keep probe for the forward line-391 case (step-0 precedent:
 repair the judge, not the certificate), Alec's scope decision for the
 reverse line-398 assertion (recommended: no row keeps a forward
-reference naming x), then six fresh initializations per order. The
+reference naming x), then six fresh initializations per order.
+*Fifth review (Claude, plan §14):* the D1 probe is accepted; the keep is
+decided by one byte of reconstruction with A=0 by design, so it is the
+contract case; recommended to Alec: D2 now, the §10.2 round next (both
+failing readings are the complement mint that §10.2 change 1 removes),
+the twelve fresh runs on that source, and a contract split (mechanism
+assertion in step 1b, the strict reading kept verbatim at item 0) only
+if failures remain. **Alec decided: §10.2 first, contract later.** The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
 dissolution; shared six-column Part store; cube-coordinate maps and
