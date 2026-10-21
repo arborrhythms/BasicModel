@@ -6,7 +6,6 @@ import pytest
 import torch
 
 from ClauseRow import Clause, Composition, attach_clause_index
-from IdentityRows import witness_count
 from Layers import TernaryTruthStore
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
@@ -167,7 +166,9 @@ def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(ki
             if mode == 'mint':
                 assert plan['items'][0]['selected'][0] == 'new'
             else:
-                assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+                assert all(isinstance(ref, tuple) and ref[:2] == ('ltm', store.address_domain)
+                           and isinstance(store.location(ref), int)
+                           for ref in plan['items'][0]['candidates'])
         identities = current_identities(resolver, frames)
         references = [identities[address] for address in occurrences]
         assert len(set(references)) == (2 if distinct else 1)
@@ -181,7 +182,8 @@ def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
     frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (), document='a', sentence=0)
     before = store.refs.clone()
     _, missing, plan = close(resolver, torch.zeros(12), atoms[6], 'pronoun', (), document='b', sentence=0)
-    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 1
+    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 0
+    assert tuple(resolver.components.owner.mtm.entries) == (store.occurrence_of(store.index_of_row(address)),)
     assert int(store.refs[store.index_of_row(missing), 0]) == -1
     torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])
     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'
@@ -238,7 +240,11 @@ def test_revision_merges_three_accessible_groups_transitively_across_cued_docume
     identities = current_identities(resolver, frames)
     assert len({identities[a] for a in addresses}) == 1
     assert outside not in set(identities.values())
-    assert len(resolver.components.individual_ids) == 4
+    introductions = (*addresses[::2], inaccessible)
+    assert len(set(introductions)) == 4
+    assert {store.occurrence_of(store.index_of_row(a)) for a in introductions} == set(
+        resolver.components.owner.mtm.entries)
+    assert not resolver.components.individual_ids
     for address, point in before.items():
         torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
 
@@ -391,8 +397,10 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     row = f.store.write_clause(kept, document_key='native', sentence_index=0, written_rows=written)
     resolver.commit(plan, row, written, document='native', position=0, training=False)
     identity = resolver.last_audit[0]['reference']
-    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
-    assert witness_count(f.cs, identity) == 1 and not hasattr(component, 'nouns')
+    assert isinstance(identity, tuple) and identity[:2] == ('ltm', f.store.address_domain)
+    assert component.individual_ids == before
+    assert f.store.raw_meaning_of(f.store.location(identity)).role_refs[0] == ('sym', program.concept_ids[1].item())
+    assert int(f.store.witness_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
     occurrence = resolver.last_audit[0]['occurrence']
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
     restored = TernaryTruthStore(8, capacity=64)

@@ -20,7 +20,7 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
     assert f.resolver.prediction(address, f.atoms[4], 0) > 0
     assert f.resolver.prediction(f.identities[distractor], f.atoms[4], 0) == 0
     context = next(context for location, context in records.values() if location == target)
-    assert context['identity'] is None and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]
+    assert context['identity'] == address and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]
     result = execute(f, site(f, f.atoms[kind]*0, predicate=f.atoms[4]))
     assert result.value.role_refs[0] == address
     for actual, expected in zip((f.store.refs, f.store.slots, f.cs.similarity_codebook.W), before):

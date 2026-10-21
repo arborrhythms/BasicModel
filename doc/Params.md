@@ -399,6 +399,7 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `butterfly` | bool | — | **Silently ignored**: ConceptualSpace never reads a per-space `<butterfly>` — only PartSpace and WholeSpace carry the per-space read (the deprecated alias for architecture-level `<sigmaPi>`). A `<ConceptualSpace><butterfly>` element in a config has no effect. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
+| `mtmCapacity` | positive int | `64` | Capacity of `ConceptualSpace.mtm`, the medium-term token identity pool. Kept closes retain introduction/use addresses, kind, access count and last model time; the oldest access is evicted at capacity without changing LTM rows. The pool has no parameters or working vectors and is outside the compiled forward body. |
 
 > `ConceptualSpace` owns definitions, evidence and STM/event state. The
 > former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer

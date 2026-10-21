@@ -12785,6 +12785,9 @@ class ConceptualSpace(Space):
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+        from MediumTermMemory import MediumTermMemory
+        self.mtm = MediumTermMemory(int(TheXMLConfig.space(
+            section, "mtmCapacity", default=64)))
         # CSLang is the ConceptualSpace-owned language transaction lane.  It
         # is an ownership name for the existing STM, not a second registered
         # module: LanguageSpace owns grammar/tree choice, while this CS-owned

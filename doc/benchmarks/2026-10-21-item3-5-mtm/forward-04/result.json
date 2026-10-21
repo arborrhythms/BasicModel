@@ -1,0 +1,237 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+    "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+    "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+  ],
+  "completed": [
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+    "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+    "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/worker-000.json"
+      ],
+      "pid": 44615,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1988316352,
+      "elapsed_seconds": 53.0277484159451,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+        "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+        "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+        "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+        "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+      ],
+      "completed": [
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+        "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+        "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+        "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+        "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.019913333002477884,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005418125074356794,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005109000019729137,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008123500039801002,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003711290890350938,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0036609999369829893,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003690958023071289,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.2755661669652909,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004812041996046901,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 18.068879541940987,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 29.200370708014816,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 300.0,
+    "suite_seconds": 600.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04",
+  "elapsed_seconds": 56.02376808319241,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 1988316352,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/collect.json"
+    ],
+    "pid": 44595,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263832440,
+    "elapsed_seconds": 2.2469965000636876,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/forward-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+        "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+        "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+        "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+        "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

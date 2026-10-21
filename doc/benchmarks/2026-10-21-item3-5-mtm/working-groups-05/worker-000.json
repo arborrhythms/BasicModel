@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "completed": [
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023814083077013493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009085832862183452,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013052625115960836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01571308309212327,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

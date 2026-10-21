@@ -1,0 +1,181 @@
+FFFF....FFF                                                              [100%]
+=================================== FAILURES ===================================
+____ test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind] _____
+test/test_medium_term_memory.py:60: in test_bound_use_reads_as_its_introduction_without_rewriting_rows
+    use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:38: in keep
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+___ test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun] ___
+test/test_medium_term_memory.py:60: in test_bound_use_reads_as_its_introduction_without_rewriting_rows
+    use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:38: in keep
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+___ test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision] ___
+test/test_medium_term_memory.py:60: in test_bound_use_reads_as_its_introduction_without_rewriting_rows
+    use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:38: in keep
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+______ test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token ______
+test/test_medium_term_memory.py:90: in test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token
+    keep(resolver, mention(a[0], mode='bind'), (frames[0],), position=2)
+test/test_medium_term_memory.py:38: in keep
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+______ test_row_reclamation_drops_a_use_and_then_its_introductions_entry _______
+test/test_medium_term_memory.py:164: in test_row_reclamation_drops_a_use_and_then_its_introductions_entry
+    use, _ = keep(resolver, mention(a[0], mode='bind'), (first,), position=1)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:38: in keep
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_ test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them _
+test/test_reference_close.py:138: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+    frame, address, _ = close(resolver, point, predicate, mode, frames,
+test/test_reference_close.py:61: in close
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-inline-lowering/reference_probe.py:28: in read_individuals
+    result = individuals(resolver, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_ test_revision_merges_three_accessible_groups_transitively_across_cued_documents _
+test/test_reference_close.py:231: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+    second, b, _ = close(resolver, atoms[0]+atoms[4], atoms[6], 'bind', (first,),
+test/test_reference_close.py:61: in close
+    plan = resolver.preview(clause, frames)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:512: in preview
+    individuals = self.individuals(records)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-inline-lowering/reference_probe.py:28: in read_individuals
+    result = individuals(resolver, inputs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:256: in individuals
+    native = baseline(identity)
+             ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:248: in baseline
+    return self.store.point_of_row(identity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:343: in point_of_row
+    slot = self.slot_of_reference(reference)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ClauseRow.py:323: in slot_of_reference
+    value = self._slot_index.get(int(reference))
+                                 ^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+=============================== warnings summary ===============================
+test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]
+FAILED test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]
+FAILED test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]
+FAILED test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token
+FAILED test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry
+FAILED test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+FAILED test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+7 failed, 4 passed, 1 warning in 2.52s

@@ -2,7 +2,7 @@
 
 Operations decide mint versus bind. This owner decides only *which* accessible
 individual explains a binding. Its inputs are native concept rows and accessible LTM occurrences.
-It has no identity dictionary, event chart or text parser.
+The owner's MTM retains token membership between kept closes.
 Trial plans are read-only. Occurrence points are immutable under revision.
 """
 from dataclasses import replace
@@ -148,6 +148,7 @@ class ReferenceClose(nn.Module):
         alloc = _concept_alloc_of(self.components.owner)
         parts = alloc.parts
         active = parts.indices()
+        mtm = self.components.owner.mtm
         for position, frame in enumerate(frames):
             for identity in frame.symbol_ids:
                 if identity in alloc.individuals and identity not in alloc.retired:
@@ -158,7 +159,9 @@ class ReferenceClose(nn.Module):
                 continue
             row = store.row(location)
             if isinstance(location, int) and int(row['order']) == 1:
-                records[row['row_id']] = location, dict(role=0, position=(position, 0), identity=None)
+                occurrence = store.occurrence_of(location)
+                records[row['row_id']] = location, dict(role=0, position=(position, 0),
+                    identity=mtm.token_of(occurrence) or occurrence)
             at_time = active[(parts.when[active] == row['when'].to(parts.when)).all(-1)]
             # A timestamp is not a sentence identity. Traverse this frame's
             # retained derivation before consulting any contemporaneous edge.
@@ -207,13 +210,14 @@ class ReferenceClose(nn.Module):
                         break
                 records.pop(identity, None)
                 records[int(occurrence[-1])] = index, dict(role=role, position=(position, index),
-                    identity=identity, predicate=predicate)
+                    identity=(mtm.token_of(occurrence) or occurrence) if identity is None else identity,
+                    predicate=predicate)
         return dict(tuple(records.items())[-self.components.source_capacity:])
 
     def occurrences(self, row):
         frame = __import__('ReferenceContext').SituationFrame.from_row(self.store.row(row))
-        return tuple(('sym', context['identity']) if context['identity'] is not None
-                     else self.store.occurrence_of(location)
+        return tuple(('sym', context['identity']) if isinstance(context['identity'], int)
+                     else context['identity'] or self.store.occurrence_of(location)
                      for location, context in self.accessible((frame,)).values())
 
     def logits(self, features, cue=None, *, supervised=False):
@@ -237,13 +241,19 @@ class ReferenceClose(nn.Module):
         nor the activation/address index is changed by this interpretation.
         """
         from IdentityRows import point
+        def baseline(identity):
+            if isinstance(identity, int):
+                return point(self.components.owner, identity)
+            if identity in self.components.owner.mtm.entries:
+                return self.store.point_of_row(identity[-1])
+            return None
         groups = {}
         for address, (location, original) in records.items():
             context = dict(original)
             identity = context.get('identity')
             if identity is None:
                 identity = self.store.occurrence_of(location)
-            native = point(self.components.owner, identity) if isinstance(identity, int) else None
+            native = baseline(identity)
             observed = (self.store.point_of_row(address) if isinstance(location, int) else native)
             if observed is None:
                 continue
@@ -305,17 +315,15 @@ class ReferenceClose(nn.Module):
                 if right not in groups:
                     continue
                 a, b = groups[left], groups[right]
-                if not isinstance(left, int) or not isinstance(right, int):
-                    continue
-                native_a, native_b = point(self.components.owner, left), point(self.components.owner, right)
+                native_a, native_b = baseline(left), baseline(right)
                 if native_a is None or native_b is None:
                     continue
                 width = min(native_a.numel(), native_b.numel())
-                baseline = torch.maximum(self.coordinates(native_a)[:width],
-                                         self.coordinates(native_b)[:width])
+                initial = torch.maximum(self.coordinates(native_a)[:width],
+                                        self.coordinates(native_b)[:width])
                 def new_support(member):
                     value = member['content'][:width]
-                    return bool(((value >= .3) & (baseline[:value.numel()] < .3)).any())
+                    return bool(((value >= .3) & (initial[:value.numel()] < .3)).any())
                 newer_a, newer_b = [x for x in a if new_support(x)], [x for x in b if new_support(x)]
                 common = any(float(meet_ratios(x['content'], y['content'])[1]) >= .9
                     and predicate(x) == predicate(y) for x in newer_a for y in newer_b)
@@ -323,7 +331,7 @@ class ReferenceClose(nn.Module):
                     groups[left].extend(groups.pop(right))
         result = {}
         for identity, members in groups.items():
-            native = point(self.components.owner, identity) if isinstance(identity, int) else None
+            native = baseline(identity)
             width = native.numel() if native is not None else max(x['content'].numel() for x in members)
             value = native.detach().clone() if native is not None else members[-1]['content'].new_zeros(width)
             for member in members:
@@ -609,6 +617,7 @@ class ReferenceClose(nn.Module):
         from IdentityRows import expose_form, point
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(self.components.owner)
+        mtm = self.components.owner.mtm
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit = {}, []
         for number, item in enumerate(plan['items']):
@@ -625,6 +634,14 @@ class ReferenceClose(nn.Module):
             elif isinstance(item['selected'], tuple) and item['selected'][:1] == ('new',):
                 reference = allocated.get(item['selected'])
             item['reference'] = reference
+            if isinstance(reference, tuple) and reference[:1] == ('ltm',):
+                from RowTime import encoder, stamp
+                kind = self._derivation_symbol(occurrence)
+                when = int(encoder().decode_index(stamp(self.store)))
+                if item['mode'] == 'mint':
+                    mtm.open(occurrence, kind=kind, when=when)
+                else:
+                    mtm.bind(reference, occurrence, kind=kind, when=when)
             if item['features'] is not None:
                 held = dict(candidates=tuple(allocated.get(identity, identity) for identity in item['candidates']),
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())

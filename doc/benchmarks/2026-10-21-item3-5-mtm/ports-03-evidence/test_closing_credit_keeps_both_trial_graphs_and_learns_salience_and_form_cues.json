@@ -1,0 +1,642 @@
+{
+  "node": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+  "outcome": "passed",
+  "failure": "None",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": -2861869678661412324,
+          "reference": [
+            "ltm",
+            "address-v1",
+            -2861869678661412324
+          ],
+          "operation": "mint",
+          "candidates": [],
+          "missing_reason": null
+        }
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -2861869678661412324
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3489870347451900525
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "call": "accessible",
+      "frames": [
+        "SituationFrame(depth=1, roles=tensor([[1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]), occupied=tensor([ True, False, False]), row_id=3489870347451900525, point=tensor([1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]), order=2, where=tensor([0., 0., 0., 0.]), when=tensor([3.6573e-10, 1.0000e+00, 3.8350e-04, 1.0000e+00]), symbol_ids=(), activations=((('ltm', 'address-v1', -2861869678661412324), None, 0),))"
+      ],
+      "records": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ]
+      }
+    },
+    {
+      "call": "individuals",
+      "inputs": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ]
+      },
+      "output": {
+        "('ltm', 'address-v1', -2861869678661412324)": {
+          "content": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "role": 0,
+          "position": [
+            0,
+            0
+          ],
+          "occurrences": [
+            -2861869678661412324
+          ]
+        }
+      }
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 2354814268823880375,
+          "reference": [
+            "ltm",
+            "address-v1",
+            2354814268823880375
+          ],
+          "operation": "mint",
+          "candidates": [
+            [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ]
+          ],
+          "missing_reason": null
+        }
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -2861869678661412324
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3489870347451900525
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 2,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            2354814268823880375
+          ],
+          "refs": [
+            [
+              "sym",
+              5
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 3,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -3308879293101045912
+          ],
+          "refs": [
+            [
+              "sym",
+              6
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "call": "accessible",
+      "frames": [
+        "SituationFrame(depth=1, roles=tensor([[1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]), occupied=tensor([ True, False, False]), row_id=3489870347451900525, point=tensor([1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]), order=2, where=tensor([0., 0., 0., 0.]), when=tensor([3.6573e-10, 1.0000e+00, 3.8350e-04, 1.0000e+00]), symbol_ids=(), activations=((('ltm', 'address-v1', -2861869678661412324), None, 0),))",
+        "SituationFrame(depth=1, roles=tensor([[0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]), occupied=tensor([ True, False, False]), row_id=-3308879293101045912, point=tensor([0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.]), order=2, where=tensor([0., 0., 0., 0.]), when=tensor([3.2916e-09, 1.0000e+00, 3.4514e-03, 9.9999e-01]), symbol_ids=(), activations=((('ltm', 'address-v1', 2354814268823880375), None, 0),))"
+      ],
+      "records": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ],
+        "2354814268823880375": [
+          2,
+          {
+            "role": 0,
+            "position": [
+              1,
+              2
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              2354814268823880375
+            ],
+            "predicate": 4
+          }
+        ]
+      }
+    },
+    {
+      "call": "individuals",
+      "inputs": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ],
+        "2354814268823880375": [
+          2,
+          {
+            "role": 0,
+            "position": [
+              1,
+              2
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              2354814268823880375
+            ],
+            "predicate": 4
+          }
+        ]
+      },
+      "output": {
+        "('ltm', 'address-v1', -2861869678661412324)": {
+          "content": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "role": 0,
+          "position": [
+            0,
+            0
+          ],
+          "occurrences": [
+            -2861869678661412324
+          ]
+        },
+        "('ltm', 'address-v1', 2354814268823880375)": {
+          "content": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "value": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "role": 0,
+          "position": [
+            1,
+            2
+          ],
+          "occurrences": [
+            2354814268823880375
+          ]
+        }
+      }
+    },
+    {
+      "call": "accessible",
+      "frames": [
+        "SituationFrame(depth=1, roles=tensor([[1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]), occupied=tensor([ True, False, False]), row_id=3489870347451900525, point=tensor([1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.]), order=2, where=tensor([0., 0., 0., 0.]), when=tensor([3.6573e-10, 1.0000e+00, 3.8350e-04, 1.0000e+00]), symbol_ids=(), activations=((('ltm', 'address-v1', -2861869678661412324), None, 0),))",
+        "SituationFrame(depth=1, roles=tensor([[0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],\n        [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]), occupied=tensor([ True, False, False]), row_id=-3308879293101045912, point=tensor([0., 1., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.]), order=2, where=tensor([0., 0., 0., 0.]), when=tensor([3.2916e-09, 1.0000e+00, 3.4514e-03, 9.9999e-01]), symbol_ids=(), activations=((('ltm', 'address-v1', 2354814268823880375), None, 0),))"
+      ],
+      "records": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ],
+        "2354814268823880375": [
+          2,
+          {
+            "role": 0,
+            "position": [
+              1,
+              2
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              2354814268823880375
+            ],
+            "predicate": 4
+          }
+        ]
+      }
+    },
+    {
+      "call": "individuals",
+      "inputs": {
+        "-2861869678661412324": [
+          0,
+          {
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              -2861869678661412324
+            ],
+            "predicate": 1
+          }
+        ],
+        "2354814268823880375": [
+          2,
+          {
+            "role": 0,
+            "position": [
+              1,
+              2
+            ],
+            "identity": [
+              "ltm",
+              "address-v1",
+              2354814268823880375
+            ],
+            "predicate": 4
+          }
+        ]
+      },
+      "output": {
+        "('ltm', 'address-v1', -2861869678661412324)": {
+          "content": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "role": 0,
+          "position": [
+            0,
+            0
+          ],
+          "occurrences": [
+            -2861869678661412324
+          ]
+        },
+        "('ltm', 'address-v1', 2354814268823880375)": {
+          "content": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "value": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "role": 0,
+          "position": [
+            1,
+            2
+          ],
+          "occurrences": [
+            2354814268823880375
+          ]
+        }
+      }
+    }
+  ]
+}

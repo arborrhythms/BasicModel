@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]"
+  ],
+  "completed": [
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022445499897003174,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007598832948133349,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

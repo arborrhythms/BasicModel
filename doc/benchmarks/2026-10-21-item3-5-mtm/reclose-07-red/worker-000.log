@@ -1,0 +1,24 @@
+FF....                                                                   [100%]
+=================================== FAILURES ===================================
+____ test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind] ____
+test/test_medium_term_memory.py:138: in test_reclosed_occurrence_survives_eviction_of_its_previous_token
+    assert pool.token_of(occurrence) == target
+E   AssertionError: assert None == ('ltm', 'address-v1', -2450525585685690625)
+E    +  where None = token_of(('ltm', 'address-v1', 8636430649997409478))
+E    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x1235072f0>.token_of
+____ test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint] ____
+test/test_medium_term_memory.py:138: in test_reclosed_occurrence_survives_eviction_of_its_previous_token
+    assert pool.token_of(occurrence) == target
+E   AssertionError: assert None == ('ltm', 'address-v1', 8636430649997409478)
+E    +  where None = token_of(('ltm', 'address-v1', 8636430649997409478))
+E    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x123acbfe0>.token_of
+=============================== warnings summary ===============================
+test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]
+FAILED test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]
+2 failed, 4 passed, 1 warning in 2.15s

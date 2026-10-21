@@ -1266,3 +1266,261 @@ additional ports proposed but not applied, and the unresolved working-group
 read. Alec's request to describe the work for Claude is not recorded as
 approval of the extra ports. No further production or assertion change was
 made while preparing this note; publication remains held.
+
+## 16. Claude's sixth review: the §10.2 round (`eb75de56a`, `f9faae610`, `67c5b203f`; 2026-10-21)
+
+**Accepted.**
+
+- **D2** (`eb75de56a`): the reverse arm now asserts, over every
+  non-estimate row, that no forward reference names x and that a row
+  whose raw journal pended x has no open referent slot; both saved
+  reverse states pass. As decided.
+- **§10.2, the eight changes** (`f9faae610`), each as written: the
+  journal keeps the operand reference; `lower` is inline in
+  `PartClosing._plan_one` (head child's symbol and types, exact-equality
+  assertion, no edge, no seat, the three `lower` occupations still
+  recorded); activations and the close's new-referent records carry the
+  occurrence unless the symbol is a declared individual; a located leaf
+  resolves to its row's derivation symbol; implicit individual
+  promotion is gone. The two-token and pronoun regressions and the
+  loud rejection of non-identity lowering pass.
+- **D1 dissolves without a contract change.** Both captured forward
+  failures now tie at R = .0360673778 in both trials and the tie rule
+  keeps the greedy reading headed by `three`; all twelve fresh
+  initializations pass, six per order, with the unchanged assertion and
+  twelve distinct parameter fingerprints. The strict `matches three`
+  assertion stays in step 1b; nothing moves to item 0.
+- **Follow-up** (`67c5b203f`): two further lost source-identity carriers
+  found by exact replay of the failed fresh MM draw, with distance-zero
+  evidence against admitted identities 1, 2, 3: the mixing reader's
+  staged OBJECT ids were dropped in `_capture_reading_programs`, and
+  `Language.resolve_lexical_references` cut every order-1
+  non-individual reference to -1 (the same cut as §10.2 change 1 at a
+  second site). Both eight-seat MM states pass with zero seats and zero
+  lower edges; the fresh draw was replayed, never replaced.
+  `ReferenceClose._derivation_symbol` gives occurrence candidates their
+  participant prediction and predicate context through the retained
+  kind. Accepted as mechanism repairs.
+- Section 14, paired zero-cost R and both decomposition arms pass on
+  `f9faae610` (8/8 companions).
+
+**The 43 scoped failures, classified.** All 29 bind-thought failures
+are one representation mismatch: the test wraps the expected occurrence
+as `('sym', expected)` while the result is the occurrence itself; the
+addresses agree in every shown case. The nine reference-close and five
+identity-rows failures assert the retired implicit mint (int candidates,
+`individual_ids` counts, a bank symbol from an ordinary mint), and the
+five on the follow-up assert the retired -1 staging cut. These are
+**ports, authorized** under one rule: the semantic assertion behind each
+(the expected antecedent, the partition, the content, the evidence, the
+immutable rows, the loud rejection) is kept verbatim; a wrong antecedent
+after the port is a mechanism failure and is reported as one. Codex's
+port inventory (`review-required.md` §1, `claude-review.md` §6) is the
+list; the five native-identity tests get an explicitly minted native
+concept in their fixture rather than an ordinary token.
+
+**The one mechanism gap: a bound use is not grouped with its
+antecedent.** `working-groups-08`: every later bind selects the right
+earlier occurrence at the close, but the next working read gives each
+occurrence its own group, because the selected address survives only in
+the closing audit; the row keeps the kind (`role_refs[0] = ('sym',
+kind)`) and the frame's activation is `None` by design. Codex asks
+which retained fact licenses the grouping.
+
+**Design (recommendation to Alec; in code names).** The retained fact
+is the mention's own reference: object permanence by reference (Alec,
+2026-09-21) and `bind`'s declared effect, "fills `role_refs[r]`" (§2).
+Bind's choice is part of the sentence's derivation, exactly as the
+equality row in the arrival certificate records the occurrence it
+equates; it is not the computed intersection or union that §6.6 forbids
+writing back, and the antecedent rows are not rewritten.
+
+1. **Write.** `ReferenceClose.prepare` already places the selected
+   occurrence's address key in `Clause.refs[0]`. `ClauseRows.write_clause`,
+   non-open branch: when `refs[0]` locates a row (`store.location` is an
+   int, not a concept), store `role_refs = (occurrence_of(that row),
+   None, None)` instead of the derivation symbol; the derivation (the
+   kind or fold) is read through the antecedent, as `_derivation_symbol`
+   and `_plan_one`'s located-leaf branch already do. A mint keeps
+   `('sym', kind)`.
+2. **Read.** `ReferenceClose.accessible`: a record whose row's raw
+   `role_refs[0]` is an `('ltm', …)` address takes that address as its
+   identity, followed to the introducing occurrence (cycle-guarded); the
+   frame's activation stays `None`. `individuals()`: the split/merge
+   pass treats address keys like native ones, with the introducing
+   row's point (`point_of_row`) as the baseline where it used
+   `point(owner, identity)`. Two independent mints keep distinct
+   addresses (the new regression stays green); the two merge
+   certificates must pass with their assertions unchanged.
+3. **Not this.** No identity label column, no revived individual flags,
+   no seat as identity, no merging by shared kind.
+
+**Evidence rule.** The twelve fresh runs and the scoped set were
+measured on `f9faae610`; the follow-up changes every reading's staging.
+After the ports and the grouping repair, the frozen source needs its own
+twelve fresh initializations, the eight-file set, both decomposition
+arms and both MM gates by hash; nothing is promoted.
+
+**My runs on the follow-up source** (`90524c0ee`, code at `67c5b203f`;
+bounded runner, run directories under `/tmp`): Part closing, Part read,
+Part store, occurrence views, reference mentions: 35 passed.
+Pending-premise certificate at fresh initializations: forward 2 / 2,
+reverse 2 / 2 passed. MM_grammar at one fresh initialization: passed.
+
+**Decided (Alec, 2026-10-21).** Ports: all listed ports authorized under
+the kept-semantics rule. Grouping: not the row reference; Alec proposes a
+short-term identity pool independent of LTM, **MTM**, owned by
+`ConceptualSpace` ("medium term memory is mostly used for identity, and
+resembles the seventh consciousness in the Yogācāra model"), or, if STM
+has room, the row pointers kept in STM with no MTM. Design to follow as
+§10.3 after Claude's reaction.
+
+### 10.3 Decided (Alec, 2026-10-21): MTM, a medium-term identity pool on ConceptualSpace
+
+Alec: a short-term identity pool, independent of LTM, "MTM", stored on
+`ConceptualSpace`; "medium term memory is mostly used for identity";
+the Yogācāra analogue is kliṣṭa-manas, the seventh consciousness, which
+takes the store as its object and constructs identity from it and is
+the seat of the identity illusion (the sixth, manas, is unproblematic):
+the pool's groupings are revisable interpretations, never written back.
+If STM had room, row pointers in STM would do; so the pool is built
+once, with a configured capacity, and the STM index is its recency
+window. Psychological grades: in focus (the STM frames), familiar (the
+pool), uniquely identifiable (a minted concept): Gundel's givenness
+hierarchy, Kahneman–Treisman object files, Heim's file cards, Ericsson
+and Kintsch's long-term working memory.
+
+**Owner.** `bin/MediumTermMemory.py`, class `MediumTermMemory`, one
+instance `ConceptualSpace.mtm`, created with the space; config
+`<mtmCapacity>` under `ConceptualSpace` (Params), default 64. No
+parameters, no gradient, no tensors on the forward path; Python state
+written once per kept close, like `ReferenceClose._mentions`; untouched
+by trials (`preview`, `prepare`) and by the compiled body.
+
+**Entry.** One per token, keyed by the introducing occurrence address
+(`('ltm', domain, key)`): `occurrences` (the introduction, then every
+bound use, in order), `kind` (the introduction's retained derivation
+symbol, `raw_meaning_of(index).role_refs[0][1]`, a kind or a fold
+handle), `count` (accesses), `when` (model time of the last access,
+`RowTime.stamp`). No working vector, no label: the working vector is
+computed on read, as now, from `point_of_row` over the occurrences.
+
+**Writes, only in `ReferenceClose.commit`.** A mint whose written
+symbol is not in `alloc.individuals` opens an entry at its occurrence.
+A bind whose `item['reference']` is an address (directly, or through a
+`('new', n)` alias) calls `mtm.bind(antecedent, occurrence)`: append,
+`count += 1`, `when` refreshed. A bind to a minted individual (an int
+in `alloc.individuals`) writes nothing: the symbol is the identity and
+LTM2 carries it. The same path serves definite, pronoun and elision
+sites (§3). LTM1 rows, the Part store and the bank are not written;
+the existing immutable-store assertions stay.
+
+**Reads.** `ReferenceClose.accessible`: a record from an order-1
+occurrence row, or from an activation with `identity None`, takes
+`mtm.token_of(occurrence)` (the entry key) as its identity when the
+occurrence belongs to an entry, else the occurrence itself. `individuals()`
+then groups every bound use with its introduction. Its split/merge pass
+treats entry keys like native identities, with the introducing row's
+point (`point_of_row`) as the baseline where it used `point(owner,
+identity)`; revision merges remain computed on read over the accessible
+uses and are not written to MTM. Two independent mints of one kind keep
+distinct entries; the two-token regression stays green. Candidates
+still come from the frames in this round; offering pool entries outside
+the recency window by content (the "familiar" grade, a definite
+description reaching far back) is step 2 or later and is written there.
+
+**Capacity and decay.** At capacity, evict the entry with the oldest
+`when`; its rows stay in LTM as unlinked occurrences and a later mention
+opens a new token (losing track). When item 5 reclaims a row,
+`mtm.forget(address)` drops the pointer, and the entry when its
+introduction is gone.
+
+**Later, not now.** Recurrence minting (step 2) is promotion out of the
+pool: when `count` reaches its threshold, mint the concept with the
+entry's content, add it to `alloc.individuals`, and keep the entry with
+its `symbol` so earlier occurrences still read as that individual. Pool
+entries as candidates by content; cross-document identity (staircase
+step 5).
+
+**Gates for this round.**
+1. `test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them`
+   and `test_revision_merges_three_accessible_groups_transitively_across_cued_documents`
+   pass with their assertions unchanged; `working-groups-08` replayed
+   shows one group where it showed four and six.
+2. New regressions: a bind appends to the antecedent's entry and the
+   next `accessible()` keys the mention by the introducing address, rows
+   and bank unchanged; at capacity the least recently accessed entry is
+   evicted, rows unchanged, and a later mention of it opens a new entry;
+   a minted individual gets no entry; `preview`/`prepare` leave MTM
+   unchanged and one kept close writes it once (eager and compiled).
+3. The authorized ports (`review-required.md` §1; `claude-review.md`
+   §6) under the kept-semantics rule; the two-token, pronoun and
+   non-identity-lowering regressions, the 14 Part-closing cases and the
+   four occurrence-view cases stay green.
+4. On the frozen source, by hash: twelve fresh initializations (six per
+   order, full captures), the eight-file set, both decomposition arms,
+   both eight-seat MM gates. Then publication of both mains with the
+   October 20 docs, Architecture's STM paragraph gaining the pool and
+   Params gaining `mtmCapacity`, and a clean tree. No second full sweep.
+
+## 17. Claude's seventh review: the MTM round (working tree on `90524c0ee`; 2026-10-21)
+
+**Accepted.** `bin/MediumTermMemory.py` and `ConceptualSpace.mtm` are
+§10.3 as written: entries keyed by the introduction with occurrences,
+kind, count and the model tick; writes only in `ReferenceClose.commit`
+(a mint opens, a bind or a same-close alias appends, a minted individual
+writes nothing); reads key order-1 rows and `None` activations by
+`token_of`; `individuals()` uses the introducing row's point as the
+baseline and computes revision merges without touching the pool; LRU
+eviction at capacity; `forget` from row compaction; `mtmCapacity` in the
+schema, Params and Architecture. The regressions cover the bind, pronoun
+and elision sites, eviction with rows intact, no entry for a native
+individual, the same-close alias, revision without merging entries,
+trials leaving the pool untouched with one write per kept close in eager
+and compiled runs, row reclamation, and the complete forward body never
+touching the pool under a fullgraph compile. Both merge certificates
+pass unchanged (`working-groups-05`: one group where there were four and
+six; pool entries stay two and four). The authorized ports are applied as
+authorized; the five native-identity tests mint an explicit native
+concept.
+
+**Finding A (repair before freezing): a re-closed occurrence leaves a
+stale pointer.** `MediumTermMemory.bind` and `open` set
+`_tokens[occurrence]` to the new token but do not remove the occurrence
+from the token it belonged to before. The read is right meanwhile
+(`token_of` wins), but `forget(old introduction)` later pops the
+occurrence's mapping to its *new* token. Reachable under epoch training:
+the same address is re-closed every epoch, the bind decision moves as
+the policy learns, then eviction. Repair: in both methods, detach the
+occurrence from its previous token's `occurrences` first. Regression:
+bind an occurrence to A, re-close it bound to B, evict A, assert
+`token_of(occurrence) == B` and B's occurrences still hold it.
+
+**Finding B (authorized): the fourth occurrence-view port.** In the four
+`test_occurrence_candidates_use_retained_part_participants` cases,
+`context['identity'] is None` becomes `== address`, the §10.3 read
+contract; predicate, antecedent, prediction, content and the unchanged
+store and bank stay verbatim. Authorized under the kept-semantics rule.
+
+**Then.** Freeze the source in a commit; on that hash the twelve fresh
+initializations with full captures (a failure diagnosed from its
+capture with the keep probe before any change), the eight-file set,
+both decomposition arms, and both eight-seat MM gates (rng-119 and the
+same fresh draw); receipts and status by hash; my review; publication
+of both mains with the October 20 docs and a clean tree.
+
+**My runs on the working tree** (plain pytest for the unit files; the
+bounded runner, no capture plugin, for the certificates): MTM,
+reference close, bind thought, Part closing, Part read, identity rows,
+occurrence views, lexical orders, operators final, mentions, Part
+store: 144 passed, 4 failed, the four occurrence-view cases awaiting
+finding B's port. Pending-premise certificate at one fresh
+initialization per arm: reverse passed; **forward failed at line 441,
+"the arriving x is three must supply the bound referent", the D1
+mode**, state not captured (my harness lacks `arrival_capture`).
+MM_grammar at one fresh initialization: passed. Consequence: the D1
+mode is live again on this tree at some rate; the frozen-source twelve
+with full captures are the gate, a forward failure there is captured
+and keep-probed before any change, and if it is the R-tie-broken
+reading again the contract question (§14 option 2) returns to Alec with
+that probe. Nothing is changed on this finding alone.

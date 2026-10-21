@@ -1,0 +1,60 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+  ],
+  "completed": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.020862292032688856,
+      "message": "test/test_reference_occurrence_views.py:23: in test_occurrence_candidates_use_retained_part_participants\n    assert context['identity'] is None and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]\nE   AssertionError: assert (('ltm', 'address-v1', 6978180173476468647) is None)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.015066083054989576,
+      "message": "test/test_reference_occurrence_views.py:23: in test_occurrence_candidates_use_retained_part_participants\n    assert context['identity'] is None and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]\nE   AssertionError: assert (('ltm', 'address-v1', 6906299328310477316) is None)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.014791082823649049,
+      "message": "test/test_reference_occurrence_views.py:23: in test_occurrence_candidates_use_retained_part_participants\n    assert context['identity'] is None and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]\nE   AssertionError: assert (('ltm', 'address-v1', 6397399687836249189) is None)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.015130624873563647,
+      "message": "test/test_reference_occurrence_views.py:23: in test_occurrence_candidates_use_retained_part_participants\n    assert context['identity'] is None and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]\nE   AssertionError: assert (('ltm', 'address-v1', -4413113195129499938) is None)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

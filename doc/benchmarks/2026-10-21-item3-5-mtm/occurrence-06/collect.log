@@ -1,0 +1,6 @@
+test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]
+test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]
+test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]
+test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]
+
+4 tests collected in 1.93s

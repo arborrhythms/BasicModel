@@ -10077,6 +10077,13 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if rows != sorted(set(rows)) or any(i < 0 or i >= count for i in rows):
             raise ValueError('LTM compaction requires ordered, unique surviving rows')
         size = len(rows)
+        owner_ref = self.__dict__.get('_concept_owner')
+        owner = None if owner_ref is None else owner_ref()
+        if owner is not None:
+            survivors = set(rows)
+            for index in range(count):
+                if index not in survivors:
+                    owner.mtm.forget(self.occurrence_of(index))
         self._ensure_texts(count)
         texts = [self._texts[i] for i in rows]
         self.compact_leaf_rows(keep)

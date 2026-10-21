@@ -144,7 +144,7 @@ def test_g1_definite_generator_referent_with_distractor(monkeypatch, kind, other
     result = execute(f, site(f, node.point, predicate=node.reference_request['predicate'],
                             leaves=node.reference_request['leaves']))
     actual = result.value.role_refs[0]
-    assert actual == ('sym', expected)
+    assert actual == expected
     assert not open_slots(result.value)
     assert evidence_pair(result.value) == pytest.approx((result.support_true, result.support_false))
     assert result.support_true + result.support_false == pytest.approx(1.)
@@ -193,7 +193,7 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     assert bindings(query)['_forward_references'] == ((0, word),)
     f.frames[:] = frames
     result = execute(f, query)
-    assert result.value.role_refs[0] == ('sym', expected)
+    assert result.value.role_refs[0] == expected
     emitted = f.registry.reverse(result, program.leaves)
     torch.testing.assert_close(emitted, program.leaves[:1], rtol=0, atol=0)
     receipt('G2', f'{kind}-{other}', text=f'a {KINDS[kind]} ; a {KINDS[other]} ; {marker} {VERBS[0]}',
@@ -221,7 +221,7 @@ def test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open(monkeypatc
     result = execute(f, clause.meaning, 2)
     actual = result.value.role_refs[2]
     if accessible:
-        assert actual == ('sym', expected)
+        assert actual == expected
         assert ('referent', 2) not in open_slots(result.value)
     else:
         assert actual is None and ('referent', 2) in open_slots(result.value)
@@ -252,7 +252,7 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
     monkeypatch.setattr(f.model, '_choose_selected_thought_action', choose)
     result = run(f.model, meaning, work_budget=128)
     assert len(selected) == 1
-    assert result.meaning.role_refs[0] == ('sym', f.identities[target])
+    assert result.meaning.role_refs[0] == f.identities[target]
     assert not open_slots(result.meaning)
     assert open_slots(f.store.meaning_of(missing)) == (('referent', 0),)
     torch.testing.assert_close(f.store.slots[missing], before, rtol=0, atol=0)

@@ -194,9 +194,9 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
         program.word_rows, program.concept_ids, program.actions,
         leaf_orders=torch.tensor([0, 2, 0]), admit=True)
     assert len(f.cs.definitions._store()) == before
-    # The selected mint carries no existing column. Dictionary capture may
-    # not substitute the noun's concept for that individual choice.
-    assert refs[1] == -1 and orders[1] == 1
+    # The source kind remains available to the close's inline lowering;
+    # the member-order request does not allocate an individual column.
+    assert refs[1] == program.concept_ids[1] and orders[1] == 1
     reading = replace(program, reference_ids=refs, reference_orders=orders,
                       leaf_orders=torch.tensor([0, 2, 0]))
     clause = finish_reading(f.language, reading, registry=f.registry)
@@ -208,6 +208,7 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
     assert isinstance(child, int) and f.store.row(child)['order'] == 1
     root = f.store.raw_meaning_of(row).role_refs[0]
     assert root[0] == 'sym' and f.store.parts.contains(root[1])
+    assert not f.cs.components.individual_ids
 
 
 def test_determiner_reverse_uses_a_marker_witness():

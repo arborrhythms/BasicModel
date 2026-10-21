@@ -44,9 +44,9 @@ def test_selected_grammar_context_selects_order(context, order):
     got, orders = Language.LanguageSpace.resolve_lexical_references(
         language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions,
         leaf_orders=torch.tensor([0, order+1]))
-    # Individual identity is chosen by the global operation, not this
-    # dictionary-order staging helper. Types/events retain their lookup.
-    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+    # The source kind survives the member-order request. Closing chooses
+    # the token's identity independently of this derivation carrier.
+    assert got.tolist() == [-1, ids[0] if order == 1 else ids[order]]
     assert orders.tolist() == [-1, order]
     assert cs.word_concepts('cat') == tuple(sorted([cs.definitions.word(form='cat'), *ids]))
 
@@ -66,11 +66,11 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
          torch.tensor([[-1, -1, 0]])),
         leaves, torch.tensor([[-1, row]]), torch.tensor([[-1, row]]),
         torch.ones(1, 2), torch.zeros(1, 3, 8), concept_ids=torch.tensor([[-1, ids[0]]]))
-    assert entry.reference_ids.tolist() == [-1, -1]
+    assert entry.reference_ids.tolist() == [-1, ids[0]]
     assert entry.reference_orders.tolist() == [-1, 1]
     torch.testing.assert_close(entry.leaves, leaves[0])
     assert entry.concept_ids.tolist() == [-1, ids[0]]
-    assert entry.detached().reference_ids.tolist() == [-1, -1]
+    assert entry.detached().reference_ids.tolist() == [-1, ids[0]]
 
 
 def test_order_three_relation_over_kinds_is_read_from_its_stamp():

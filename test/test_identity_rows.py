@@ -9,6 +9,17 @@ from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
 
 
+def native_close(resolver, content, predicate, *, document, sentence):
+    """Supply the explicit native individual these bank certificates examine."""
+    from types import SimpleNamespace
+    from IdentityRows import mint
+    identity = mint(resolver.components.owner, content)
+    assert identity is not None
+    frame = SimpleNamespace(symbol_ids=(identity,), row_id=-1, activations=())
+    return close(resolver, content, predicate, 'bind', (frame,),
+                 document=document, sentence=sentence)
+
+
 def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
     resolver, _, atoms = fixture()
     q = atoms[0]
@@ -49,7 +60,7 @@ def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
 def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
     from types import SimpleNamespace
     resolver, _, atoms = fixture()
-    close(resolver, atoms[0]+atoms[6], atoms[7], 'mint', (),
+    native_close(resolver, atoms[0]+atoms[6], atoms[7],
           document='separate-metrics', sentence=0)
     owner = resolver.components.owner
     object.__setattr__(owner.similarity_codebook, 'mereology',
@@ -68,7 +79,7 @@ def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
 
 def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
     resolver, store, a = fixture()
-    frame, address, _ = close(resolver,a[0],a[6],'mint',(),document='one',sentence=0)
+    frame, address, _ = native_close(resolver,a[0],a[6],document='one',sentence=0)
     cid = resolver.last_audit[0]['reference']
     assert witness_count(resolver.components.owner,cid) == 1
     owner = resolver.components.owner
@@ -86,7 +97,7 @@ def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
 
 def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
     resolver, store, a = fixture()
-    first, address, _ = close(resolver,a[0]+a[1],a[6],'mint',(),document='fold',sentence=0)
+    first, address, _ = native_close(resolver,a[0]+a[1],a[6],document='fold',sentence=0)
     cid = resolver.last_audit[0]['reference']
     second, address2, _ = close(resolver,a[0],a[6],'bind',(first,),document='fold',sentence=1)
     # Read only the surviving occurrence, as after forgetting. Its working
@@ -173,7 +184,7 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
 @pytest.mark.parametrize('native_bank', (False, True))
 def test_loader_permanently_rejects_signed_identity_without_modifying_the_row(native_bank):
     resolver, store, atoms = fixture()
-    frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (),
+    frame, address, _ = native_close(resolver, atoms[0], atoms[6],
                           document='strict-load', sentence=0)
     row = store.index_of_row(address)
     identity = resolver.last_audit[0]['reference']

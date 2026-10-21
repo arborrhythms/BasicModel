@@ -20,25 +20,21 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §14 round (base `93788f9d2`), publication held:** D2's two
-saved reverse replays pass on `eb75de56a`. The §10.2 candidate `f9faae610`
-passes both D1 replays, all twelve fresh initializations (six per order),
-both decomposition lengths in both arms, and paired zero-cost R. Its one
-scoped set records **70 passed, 43 failed, one prerequisite skip**.
-Follow-up `67c5b203f` repairs lost grammar OBJECT IDs, the remaining lexical
--1 cut and occurrence participant reads. Both original eight-seat MM
-initializations now pass with zero seats; the failed fresh draw is replayed,
-never replaced. Targeted checks: 37 passed, five old -1 assertions failed;
-two working-identity merge certificates still fail. The
-[review questions and exact proposed ports](doc/benchmarks/2026-10-20-item3-5-inline-lowering/review-required.md)
-are recorded for Alec/Claude; no additional existing assertion is changed.
-The [step-by-step review note](doc/benchmarks/2026-10-20-item3-5-inline-lowering/claude-review.md)
-records the implemented work and unapplied proposals at Alec's request.
-After those are resolved, the final source still needs its arrival and
-scoped/decomposition evidence by hash. Earlier results are not promoted to
-the follow-up source. No full second sweep, objective change or learning
-claim; all failed runs are retained. Both-main publication and the
-WikiOracle bump remain pending.
+**Active §17 / §10.3 round:** MTM and the listed ports are accepted.
+Re-closing now detaches the old pool membership before `open`/`bind` assigns
+a new token; both stale-pointer regressions reproduce before the repair.
+The additional four occurrence-view ports are authorized and applied.
+`reclose-08`: 20 passed (full MTM, eager/compiled, both merge certificates,
+four occurrence-view cases); the [MTM receipt](doc/benchmarks/2026-10-21-item3-5-mtm/README.md)
+retains all development results and failures. Freeze source, then collect
+twelve fresh arrivals, the eight-file set, both decomposition arms and both
+original eight-seat MM draws on that hash. Keep-probe any captured forward
+failure before changing anything; an R-tie-broken reading returns to Alec.
+Then Claude reviews the frozen hash before both-main publication and the
+WikiOracle bump. No prior-source promotion, second full sweep or learning
+claim. D2, §10.2 and the carrier repair remain accepted; the forward
+assertion is unchanged.
+
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
 `codex/item3-5-first-pass`; its
@@ -90,7 +86,22 @@ contract case; recommended to Alec: D2 now, the §10.2 round next (both
 failing readings are the complement mint that §10.2 change 1 removes),
 the twelve fresh runs on that source, and a contract split (mechanism
 assertion in step 1b, the strict reading kept verbatim at item 0) only
-if failures remain. **Alec decided: §10.2 first, contract later.** The
+if failures remain. **Alec decided: §10.2 first, contract later.**
+*Sixth review (Claude, 2026-10-21, plan §16):* D2, the eight §10.2
+changes and the carrier follow-up accepted; D1 dissolved (both replays
+tie and keep greedy; twelve fresh pass with the unchanged assertion).
+The 43 scoped failures are representation ports (authorized under the
+kept-semantics rule) plus one mechanism gap: a bound use is not grouped
+with its antecedent; recommended: the mention's row keeps the selected
+occurrence in `role_refs[0]` (object permanence by reference) and the
+read follows it. **Alec decided (2026-10-21): ports authorized; the
+grouping lives in MTM, a medium-term identity pool on ConceptualSpace,
+independent of LTM (plan §10.3)**; then final evidence by hash on the
+frozen source. *Seventh review (Claude, plan §17):* MTM accepted as
+§10.3 with both merge certificates passing unchanged; one repair before
+the freeze (a re-closed occurrence must detach from its previous token)
+and the fourth occurrence-view port authorized; then the final gates by
+hash and publication. The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
 dissolution; shared six-column Part store; cube-coordinate maps and
