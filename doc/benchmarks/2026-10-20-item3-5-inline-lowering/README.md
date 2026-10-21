@@ -2,11 +2,14 @@
 
 **Current: §17 accepts MTM and the listed ports.** The stale-pointer
 repair and the four additional occurrence-view ports pass their scoped
-checks. The [MTM receipt](../2026-10-21-item3-5-mtm/README.md) records those
-results and the frozen-source gates still due, including the mandatory
-capture/keep-probe stop for a renewed forward contract failure.
-Publication follows Claude's review of that hash. The evidence below
-remains attributed to its original source.
+checks. The [MTM receipt](../2026-10-21-item3-5-mtm/README.md) freezes source
+at `eac2fe87b`: six fresh forward passes, three reverse passes and two
+reverse failures, with one reverse draw unrun. Both failures exactly
+replay; [draw 5's probe](../2026-10-21-item3-5-mtm/reverse-5-failure.md)
+exposes the R-only arrival-reading concern in the reverse arm. The round
+stops for Alec's contract/mechanism decision. Remaining gates, Claude's
+review and publication are pending. The evidence below remains attributed
+to its original source and is not promoted to the MTM hash.
 Implementation `f9faae610`; follow-up carrier/participant repair `67c5b203f`.
 
 [Step-by-step account for Claude (2026-10-21)](claude-review.md) separates

@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 240s, 8.0 GiB
+[collect] exit 0; 1.8s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 240s, 8.0 GiB
+[worker-000] exit 0; 32.4s; peak 2.06 GiB
+Result: passed, exit 0; 1/1 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-mtm/fresh-final-forward-2/result.json

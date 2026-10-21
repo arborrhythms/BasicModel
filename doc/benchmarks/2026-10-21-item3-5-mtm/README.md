@@ -4,8 +4,15 @@ Current: Claude's seventh review (bind plan §17) accepts the MTM
 implementation and the original ports. Finding A is repaired: re-closing
 an occurrence first detaches its previous membership in both `open` and
 `bind`. Finding B's four occurrence-view assertions are ported exactly as
-authorized. The source is ready for freezing; final-source gates have not
-begun and earlier-source results are not promoted.
+authorized. Source is frozen at
+`eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7`. Its fresh gate is stopped at
+11/12 first draws: six forward passes, three reverse passes, two reverse
+failures and one reverse draw unrun. Both failures reproduce exactly with
+the keep probe. [Draw 5](reverse-5-failure.md) exposes the R-only arrival
+reading concern in the reverse arm; Alec's contract/mechanism decision is
+needed. No production or assertion change follows the freeze. The other
+gates, Claude's review and publication remain pending; earlier-source
+results are not promoted.
 
 ## Implementation
 
@@ -41,6 +48,7 @@ LTM layout, objectives, forward assertion and capacity gates are unchanged.
 | `occurrence-06` | 4 failed | Historical: all stopped at the old `identity is None` assertion, before §17 authorized its port. |
 | `reclose-07-red` | 4 passed, 2 failed | Both new regressions reproduce stale membership in `bind` and `open`; the four authorized occurrence-view ports pass. |
 | `reclose-08` | 20 passed | Reassignment and eviction repaired; the full MTM file, four occurrence-view cases and both merge certificates pass, including eager/compiled checks. |
+| `reclose-09` | 2 passed | The two reassignment regressions additionally assert that A's occurrence list has already detached the use before eviction. |
 
 [Replay tables and full reads](working-groups.md) show one group where
 `working-groups-08` showed four and six. The outside occurrence remains
@@ -62,17 +70,48 @@ cases, only `context['identity'] is None` becomes
 participant prediction, content and unchanged store/bank checks stay
 verbatim. This is the additional port explicitly authorized in §17.
 
+## Frozen-source evidence and stop
+
+[Source manifest](frozen-source.json) pins production, test and data trees,
+the unchanged arrival/MM certificate blobs and all measurement helpers.
+The [fresh ledger](fresh-final.md) verifies 11 distinct parameter
+fingerprints, complete first-draw state and both trials in both batches.
+The [source audit](source-audit.json) verifies all 824 manifest files
+against the frozen Git blobs in all 13 runs, including the two exact
+replays, plus unchanged measurement helpers. All draws use the frozen hash;
+the two saved failing replays are additional diagnostics, not fresh draws.
+
+| Required gate on `eac2fe87b` | Result |
+|---|---|
+| Six fresh forward initializations | 6 passed, unchanged strict assertion |
+| Six fresh reverse initializations | 3 passed, 2 failed, draw 6 unrun |
+| Eight-file set | Not run; stopped |
+| Both decomposition arms at original snapshots/seeds | Not run; stopped |
+| Eight-seat MM, rng-119 | Not run; stopped |
+| Eight-seat MM, same captured fresh draw | Not run; stopped |
+
+[Reverse draw 2](reverse-2-failure.md) fails D2 at row 5/document 2:
+explore's second-premise equality wins on R (.0324606411 versus
+.0360673778; A=0), adds a second x complement, and the existing ambiguity
+rule leaves x open. It was exactly replayed and diagnosed before draws
+3–5 continued. [Reverse draw 5](reverse-5-failure.md) fails at row 1/document
+0. Its first premise also keeps a differently headed `x is three` reading
+on R (.0300561469 versus .0360673778; A=0); its second premise adds another
+conflicting x equality. Its exact replay matches too. Complete readings,
+R/E/A, keep decisions and retained state are linked from each diagnosis.
+
+Both are semantic failures, not ports. Neither is a reproduction of the
+forward assertion; all six forward runs passed. The R-selected arrival
+in draw 5 nevertheless reaches the reading concern behind the requested
+stop rule. Codex stops for Alec's decision, without changing the assertion,
+forced scope, budget, objective, keep law or ambiguity rule. Every failure
+is retained. The carried source has no new learning claim or second sweep.
+
 ## Remaining sequence
 
-Freeze the source in a commit. On that hash collect twelve fresh arrivals (six per
-order, all first draws and full captures), the eight-file set, both
-decomposition arms, rng-119 and the same captured fresh eight-seat MM draw.
-Any failure is diagnosed from its capture with the keep probe before a
-change. The fresh runner stops on its first failure for diagnosis. An
-R-tie-broken forward reading returns the contract question to Alec, as §17
-requires; no assertion, scope, budget, objective or keep law changes. The copied measurement harnesses add MTM state to their captures;
-they have not run final gates yet. No second full sweep.
-
-Update the final receipts and status by source, then obtain Claude's review
-of implementation, ports, gates and docs before publication to both mains.
-The WikiOracle submodule bump and clean BasicModel landing remain pending.
+Resolve the surviving failures under contract/mechanism review before
+finishing the source-specific gates. A source repair would require a new
+freeze and evidence on that hash; no result here can be promoted to it.
+Claude's review of the frozen source and receipts precedes publication to
+both mains, the WikiOracle bump and the October 20 docs. Publication is
+held; BasicModel's local receipt commit does not land step 1b.

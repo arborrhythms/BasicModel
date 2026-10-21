@@ -1,0 +1,10 @@
+{
+  "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+  "declared": 12,
+  "completed": 11,
+  "passed": 9,
+  "failed": 2,
+  "not_run": 1,
+  "distinct_initial_parameter_fingerprints": 11,
+  "identical_bounded_source_manifests": true
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "number": 1,
+    "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+    "arm": "reverse",
+    "exit": 0,
+    "receipt": "fresh-final-reverse-1",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  },
+  {
+    "number": 2,
+    "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-final-reverse-2",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  },
+  {
+    "number": 3,
+    "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+    "arm": "reverse",
+    "exit": 0,
+    "receipt": "fresh-final-reverse-3",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  },
+  {
+    "number": 4,
+    "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+    "arm": "reverse",
+    "exit": 0,
+    "receipt": "fresh-final-reverse-4",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  },
+  {
+    "number": 5,
+    "source": "eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-final-reverse-5",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  }
+]

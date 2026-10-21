@@ -26,14 +26,18 @@ a new token; both stale-pointer regressions reproduce before the repair.
 The additional four occurrence-view ports are authorized and applied.
 `reclose-08`: 20 passed (full MTM, eager/compiled, both merge certificates,
 four occurrence-view cases); the [MTM receipt](doc/benchmarks/2026-10-21-item3-5-mtm/README.md)
-retains all development results and failures. Freeze source, then collect
-twelve fresh arrivals, the eight-file set, both decomposition arms and both
-original eight-seat MM draws on that hash. Keep-probe any captured forward
-failure before changing anything; an R-tie-broken reading returns to Alec.
-Then Claude reviews the frozen hash before both-main publication and the
-WikiOracle bump. No prior-source promotion, second full sweep or learning
-claim. D2, §10.2 and the carrier repair remain accepted; the forward
-assertion is unchanged.
+retains all development results and failures. Source is frozen at
+`eac2fe87b`. Its fresh gate stops at 11/12 draws: six forward passes,
+three reverse passes, two reverse failures, one reverse unrun. Both
+failures exactly replay; R-selected conflicting x equalities leave x open
+under the existing ambiguity rule. [Draw 5](doc/benchmarks/2026-10-21-item3-5-mtm/reverse-5-failure.md)
+also keeps the differently headed `x is three` arrival on R with A=0.
+Alec's contract/mechanism decision is next; no assertion or production
+change follows the freeze. The eight-file set, both decomposition arms
+and both original eight-seat MM draws remain unrun on this hash. Claude's
+review precedes both-main publication and the WikiOracle bump. No
+prior-source promotion, second full sweep or learning claim. D2, §10.2
+and the carrier repair remain accepted; the forward assertion is unchanged.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on

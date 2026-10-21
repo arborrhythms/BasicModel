@@ -9,14 +9,31 @@ compiled), the four occurrence-view cases and both merge certificates.
 Both merge assertions remain unchanged. The earlier 114-case targeted set
 and every development failure remain in the [MTM receipt](../2026-10-21-item3-5-mtm/README.md).
 
-The source is ready to freeze. The twelve fresh captures, eight-file set,
-both decomposition arms and both original eight-seat MM draws are still
-due on that hash. Claude's uncaptured fresh forward failure is recorded in
-plan §17; any captured forward failure is keep-probed before a change, and
-an R-tie-broken reading returns to Alec. D2, §10.2 and the carrier repair
-remain accepted; the forward assertion stays. Architecture and Params are
-updated. Publication follows Claude's review of the frozen hash. No second
-full sweep or learning claim; no result is promoted from earlier sources.
+Frozen source: `eac2fe87b2e2f0d24ee16fe8250dec37e59abbc7`. Its
+[first-draw ledger](../2026-10-21-item3-5-mtm/fresh-final.md) records
+**11/12 completed: six forward passes, three reverse passes, two reverse
+failures; reverse draw 6 unrun**. Every completed initialization is distinct
+and fully captured from the outset. Both failures exactly replay with
+identical readings, costs, keep decisions and retained state.
+
+[Reverse draw 2](../2026-10-21-item3-5-mtm/reverse-2-failure.md) adds a
+second x equality when explore wins on R with A=0. The existing ambiguity
+rule then leaves x open, failing D2. After that diagnosis, draws 3 and 4
+pass; [draw 5](../2026-10-21-item3-5-mtm/reverse-5-failure.md) fails D2 too.
+Its first sentence keeps an `x is three` reading headed by space on R
+(.0300561469 versus .0360673778; A=0), and its second sentence introduces a
+conflicting equality. These are reverse semantic failures, not ports or
+reproductions of the forward assertion. Draw 5 exposes the R-only reading
+concern behind the §17 stop instruction; the round stops for Alec's
+contract/mechanism decision. No production or assertion change follows
+the freeze.
+
+The eight-file set, both decomposition arms and both original eight-seat
+MM draws are **unrun on this hash**, as is the remaining reverse draw.
+Claude's review and publication remain pending. D2, §10.2 and the carrier
+repair remain accepted; the forward assertion stays. Architecture and
+Params are updated. No second full sweep or learning claim; no result is
+promoted from earlier sources. All failed runs and exact probes are kept.
 
 **Prior §14 round (historical evidence, not promoted).**
 At Alec's 2026-10-21 request, the
