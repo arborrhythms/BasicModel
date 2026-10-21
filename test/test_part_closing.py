@@ -136,22 +136,119 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     marker = f.noun('marker')
+    kind = f.noun('description')
     left = Composition(f.registry._payload(('sym', marker)), reference=marker)
-    description = Composition(torch.eye(8)[3])
+    description = Composition(f.registry._payload(('sym', kind)), reference=kind)
     root = Composition(description.point, (left, description), operation='lower',
                        formal_name='lower', head_role=2, order=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     order=1, composition=root, minted=True,
                     reference_request={'mode': 'mint'})
     before = f.cs._concept_allocator.next_id, len(f.store.parts)
+    bank = f.cs.similarity_codebook.W.detach().clone()
     row = f.store.write_clause(clause)
     assert isinstance(row, int) and int(f.store.order[row]) == 1
     torch.testing.assert_close(f.store.slots[row, 0], root.point)
-    assert f.store.raw_meaning_of(row).role_refs[0] is None
+    assert f.store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
     assert f.store.location(f.store.occurrence_of(row)) is not None
     # The description is the new referent, not a relation argument. Its
     # introduction consumes neither a seat nor an unseated Part handle.
     assert (f.cs._concept_allocator.next_id, len(f.store.parts)) == before
+    torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
+    counts = f.language.parts_of_speech.counts
+    assert counts[marker]['lower_argin1'] == 1
+    assert counts[kind]['lower_argin2'] == counts[kind]['lower_argout1'] == 1
+
+
+def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch):
+    from dataclasses import replace
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from ReferenceContext import SituationFrame
+    f = SentenceFixture(monkeypatch)
+    marker, kind = f.noun('marker'), f.noun('description')
+    left = Composition(f.registry._payload(('sym', marker)), reference=marker)
+    head = Composition(f.registry._payload(('sym', kind)), reference=kind)
+    term = Composition(head.point, (left, head), operation='lower', formal_name='lower',
+                       head_role=2, order=1)
+    clause = Clause(ConceptualMeaning.from_description(head.point), point=head.point,
+                    order=1, minted=True, composition=term)
+    alloc = f.cs._concept_allocator
+    before = alloc.next_id, len(f.store.parts)
+    bank = f.cs.similarity_codebook.W.detach().clone()
+    frames, addresses = [], []
+    for sentence in range(2):
+        written = {}
+        row = f.store.write_clause(clause, document_key='tokens', sentence_index=sentence,
+                                   written_rows=written)
+        addresses.append(f.store.occurrence_of(row))
+        assert int(f.store.order[row]) == 1
+        assert f.store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
+        assert written[('symbols', id(clause))] == ()
+        assert written[('activations', id(clause))] == ((addresses[-1], None, 0),)
+        frames.append(replace(SituationFrame.from_row(f.store.row(row)),
+            symbol_ids=written[('symbols', id(clause))],
+            activations=written[('activations', id(clause))]))
+    resolver = f.cs.components.reference_close
+    identities = resolver.individuals(resolver.accessible(frames))
+    assert len(set(addresses)) == 2 and set(identities) == set(addresses)
+    assert (alloc.next_id, len(f.store.parts)) == before
+    torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
+
+
+def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(monkeypatch):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from ReferenceContext import SituationFrame
+    f = SentenceFixture(monkeypatch)
+    kind, verb = f.noun('description'), f.noun('predicate')
+    point, predicate = (f.registry._payload(('sym', identity)) for identity in (kind, verb))
+    antecedent = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
+                        composition=Composition(point, reference=kind, order=1))
+    first = f.store.write_clause(antecedent, document_key='pronoun', sentence_index=0)
+    address = f.store.occurrence_of(first)
+    request = dict(mode='pronoun', leaves=(0,), cue=torch.zeros_like(point),
+                   predicate=predicate, role=0)
+    term = Composition(point, order=1)
+    np = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
+                composition=term, reference_request=request)
+    value = torch.maximum(point, predicate)
+    clause = Clause(ConceptualMeaning.from_description(value), point=value, children=(np,),
+        composition=Composition(value, (term, Composition(predicate, reference=verb)),
+                                operation='verb', formal_name='verb', head_role=1))
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, (SituationFrame.from_row(f.store.row(first)),))
+    assert plan['items'][0]['selected'] == address
+    kept = resolver.prepare(clause, plan)
+    bank = f.cs.similarity_codebook.W.detach().clone()
+    seats = dict(f.cs._concept_allocator.layer()._tensor_rows)
+    written = {}
+    row = f.store.write_clause(kept, document_key='pronoun', sentence_index=1,
+                               written_rows=written)
+    resolver.commit(plan, row, written, document='pronoun', position=1, training=False)
+    edge = f.store.raw_meaning_of(row).role_refs[0][1]
+    assert f.store.parts.refs[edge].tolist() == [kind, verb]
+    assert resolver.last_audit[0]['reference'] == address
+    assert dict(f.cs._concept_allocator.layer()._tensor_rows) == seats
+    torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
+
+
+def test_inline_lower_rejects_content_change_without_a_partial_close(monkeypatch):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    marker, kind = f.noun('marker'), f.noun('description')
+    left = Composition(f.registry._payload(('sym', marker)), reference=marker)
+    head = Composition(f.registry._payload(('sym', kind)), reference=kind)
+    changed = torch.maximum(left.point, head.point)
+    term = Composition(changed, (left, head), operation='lower', formal_name='lower',
+                       head_role=2, order=1)
+    clause = Clause(ConceptualMeaning.from_description(changed), point=changed, composition=term)
+    alloc = f.cs._concept_allocator
+    before = alloc.next_id, len(f.store.parts), len(f.store)
+    with pytest.raises(ValueError, match='preserve its description exactly'):
+        f.store.write_clause(clause)
+    assert (alloc.next_id, len(f.store.parts), len(f.store)) == before
 
 
 def test_new_relation_argument_is_minted_and_unseatable_argument_fails(monkeypatch):

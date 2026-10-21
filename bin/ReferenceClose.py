@@ -593,6 +593,8 @@ class ReferenceClose(nn.Module):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         from collections import OrderedDict
         from IdentityRows import expose_form, point
+        from Spaces import _concept_alloc_of
+        alloc = _concept_alloc_of(self.components.owner)
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit = {}, []
         for number, item in enumerate(plan['items']):
@@ -600,14 +602,15 @@ class ReferenceClose(nn.Module):
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
             if location is None:
                 raise RuntimeError('kept reference constituent has no closing address')
+            occurrence = self.store.occurrence_of(location)
             reference = item['reference']
             if item['mode'] == 'mint':
-                reference = written.get(('symbol', id(node)))
+                symbol = written.get(('symbol', id(node)))
+                reference = symbol if symbol in alloc.individuals else occurrence
                 allocated[('new', number)] = reference
             elif isinstance(item['selected'], tuple) and item['selected'][:1] == ('new',):
                 reference = allocated.get(item['selected'])
             item['reference'] = reference
-            occurrence = self.store.occurrence_of(location)
             if item['features'] is not None:
                 held = dict(candidates=tuple(allocated.get(identity, identity) for identity in item['candidates']),
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())
@@ -615,11 +618,16 @@ class ReferenceClose(nn.Module):
                 mentions.move_to_end(occurrence)
             if training:
                 for target in item.get('correct', (reference,)):
-                    value = point(self.components.owner, target) if isinstance(target, int) else None
+                    if isinstance(target, int):
+                        value = point(self.components.owner, target)
+                    else:
+                        index = self.store.location(target) if target is not None else None
+                        value = self.store.slots[index, 0] if isinstance(index, int) else None
                     if value is not None:
                         expose_form(self.components.owner, item['cue'], value)
             audit.append(dict(leaves=item['leaves'], occurrence=occurrence[-1], reference=reference,
-                operation=item['mode'], candidates=item['candidates'],
+                operation=item['mode'], candidates=tuple(
+                    allocated.get(identity, identity) for identity in item['candidates']),
                 missing_reason=None if reference is not None else 'no_accessible_individual'))
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)

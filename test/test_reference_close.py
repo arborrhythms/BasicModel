@@ -94,24 +94,36 @@ def test_mint_uses_the_selected_member_order_instead_of_the_source_word_order():
     plan = resolver.preview(clause, ())
     kept = resolver.prepare(clause, plan)
     assert kept.composition.order == 1
-    store.write_clause(kept)
-    symbol = resolver.components.individual_ids[0]
-    assert resolver.components.owner._concept_source_order(symbol) == 1
+    before = len(resolver.components.individual_ids)
+    written = {}
+    row = store.write_clause(kept, written_rows=written)
+    resolver.commit(plan, row, written, document='member', position=0, training=True)
+    assert int(store.order[row]) == 1
+    assert resolver.last_audit[0]['reference'] == store.occurrence_of(row)
+    assert len(resolver.components.individual_ids) == before
+    assert written[('activations', id(kept))] == ((store.occurrence_of(row), None, 0),)
 
 
 @pytest.mark.parametrize('order', (0, 3))
-def test_recent_minted_symbol_returns_at_its_native_conceptual_order(order):
+def test_recent_token_returns_at_its_kinds_native_conceptual_order(order):
     resolver, store, atoms = fixture()
+    owner = resolver.components.owner
+    kind = owner.new_concept()
+    seat = owner._csw_concept_row(order, kind)
+    with torch.no_grad():
+        owner.similarity_codebook.W[seat].copy_(atoms[0])
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
-        order=order, minted=True, composition=Composition(atoms[0], order=order))
+        order=1, minted=True, composition=Composition(atoms[0], reference=kind, order=order))
     row = store.write_clause(clause)
-    identity = store.raw_meaning_of(row).role_refs[0][1]
-    frame = replace(SituationFrame.from_row(store.row(row)), symbol_ids=(identity,))
+    assert store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
+    identity = store.occurrence_of(row)
+    frame = SituationFrame.from_row(store.row(row))
     records = resolver.accessible((frame,))
-    assert identity in records
-    candidate = resolver.individuals(records)[identity]
+    candidates = resolver.individuals(records)
+    assert identity in candidates and kind not in candidates
+    candidate = candidates[identity]
     torch.testing.assert_close(candidate['value'], atoms[0], rtol=0, atol=0)
-    assert resolver.components.owner._concept_source_order(identity) == order
+    assert int(store.order[row]) == 1 and owner._concept_source_order(kind) == order
 
 
 def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them():

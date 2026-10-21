@@ -573,12 +573,13 @@ class ClauseRows:
                 for value in nodes})
             written_rows[('symbols', id(clause))] = tuple(dict.fromkeys(
                 symbol for symbol in closing.symbols.values()
-                if symbol is not None and closing._point(symbol) is not None))
+                if symbol in closing.alloc.individuals))
             written_rows[('activations', id(clause))] = tuple(
-                (self.occurrence_of(rows[id(value)]), symbol,
+                (self.occurrence_of(rows[id(value)]),
+                 symbol if symbol in closing.alloc.individuals else None,
                  (value.reference_request or {}).get('role', 0))
                 for value in nodes if value.order == 1
-                and (symbol := written_rows.get(('symbol', id(value)))) is not None)
+                for symbol in (written_rows.get(('symbol', id(value))),))
         if authority is not None:
             authority['rows'].append(result)
         return result

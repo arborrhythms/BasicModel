@@ -1,16 +1,21 @@
 # Step 1b: current gates and carry ledger
 
-**Active §14 round, base `93788f9d2`: D2 applied; saved replays next.**
+**Active §14 round, base `93788f9d2`: D2 passes; §10.2 gates next.**
 The reverse certificate now checks every non-estimate row for a surviving
 forward name x and checks that rows originally pending x have no open
 referent slot. Row 5 / word 14 (`is`) is the unrelated name documented in
-closing-read-causes §6.2. The forward assertion, graph count, departure
+closing-read-causes §6.2. Both requested saved replays pass on `eb75de56a`
+([D2 receipt](review3/d2-replays.md)). The forward assertion, graph count, departure
 assertion, forced scope, budgets and objective are unchanged. The accepted
 D1 probe is complete. Alec's new order is D2 and its two replays, then
 §10.2 in a separate receipt, the two D1 replays on that source, all twelve
 fresh runs, the eight-file set and both decomposition arms by commit hash.
 Any remaining forward contract decision follows those measurements;
-publication remains conditional on closing it. No second full sweep.
+publication remains conditional on closing it. The
+[§10.2 receipt](../2026-10-20-item3-5-inline-lowering/README.md) now records
+the eight changes and the three declared reference-close ports. Its
+closing/capacity checks precede the saved D1 and fresh-arrival measurements.
+No second full sweep.
 
 **Active §13 round, base `266189eda`: stopped at D1's decision boundary.**
 Both native arrival probes reproduce the saved failures exactly. Both

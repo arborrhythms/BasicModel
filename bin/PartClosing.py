@@ -29,7 +29,6 @@ class PartClosing:
         self._definitions = {}
         self._word_origins = {}
         self._occupations = []
-        self._individual_terms = set()
         self._next = int(self.alloc.next_id)
         self._ready = False
         self._committed = False
@@ -49,9 +48,6 @@ class PartClosing:
         self.alloc.symbol_types.setdefault(int(symbol), set()).update(types)
         self.alloc.symbol_types[int(symbol)].add('concept')
         self.alloc.reference_orders.setdefault(int(symbol), int(term.order))
-        if int(term.order) == 1:
-            self.alloc.individuals.add(int(symbol))
-            self.alloc.singletons.add(int(symbol))
         row = self.owner._csw_row_of(int(symbol))
         if row is None:
             self.owner._preflight_concept_row(int(term.order))
@@ -100,6 +96,11 @@ class PartClosing:
     def _plan_one(self, value, as_argument):
         if id(value) in self._planned:
             record = self._planned[id(value)]
+            if value.formal_name == 'lower' and len(value.children) == 2:
+                head = value.children[value.head_role - 1]
+                record['symbol'] = self._plan_term(head, as_argument)
+                record['types'] = self._planned[id(head)]['types']
+                return record['symbol']
             if as_argument and record['symbol'] is None:
                 record['symbol'] = self._reserve()
             record['seat'] |= (as_argument and value.binding is None
@@ -112,6 +113,12 @@ class PartClosing:
                      value.reference if self._native(value.reference) else None)
         edge, pair, types = None, None, ('object',)
         if not children:
+            if reference is None:
+                location = self.store.location(value.reference)
+                if isinstance(location, int):
+                    retained = self.store.raw_meaning_of(location).role_refs[0]
+                    if retained is not None and retained[0] == 'sym':
+                        reference = retained[1]
             if (reference is None and value.reference > 0
                     and self.store.location(value.reference) is None):
                 raise ValueError('a closing argument names an unavailable native reference')
@@ -131,6 +138,16 @@ class PartClosing:
             child_record = self._planned[id(value.children[0])]
             edge, pair = child_record['edge'], child_record['pair']
         elif len(children) == 2:
+            if value.formal_name == 'lower':
+                head = value.children[value.head_role - 1]
+                if not torch.equal(value.point, head.point):
+                    raise ValueError('inline lowering must preserve its description exactly')
+                reference = self._plan_term(head, as_argument)
+                record = dict(value=value, symbol=reference, edge=None, pair=None,
+                              types=self._planned[id(head)]['types'], seat=False)
+                self._planned[id(value)] = record
+                self._plan.append(record)
+                return reference
             part, whole = children
             if value.operation == 'whole':
                 part, whole = whole, part
@@ -222,7 +239,6 @@ class PartClosing:
                     self._word_origins[id(value)] = word, clause.evidence
         if clause.minted or bool(clause.reference_request and
                                  clause.reference_request.get('mode') == 'mint'):
-            self._individual_terms.add(id(term))
             if self._native(clause.subject_word_id):
                 self._word_origins[id(term)] = int(clause.subject_word_id), clause.evidence
 
@@ -242,7 +258,7 @@ class PartClosing:
                 continue
             for role, child in enumerate(value.children, 1):
                 symbol = self._planned[id(child)]['symbol']
-                if symbol is not None and symbol != child.word_id:
+                if symbol is not None and (symbol != child.word_id or name == 'lower'):
                     argument = f'{name}_argin{role}'
                     if argument not in occupations.index:
                         raise ValueError(f'undeclared closing occupation: {argument}')
@@ -317,13 +333,6 @@ class PartClosing:
             interpreter = self.owner.interpret
             interpreter._pending.pop(word, None)
             interpreter._field_pending.discard(word)
-        # A selected mint is an individual use at its actual conceptual
-        # order; the order number is not the test for having an identity.
-        individuals = {self.symbols[term] for term in self._individual_terms
-                       if self.symbols[term] is not None
-                       and self._point(self.symbols[term]) is not None}
-        self.alloc.individuals.update(individuals)
-        self.alloc.singletons.update(individuals)
         ref = self.store.__dict__.get('_occupation_owner')
         occupations = None if ref is None else ref()
         if occupations is not None:

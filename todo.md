@@ -22,8 +22,9 @@ lines below keep the numbers their items had when they landed.
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
 **Active §14 round (base `93788f9d2`):** the exact D1 probe is accepted;
 Alec decided to implement §10.2 before revisiting its contract. D2's
-name-scoped reverse assertion is applied, with the two saved replays next.
-Then §10.2's eight changes and gates in its own receipt, both D1 replays
+name-scoped reverse assertion passes both saved replays on `eb75de56a`.
+The [§10.2 round](doc/benchmarks/2026-10-20-item3-5-inline-lowering/README.md)
+is implemented, with its closing/capacity gates next, then both D1 replays
 with paired R/A, all twelve fresh initializations, and the eight-file set
 plus both decomposition arms by commit hash. Any remaining forward
 contract question is decided on that source before publication to both

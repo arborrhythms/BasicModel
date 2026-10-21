@@ -245,9 +245,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             composition_cache[key] = Composition(
                 point=current['composed_value'],
                 children=tuple(composition_cache[id(child)] for child in current['children']),
-                reference=(-1 if current.get('mint_reference') else
-                    int(current.get('forward_identity', current['ref'])
-                        if current['ref'] in (-1, 0) else current['ref'])),
+                reference=int(current.get('forward_identity', current['ref'])
+                    if current['ref'] in (-1, 0) else current['ref']),
                 operation=None if rule is None else rule.method_name,
                 head_role=0 if rule is None else getattr(rule, 'head_role', 0),
                 order=max(0, int(current.get('mint_order', current['order']))),
