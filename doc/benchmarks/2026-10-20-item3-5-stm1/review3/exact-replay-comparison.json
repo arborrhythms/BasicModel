@@ -1,0 +1,42 @@
+[
+  {
+    "original": 12,
+    "replay": 13,
+    "arm": "False",
+    "initial": {
+      "parameters": true,
+      "buffers": true,
+      "after_rng": true,
+      "source_manifest": true
+    },
+    "failure": {
+      "rows": true,
+      "parts": false,
+      "occupations": true,
+      "parameters": true,
+      "rng": true,
+      "source_manifest": true,
+      "sources": true
+    }
+  },
+  {
+    "original": 10,
+    "replay": 14,
+    "arm": "True",
+    "initial": {
+      "parameters": true,
+      "buffers": true,
+      "after_rng": true,
+      "source_manifest": true
+    },
+    "failure": {
+      "rows": true,
+      "parts": false,
+      "occupations": true,
+      "parameters": true,
+      "rng": true,
+      "source_manifest": true,
+      "sources": true
+    }
+  }
+]

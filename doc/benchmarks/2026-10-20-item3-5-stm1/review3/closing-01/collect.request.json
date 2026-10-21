@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_part_closing.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

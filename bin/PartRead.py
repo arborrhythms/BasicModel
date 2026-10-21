@@ -192,6 +192,10 @@ def expression_components(store, roots, *, max_records, work, scanned=0):
             representative = children[head-1]
             components[address] = dict(components[representative])
             components[address]['reference'] = representative
+            # An identity read must inspect each named head before descending
+            # further. Flattening is useful for a structural view, but can
+            # skip a composite that has itself been bound to a word.
+            components[address]['head_reference'] = ('sym', arguments[head-1])
         else:
             representative = address
             components[address] = dict(kind=kind, operands=children, meaning=row['meaning'])

@@ -529,7 +529,7 @@ capacity gate in §10. Publication is held for that decision and repair.
 | row cull: slots, `.when`, `truth_±`, access count, `surprise` only; document/stream as context wholes; sidecar keys moved or deleted | two truths §1 row table; §6.3 | audited (row-audit.md), **carried to step 2** | step 2 |
 | `IntraSentenceLayer` retired or justified | §6.3 | owner, state, loss/config retired; surviving STM, gradient and compiled checks ported; retired-name audit passes | step 1b |
 | reverse-order premise resolution and closing reference reads | §7 review findings | both saved premise initializations and saved c/e failure replay pass in whole §14; closing-only witness exclusion preserves ordinary copular reads | step 1b |
-| minting by recurrence in LTM1 (access count) | two truths §1 | carried to step 2 | step 2 |
+| minting by recurrence in LTM1 (access count); an ordinary referent stays an unminted LTM1 occurrence, only relation arguments are minted at the close, an unseatable mint fails loudly, no capacity masking of the menu (§10.1) | two truths §1; §10.1 | the step-1b form (unminted occurrence; no mint for the ordinary referent; loud failure) lands now; **§10.2** (the determiner's token is located in STM, no concept row, fixture at 8 rows) is the round after the current one, before publication; recurrence minting is step 2 | step 1b / step 2 |
 | verb = shared basis per group, diagonal per verb; `verbGroups` ≈ 24; joint diagonalization; log-ratio teacher | occurrence §14.1 | not started; **step 4**, not step 1b | step 4 |
 | second difference: `position` with a world object; de re = membership evidence; de dicto = LTM1 row with the world as a context whole | occurrence §14.3 | not started; step 5 | step 5 |
 | defaults NP = everything, VP = occurs, MP = all worlds | occurrence §14.4 | spec only | step 5 |
@@ -762,3 +762,261 @@ The one full sweep is not repeated or relabeled green: 218 failures now
 have passing scoped checks or explicit ports, while the native capacity
 failure remains open under §10. The candidate stays on the branch;
 publication to both mains awaits that allocation decision and repair.
+
+### 10.1 Decided (Alec, 2026-10-20): no capacity masking; an ordinary referent stays unminted
+
+The contract is the decided design, not a new resource rule. An ordinary
+new referent is a short-term concept in STM1 and then an **unminted LTM1
+occurrence at concept width**, minted only by **recurrence** (step 2's
+access count) or because it is **an argument of a relation**, in which
+case it is minted at the close. A relation-argument mint that cannot be
+seated **fails loudly** — capacity exhaustion stops training, as item 5
+already has it — and is never masked or silently kept open. The chooser's
+mint action collapses to the determiner mode on `lower`, as decided in
+§1–§5; the menu is never conditioned on pool state, which would confound
+the chooser's credit. For step 1b that means: the `MM_grammar` close
+writes the new referent as an unminted occurrence, no mint is attempted
+for it, the convergence certificate is re-run on that source at its
+original budget and seed, and the native-119 captured state is the
+regression. Codex's seat-reservation proposal is not adopted.
+The pool is the per-order partition of the concept table's rows
+(`Codebook.create` ramsifies them; symbol index = concept row), which only
+a **symbol** needs; an unminted LTM1 occurrence holds its vector inline
+and takes no seat. If the order-1 symbol that overflowed in native-119 is
+a relation argument, the loud failure is correct and the fixture's
+two-seat order-1 inventory is what is undersized: resize the fixture
+config, never the mechanism.
+
+## 12. Claude's third review of step 1b (committed `dde893527` + `6903713c7`, 2026-10-20)
+
+**What is accepted.** The §6.10 repair is in: the close writes the minted
+terminals' DEF links and PartsOfSpeech occupations, and the reader
+follows the declared head role; the reverse-order premise cause (DEF
+edges exposed to generic part/whole reads, so the wrong identity won the
+bind) is a named mechanism repair with a before/after pair
+(native-102/104). Both decomposition lengths pass in both gain arms at
+the original seeds and budgets (attempt 124, 8/8 companions). The one
+full sweep (5,965: 5,420 passed, 219 failed, 325 skipped) is recorded
+once and not relabeled; 218 failures point at scoped passes or declared
+fixture ports, which the one-sweep rule accepts. The §10 capacity
+question is decided in §10.1. My own certificate run on the committed
+tree (`RUN_SLOW=1`, decomposition + §14 + reference close/mentions +
+bind + item 3.5 files, `/tmp/review-1b2-tests.log`): 39 passed, 1
+skipped (copular prerequisite), **1 failed**.
+
+**Finding A (blocks publication): the pending-premise certificate is not
+a live pass.** `test_forced_ordinary_pending_premise_in_both_orders` is a
+random certificate (`ordinary_model` builds an unseeded model, which is
+right under the no-seed-pinning rule). Three fresh runs on the committed
+tree fail it three different ways:
+
+| Run | Forward arm | Reverse arm | Failing assertion |
+|---|---|---|---|
+| Full sweep (Codex) | failed | passed | line 391: the arriving "x is three" does not supply the bound referent |
+| My certificate run | failed | passed | line 391, same |
+| My isolated rerun (`-x`, both arms only) | passed | **failed** | line 398: forward references `((0, 14), (2, 15))` survive the arrival |
+
+Native-125 "passes at its exact captured state", and native-122/123
+pass at saved states 32 and 75. Those replays do not reproduce the
+sweep's failure (the captured store passes where the live run failed),
+so the capture does not hold what decided the outcome, and the cause is
+unnamed. A state replay that passes is therefore not a covering scoped
+pass for this row of the failure index; status.md's "both premise orders
+pass" is true only at saved states. Two failure modes are live: (A1)
+forward order, the pending x row is found but the arrival does not bind
+it to `three`; (A2) reverse order, a row keeps `_forward_references`
+after the batch that should have resolved them. Required before
+publication: save the initial RNG state on failure the way native-61/63
+did (`closing-61.initial-rng.pt`), reproduce each mode exactly, name the
+cause in `closing-read-causes.md`, repair, and then pass the certificate
+at **six fresh initializations in both orders** with no seed chosen for
+passing. If a mode turns out to be the certificate reading the store
+wrongly rather than the mechanism, say so with the row evidence; do not
+loosen the assertion.
+
+**Finding B (decided, §10.1): the MM_grammar capacity failure.** Apply
+§10.1 natively: the close writes the ordinary new referent as an
+unminted LTM1 occurrence at concept width and attempts no mint for it;
+only relation arguments are minted at the close; an unseatable
+relation-argument mint fails loudly; no menu masking by pool state. Re-run
+the failed MM_grammar certificate on that source at its original budget;
+the captured native-119 state is the regression. Seat reservation is not
+adopted.
+
+**Carried, agreed.** Cold-start boundary learning (native-117, 901 s
+bound) goes to item 0 unchanged. Copular-identity stays a prerequisite
+skip until stage 4e. Strata, order-0 geometry and placement are item 3.
+
+**Landing order.** B, then A, then the publication steps already listed
+in status.md §78 (both mains, October 20 docs, clean tree). No second
+full sweep; the two repaired certificates plus the eight-file certificate
+set above are the landing evidence, recorded by commit hash.
+
+### 12.1 In-flight note on the B candidate (Claude, 2026-10-20, later; uncommitted `bin/PartClosing.py`, `test/test_part_closing.py`, `data/MM_grammar.xml`)
+
+*Sequenced by §10.2 (Alec, later): the current round completes as scoped; finding C is the §10.2 round's gate.*
+
+Read before building A on this tree. Not a review of a hand-off; the
+candidate is still running (`review3/`).
+
+**What the candidate does.** `PartClosing.prepare` plans the root with
+`as_argument=False` and `_required_seats` is gone, so the determiner's
+result (the `lower` edge, symbol 10 in `review3/capacity-02.jsonl`) has no
+seat. The chooser's menu reads no pool state (`_order_caps` and
+`_preflight_concept_row` have no caller on the menu path) and the
+preflight fails loudly. Those three parts of §10.1 hold.
+
+**Finding C (the §10.2 round's gate): the mint moved one node down; the
+fixture was then sized to it.** `ClauseJournal` (line 150) sets `mint_reference` on
+the `lower` operand that `operation_modes` names (`modes['argin' +
+head_role]`, `LowerLayer.head_role = 2`), `composition()` gives that leaf
+`reference=-1`, and `_plan_one` (`if reference is None and as_argument:
+reference = self._reserve()`) reserves and seats it as an argument of
+the `lower` edge: symbol 9 in the captured plan, order 0, `seat: true`,
+`word: -1`, `reference: -1`. That leaf *is* the new referent (the
+"particular" of `reference_modes`, the fresh description the `LowerLayer`
+docstring leaves "for the kept closing to mint"). mm-02 therefore fails
+with the native-119 error at order 0 (`pools=((0, 4), (6, 2)),
+occupied=6, planned=1`): one fresh row per sentence that selects the
+mint mode, two fill the tail pool, the third fails. The uncommitted
+`data/MM_grammar.xml` then raises ConceptualSpace `nVectors` from 8 to
+8192 "for 900 epochs × four two-word examples ≤ 7200 terminal
+arguments". The four examples recur every epoch; each recurrence of the
+same description seats a new row. That is the allocation §10.1 withdrew,
+not an undersized fixture, and at item 0's scale no inventory holds it.
+`test_new_referent_closes_as_an_unminted_occurrence` asserts the leak in
+its second half (`_csw_row_of(argument) is not None`). A pass of mm-03
+at 8192 rows is not the §10.1 certificate.
+
+**§10.1 in code terms (my reading; Alec to confirm).** The `lower` edge is
+the referent's own introduction, not a relation between two concepts;
+its marker contributes no content. Relation-kind operations are the ones
+`_plan_one` already types `situation`/`state`: `lift`, `part`,
+`assertPart`, `whole`, `implies`, `equal`, `verb`. So:
+
+- A `mint_reference` operand of a determiner-mode `lower` is neither
+  reserved nor seated, whether it is a leaf or a fold; its own edges
+  among minted word objects are still written (the structure that
+  survives, §6.6(2)). The `lower` edge is not written for an unminted
+  referent (it would need a handle for the operand, and
+  `preflight` counts every reserved handle in `count`). The occurrence
+  row at concept width is the referent; `ReferenceClose.accessible`
+  already lists order-1 occurrence rows as candidates and
+  `individuals()` reads them with `point_of_row`.
+- The NP is minted only when the `lower` node is itself an argument of a
+  relation-kind operation (`lift(lower(a, X), sat)`): the existing
+  binary branch reserves it (`reference = self._reserve()` when
+  `as_argument`), seats it at order 1 with the NP point, writes the
+  enclosing edge, and fails loudly when unseatable. Its DEF edge comes
+  from `clause.subject_word_id`, the line the candidate removed from
+  `prepare`; write it only when the node is seated.
+- `test_new_relation_argument_is_minted_and_unseatable_argument_fails`
+  stands (a fresh leaf under `verb`). Invert the second half of
+  `test_new_referent_closes_as_an_unminted_occurrence`: no seat for the
+  description argument and no `lower` edge.
+- Revert `data/MM_grammar.xml` to 8 rows. The certificate passes at the
+  original inventory, budget and seed or B is not repaired; `rng-119/`
+  and `review3/capacity-02.jsonl` are the two regressions.
+
+**One check, not a finding.** `IdentityRows.mint` returns `None` on a
+capacity `RuntimeError` (the fold cache / `form_regions` seat). If any
+kept write of a referent reaches it, that is a masked mint under §10.1;
+if it is only the rebuildable cache, say so in the receipt.
+
+### 10.2 Decided (Alec, 2026-10-20, later): the determiner prepares the token for identity in STM
+
+Alec: "determiners will trigger a `lower` on the count noun which
+prepares them to be bound by identity in STM"; no temporary concept. A
+token's identity is its location in STM, not a concept row. **For Codex
+after the current round (B and A as scoped in §12), before step 1b
+publishes.** The current round's evidence stands as recorded; §12.1's
+finding C is this round's gate, not the current round's.
+
+**Design.** A determiner is the marker of `lower` (`LowerLayer`: marker,
+description → member; `operation_modes` puts the determiner mode on
+`argin2`). The member is a token. Its identity is its location: the
+sentence's working slot while the sentence is open (`_clause_end_state`
+publishes and dissolves it), then its occurrence row's address in the
+recent-row index (`SituationAddress` → `SituationFrame`), which `bind`
+reads: `ReferenceClose.accessible` lists order-1 rows and `individuals()`
+groups by `occurrence_of(location)` when no minted symbol is recorded.
+The close creates no concept row for the token, neither for the operand
+nor for the member. An individual gets a concept row only by recurrence
+(step 2) or when a relative truth needs the token as a symbol reference,
+minted at the close with loud failure (§10.1). The derivation survives
+as handles over minted symbols, `Part(marker, kind)`, deduplicated by
+pair (`_pairs`, `parts.find`). Already in the code: `SituationAddress`,
+the order-1 row candidates, `semantic_reference` (a row references a row
+by address), the address grouping in `individuals()`. Missing, and this
+round's work: the derivation side still seats any non-native argument,
+and the determiner cuts the operand to -1.
+
+**Changes, in code names.**
+
+1. `ClauseJournal.composition()` (≈ line 241): delete the `-1 if
+   current.get('mint_reference')` branch; the operand keeps
+   `current['ref']` (its kind's object, or its own edge when composite).
+   `mint_reference` and `mint_order` still drive `member()` (order 1) and
+   the chooser's credit; they no longer cut the derivation. In
+   `PartClosing` the plan for `lower(marker, kind)` then has no fresh
+   leaf, a recurrence of the pair reuses its handle, and the fixture's
+   four examples plan no seat (their root is the `lower` itself).
+2. `ClauseRow.write_clause`, `written_rows[('activations', id(clause))]`
+   and `('symbols', id(clause))`: record a symbol only when it is in
+   `alloc.individuals`, otherwise `None`, so the frame's activation keys
+   the token by its address (the `identity is None` →
+   `occurrence_of(location)` branch of `individuals()`).
+3. `ReferenceClose.commit`: for a mint item, `reference` and
+   `allocated[('new', n)]` are the written node's occurrence address
+   (`self.store.occurrence_of(location)`) unless the close seated a
+   symbol in `alloc.individuals`; `audit`, `mentions` and
+   `held['candidates']` carry the address. Under `training`, an address
+   target exposes the form on the row's point (`store.location` → slot
+   0), where `point(owner, target)` now serves only ints.
+4. `PartClosing._plan_one`, leaf case: a leaf whose `reference` locates
+   a row (`store.location(reference)` is an int) resolves to that row's
+   derivation handle (`raw_meaning_of(index).role_refs[0]` when it is
+   `('sym', handle)`) instead of `_reserve()`; a located row without a
+   handle keeps the existing reserve. This is site 2 of §3: "it" under
+   its verb edge references the antecedent's expression handle; which
+   cat is the row. `ReferenceClose.prepare` places the located
+   candidate on the term as today.
+5. `PartClosing`: `_individual_terms` and the `alloc.individuals` /
+   `singletons` update from `clause.minted` go; `_seat` no longer adds
+   order-1 seats to `alloc.individuals` / `singletons` (a seated handle
+   is an expression's fold cache, not an individual; definitions and
+   `IdentityRows.mint` are the individual writers). `clause.minted`
+   keeps only its order-1 meaning.
+6. `data/MM_grammar.xml`: ConceptualSpace `nVectors` back to the
+   committed 8. Gate: `test_mm_grammar_learns_xor_signal` at its original
+   900-epoch / .20 budget, at the `rng-119` state and at one fresh
+   initialization; `review3/capacity-02.jsonl` replayed on this source
+   plans no `seat: true` entry.
+7. Tests. Keep
+   `test_new_relation_argument_is_minted_and_unseatable_argument_fails`
+   (a fresh leaf under `verb`: seated or loud; the §10.1 relative-truth
+   case). Rewrite `test_new_referent_closes_as_an_unminted_occurrence`:
+   `refs[result, 1]` is the kind's symbol, `alloc.next_id` advances by
+   the edge handle only, no bank row anywhere, `_csw_row_of(result) is
+   None`. Add: two sentences with the same description close to two
+   order-1 rows with distinct addresses and one `Part(marker, kind)`
+   edge, and `individuals()` over both frames returns two identities
+   keyed by address. Add: a pronoun bound to a located row writes its
+   verb edge over the antecedent's handle and seats nothing. Re-run the
+   eight-file certificate set (decomposition in both arms, §14,
+   reference close, reference mentions, bind thought G1–G3, identity
+   rows, identity cube, Part store) at the unchanged budgets and seeds; a
+   reference-close case that asserted a minted symbol for a determiner
+   token is a declared port to the address, never a loosened assertion.
+8. Not in this round: edges that address occurrence rows (LTM2 → LTM1);
+   minting by recurrence (step 2); the thought stream's
+   `search_exhausted` leaf referent (`ThoughtStream` ≈ 256) unchanged;
+   the binary branch's fold-cache seat for composed arguments unchanged
+   (bounded by distinct pairs; the duplicate of the kind's point under
+   `lower` is a step-2 clean-up).
+
+**Order.** The current round completes as scoped (`review3/`: B's
+capacity sequence, A's live-arrival certificates), then this round, then
+publication of both mains with the October 20 docs and a clean tree. No
+second full sweep; this round's evidence is the gates above, by commit
+hash.

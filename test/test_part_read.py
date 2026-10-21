@@ -144,3 +144,21 @@ def test_a_later_word_definition_does_not_retype_a_retained_marker(monkeypatch):
     after, _, missing = expression_components(f.store, (reference,),
         max_records=64, work=QueryWorkBudget(64))
     assert not missing and after[reference]['reference'] == ('sym', content)
+
+
+def test_answer_read_checks_a_named_composite_before_descending_its_head(monkeypatch):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from BindingAnswers import matches
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    row = f.store.write_clause(f.clause(('verb', ('verb', 'content', 'ending'), 'outer')))
+    reference = f.store.raw_meaning_of(row).role_refs[0]
+    named = int(f.store.parts.refs[reference[1], 0])
+    word = f.cs.interpret.lookup_word([83], [], form='bound-name')
+    f.cs.interpret.define(word, named)
+    value = replace(ConceptualMeaning.from_description(f.store.slots[row, 0]),
+        role_refs=(reference, None, None), bindings={'_bound_roles': (('referent', 0),)})
+    model = SimpleNamespace(_concept_owner=lambda:f.cs,
+                            symbolSpace=SimpleNamespace(ltm_store=f.store))
+    assert matches(model, value, 'bound-name')

@@ -1,0 +1,4 @@
+[collect] 1 selectors; limit 240s, 8.0 GiB
+[collect] exit 1; 1.2s; peak 0.03 GiB
+Result: collection_exit, exit 1; 0/0 cases completed.
+doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-06/result.json

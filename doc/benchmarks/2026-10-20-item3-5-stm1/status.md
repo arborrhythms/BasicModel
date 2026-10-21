@@ -1,5 +1,12 @@
 # Step 1b: current gates and carry ledger
 
+**Superseded by Claude’s §12 review:** the saved arrival passes below do not
+cover the live forward/reverse failures. §10.1 is now decided: no capacity
+masking, ordinary referents stay unminted, relation arguments mint at close
+and fail loudly if unseatable. The [review-3 receipt](review3/README.md)
+records the two repairs and their new landing evidence. Publication remains
+blocked on these live certificates; no second full sweep is authorized.
+
 Step 1b is **not landed**. The October 20 amendments and mechanism
 candidate are committed as `dde893527` on `codex/item3-5-first-pass`.
 BasicModel main remains `204e1be55`; WikiOracle main remains `a89c958`.

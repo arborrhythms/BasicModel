@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 33.400789874838665,
+      "message": "test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:160: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:74: in record\n    after(model, split, rows, result, observations, observer)\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:154: in observed_after\n    return after(*args) if after is not None else None\n           ^^^^^^^^^^^^\ntest/test_math_chain_section14.py:391: in after\n    assert correct, 'the arriving x is three must supply the bound referent'\nE   AssertionError: the arriving x is three must supply the bound referent\nE   assert False",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=18.945s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

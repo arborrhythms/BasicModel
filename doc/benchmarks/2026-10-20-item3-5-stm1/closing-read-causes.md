@@ -80,3 +80,69 @@ The [eight question tables](decomposition-71.md) and
 [symbol-type question](../../plans/2026-10-19-bind-thought-operation.md#69-implementing-68-a-missing-symbol-type-source-codex-2026-10-20)
 record the separate expression-reader blocker. The passing §14 file and
 thinking ports do not replace those proofs or the pending full sweep.
+
+## 5. §12 review: why did the ordinary introduction exhaust MM_grammar?
+
+| Question | Evidence / answer |
+|---|---|
+| Native-119 failure | The close required a bank seat for the ordinary new referent |
+| First repair attempt | `review3/capacity-02.jsonl`: the root lost its seat, but the description operand gained one; this moved the leak rather than removing it |
+| Rejected enlargement | `review3/mm-03` at 8192 seats was interrupted, not passed; the fixture is restored to eight seats |
+| Mechanism boundary | Description and determiner operations do not require new operand identities. A relation argument does; inability to seat it is an atomic loud failure |
+| Original regression | `review3/mm-05`: native-119 initialization, eight seats, original 900-epoch/.20 certificate passes; all ten close regressions pass |
+
+This does not introduce recurrence minting. An ordinary occurrence has its
+own LTM1 address and point; neither its introduction nor its description
+requires a new symbol. The chooser menu does not inspect capacity.
+
+## 6. §12 review: what was missing from an RNG-only arrival replay?
+
+| Capture | What it establishes |
+|---|---|
+| `review3/arrival-07` → `arrival-08`, forward | Same initial parameters, buffers, post-constructor Torch RNG, final parameters and Part pairs; same line-391 failure at row 6 |
+| Limitation of that pair | Occurrence addresses differ. This is not yet an exact native-address replay |
+| Missing owner | `MathChainCorpus` constructs `MathProblemGenerator(seed=None)`, whose private `random.Random(None)` is independent of the saved Python/NumPy/Torch process RNGs |
+| Consequence | The independently shuffled corpus changes `source_manifest.content_sha256`, which participates in the staged document address even after the certificate stages its own eight documents |
+| Expanded capture | `review3/arrival_capture.py` saves/restores each private generator state before presentation, alongside all three process RNGs and initialized parameter/buffer hashes |
+
+The full capture starts at `arrival-11`. Earlier saved-state passes are
+not promoted to coverage of the live failures. Runs using the explicitly
+recorded `PartClosing_6903713c7.py` diagnostic override reproduce the
+reviewed close; they are not acceptance runs of the new candidate.
+
+### 6.1 Forward failure: a named intermediate identity was skipped
+
+| Check | Evidence |
+|---|---|
+| Original reviewed close | `arrival-12`, fresh initialization, forward failure at line 391 / row 6 |
+| Replay | `arrival-13`: initial parameters/buffers/RNG/source manifest, final parameters/RNG, all LTM1 rows and native addresses match |
+| Bound reference | Symbol 101, through heads 100 → 99 → 24 |
+| Retained definition | Part 102 = `(24, 91)`; word 91 is the supplied target `three` |
+| Faulty answer read | `arrival-15/failure-expression.json`: the structural reader flattens all those heads to symbol 21, bypassing the already named symbol 24; no incomplete-read flag |
+| Repair | The structural view retains its flattening, and exposes each direct declared head for the identity reader. The answer reader checks each identity before following the next head |
+| Regression | `test_answer_read_checks_a_named_composite_before_descending_its_head`, passed in `unit-16` |
+
+The new capacity candidate also exposed a separate missing definition: a
+surface phrase minted as a relation argument could leave its description
+unminted and lose that description's word link. The close now carries the
+lexical head's origin to the phrase's mint. Its regression passes in
+`unit-16`. Definition handles are assigned in derivation order, replacing
+the iteration over a set of process-specific object IDs. In the baseline
+replays that set permuted some DEF handles, although the pairs/evidence and
+all LTM1 rows agreed; `exact-replay-comparison.json` records that limitation.
+
+### 6.2 Reverse failure: the global assertion includes an unrelated variable
+
+| Check | Evidence |
+|---|---|
+| Original reviewed close | `arrival-10`, reverse failure at line 398 / row 5 |
+| Replay | `arrival-14`: same initialized model and native LTM1 rows/addresses, same assertion and unresolved reference |
+| Failing row | Stream 2's unverified constituent, with role 2 open on word 14 (`is`) |
+| Pending reference specified by the certificate | Word 12 (`x`), in the separate question at row 6 |
+| Conflict | The live explore suffix may open another name. The forward arm explicitly excludes those unrelated variables; the reverse arm asserts over every non-estimate row |
+| Decision pending | [Exact rows and proposed scope correction](review3/reverse-scope-question.md) |
+
+No assertion, forced scope, budget or initialization has been changed.
+The reverse raw-graph count also reads stored references instead of the
+working identity read; its disposition remains open. Publication and the
+six-fresh-initialization acceptance run remain pending.

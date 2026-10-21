@@ -1,0 +1,13 @@
+{
+  "exit_code": 125,
+  "selected": [],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

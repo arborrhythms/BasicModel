@@ -1,0 +1,18 @@
+........F.                                                               [100%]
+=================================== FAILURES ===================================
+______________ test_new_referent_closes_as_an_unminted_occurrence ______________
+test/test_part_closing.py:150: in test_new_referent_closes_as_an_unminted_occurrence
+    assert f.store.raw_meaning_of(row).role_refs[0] == f.store.occurrence_of(row)
+E   AssertionError: assert None == ('ltm', 'address-v1', 8272800373608032761)
+E    +  where ('ltm', 'address-v1', 8272800373608032761) = occurrence_of(0)
+E    +    where occurrence_of = TernaryTruthStore().occurrence_of
+E    +      where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x121facb90>.store
+=============================== warnings summary ===============================
+test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence
+1 failed, 9 passed, 1 warning in 2.10s

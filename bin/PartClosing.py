@@ -11,6 +11,11 @@ from Spaces import _concept_alloc_of
 
 
 class PartClosing:
+    # These operations assert a relation between concepts. A description
+    # fold or a determiner introduction does not itself require identities
+    # for its operands; it retains a pair only when both already have them.
+    _relations = frozenset(('lift', 'part', 'assertPart', 'whole', 'implies', 'equal', 'verb'))
+
     def __init__(self, owner, store):
         self.owner, self.store = owner, store
         self.alloc = _concept_alloc_of(owner)
@@ -22,9 +27,9 @@ class PartClosing:
         self._planned = {}
         self._pairs = {}
         self._definitions = {}
+        self._word_origins = {}
         self._occupations = []
-        self._individuals = set()
-        self._required_seats = set()
+        self._individual_terms = set()
         self._next = int(self.alloc.next_id)
         self._ready = False
         self._committed = False
@@ -71,9 +76,6 @@ class PartClosing:
         self._next += 1
         return symbol
 
-    def _mint_terminal(self, value):
-        return id(value) in self._required_seats or self._native(value.word_id)
-
     def _plan_term(self, value, as_argument):
         pending, active = [(value, as_argument, False)], set()
         while pending:
@@ -89,7 +91,7 @@ class PartClosing:
                 raise ValueError('recursive composing object')
             active.add(id(term))
             pending.append((term, argument, True))
-            dependencies = [(child, len(term.children) == 2) for child in term.children]
+            dependencies = [(child, term.operation in self._relations) for child in term.children]
             if term.binding is not None:
                 dependencies.append((term.binding, True))
             pending.extend((child, needed, False) for child, needed in reversed(dependencies))
@@ -98,14 +100,14 @@ class PartClosing:
     def _plan_one(self, value, as_argument):
         if id(value) in self._planned:
             record = self._planned[id(value)]
-            if as_argument and record['symbol'] is None and self._mint_terminal(value):
+            if as_argument and record['symbol'] is None:
                 record['symbol'] = self._reserve()
             record['seat'] |= (as_argument and value.binding is None
                                and record['symbol'] is not None and not self._native(record['symbol'])
-                               and (record['edge'] is None or id(value) in self._required_seats)
                                and self._point(record['symbol']) is None)
             return record['symbol']
-        children = tuple(self._plan_term(child, len(value.children) == 2) for child in value.children)
+        children = tuple(self._plan_term(child, value.operation in self._relations)
+                         for child in value.children)
         reference = (self._plan_term(value.binding, True) if value.binding is not None else
                      value.reference if self._native(value.reference) else None)
         edge, pair, types = None, None, ('object',)
@@ -113,7 +115,7 @@ class PartClosing:
             if (reference is None and value.reference > 0
                     and self.store.location(value.reference) is None):
                 raise ValueError('a closing argument names an unavailable native reference')
-            if reference is None and as_argument and self._mint_terminal(value):
+            if reference is None and as_argument:
                 reference = self._reserve()
         elif len(children) == 1:
             # A unary face changes the working concept/order. It supplies no
@@ -123,7 +125,7 @@ class PartClosing:
                 child = self._point(children[0])
                 if child is not None and torch.equal(child.to(value.point), value.point):
                     reference = children[0]
-                elif self._mint_terminal(value):
+                else:
                     reference = self._reserve()
                 types = ('kind',) if value.order > 1 else ('object',)
             child_record = self._planned[id(value.children[0])]
@@ -132,9 +134,8 @@ class PartClosing:
             part, whole = children
             if value.operation == 'whole':
                 part, whole = whole, part
-            # A derivation edge owns a native handle, not another copy of
-            # the dissolved wide value in the concept bank. An unminted
-            # argument does not acquire an identity merely by composition.
+            # The pair retains the derivation. Its result needs a bank seat
+            # only if a containing relation uses that result as an argument.
             if part is not None and whole is not None:
                 pair = (part, whole)
                 edge = self._pairs.get(pair, self.parts.find(*pair))
@@ -153,14 +154,13 @@ class PartClosing:
                     types = (*types, 'speech_individual')
             if reference is None:
                 reference = edge
-                if reference is None and id(value) in self._required_seats:
+                if reference is None and as_argument:
                     reference = self._reserve()
         else:
             raise ValueError('a composition has one or two arguments')
         record = dict(value=value, symbol=reference, edge=edge, pair=pair, types=types,
                       seat=as_argument and value.binding is None and reference is not None
                       and not self._native(reference)
-                      and (edge is None or id(value) in self._required_seats)
                       and self._point(reference) is None)
         self._planned[id(value)] = record
         self._plan.append(record)
@@ -186,6 +186,15 @@ class PartClosing:
             self._pairs[pair] = edge
         self._definitions[pair] = edge, description, evidence
 
+    def _word_origin(self, value):
+        # Surface/form attachments keep their head's lexical use. If that
+        # phrase is minted as a relation argument, its definition belongs to
+        # the minted phrase even while the description remains unminted.
+        while (value.word_id < 0 and value.children and value.head_role
+               and value.operation not in self._relations):
+            value = value.children[value.head_role-1]
+        return value.word_id
+
     def prepare(self, clause):
         term = self._terms.setdefault(id(clause), self.clause_term(clause))
         pending, visited = [term], set()
@@ -199,22 +208,29 @@ class PartClosing:
                 raise ValueError('closing arguments require the full concept-space width')
             assert_cube(value.point)
             pending.extend(value.children)
-        minted = clause.minted or bool(clause.reference_request and
-                                      clause.reference_request.get('mode') == 'mint')
-        if minted:
-            self._required_seats.add(id(term))
-        symbol = self._plan_term(term, minted)
-        if minted:
-            self._individuals.add(symbol)
-            self._definition(symbol, int(clause.subject_word_id), clause.evidence)
-        for value in (self._planned[key] for key in visited):
-            if not value['value'].children:
-                # A kept word use can bind an existing object. Its word
-                # link is testimony too; allocating a new seat is not the
-                # condition for admitting that definition.
-                self._definition(value['symbol'], value['value'].word_id, clause.evidence)
+        # A determiner's new referent is a working concept, then an LTM1
+        # occurrence. Only use as a relation argument requires minting here;
+        # recurrence promotion belongs to the later occurrence owner.
+        self._plan_term(term, False)
+        # Follow derivation order, never the process-dependent ordering of
+        # Python object IDs, when assigning the native definition handles.
+        for record in self._plan:
+            value = record['value']
+            if id(value) in visited:
+                word = self._word_origin(value)
+                if self._native(word):
+                    self._word_origins[id(value)] = word, clause.evidence
+        if clause.minted or bool(clause.reference_request and
+                                 clause.reference_request.get('mode') == 'mint'):
+            self._individual_terms.add(id(term))
+            if self._native(clause.subject_word_id):
+                self._word_origins[id(term)] = int(clause.subject_word_id), clause.evidence
 
     def preflight(self):
+        for term, (word, evidence) in self._word_origins.items():
+            record = self._planned[term]
+            if record['seat'] or self._point(record['symbol']) is not None:
+                self._definition(record['symbol'], word, evidence)
         ref = self.store.__dict__.get('_occupation_owner')
         occupations = None if ref is None else ref()
         for record in self._plan:
@@ -303,8 +319,11 @@ class PartClosing:
             interpreter._field_pending.discard(word)
         # A selected mint is an individual use at its actual conceptual
         # order; the order number is not the test for having an identity.
-        self.alloc.individuals.update(self._individuals)
-        self.alloc.singletons.update(self._individuals)
+        individuals = {self.symbols[term] for term in self._individual_terms
+                       if self.symbols[term] is not None
+                       and self._point(self.symbols[term]) is not None}
+        self.alloc.individuals.update(individuals)
+        self.alloc.singletons.update(individuals)
         ref = self.store.__dict__.get('_occupation_owner')
         occupations = None if ref is None else ref()
         if occupations is not None:

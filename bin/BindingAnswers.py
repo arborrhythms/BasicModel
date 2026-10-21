@@ -50,7 +50,7 @@ def _matches(model, meaning, word, values):
             from QueryWork import QueryWorkBudget
             terms, _, incomplete = expression_components(store, (reference,),
                 max_records=64, work=QueryWorkBudget(64))
-            target = terms.get(reference, {}).get('reference')
+            target = terms.get(reference, {}).get('head_reference')
             if incomplete or target is None or target == reference:
                 return False
             reference = target

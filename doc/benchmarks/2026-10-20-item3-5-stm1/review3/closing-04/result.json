@@ -1,0 +1,223 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails"
+  ],
+  "completed": [
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/worker-000.json"
+      ],
+      "pid": 17927,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 438256936,
+      "elapsed_seconds": 3.724711999995634,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails"
+      ],
+      "completed": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014517416013404727,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006598958047106862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00901625002734363,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008045250084251165,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007170500000938773,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007010124856606126,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005896500078961253,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0061177092138677835,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.006610583979636431,
+          "message": "test/test_part_closing.py:150: in test_new_referent_closes_as_an_unminted_occurrence\n    assert f.store.raw_meaning_of(row).role_refs[0] == f.store.occurrence_of(row)\nE   AssertionError: assert None == ('ltm', 'address-v1', 8272800373608032761)\nE    +  where ('ltm', 'address-v1', 8272800373608032761) = occurrence_of(0)\nE    +    where occurrence_of = TernaryTruthStore().occurrence_of\nE    +      where TernaryTruthStore() = <test_clause_acceptance.SentenceFixture object at 0x121facb90>.store",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0063727921806275845,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120.0,
+    "suite_seconds": 180.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04",
+  "elapsed_seconds": 8.005967958131805,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 438256936,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/collect.json"
+    ],
+    "pid": 17906,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432571592,
+    "elapsed_seconds": 3.5380529169924557,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/closing-04/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}
