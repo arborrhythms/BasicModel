@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_reference_arrivals.py",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

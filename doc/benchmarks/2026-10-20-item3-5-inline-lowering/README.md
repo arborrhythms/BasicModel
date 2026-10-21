@@ -1,5 +1,11 @@
 # Step 1b §10.2: inline lowering and occurrence identities
 
+**§18 update:** Claude accepts the frozen MTM repair and ports. Alec's
+§10.4 decision is implemented in the [anonymous-bind round](../2026-10-21-item3-5-anonymous-bind/README.md).
+All landing evidence moves to its next frozen source; the remaining gates
+on `eac2fe87b` are not run. The following source-attributed record remains
+historical, including every failed run. No evidence is promoted.
+
 **Current: §17 accepts MTM and the listed ports.** The stale-pointer
 repair and the four additional occurrence-view ports pass their scoped
 checks. The [MTM receipt](../2026-10-21-item3-5-mtm/README.md) freezes source

@@ -1,0 +1,251 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+    "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+    "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+    "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry"
+  ],
+  "completed": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+    "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+    "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+    "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/worker-000.json"
+      ],
+      "pid": 56018,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 538281352,
+      "elapsed_seconds": 4.040237165987492,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+        "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+        "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+        "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+        "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry"
+      ],
+      "completed": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+        "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+        "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+        "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+        "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.018668833188712597,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008953375043347478,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008466208120808005,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007933749817311764,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0029064591508358717,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01780854188837111,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00915875006467104,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004444916965439916,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00812700018286705,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.28139845794066787,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.003603332908824086,
+          "message": "test/test_reference_arrivals.py:235: in test_named_root_can_retain_a_selected_lexical_constituent\n    row, _ = keep(resolver, clause)\n             ^^^^^^^^^^^^^^^^^^^^^^\ntest/test_medium_term_memory.py:47: in keep\n    resolver.commit(plan, row, written, document='mtm', position=position, training=False)\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:864: in commit\n    raise RuntimeError('kept reference constituent has no closing address')\nE   RuntimeError: kept reference constituent has no closing address",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.002626999979838729,
+          "message": "test/test_reference_arrivals.py:243: in test_named_bind_to_a_native_individual_creates_no_pool_entry\n    frame = SituationFrame(-1, symbol_ids=(native,))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: SituationFrame.__init__() missing 4 required positional arguments: 'roles', 'occupied', 'row_id', and 'point'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 240.0,
+    "suite_seconds": 300.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14",
+  "elapsed_seconds": 7.1059942920692265,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 538281352,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/collect.json"
+    ],
+    "pid": 56000,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263013216,
+    "elapsed_seconds": 2.3062444168608636,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-14/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+        "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+        "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+        "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+        "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

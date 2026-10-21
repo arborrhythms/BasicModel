@@ -1524,3 +1524,148 @@ with full captures are the gate, a forward failure there is captured
 and keep-probed before any change, and if it is the R-tie-broken
 reading again the contract question (§14 option 2) returns to Alec with
 that probe. Nothing is changed on this finding alone.
+
+## 18. Claude's eighth review: the frozen source `eac2fe87b` (2026-10-21)
+
+**Accepted.** Finding A is repaired (`open` and `bind` detach a re-closed
+occurrence first; the two reassignment regressions, including eviction
+of the previous token, pass). Finding B's port is applied as authorized.
+The source is frozen with an 824-file audit against the Git blobs. The
+fresh gate on that hash: forward 6 / 6 passed with the unchanged strict
+assertion; reverse 3 passed, 2 failed, 1 unrun; the stop at the second
+failure is the order I gave. Both failures replay exactly with the keep
+probe. **MTM is not implicated**: both deciding comparisons of draw 2
+leave the pool empty, and draw 5's one entry is an unrelated mint; the
+pool is accepted as frozen.
+
+**The two reverse failures are the R-only keep, now in the reverse
+arm.** Draw 2: the explore reading of `y is x plus two` is an equality
+with a forward x subject and wins on R (.0325 against .0361, A = 0); a
+second x equality is written, and `ClauseRows.read_reference_bindings`'s
+ambiguity rule leaves x open with two positively supported complements;
+D2 fails. Draw 5: the explore reading of `x is three` keeps a complement
+headed by the space word on R (.0301 against .0361), then the second
+sentence adds a conflicting x equality; same end. A = 0 because an
+unlabelled premise has no target (`ChainDocument.target` returns a
+`ReferentTarget` only for its one `question` sentence), E is excluded,
+and R is the tied byte cost, a small integer count; at a fresh
+initialization the explore suffix's readings are random and R prefers
+a wrong one at a rate the samples put between one in six and two in
+five. The mechanism works as designed; the certificate's semantic
+assertions are, in a live-keep certificate, a statistical claim about
+the untrained reconstruction objective. This is the third round the
+class has cost.
+
+**Decision for Alec; recommendation first.**
+
+1. **Split by the keep, not by the assertion (recommended).** The
+   step-1b certificate is forced by name; extend the forcing to the
+   keep: `ForcedGrammar` gains `keep='forced'`, under which the kept
+   trial is the forced one; both trials still run and train, R, A, E and
+   the production keep law are untouched, the zero budget, forced scope
+   and every assertion stay verbatim, and the `departures > 1` assertion
+   still holds because kept departures vary across the sixteen sentences.
+   The certificate then tests exactly what its name says, at any
+   initialization. The live-keep form, today's test verbatim, becomes an
+   item-0 learning certificate (does the trained R + A keep select the
+   right reading?), not a landing gate. No production change; MTM and
+   the frozen pool are unaffected.
+2. **Supply the named binding to the judge.** Give every sentence
+   containing x the `ReferentTarget('three')` so A decides the keep
+   (`_sentence_answer_error` → `BindingAnswers.cost`). It settles the
+   arrival reading but not the conflicting-equality mode: the judge
+   charges an unfilled name and a wrongly bound one alike (one each), so
+   a forward sentence 1 with x pending ties on A and R still decides.
+   My §14 objection to supplying targets is withdrawn, but this leaves a
+   residual random mode.
+3. **Split by the assertion** (§14 option 2): weaker, and the ambiguity
+   rule still leaves x open under a kept conflicting equality, so it
+   does not close the reverse arm either.
+
+**Decided (Alec, 2026-10-21): none of the three.** `bind` is the only
+binder at the arrival too, and the first bind opens an anonymous token
+in MTM that later binds refine; written as §10.4. The forced keep and
+the supplied target are withdrawn.
+
+**Evidence rule after the decision.** Run the remaining gates on
+`eac2fe87b` now (eight-file set, both decomposition arms, both
+eight-seat MM gates): they do not depend on the certificate. The
+certificate change touches only `test/forced_math_grammar.py` and
+`test/test_math_chain_section14.py`; on the new hash, re-run the twelve
+fresh initializations with full captures and the §14 file, and carry the
+other gates with the two-file diff declared in the receipt. Then review
+and publication.
+
+### 10.4 Decided (Alec, 2026-10-21): `bind` is the only binder, at the arrival too; the first bind opens an anonymous token
+
+Alec: treat `bind` as just another operator for the chooser, like any
+other operation; "the first call to bind can bind to anonymous in the
+MTM, waiting for later binds to refine it". This settles the pending
+premise certificate class (§14, §17, §18) without forcing the keep,
+supplying an answer target, or changing an assertion.
+
+**What goes.** The reader-side binder: `ClauseRows.read_reference_bindings`
+no longer derives a forward name's binding from the equality rows that
+mention it, and its ambiguity clause (two distinct complements → open)
+goes with it. A kept sentence reading, right or wrong, is then only rows
+and evidence; it never binds anything by itself. The pending column,
+`_forward_references`, the posting index (`_forward_addresses`) and the
+address upsert stay: they are how an arrival finds its sites.
+
+**Sites and outcomes.** Three outcomes of one operation, chosen like any
+operation: an existing candidate; a **new anonymous token**; remain
+open. A site that has a word (a no-object leaf with a `forward_identity`,
+the pronoun-mode request `ClauseJournal` already builds) and no selected
+candidate binds to a new anonymous token: `ReferenceClose.commit` calls
+`mtm.open(occurrence, kind=None, when)` on the site's own occurrence and
+records that address as the site's reference (`audit.reference`, the
+`('new', n)` alias path; `missing_reason` is then not set). A site that
+is a gap (an open role with no word) and no candidate remains open, as
+G3 certifies. No word class is consulted: the distinction is a word
+versus a gap.
+
+**The arrival refines.** When a kept close writes a reading that
+mentions a name with pending sites (`_forward_addresses(identities)` over
+the arrival's forward identities), the close re-runs `bind` for each
+pending site, once per site, as a thought operation of that close:
+candidates are the accessible tokens of the frames plus the arrival's
+own constituents' tokens (the complement of `x is three` among them),
+scored by the same resolver (`ReferenceClose.score`: meet ratios,
+participant prediction, prime, form region, recency, roles) and credited
+by the same `choice_cost` and chooser credit as any site. The selected
+candidate refines the anonymous token: `mtm.bind(token, candidate's
+occurrence, kind=its derivation symbol, when)`, and `MediumTermMemory.bind`
+sets the entry's `kind` when it was `None`. The token's working vector,
+computed on read over its occurrences, then carries the complement's
+content; a later use binds to it as to any token. A later arrival may
+re-bind (revision); nothing re-opens a site by ambiguity.
+
+**Reads.** `_derivation_symbol(address)` falls back to the token's entry
+`kind` when the row itself has no derivation (the anonymous row), so
+`PartClosing`'s located-leaf branch, `BindingAnswers._matches` through
+`expression_components`, and `individuals()` all resolve a forward name
+through its token. `meaning_of` on a pending row reports the site bound
+to the token and no open slot once the token is refined.
+
+**Certificate.** `ForcedGrammar` already forces reference choices by
+`named_bindings` and `open_names`; the re-run bind at the arrival is
+forced the same way (x → three, +30), so
+`test_forced_ordinary_pending_premise_in_both_orders` is deterministic
+at any initialization with its assertions, the live keep, the
+`departures > 1` check, the zero budget and the keep law untouched. In
+production the resolver weighs the arrival's evidence, which is the
+learning question and stays at item 0.
+
+**Gates.** The §14 file in both orders at twelve fresh initializations
+with full captures (a failure captured and keep-probed, as before); the
+c/e closings certificate; `test_reference_close.py`,
+`test_reference_mentions.py`, `test_bind_thought.py` G1–G3 and the
+episode case unchanged (G3's inaccessible case still remains open);
+`test_medium_term_memory.py` plus new regressions: a named site with no
+candidate opens an anonymous token (`kind None`, zero working content,
+rows and bank unchanged); the arrival refines it (`kind` set, the token
+reads as the complement, `matches` finds `three` through the token); a
+kept wrong equality row before or after the arrival neither binds nor
+re-opens the site; a gap site with no candidate remains open. Then the
+eight-file set, both decomposition arms and both eight-seat MM gates on
+the frozen hash. No second full sweep.

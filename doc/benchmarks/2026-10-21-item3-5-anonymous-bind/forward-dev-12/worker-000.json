@@ -1,0 +1,38 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 29.646925708977506,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=15.708s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 6.6119548748247325,
+      "message": "test/test_math_chain_section14.py:332: in test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage\n    assert item['operations'] == ['query','conclude']\nE   AssertionError: assert ['query', 'query', 'conclude'] == ['query', 'conclude']\nE     \nE     At index 1 diff: 'query' != 'conclude'\nE     Left contains one more item: 'conclude'\nE     Use -v to get more diff",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+  ],
+  "completed": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009262582985684276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009381582960486412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007851500064134598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008013834012672305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002925541950389743,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

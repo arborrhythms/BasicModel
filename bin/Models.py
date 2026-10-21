@@ -20283,13 +20283,12 @@ class BasicModel(BaseModel):
                     resolver = self._concept_owner().components.reference_close
                     # Reattach the scored decisions to the admitted copies of
                     # those same kept constituents. No post-update re-choice.
-                    from ReferenceClose import constituents
                     scored = chosen[b]['reference_plans'][b]
-                    nodes = constituents(clause)
-                    if len(nodes) != len(scored['items']):
+                    sites = resolver.sites(clause)
+                    if len(sites) != len(scored['items']):
                         raise RuntimeError('admission changed reference constituents')
-                    reference_plan = dict(scored, items=[dict(item, node=node)
-                        for item, node in zip(scored['items'], nodes)])
+                    reference_plan = dict(scored, items=[dict(item, **site)
+                        for item, site in zip(scored['items'], sites)])
                     clause = resolver.prepare(clause, reference_plan)
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
                 encoding = getattr(self, 'when_encoding', None)

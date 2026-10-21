@@ -364,9 +364,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 # objectless participant. Keep its raw identity in the
                 # ended VP's two-address cache.
                 return None
-            forward = head(item).get('forward_identity')
-            if forward is not None:
+            word = head(item)
+            leaf_request = word.get('close_request', {})
+            forward = word.get('forward_identity', leaf_request.get('forward_identity'))
+            if forward is not None and request['mode'] != 'mint':
                 request = dict(request, forward_identity=forward)
+                if leaf_request.get('leaf'):
+                    # A unary bind still owns the same objectless word site.
+                    # Keep its name and empty content when wrapping the leaf.
+                    request.update(content=leaf_request['content'],
+                                   cue=leaf_request.get('cue'))
             point = request['content'] if current is item or request.get('leaf') else region(item)
             if point is None:
                 return None

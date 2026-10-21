@@ -116,9 +116,8 @@ class PartClosing:
             if reference is None:
                 location = self.store.location(value.reference)
                 if isinstance(location, int):
-                    retained = self.store.raw_meaning_of(location).role_refs[0]
-                    if retained is not None and retained[0] == 'sym':
-                        reference = retained[1]
+                    reference = self.owner.components.reference_close._derivation_symbol(
+                        self.store.occurrence_of(location))
             if (reference is None and value.reference > 0
                     and self.store.location(value.reference) is None):
                 raise ValueError('a closing argument names an unavailable native reference')

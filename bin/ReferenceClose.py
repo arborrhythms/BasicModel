@@ -96,7 +96,9 @@ class ReferenceClose(nn.Module):
 
     def _derivation_symbol(self, reference):
         """Read a token's retained kind/fold without making it an individual."""
-        if isinstance(reference, int):
+        if reference is None:
+            return None
+        if isinstance(reference, int) and (self.store is None or self.store.index_of_row(reference) is None):
             return reference
         if isinstance(reference, tuple) and reference[:1] == ('sym',):
             return reference[1]
@@ -105,7 +107,35 @@ class ReferenceClose(nn.Module):
             value = self.store.raw_meaning_of(location).role_refs[0]
             if value is not None and value[0] == 'sym':
                 return value[1]
+            mtm = self.components.owner.mtm
+            token = mtm.token_of(self.store.occurrence_of(location))
+            if token is not None:
+                return mtm.entries[token].kind
         return None
+
+    def token_value(self, reference):
+        """Compute an anonymous introduction's content from its retained uses."""
+        mtm = self.components.owner.mtm
+        token = mtm.token_of(reference)
+        if token is None:
+            return None
+        entry = mtm.entries[token]
+        value = self.store.point_of_row(token[-1])
+        if value is None:
+            return None
+        value = value.detach().clone()
+        location = self.store.location(token)
+        if entry.kind is not None and self.store.raw_meaning_of(location).role_refs[0] is None:
+            kind = self.store._concept_point(entry.kind)
+            if kind is not None:
+                size = min(value.numel(), kind.numel())
+                value[:size] = torch.maximum(value[:size], kind[:size].to(value))
+        for occurrence in entry.occurrences[1:]:
+            point = self.store.point_of_row(occurrence[-1])
+            if point is not None:
+                size = min(value.numel(), point.numel())
+                value[:size] = torch.maximum(value[:size], point[:size].to(value))
+        return value
 
     def prediction(self, identity, predicate, role):
         target = self._derivation_symbol(identity)
@@ -245,6 +275,9 @@ class ReferenceClose(nn.Module):
             if isinstance(identity, int):
                 return point(self.components.owner, identity)
             if identity in self.components.owner.mtm.entries:
+                index = self.store.location(identity)
+                if isinstance(index, int) and self.store.raw_meaning_of(index).role_refs[0] is None:
+                    return self.token_value(identity)
                 return self.store.point_of_row(identity[-1])
             return None
         groups = {}
@@ -356,7 +389,7 @@ class ReferenceClose(nn.Module):
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
             features.append(torch.stack((candidate_coverage,request_coverage,
-                self.prediction(identity,predicate,role),self.prime(value,stream),form,
+                self.prediction(candidate.get('kind', identity),predicate,role),self.prime(value,stream),form,
                 content.new_tensor(-recency/max(1,len(individuals))),
                 content.new_tensor(candidate['role']/2),content.new_tensor(role/2))))
             choices.append(identity)
@@ -369,6 +402,10 @@ class ReferenceClose(nn.Module):
         target = credit.detach().softmax(0)
         return ((1-features[selected,1]).clamp_min(0)-features[selected,2]
                 -(target*logits.log_softmax(0)).sum())
+
+    def select(self, choices, logits, *, forward_identity=None, individuals=None):
+        """The ordinary resolver choice; fixtures may force this operation seam."""
+        return int(logits.detach().argmax()) if choices else None
 
     def bind_site(self, meaning, role, frames, *, stream=None):
         """The thought and closing faces read the same native candidates."""
@@ -396,7 +433,11 @@ class ReferenceClose(nn.Module):
         if not choices:
             return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
                         reference_cost=1., incomplete=('no_accessible_individual',))
-        index = int(logits.detach().argmax())
+        index = self.select(choices, logits, forward_identity=dict(
+            bindings(meaning).get('_forward_references', ())).get(role), individuals=individuals)
+        if index is None:
+            return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
+                        reference_cost=1., incomplete=('no_accessible_individual',))
         identity = choices[index]
         probability = float(logits.softmax(0)[index].detach())
         point = individuals[identity]['value'].detach().to(meaning.roles)
@@ -500,6 +541,51 @@ class ReferenceClose(nn.Module):
                 else:
                     mentions.pop(occurrence, None)
 
+    def sites(self, clause):
+        """Keep explicit open formations as one site, owned by their word.
+
+        The journal need not invent a second NP request. Its retained forward
+        name supplies the anonymous constituent only at the closing boundary.
+        """
+        from ClauseRow import Clause, Composition
+        from Meaning import ConceptualMeaning
+        from ThoughtReferences import bindings, open_slots
+        result, seen = [], set()
+        def visit(node):
+            if node is None or id(node) in seen:
+                return
+            seen.add(id(node))
+            if node.reference_request is not None and node.order == 1:
+                result.append(dict(node=node, parent=None, site_role=None))
+            else:
+                data = bindings(node.meaning)
+                requests = dict(data.get('_reference_sites', ()))
+                for role, name in data.get('_forward_references', ()):
+                    if ('referent', role) not in open_slots(node.meaning):
+                        continue
+                    ref = node.refs[role]
+                    if isinstance(ref, tuple) and ref[:1] == ('clause',):
+                        child = node.children[ref[1]]
+                        if (child.reference_request or {}).get('forward_identity') == name:
+                            continue
+                    held = dict(requests.get(role, ()))
+                    zero = torch.zeros_like(node.meaning.roles[role])
+                    def value(key, fallback):
+                        return fallback if held.get(key) is None else zero.new_tensor(held[key])
+                    request = dict(mode='pronoun', forward_identity=name, role=role,
+                        leaves=tuple(held.get('leaves', ())), content=zero,
+                        cue=value('cue', node.meaning.roles[role]),
+                        predicate=value('predicate', node.meaning.roles[1]))
+                    site = Clause(ConceptualMeaning.from_description(zero), point=zero,
+                        order=1, evidence=node.evidence, subject_word_id=name,
+                        reference_request=request, composition=Composition(zero,
+                            word_id=name, leaves=request['leaves'], order=1))
+                    result.append(dict(node=site, parent=node, site_role=role))
+            for child in (*node.children, *node.companions):
+                visit(child)
+        visit(clause)
+        return result
+
     def preview(self, clause, frames, *, document=None, position=None, stream=None):
         """One decision per constituent; no allocation, writes or statistics."""
         if position is not None and frames:
@@ -511,7 +597,8 @@ class ReferenceClose(nn.Module):
         records = self.accessible(frames)
         individuals = self.individuals(records)
         items, cost = [], self.policy.new_zeros(())
-        for node in constituents(clause):
+        for site in self.sites(clause):
+            node = site['node']
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)
             content = self.coordinates(node.point)
@@ -536,40 +623,168 @@ class ReferenceClose(nn.Module):
                 # parameter values used by this graph, as the shared chooser
                 # does, while retaining their gradient connection.
                 probabilities = logits.softmax(0)
-                index = int(logits.detach().argmax())
-                selected = choices[index]
+                index = self.select(choices, logits,
+                    forward_identity=request.get('forward_identity'), individuals=individuals)
+                selected = None if index is None else choices[index]
                 # The evidence cost trains the operation chooser; the
                 # posterior cross entropy trains learned salience and cues.
-                cost = cost + self.choice_cost(phi, logits, index)
+                cost = cost + (1 if index is None else self.choice_cost(phi, logits, index))
             else:
                 cost = cost + 1
-            items.append(dict(node=node, mode=mode, content=content, predicate=predicate,
+            anonymous = mode != 'mint' and selected is None and request.get('forward_identity') is not None
+            if anonymous:
+                selected = ('new', len(items))
+                latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
+                individuals[selected] = dict(content=content*0, value=content*0,
+                    role=role, position=(latest[0]+1, len(items)))
+            items.append(dict(**site, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
-                probabilities=probabilities, leaves=request['leaves']))
-        return dict(items=items, cost=cost, records=records)
+                probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous))
+        plan = dict(items=items, cost=cost, records=records)
+        self._arrival_plan(clause, plan, individuals, stream=stream)
+        return plan
+
+    def _arrival_constituents(self, clause):
+        """The kept derivation's own fields and lexical constituents, locally."""
+        from ClauseRow import Clause, Composition
+        from Meaning import ConceptualMeaning
+        from ThoughtReferences import bindings
+        nodes, names, seen = [], set(), set()
+        def visit(node):
+            if node is None or id(node) in seen:
+                return
+            seen.add(id(node)); nodes.append(node)
+            names.update(name for _, name in bindings(node.meaning).get('_forward_references', ()))
+            request = node.reference_request or {}
+            if request.get('forward_identity') is not None:
+                names.add(request['forward_identity'])
+            for child in (*node.children, *node.companions):
+                visit(child)
+        visit(clause)
+        candidates = [node for node in nodes if node.point is not None and node.reference_request is None]
+        represented = {id(node.composition) for node in nodes}
+        terms = set()
+        def visit_term(term):
+            if term is None or id(term) in terms:
+                return
+            terms.add(id(term))
+            if term.word_id >= 0:
+                names.add(term.word_id)
+            if not term.children and id(term) not in represented:
+                candidates.append(Clause(ConceptualMeaning.from_description(term.point),
+                    point=term.point, composition=term, order=term.order,
+                    subject_word_id=term.word_id))
+            if not term.children and term.word_id >= 0 and term.reference != term.word_id:
+                # A chosen operand can differ from its identified lexical
+                # constituent. Both belong to this arrival's candidate set.
+                lexical = self.store._concept_point(term.word_id)
+                if lexical is not None:
+                    candidates.append(Clause(ConceptualMeaning.from_description(lexical),
+                        point=lexical, composition=Composition(lexical, reference=term.word_id,
+                            word_id=term.word_id, leaves=term.leaves),
+                        subject_word_id=term.word_id))
+            for child in term.children:
+                visit_term(child)
+        for node in nodes:
+            visit_term(node.composition)
+        return names, candidates
+
+    def _arrival_plan(self, clause, plan, individuals, *, stream):
+        """Plan each pending site's bind with the same resolver and cost.
+
+        Arrival handles are temporary constituent addresses. Only prepare and
+        the kept admission materialize selected constituents; this read neither
+        opens a pool entry nor changes an older row.
+        """
+        from ThoughtReferences import bindings
+        names, candidates = self._arrival_constituents(clause)
+        sites = {}
+        mtm, store = self.components.owner.mtm, self.store
+        for address in sorted(store._forward_addresses(names)) if store is not None and names else ():
+            location = store.location(address)
+            if not isinstance(location, int):
+                continue
+            if stream is not None and bool(store.stream[location].any()) and not bool(store.stream[location, stream]):
+                continue
+            value = store.raw_meaning_of(location)
+            data = bindings(value)
+            requests = dict(data.get('_reference_sites', ()))
+            for role, name in data.get('_forward_references', ()):
+                if name not in names:
+                    continue
+                reference = value.role_refs[role]
+                occurrence = reference if reference is not None and reference[0] == 'ltm' else store.occurrence_of(location)
+                token = mtm.token_of(occurrence)
+                if token is None or occurrence in sites:
+                    continue
+                request = dict(requests.get(role, ()))
+                sites[occurrence] = (token, dict(forward_identity=name, role=request.get('role', role),
+                    content=value.roles[role] if request.get('content') is None else value.roles.new_tensor(request['content']),
+                    predicate=value.roles[1] if request.get('predicate') is None else value.roles.new_tensor(request['predicate']),
+                    cue=None if request.get('cue') is None else value.roles.new_tensor(request['cue'])))
+        for number, item in enumerate(plan['items']):
+            request = item['node'].reference_request
+            if request.get('forward_identity') is None:
+                continue
+            selected = item['selected']
+            token = selected if isinstance(selected, tuple) and selected[:1] == ('new',) else mtm.token_of(selected)
+            if token is not None:
+                sites[('site', number)] = token, request
+        plan['arrivals'], plan['arrival_count'] = [], len(candidates)
+        if not sites:
+            return
+        menu = dict(individuals)
+        latest = max((other['position'] for other in menu.values()), default=(-1, -1))
+        for number, node in enumerate(candidates):
+            kind = None if node.composition is None else self._derivation_symbol(node.composition.reference)
+            menu[('arrival', number)] = dict(content=self.coordinates(node.point), value=node.point,
+                role=0, position=(latest[0]+1, number), kind=kind,
+                word_id=node.subject_word_id)
+        for site, (token, request) in sites.items():
+            content = request.get('content')
+            if content is None:
+                content = self.policy.new_zeros(self.store.slots.shape[-1])
+            predicate = self.predicate_coordinates(request.get('predicate'))
+            cue = self.cue(request.get('cue'))
+            choices, phi, logits = self.score(content, predicate, cue, request.get('role', 0),
+                                              menu, stream=stream)
+            index = self.select(choices, logits, forward_identity=request['forward_identity'], individuals=menu)
+            selected = None if index is None else choices[index]
+            plan['cost'] = plan['cost'] + (1 if index is None else self.choice_cost(phi, logits, index))
+            plan['arrivals'].append(dict(site=site, token=token, selected=selected, candidates=choices,
+                features=phi, cue=cue, role=request.get('role', 0),
+                forward_identity=request['forward_identity'],
+                probabilities=None if not choices else logits.softmax(0)))
 
     @torch.no_grad()
     def prepare(self, clause, plan):
         """Attach decisions to the temporary derivation, before any admission."""
         from ClauseRow import Composition
         from ThoughtReferences import bindings, with_slots
-        if not plan['items']:
+        if not plan['items'] and not plan.get('arrivals'):
             plan['prepared_root'] = clause
             return clause
         replacements, terms = {}, {}
-        minted = {}
+        minted, anonymous = {}, set()
+        attached = {}
         for item in plan['items']:
             node, selected = item['node'], item['selected']
             reference = None if isinstance(selected, tuple) and selected[:1] == ('new',) else selected
             item['reference'] = reference
             request = node.reference_request
+            token = self.components.owner.mtm.token_of(reference)
+            unresolved = (selected in anonymous or (token is not None
+                          and self.components.owner.mtm.entries[token].kind is None))
+            if unresolved and request.get('forward_identity') is None and node.subject_word_id >= 0:
+                request = dict(request, forward_identity=node.subject_word_id)
             site = dict(role=item['role'], leaves=item['leaves'],
                 cue=None if request.get('cue') is None else request['cue'].detach().cpu().tolist(),
                 content=None if request.get('content') is None else request['content'].detach().cpu().tolist(),
                 predicate=None if request.get('predicate') is None else request['predicate'].detach().cpu().tolist())
             meaning = replace(node.meaning, bindings=dict(bindings(node.meaning), _reference_sites=((0, site),)))
-            if selected is None:
+            named = request.get('forward_identity') is not None
+            if selected is None or named or unresolved:
                 meaning = with_slots(meaning, (('referent', 0),), pair=node.evidence)
                 if request.get('forward_identity') is not None:
                     meaning = replace(meaning, bindings=dict(bindings(meaning),
@@ -579,12 +794,17 @@ class ReferenceClose(nn.Module):
             alias = minted.get(selected) if isinstance(selected, tuple) else None
             updated = replace(term, reference=-1 if native is None else native,
                               order=node.order, binding=alias)
-            if item['mode'] == 'mint':
+            if item['mode'] == 'mint' or item.get('anonymous'):
                 minted[selected] = updated
+            if item.get('anonymous'):
+                anonymous.add(selected)
             if node.composition is not None:
                 terms[id(node.composition)] = updated
             replacements[id(node)] = replace(node, meaning=meaning, composition=updated,
-                refs=(-1 if native is None else native, -1, -1))
+                refs=(-1 if native is None or unresolved or
+                      (named and not isinstance(reference, int)) else native, -1, -1))
+            if item.get('parent') is not None:
+                attached.setdefault(id(item['parent']), []).append((item['site_role'], node))
         composed = {}
         def rewrite_term(term):
             if term is None:
@@ -599,14 +819,35 @@ class ReferenceClose(nn.Module):
         def rewrite(node):
             if id(node) not in rebuilt:
                 value = replacements.get(id(node), node)
+                children, refs = list(value.children), list(value.refs)
+                for role, site in attached.get(id(node), ()):
+                    refs[role] = ('clause', len(children))
+                    children.append(site)
                 rebuilt[id(node)] = replace(value,
                     composition=rewrite_term(node.composition) if node.composition is not None else value.composition,
-                    children=tuple(rewrite(c) for c in value.children),
+                    refs=tuple(refs), children=tuple(rewrite(c) for c in children),
                     companions=tuple(rewrite(c) for c in value.companions))
             return rebuilt[id(node)]
         result = rewrite(clause)
+        _, arrival_nodes = self._arrival_constituents(clause)
+        if len(arrival_nodes) != plan.get('arrival_count', len(arrival_nodes)):
+            raise RuntimeError('admission changed arrival constituents')
+        arrivals, extra = {}, []
+        for item in plan.get('arrivals', ()):
+            selected = item['selected']
+            if isinstance(selected, tuple) and selected[:1] == ('arrival',) and selected not in arrivals:
+                node = arrival_nodes[selected[1]]
+                arrivals[selected] = rebuilt.get(id(node), node)
+                if id(node) not in rebuilt:
+                    extra.append(node)
+        previous_root = result
+        if extra:
+            result = replace(result, companions=(*result.companions, *extra))
+        plan['arrival_written'] = {key: result if node is previous_root else node
+                                   for key, node in arrivals.items()}
         for item in plan['items']:
-            item['written_node'] = rebuilt[id(item['node'])]
+            node = rebuilt[id(item['node'])]
+            item['written_node'] = result if node is previous_root else node
         plan['prepared_root'] = result
         return result
 
@@ -627,7 +868,10 @@ class ReferenceClose(nn.Module):
                 raise RuntimeError('kept reference constituent has no closing address')
             occurrence = self.store.occurrence_of(location)
             reference = item['reference']
-            if item['mode'] == 'mint':
+            if item.get('anonymous'):
+                reference = occurrence
+                allocated[('new', number)] = reference
+            elif item['mode'] == 'mint':
                 symbol = written.get(('symbol', id(node)))
                 reference = symbol if symbol in alloc.individuals else occurrence
                 allocated[('new', number)] = reference
@@ -637,9 +881,11 @@ class ReferenceClose(nn.Module):
             if isinstance(reference, tuple) and reference[:1] == ('ltm',):
                 from RowTime import encoder, stamp
                 kind = self._derivation_symbol(occurrence)
+                if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
+                    kind = self._derivation_symbol(reference)
                 when = int(encoder().decode_index(stamp(self.store)))
-                if item['mode'] == 'mint':
-                    mtm.open(occurrence, kind=kind, when=when)
+                if item['mode'] == 'mint' or item.get('anonymous'):
+                    mtm.open(occurrence, kind=None if item.get('anonymous') else kind, when=when)
                 else:
                     mtm.bind(reference, occurrence, kind=kind, when=when)
             if item['features'] is not None:
@@ -660,6 +906,22 @@ class ReferenceClose(nn.Module):
                 operation=item['mode'], candidates=tuple(
                     allocated.get(identity, identity) for identity in item['candidates']),
                 missing_reason=None if reference is not None else 'no_accessible_individual'))
+        for item in plan.get('arrivals', ()):
+            token = allocated.get(item['token'], item['token'])
+            selected = allocated.get(item['selected'], item['selected'])
+            node = plan.get('arrival_written', {}).get(selected)
+            if node is not None:
+                location = written.get(id(node), row if node is plan['prepared_root'] else None)
+                selected = None if location is None else self.store.occurrence_of(location)
+            if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
+                    and selected != token and mtm.token_of(token) is not None):
+                from RowTime import encoder, stamp
+                mtm.bind(token, selected, kind=self._derivation_symbol(selected),
+                         when=int(encoder().decode_index(stamp(self.store))))
+            item['reference'] = selected if selected is not None else token
+            audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
+                reference=item['reference'], candidates=item['candidates'],
+                missing_reason=None if mtm.token_of(token) is not None else 'no_accessible_individual'))
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)

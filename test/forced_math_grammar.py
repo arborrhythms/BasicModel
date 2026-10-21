@@ -24,6 +24,45 @@ class ForcedGrammar:
         layer = language.language_layer.operation_layer
         begin, batch = SentenceFork.begin_word, BasicModel.runBatch
         choose, forward, select = language.choose_operation, layer.forward, layer.select_logits
+        resolver = self.model._concept_owner().components.reference_close
+        select_reference = resolver.select
+        def reference_choice(choices, logits, *, forward_identity=None, individuals=None):
+            if forward_identity is None:
+                return select_reference(choices, logits, individuals=individuals)
+            from Spaces import _concept_alloc_of
+            owner = self.model._concept_owner()
+            forms = _concept_alloc_of(owner).word_forms
+            names = {}
+            for word, identities in forms.items():
+                word = word.decode() if isinstance(word, bytes) else str(word)
+                for identity in (*identities, *owner.word_concepts(word)):
+                    names.setdefault(identity, set()).add(word.lower())
+            labels = names.get(forward_identity, set())
+            if not labels.intersection(self.open_names | self.named_bindings.keys()):
+                return select_reference(choices, logits, forward_identity=forward_identity,
+                                        individuals=individuals)
+            ranked = [(10 if labels.intersection(self.open_names) else 0, float('-inf'), None)]
+            for index, identity in enumerate(choices):
+                candidate = individuals[identity]
+                kind = candidate.get('kind', resolver._derivation_symbol(identity))
+                words = names.get(kind, set())
+                if kind is not None and resolver.store.parts.contains(kind):
+                    from PartRead import expression_components
+                    from QueryWork import QueryWorkBudget
+                    terms, _, incomplete = expression_components(resolver.store, (('sym', kind),),
+                        max_records=64, work=QueryWorkBudget(64))
+                    reference, seen = ('sym', kind), set()
+                    while not incomplete and reference not in seen:
+                        seen.add(reference)
+                        words = words | names.get(reference[1], set())
+                        reference = terms.get(reference, {}).get('head_reference')
+                        if reference is None:
+                            break
+                score = 3 * bool(words.intersection(labels))
+                score += sum(30 for source, target in self.named_bindings.items()
+                             if source in labels and target in words)
+                ranked.append((score, float(logits[index].detach()), index))
+            return max(ranked, key=lambda item: item[:2])[2]
         def begin_word(fork, word, latches):
             self.word = int(word)
             return begin(fork, word, latches)
@@ -137,7 +176,8 @@ class ForcedGrammar:
         for owner,name,value in ((SentenceFork,'begin_word',begin_word),
                                  (BasicModel,'runBatch',run_batch),
                                  (language,'choose_operation',choose_operation),
-                                 (layer,'forward',operation), (layer,'select_logits',choose_logits)):
+                                 (layer,'forward',operation), (layer,'select_logits',choose_logits),
+                                 (resolver,'select',reference_choice)):
             self.stack.enter_context(patch.object(owner,name,value))
         return self
 

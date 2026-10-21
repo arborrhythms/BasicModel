@@ -1,0 +1,21 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

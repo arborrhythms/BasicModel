@@ -1,5 +1,18 @@
 # Step 1b: current gates and carry ledger
 
+**Active §18 / §10.4 round, 2026-10-21.** Frozen MTM `eac2fe87b` is
+accepted. Alec's anonymous-token decision replaces the equality/ambiguity
+reader binder with kept-close bind operations. The [new receipt](../2026-10-21-item3-5-anonymous-bind/README.md)
+retains development failures, complete forward/reverse captures, keep probes
+and the c/e traces. Saved forward/reverse replays and the unchanged c/e,
+G1–G3/episode checks have development passes. All landing gates must be run
+on the next frozen source: twelve fresh first draws, the eight-file set,
+both original decomposition arms and both original eight-seat MM draws.
+No result below is promoted. Claude's review and publication follow those
+gates; no second full sweep or learning claim.
+
+**Historical §17 evidence follows.**
+
 **Active §17 / §10.3 round, 2026-10-21.** Claude accepts MTM and the
 listed ports. Finding A's stale re-closed pointer is reproduced in both
 `open` and `bind`, then repaired by detaching the old membership before

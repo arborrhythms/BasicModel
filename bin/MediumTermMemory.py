@@ -54,6 +54,7 @@ class MediumTermMemory:
         if occurrence not in uses:
             uses += (occurrence,)
         self.entries[token] = replace(entry, occurrences=uses,
+                                     kind=kind if entry.kind is None else entry.kind,
                                      count=entry.count + 1, when=when)
         self._tokens[occurrence] = token
         return token

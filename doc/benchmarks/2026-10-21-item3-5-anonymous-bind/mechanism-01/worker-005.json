@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.028286541113629937,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021190416999161243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02077941596508026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02078112494200468,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02061962499283254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020764291984960437,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020750624826177955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02110154088586569,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023817832814529538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02205708296969533,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02326470916159451,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022609541891142726,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024041624972596765,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02223279094323516,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023719083052128553,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02204212499782443,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

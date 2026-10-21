@@ -613,78 +613,49 @@ class ClauseRows:
         return set().union(*(self._forward_postings.get(identity, ()) for identity in identities))
 
     def read_reference_bindings(self, index, meaning, *, exclude=()):
-        """Interpret a forward name from retained membership evidence.
+        """Read an already bound token; equality rows never select a binding.
 
-        This is a working value. Neither the source occurrence nor the
-        candidate's bank content is changed by a later equality. Exclusions
-        limit witnesses for this read, such as the occurrence now closing.
+        The journal's pending names and structural constituent references stay
+        immutable. Only ReferenceClose.commit can refine their MTM token.
         """
-        from ThoughtReferences import bindings, open_slots, fill
-        names = bindings(meaning).get('_forward_references', ())
-        parts = getattr(self, 'parts', None)
+        from ThoughtReferences import bindings, fill, open_slots, with_slots
         owner_ref = self.__dict__.get('_concept_owner')
         owner = None if owner_ref is None else owner_ref()
-        if not names or parts is None or owner is None:
+        if owner is None or not isinstance(index, int):
             return meaning
-        from Spaces import _concept_alloc_of
-        alloc = _concept_alloc_of(owner)
-        for role, name in names:
-            if ('referent', role) not in open_slots(meaning):
+        resolver, mtm = owner.components.reference_close, owner.mtm
+        occurrence = self.occurrence_of(index)
+        for role, _name in bindings(meaning).get('_forward_references', ()):
+            reference = meaning.role_refs[role]
+            site = reference if reference is not None and reference[0] == 'ltm' else occurrence
+            token = mtm.token_of(site)
+            if token is None:
+                kind = resolver._derivation_symbol(reference)
+                if kind is None:
+                    continue
+                point = self._concept_point(kind)
+                target, uses = reference, (site,)
+            else:
+                kind = mtm.entries[token].kind
+                point = None if kind is None else resolver.token_value(token)
+                # A token's own one-slot read exposes its derivation,
+                # terminating the address walk. A parent keeps its token.
+                target = ('sym', kind) if site == occurrence else token
+                uses = mtm.entries[token].occurrences
+            # The retained parent already points at its anonymous child. That
+            # structural pointer is not the pending role's bound content.
+            references = list(meaning.role_refs)
+            references[role] = None
+            meaning = with_slots(replace(meaning, role_refs=tuple(references)),
+                                 (*open_slots(meaning), ('referent', role)))
+            if point is None:
                 continue
-            candidates = {}
-            for whole in parts.wholes(name):
-                if whole == name or whole not in alloc.singletons:
-                    continue
-                edge = parts.find(name, whole)
-                pair = (float(parts.truth_plus[edge]), float(parts.truth_minus[edge]))
-                if pair[0] <= 0:
-                    continue
-                point = self._concept_point(whole)
-                if point is not None:
-                    candidates[('sym', whole)] = (point, pair, ('sym', edge))
-            # A still-open copular occurrence already supplies a witnessed
-            # complement. Its forward name is a variable, not permission to
-            # rewrite every older occurrence that used the name.
-            for address in self._forward_addresses((name,)):
-                source_index = self._index_occurrences.get(('ltm', self.address_domain, address))
-                if source_index is None or source_index in exclude:
-                    continue
-                if (isinstance(index, int) and bool(self.stream[index].any())
-                        and not bool((self.stream[index] & self.stream[source_index]).any())):
-                    continue
-                source = self.raw_meaning_of(source_index)
-                data = bindings(source)
-                if not data.get('_equality'):
-                    continue
-                for side, identity in data.get('_forward_references', ()):
-                    reference = source.role_refs[2-side] if side in (0, 2) else None
-                    if identity != name or reference is None:
-                        continue
-                    pair = (float(self.c_plus[source_index]), float(self.c_minus[source_index]))
-                    if reference[0] == 'sym':
-                        point = self._concept_point(reference[1])
-                        if point is None and parts.contains(reference[1]):
-                            # A relative close has a native Part address but
-                            # need not have a concept-bank seat. Its witnessed
-                            # complement is usable without inverting the edge.
-                            point = source.roles[2-side]
-                    elif reference[0] == 'ltm' and self.location(reference) is not None:
-                        # A retained, unminted complement is already a valid
-                        # candidate at its own width. Its address is not a
-                        # concept-bank key and must not be discarded here.
-                        point = source.roles[2-side]
-                    else:
-                        continue
-                    if pair[0] > 0 and point is not None:
-                        candidates[reference] = point, pair, self.occurrence_of(source_index)
-            # Multiple different bindings remain open; a cycle or a tie
-            # never makes the first physical row an identity authority.
-            if len(candidates) != 1:
-                continue
-            reference, (point, pair, witness) = next(iter(candidates.items()))
-            meaning = fill(meaning, dict(reference=reference, binding_value=point,
-                support_true=pair[0], support_false=pair[1]),
-                slots=(('referent', role),), witnesses=(witness,))
+            witnesses = [self.location(address) for address in uses]
+            witnesses = [row for row in witnesses if isinstance(row, int)]
+            meaning = fill(meaning, dict(reference=target, binding_value=point,
+                support_true=max(float(self.c_plus[row]) for row in witnesses),
+                support_false=max(float(self.c_minus[row]) for row in witnesses)), slots=(('referent', role),),
+                witnesses=uses, operation='bind')
         return meaning
 
     def relation_operands(self, symbol):

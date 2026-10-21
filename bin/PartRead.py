@@ -208,4 +208,11 @@ def expression_components(store, roots, *, max_records, work, scanned=0):
     for reference in roots:
         if reference[0] == 'sym':
             read(reference[1])
+        elif reference[0] == 'ltm':
+            symbol = owner.components.reference_close._derivation_symbol(reference)
+            if symbol is not None:
+                target = read(symbol)
+                if target in components:
+                    components[reference] = dict(components[target],
+                        reference=target, head_reference=('sym', symbol))
     return components, scanned, tuple(dict.fromkeys(incomplete))

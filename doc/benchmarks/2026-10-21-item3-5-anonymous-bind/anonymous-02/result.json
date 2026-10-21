@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+  ],
+  "completed": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/worker-000.json"
+      ],
+      "pid": 53943,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 441124136,
+      "elapsed_seconds": 3.7844478329643607,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+      ],
+      "completed": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006654208991676569,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008578582899644971,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0079197499435395,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007524333195760846,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0029019159264862537,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.019784457981586456,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014400999993085861,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 240.0,
+    "suite_seconds": 300.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02",
+  "elapsed_seconds": 8.11310745892115,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 441124136,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/collect.json"
+    ],
+    "pid": 53924,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434685128,
+    "elapsed_seconds": 3.5754639580845833,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind/anonymous-02/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

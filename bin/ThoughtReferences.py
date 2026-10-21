@@ -23,6 +23,7 @@ def open_slots(meaning):
     Surface mode cannot preserve an already filled reference.
     """
     result = []
+    forward_roles = {role for role, _ in bindings(meaning).get('_forward_references', ())}
     for kind, role in bindings(meaning).get('_open_references', ()):
         # Old checkpoints may retain the retired evidence annotation. It
         # denotes ignorance, never a free variable or something bind fills.
@@ -32,7 +33,11 @@ def open_slots(meaning):
             raise ValueError('unknown open-reference kind')
         if role not in (0, 1, 2):
             raise ValueError('an open role must name a canonical row slot')
-        elif meaning.role_refs[role] is None:
+        elif (meaning.role_refs[role] is None or (role in forward_roles
+              and meaning.role_refs[role][0] == 'ltm')):
+            # A structural address to an anonymous constituent is still the
+            # raw pending site. Its refined working read clears the forward
+            # marker; an address alone does not assert a successful bind.
             result.append((kind, role))
     if (meaning.sentence_kind == 'relation' or
             (meaning.sentence_kind is None and int(meaning.role_mask.sum()) > 1)):

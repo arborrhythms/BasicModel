@@ -20,24 +20,19 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §17 / §10.3 round:** MTM and the listed ports are accepted.
-Re-closing now detaches the old pool membership before `open`/`bind` assigns
-a new token; both stale-pointer regressions reproduce before the repair.
-The additional four occurrence-view ports are authorized and applied.
-`reclose-08`: 20 passed (full MTM, eager/compiled, both merge certificates,
-four occurrence-view cases); the [MTM receipt](doc/benchmarks/2026-10-21-item3-5-mtm/README.md)
-retains all development results and failures. Source is frozen at
-`eac2fe87b`. Its fresh gate stops at 11/12 draws: six forward passes,
-three reverse passes, two reverse failures, one reverse unrun. Both
-failures exactly replay; R-selected conflicting x equalities leave x open
-under the existing ambiguity rule. [Draw 5](doc/benchmarks/2026-10-21-item3-5-mtm/reverse-5-failure.md)
-also keeps the differently headed `x is three` arrival on R with A=0.
-Alec's contract/mechanism decision is next; no assertion or production
-change follows the freeze. The eight-file set, both decomposition arms
-and both original eight-seat MM draws remain unrun on this hash. Claude's
-review precedes both-main publication and the WikiOracle bump. No
-prior-source promotion, second full sweep or learning claim. D2, §10.2
-and the carrier repair remain accepted; the forward assertion is unchanged.
+**Active §18 / §10.4 round:** Claude accepts frozen MTM `eac2fe87b`;
+Alec decides that bind alone owns anonymous names and arrival refinement.
+The [§10.4 receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind/README.md)
+retains the implementation, every development failure and its probes.
+The reader-side equality/ambiguity binder is removed. Word sites open
+anonymous tokens; arrivals use the existing scored/credited bind path;
+gaps remain open. Saved forward and reverse development replays pass;
+c/e and G1–G3/episode pass unchanged. The next frozen source must pass all
+twelve fresh first draws, the eight-file set, both original decomposition
+arms and both original eight-seat MM draws. Nothing is promoted from
+`eac2fe87b` or earlier. Claude's review precedes both-main publication,
+the WikiOracle bump and October 20 docs. No second full sweep or learning
+claim; the strict forward assertion, objective, budget and keep law stay.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
@@ -105,7 +100,17 @@ frozen source. *Seventh review (Claude, plan §17):* MTM accepted as
 §10.3 with both merge certificates passing unchanged; one repair before
 the freeze (a re-closed occurrence must detach from its previous token)
 and the fourth occurrence-view port authorized; then the final gates by
-hash and publication. The
+hash and publication. *Eighth review (Claude, plan §18):* the frozen
+source `eac2fe87b` is accepted (finding A repaired, port B applied, MTM
+not implicated); reverse fresh draws 2 and 5 fail by the R-only keep
+(A=0 on unlabelled premises, the ambiguity rule leaves x open under a
+kept conflicting equality); recommended to Alec: force the keep in the
+forced certificate and keep the live-keep form verbatim at item 0.
+**Alec decided instead (plan §10.4): `bind` is the only binder at the
+arrival too; the reader's equality rule and ambiguity clause go; a
+named site with no candidate opens an anonymous MTM token that the
+arrival's re-run bind refines; forced like any operation in the
+certificate; assertions, keep law and budget untouched.** The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
 dissolution; shared six-column Part store; cube-coordinate maps and
