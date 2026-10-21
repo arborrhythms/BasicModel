@@ -1,0 +1,223 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+    "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+    "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+  ],
+  "completed": [
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+    "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+    "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/worker-000.json"
+      ],
+      "pid": 85384,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 441156880,
+      "elapsed_seconds": 3.7400746250059456,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+        "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+        "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+      ],
+      "completed": [
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+        "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+        "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.032502165995538235,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.018326541874557734,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005889541935175657,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005159916123375297,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0052938328590244055,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004191709216684103,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004336958983913064,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.041333874920383096,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.042485499987378716,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005004334030672908,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 120.0,
+    "suite_seconds": 180.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01",
+  "elapsed_seconds": 6.815421957988292,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 441156880,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/collect.json"
+    ],
+    "pid": 85375,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263177128,
+    "elapsed_seconds": 2.3105650830548257,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10-observer/observer-dev-01/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+        "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+        "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

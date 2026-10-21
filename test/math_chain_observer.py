@@ -71,14 +71,15 @@ class Observer:
             self.results[row] = (value, committed)
             return value
 
-        def credited(model, value, *, costs, source, row):
-            parameters = tuple(parameter for parameter in
-                model._selected_thought_chooser(None).parameters() if parameter.requires_grad)
+        def credited(model, value, *, costs, source, row, category='reconstruction'):
+            owner = (model._concept_owner().components.reference_close if category == 'expectation'
+                     else model._selected_thought_chooser(None))
+            parameters = tuple(parameter for parameter in owner.parameters() if parameter.requires_grad)
             gradients = (torch.autograd.grad(value, parameters, retain_graph=True, allow_unused=True)
                          if value is not None and value.requires_grad else ())
             gradient_norm = sum(float(gradient.detach().double().square().sum())
                                 for gradient in gradients if gradient is not None) ** .5
-            item = dict(source=source, row=row, costs=list(map(float, costs)),
+            item = dict(source=source, row=row, category=category, costs=list(map(float, costs)),
                         graph=value is not None and value.requires_grad,
                         surrogate=None if value is None else float(value.detach()),
                         raw_chooser_gradient_l2=gradient_norm)
@@ -90,7 +91,7 @@ class Observer:
             self.credits['nonzero_chooser_gradients'] += gradient_norm > 0.
             if len(self.credit_sample) < 100:
                 self.credit_sample.append(dict(self.context, **item))
-            return register(model, value, costs=costs, source=source, row=row)
+            return register(model, value, costs=costs, source=source, row=row, category=category)
 
         self.stack.enter_context(patch.object(BasicModel, 'run_selected_thought', observed))
         self.stack.enter_context(patch.object(ThoughtCredit, 'register', credited))

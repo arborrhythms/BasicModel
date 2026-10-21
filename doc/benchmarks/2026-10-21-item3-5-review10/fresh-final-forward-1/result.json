@@ -1,0 +1,97 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/worker-000.json"
+      ],
+      "pid": 85038,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 2052164032,
+      "elapsed_seconds": 18.73850241699256,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 13.644737167051062,
+          "message": "test/test_math_chain_section14.py:410: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-21-item3-5-review10/arrival_capture.py:180: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ntest/forced_math_grammar.py:73: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-21-item3-5-review10/arrival_keep_probe.py:98: in batch\n    result = original_batch(model, *args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13545: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13701: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14077: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8766: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10142: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8451: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8229: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23846: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17130: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22398: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21968: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21087: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20411: in _commit_sentence\n    closed_thoughts = close(self, fields, sentence=sid, ready=ready, score=score_thought, images=images)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ThoughtClosing.py:110: in close\n    result = model.run_selected_thought(field.query, row=row,\ntest/math_chain_observer.py:64: in observed\n    value = run(model, meaning, **kwargs)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:5917: in run_selected_thought\n    result = thought_pair(self, meaning, row=row, work_budget=work_budget,\nbin/WalkTrials.py:214: in thought_pair\n    complete(model,trace,other,departure,costs,row)\nbin/ThoughtCredit.py:29: in complete\n    register(model, surrogate(trace, other, departure, costs), costs=costs,\nE   TypeError: Observer.__enter__.<locals>.credited() got an unexpected keyword argument 'category'",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 240.0,
+    "suite_seconds": 300.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1",
+  "elapsed_seconds": 21.306819000048563,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 2052164032,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/collect.json"
+    ],
+    "pid": 85021,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 184746848,
+    "elapsed_seconds": 1.8060871658381075,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/fresh-final-forward-1/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

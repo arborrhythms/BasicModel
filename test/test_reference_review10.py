@@ -163,7 +163,7 @@ def test_answer_view_and_loss_judge_only_a_direct_root_site(nested):
 
 
 @pytest.mark.parametrize('answer_weight', (0., 1.))
-def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, answer_weight):
+def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_path, answer_weight):
     import WalkTrials
     from test_bind_thought import native, occurrence, site
     from test_item6_2_thinking import run
@@ -202,7 +202,10 @@ def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, answer_
         answer = answer_weight*float(result.meaning.role_refs[0] != f.identities[target])
         measured.append(answer)
         return dict(reconstruction=0., answer=answer)
-    run(f.model, meaning, work_budget=128, score=score)
+    from math_chain_observer import Observer
+    with Observer(tmp_path) as observer:
+        run(f.model, meaning, work_budget=128, score=score)
+    assert observer.credit_sample[-1]['category'] == 'expectation'
     audit = f.model._last_thought_comparison
     assert audit['costs'] == pytest.approx(measured)
     assert audit['keep_costs'] == audit['costs']

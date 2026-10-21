@@ -1,0 +1,10 @@
+[
+  {
+    "number": 1,
+    "source": "6c0db20afc1f8ccc097bae79447a040d2bb08d73",
+    "arm": "forward",
+    "exit": 1,
+    "receipt": "fresh-final-forward-1",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  }
+]

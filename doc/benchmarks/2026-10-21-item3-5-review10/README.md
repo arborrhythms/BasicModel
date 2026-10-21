@@ -110,3 +110,22 @@ RNG. The carrier gate is
 
 No frozen-source pass or publication is recorded yet. Claude must review
 the frozen hash and its receipts before both mains and the WikiOracle bump.
+
+## First frozen attempt: 6c0db20af
+
+Frozen source `6c0db20afc1f8ccc097bae79447a040d2bb08d73` passed the
+828-file pre-freeze audit. Its first forward draw stopped before the
+certificate's after-batch check: the math-chain observer did not accept
+ThoughtCredit's new `category` keyword. The initial failure is retained.
+An observation-only replay of its saved RNG captured both sentence trials,
+the keep decision and the full pre-cleanup store before any source repair.
+Initial parameters, buffers and post-construction RNG match exactly.
+Both trials have R = 0.036067377775907516, A = 0 on all eight rows and keep
+greedy; all eight x tokens are anonymous. No wrong binding was established.
+See [the diagnosis](observer-failure-diagnosis.json).
+
+The observer is repaired to forward and report the credit owner; its
+assertions are unchanged. The thought-credit regression now runs through
+that observer. A [new source series](../2026-10-21-item3-5-review10-observer/README.md)
+starts afresh. No gate on `6c0db20af` is promoted, and no failed draw is
+replaced or hidden.
