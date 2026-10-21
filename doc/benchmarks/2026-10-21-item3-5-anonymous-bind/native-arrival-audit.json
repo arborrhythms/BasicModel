@@ -1,0 +1,27 @@
+{
+  "source": "51cce2005be3860f4da5ef15eebfac96812f437b",
+  "token": [
+    "ltm",
+    "address-v1",
+    6722543677319378513
+  ],
+  "expected_kind": 4,
+  "actual_kind": null,
+  "arrivals": [
+    {
+      "token": [
+        "ltm",
+        "address-v1",
+        6722543677319378513
+      ],
+      "selected": 4,
+      "reference": 4
+    }
+  ],
+  "native_occurrence": [
+    "ltm",
+    "address-v1",
+    -2450525585685690625
+  ],
+  "outcome": "failed"
+}

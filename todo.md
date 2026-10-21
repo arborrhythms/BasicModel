@@ -22,17 +22,17 @@ lines below keep the numbers their items had when they landed.
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
 **Active §18 / §10.4 round:** Claude accepts frozen MTM `eac2fe87b`;
 Alec decides that bind alone owns anonymous names and arrival refinement.
-The [§10.4 receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind/README.md)
-retains the implementation, every development failure and its probes.
-The reader-side equality/ambiguity binder is removed. Word sites open
-anonymous tokens; arrivals use the existing scored/credited bind path;
-gaps remain open. Saved forward and reverse development replays pass;
-c/e and G1–G3/episode pass unchanged. The next frozen source must pass all
-twelve fresh first draws, the eight-file set, both original decomposition
-arms and both original eight-seat MM draws. Nothing is promoted from
-`eac2fe87b` or earlier. Claude's review precedes both-main publication,
-the WikiOracle bump and October 20 docs. No second full sweep or learning
-claim; the strict forward assertion, objective, budget and keep law stay.
+The first anonymous-bind source `51cce2005` passed six forward and two
+reverse first draws, then failed reverse draw 3: cached lexical x bypassed
+binding the next occurrence. Its exact replay, both-trial keep probe and a
+separate native-arrival failure are retained in the [first receipt](doc/benchmarks/2026-10-21-item3-5-anonymous-bind/README.md).
+Both paths are repaired; the captured reverse failure now passes. The
+[second freeze](doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/README.md)
+must pass all twelve fresh draws, the eight-file set, both original
+decomposition arms and both original eight-seat MM draws. Nothing is
+promoted from an earlier source. Claude's review precedes both-main
+publication, the WikiOracle bump and October 20 docs. No second full sweep
+or learning claim; assertions, objective, budget and keep law stay.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on

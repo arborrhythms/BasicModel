@@ -2,9 +2,11 @@
 
 **§18 update:** Claude accepts the frozen MTM repair and ports. Alec's
 §10.4 decision is implemented in the [anonymous-bind round](../2026-10-21-item3-5-anonymous-bind/README.md).
-All landing evidence moves to its next frozen source; the remaining gates
-on `eac2fe87b` are not run. The following source-attributed record remains
-historical, including every failed run. No evidence is promoted.
+Its first freeze `51cce2005` retained a captured reverse failure and a
+native-arrival failure; the repairs and all new gates belong to the
+[second freeze](../2026-10-21-item3-5-anonymous-bind-v2/README.md). No result
+is promoted from `eac2fe87b` or `51cce2005`. Every failed run stays retained.
+
 
 Current: Claude's seventh review (bind plan §17) accepts the MTM
 implementation and the original ports. Finding A is repaired: re-closing

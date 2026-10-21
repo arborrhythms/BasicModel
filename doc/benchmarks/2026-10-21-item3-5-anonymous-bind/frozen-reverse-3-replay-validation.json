@@ -1,0 +1,11 @@
+{
+  "source": "51cce2005be3860f4da5ef15eebfac96812f437b",
+  "exact": {
+    "readings": true,
+    "credit": true,
+    "field": true,
+    "mtm": true,
+    "words": true,
+    "reference_close_audit": true
+  }
+}

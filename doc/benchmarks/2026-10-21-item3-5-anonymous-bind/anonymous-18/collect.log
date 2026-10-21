@@ -1,0 +1,5 @@
+
+no tests collected in 0.46s
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py::test_c_e_closings_certificate
+(no match in any of [<Module test_math_chain_section14.py>])
+

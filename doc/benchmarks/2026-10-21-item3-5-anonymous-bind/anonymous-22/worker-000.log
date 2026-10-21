@@ -1,0 +1,20 @@
+...............F                                                         [100%]
+=================================== FAILURES ===================================
+_________ test_cached_word_mention_still_binds_to_its_accessible_token _________
+test/test_reference_arrivals.py:318: in test_cached_word_mention_still_binds_to_its_accessible_token
+    assert matches(model, store.meaning_of(store.index_of_row(used)), 'three')
+E   AssertionError: assert False
+E    +  where False = <function matches at 0x12a483880>(namespace(_concept_owner=<function world.<locals>.<lambda> at 0x1300fbe20>, symbolSpace=namespace(ltm_store=TernaryTruthStore())), ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....ate', (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), ('role', 0))),))), scope=(), sentence_kind='idea'), 'three')
+E    +    where ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....ate', (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), ('role', 0))),))), scope=(), sentence_kind='idea') = meaning_of(5)
+E    +      where meaning_of = TernaryTruthStore().meaning_of
+E    +      and   5 = index_of_row(544054056358080722)
+E    +        where index_of_row = TernaryTruthStore().index_of_row
+=============================== warnings summary ===============================
+test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token
+1 failed, 15 passed, 1 warning in 2.38s

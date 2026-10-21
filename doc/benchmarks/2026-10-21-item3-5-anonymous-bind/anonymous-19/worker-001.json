@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 7.032258791849017,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -541,7 +541,7 @@ class ReferenceClose(nn.Module):
                 else:
                     mentions.pop(occurrence, None)
 
-    def sites(self, clause):
+    def sites(self, clause, *, pending_names=()):
         """Keep explicit open formations as one site, owned by their word.
 
         The journal need not invent a second NP request. Its retained forward
@@ -550,11 +550,12 @@ class ReferenceClose(nn.Module):
         from ClauseRow import Clause, Composition
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings, open_slots
-        result, seen = [], set()
+        result, seen, nodes = [], set(), []
         def visit(node):
             if node is None or id(node) in seen:
                 return
             seen.add(id(node))
+            nodes.append(node)
             if node.reference_request is not None and node.order == 1:
                 result.append(dict(node=node, parent=None, site_role=None))
             else:
@@ -584,7 +585,47 @@ class ReferenceClose(nn.Module):
             for child in (*node.children, *node.companions):
                 visit(child)
         visit(clause)
+        # A lexical concept cache does not replace a familiar word's token
+        # choice. Re-mentions of accessible pending names still call bind at
+        # the closing boundary, before their derivation is admitted.
+        covered = {site['node'].reference_request.get('forward_identity') for site in result}
+        names, terms = set(pending_names) - covered, set()
+        def lexical(term):
+            if term is None or id(term) in terms:
+                return
+            terms.add(id(term))
+            if not term.children and term.word_id in names:
+                zero = torch.zeros_like(term.point)
+                request = dict(mode='pronoun', forward_identity=term.word_id,
+                    role=0, leaves=term.leaves, cue=term.point, content=zero, predicate=zero)
+                node = Clause(ConceptualMeaning.from_description(zero), point=zero, order=1,
+                    evidence=clause.evidence, subject_word_id=term.word_id,
+                    composition=term, reference_request=request)
+                result.append(dict(node=node, parent=None, site_role=None, lexical=True))
+            for child in term.children:
+                lexical(child)
+        for node in nodes:
+            lexical(node.composition)
         return result
+
+    def pending_names(self, clause, individuals, stream):
+        """Names whose chosen token is in this close's accessible frames."""
+        from ThoughtReferences import bindings
+        names, _ = self._arrival_constituents(clause)
+        result, store, mtm = set(), self.store, self.components.owner.mtm
+        for address in store._forward_addresses(names) if store is not None and names else ():
+            index = store.location(address)
+            if not isinstance(index, int) or (stream is not None and bool(store.stream[index].any())
+                                             and not bool(store.stream[index, stream])):
+                continue
+            value = store.raw_meaning_of(index)
+            for role, name in bindings(value).get('_forward_references', ()):
+                reference = value.role_refs[role]
+                occurrence = (reference if reference is not None and reference[0] == 'ltm'
+                              else store.occurrence_of(index))
+                if name in names and mtm.token_of(occurrence) in individuals:
+                    result.add(name)
+        return tuple(sorted(result))
 
     def preview(self, clause, frames, *, document=None, position=None, stream=None):
         """One decision per constituent; no allocation, writes or statistics."""
@@ -596,8 +637,9 @@ class ReferenceClose(nn.Module):
             frames = tuple(frame for frame, keep in zip(frames, allowed.tolist()) if keep)
         records = self.accessible(frames)
         individuals = self.individuals(records)
+        pending_names = self.pending_names(clause, individuals, stream)
         items, cost = [], self.policy.new_zeros(())
-        for site in self.sites(clause):
+        for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)
@@ -641,7 +683,7 @@ class ReferenceClose(nn.Module):
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
                 probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous))
-        plan = dict(items=items, cost=cost, records=records)
+        plan = dict(items=items, cost=cost, records=records, pending_names=pending_names)
         self._arrival_plan(clause, plan, individuals, stream=stream)
         return plan
 
@@ -751,16 +793,26 @@ class ReferenceClose(nn.Module):
                                               menu, stream=stream)
             index = self.select(choices, logits, forward_identity=request['forward_identity'], individuals=menu)
             selected = None if index is None else choices[index]
+            occurrence = None
+            if isinstance(selected, int):
+                for address in reversed(menu[selected].get('occurrences', ())):
+                    location = store.location(address)
+                    if isinstance(location, int):
+                        occurrence = store.occurrence_of(location)
+                        break
             plan['cost'] = plan['cost'] + (1 if index is None else self.choice_cost(phi, logits, index))
             plan['arrivals'].append(dict(site=site, token=token, selected=selected, candidates=choices,
                 features=phi, cue=cue, role=request.get('role', 0),
                 forward_identity=request['forward_identity'],
+                candidate_occurrence=occurrence,
+                native_value=menu[selected]['value'].detach() if isinstance(selected, int) and occurrence is None else None,
                 probabilities=None if not choices else logits.softmax(0)))
 
     @torch.no_grad()
     def prepare(self, clause, plan):
         """Attach decisions to the temporary derivation, before any admission."""
-        from ClauseRow import Composition
+        from ClauseRow import Clause, Composition
+        from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings, with_slots
         if not plan['items'] and not plan.get('arrivals'):
             plan['prepared_root'] = clause
@@ -832,7 +884,8 @@ class ReferenceClose(nn.Module):
         _, arrival_nodes = self._arrival_constituents(clause)
         if len(arrival_nodes) != plan.get('arrival_count', len(arrival_nodes)):
             raise RuntimeError('admission changed arrival constituents')
-        arrivals, extra = {}, []
+        arrivals = {}
+        extra = [rewrite(item['node']) for item in plan['items'] if item.get('lexical')]
         for item in plan.get('arrivals', ()):
             selected = item['selected']
             if isinstance(selected, tuple) and selected[:1] == ('arrival',) and selected not in arrivals:
@@ -840,6 +893,12 @@ class ReferenceClose(nn.Module):
                 arrivals[selected] = rebuilt.get(id(node), node)
                 if id(node) not in rebuilt:
                     extra.append(node)
+            elif isinstance(selected, int) and item.get('native_value') is not None and selected not in arrivals:
+                point = item['native_value']
+                node = Clause(ConceptualMeaning.from_description(point), point=point,
+                    composition=Composition(point, reference=selected), order=1)
+                arrivals[selected] = node
+                extra.append(node)
         previous_root = result
         if extra:
             result = replace(result, companions=(*result.companions, *extra))
@@ -860,7 +919,7 @@ class ReferenceClose(nn.Module):
         alloc = _concept_alloc_of(self.components.owner)
         mtm = self.components.owner.mtm
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
-        allocated, audit = {}, []
+        allocated, audit, uses = {}, [], []
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
@@ -883,11 +942,11 @@ class ReferenceClose(nn.Module):
                 kind = self._derivation_symbol(occurrence)
                 if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
                     kind = self._derivation_symbol(reference)
-                when = int(encoder().decode_index(stamp(self.store)))
                 if item['mode'] == 'mint' or item.get('anonymous'):
-                    mtm.open(occurrence, kind=None if item.get('anonymous') else kind, when=when)
+                    mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
+                             when=int(encoder().decode_index(stamp(self.store))))
                 else:
-                    mtm.bind(reference, occurrence, kind=kind, when=when)
+                    uses.append((reference, occurrence, kind))
             if item['features'] is not None:
                 held = dict(candidates=tuple(allocated.get(identity, identity) for identity in item['candidates']),
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())
@@ -908,7 +967,7 @@ class ReferenceClose(nn.Module):
                 missing_reason=None if reference is not None else 'no_accessible_individual'))
         for item in plan.get('arrivals', ()):
             token = allocated.get(item['token'], item['token'])
-            selected = allocated.get(item['selected'], item['selected'])
+            selected = item.get('candidate_occurrence') or allocated.get(item['selected'], item['selected'])
             node = plan.get('arrival_written', {}).get(selected)
             if node is not None:
                 location = written.get(id(node), row if node is plan['prepared_root'] else None)
@@ -922,6 +981,12 @@ class ReferenceClose(nn.Module):
             audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
                 reference=item['reference'], candidates=item['candidates'],
                 missing_reason=None if mtm.token_of(token) is not None else 'no_accessible_individual'))
+        # Refinement can reassign a candidate's introducing occurrence. Attach
+        # this close's uses afterwards, to the identity that now owns their
+        # chosen antecedent; detaching an introduction must not lose new uses.
+        for reference, occurrence, kind in uses:
+            mtm.bind(reference, occurrence, kind=kind,
+                     when=int(encoder().decode_index(stamp(self.store))))
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)

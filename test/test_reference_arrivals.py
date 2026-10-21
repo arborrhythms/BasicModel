@@ -263,3 +263,60 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind():
     assert token == store.occurrence_of(row) and pool.entries[token].kind == words['three']
     from BindingAnswers import matches
     assert matches(model, store.meaning_of(row), 'three')
+
+
+@pytest.mark.parametrize('retained_occurrence', (False, True))
+def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retained_occurrence):
+    from IdentityRows import mint
+    resolver, store, a, words, _ = world()
+    pending, _ = keep(resolver, named(a[0], words['x']))
+    token = store.occurrence_of(pending)
+    pool = resolver.components.owner.mtm
+    native = mint(resolver.components.owner, a[0])
+    force_named(resolver, monkeypatch, native)
+    if retained_occurrence:
+        row = store.write_clause(Clause(ConceptualMeaning.from_description(a[0]),
+            point=a[0], order=1, composition=Composition(a[0], reference=native)))
+        occurrence = store.occurrence_of(row)
+        frame = replace(SituationFrame.from_row(store.row(row)), symbol_ids=(native,),
+                        activations=((occurrence, native, 0),))
+    else:
+        frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
+            torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
+    _, plan = keep(resolver, equality(a[1], words['x'], words['wrong']), (frame,), position=1)
+    refinement = next(item for item in plan['arrivals'] if item['token'] == token)
+    assert refinement['selected'] == native
+    assert pool.entries[token].kind == native and pool.entries[token].count == 2
+    assert pool.entries[token].occurrences[-1] == refinement['reference']
+    if retained_occurrence:
+        assert refinement['reference'] == occurrence
+    assert set(pool.entries) == {token}
+    assert resolver._derivation_symbol(token) == native
+    assert not open_slots(store.meaning_of(pending))
+
+
+def test_cached_word_mention_still_binds_to_its_accessible_token(monkeypatch):
+    from BindingAnswers import matches
+    resolver, store, a, words, model = world()
+    force_named(resolver, monkeypatch, words['three'])
+    pending, _ = keep(resolver, named(a[0], words['x']))
+    token = store.occurrence_of(pending)
+    frame = SituationFrame.from_row(store.row(pending))
+    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+    # The lexical cache supplies a concept, so the journal has no no-object
+    # request. The accessible named token still owns this occurrence's bind.
+    with torch.no_grad():
+        owner = resolver.components.owner
+        owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[1])
+    cached = Clause(ConceptualMeaning.from_description(a[1]), point=a[1], order=1,
+        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,)))
+    row, plan = keep(resolver, cached, (frame,), position=2)
+    assert len(plan['items']) == 1 and plan['items'][0]['lexical']
+    assert plan['items'][0]['reference'] == token
+    assert resolver._derivation_symbol(store.occurrence_of(row)) == words['three']
+    used = next(item['occurrence'] for item in resolver.last_audit if not item.get('refinement'))
+    assert matches(model, store.meaning_of(store.index_of_row(used)), 'three')
+    pool = resolver.components.owner.mtm
+    # An arrival bind can itself reassign the selected introduction. This use
+    # stays attached to that exact antecedent through the reassignment.
+    assert pool.token_of(('ltm', store.address_domain, used)) == pool.token_of(token)

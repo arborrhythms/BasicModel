@@ -20284,7 +20284,7 @@ class BasicModel(BaseModel):
                     # Reattach the scored decisions to the admitted copies of
                     # those same kept constituents. No post-update re-choice.
                     scored = chosen[b]['reference_plans'][b]
-                    sites = resolver.sites(clause)
+                    sites = resolver.sites(clause, pending_names=scored.get('pending_names', ()))
                     if len(sites) != len(scored['items']):
                         raise RuntimeError('admission changed reference constituents')
                     reference_plan = dict(scored, items=[dict(item, **site)

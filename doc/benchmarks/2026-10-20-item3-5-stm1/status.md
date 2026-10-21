@@ -1,15 +1,18 @@
 # Step 1b: current gates and carry ledger
 
-**Active §18 / §10.4 round, 2026-10-21.** Frozen MTM `eac2fe87b` is
-accepted. Alec's anonymous-token decision replaces the equality/ambiguity
-reader binder with kept-close bind operations. The [new receipt](../2026-10-21-item3-5-anonymous-bind/README.md)
-retains development failures, complete forward/reverse captures, keep probes
-and the c/e traces. Saved forward/reverse replays and the unchanged c/e,
-G1–G3/episode checks have development passes. All landing gates must be run
-on the next frozen source: twelve fresh first draws, the eight-file set,
-both original decomposition arms and both original eight-seat MM draws.
-No result below is promoted. Claude's review and publication follow those
-gates; no second full sweep or learning claim.
+**Active §18 / §10.4 round, 2026-10-21.** Accepted MTM remains
+`eac2fe87b`. First anonymous-bind source `51cce2005` passed six forward and
+two reverse first draws, then failed reverse draw 3: the next x occurrence
+used a cached lexical object without binding to its already-refined token.
+The [first receipt](../2026-10-21-item3-5-anonymous-bind/README.md) retains
+all captures, both-trial keep tables, its exact replay, a native-arrival
+failure and the 825-file source audit. Both mechanisms are repaired and
+the captured reverse failure passes on the development tree. Every landing
+gate moves to the [second freeze](../2026-10-21-item3-5-anonymous-bind-v2/README.md):
+twelve fresh first draws, the eight-file set, both original decomposition
+arms and both original eight-seat MM draws. No earlier result is promoted.
+Claude's review and publication follow those gates; no second full sweep
+or learning claim.
 
 **Historical §17 evidence follows.**
 

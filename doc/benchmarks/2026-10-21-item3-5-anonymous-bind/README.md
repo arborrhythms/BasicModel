@@ -66,10 +66,52 @@ Every failure, log, source manifest and captured state remains beside this recei
 | `anonymous-15` | 12 passed | Root alias repaired; named native-individual binding reads closed with no pool entry. Eager/compiled trial-isolation checks pass. |
 | `anonymous-16` | 13 passed | Each distinct pending occurrence is refined once; named binds to retained, unpooled occurrences keep the selected kind without reviving an old token. |
 
-The source freeze and its complete gate ledger will be recorded here. Required:
-twelve distinct first draws with full captures and keep probes; the eight-file
-set; both decomposition arms at their original parameter snapshots/seeds;
-both original eight-seat MM draws (rng-119 and the captured fresh draw);
-MTM/anonymous/PartClosing/occurrence-view regressions by the same hash.
-Then Claude reviews that hash and the evidence before publication to both
-mains and the WikiOracle bump. No second full sweep or learning claim.
+## First freeze: `51cce2005be3860f4da5ef15eebfac96812f437b`
+
+Six forward first draws passed. Reverse draws 1 and 2 passed; draw 3 failed
+the unchanged line 438 assertion (zero second-sentence roots carried three,
+at least two required). Reverse draws 4–6 and the remaining gates were not
+run. All nine first draws have full arrival captures from initialization.
+The [source audit](source-audit-51cce2005.json) matches all 825 validated
+files in every run to the frozen Git blobs. None of these passes is promoted
+to the repaired source.
+
+The [reverse-3 probe](fresh-final-reverse-3-tables.md) retains both trials'
+readings, R, E, A and keep decisions for all sixteen closes. The failure
+[replays exactly](frozen-reverse-3-replay-validation.json), including MTM,
+words and reference audits. Six pending x tokens already have kind three.
+A first-sentence explore mint in another stream caches a lexical x object;
+the next sentence consequently has no no-object request for its new x use.
+Its Part derivation keeps that cached object instead of binding the use to
+the accessible token. This is a mechanism failure, with the keep untouched.
+
+A separate [native-arrival audit](native-arrival-audit.json) fails on the
+same frozen source: selecting native individual 4 leaves the old anonymous
+token's kind unset even though the frame contains its actual occurrence.
+Commit had discarded the native candidate's occurrence.
+
+The repairs bind cached mentions of accessible pending names before Part
+admission, and carry a selected native candidate's occurrence into arrival
+commit. A symbol-only frame materializes that selected native constituent
+through the ordinary writer. Neither path adds a pool entry for a native
+individual. These binds use the existing score and reference credit.
+Arrival refinements precede attachment of this close's ordinary uses: if
+refinement reassigns a candidate's introducing occurrence, the new use
+follows that chosen antecedent's current token instead of being detached.
+Model timestamps follow that commit order. MTM's accepted detachment and
+eviction rules are unchanged.
+
+| Subsequent development run | Result | Scope |
+|---|---|---|
+| `frozen-reverse-3-repair-17` | 14 passed | Captured reverse-3 replay and the thirteen anonymous-token tests. |
+| `anonymous-18` | Collection error | Incorrect c/e selector; no tests ran. |
+| `anonymous-19` | 16 passed, 1 failed | Both native-arrival regressions and unchanged c/e passed; the new cached-word fixture left its lexical x vector outside native [0, 1] coordinates. |
+| `anonymous-20` | 15 passed, 1 failed | The cached-word case exposed a bare row ID passed to MTM for a standalone pending leaf. Converted it to an occurrence address. |
+| `anonymous-21` | 15 passed, 1 failed | The root has the correct three derivation; the new test called the answer matcher on the literal root instead of the bound site retained as its companion. The regression checks that site's answer and the root's derivation separately. |
+| `anonymous-22` | 15 passed, 1 failed | Refining another pending token detached the selected introduction after the new use had been appended. The use lost its token link. |
+| `anonymous-23` | 30 passed | Append kept uses after arrival refinement; all sixteen anonymous-token and fourteen MTM cases pass, including eager/compiled isolation. The new cached-use regression keeps the expected three antecedent and follows the selected introduction through an explicit arrival reassignment. |
+| `frozen-reverse-3-repair-24` | 17 passed | Captured reverse-3 replay plus all sixteen anonymous-token cases after timestamps follow the new commit order. |
+
+The [second freeze receipt](../2026-10-21-item3-5-anonymous-bind-v2/README.md)
+owns the next complete evidence round. Every failure and its original source
+manifest remains here. No second full sweep or learning claim.
