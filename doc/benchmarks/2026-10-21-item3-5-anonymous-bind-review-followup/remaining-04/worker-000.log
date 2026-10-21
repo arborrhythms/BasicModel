@@ -1,0 +1,17 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content _
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py:28: in test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
+    assert pool.token_of(use) == candidate_token
+E   AssertionError: assert None == ('ltm', 'address-v1', -556487946229065649)
+E    +  where None = token_of(('ltm', 'address-v1', 6852026937621719683))
+E    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x126cd63c0>.token_of
+=============================== warnings summary ===============================
+doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
+1 failed, 1 passed, 1 warning in 1.91s

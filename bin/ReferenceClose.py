@@ -441,7 +441,7 @@ class ReferenceClose(nn.Module):
         identity = choices[index]
         probability = float(logits.softmax(0)[index].detach())
         point = individuals[identity]['value'].detach().to(meaning.roles)
-        witnesses = tuple(('sym', context['identity']) if context.get('identity') is not None
+        witnesses = tuple(('sym', context['identity']) if isinstance(context.get('identity'), int)
                           else self.store.occurrence_of(location)
                           for location, context in records.values()
                           if context.get('identity') == identity or
@@ -743,6 +743,12 @@ class ReferenceClose(nn.Module):
         names, candidates = self._arrival_constituents(clause)
         sites = {}
         mtm, store = self.components.owner.mtm, self.store
+        # A posting locates a site; it does not bring its token into focus.
+        # Use the occurrence records before the read-time split/merge pass,
+        # which may represent an accessible token under another group key.
+        accessible_tokens = {mtm.token_of(store.occurrence_of(location))
+                             for location, _ in plan['records'].values()
+                             if isinstance(location, int)}
         for address in sorted(store._forward_addresses(names)) if store is not None and names else ():
             location = store.location(address)
             if not isinstance(location, int):
@@ -758,7 +764,7 @@ class ReferenceClose(nn.Module):
                 reference = value.role_refs[role]
                 occurrence = reference if reference is not None and reference[0] == 'ltm' else store.occurrence_of(location)
                 token = mtm.token_of(occurrence)
-                if token is None or occurrence in sites:
+                if token is None or token not in accessible_tokens or occurrence in sites:
                     continue
                 request = dict(requests.get(role, ()))
                 sites[occurrence] = (token, dict(forward_identity=name, role=request.get('role', role),
@@ -805,7 +811,6 @@ class ReferenceClose(nn.Module):
                 features=phi, cue=cue, role=request.get('role', 0),
                 forward_identity=request['forward_identity'],
                 candidate_occurrence=occurrence,
-                native_value=menu[selected]['value'].detach() if isinstance(selected, int) and occurrence is None else None,
                 probabilities=None if not choices else logits.softmax(0)))
 
     @torch.no_grad()
@@ -893,12 +898,6 @@ class ReferenceClose(nn.Module):
                 arrivals[selected] = rebuilt.get(id(node), node)
                 if id(node) not in rebuilt:
                     extra.append(node)
-            elif isinstance(selected, int) and item.get('native_value') is not None and selected not in arrivals:
-                point = item['native_value']
-                node = Clause(ConceptualMeaning.from_description(point), point=point,
-                    composition=Composition(point, reference=selected), order=1)
-                arrivals[selected] = node
-                extra.append(node)
         previous_root = result
         if extra:
             result = replace(result, companions=(*result.companions, *extra))
@@ -972,6 +971,13 @@ class ReferenceClose(nn.Module):
             if node is not None:
                 location = written.get(id(node), row if node is plan['prepared_root'] else None)
                 selected = None if location is None else self.store.occurrence_of(location)
+            if isinstance(selected, int) and selected in alloc.individuals and mtm.token_of(token) is not None:
+                # A native identity needs no synthetic occurrence holding its
+                # working vector. Refine through the existing introduction.
+                from RowTime import encoder, stamp
+                mtm.bind(token, token, kind=selected,
+                         when=int(encoder().decode_index(stamp(self.store))))
+                selected = token
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
                     and selected != token and mtm.token_of(token) is not None):
                 from RowTime import encoder, stamp
@@ -979,8 +985,9 @@ class ReferenceClose(nn.Module):
                          when=int(encoder().decode_index(stamp(self.store))))
             item['reference'] = selected if selected is not None else token
             audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
-                reference=item['reference'], candidates=item['candidates'],
-                missing_reason=None if mtm.token_of(token) is not None else 'no_accessible_individual'))
+                reference=item['reference'], selected=item['selected'], candidates=item['candidates'],
+                missing_reason=('no_selected_candidate' if selected is None else
+                                None if mtm.token_of(token) is not None else 'no_accessible_individual')))
         # Refinement can reassign a candidate's introducing occurrence. Attach
         # this close's uses afterwards, to the identity that now owns their
         # chosen antecedent; detaching an introduction must not lose new uses.

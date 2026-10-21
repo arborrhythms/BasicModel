@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+    "test/test_reference_arrival_review.py::test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
+    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token"
+  ],
+  "completed": [
+    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+    "test/test_reference_arrival_review.py::test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
+    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020223249914124608,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00687316688708961,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006225875113159418,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

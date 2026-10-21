@@ -20288,7 +20288,8 @@ class BasicModel(BaseModel):
                     if len(sites) != len(scored['items']):
                         raise RuntimeError('admission changed reference constituents')
                     reference_plan = dict(scored, items=[dict(item, **site)
-                        for item, site in zip(scored['items'], sites)])
+                        for item, site in zip(scored['items'], sites)],
+                        arrivals=[dict(item) for item in scored.get('arrivals', ())])
                     clause = resolver.prepare(clause, reference_plan)
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
                 encoding = getattr(self, 'when_encoding', None)

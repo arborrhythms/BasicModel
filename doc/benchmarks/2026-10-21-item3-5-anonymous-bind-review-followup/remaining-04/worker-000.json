@@ -1,0 +1,38 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.1148944159504026,
+      "message": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py:28: in test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content\n    assert pool.token_of(use) == candidate_token\nE   AssertionError: assert None == ('ltm', 'address-v1', -556487946229065649)\nE    +  where None = token_of(('ltm', 'address-v1', 6852026937621719683))\nE    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x126cd63c0>.token_of",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005645207827910781,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

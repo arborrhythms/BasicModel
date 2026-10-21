@@ -1,0 +1,18 @@
+{
+  "base": "ffe814b51ea5dae7cea4d6149ab21dc192e76a6a",
+  "files": {
+    "bin/ReferenceClose.py": "bbcc24bb146ab130cfdde0fe9c1888f170a5825e5fe36c0a314aba2476b62e8b",
+    "bin/Models.py": "b76f530d64ac887e97696e33c92c600bb6e5a65ff8f538312d70fc9f58bfa492",
+    "test/test_reference_arrivals.py": "e16f4e69bfec7632ebc43b3678ff8748ca0383bcc1b9c5fdb087614e2e101e56",
+    "test/test_reference_arrival_review.py": "715c73a22601ccbe6ece5a7d3dfee0a268ee25c16547057e4bb602df1711cada"
+  },
+  "existing_arrival_assertions_unchanged": true,
+  "assertion_count": 61,
+  "fixture_adjustment": "Add the pending token frame to the two native arrival positive cases; no capacity changes.",
+  "excluded_concurrent_work": [
+    "doc/FutureWork.md",
+    "doc/plans/2026-10-21-intuit.md",
+    "todo.md Step 1c intuit addition",
+    "../nanochat"
+  ]
+}

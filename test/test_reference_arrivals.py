@@ -283,7 +283,8 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
     else:
         frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
             torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
-    _, plan = keep(resolver, equality(a[1], words['x'], words['wrong']), (frame,), position=1)
+    _, plan = keep(resolver, equality(a[1], words['x'], words['wrong']),
+                   (SituationFrame.from_row(store.row(pending)), frame), position=1)
     refinement = next(item for item in plan['arrivals'] if item['token'] == token)
     assert refinement['selected'] == native
     assert pool.entries[token].kind == native and pool.entries[token].count == 2
