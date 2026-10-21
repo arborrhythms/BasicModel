@@ -130,8 +130,10 @@ def expression_components(store, roots, *, max_records, work, scanned=0):
                 if len(rule.rhs_symbols) != 2:
                     continue
                 name = operation_name(rule)
-                if rule.method_name == 'surface' and not marker(arguments[0], set()):
-                    continue
+                # The objectless-marker rule above resolves a surface use
+                # even when other occupations coexist. Otherwise the
+                # catalogue still admits an unambiguous recorded surface
+                # pair: its marker argument may itself be a composed value.
                 roles = (2, 1) if rule.method_name == 'whole' else (1, 2)
                 if all((direct + words if fallback else direct)[f'{name}_argin{role}'] > 0
                        for (direct, words), role in zip(evidence, roles)):

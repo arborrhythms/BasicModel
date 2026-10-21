@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>32.518228207947686</pre></td><td><pre>test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:178: in observed_train
+    return train(model, documents, folder, after=observed_after, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split=&#x27;train&#x27;, optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:74: in record
+    after(model, split, rows, result, observations, observer)
+doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:154: in observed_after
+    return after(*args) if after is not None else None
+           ^^^^^^^^^^^^
+test/test_math_chain_section14.py:390: in after
+    assert store.occurrence_of(index) == address and not open_slots(value)
+E   AssertionError: assert ((&#x27;ltm&#x27;, &#x27;addr...4697239919223) == (&#x27;ltm&#x27;, &#x27;addr...4697239919223)
+E     
+E     Use -v to get more diff and not ((&#x27;referent&#x27;, 0),))
+E    +  where ((&#x27;referent&#x27;, 0),) = open_slots(ConceptualMeaning(mode=&#x27;assertive&#x27;, polarity=True, role_refs=(None, (&#x27;sym&#x27;, 16), (&#x27;ltm&#x27;, &#x27;address-v1&#x27;, -87423117773318...0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), (&#x27;role&#x27;, 0))),))), scope=(), sentence_kind=&#x27;relation&#x27;))</pre></td><td><pre>[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=18.315s)
+</pre></td></tr></table></body></html>

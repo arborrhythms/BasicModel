@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_forced_ordinary_pending_premise_in_both_orders[False] __________
+test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders
+    rows = train_documents(model, documents, tmp_path, after=after)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:178: in observed_train
+    return train(model, documents, folder, after=observed_after, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/math_chain_ordinary.py:77: in train_documents
+    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)
+bin/MathChainTraining.py:52: in present
+    after_batch(model, split, rows, result)
+test/math_chain_ordinary.py:74: in record
+    after(model, split, rows, result, observations, observer)
+doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:154: in observed_after
+    return after(*args) if after is not None else None
+           ^^^^^^^^^^^^
+test/test_math_chain_section14.py:391: in after
+    assert correct, 'the arriving x is three must supply the bound referent'
+E   AssertionError: the arriving x is three must supply the bound referent
+E   assert False
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 8 (Δ=18.309s)
+=============================== warnings summary ===============================
+test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
+1 failed, 1 warning in 34.59s

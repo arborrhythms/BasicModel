@@ -68,3 +68,44 @@ The newly added bind-plan §10.2 describes a further token-address round
 after the present B/A repairs and before publication. It is not implemented
 or claimed by these results. Publication remains held; no second full sweep
 has been run.
+
+## Candidate `2fa238049`: saved capacity and fresh forward checks
+
+`mm-19` passes the native-119 replay on this committed candidate at the
+original eight seats and 900-epoch/.20 budget (50.47 s for the bounded run).
+The first declared set of six fresh forward initializations is **four
+passes, two failures**, not an accepted six-pass gate. All six initial
+states remain in their `fresh-forward-N-state` directories.
+
+| Initialization | Result | Follow-up |
+|---|---|---|
+| 1 | Pass | Retained |
+| 2 | Fail, line 390, row 2 remains open | `arrival-20` exactly reproduces the native rows, Part rows, initialized/final parameters, RNG and manifest; the pending name is word 15 while the arriving equality uses its newly admitted object 29 |
+| 3 | Pass | Retained |
+| 4 | Pass | Retained |
+| 5 | Fail, line 391, row 30's bound complement is unresolved | `arrival-21` exactly reproduces every captured store field and the initialized model; row 54 has an unrelated open complement, word 59 |
+| 6 | Pass | Retained |
+
+Compact evidence is in `fresh-failure-replays.json`. The type lists in
+initialization 2 differ only in set iteration order; their type sets agree.
+
+The word-key repair makes all three journal forward-name sites use the
+admitted lexical word ID, independent of its current object. `unit-22`
+passes all 63 binding/Part tests. `arrival-23` at initialization 2 now fills
+the pending reference, then fails the strict answer check: its surface
+root 78 is `(75,77)`, whose recorded surface occupations are unambiguous,
+but the reader rejects surface because 75 is a composed marker containing
+an object. The catalogue must still read that recorded surface use; the
+objectless-marker rule is a disambiguation rule, not a prohibition on
+other admitted surface operands. `arrival-24` tests that repair at the
+same initialization, with a dedicated regression.
+
+`arrival-24` completes **10 passed**: the unchanged native certificate at
+fresh initialization 2 now passes, along with all nine Part-reader cases.
+`arrival-25` retains initialization 5's line-391 failure; `arrival-26`
+retains the reverse initialization's unrelated-variable line-398 failure.
+Those two are not claimed repaired by the name-key and surface changes.
+
+The next declared set, `fresh-both-N`, consists of six fresh independent
+model initializations in each order on this repaired source. Every result
+and initialization is retained; acceptance requires all twelve passes.

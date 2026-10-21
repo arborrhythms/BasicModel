@@ -162,3 +162,22 @@ def test_answer_read_checks_a_named_composite_before_descending_its_head(monkeyp
     model = SimpleNamespace(_concept_owner=lambda:f.cs,
                             symbolSpace=SimpleNamespace(ltm_store=f.store))
     assert matches(model, value, 'bound-name')
+
+
+def test_answer_read_follows_admitted_surface_with_a_composed_marker(monkeypatch):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from BindingAnswers import matches
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    marker = f.cs.interpret.lookup_word([84], [], form='unbound-form')
+    f.words['unbound-form'] = marker, marker
+    row = f.store.write_clause(f.clause(('surface',
+        ('surface', 'marker-object', 'unbound-form'),
+        ('verb', 'content', 'ending'))))
+    reference = f.store.raw_meaning_of(row).role_refs[0]
+    value = replace(ConceptualMeaning.from_description(f.store.slots[row, 0]),
+        role_refs=(reference, None, None), bindings={'_bound_roles': (('referent', 0),)})
+    model = SimpleNamespace(_concept_owner=lambda:f.cs,
+                            symbolSpace=SimpleNamespace(ltm_store=f.store))
+    assert matches(model, value, 'content')

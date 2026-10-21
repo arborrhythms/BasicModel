@@ -1,0 +1,288 @@
+[
+  {
+    "original": "fresh-forward-2",
+    "replay": "arrival-20",
+    "source": "2fa23804929556a77d622679d51bc3f31ef701e3",
+    "initial_equal": {
+      "parameters": true,
+      "buffers": true,
+      "after_rng": true,
+      "source_manifest": true
+    },
+    "final_equal": {
+      "rows": true,
+      "words": true,
+      "singletons": true,
+      "occupations": true,
+      "parts": true,
+      "parameters": true,
+      "sources": true,
+      "source_manifest": true,
+      "rng": true
+    },
+    "symbol_type_sets_equal": true,
+    "failure": {
+      "line": 390,
+      "index": 2,
+      "address": [
+        "ltm",
+        "address-v1",
+        242404697239919223
+      ]
+    },
+    "rows": [
+      {
+        "index": 2,
+        "address": [
+          "ltm",
+          "address-v1",
+          242404697239919223
+        ],
+        "stream": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "kind": "unverified",
+        "refs": [
+          null,
+          [
+            "sym",
+            16
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -8742311777331814676
+          ]
+        ],
+        "forward": [
+          [
+            0,
+            15
+          ]
+        ],
+        "equality": null
+      },
+      {
+        "index": 34,
+        "address": [
+          "ltm",
+          "address-v1",
+          -6207220109782855408
+        ],
+        "stream": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "kind": "unverified",
+        "refs": [
+          [
+            "sym",
+            78
+          ],
+          null,
+          null
+        ],
+        "forward": null,
+        "equality": null
+      },
+      {
+        "index": 35,
+        "address": [
+          "ltm",
+          "address-v1",
+          1163491355901695505
+        ],
+        "stream": [
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ],
+        "kind": "question",
+        "refs": [
+          null,
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -6207220109782855408
+          ]
+        ],
+        "forward": [
+          [
+            0,
+            29
+          ]
+        ],
+        "equality": true
+      }
+    ]
+  },
+  {
+    "original": "fresh-forward-5",
+    "replay": "arrival-21",
+    "source": "2fa23804929556a77d622679d51bc3f31ef701e3",
+    "initial_equal": {
+      "parameters": true,
+      "buffers": true,
+      "after_rng": true,
+      "source_manifest": true
+    },
+    "final_equal": {
+      "rows": true,
+      "words": true,
+      "singletons": true,
+      "occupations": true,
+      "parts": true,
+      "parameters": true,
+      "sources": true,
+      "source_manifest": true,
+      "rng": true
+    },
+    "symbol_type_sets_equal": true,
+    "failure": {
+      "line": 391,
+      "index": 30,
+      "address": [
+        "ltm",
+        "address-v1",
+        4124156913535508470
+      ]
+    },
+    "rows": [
+      {
+        "index": 30,
+        "address": [
+          "ltm",
+          "address-v1",
+          4124156913535508470
+        ],
+        "stream": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "kind": "unverified",
+        "refs": [
+          null,
+          [
+            "sym",
+            16
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -7108193164117853177
+          ]
+        ],
+        "forward": [
+          [
+            0,
+            15
+          ]
+        ],
+        "equality": null
+      },
+      {
+        "index": 54,
+        "address": [
+          "ltm",
+          "address-v1",
+          -3266777596228534121
+        ],
+        "stream": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "kind": "unverified",
+        "refs": [
+          [
+            "sym",
+            14
+          ],
+          [
+            "sym",
+            4010033338316264258
+          ],
+          null
+        ],
+        "forward": [
+          [
+            2,
+            59
+          ]
+        ],
+        "equality": null
+      },
+      {
+        "index": 55,
+        "address": [
+          "ltm",
+          "address-v1",
+          -5081273345003562223
+        ],
+        "stream": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true
+        ],
+        "kind": "question",
+        "refs": [
+          null,
+          [
+            "sym",
+            4010033338316264258
+          ],
+          [
+            "ltm",
+            "address-v1",
+            -3266777596228534121
+          ]
+        ],
+        "forward": [
+          [
+            0,
+            15
+          ]
+        ],
+        "equality": true
+      }
+    ]
+  }
+]

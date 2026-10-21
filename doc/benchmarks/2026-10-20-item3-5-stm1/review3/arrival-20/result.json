@@ -1,0 +1,97 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/worker-000.json"
+      ],
+      "pid": 20895,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 3512667976,
+      "elapsed_seconds": 37.38598341681063,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 33.224980334052816,
+          "message": "test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:178: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:74: in record\n    after(model, split, rows, result, observations, observer)\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:154: in observed_after\n    return after(*args) if after is not None else None\n           ^^^^^^^^^^^^\ntest/test_math_chain_section14.py:390: in after\n    assert store.occurrence_of(index) == address and not open_slots(value)\nE   AssertionError: assert (('ltm', 'addr...4697239919223) == ('ltm', 'addr...4697239919223)\nE     \nE     Use -v to get more diff and not (('referent', 0),))\nE    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 16), ('ltm', 'address-v1', -87423117773318...0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)), ('role', 0))),))), scope=(), sentence_kind='relation'))",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=18.771s)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 240.0,
+    "suite_seconds": 300.0,
+    "batch_size": 256,
+    "max_files": 16
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20",
+  "elapsed_seconds": 39.979759916896,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 3512667976,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/collect.json"
+    ],
+    "pid": 20872,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 180323120,
+    "elapsed_seconds": 1.8914678748697042,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-20/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

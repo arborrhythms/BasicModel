@@ -146,3 +146,28 @@ No assertion, forced scope, budget or initialization has been changed.
 The reverse raw-graph count also reads stored references instead of the
 working identity read; its disposition remains open. Publication and the
 six-fresh-initialization acceptance run remain pending.
+
+### 6.3 Fresh forward initialization 2: a changing name key and a surface read
+
+| Check | Evidence / cause |
+|---|---|
+| Original and replay | `review3/fresh-forward-2` → `arrival-20`, source `2fa238049`; initialized model, all native LTM1/Part rows, final parameters/RNG and source manifest match |
+| First failure | Row 2 names lexical word 15; between premises another kept reading admits object 29 with DEF `(29,15)`. The arriving row 35 then records 29 as its forward name, so the exact posting lookup for 15 cannot find it |
+| Name repair | The journal's forward name is the admitted lexical word ID when present, not the word's changing interpreted object; nonlexical programs retain their concept identity |
+| Regression | `test_pending_name_stays_the_word_after_an_object_is_admitted`; `unit-22`, 63 passed |
+| Native replay after name repair | `arrival-23` fills row 2 from row 35 but fails line 391; the unchanged strict answer check exposes a second read defect |
+| Second cause | Root 78 is the surface pair `(75,77)`, with direct `surface_argin1`/`surface_argin2` occupations. Node 75 is itself a surface composition containing a named object. The reader wrongly excludes the catalogue's surface rule unless every marker leaf is objectless |
+| Surface repair | Keep the objectless-marker priority; otherwise admit an unambiguous operation from its recorded argument occupations, including surface. No edge metadata or fixture recognition |
+
+### 6.4 Fresh forward initialization 5: the arrived complement remains open
+
+| Check | Evidence |
+|---|---|
+| Exact replay | `review3/fresh-forward-5` → `arrival-21`, source `2fa238049`; every captured store field, initial parameters/buffers/RNG and manifest agrees |
+| Pending row | Row 30, stream 7, forward word 15; after arrival it is bound to row 54's occurrence |
+| Arriving witness | Row 55, equality with forward word 15 and complement at row 54 |
+| Complement | Row 54 is a three-slot expression with references `(('sym',14), ('sym',4010033338316264258), None)` and forward word 59, rather than a completed one-slot referent |
+| Consequence | Filling the pending name succeeds, but the strict supplied-referent identity check is false. A separate open variable cannot be silently treated as the supplied target |
+
+This mode is retained for the certificate-scope review, alongside §6.2.
+It has not been suppressed, regraded or replaced by a passing initialization.

@@ -436,6 +436,23 @@ def test_pending_subject_keeps_its_composed_predicate_when_stored(monkeypatch):
     assert stored.role_refs[1] is not None
 
 
+def test_pending_name_stays_the_word_after_an_object_is_admitted(monkeypatch):
+    from ClauseJournal import finish_clause
+    f = native(monkeypatch)
+    program = f.program(('lift', KINDS[0], VERBS[0]))
+    word, obj = f.words[KINDS[0]]
+    assert word != obj
+    program = replace(program, binding_choices=True,
+        leaf_orders=torch.zeros(2, dtype=torch.long))
+    program = record_reading(f.language, program)
+    refs = program.operation_refs.clone()
+    refs[-1, 0] = 0
+    clause = finish_clause(f.language, replace(program, operation_refs=refs),
+                           registry=f.registry)
+    assert bindings(clause.meaning)['_forward_references'] == ((0, word),)
+    assert ('referent', 0) in open_slots(clause.meaning)
+
+
 @pytest.mark.parametrize('unresolved', (False, True))
 def test_objectless_predicate_keeps_its_identity_in_the_ended_compound(monkeypatch, unresolved):
     from ClauseJournal import finish_clause

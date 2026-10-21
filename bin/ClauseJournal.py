@@ -41,6 +41,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if store is not None and store.index_of_row(reference) is not None:
             return store.point_of_row(reference) is not None
         return default
+    def forward_name(leaf):
+        # A word keeps its name when another occurrence supplies its object.
+        # Pending and arriving references must use the same lexical key,
+        # independently of the current word-to-object interpretation.
+        if program.word_ids is not None and int(program.word_ids[leaf]) >= 0:
+            return int(program.word_ids[leaf])
+        return int(program.concept_ids[leaf])
     values = list(program.leaves.unbind())
     frames = program.operation_values
     if frames is None:
@@ -87,7 +94,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if word in no_object:
                 stack[-1]['close_request'] = dict(mode='pronoun', leaves=(word,),
                     cue=values[word], content=torch.zeros_like(values[word]),
-                    forward_identity=int(program.concept_ids[word]), leaf=True)
+                    forward_identity=forward_name(word), leaf=True)
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
@@ -138,7 +145,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     selected['ref'] = -1
                     selected['open_reference'] = True
                     operand['open_reference'] = True
-                    selected['forward_identity'] = int(program.concept_ids[selected['leaves'][0]])
+                    selected['forward_identity'] = forward_name(selected['leaves'][0])
                     request = selected.get('close_request', {})
                     if request.get('leaf'):
                         # A selected open formation already owns the role.
@@ -636,7 +643,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             data = bindings(described)
             data['_forward_references'] = tuple((role,
                 head(role_nodes[role]).get('forward_identity',
-                    int(program.concept_ids[head(role_nodes[role])['leaves'][0]])))
+                    forward_name(head(role_nodes[role])['leaves'][0])))
                 for kind, role in opened if kind == 'referent' and role_nodes[role] is not None)
             sites = dict(data.get('_reference_sites', ()))
             for kind, role in opened:
