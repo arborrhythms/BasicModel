@@ -177,7 +177,7 @@ def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
     assert store.raw_meaning_of(used).role_refs[0] is None
     force_named(resolver, monkeypatch, words['three'])
     _, refined = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=2)
-    assert sum(item['token'] == token for item in refined['arrivals']) == 2
+    assert sum(item['token'] == token for item in refined['arrivals']) == 1
     from BindingAnswers import matches
     assert matches(model, store.meaning_of(used), 'three')
 

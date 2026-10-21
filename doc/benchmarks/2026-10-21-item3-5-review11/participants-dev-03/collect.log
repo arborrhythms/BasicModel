@@ -1,0 +1,6 @@
+test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[surface]
+test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[predicate]
+test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[punctuation]
+test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations
+
+4 tests collected in 0.84s

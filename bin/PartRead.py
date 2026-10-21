@@ -89,15 +89,9 @@ def occurrence_codes(records, pairs, ones, like):
             for row, record in enumerate(records)}
 
 
-def expression_components(store, roots, *, max_records, work, scanned=0):
-    """Read semantic operands from admitted occupations and ordered pairs.
-
-    The view is local to this bounded read. A head attachment exposes its
-    head's view; a clause keeps its subject beside that head. No producing
-    operation or working identity is added to the retained Part rows.
-    """
+def argument_reader(store, incomplete=None):
+    """Classify retained pairs from their admitted argument occupations."""
     from collections import Counter
-    from Meaning import ConceptualMeaning
     from PartsOfSpeech import operation_name
     from Spaces import _concept_alloc_of
     owner = store._concept_owner()
@@ -105,7 +99,7 @@ def expression_components(store, roots, *, max_records, work, scanned=0):
     ref = store.__dict__.get('_occupation_owner')
     occupations = None if ref is None else ref()
     rules = store.__dict__.get('_part_read_rules', ())
-    components, active, representatives, incomplete = {}, set(), {}, []
+    incomplete = [] if incomplete is None else incomplete
 
     def counts(symbol):
         direct = Counter() if occupations is None else Counter(occupations.counts.get(symbol, {}))
@@ -157,6 +151,22 @@ def expression_components(store, roots, *, max_records, work, scanned=0):
         # by the same word does not turn the retained marker into that object.
         return ('object' not in allocator.symbol_types.get(symbol, ())
                 and (direct + words)['surface_argin1'] > 0)
+
+    return operation, marker
+
+
+def expression_components(store, roots, *, max_records, work, scanned=0):
+    """Read semantic operands from admitted occupations and ordered pairs.
+
+    The view is local to this bounded read. A head attachment exposes its
+    head's view; a clause keeps its subject beside that head. No producing
+    operation or working identity is added to the retained Part rows.
+    """
+    from Meaning import ConceptualMeaning
+    owner = store._concept_owner()
+    components, active, representatives, incomplete = {}, set(), {}, []
+
+    operation, _ = argument_reader(store, incomplete)
 
     def read(symbol):
         nonlocal scanned

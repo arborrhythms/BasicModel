@@ -1,5 +1,12 @@
 # Step 1b §10.2: inline lowering and occurrence identities
 
+**Current §21:** the participant-position repair and Alec’s seven check
+dispositions are implemented for a new freeze. The captured forward-five
+regression passes with the original parameters and RNGs; the preceding
+stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11/README.md)
+owns the new source audit and gates. No earlier evidence is promoted.
+Claude review and publication remain pending.
+
 **Current §20 source `f56fdf8ff` is stopped for Alec:** forward first draw
 5 binds x to the captured space symbol instead of three. The
 [wrong-binding receipt](../2026-10-21-item3-5-review10-observer/wrong-binding.md)

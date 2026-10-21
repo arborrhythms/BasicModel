@@ -146,8 +146,7 @@ def test_later_common_evidence_merges_accessible_occurrences_without_rewriting_t
         torch.testing.assert_close(store.point_of_row(address), point, rtol=0, atol=0)
 
 
-@pytest.mark.parametrize('kind', range(4))
-def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(kind):
+def same_kind_fourth_close(kind):
     resolver, store, atoms = fixture()
     noun, black, white, runs, sleeps = atoms[kind], *atoms[4:8]
     # Evidence teaches exclusivity; no color/word identities enter the owner.
@@ -172,9 +171,21 @@ def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(ki
         identities = current_identities(resolver, frames)
         references = [identities[address] for address in occurrences]
         assert len(set(references)) == (2 if distinct else 1)
-        assert references[0] == references[2] and references[1] == references[3]
         for address, content in zip(occurrences, contents):
             torch.testing.assert_close(store.point_of_row(address), content, rtol=0, atol=0)
+        yield references
+
+
+@pytest.mark.parametrize('kind', range(4))
+def test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding(kind):
+    list(same_kind_fourth_close(kind))
+
+
+@pytest.mark.phase('mtm_reidentification')
+@pytest.mark.parametrize('kind', range(4))
+def test_reidentification_revises_the_earlier_ambiguous_binding(kind):
+    for references in same_kind_fourth_close(kind):
+        assert references[0] == references[2] and references[1] == references[3]
 
 
 def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():

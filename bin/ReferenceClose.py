@@ -180,12 +180,12 @@ class ReferenceClose(nn.Module):
         active = parts.indices()
         mtm = self.components.owner.mtm
         for position, frame in enumerate(frames):
-            for identity in frame.symbol_ids:
-                if identity in alloc.individuals and identity not in alloc.retired:
-                    records[identity] = ('sym', identity), dict(role=0,
-                        position=(position, 0), identity=identity)
             location = store.location(frame.row_id)
             if location is None:
+                for identity in frame.symbol_ids:
+                    if identity in alloc.individuals and identity not in alloc.retired:
+                        records[identity] = ('sym', identity), dict(role=0,
+                            position=(position, 0), identity=identity)
                 continue
             row = store.row(location)
             if isinstance(location, int) and int(row['order']) == 1:
@@ -198,6 +198,13 @@ class ReferenceClose(nn.Module):
             roots = ([location[1]] if isinstance(location, tuple) else
                      [ref[1] for ref in row['meaning'].role_refs
                       if ref is not None and ref[0] == 'sym' and parts.contains(ref[1])])
+            from ReferenceParticipants import nonparticipants
+            excluded = nonparticipants(store, roots, noun=int(row['order']) == 1)
+            for identity in frame.symbol_ids:
+                if (identity in alloc.individuals and identity not in alloc.retired
+                        and identity not in excluded):
+                    records[identity] = ('sym', identity), dict(role=0,
+                        position=(position, 0), identity=identity)
             if roots:
                 pending, reachable = list(roots), set()
                 while pending:
@@ -217,7 +224,8 @@ class ReferenceClose(nn.Module):
                     continue
                 seen.add(edge)
                 for role, identity in zip((0, 2), parts.refs[edge].tolist()):
-                    if identity in alloc.individuals and identity not in alloc.retired:
+                    if (identity in alloc.individuals and identity not in alloc.retired
+                            and identity not in excluded):
                         records[identity] = ('sym', identity), dict(role=role,
                             position=(position, len(seen)), identity=identity)
                     if parts.contains(identity):
@@ -227,6 +235,8 @@ class ReferenceClose(nn.Module):
                 if not isinstance(index, int):
                     continue
                 argument = self._derivation_symbol(identity if identity is not None else occurrence)
+                if argument in excluded:
+                    continue
                 predicate = None
                 for edge in at_time.tolist():
                     part, whole = parts.refs[edge].tolist()
@@ -613,6 +623,10 @@ class ReferenceClose(nn.Module):
         from ClauseRow import Clause, Composition
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings, open_slots
+        from ReferenceParticipants import clause_participants
+        _, participants, terms = clause_participants(clause,
+            self.store.__dict__.get('_part_read_rules', ()))
+        noun_leaves = {leaf for term in terms.values() if not term.children for leaf in term.leaves}
         result, seen, nodes = [], set(), []
         def visit(node):
             if node is None or id(node) in seen:
@@ -620,7 +634,8 @@ class ReferenceClose(nn.Module):
             seen.add(id(node))
             nodes.append(node)
             if node.reference_request is not None and node.order == 1:
-                result.append(dict(node=node, parent=None, site_role=None))
+                if not self.has_word(node) or id(node) in participants:
+                    result.append(dict(node=node, parent=None, site_role=None))
             else:
                 data = bindings(node.meaning)
                 requests = dict(data.get('_reference_sites', ()))
@@ -633,6 +648,9 @@ class ReferenceClose(nn.Module):
                         if (child.reference_request or {}).get('forward_identity') == name:
                             continue
                     held = dict(requests.get(role, ()))
+                    if role not in (0, 2) or (node.composition is not None
+                            and not set(held.get('leaves', ())).intersection(noun_leaves)):
+                        continue
                     zero = torch.zeros_like(node.meaning.roles[role])
                     def value(key, fallback):
                         return fallback if held.get(key) is None else zero.new_tensor(held[key])
@@ -652,12 +670,12 @@ class ReferenceClose(nn.Module):
         # choice. Re-mentions of accessible pending names still call bind at
         # the closing boundary, before their derivation is admitted.
         covered = {site['node'].reference_request.get('forward_identity') for site in result}
-        names, terms = set(pending_names) - covered, set()
+        names, visited_terms = set(pending_names) - covered, set()
         def lexical(term):
-            if term is None or id(term) in terms:
+            if term is None or id(term) in visited_terms:
                 return
-            terms.add(id(term))
-            if not term.children and term.word_id in names:
+            visited_terms.add(id(term))
+            if not term.children and id(term) in terms and term.word_id in names:
                 zero = torch.zeros_like(term.point)
                 request = dict(mode='pronoun', forward_identity=term.word_id,
                     role=0, leaves=term.leaves, cue=term.point, content=zero, predicate=zero)
@@ -776,29 +794,20 @@ class ReferenceClose(nn.Module):
         return plan
 
     def _arrival_constituents(self, clause):
-        """The kept derivation's own fields and lexical constituents, locally."""
+        """Only participant constituents and their lexical copies are objects."""
         from ClauseRow import Clause, Composition
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings
-        nodes, names, seen = [], set(), set()
-        def visit(node):
-            if node is None or id(node) in seen:
-                return
-            seen.add(id(node)); nodes.append(node)
-            names.update(name for _, name in bindings(node.meaning).get('_forward_references', ()))
-            request = node.reference_request or {}
-            if request.get('forward_identity') is not None:
-                names.add(request['forward_identity'])
-            for child in (*node.children, *node.companions):
-                visit(child)
-        visit(clause)
-        candidates = [node for node in nodes if node.point is not None and node.reference_request is None]
+        from ReferenceParticipants import clause_participants
+        nodes, participants, terms = clause_participants(clause,
+            self.store.__dict__.get('_part_read_rules', ()))
+        names = {site['node'].reference_request['forward_identity']
+                 for site in self.sites(clause)
+                 if site['node'].reference_request.get('forward_identity') is not None}
+        candidates = [node for node in nodes if id(node) in participants
+                      and node.point is not None and node.reference_request is None]
         represented = {id(node.composition) for node in nodes}
-        terms = set()
-        def visit_term(term):
-            if term is None or id(term) in terms:
-                return
-            terms.add(id(term))
+        for term in terms.values():
             if term.word_id >= 0:
                 names.add(term.word_id)
             if not term.children and id(term) not in represented:
@@ -814,10 +823,6 @@ class ReferenceClose(nn.Module):
                         point=lexical, composition=Composition(lexical, reference=term.word_id,
                             word_id=term.word_id, leaves=term.leaves),
                         subject_word_id=term.word_id))
-            for child in term.children:
-                visit_term(child)
-        for node in nodes:
-            visit_term(node.composition)
         return names, candidates
 
     def _arrival_plan(self, clause, plan, individuals, *, stream):

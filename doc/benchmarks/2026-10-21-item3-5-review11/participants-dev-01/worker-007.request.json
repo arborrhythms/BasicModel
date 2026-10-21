@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+    "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11/participants-dev-01/worker-007.recycle.json"
+}

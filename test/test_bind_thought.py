@@ -324,74 +324,14 @@ def test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access(monkey
     assert [a.open_roles for a in actions if a.semantic_id == 'bind'] == [(2,)]
 
 
-def test_bind_cost_trains_existing_form_and_content_only_after_kept_commit(monkeypatch):
-    from Layers import Error
-    f = native(monkeypatch)
-    occurrence(f, f.atoms[0], f.atoms[4])
-    occurrence(f, f.atoms[1], f.atoms[5])
-    from test_reference_close import form_exposure
-    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
-    before = {name: value.clone() for name, value in f.resolver.named_parameters()}
-    result = execute(f, site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7]))
-    for name, value in f.resolver.named_parameters():
-        assert value.grad is None
-        torch.testing.assert_close(value, before[name], rtol=0, atol=0)
-    record = SimpleNamespace(kind='thought', result=result)
-    errors = Error()
-    f.resolver.train_thought(SimpleNamespace(records=(record,)), errors)
-    loss = errors.total(objective='expectation')
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    assert f.resolver.policy.grad.abs().sum() > 0
-    assert f.resolver.policy.grad[4].abs() > 0
+def test_bind_has_no_update_when_episode_r_plus_a_ties(monkeypatch, tmp_path):
+    from test_reference_review10 import test_thought_bind_is_credited_only_by_episode_advantage
+    test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_path, 0.)
 
 
-def test_paired_bind_trials_use_r_plus_a_with_no_work_reward(monkeypatch):
-    f = native(monkeypatch)
-    occurrence(f, f.atoms[0], f.atoms[4])
-    occurrence(f, f.atoms[1], f.atoms[5])
-    from test_reference_close import form_exposure
-    form_exposure(f.resolver, f.atoms[7], f.atoms[0])
-    meaning = site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7])
-    # Force only the operation ordering, retaining native logits, departure,
-    # execution, scoring, comparison, and kept commit.
-    original_candidates = f.registry.controller_candidates
-    def negation(*args, **kwargs):
-        return tuple(action for action in original_candidates(*args, **kwargs)
-                     if action.semantic_id == 'not')
-    monkeypatch.setattr(f.registry, 'controller_candidates', negation)
-    chooser = f.model.shared_grammar
-    original_logits = chooser.thought_logits
-    def prefer_binding(active, requests):
-        logits = original_logits(active, requests)
-        preferred = [request is None or f.registry.signature_for(
-            request, verify_reference=False).operation.semantic_id == 'bind' for request in requests]
-        return logits + logits.new_tensor(preferred) * (2*logits.detach().abs().sum()+1)
-    monkeypatch.setattr(chooser, 'thought_logits', prefer_binding)
-    f.model.train()
-    f.model.errors.clear()
-    measured = []
-    def score(result):
-        measured.append(f.cs.components.weight * sum(
-            record.result.evidence.get('reference_cost', 0.)
-            for record in result.records if record.kind == 'thought'
-            and record.result is not None))
-        return dict(reconstruction=0., answer=0.)
-    result = run(f.model, meaning, work_budget=128, score=score)
-    audit = f.model._last_thought_comparison
-    assert audit['departure'] >= 0
-    assert audit['keep_costs'] == pytest.approx(audit['costs'])
-    assert audit['costs'] == pytest.approx(measured)
-    assert audit['work_spent'][0] != audit['work_spent'][1]
-    reference_cost = sum(record.result.evidence['reference_cost']
-        for record in result.records if record.kind == 'thought'
-        and record.result is not None and record.result.semantic_id == 'bind')
-    assert min(audit['costs']) == pytest.approx(f.cs.components.weight*reference_cost)
-    assert audit['explore_kept'] == (measured[1] < measured[0])
-    loss = f.model.errors.total(objective='expectation')
-    assert loss is not None and loss.requires_grad
-    loss.backward()
-    assert f.resolver.policy.grad[4].abs() > 0
+def test_bind_resolver_and_form_learn_only_from_episode_advantage(monkeypatch, tmp_path):
+    from test_reference_review10 import test_thought_bind_is_credited_only_by_episode_advantage
+    test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_path, 1.)
 
 
 def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypatch):

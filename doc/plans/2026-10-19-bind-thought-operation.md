@@ -1966,3 +1966,80 @@ initial RNG (C holds).
 Finding 5 still needs its fix without the record: `merge` adopts the
 joined token's kind when the antecedent's is `None`. That is §10.4's
 "kind only when `None`", not an overwrite; B's kind stays untouched.
+
+## 21. Claude's eleventh review: §20's implementation and the stopped series (`6c0db20af`, `f56fdf8ff`; 2026-10-21)
+
+**Accepted.** The six authorized ports; a live resolver for x
+(`live_references=('x',)`, `open_names` at formation only); the
+joined-site guard in planning and commit (`token_of(site) == site`); the
+exclusion of contradicted candidates, including a named site's
+same-close equality partner, declared inert at initialization; direct
+root roles for the answer view and `answer_loss`; kind adoption on merge
+only when the target's is `None`; thought binds credited by the episode's
+R + A with no local reference cost, their dummy/candidate choice in the
+episode's single-departure reservoir; C's scope declared; the renamed
+caller test; the naming sweep (LTM0 occurrences, LTM1 Part relations,
+LTM2 relations over relations, LTM3 retired; runtime identifiers
+unchanged). The first freeze stopped on an observer keyword, replayed and
+diagnosed before repair; the observer fix changes no production code and
+no assertion. Both stops follow the rules: no replaced draw, no promoted
+gate.
+
+**The wrong binding is a mechanism defect: markers are bind candidates.**
+Forward draw 5 on `f56fdf8ff` binds the pending x to symbol 13, the space.
+`ReferenceClose._arrival_constituents` makes every leaf of the arriving
+sentence a candidate, markers included, so the space, `is` and the full
+stop are on x's menu. For an anonymous x every content feature is zero;
+the untrained participant prediction gives the space and `three` the same
+0.25; the dummy has 0; equal candidate logits go to the first in order,
+the space. Alec's rule decides the repair: binding happens only when an
+object is added to the store, so **a candidate must be an object**. The
+arrival menu (and any ordinary menu) excludes constituents that are not
+objects: words the interpreter reports as objectless
+(`Interpret.no_object`), the forced grammar's whitespace and copula
+leaves, and their lexical copies. With the markers gone, `three` is the
+only candidate at 0.25 and beats the dummy. Regressions: draw 5's captured
+initial state replayed binds x to `three` or leaves it open, never to a
+marker; a unit arrival whose constituents include a marker with positive
+prediction never selects it. The certificate is unchanged.
+
+**The seven checks Codex retained, recommendations for Alec.**
+
+- Two `test_bind_thought` expectations of the removed local `choice_cost`
+  training: superseded by Alec's extension of decision A to thought binds;
+  port them to the new regression (no update on equal episode R + A,
+  resolver and form gradients from a nonzero advantage).
+- `test_bound_use_does_not_assign_a_kind_before_arrival` expects two
+  arrival items; the joined-use guard (Alec: no rebinding of a joined
+  site) leaves the introduction only. Port the count to one; its content
+  assertions stay.
+- Four `test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding`
+  cases expect an earlier ambiguous mention to move to the new group.
+  Under Alec's decision the new mention becomes its own identity and the
+  earlier binding is undisturbed, so that reassignment is
+  re-identification. Move those four partition assertions verbatim into a
+  re-identification certificate registered under a FutureWork phase
+  (prerequisite-skipped, as the item-0 tests are), linked from the
+  FutureWork entry; every other assertion in the four cases stays live.
+
+**Decided (Alec, 2026-10-21).** On the markers: "We might offer bind()
+conditional on words identified as nouns in the final parse. I'm not sure
+it has to be in the grammar, but it could (ID → NP). To simplify the
+grammar, let's just leave identity as an option." So no `ID → NP` rule:
+`bind` stays an option (with the dummy), offered only where the kept
+parse has a noun, and only nouns are candidates. In code terms, a word
+site exists only for a constituent the kept derivation places in a
+participant position (the description of a determiner's `lower`, the
+subject of `lift`, a participant of `verb`, an argument of `equal` or
+`part`), read from the declared head roles and occupation records as the
+expression reader already does (§6.10); never a `surface` marker argument,
+an objectless marker leaf or a predicate head. Arrival candidates are
+restricted the same way (the arrival's participant constituents and
+their lexical copies), plus the accessible store objects. Gap sites (an
+open role, no word) are unchanged. On the seven checks: all three
+dispositions above are authorized.
+
+**Then:** the noun rule, the seven dispositions, a new freeze, and the complete series on the
+new hash: twelve fresh first draws with captures, the eight-file set, both
+decomposition arms, both eight-seat MM draws, C's pair, the carrier
+certificate, the regression files. Then my review and publication.

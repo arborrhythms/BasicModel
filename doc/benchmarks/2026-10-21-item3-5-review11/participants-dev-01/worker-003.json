@@ -1,0 +1,109 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]": "mtm_reidentification"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.0002877088263630867,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.00019745784811675549,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.0001835830044001341,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.0001949169673025608,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01989962486550212,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024565409403294325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010469499975442886,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01499270903877914,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

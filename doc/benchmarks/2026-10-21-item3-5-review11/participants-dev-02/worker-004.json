@@ -1,0 +1,197 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]": "mtm_reidentification",
+    "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]": "mtm_reidentification"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.017871416173875332,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0036035829689353704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00252445787191391,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011309083085507154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05708108306862414,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05718541704118252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05714462511241436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05704833287745714,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.00025933398865163326,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.00019383314065635204,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.00019520800560712814,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "mtm_reidentification",
+      "duration": 0.00025162496604025364,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 184, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004606083035469055,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002526415977627039,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010695874923840165,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015302665997296572,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

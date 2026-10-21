@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020325541030615568,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012899624882265925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015243459027260542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01506545813754201,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -20,18 +20,16 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**§20 stopped on frozen source `f56fdf8ff`:** forward first draws 1–4
-pass with 0 bound / 16 open each. Draw 5 binds the earlier x to the space
-symbol (13), instead of three (31): native prediction gives its arrival
-candidate logit .25 against the dummy's 0. Both trials tie on R + A and
-keep greedy. The [full diagnosis and source audit](doc/benchmarks/2026-10-21-item3-5-review10-observer/wrong-binding.md)
-retain every capture; all five manifests match 828 frozen files. The
-explicit wrong-binding stop rule returns the round to Alec. Remaining
-gates, Claude's review, both-main publication and the WikiOracle bump are
-pending. The implementation, October 20 docs and naming sweep are committed
-locally. Seven earlier assertion-contract checks remain unchanged and
-recorded; no prior-source pass is promoted, second full sweep run, or
-learning claim made.
+**§21 participant repair is ready for a new freeze:** the kept parse’s
+participant positions govern word sites, arrival constituents and ordinary
+menus. Draw 5’s complete captured initialization replays with 0 bound / 14
+open reads; its assertions are unchanged. The seven retained checks have
+Alec’s authorized dispositions, including four prerequisite-skipped
+re-identification certificates. The [§21 receipt](doc/benchmarks/2026-10-21-item3-5-review11/README.md)
+owns the new source audit and gates. Fresh gates, Claude’s review,
+both-main publication and the WikiOracle bump remain pending. All earlier
+failures and their source attribution are retained; no earlier-source pass
+is promoted and no learning claim is made.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
@@ -140,6 +138,13 @@ joined site is never re-bound; incompatibility makes the mention a new
 identity; re-identification is FutureWork; thought binds follow decision
 A; "reconstruction reads the bind" is the recommended next round after
 step 1b. Repairs: nested-role answer view, kind adoption on merge.
+*Eleventh review (plan §21):* §20 implemented and accepted; the series
+stopped on a wrong binding (x to the space: markers were bind candidates).
+Alec: bind is offered only on words the final parse identifies as nouns,
+and only nouns are candidates (no ID → NP rule; identity stays an option);
+the seven retained checks get the authorized dispositions (two thought
+ports, one count port, four partition assertions to a re-identification
+certificate under FutureWork). Then a new freeze and every gate.
 
 **Naming sweep at the step 1b landing (Alec, 2026-10-21: "rename when
 you think best"):** LTM1 → LTM0 (the occurrence store: order 0, no

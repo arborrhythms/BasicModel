@@ -1592,4 +1592,12 @@ direct dependents reconsidered once); precedents in the step-1b receipt
 `benchmarks/2026-10-21-item3-5-bind-choices/README.md` (Haug's revisable
 anaphora, Recanati's mental-file linking and splitting, Lee et al.'s
 higher-order coreference, Doyle's truth maintenance, Tauer et al.'s
-incremental entity resolution).
+incremental entity resolution). Its first certificate is the four
+partition assertions of `test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding`
+(an earlier ambiguous mention moved to a new group), carried verbatim under
+a FutureWork phase (Alec, 2026-10-21).
+
+Certificate: [`test_reidentification_revises_the_earlier_ambiguous_binding`](../test/test_reference_close.py),
+registered as the prerequisite-skipped FutureWork phase `mtm_reidentification`.
+Its four parametrized partition assertions are unchanged; all other checks
+in the original four cases still run in step 1b.

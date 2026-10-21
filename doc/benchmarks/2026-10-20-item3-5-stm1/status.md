@@ -1,5 +1,12 @@
 # Step 1b: current gates and carry ledger
 
+**Current §21:** the participant-position repair and Alec’s seven check
+dispositions are implemented for a new freeze. The captured forward-five
+regression passes with the original parameters and RNGs; the preceding
+stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11/README.md)
+owns the new source audit and gates. No earlier evidence is promoted.
+Claude review and publication remain pending.
+
 **§20 stopped, frozen source `f56fdf8ff`, 2026-10-21.** Forward first
 draws 1–4 pass (0 bound / 16 open each); draw 5 is a wrong antecedent:
 after `x is three.`, the earlier x reads the captured space symbol 13,
