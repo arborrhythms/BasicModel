@@ -1,0 +1,20 @@
+{
+  "case": "1-1",
+  "text": "bird chases",
+  "expected": 13,
+  "chosen": 13,
+  "open_roles": [
+    [
+      "referent",
+      0
+    ],
+    [
+      "relation",
+      1
+    ]
+  ],
+  "pair": [
+    0.7310585975646973,
+    0.26894140243530273
+  ]
+}

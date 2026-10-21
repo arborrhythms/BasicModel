@@ -1,0 +1,136 @@
+[
+  {
+    "epoch": 1,
+    "source": 0,
+    "row_id": 23,
+    "address": [
+      "sym",
+      23
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 6,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 4,
+    "row_id": 33,
+    "address": [
+      "sym",
+      33
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 7,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 1,
+    "row_id": 49,
+    "address": [
+      "sym",
+      49
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 28,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 5,
+    "row_id": 62,
+    "address": [
+      "sym",
+      62
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 12,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 2,
+    "row_id": 75,
+    "address": [
+      "sym",
+      75
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 13,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 6,
+    "row_id": 87,
+    "address": [
+      "sym",
+      87
+    ],
+    "open": [],
+    "forward": [],
+    "episode": false,
+    "departure": 48,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 3,
+    "row_id": -8233586035598707153,
+    "address": [
+      "ltm",
+      "address-v1",
+      -8233586035598707153
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        92
+      ]
+    ],
+    "episode": true,
+    "departure": -1,
+    "query_open": []
+  },
+  {
+    "epoch": 1,
+    "source": 7,
+    "row_id": -4703523234903200822,
+    "address": [
+      "ltm",
+      "address-v1",
+      -4703523234903200822
+    ],
+    "open": [
+      [
+        "referent",
+        0
+      ]
+    ],
+    "forward": [
+      [
+        0,
+        92
+      ]
+    ],
+    "episode": true,
+    "departure": 0,
+    "query_open": []
+  }
+]

@@ -37,17 +37,21 @@ reverse-order replays pass. Both decomposition lengths pass in both arms
 in [attempt 124](doc/benchmarks/2026-10-20-item3-5-stm1/decomposition-124.md),
 all eight companion questions correct. The one full sweep completed 5,965 cases with 219 failures; the
 [sweep repair record](doc/benchmarks/2026-10-20-item3-5-stm1/landing.md) tracks
-218 passing scoped cases or declared ports and the unresolved capacity
-failure. Saved-state arrival and paired-reconstruction replays pass. The
+218 passing scoped cases or declared ports and the capacity repair now
+recorded in [review 3](doc/benchmarks/2026-10-20-item3-5-stm1/review3/README.md).
+The native-119 replay passes with the original eight seats and budget.
+Saved-state paired-reconstruction evidence remains separate. The
 [pool-capacity question](doc/plans/2026-10-19-bind-thought-operation.md#10-landing-follow-up-a-full-concept-row-pool-codex-2026-10-20)
 is decided (plan §10.1: ordinary referent stays an unminted LTM1
 occurrence; mint only relation arguments at the close or by recurrence;
 unseatable mint fails loudly; no capacity masking). Claude's third review
 (plan §12) adds one blocking finding: the pending-premise certificate
-(§14 e, both orders) fails at fresh initializations in both arms and the
-saved-state replays do not reproduce it, so its cause is unnamed. Repair
-B (§10.1 natively) and A (reproduce from saved initial RNG, name the
-cause, pass six fresh initializations per order), then the
+(§14 e, both orders) fails at fresh initializations. Exact captures now
+reproduce it; named-head, lexical-key and composed-marker repairs and the
+working-read certificate port have passing regressions. The
+[live-exploration contract question](doc/benchmarks/2026-10-20-item3-5-stm1/review3/reverse-scope-question.md)
+and six-fresh-per-order gate remain open. Complete A without weakening
+the assertion or selecting passing seeds, then the
 [§10.2 round](doc/plans/2026-10-19-bind-thought-operation.md#102-decided-alec-2026-10-20-later-the-determiner-prepares-the-token-for-identity-in-stm)
 (Alec, 2026-10-20: the determiner's `lower` prepares the token to be
 bound by identity in STM; no concept row and no edge for the token, the
@@ -57,7 +61,7 @@ mains with the October 20 docs and a clean BasicModel tree. The
 records completed scoped work: transient full-width STM1 and close
 dissolution; shared six-column Part store; cube-coordinate maps and
 inverse checks; Part-derived exact bootstrap and saved/random paired
-reconstruction; both premise orders and whole §14; predictor retirement;
+reconstruction; historical saved-state §14 checks; predictor retirement;
 G1–G3 and reference-close. These are not a completed landing.
 Alec's §6.6 answers withdraw the exact-leaf inversion and width gates;
 identity computed in STM is never written back into LTM. All-LTM2

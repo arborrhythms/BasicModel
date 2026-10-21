@@ -151,3 +151,26 @@ The requested eight-file set and the unchanged random paired-R certificate
 are next, with both decomposition arms at their original snapshots/seeds.
 This is scoped evidence, not another full sweep. The live-exploration
 contract questions remain held for review.
+
+## Scoped completion on `47652a9fe`
+
+The requested eight-file set, both original decomposition arms, and the
+unchanged random paired reconstruction certificate are complete. Native:
+**109 passed, four failed, one prerequisite skip**. Decomposition: **four
+passed**, all **8/8** companion questions correct. Production, configuration
+and test hashes match the tested commit; [validation](validation-29.json)
+also verifies the original parameter snapshots and seeds.
+
+The four failures are the documented forward live-exploration counterexample
+and three reference-close cases expecting an allocated symbol for an ordinary
+token. The latter require the already-decided §10.2 production work and
+declared address-based ports, queued after this round. They are not waived
+or claimed green. The reverse certificate and random paired-R invariant pass.
+The copular-identity artifact remains the one prerequisite skip.
+
+[Gate tables](scoped-certificates-29.md) give the exact disposition;
+[one table per decomposition question](decomposition-29-questions.md) keeps
+all eight outcomes. The six-fresh gate remains false; its earlier failed set
+is not regraded. Neither main has moved and publication remains held for the
+contract decision, then §10.2. All carried Item 0, artifact, Item 3 and 5.5
+destinations remain in the [ledger](../status.md).

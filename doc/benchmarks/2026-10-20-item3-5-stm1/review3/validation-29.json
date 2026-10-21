@@ -1,0 +1,261 @@
+{
+  "source": "47652a9fe826817ffe3d13eaac812d75ced9e41f",
+  "runs": [
+    {
+      "receipt": "native-29",
+      "source": "47652a9fe826817ffe3d13eaac812d75ced9e41f",
+      "reason": "test_failure",
+      "elapsed_seconds": 306.45982254086994,
+      "counts": {
+        "failed": 4,
+        "passed": 109,
+        "skipped": 1
+      },
+      "cases": {
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate": "passed",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input": "passed",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias": "passed",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]": "passed",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]": "passed",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open": "passed",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge": "passed",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match": "passed",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate": "passed",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "skipped",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage": "passed",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "failed",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]": "passed",
+        "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order": "failed",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]": "failed",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]": "failed",
+        "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them": "passed",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]": "passed",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]": "passed",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]": "passed",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]": "passed",
+        "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised": "passed",
+        "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect": "passed",
+        "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction": "passed",
+        "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents": "passed",
+        "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues": "passed",
+        "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract": "passed",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]": "passed",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]": "passed",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]": "passed",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]": "passed",
+        "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment": "passed",
+        "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read": "passed",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]": "passed",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]": "passed",
+        "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content": "passed",
+        "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu": "passed",
+        "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph": "passed",
+        "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]": "passed",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]": "passed",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]": "passed",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]": "passed",
+        "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content": "passed",
+        "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows": "passed",
+        "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[False]": "passed",
+        "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[True]": "passed",
+        "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access": "passed",
+        "test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit": "passed",
+        "test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward": "passed",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue": "passed",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored": "passed",
+        "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted": "passed",
+        "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]": "passed",
+        "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]": "passed",
+        "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content": "passed",
+        "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region": "passed",
+        "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient": "passed",
+        "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries": "passed",
+        "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity": "passed",
+        "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment": "passed",
+        "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy": "passed",
+        "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon": "passed",
+        "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time": "passed",
+        "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]": "passed",
+        "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]": "passed",
+        "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]": "passed",
+        "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]": "passed",
+        "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address": "passed",
+        "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse": "passed",
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates": "passed",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse": "passed",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts": "passed",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]": "passed",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]": "passed",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]": "passed",
+        "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning": "passed",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.0]": "passed",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]": "passed",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[1.0]": "passed",
+        "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails": "passed",
+        "test/test_part_store.py::test_taxonomy_and_nested_relations_share_symbol_rows": "passed",
+        "test/test_part_store.py::test_pair_rewitnesses_both_lanes_without_a_relation_kind": "passed",
+        "test/test_part_store.py::test_part_checkpoint_and_retention_keep_native_addresses": "passed",
+        "test/test_part_store.py::test_definition_cannot_answer_identity_query_with_its_singleton_word": "passed",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot": "passed"
+      },
+      "nonpassing_messages": {
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 241, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]": "test/test_math_chain_section14.py:432: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:179: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:74: in record\n    after(model, split, rows, result, observations, observer)\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:155: in observed_after\n    return after(*args) if after is not None else None\n           ^^^^^^^^^^^^\ntest/test_math_chain_section14.py:391: in after\n    assert correct, 'the arriving x is three must supply the bound referent'\nE   AssertionError: the arriving x is three must supply the bound referent\nE   assert False",
+        "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order": "test/test_reference_close.py:98: in test_mint_uses_the_selected_member_order_instead_of_the_source_word_order\n    symbol = resolver.components.individual_ids[0]\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   IndexError: tuple index out of range",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]": "test/test_reference_close.py:108: in test_recent_minted_symbol_returns_at_its_native_conceptual_order\n    identity = store.raw_meaning_of(row).role_refs[0][1]\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable",
+        "test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]": "test/test_reference_close.py:108: in test_recent_minted_symbol_returns_at_its_native_conceptual_order\n    identity = store.raw_meaning_of(row).role_refs[0][1]\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+      },
+      "source_files_checked": 817,
+      "changed_since_run": []
+    },
+    {
+      "receipt": "decomposition-zero-29",
+      "source": "47652a9fe826817ffe3d13eaac812d75ced9e41f",
+      "reason": "passed",
+      "elapsed_seconds": 137.95540808304213,
+      "counts": {
+        "passed": 2
+      },
+      "cases": {
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": "passed",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]": "passed"
+      },
+      "nonpassing_messages": {},
+      "source_files_checked": 817,
+      "changed_since_run": []
+    },
+    {
+      "receipt": "decomposition-enabled-29",
+      "source": "47652a9fe826817ffe3d13eaac812d75ced9e41f",
+      "reason": "passed",
+      "elapsed_seconds": 141.0577589578461,
+      "counts": {
+        "passed": 2
+      },
+      "cases": {
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": "passed",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]": "passed"
+      },
+      "nonpassing_messages": {},
+      "source_files_checked": 817,
+      "changed_since_run": []
+    }
+  ],
+  "original_decomposition_parameters": {
+    "zero": {
+      "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": {
+        "seed": 4199722147,
+        "configuration": {
+          "sentenceExpectation": true,
+          "expectationPrime": true,
+          "explorationUniformFraction": 0.5,
+          "perceptExpectationGain": 0.0,
+          "symbolExpectationGain": 0.0,
+          "rowExpectationGain": 0.0,
+          "documentExpectationGain": 0.0,
+          "seed": 4199722147
+        },
+        "constructors": [
+          {
+            "original_snapshot": "output/item3-5-identity-initial/e9daaa04366132fba57e/0.pt",
+            "snapshot_sha256": "dbd7315f8a49f581f5f2bb0f837e0075ef9dbada63cc94cc9db6c0d1ee367d34",
+            "equal_to_original_surviving_parameters": true
+          }
+        ]
+      },
+      "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]": {
+        "seed": 2428440506,
+        "configuration": {
+          "sentenceExpectation": true,
+          "expectationPrime": true,
+          "explorationUniformFraction": 0.5,
+          "perceptExpectationGain": 0.0,
+          "symbolExpectationGain": 0.0,
+          "rowExpectationGain": 0.0,
+          "documentExpectationGain": 0.0,
+          "seed": 2428440506
+        },
+        "constructors": [
+          {
+            "original_snapshot": "output/item3-5-identity-initial/03fb1f716073d152892b/0.pt",
+            "snapshot_sha256": "f1d141abee10ac6c56425cc3bfca6bee15f5f02350fe7d35baefaa1b8aa63b8f",
+            "equal_to_original_surviving_parameters": true
+          }
+        ]
+      }
+    },
+    "enabled": {
+      "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]": {
+        "seed": 4199722147,
+        "configuration": {
+          "sentenceExpectation": true,
+          "expectationPrime": true,
+          "explorationUniformFraction": 0.5,
+          "perceptExpectationGain": 0.5,
+          "symbolExpectationGain": 0.5,
+          "rowExpectationGain": 0.5,
+          "documentExpectationGain": 0.5,
+          "seed": 4199722147
+        },
+        "constructors": [
+          {
+            "original_snapshot": "output/item3-5-identity-initial/e9daaa04366132fba57e/0.pt",
+            "snapshot_sha256": "dbd7315f8a49f581f5f2bb0f837e0075ef9dbada63cc94cc9db6c0d1ee367d34",
+            "equal_to_original_surviving_parameters": true
+          }
+        ]
+      },
+      "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]": {
+        "seed": 2428440506,
+        "configuration": {
+          "sentenceExpectation": true,
+          "expectationPrime": true,
+          "explorationUniformFraction": 0.5,
+          "perceptExpectationGain": 0.5,
+          "symbolExpectationGain": 0.5,
+          "rowExpectationGain": 0.5,
+          "documentExpectationGain": 0.5,
+          "seed": 2428440506
+        },
+        "constructors": [
+          {
+            "original_snapshot": "output/item3-5-identity-initial/03fb1f716073d152892b/0.pt",
+            "snapshot_sha256": "f1d141abee10ac6c56425cc3bfca6bee15f5f02350fe7d35baefaa1b8aa63b8f",
+            "equal_to_original_surviving_parameters": true
+          }
+        ]
+      }
+    }
+  },
+  "gate_status": "held: live-exploration certificate contract and six-fresh gate; then decided section 10.2 round",
+  "no_second_full_sweep": true
+}

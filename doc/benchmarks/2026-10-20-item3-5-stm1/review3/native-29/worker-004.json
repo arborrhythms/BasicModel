@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+    "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.026248333044350147,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018886415986344218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018234166083857417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01759999990463257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01844229199923575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018648916855454445,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018503625178709626,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018300667172297835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018973374972119927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018043542047962546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018156958045437932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01766550005413592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020021250005811453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019655999960377812,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019645582884550095,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019517207983881235,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

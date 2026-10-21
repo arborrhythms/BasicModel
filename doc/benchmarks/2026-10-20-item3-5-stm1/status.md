@@ -1,15 +1,24 @@
 # Step 1b: current gates and carry ledger
 
-**Current §12 repair round:** candidate `1be79c9d5` follows `2fa238049` on
+**Current §12 repair round:** candidate `47652a9fe` follows `1be79c9d5` on
 `codex/item3-5-first-pass`. The [review-3 receipt](review3/README.md) owns
 the new evidence. MM_grammar passes the native-119 replay at the original
 eight seats and 900-epoch/.20 budget. Arrival repairs now cover the skipped
 named head, changing lexical name key and rejected composed surface marker;
 the captured name-key initialization passes with the unchanged assertion.
-The fresh live certificate is still open. Its raw-storage traversal needs
-a working-read port; distinct live-exploration counterexamples remain
+The fresh live certificate is still open. Its raw-storage traversal is
+ported to the working read, with an exact failing/passing replay;
+distinct live-exploration counterexamples remain
 under [certificate-contract review](review3/reverse-scope-question.md).
 All failures and their initializations are retained. Publication is held.
+
+The [scoped set](review3/scoped-certificates-29.md) on `47652a9fe` completes:
+native **109 passed, four failed, one copular prerequisite skip**; both
+decomposition lengths in both gain arms **pass**, all **8/8** companion
+questions correct. The random paired reconstruction invariant passes.
+The four failures are the held forward contract case and three old
+symbol-expecting reference-close cases whose production/fixture changes
+belong to the already-decided §10.2 round. The six-fresh gate is not green.
 
 The §10.2 token-address/inline-lowering round is queued **after this B/A
 round and before publication**. It has not been implemented or claimed by
