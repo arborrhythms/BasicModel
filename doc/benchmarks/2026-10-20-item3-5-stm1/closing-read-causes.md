@@ -171,3 +171,22 @@ six-fresh-initialization acceptance run remain pending.
 
 This mode is retained for the certificate-scope review, alongside §6.2.
 It has not been suppressed, regraded or replaced by a passing initialization.
+
+### 6.5 Fresh reverse count failure: the certificate traverses raw storage
+
+| Check | Evidence |
+|---|---|
+| Candidate | `1be79c9d52fc358f4c33f3313412141e2ca3b8a2` |
+| New failure | `review3/fresh-both-reverse-1`, line 422; every working forward reference has resolved, but the raw-graph count is zero |
+| Read mismatch | `carries_three` traverses `store.refs[child]`, bypassing `meaning_of(child)` and its witnessed binding |
+| Architectural rule | Identity is computed on read and never written back to the source LTM occurrence; an open raw reference is expected to remain raw |
+| Row evidence | `review3/raw-working-count-1.json`: the same eight sentence roots have no raw path and eight working paths to a retained supplied-answer identity. Every working value is from a read the native run already made |
+| Required port | At an LTM occurrence, traverse the references from its working `meaning_of` value. Keep the same eight roots, Part edges, cycle boundary, `>= 2` assertion, forced scope and budgets |
+
+This port does not settle the unrelated-variable assertion (§6.2) or the
+unresolved explored complement (§6.4). Those remain separate decisions.
+
+`review3/arrival-27` reproduces the count failure exactly at the saved fresh
+initialization (`raw-count-replay.json`); `arrival-28` passes after the
+working-read port, with all eight selected roots bound correctly. No
+assertion, root selection, forced scope or budget changed.

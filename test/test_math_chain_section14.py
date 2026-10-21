@@ -413,7 +413,14 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                             pending_refs.extend(store.parts.refs[ref].tolist())
                         child = store.index_of_row(ref)
                         if child is not None:
-                            pending_refs.extend(store.refs[child].tolist())
+                            # Identity is interpreted on read, never written
+                            # back into the retained occurrence's raw slots.
+                            value = store.meaning_of(child)
+                            for reference in value.role_refs:
+                                if reference is not None:
+                                    assert reference[0] in ('sym', 'ltm')
+                                    pending_refs.append(reference[1] if reference[0] == 'sym'
+                                                        else reference[2])
                     return False
                 for field in model._sentence_fields[0]:
                     index = store.location(field.row_id)

@@ -109,3 +109,45 @@ Those two are not claimed repaired by the name-key and surface changes.
 The next declared set, `fresh-both-N`, consists of six fresh independent
 model initializations in each order on this repaired source. Every result
 and initialization is retained; acceptance requires all twelve passes.
+
+### Question A: six fresh initializations per order on `1be79c9d5`
+
+| Initialization | Forward | Reverse |
+|---|---|---|
+| 1 | Pass | Fail line 422, raw-storage traversal |
+| 2 | Pass | Fail line 422, raw-storage traversal |
+| 3 | Pass | Fail line 422, raw-storage traversal |
+| 4 | Fail line 391, the kept arrival equates the name with a different word | Fail line 422, raw-storage traversal |
+| 5 | Pass | Fail line 398, unrelated-variable assertion |
+| 6 | Pass | Fail line 422, raw-storage traversal |
+
+The complete declared set is **5 passed / 7 failed**, all retained in
+`fresh-both-summary.json`. No seed was chosen for passing. The raw/working
+comparison for reverse initialization 1 is `raw-working-count-1.json`:
+the eight selected sentence roots have zero raw paths but eight recorded
+working paths to the expected identity. The certificate reads the abolished
+write-back behavior. A port to `meaning_of` preserves every root and the
+same `>= 2` assertion; the live-exploration contract failures stay separate.
+
+### Question B: does the cache allocation swallow a kept referent failure?
+
+The sole production caller of `IdentityRows.mint` is `expose_form`, which
+supplies `form=` and creates a rebuildable learned form region. Ordinary
+referents and relation arguments close through `PartClosing`; its native
+allocation failure is loud. The direct no-form `IdentityRows.mint` calls
+are test fixtures. The optional cache allocation is not a second kept
+referent path.
+
+### Question A: does the working-read port preserve the reverse certificate?
+
+| Check | Result |
+|---|---|
+| Original fresh reverse initialization 1 | Fails line 422, zero raw paths |
+| `arrival-27`, exact replay before port | Same initial/final parameters, RNG, source manifest, all LTM1 and Part rows; same failure. Symbol-type sets agree (`raw-count-replay.json`) |
+| Port | Read each LTM occurrence through `meaning_of`; no changed roots, Part traversal, cycle guard, forced scope, budget or `>= 2` assertion |
+| `arrival-28`, replay after port | Pass; 8/8 roots bound correctly. Native `certificate.json` is copied beside the saved initialization |
+
+The requested eight-file set and the unchanged random paired-R certificate
+are next, with both decomposition arms at their original snapshots/seeds.
+This is scoped evidence, not another full sweep. The live-exploration
+contract questions remain held for review.

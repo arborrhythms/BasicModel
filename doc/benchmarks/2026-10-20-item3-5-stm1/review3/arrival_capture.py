@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import random
+import shutil
 
 import numpy as np
 import pytest
@@ -195,3 +196,11 @@ def pytest_runtest_makereport(item, call):
             for frame in call.excinfo.traceback if frame.name in (
                 'after', 'test_forced_ordinary_pending_premise_in_both_orders')]
     (directory/'outcome.json').write_text(json.dumps(plain(details), indent=2)+'\n')
+    # Copy the native question tables only after the test has finished. This
+    # adds no model reads or changes to the trial that produced the result.
+    folder = item.funcargs.get('tmp_path')
+    if folder is not None:
+        for name in ('certificate.json', 'ordinary.json'):
+            source = folder/name
+            if source.is_file():
+                shutil.copy2(source, directory/name)

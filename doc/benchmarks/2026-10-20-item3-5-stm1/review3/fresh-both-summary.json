@@ -1,0 +1,124 @@
+[
+  {
+    "number": 1,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 0,
+    "receipt": "fresh-both-forward-1",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "passed"
+  },
+  {
+    "number": 2,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 0,
+    "receipt": "fresh-both-forward-2",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "passed"
+  },
+  {
+    "number": 3,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 0,
+    "receipt": "fresh-both-forward-3",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "passed"
+  },
+  {
+    "number": 4,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 1,
+    "receipt": "fresh-both-forward-4",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "failed",
+    "line": 391,
+    "index": 26
+  },
+  {
+    "number": 5,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 0,
+    "receipt": "fresh-both-forward-5",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "passed"
+  },
+  {
+    "number": 6,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "forward",
+    "exit": 0,
+    "receipt": "fresh-both-forward-6",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+    "outcome": "passed"
+  },
+  {
+    "number": 1,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-1",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 422,
+    "index": 55
+  },
+  {
+    "number": 2,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-2",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 422,
+    "index": 55
+  },
+  {
+    "number": 3,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-3",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 422,
+    "index": 55
+  },
+  {
+    "number": 4,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-4",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 422,
+    "index": 55
+  },
+  {
+    "number": 5,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-5",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 398,
+    "index": 4
+  },
+  {
+    "number": 6,
+    "source": "1be79c9d52fc358f4c33f3313412141e2ca3b8a2",
+    "arm": "reverse",
+    "exit": 1,
+    "receipt": "fresh-both-reverse-6",
+    "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+    "outcome": "failed",
+    "line": 422,
+    "index": 55
+  }
+]

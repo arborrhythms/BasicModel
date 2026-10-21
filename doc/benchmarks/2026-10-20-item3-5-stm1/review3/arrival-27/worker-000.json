@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "completed": [
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 34.121358084026724,
+      "message": "test/test_math_chain_section14.py:425: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:178: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:52: in present\n    after_batch(model, split, rows, result)\ntest/math_chain_ordinary.py:74: in record\n    after(model, split, rows, result, observations, observer)\ndoc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival_capture.py:154: in observed_after\n    return after(*args) if after is not None else None\n           ^^^^^^^^^^^^\ntest/test_math_chain_section14.py:422: in after\n    assert sum(item['bound_correct'] for item in report) >= 2\nE   assert 0 >= 2\nE    +  where 0 = sum(<generator object test_forced_ordinary_pending_premise_in_both_orders.<locals>.after.<locals>.<genexpr> at 0x146594ba0>)",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 8 (\u0394=21.694s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

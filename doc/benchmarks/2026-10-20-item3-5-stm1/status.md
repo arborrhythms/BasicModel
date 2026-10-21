@@ -1,17 +1,28 @@
 # Step 1b: current gates and carry ledger
 
-**Superseded by Claude’s §12 review:** the saved arrival passes below do not
-cover the live forward/reverse failures. §10.1 is now decided: no capacity
-masking, ordinary referents stay unminted, relation arguments mint at close
-and fail loudly if unseatable. The [review-3 receipt](review3/README.md)
-records the two repairs and their new landing evidence. Publication remains
-blocked on these live certificates; no second full sweep is authorized.
+**Current §12 repair round:** candidate `1be79c9d5` follows `2fa238049` on
+`codex/item3-5-first-pass`. The [review-3 receipt](review3/README.md) owns
+the new evidence. MM_grammar passes the native-119 replay at the original
+eight seats and 900-epoch/.20 budget. Arrival repairs now cover the skipped
+named head, changing lexical name key and rejected composed surface marker;
+the captured name-key initialization passes with the unchanged assertion.
+The fresh live certificate is still open. Its raw-storage traversal needs
+a working-read port; distinct live-exploration counterexamples remain
+under [certificate-contract review](review3/reverse-scope-question.md).
+All failures and their initializations are retained. Publication is held.
+
+The §10.2 token-address/inline-lowering round is queued **after this B/A
+round and before publication**. It has not been implemented or claimed by
+these results. No second full sweep is authorized.
 
 Step 1b is **not landed**. The October 20 amendments and mechanism
-candidate are committed as `dde893527` on `codex/item3-5-first-pass`.
+candidate began at `dde893527` on `codex/item3-5-first-pass`.
 BasicModel main remains `204e1be55`; WikiOracle main remains `a89c958`.
 The post-sweep repair candidate carries this receipt on the same branch;
-publication to both mains remains held for the allocation decision and repair.
+publication to both mains remains held for the live certificates and §10.2.
+
+The following tables retain the earlier candidates' scoped evidence; they
+do not promote the old saved-state arrival passes to the current live gate.
 
 The one [full sweep](full/report.html) completed 5,965/5,965: **5,420 passed,
 219 failed, 325 skipped and one XPASS**. The [failure index](sweep-failures.md) records 218 passing scoped cases or
@@ -82,7 +93,8 @@ both decomposition arms match the current validated source exactly.
 | Work | Destination / status |
 |---|---|
 | §6.10 close types, expression read and both decomposition lengths in both arms | Complete scoped evidence in attempt 124; included in this landing |
-| One full landing sweep, resolve its failures, commit, push and WikiOracle bump to both mains; include all October 20 doc edits and end with a clean BasicModel tree | Full sweep complete; one native capacity failure remains. Publication held for §10’s allocation decision and repair |
+| One full landing sweep, resolve its failures, commit, push and WikiOracle bump to both mains; include all October 20 doc edits and end with a clean BasicModel tree | Full sweep complete once; §12 capacity replay passes, live arrival gate remains open. Publication also awaits the decided §10.2 round |
+| Inline determiner lowering, address-based token identity/activations and located-kind references | Decided §10.2 round after the current B/A repair; own receipt and unchanged scoped gates before publication |
 | LTM1 column cull, document/stream context wholes, minting by recurrence | Step 2, explicitly outside this repair |
 | Regenerate stage3, np_definite and np_description | When their producing stage-4e/NP lessons are next needed in Item 3.5, with original budgets and seeds; certificates remain prerequisite-skipped. Archived signed artifacts are never loader inputs |
 | Order strata, order-0 geometric diffusion, placement and Item 3 content-width/cleanup work | Item 3; STM1 has no inversion or width gate |

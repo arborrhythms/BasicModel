@@ -943,13 +943,28 @@ groups by `occurrence_of(location)` when no minted symbol is recorded.
 The close creates no concept row for the token, neither for the operand
 nor for the member. An individual gets a concept row only by recurrence
 (step 2) or when a relative truth needs the token as a symbol reference,
-minted at the close with loud failure (§10.1). The derivation survives
-as handles over minted symbols, `Part(marker, kind)`, deduplicated by
-pair (`_pairs`, `parts.find`). Already in the code: `SituationAddress`,
+minted at the close with loud failure (§10.1). The lowering is inline (Alec,
+later): `LowerLayer.forward(marker, description)` returns
+`assert_cube(description)`, so the type does not change and the lowering
+is deterministic; it changes order and location only. The close writes
+no edge and reserves no handle for it: the `lower` node's symbol is its
+head child's, as `_plan_one`'s unary branch already does for a
+content-preserving face; enclosing edges (`lift`, `verb`) reference the
+kind directly, and which member is the row. **The same lowering is the
+identity in STM (Alec):** a token in STM, whether the open sentence's
+working slot, the trial-local `('new', n)` candidate that
+`ReferenceClose.preview` adds to `individuals` (`signature =
+content.clone()`), or the forward referent `ThoughtReferences.fill`
+constructs from a role's description, is `lower` applied to its
+description: the description's content at order 1 at a location. One
+rule, no second construction of identity; `bind` compares lowered
+descriptions by the meet (§6.1) and decides by location, recency and
+expectation. Already in the code: `SituationAddress`,
 the order-1 row candidates, `semantic_reference` (a row references a row
 by address), the address grouping in `individuals()`. Missing, and this
 round's work: the derivation side still seats any non-native argument,
-and the determiner cuts the operand to -1.
+the determiner cuts the operand to -1, and the close would write an
+edge for an operation that changes no content.
 
 **Changes, in code names.**
 
@@ -959,8 +974,18 @@ and the determiner cuts the operand to -1.
    `mint_reference` and `mint_order` still drive `member()` (order 1) and
    the chooser's credit; they no longer cut the derivation. In
    `PartClosing` the plan for `lower(marker, kind)` then has no fresh
-   leaf, a recurrence of the pair reuses its handle, and the fixture's
-   four examples plan no seat (their root is the `lower` itself).
+   leaf. **Inline (Alec, later):** in `_plan_one`'s binary branch a
+   determiner-mode `lower` (`formal_name == 'lower'`) makes no pair and
+   reserves no edge; its `reference` is its head child's symbol
+   (`children[head_role - 1]`) and its `types` the child's; assert
+   `torch.equal(value.point, head.point)` as the unary branch does, and
+   treat an inequality as a mechanism defect (the marker contributed
+   content), never as a reason to write an edge. `preflight` still
+   records `lower_argin1`, `lower_argin2` and `lower_argout1` from the
+   plan, so the distributional word classes keep the determiner's signal.
+   The reverse re-selects the marker from references
+   (`LowerLayer.reverse`); the determiner leaves no trace (probe,
+   2026-10-20). The fixture's four examples then allocate nothing.
 2. `ClauseRow.write_clause`, `written_rows[('activations', id(clause))]`
    and `('symbols', id(clause))`: record a symbol only when it is in
    `alloc.individuals`, otherwise `None`, so the frame's activation keys
@@ -975,11 +1000,11 @@ and the determiner cuts the operand to -1.
    0), where `point(owner, target)` now serves only ints.
 4. `PartClosing._plan_one`, leaf case: a leaf whose `reference` locates
    a row (`store.location(reference)` is an int) resolves to that row's
-   derivation handle (`raw_meaning_of(index).role_refs[0]` when it is
-   `('sym', handle)`) instead of `_reserve()`; a located row without a
-   handle keeps the existing reserve. This is site 2 of §3: "it" under
-   its verb edge references the antecedent's expression handle; which
-   cat is the row. `ReferenceClose.prepare` places the located
+   derivation symbol (`raw_meaning_of(index).role_refs[0]` when it is
+   `('sym', symbol)`: the kind under inline lowering, a fold handle for a
+   composed description) instead of `_reserve()`; a located row without
+   one keeps the existing reserve. This is site 2 of §3: "it" under its
+   verb edge references the antecedent's kind; which cat is the row. `ReferenceClose.prepare` places the located
    candidate on the term as today.
 5. `PartClosing`: `_individual_terms` and the `alloc.individuals` /
    `singletons` update from `clause.minted` go; `_seat` no longer adds
@@ -996,13 +1021,13 @@ and the determiner cuts the operand to -1.
    `test_new_relation_argument_is_minted_and_unseatable_argument_fails`
    (a fresh leaf under `verb`: seated or loud; the §10.1 relative-truth
    case). Rewrite `test_new_referent_closes_as_an_unminted_occurrence`:
-   `refs[result, 1]` is the kind's symbol, `alloc.next_id` advances by
-   the edge handle only, no bank row anywhere, `_csw_row_of(result) is
-   None`. Add: two sentences with the same description close to two
-   order-1 rows with distinct addresses and one `Part(marker, kind)`
-   edge, and `individuals()` over both frames returns two identities
-   keyed by address. Add: a pronoun bound to a located row writes its
-   verb edge over the antecedent's handle and seats nothing. Re-run the
+   the row's `role_refs[0]` is `('sym', kind)`, `len(parts)` and
+   `alloc.next_id` are unchanged, no bank row anywhere. Add: two
+   sentences with the same description close to two order-1 rows with
+   distinct addresses and no new Part row, and `individuals()` over both
+   frames returns two identities keyed by address. Add: a pronoun bound
+   to a located row writes its verb edge over the antecedent's kind and
+   seats nothing. Re-run the
    eight-file certificate set (decomposition in both arms, §14,
    reference close, reference mentions, bind thought G1–G3, identity
    rows, identity cube, Part store) at the unchanged budgets and seeds; a
@@ -1011,9 +1036,8 @@ and the determiner cuts the operand to -1.
 8. Not in this round: edges that address occurrence rows (LTM2 → LTM1);
    minting by recurrence (step 2); the thought stream's
    `search_exhausted` leaf referent (`ThoughtStream` ≈ 256) unchanged;
-   the binary branch's fold-cache seat for composed arguments unchanged
-   (bounded by distinct pairs; the duplicate of the kind's point under
-   `lower` is a step-2 clean-up).
+   the binary branch's fold-cache seat for composed arguments other than
+   `lower` unchanged (bounded by distinct pairs).
 
 **Order.** The current round completes as scoped (`review3/`: B's
 capacity sequence, A's live-arrival certificates), then this round, then

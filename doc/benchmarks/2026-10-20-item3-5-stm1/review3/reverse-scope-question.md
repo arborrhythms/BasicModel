@@ -62,3 +62,12 @@ fills the same name with its actual retained referent; requiring every
 kept departure to retain the supplied referent additionally constrains
 the grammar/keep result. No such change is made here. The original
 assertions, forced scope, budgets and failures remain visible for review.
+
+The declared six-per-order check on repaired candidate `1be79c9d5` adds a
+clearer forward example (`fresh-both-forward-4`): stream 6's pending row 26
+is filled with symbol 14 (`is`) because the kept arrival at row 51 actually
+has equality endpoints `(open word 15, symbol 14)`. It does not state the
+supplied complementary referent. Five other forward initializations pass.
+Reverse initialization 5 reproduces the unrelated-variable assertion;
+the other five reverse failures are the separate raw-storage traversal
+error, whose eight working paths are recorded in `raw-working-count-1.json`.

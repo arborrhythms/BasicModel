@@ -50,8 +50,8 @@ B (§10.1 natively) and A (reproduce from saved initial RNG, name the
 cause, pass six fresh initializations per order), then the
 [§10.2 round](doc/plans/2026-10-19-bind-thought-operation.md#102-decided-alec-2026-10-20-later-the-determiner-prepares-the-token-for-identity-in-stm)
 (Alec, 2026-10-20: the determiner's `lower` prepares the token to be
-bound by identity in STM; no concept row for the token; fixture back to
-8 rows; the capacity certificate at the original inventory), then publish both
+bound by identity in STM; no concept row and no edge for the token, the
+lowering is inline; fixture back to 8 rows; the capacity certificate at the original inventory), then publish both
 mains with the October 20 docs and a clean BasicModel tree. The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
