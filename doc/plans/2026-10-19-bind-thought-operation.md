@@ -2043,3 +2043,15 @@ dispositions above are authorized.
 new hash: twelve fresh first draws with captures, the eight-file set, both
 decomposition arms, both eight-seat MM draws, C's pair, the carrier
 certificate, the regression files. Then my review and publication.
+
+**Landing record (Codex, 2026-10-21).** The participant implementation and
+authorized ports are frozen at `cc3672cfbcab4e0fc1f88aabd22bd4bb8f80b57c`.
+The decomposition certificate's episode lookup additionally uses the
+question's occurrence address; every assertion remains verbatim. All
+requested gates pass on this hash: 212 cases, seven declared prerequisite
+skips. The twelve first draws and captured forward-five replay leave x
+open; no learning is claimed. [Claude's completed review](../benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md)
+recommends land and accepts that correspondence repair. Its two ungated
+root-position findings are recorded in [FutureWork](../FutureWork.md#root-participant-positions-review-follow-up-2026-10-21)
+as unresolved design follow-ups, not new decisions. The [receipt](../benchmarks/2026-10-21-item3-5-review11-landing/README.md)
+retains every prior failure, exact-source gate and evidence limitation.

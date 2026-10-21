@@ -1,0 +1,119 @@
+{
+  "base": "f56fdf8ff337021ef744070cb3238c9c4fc7e8fa",
+  "source": "cc3672cfbcab4e0fc1f88aabd22bd4bb8f80b57c",
+  "ports": {
+    "test/test_reference_arrivals.py": "one count: 2 to 1; all other bytes unchanged",
+    "test/test_reference_close.py": "all assertion ASTs unchanged, including the four carried partition cases",
+    "test/test_bind_thought.py": "only the two superseded local-cost tests ported to episode-advantage credit",
+    "test/test_math_chain_section14.py": "both pending-premise certificates byte-identical",
+    "test/test_math_chain_decomposition.py": "all assertions unchanged; select the episode by its question occurrence, not list position"
+  },
+  "runs": [
+    {
+      "receipt": "bootstrap-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "carrier-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "decomposition-enabled-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "decomposition-zero-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-1",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-2",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-3",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-4",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-5",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-6",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-1",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-2",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-3",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-4",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-5",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-reverse-6",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "marker-replay-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "mm-fresh-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "mm-saved-final",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "native-final-02",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "regressions-final",
+      "exit": 0,
+      "reason": "passed"
+    }
+  ],
+  "source_files": 830
+}

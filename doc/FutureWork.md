@@ -1601,3 +1601,17 @@ Certificate: [`test_reidentification_revises_the_earlier_ambiguous_binding`](../
 registered as the prerequisite-skipped FutureWork phase `mtm_reidentification`.
 Its four parametrized partition assertions are unchanged; all other checks
 in the original four cases still run in step 1b.
+
+## Root participant positions (review follow-up, 2026-10-21)
+
+Claude's [landing review of step 1b](benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md)
+recommends landing `cc3672cfb` and records two nonblocking findings outside
+the gated parse shapes. At a root, `verb(noun, punctuation)` starts outside
+a noun position, so its non-head punctuation can become a participant.
+A standalone composite object without a determiner also falls outside the
+current standalone-site exception, which accepts only leaf compositions.
+The declared head alone does not distinguish a root attachment from a
+predicate-and-object verb. These remain unresolved for Alec's design
+decision; no new grammar rule, word class or marker mask was adopted in
+the landing. A follow-up needs explicit root-position semantics and
+commit-level coverage of both shapes.

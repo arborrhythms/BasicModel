@@ -1,6 +1,6 @@
 # Claude review request: step 1b after review eleven, bind plan §21
 
-Review frozen BasicModel source `bedbea855a5701c4802a58142c6ccb08ef7b9097`
+Review frozen BasicModel source `cc3672cfbcab4e0fc1f88aabd22bd4bb8f80b57c`
 against accepted base `f56fdf8ff337021ef744070cb3238c9c4fc7e8fa`.
 Read §21 of `doc/plans/2026-10-19-bind-thought-operation.md` first.
 The user explicitly requests your review of this frozen source and its

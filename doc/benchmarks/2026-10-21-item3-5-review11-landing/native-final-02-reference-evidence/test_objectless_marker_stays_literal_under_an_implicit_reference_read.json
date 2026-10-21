@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+  "outcome": "passed",
+  "failure": "None",
+  "reads": []
+}

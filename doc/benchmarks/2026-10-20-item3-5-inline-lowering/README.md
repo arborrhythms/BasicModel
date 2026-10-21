@@ -1,11 +1,17 @@
 # Step 1b §10.2: inline lowering and occurrence identities
 
-**Current §21:** the participant-position repair and Alec’s seven check
-dispositions are implemented for a new freeze. The captured forward-five
-regression passes with the original parameters and RNGs; the preceding
-stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11-landing/README.md)
-owns the new source audit and gates. No earlier evidence is promoted.
-Claude review and publication remain pending.
+**Current §21 source `cc3672cfb`:** all requested gates pass by this
+hash: twelve distinct fresh first draws, the eight-file set, both original
+decomposition arms, both eight-seat MM draws, C's pair, carrier and 78
+regressions. The [landing receipt](../2026-10-21-item3-5-review11-landing/README.md)
+records 212 passed cases and seven declared prerequisite skips, including
+four re-identification cases carried verbatim to FutureWork. Every prior
+failure remains attributed to its own source. [Claude recommends landing](../2026-10-21-item3-5-review11-landing/claude-review.md),
+accepting the source and the occurrence-addressed decomposition repair.
+This landing publishes the source, receipts, October 20 docs and accepted
+naming sweep on both mains with the WikiOracle bump. Two nonblocking root
+parse limitations remain recorded in FutureWork. All fresh pending-name
+outcomes are open; no earlier-source pass is promoted or learning claimed.
 
 **Current §20 source `f56fdf8ff` is stopped for Alec:** forward first draw
 5 binds x to the captured space symbol instead of three. The

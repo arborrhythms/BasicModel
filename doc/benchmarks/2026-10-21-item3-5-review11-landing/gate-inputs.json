@@ -1,5 +1,5 @@
 {
-  "source": "bedbea855a5701c4802a58142c6ccb08ef7b9097",
+  "source": "cc3672cfbcab4e0fc1f88aabd22bd4bb8f80b57c",
   "sha256": {
     "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-diagnostic-01-state/initial-rng.pt": "19e05f350cca78b058be5f49835e7615c8751f3dce38494cc04352b2360f5509",
     "doc/benchmarks/2026-10-20-item3-5-stm1/rng-119/test_mm_grammar_learns_xor_signal/initial-rng.pt": "0f9b2d07ee3d0d3c1fb88629e4915aa3321c862428b5a6911b60569b937585ff",

@@ -1,11 +1,17 @@
 # Step 1b: current gates and carry ledger
 
-**Current §21:** the participant-position repair and Alec’s seven check
-dispositions are implemented for a new freeze. The captured forward-five
-regression passes with the original parameters and RNGs; the preceding
-stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11-landing/README.md)
-owns the new source audit and gates. No earlier evidence is promoted.
-Claude review and publication remain pending.
+**Current §21 source `cc3672cfb`:** all requested gates pass by this
+hash: twelve distinct fresh first draws, the eight-file set, both original
+decomposition arms, both eight-seat MM draws, C's pair, carrier and 78
+regressions. The [landing receipt](../2026-10-21-item3-5-review11-landing/README.md)
+records 212 passed cases and seven declared prerequisite skips, including
+four re-identification cases carried verbatim to FutureWork. Every prior
+failure remains attributed to its own source. [Claude recommends landing](../2026-10-21-item3-5-review11-landing/claude-review.md),
+accepting the source and the occurrence-addressed decomposition repair.
+This landing publishes the source, receipts, October 20 docs and accepted
+naming sweep on both mains with the WikiOracle bump. Two nonblocking root
+parse limitations remain recorded in FutureWork. All fresh pending-name
+outcomes are open; no earlier-source pass is promoted or learning claimed.
 
 **§20 stopped, frozen source `f56fdf8ff`, 2026-10-21.** Forward first
 draws 1–4 pass (0 bound / 16 open each); draw 5 is a wrong antecedent:

@@ -1,0 +1,27 @@
+**Verdict: land.** Nothing I found blocks `cc3672cfb`. The code matches §21 and Alec's decision, the authorized ports are faithful, the correspondence repair is principled, and every requested gate is recorded as passing on this hash. Below are two latent gaps in the participant rule and some limits on the evidence. They're for Alec to decide on, not reasons to stop.
+
+## What I checked and accept
+
+- **Participant walk** (`bin/ReferenceParticipants.py:22-63`). I traced both forced sentences against the declared heads (verb head 1, lift/lower/surface head 2):
+  - `y is x plus two.` gives `equal(y, surface(is, lift(x, verb(plus, verb(two, .)))))`. Eligible: y, x and two. Not eligible: `is`, the spaces, `plus` and `.`.
+  - `x is three.` follows the noun path through surface into `verb(three, .)` and keeps `three` as the head (line 48). The punctuation never becomes an object.
+  - Arrival candidates (`bin/ReferenceClose.py:796-826`) are limited to eligible nodes, leaf terms and their lexical copies. Store objects are still added at `:882`, and the dummy and gaps are untouched.
+- **Ordinary menus.** `accessible()` filters frame identities and the pairs it walks through `nonparticipants` (`ReferenceClose.py:111-117`, `:126-127`, `:135`), using the classifier factored out into `PartRead.argument_reader`. Unclassified pairs exclude nothing. This adds no pool read: the forward-body pool test passes, and the bind-fork test's `len(reads) == 1` still holds. It does add a per-call occupation classification inside `bind_site`'s menu read.
+- **Journal writer** (`bin/ClauseJournal.py:342-345`, `:371`). `composition()` is cached (`:236-260`), so the `id()` check is stable. A standalone provisional leaf now returns `None` and never becomes an order-1 site. The new journal regression and the accepted unpooled-antecedent test both pass in `regressions-final`.
+- **Ports.**
+  - Both thought tests delegate to `test_thought_bind_is_credited_only_by_episode_advantage` at weights 0 and 1. That covers no loss or gradient at equal R + A, and policy and form-cue (`grad[4]`) gradients at nonzero advantage.
+  - The arrival count change is a single line (2→1).
+  - The four partition assertions move verbatim into the `mtm_reidentification` test, which is registered in `phase-artifacts.json` and linked from `doc/FutureWork.md:1600`. All other assertions stay live.
+- **Decomposition repair** (`test/test_math_chain_decomposition.py:29-31`). The test now finds the question's source row and picks the one episode whose `_query_occurrence` matches it; the `episode, =` unpacking fails if there are zero or several. This picks by identity, not by outcome, so it can't quietly choose a passing episode. Assertions, fixtures and production are unchanged, and the four cases show correct bindings and chains. The failed `bedbea855` gates stay failed in their own receipt.
+- **Gates.** All 21 runs show this hash and exit 0. The twelve fresh draws have distinct parameter, RNG and generator hashes. The bound/open counts match the README. Seven skips: copular identity (1), pending-premise learning (2) and re-identification (4). Nothing from an earlier source is promoted.
+
+## Findings (not blocking)
+
+1. **A root-level `verb(noun, punctuation)` makes the punctuation a participant.** At the root the walk starts in non-noun context (`ReferenceParticipants.py:86`). It then takes the verb-participant branch (`:53-56`) and marks the non-head child as a noun. For a one-noun sentence like `three.`, `.` would become eligible, `three` would not, and `.` would enter the arrival menu. That breaks the §21 rule that objectless markers are never candidates. The forced grammar only builds this shape inside a noun position, so no gated fixture reaches it. Fixing it needs a decision from Alec, because the head declarations alone can't tell a predicate-and-object verb from an attachment at the root.
+2. **A standalone composite object without a determiner gets no site.** Example: a root of order 1 that is a headed attachment with a non-leaf composition. The standalone exception (`ReferenceParticipants.py:105-110`) only covers leaf compositions, and the root walk starts in non-noun context. `sites()` therefore drops its worded request (`ReferenceClose.py:637`), and `prepare` passes it through unchanged. The new tests only check `preview` for a dropped request; no test commits one. No fixture produces this case today.
+
+## Evidence limitations
+
+- **No run shows the positive binding.** In none of the 13 pending-premise runs (12 fresh, plus the replay) was `x` bound to `three` in a kept store. In the draw 5 replay the only arrival selections (`arrival 1`, twice) were in the explore trial, which wasn't kept (`keep_decision: tie:greedy`). So my §21 prediction that `three` would beat the dummy did not hold in the kept path. The certificate allows `x` to stay open, so this isn't a failure, but the rule is only demonstrated in the negative direction.
+- **Explore-trial selections go unchecked.** The certificate only inspects the kept store. The keep probe records arrival candidates by index, not by word, so I couldn't confirm that the unkept `arrival 1` was `three` rather than a marker. Code reading says no marker is eligible in that derivation.
+- **I ran nothing**, as the review was read-only. I relied on the receipts for test outcomes, the 830-file manifest and the source audit's checks. That ForcedGrammar and the pending-premise certificates are byte-identical I confirmed only by their absence from `source-diff.patch`.

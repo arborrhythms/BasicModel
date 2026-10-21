@@ -17,19 +17,19 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 step 1 is published on both mains: BasicModel
-`204e1be55`, WikiOracle `a89c958`
-([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**§21 participant repair is ready for a new freeze:** the kept parse’s
-participant positions govern word sites, arrival constituents and ordinary
-menus. Draw 5’s complete captured initialization replays with 0 bound / 14
-open reads; its assertions are unchanged. The seven retained checks have
-Alec’s authorized dispositions, including four prerequisite-skipped
-re-identification certificates. The [§21 receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)
-owns the new source audit and gates. Fresh gates, Claude’s review,
-both-main publication and the WikiOracle bump remain pending. All earlier
-failures and their source attribution are retained; no earlier-source pass
-is promoted and no learning claim is made.
+**Current:** Item 3.5 step 1b lands with reviewed source `cc3672cfb`:
+all requested gates pass on that hash (212 passed cases, seven declared
+prerequisite skips), including twelve distinct first draws and both
+original decomposition/MM arms. [Claude recommends landing](doc/benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md).
+The [receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)
+retains every failure and source audit; the October 20 docs and accepted
+naming sweep ride with publication to both mains and the WikiOracle bump.
+All fresh pending-name sites stay open; this is no learning claim. The next
+proposed round, reconstruction reading the bind, needs its spec first.
+Two nonblocking root-position findings remain in
+[FutureWork](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21).
+
+**Historical step 1b review ledger (superseded by Current).**
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
@@ -695,6 +695,10 @@ not by a passing identity lesson.
    item 0 or FutureWork with the reason written here; when the list is
    empty the 6 and 5.5 entries collapse to Done lines.
 
+   Step 1b is reviewed at `cc3672cfb` ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
+   Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
+   reconstruction reading the bind needs a spec before its next round.
+
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
    described below by origin; the first-pass order above supersedes the older sequencing:
@@ -1098,6 +1102,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 step 1b — native binding, MTM and participant menus:** reviewed source `cc3672cfb`; all requested gates pass, seven prerequisite skips and two nonblocking root-position follow-ups declared, no learning claim ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
 
 - **Item 4 Step 0 — carried invariants and gates:** `bfc834d79`; all-level XOR/math comparison, paired reconstruction, uncapped prime/content-neutrality certificate, mention-ranking credit, one full sweep and scoped empty-menu repair ([receipt](doc/benchmarks/2026-10-19-item4-step0-round2/README.md)).
 

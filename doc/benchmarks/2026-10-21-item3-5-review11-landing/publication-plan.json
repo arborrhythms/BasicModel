@@ -1,0 +1,20 @@
+{
+  "source": "cc3672cfbcab4e0fc1f88aabd22bd4bb8f80b57c",
+  "status": "reviewed_for_publication",
+  "basicmodel_remote_main": "204e1be55d9021f7b0a5c0931de7f9691d3d8006",
+  "wikioracle_remote_main": "a89c95811fa7ebcf4e2bbf8a8bbd472e8f2dc026",
+  "fast_forward_basicmodel": true,
+  "wikioracle_change": "basicmodel submodule pointer only",
+  "preexisting_wikioracle_changes": [
+    "nanochat"
+  ],
+  "second_full_sweep": false,
+  "claude_verdict": "land",
+  "claude_report": "claude-review.md",
+  "landing_changes": "documentation and receipts only; bin/test/data identical to the frozen source",
+  "unresolved_review_findings": [
+    "root verb(noun, punctuation) participant ambiguity",
+    "standalone composite noun without determiner lacks a site"
+  ],
+  "findings_disposition": "nonblocking per Claude; recorded for Alec in FutureWork, not resolved by a new design decision"
+}
