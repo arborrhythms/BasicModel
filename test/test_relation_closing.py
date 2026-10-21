@@ -98,3 +98,49 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+@pytest.mark.usefixtures('eager_reading')
+def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monkeypatch):
+    from pathlib import Path
+    from test_mm_xor import _fresh_model, _PROJECT
+    from PartClosing import PartClosing
+    from reading_fixtures import capture_readings
+    model, _, _ = _fresh_model(str(Path(_PROJECT)/'data/MM_grammar.xml'))
+    chooser = model.languageSpace._tree_layer(2).chooser
+    part = next(i for i, rule in enumerate(model.languageSpace._compose_binary_rules)
+                if rule.method_name == 'part')
+    score_binary, score_unary = chooser.score_binary, chooser.score_unary
+    def binary(*args, **kwargs):
+        stop, scores = score_binary(*args, **kwargs)
+        ids = kwargs.get('op_indices', torch.arange(scores.shape[-1], device=scores.device))
+        return stop, scores.masked_fill(ids != part, -torch.inf) + 1e6
+    def unary(*args, **kwargs):
+        stop, scores = score_unary(*args, **kwargs)
+        if kwargs.get('op_offset') == model._stm_reducer().r_reduce + model._stm_reducer().r_apply:
+            return stop, scores
+        return stop, torch.full_like(scores, -torch.inf)
+    monkeypatch.setattr(chooser, 'score_binary', binary)
+    monkeypatch.setattr(chooser, 'score_unary', unary)
+    preflight, plans = PartClosing.preflight, []
+    def observe(closing):
+        plans.append([(record['value'].reference, record['seat']) for record in closing._plan])
+        return preflight(closing)
+    monkeypatch.setattr(PartClosing, 'preflight', observe)
+    try:
+        inputs, _ = next(iter(model.inputSpace.data.data_loader(split='train', num_streams=4)))
+        with capture_readings(model) as captured:
+            model.forward(model.inputSpace.prepInput(inputs))
+        assert model._concept_owner().nVectors == 8
+        assert model._word_symbol_concept_ids() is None
+        source = model.inputSpace
+        valid = source._ar_grammar_leaf_mask
+        for b, program in enumerate(captured[0]):
+            expected = source._ar_grammar_object_ids[b, valid[b]]
+            torch.testing.assert_close(program.concept_ids, expected, rtol=0, atol=0)
+            assert bool((expected > 0).all())
+        assert plans and all(not seat for plan in plans for _, seat in plan)
+        assert not model.symbolSpace.ltm_store.relations('definition').numel()
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()

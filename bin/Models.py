@@ -12642,6 +12642,19 @@ class BasicModel(BaseModel):
         concept_ids = self._word_symbol_concept_ids()
         if not torch.is_tensor(concept_ids) or concept_ids.shape != rows.shape:
             concept_ids = torch.full_like(rows, -1)
+        # The mixing reader stages admitted OBJECT identities beside the
+        # same grammar atoms that _pushed_word_slab consumes. Its WORD lane
+        # is intentionally absent; that does not make these objects unknown.
+        # Carry the actual source IDs, without identifying a dimmed value or
+        # treating its physical bank row as an allocator address.
+        grammar_rows = getattr(isp, '_ar_grammar_object_rows', None)
+        grammar_ids = getattr(isp, '_ar_grammar_object_ids', None)
+        if (torch.is_tensor(grammar_rows) and torch.is_tensor(grammar_ids)
+                and grammar_rows.shape == rows.shape and grammar_ids.shape == rows.shape):
+            if grammar_ids.dtype != torch.long:
+                raise TypeError('grammar OBJECT identities must use integer address tensors')
+            concept_ids = torch.where(grammar_rows.to(rows.device) >= 0,
+                grammar_ids.to(rows.device), concept_ids)
         activations = getattr(self.symbolSpace, "_word_reference_presences", None)
         if not torch.is_tensor(activations):
             activations = reference.new_ones(B, W)

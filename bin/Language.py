@@ -12599,12 +12599,9 @@ class LanguageSpace(nn.Module):
             if order < 0:
                 continue
             if order == 1:
-                # The selected operation carries its column reference. A
-                # dictionary association cannot decide individual identity;
-                # the kept close resolves its constituent's request.
-                from Spaces import _concept_alloc_of
-                if int(refs[leaf]) not in _concept_alloc_of(owner).individuals:
-                    refs[leaf] = -1
+                # The token's identity is its location. Its derivation still
+                # names the admitted kind; lowering changes order, not that
+                # source reference. The close resolves the separate request.
                 orders[leaf] = order
                 continue
             surface = owner.word_surface_for_row(int(word_rows[leaf]))

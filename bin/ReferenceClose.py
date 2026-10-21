@@ -94,15 +94,28 @@ class ReferenceClose(nn.Module):
             parts._participant_cache = cache
         return cache[1]
 
+    def _derivation_symbol(self, reference):
+        """Read a token's retained kind/fold without making it an individual."""
+        if isinstance(reference, int):
+            return reference
+        if isinstance(reference, tuple) and reference[:1] == ('sym',):
+            return reference[1]
+        location = self.store.location(reference) if self.store is not None else None
+        if isinstance(location, int):
+            value = self.store.raw_meaning_of(location).role_refs[0]
+            if value is not None and value[0] == 'sym':
+                return value[1]
+        return None
+
     def prediction(self, identity, predicate, role):
-        if isinstance(identity, tuple) and identity[:1] in (('new',), ('ltm',)):
+        target = self._derivation_symbol(identity)
+        if target is None:
             return predicate.sum()*0
         rows = [(edge, target) for edge, r, target in
                 self._participants().get(self._predicate_key(predicate), ()) if r == role]
         from Spaces import _concept_alloc_of
         parts = _concept_alloc_of(self.components.owner).parts
         total = sum(int(parts.access_count[edge]) for edge, _ in rows)
-        target = identity[-1] if isinstance(identity, tuple) else identity
         count = sum(int(parts.access_count[edge]) for edge, candidate in rows if candidate == target)
         return predicate.new_tensor(count/total) if total else predicate.sum()*0
 
@@ -180,14 +193,15 @@ class ReferenceClose(nn.Module):
                 index = store.location(occurrence)
                 if not isinstance(index, int):
                     continue
+                argument = self._derivation_symbol(identity if identity is not None else occurrence)
                 predicate = None
                 for edge in at_time.tolist():
                     part, whole = parts.refs[edge].tolist()
                     if role == 2 and 'state' in alloc.symbol_types.get(edge, ()):
-                        if part == identity:
+                        if part == argument:
                             predicate = whole
                             break
-                    if role == 0 and part == identity:
+                    if role == 0 and part == argument:
                         predicate = int(parts.refs[whole, 1]) if parts.contains(whole) and (
                             'state' in alloc.symbol_types.get(whole, ())) else whole
                         break
