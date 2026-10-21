@@ -1,0 +1,4 @@
+[collect] 8 selectors; limit 900s, 8.0 GiB
+[collect] exit 1; 1.7s; peak 0.16 GiB
+Result: collection_exit, exit 1; 0/0 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/native-final/result.json

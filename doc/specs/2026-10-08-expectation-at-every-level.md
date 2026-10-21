@@ -1,5 +1,7 @@
 # Item 4 (formerly 4.5): expectation at every level — a gain field, surprise as the signal
 
+> **Naming amendment (2026-10-21, Alec):** LTM0 is the occurrence store (formerly LTM1); LTM1 is its relation stratum (formerly LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Names in this live contract are updated in place; retained evidence and source hashes are unchanged.
+
 *Draft rev 5, 2026-10-19 (Claude, from Alec's direction on 2026-10-08/09 and
 his five decisions on 2026-10-19). Item 4 closed as a mechanism on 2026-10-20 (gates at item 0);
 [the execution record](../plans/2026-10-19-item4-start.md) distinguishes

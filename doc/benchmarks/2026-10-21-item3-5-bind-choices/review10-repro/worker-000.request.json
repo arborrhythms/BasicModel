@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_later_pooled_arrival_moves_only_the_named_site",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_reselecting_the_current_owner_changes_no_pool_entry",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[False]",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/review10-repro/worker-000.recycle.json"
+}

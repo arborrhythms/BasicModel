@@ -1,0 +1,23 @@
+{
+  "source": "575cab06cb7d2ecb94a0c02cf64cb71bc6de33b0",
+  "receipt": "bootstrap-final",
+  "selector": "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+  "exit": 0,
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "300",
+    "--suite-timeout",
+    "360",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-final"
+  ],
+  "initial_rng": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v2/bootstrap-diagnostic-01-state/initial-rng.pt",
+  "initial_rng_sha256": "19e05f350cca78b058be5f49835e7615c8751f3dce38494cc04352b2360f5509"
+}

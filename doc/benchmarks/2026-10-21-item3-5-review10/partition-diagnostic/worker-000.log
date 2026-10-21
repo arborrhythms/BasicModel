@@ -1,0 +1,20 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0] _
+test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert references[0] == references[2] and references[1] == references[3]
+E   AssertionError: assert (('ltm', 'addr...0983127492346) == ('ltm', 'addr...0983127492346)
+E     
+E     Use -v to get more diff and ('ltm', 'addr...0983127492346) == ('ltm', 'addr...4796991834863)
+E     
+E     At index 2 diff: 7413710983127492346 != 616094796991834863
+E     Use -v to get more diff)
+=============================== warnings summary ===============================
+test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]
+1 failed, 1 warning in 1.76s

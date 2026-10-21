@@ -406,7 +406,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
                     if any(identity in names for _, identity in (*raw, *read)):
                         check(store, index, names)
     try:
-        with ForcedGrammar(model, open_names=('x',)) as forced:
+        with ForcedGrammar(model, open_names=('x',), live_references=('x',)) as forced:
             rows = train_documents(model, documents, tmp_path, after=after)
         (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True, reverse=reverse,
             closure_forced=False, attention_budget=0,
@@ -512,7 +512,7 @@ def test_live_pending_premise_closes_in_both_orders(tmp_path, reverse, eager_rea
                         bound_correct=carries_three(int(store.row(index)['row_id']))))
                 assert sum(item['bound_correct'] for item in report) >= 2
     try:
-        with ForcedGrammar(model, open_names=('x',)) as forced:
+        with ForcedGrammar(model, open_names=('x',), live_references=('x',)) as forced:
             rows = train_documents(model, documents, tmp_path, after=after)
         (tmp_path/'certificate.json').write_text(json.dumps(dict(forced=True, reverse=reverse,
             attention_budget=0, ending='budget exhaustion preserves pending reference',

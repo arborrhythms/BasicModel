@@ -1,7 +1,7 @@
 """Consume a kept composition into the common native-symbol Part store.
 
 The temporary derivation supplies argument order. Neither that derivation nor
-a working identity is retained on an LTM1 occurrence.
+a working identity is retained on an LTM0 occurrence.
 """
 import torch
 
@@ -224,7 +224,7 @@ class PartClosing:
                 raise ValueError('closing arguments require the full concept-space width')
             assert_cube(value.point)
             pending.extend(value.children)
-        # A determiner's new referent is a working concept, then an LTM1
+        # A determiner's new referent is a working concept, then an LTM0
         # occurrence. Only use as a relation argument requires minting here;
         # recurrence promotion belongs to the later occurrence owner.
         self._plan_term(term, False)

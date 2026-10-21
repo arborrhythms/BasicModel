@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-bind-choices/carrier-final/worker-000.recycle.json"
+}

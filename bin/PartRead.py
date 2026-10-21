@@ -39,8 +39,8 @@ def word_rows(owner, parts, root):
 def occurrence_roots(owner, store, b=0):
     """Transient context rows, addressed by their native occurrence or symbol.
 
-    LTM1's existing reference column points to the derivation of an ended
-    concept. A complete relative close is itself an LTM2 root. Definitions
+    LTM0's existing reference column points to the derivation of an ended
+    concept. A complete relative close is itself an LTM1 root. Definitions
     and interior composing nodes are not extra sentence observations.
     """
     from Occurrence import sentence_key

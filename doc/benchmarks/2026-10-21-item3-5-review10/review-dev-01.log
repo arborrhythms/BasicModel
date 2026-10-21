@@ -1,0 +1,6 @@
+[collect] 2 selectors; limit 240s, 8.0 GiB
+[collect] exit 0; 3.7s; peak 0.47 GiB
+[worker-000] 50 selectors; limit 240s, 8.0 GiB
+[worker-000] exit 1; 4.8s; peak 0.47 GiB
+Result: test_failure, exit 1; 50/50 cases completed.
+doc/benchmarks/2026-10-21-item3-5-review10/review-dev-01/result.json

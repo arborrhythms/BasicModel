@@ -215,7 +215,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     # A kept relational derivation is admitted as a whole. In particular, an
     # exhausted, source-supported variable is still a trial-local constituent
     # here. Its use as a Part argument mints it in the same preflighted close;
-    # writing it first as an LTM1 occurrence would lose its native identity.
+    # writing it first as an LTM0 occurrence would lose its native identity.
     # A query/bind conclusion records its witnessed proof occurrence. The
     # relation it read is not a newly selected composing operation, and its
     # working binding must not mint another Part or grammatical occupation.
@@ -340,9 +340,6 @@ def write(model, meaning, *, row, _active=None, _bound=None):
 def commit(model, result, *, row):
     """Publish only the kept walk, after both complete trials were compared."""
     components = getattr(model._concept_owner(), 'components', None)
-    if components is not None:
-        if model.training and torch.is_grad_enabled():
-            components.reference_close.train_thought(result, model.errors)
     derived = {}
     def resolved_witnesses(meaning):
         data = bindings(meaning)

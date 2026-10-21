@@ -1,5 +1,7 @@
 # `bind` as a thought operation: the concrete design (Claude, 2026-10-19; for Codex, item 3.5 step 1)
 
+> **Naming amendment (2026-10-21, Alec):** LTM0 is the occurrence store (formerly LTM1); LTM1 is its relation stratum (formerly LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Names in this live contract are updated in place; retained evidence and source hashes are unchanged.
+
 Decided by Alec on 2026-10-19 ([todo 3.5](../../todo.md), [catalogue §3.3](../specs/2026-09-29-operator-catalogue.md#33-bind),
 [thinking spec §1.1](../specs/2026-10-07-thinking.md#1-the-open-reference), which already
 has `bind()` as a method `interpret()` calls and binding as two-stage). This
@@ -113,7 +115,7 @@ the generator's referent:
 
 ## 5. Not in this step
 
-Minting by recurrence in LTM1 and the LTM1/LTM3 layout (3.5 step 2);
+Minting by recurrence in LTM0 and the LTM0/LTM1 layout (3.5 step 2);
 cross-document individuals (order-2 kinds); any learning claim.
 
 ## 6. Identity without side structures (Alec, 2026-10-19/20; amends §1–§3)
@@ -121,7 +123,7 @@ cross-document individuals (order-2 kinds); any learning claim.
 Alec: only the major structures — percept, concept, symbol, STM, LTM —
 may hold identity. `components.nouns` (signatures, witnesses), the
 resolver's `seen` / `cooccurrence` / `associations` / `predicates` tables
-and the **ICA event chart** are removed from the identity path. An LTM1
+and the **ICA event chart** are removed from the identity path. An LTM0
 row holds **no embedded reference**: a reference would destroy the row's
 order and concreteness. Generic (unminted) objects exist, and identifying
 several generic references as one object *is* the binding problem, done
@@ -169,11 +171,11 @@ over **short-term concepts** until a concept is minted.
 - the combining weights are `bind`'s own parameters.
 
 **Row shape (superseded by §6.3 and the two-truths row table: one slot,
-`.when`, the two truth lanes, the access count, `surprise`; LTM1 has no
+`.when`, the two truth lanes, the access count, `surprise`; LTM0 has no
 identity column and no address columns):** one
 concept slot, the identity column, the address columns. The identity
 column names minted symbols only; while a participant is short-term the
-column is empty and its identity is the inference above. A fused LTM1
+column is empty and its identity is the inference above. A fused LTM0
 row's subject is therefore recoverable as a symbol once minted, and
 before that only as the short-term concept the derivation points at.
 
@@ -206,13 +208,13 @@ candidate by the codes' accident, containment through the meet did not.
   index. The temporary identity is the wide vector, computed in STM and
   never written to LTM (so no inversion gate and no width derivation: see
   §6.6); the meet is computed on the wide vectors; the close narrows to
-  the LTM1 concept. For `bind`, STM holds the
+  the LTM0 concept. For `bind`, STM holds the
   addresses (`.where`, `.when`) of
   the most recent rows — eight is the right order (Cowan; Miller) — plus
   the symbol activation field the prime and the chooser already read. The
   current wide identity is read from STM1 at bind time; the intersection
   is computed on read, never stored. This supersedes the earlier
-  address-only STM proposal: LTM1's narrowed point cannot substitute for
+  address-only STM proposal: LTM0's narrowed point cannot substitute for
   the wide identity of the open sentence. The capacity remains about
   eight entries. Its width is the full concept-space width already used by
   composition. The earlier exact-leaf inversion gate and width derivation
@@ -243,11 +245,11 @@ a binding is revised — like the definitions index over the DEF rows. Rows
 item 5 has forgotten leave the fold as it stands.
 
 **Step 1b — the migration (decided 2026-10-20; after step 1's landing,
-before LTM1/LTM3):** keep the operation, its registry and reverse face,
+before LTM0/LTM1):** keep the operation, its registry and reverse face,
 the three site detectors, the kept-write contract and gates G1–G3;
 replace `ReferenceClose.score`'s feature construction and the structures
 it reads: (i) content = the two meet ratios `|q∧c|/|c|`, `|q∧c|/|q|` in
-concept coordinates against the candidate's LTM1 row point or minted
+concept coordinates against the candidate's LTM0 row point or minted
 concept row — the ICA event chart leaves the identity path; (ii) form =
 containment of the candidate in the form's learned region — `cue_policy`
 retired; (iii) expectation = the prime plus the verb's participants read
@@ -273,8 +275,8 @@ count, `surprise`), moved (document and stream to context wholes;
 rebuildable cache (the indexes, the fingerprint), or deleted (the rest),
 each with a one-line receipt entry. `.when` becomes model time,
 sinusoidally encoded, with the ladder's range checked against the run
-and an assertion that composition never reads it. LTM1 carries no
-identity column: a bound participant exists only in LTM3's three
+and an assertion that composition never reads it. LTM0 carries no
+identity column: a bound participant exists only in LTM1's three
 references, and a *de dicto* idea's world is a context whole like the
 document, not a column.
 
@@ -299,7 +301,7 @@ The migration-hold receipt remains the historical record of why they
 were retired. **STM1** (§6.1) is a transient working vector; identity
 computed there is never written back. No width derivation is pulled from
 item 3 (§6.6), and no reconstruction from STM1 is required. The close
-persists its narrowed LTM1 concept and the derivation's LTM2 edges.
+persists its narrowed LTM0 concept and the derivation's LTM1 edges.
 
 **Implementation finding, not a new decision:** the
 [native fold audit](../benchmarks/2026-10-20-item3-5-stm1/fold-audit.md)
@@ -309,16 +311,16 @@ widths. Those are structural identities, not insufficient numerical
 precision. This remains a historical diagnostic; §6.6 withdraws the gate.
 
 **Alec's clarification, 2026-10-20:** STM1 either reduces to a form
-suitable for LTM1 or keeps constituents separate for one or more LTM2
+suitable for LTM0 or keeps constituents separate for one or more LTM1
 relations; order may reside in the symbols or their positions in the
-shared inventory. The suggestion that LTM1 might always be order 0 is
+shared inventory. The suggestion that LTM0 might always be order 0 is
 tentative, not an implemented constraint. The subsequent §6.6 answers
 resolve the architectural pause: no inversion, comparisons at each
-candidate's native width, cube-preserving maps, and all of LTM2 in step 1b.
+candidate's native width, cube-preserving maps, and all of LTM1 in step 1b.
 
-### 6.5 LTM2: one relation, two references (Alec, 2026-10-20)
+### 6.5 LTM1: one relation, two references (Alec, 2026-10-20)
 
-"LTM3" is renamed **LTM2**: a relation row is two symbol references and
+The earlier "LTM3" label is retired; **LTM1** now names the relation stratum: a relation row is two symbol references and
 the truth pair (`Part(x, y)`), read by the types of its arguments
 (conditional, attribution, definition, subsumption, singleton equality),
 and it is the same structure as the taxonomy over symbols — Part edges
@@ -326,7 +328,7 @@ with membership evidence. The step 1b/step 2 audit treats `rel_type` and
 the middle position as dropped, the taxonomy edges and the relation rows
 as one store, and the close as writing one edge per composing operation
 with both arguments minted. STM1 holds constituents only; pairs are the
-derivation's. See the two-truths §1 amendment, "LTM2, one relation".
+derivation's. See the two-truths §1 amendment, "LTM1, one relation".
 
 ### 6.6 Codex's four questions, answered (Alec, 2026-10-20)
 
@@ -336,27 +338,27 @@ derivation's. See the two-truths §1 amendment, "LTM2, one relation".
    identity candidate and the "inverts to leaves exactly" gate is
    withdrawn; the wide vector is a working object that `bind`, thought
    and output use. What persists is what the close writes: the narrowed
-   LTM1 concept, and the LTM2 edges the derivation supplies (roles, order,
+   LTM0 concept, and the LTM1 edges the derivation supplies (roles, order,
    repeats are the derivation's). The width is the concept space's full
    width, not item 3's clean-up width.
-2. **What survives the close.** LTM1 keeps the narrowed concept; the
+2. **What survives the close.** LTM0 keeps the narrowed concept; the
    wide vector dissolves with STM. A candidate returns to `bind` at the
    width it has: a minted symbol by its code; a constituent still in STM
-   wide; an unminted LTM1 row by containment at concept width, with its
-   structure surviving as LTM2 edges. Recurrence mints and buys the wide
-   comparison back. LTM1's order is unrestricted.
+   wide; an unminted LTM0 row by containment at concept width, with its
+   structure surviving as LTM1 edges. Recurrence mints and buys the wide
+   comparison back. LTM0's order is unrestricted.
 3. **Cube preservation: required, by construction.** Maps on the
    identity path (lift, lower) act through the chart's coordinates, as
    the verb's positive diagonal already does, so valid input gives valid
    output and the declared inverse holds; no clipping. A mechanism repair
    in step 1b with an assertion as its gate.
-4. **All of LTM2 in step 1b.** The relation store is converted now: one
+4. **All of LTM1 in step 1b.** The relation store is converted now: one
    relation `Part(x, y)` with two symbol references, the truth pair, the
    access count, `surprise` and `.when`; the same structure as the
    taxonomy edges; the close writes one edge per composing operation with
    both arguments minted; `bind` reads edges for its expectation term;
    the DEF rows fold into edges; `rel_type` and the middle position go.
-   Step 2 keeps the LTM1 column cull and the artifact regeneration.
+   Step 2 keeps the LTM0 column cull and the artifact regeneration.
 
 ### 6.7 For Claude's review: reading an expression after STM1 dissolves (Codex, 2026-10-20)
 
@@ -444,11 +446,11 @@ identify, that is the finding to bring back — not metadata on Part.
 
 **Question 2 (the bootstrap).** Word membership of a sentence is the
 sentence symbol's parts down to the word symbols, which is exactly the
-retained derivation (the meronomy of the sentence); the LTM1 inverse
+retained derivation (the meronomy of the sentence); the LTM0 inverse
 posting index was a cache over an abolished layout. Read membership from
 the Part derivation, keep the exact-membership and four-distinct-meanings
 assertions, and let the posting index go or be rebuilt from the edges.
-The paired-reconstruction R of .1 (content loss when the LTM1-only read
+The paired-reconstruction R of .1 (content loss when the LTM0-only read
 credits one of two words) is the same read and should close with it;
 replay at the saved initialization and the unchanged random certificate
 remain required.
@@ -520,7 +522,7 @@ capacity gate in §10. Publication is held for that decision and repair.
 | content term = the meet; form = containment in a learned region; `cue_policy` gone | §6.1 | done in tree | step 1b |
 | STM1: one wide vector per entry at the concept space's full width; computed in STM, never written back; no inversion gate; no width derivation | §6.1, §6.6 | implemented in tree; native-width reads and close dissolution checked; full landing gate pending | step 1b |
 | three signed-chart artifacts retired; strict rejection permanent; regenerate when lessons need them | §6.4 | done in tree (registry nulls, archives) | step 1b |
-| LTM2: one relation `Part(x, y)`, two references + truth pair + access count + surprise + `.when`; same store as the taxonomy; DEF rows fold into edges; `rel_type` and the middle position gone; all of it in step 1b | §6.5, §6.6(4); two truths §1 | common six-column store, §6.10 close types and expression read implemented; both decomposition lengths/arms pass in attempt 124 | step 1b |
+| LTM1: one relation `Part(x, y)`, two references + truth pair + access count + surprise + `.when`; same store as the taxonomy; DEF rows fold into edges; `rel_type` and the middle position gone; all of it in step 1b | §6.5, §6.6(4); two truths §1 | common six-column store, §6.10 close types and expression read implemented; both decomposition lengths/arms pass in attempt 124 | step 1b |
 | cube preservation: lift/lower act through the chart; assertion gate; no clipping | §6.6(3) | learned-map assertion and 35 inverse cases pass; whole §14 initialization read passes in native-120 | step 1b |
 | the read rule for expressions (§6.8) and the bootstrap from the Part derivation | §6.8 | bootstrap exactness, four meanings, saved `.1` replay and random paired certificate pass; §6.10 expression descent passes both decomposition lengths in both arms (attempt 124) | step 1b |
 | priming diffusion on by default at `primingSpread` 0.05 (from 0.25); the surface read stratified by order (Orders §9): edge-based across and above order 0 through `PartStore`, geometric only at order 0; read points per consumer; no matrix | Architecture, priming; Orders §9; Params | default and shared-budget Part/membership graph implemented and measured; strata, order-0 channel and placement explicitly remain in item 3 | step 1b / item 3 |
@@ -529,9 +531,9 @@ capacity gate in §10. Publication is held for that decision and repair.
 | row cull: slots, `.when`, `truth_±`, access count, `surprise` only; document/stream as context wholes; sidecar keys moved or deleted | two truths §1 row table; §6.3 | audited (row-audit.md), **carried to step 2** | step 2 |
 | `IntraSentenceLayer` retired or justified | §6.3 | owner, state, loss/config retired; surviving STM, gradient and compiled checks ported; retired-name audit passes | step 1b |
 | reverse-order premise resolution and closing reference reads | §7 review findings | both saved premise initializations and saved c/e failure replay pass in whole §14; closing-only witness exclusion preserves ordinary copular reads | step 1b |
-| minting by recurrence in LTM1 (access count); an ordinary referent stays an unminted LTM1 occurrence, only relation arguments are minted at the close, an unseatable mint fails loudly, no capacity masking of the menu (§10.1) | two truths §1; §10.1 | the step-1b form (unminted occurrence; no mint for the ordinary referent; loud failure) lands now; **§10.2** (the determiner's token is located in STM, no concept row, fixture at 8 rows) is the round after the current one, before publication; recurrence minting is step 2 | step 1b / step 2 |
+| minting by recurrence in LTM0 (access count); an ordinary referent stays an unminted LTM0 occurrence, only relation arguments are minted at the close, an unseatable mint fails loudly, no capacity masking of the menu (§10.1) | two truths §1; §10.1 | the step-1b form (unminted occurrence; no mint for the ordinary referent; loud failure) lands now; **§10.2** (the determiner's token is located in STM, no concept row, fixture at 8 rows) is the round after the current one, before publication; recurrence minting is step 2 | step 1b / step 2 |
 | verb = shared basis per group, diagonal per verb; `verbGroups` ≈ 24; joint diagonalization; log-ratio teacher | occurrence §14.1 | not started; **step 4**, not step 1b | step 4 |
-| second difference: `position` with a world object; de re = membership evidence; de dicto = LTM1 row with the world as a context whole | occurrence §14.3 | not started; step 5 | step 5 |
+| second difference: `position` with a world object; de re = membership evidence; de dicto = LTM0 row with the world as a context whole | occurrence §14.3 | not started; step 5 | step 5 |
 | defaults NP = everything, VP = occurs, MP = all worlds | occurrence §14.4 | spec only | step 5 |
 | minimal operators; no language named; six generated carrier variants | occurrence §13 | spec only; gate at the tense pass | step 5 |
 | generated math suite under `RUN_SLOW`; compiler parity at scale | Testing.md; Training.md | not started | item 3.5 line; item 1 |
@@ -618,7 +620,7 @@ content term and the form region; STM1 as a full-width transient working
 vector, compared wide, dissolving at the close; the three artifacts
 retired with strict rejection permanent; `PartStore` with exactly the six
 decided columns (`refs[2]`, `truth_plus`, `truth_minus`, `access_count`,
-`surprise`, `when`) as LTM2 and the taxonomy in one owner, definitions
+`surprise`, `when`) as LTM1 and the taxonomy in one owner, definitions
 folded into it; the cube chart with the learned-map assertion and all 35
 inverse cases; model-time `.when` with the regression that it cannot
 change an operand; `IntraSentenceLayer` retired with its config; the
@@ -666,7 +668,7 @@ second difference step 5.
 The close now retains each minted terminal's DEF edge and admitted
 occupations in PartsOfSpeech; existing bound terminals also retain a new
 word use. The Part reader uses argument types and declared heads without
-new Part metadata. The later-occurrence read accepts native LTM1 and
+new Part metadata. The later-occurrence read accepts native LTM0 and
 unseated Part complements, preserving their typed references and observed
 content. It never rewrites the source occurrence. Objectless surface
 markers remain literal during implicit reference reads. The obsolete
@@ -718,12 +720,12 @@ already full at the beginning of the batch is insufficient.
 
 **Question for Alec / Claude:** should a new referent be offered as a mint
 only when the complete sentence can reserve the required seats in the
-existing order pools, or should it remain an unminted LTM1 occurrence when
+existing order pools, or should it remain an unminted LTM0 occurrence when
 that reservation cannot be made? I recommend the former: keep open and
 existing referents eligible, and treat complete seat availability as mint
 legality before scoring. This is a proposed resource contract, not an
 implemented policy. The alternative is consistent with reading unminted
-LTM1 at concept width, but would need an explicit decision about the meaning
+LTM0 at concept width, but would need an explicit decision about the meaning
 of the selected mint operation and which Part edges can be retained.
 
 Step 1b's type/DEF writer, declared-head read, arrival replays and independent
@@ -766,7 +768,7 @@ publication to both mains awaits that allocation decision and repair.
 ### 10.1 Decided (Alec, 2026-10-20): no capacity masking; an ordinary referent stays unminted
 
 The contract is the decided design, not a new resource rule. An ordinary
-new referent is a short-term concept in STM1 and then an **unminted LTM1
+new referent is a short-term concept in STM1 and then an **unminted LTM0
 occurrence at concept width**, minted only by **recurrence** (step 2's
 access count) or because it is **an argument of a relation**, in which
 case it is minted at the close. A relation-argument mint that cannot be
@@ -781,7 +783,7 @@ original budget and seed, and the native-119 captured state is the
 regression. Codex's seat-reservation proposal is not adopted.
 The pool is the per-order partition of the concept table's rows
 (`Codebook.create` ramsifies them; symbol index = concept row), which only
-a **symbol** needs; an unminted LTM1 occurrence holds its vector inline
+a **symbol** needs; an unminted LTM0 occurrence holds its vector inline
 and takes no seat. If the order-1 symbol that overflowed in native-119 is
 a relation argument, the loud failure is correct and the fixture's
 two-seat order-1 inventory is what is undersized: resize the fixture
@@ -836,7 +838,7 @@ loosen the assertion.
 
 **Finding B (decided, §10.1): the MM_grammar capacity failure.** Apply
 §10.1 natively: the close writes the ordinary new referent as an
-unminted LTM1 occurrence at concept width and attempts no mint for it;
+unminted LTM0 occurrence at concept width and attempts no mint for it;
 only relation arguments are minted at the close; an unseatable
 relation-argument mint fails loudly; no menu masking by pool state. Re-run
 the failed MM_grammar certificate on that source at its original budget;
@@ -1033,7 +1035,7 @@ edge for an operation that changes no content.
    rows, identity cube, Part store) at the unchanged budgets and seeds; a
    reference-close case that asserted a minted symbol for a determiner
    token is a declared port to the address, never a loosened assertion.
-8. Not in this round: edges that address occurrence rows (LTM2 → LTM1);
+8. Not in this round: edges that address occurrence rows (LTM1 → LTM0);
    minting by recurrence (step 2); the thought stream's
    `search_exhausted` leaf referent (`ThoughtStream` ≈ 256) unchanged;
    the binary branch's fold-cache seat for composed arguments other than
@@ -1153,7 +1155,7 @@ October 20 docs and a clean tree. No second full sweep.
 
 **Accepted.** The probe is complete and exact: both saved failures replay
 with identical initial parameters, buffers, all RNG states including the
-private corpus generator, and identical final LTM1/Part rows
+private corpus generator, and identical final LTM0/Part rows
 (`review3/arrival-keep-validation.json`); both trials of all eight streams
 are recorded in the step-0 shape (`arrival-keep.jsonl`, one table per
 document). Codex's stop at the decision boundary is the order I asked
@@ -1411,8 +1413,8 @@ A bind whose `item['reference']` is an address (directly, or through a
 `('new', n)` alias) calls `mtm.bind(antecedent, occurrence)`: append,
 `count += 1`, `when` refreshed. A bind to a minted individual (an int
 in `alloc.individuals`) writes nothing: the symbol is the identity and
-LTM2 carries it. The same path serves definite, pronoun and elision
-sites (§3). LTM1 rows, the Part store and the bank are not written;
+LTM1 carries it. The same path serves definite, pronoun and elision
+sites (§3). LTM0 rows, the Part store and the bank are not written;
 the existing immutable-store assertions stay.
 
 **Reads.** `ReferenceClose.accessible`: a record from an order-1
@@ -1852,3 +1854,115 @@ initial RNG (zero R) and the eight-seat MM fresh draw (zero seats).
 and every gate on the new hash (twelve fresh with captures, the eight-file
 set, both decomposition arms, both eight-seat MM draws), then my review
 and publication. No second full sweep.
+
+## 20. Claude's tenth review: the frozen source `575cab06c` (2026-10-21)
+
+Read with the receipt's earlier review (`bind-choices/claude-review.md`),
+whose acceptances I share: A's credit path (closing plan costs diagnostic
+only; bind credited by the sentence's R + A through the compose chooser's
+score function; no double count, no pathwise leak), D as written (the
+zero-logit dummy wins ties; own objects unpriced; gaps stay open), B's
+single refinement, isolation, C's word-row guard, F, and the evidence
+(all manifests match the frozen hash; no draw replaced). Alec has since
+authorized its six ports and a live resolver for x in both pending-premise
+certificates, with `open_names=('x',)` at formation only.
+
+**The root of the remaining defects: the pool stores membership, not
+decisions.** `MediumTermMemory.merge` unions whole entries, so after a
+merge the pool no longer knows which occurrence chose which antecedent.
+That is why a later re-run on a joined site merges the whole antecedent
+token (the earlier review's finding 1), why a joined site's kind can be
+lost (its finding 5), and why reconsidering affected choices (Alec's
+suggestion, researched in the receipt) has nothing to work from.
+
+**Recommended contract (for Alec): a decision record, tokens derived.**
+
+- `MediumTermMemory` keeps, per retained occurrence, its link (the
+  antecedent occurrence it was bound to, or `None` for its own object),
+  its derivation kind, and its access count and `when`. Nothing else; no
+  working vectors.
+- `token_of(occurrence)` follows links to the root (bounded by capacity,
+  cycle-guarded); the root is the token's key, its introduction.
+  `entries` becomes a derived view per root: occurrences in introduction
+  order, kind the root's or else the earliest member's non-`None` kind,
+  count the sum, `when` the latest.
+- Writes, at the kept close only: an own object writes `link = None`; a
+  bind writes `link(occurrence) = ` the chosen antecedent occurrence; a
+  refinement writes `link(site) = ` the candidate occurrence (finding B's
+  direction falls out); a revision replaces `link(site)`, so only the
+  site and the occurrences linked to it move, and the antecedent's token
+  is untouched (finding 1 falls out). A link into the site's own subtree
+  is a no-op. `merge` retires.
+- Reconsideration (Alec's affected choices, bounded): when a kept close
+  changes `link(o)`, each occurrence linked directly to `o` and
+  accessible through the current frames is re-run through `bind` once,
+  in that close, with the same menu, dummy, credit and departure
+  eligibility; deeper dependents wait for their own next mention. This is
+  a truth-maintenance step with recorded justifications (Doyle), kept to
+  one level so no cascade can loop.
+- Eviction: whole tokens by oldest `when`, as now. `forget(occurrence)`
+  splices: its dependents link to its antecedent; a forgotten root's
+  earliest dependent becomes the root and the others link to it.
+- Counts are occurrences, so re-selecting the current owner no longer
+  inflates step 2's promotion count.
+
+**Its other findings.** Finding 4 (`answer_meaning` matches a nested
+site's role against the root's roles) is a mechanism defect: accept and
+repair as proposed, filling only sites that are a direct root role. Finding
+5 dissolves under the record (kind derived as above). Acknowledgments I
+recommend: declare C's scope (no mixing-reader leaf becomes an
+objectless-word site, the pre-carrier behavior); rename the
+`SentenceCredit` caller test to the answer credit it now exercises,
+assertions unchanged; fix `bind_gate.py`'s header.
+
+**Two questions for Alec, recommendations first.**
+
+1. Premise and arrival binds get no R + A signal (no premise target, and
+   R never reads the bind). Recommend no new path in step 1b: carry
+   delayed credit (crediting a retained decision when a later question's
+   A depends on it, which the decision record makes possible) to item 0.
+2. `ReferenceClose.train_thought` still trains `choice_cost` locally for
+   thought-episode binds. Recommend extending decision A there too:
+   thought binds credited by the episode's R + A like other thought
+   operations, local `choice_cost` training removed.
+
+**My runs on the frozen hash** (plain pytest and my bootstrap replay
+plugin; nothing written into the tree): the carrier certificate passes;
+the regression files give 75 passed and exactly the six authorized-port
+failures; the bootstrap test passes at `bootstrap-diagnostic-01`'s
+initial RNG (C holds).
+
+**Decided (Alec, 2026-10-21).**
+
+1. *Rebinding.* "In the case you mention, there is an incompatibility
+   between ball and box that should be recognized, and x should become a
+   new MTM identity (which doesn't disturb earlier binding, but also
+   misses an identification). Re-identifying can be mentioned as future
+   work." So the decision-record contract above is not adopted now. An
+   arrival refines a site only while it is still its own pending object
+   (`token_of(site) == site`); it never moves an occurrence already
+   joined to another token and never merges a token that has other
+   members. A mention's bind excludes any candidate whose content
+   contradicts the content its own close asserts for it (the exclusion
+   query `individuals()` already uses); the mention then stays its own
+   object or joins a compatible candidate. Earlier bindings are never
+   disturbed; a missed identification is accepted. Re-identification is
+   FutureWork, with this section's decision record as its starting point.
+   Note: the exclusion query needs observed statistics (both supports
+   seen at least eight times, never together), so at initialization no
+   incompatibility is recognized.
+2. *Premise credit.* "Maybe reconstruction should read the bind?" My
+   reading: coherent, and it is `bind`'s declared reverse (§2: the reverse
+   re-emits the description or determiner). If a referring expression's
+   surface is reconstructed from its bound referent, R scores every bind,
+   premises included, with no new objective term. It needs the
+   reconstruction of referring leaves to read the close's choice, a change
+   to the order of reading and closing. Recommended as its own round right
+   after step 1b lands, with a spec; nothing in this landing.
+3. *Thought binds.* Decision A extends to them: `train_thought`'s local
+   `choice_cost` training goes; thought-episode binds are credited by the
+   episode's R + A like other thought operations.
+
+Finding 5 still needs its fix without the record: `merge` adopts the
+joined token's kind when the antecedent's is `None`. That is §10.4's
+"kind only when `None`", not an overwrite; B's kind stays untouched.

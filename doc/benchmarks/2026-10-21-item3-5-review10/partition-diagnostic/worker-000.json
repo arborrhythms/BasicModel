@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.07915437477640808,
+      "message": "test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert references[0] == references[2] and references[1] == references[3]\nE   AssertionError: assert (('ltm', 'addr...0983127492346) == ('ltm', 'addr...0983127492346)\nE     \nE     Use -v to get more diff and ('ltm', 'addr...0983127492346) == ('ltm', 'addr...4796991834863)\nE     \nE     At index 2 diff: 7413710983127492346 != 616094796991834863\nE     Use -v to get more diff)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

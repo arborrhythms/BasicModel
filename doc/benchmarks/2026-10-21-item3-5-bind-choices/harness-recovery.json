@@ -1,0 +1,38 @@
+{
+  "reason": "native-final failed importing reference_probe before collection; native-final-02 uses the unchanged observer copied into the current receipt. bind_gate is also copied unchanged so subsequent metric writes land in this receipt. Production and test sources are unchanged.",
+  "helpers": {
+    "reference_probe.py": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+    "bind_gate.py": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+    "run_native_02.py": "794aeb31c8d9be86c3588666a28331ad95cd7c16c628c6d0ecc0e6e29693436a"
+  },
+  "zero_arm_metric_relocation": [
+    {
+      "from_path": "doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-metrics/zero/process-77984.json",
+      "to_path": "doc/benchmarks/2026-10-21-item3-5-bind-choices/bind-decomposition-metrics/zero/process-77984.json",
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "from_path": "doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-metrics/zero/process-78013.json",
+      "to_path": "doc/benchmarks/2026-10-21-item3-5-bind-choices/bind-decomposition-metrics/zero/process-78013.json",
+      "sha256": "a5c5d2ef1723b12f563aaebe9917ff6b6d64f207c753ff6b6d8debdd0f6b6ef5"
+    }
+  ],
+  "metric_note": "The zero arm imported the unchanged observer from the prior receipt before the local copy existed. Only the two new untracked metric files from this run were moved into this receipt. No historical metric was altered.",
+  "copy_sources": {
+    "reference_probe.py": {
+      "source": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reference_probe.py",
+      "sha256": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+      "byte_identical": true
+    },
+    "bind_gate.py": {
+      "source": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/bind_gate.py",
+      "sha256": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+      "byte_identical": true
+    }
+  },
+  "bind_observer_older_comparison": {
+    "source": "doc/benchmarks/2026-10-20-item3-5-stm1/bind_gate.py",
+    "ast_identical": true,
+    "difference": "The local/v3 file adds two provenance comment lines; the stm1 observer and local observer have identical Python ASTs."
+  }
+}

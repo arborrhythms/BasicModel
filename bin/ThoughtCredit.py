@@ -14,17 +14,19 @@ def surrogate(trace, other, departure, costs):
     return choice['alternatives'] * sum(trace['eligible']) * probability * delta
 
 
-def register(model, value, *, costs, source, row):
+def register(model, value, *, costs, source, row, category='reconstruction'):
     model._last_thought_score_function = dict(costs=tuple(costs), source=source,
-                                             surrogate=value, row=row)
+                                             surrogate=value, row=row, category=category)
     if value is not None and value.requires_grad:
         errors = getattr(model, 'errors', None)
         if errors is not None:
-            errors.add('reconstruction.thought_score_function', value,
-                       space='SymbolSpace', category='reconstruction')
+            errors.add(category+'.thought_score_function', value,
+                       space='SymbolSpace', category=category)
 
 
 def complete(model, trace, other, departure, costs, row):
     """Credit the episode now; prediction stays on its own owner registry."""
     register(model, surrogate(trace, other, departure, costs), costs=costs,
-             source='reconstruction_and_answer', row=row)
+             source='reconstruction_and_answer', row=row,
+             category=(other['choices'][departure].get('category', 'reconstruction')
+                       if 0 <= departure < len(other['choices']) else 'reconstruction'))

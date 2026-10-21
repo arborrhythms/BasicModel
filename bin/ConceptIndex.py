@@ -97,7 +97,7 @@ def rebuild_ltm_taxonomy(cs, store):
     Native edges (including legacy edges with no provenance) are independent.
     Surviving learned coefficients are preserved, not reinitialized by replay.
     """
-    # Part edges are the durable store, so forgetting a separate LTM1
+    # Part edges are the durable store, so forgetting a separate LTM0
     # occurrence does not erase or re-create its relation evidence.
     meaning = getattr(cs.similarity_codebook, 'mereology', None)
     if meaning is not None:

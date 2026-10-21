@@ -10,9 +10,10 @@ import torch
 
 
 class ForcedGrammar:
-    def __init__(self, model, *, open_names=(), named_bindings=None):
+    def __init__(self, model, *, open_names=(), named_bindings=None, live_references=()):
         self.model, self.open_names = model, set(open_names)
         self.named_bindings = dict(named_bindings or {})
+        self.live_references = set(live_references)
         self.word, self.current, self.data, self.texts = 0, None, None, ()
         self.records = []
 
@@ -37,7 +38,7 @@ class ForcedGrammar:
                 word = word.decode() if isinstance(word, bytes) else str(word)
                 for identity in (*identities, *owner.word_concepts(word)):
                     names.setdefault(identity, set()).add(word.lower())
-            labels = names.get(forward_identity, set())
+            labels = names.get(forward_identity, set()) - self.live_references
             if not labels.intersection(self.open_names | self.named_bindings.keys()):
                 return select_reference(choices, logits, forward_identity=forward_identity,
                                         individuals=individuals)

@@ -1,0 +1,60 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_later_pooled_arrival_moves_only_the_named_site",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_reselecting_the_current_owner_changes_no_pool_entry",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[False]",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[True]"
+  ],
+  "completed": [
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_later_pooled_arrival_moves_only_the_named_site",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_reselecting_the_current_owner_changes_no_pool_entry",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[False]",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_later_pooled_arrival_moves_only_the_named_site",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.1214634589850903,
+      "message": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py:52: in test_later_pooled_arrival_moves_only_the_named_site\n    assert pool.token_of(first) == first and pool.token_of(use) == first\nE   AssertionError: assert (('ltm', 'addr...6645419602533) == ('ltm', 'addr...5585685690625)\nE     \nE     At index 2 diff: 138066645419602533 != -2450525585685690625\nE     Use -v to get more diff)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_reselecting_the_current_owner_changes_no_pool_entry",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007672833977267146,
+      "message": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py:65: in test_reselecting_the_current_owner_changes_no_pool_entry\n    assert pool.entries == before\nE   AssertionError: assert {('ltm', 'add...t=1, when=11)} == {('ltm', 'add...t=1, when=11)}\nE     \nE     Omitting 1 identical items, use -vv to show\nE     Differing items:\nE     {('ltm', 'address-v1', -2450525585685690625): Token(occurrences=(('ltm', 'address-v1', -2450525585685690625), ('ltm', 'address-v1', 8636430649997409478), ('ltm', 'address-v1', 6722543677319378513)), kind=2, count=4, when=12)} != {('ltm', 'address-v1', -2450525585685690625): Token(occurrences=(('ltm', 'address-v1', -2450525585685690625), ('ltm', 'address-v1', 8636430649997409478), ('ltm', 'address-v1', 6722543677319378513)), kind=2, count=3, when=11)}\nE     Use -v to get more diff",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0033342500682920218,
+      "message": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py:79: in test_answer_judge_uses_root_roles_not_nested_local_indices\n    clause = Clause(meaning, refs=(-1, -1, ('clause', 0)), children=(child,))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<string>:18: in __init__\n    ???\nbin/ClauseRow.py:113: in __post_init__\n    raise ValueError('an absolute clause requires its grammar-fused point')\nE   ValueError: an absolute clause requires its grammar-fused point",
+      "stdout": ""
+    },
+    {
+      "nodeid": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py::test_answer_judge_uses_root_roles_not_nested_local_indices[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.003425958100706339,
+      "message": "doc/benchmarks/2026-10-21-item3-5-bind-choices/diagnostics/test_review10_findings.py:74: in test_answer_judge_uses_root_roles_not_nested_local_indices\n    child = Clause(ConceptualMeaning.from_description(atoms[0]),\n<string>:18: in __init__\n    ???\nbin/ClauseRow.py:113: in __post_init__\n    raise ValueError('an absolute clause requires its grammar-fused point')\nE   ValueError: an absolute clause requires its grammar-fused point",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

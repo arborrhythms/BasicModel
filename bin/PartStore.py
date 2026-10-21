@@ -1,4 +1,4 @@
-"""LTM2: the single durable Part(x, y) store over native symbol handles.
+"""LTM1: the single durable Part(x, y) store over native symbol handles.
 
 Argument types belong to the concept bank. The relation has no kind column,
 predicate slot, vectors, occurrence addresses, or stored reading. Indexes are

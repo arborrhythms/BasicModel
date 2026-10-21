@@ -264,6 +264,26 @@ class ReferenceClose(nn.Module):
         from IdentityRows import carrier
         return carrier(self.components.owner, value)
 
+    def exclusion_query(self):
+        """Read observed exclusion once, for grouping or a bind's candidates."""
+        def support(value):
+            return set((value >= .3).nonzero().flatten().tolist())
+        observed = []
+        for row in range(len(self.store)):
+            if int(self.store.order[row]) != 1 or int(self.store.role_mask[row].sum()) != 1:
+                continue
+            value = self.coordinates(self.store.slots[row, 0])
+            observed.append((support(value), int(self.store.witness_count[row])))
+        def contradicts(a, b):
+            a, b = support(a), support(b)
+            if not a or not b or a <= b or b <= a:
+                return False
+            return any(sum(n for members, n in observed if x in members) >= 8
+                       and sum(n for members, n in observed if y in members) >= 8
+                       and not any(x in members and y in members for members, _ in observed)
+                       for x in a-b for y in b-a)
+        return contradicts
+
     def individuals(self, records):
         """Compute the current identities from their codes and accessible uses.
 
@@ -299,24 +319,9 @@ class ReferenceClose(nn.Module):
             reference = member.get('predicate')
             value = None if reference is None else self.store._concept_point(reference)
             return None if value is None else self._predicate_key(self.predicate_coordinates(value))
-        def support(value):
-            return set((value >= .3).nonzero().flatten().tolist())
         # Exclusion is a query over retained uses. No learned cooccurrence
         # table or word class supplies it, and no result is written to LTM.
-        observed = []
-        for row in range(len(self.store)):
-            if int(self.store.order[row]) != 1 or int(self.store.role_mask[row].sum()) != 1:
-                continue
-            value = self.coordinates(self.store.slots[row, 0])
-            observed.append((support(value), int(self.store.witness_count[row])))
-        def contradicts(a, b):
-            a, b = support(a), support(b)
-            if not a or not b or a <= b or b <= a:
-                return False
-            return any(sum(n for members, n in observed if x in members) >= 8
-                       and sum(n for members, n in observed if y in members) >= 8
-                       and not any(x in members and y in members for members, _ in observed)
-                       for x in a-b for y in b-a)
+        contradicts = self.exclusion_query()
         for identity, members in tuple(groups.items()):
             anchors = []
             for member in reversed(members):
@@ -377,14 +382,18 @@ class ReferenceClose(nn.Module):
                 occurrences=tuple(x['address'] for x in members))
         return result
 
-    def score(self, content, predicate, cue, role, individuals, *, stream=None):
+    def score(self, content, predicate, cue, role, individuals, *, stream=None, asserted=()):
         """Meet content and form, native expectation, then recency and roles."""
         from IdentityRows import form_region
         content = self.coordinates(content)
         region = form_region(self.components.owner,cue)
+        contradicts = self.exclusion_query()
+        constraints = (content, *(self.coordinates(value) for value in asserted))
         choices, features = [], []
         for identity,candidate in individuals.items():
             value = self.coordinates(candidate['content']).to(content)
+            if any(contradicts(own, value) for own in constraints):
+                continue
             candidate_coverage,request_coverage = meet_ratios(content,value)
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
@@ -442,7 +451,7 @@ class ReferenceClose(nn.Module):
         # retain a cue's composition without having a word of its own.
         return node.composition is not None and node.composition.formal_name == 'lower'
 
-    def bind_site(self, meaning, role, frames, *, stream=None):
+    def bind_site(self, meaning, role, frames, *, stream=None, decisions=None):
         """The thought and closing faces read the same native candidates."""
         from ThoughtReferences import bindings, fill, open_slots
         if ('referent', role) not in open_slots(meaning):
@@ -465,16 +474,30 @@ class ReferenceClose(nn.Module):
         base = dict(binding_role=role, reverse_leaves=tuple(site.get('leaves', ())),
                     binding_candidates=choices, witnesses=(),
                     binding_occurrence=binding_occurrence)
-        if not choices:
-            return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
-                        reference_cost=1., incomplete=('no_accessible_individual',))
-        index = self.select(choices, logits, forward_identity=dict(
-            bindings(meaning).get('_forward_references', ())).get(role), individuals=individuals)
+        plan = dict(meaning=meaning, role=role, records=records, individuals=individuals,
+            candidates=choices, features=features, cue=cue, base=base,
+            forward_identity=dict(bindings(meaning).get('_forward_references', ())).get(role))
+        result = self.finish_thought_bind(plan, logits=logits)
+        if decisions is not None:
+            decisions.append(plan)
+        return result
+
+    def finish_thought_bind(self, plan, *, departure=False, logits=None):
+        """Select from a held, already paid menu; only episode advantage trains it."""
+        from ThoughtReferences import fill, open_slots, with_slots
+        meaning, role = plan['meaning'], plan['role']
+        choices, features, cue = plan['candidates'], plan['features'], plan['cue']
+        individuals, records, base = plan['individuals'], plan['records'], plan['base']
+        if logits is None:
+            logits = self.logits(features, cue)
+        index, decision = self.choose(dict(decisions=[], departure=0 if departure else -1),
+            choices, features, logits, forward_identity=plan['forward_identity'], individuals=individuals)
+        plan['decision'] = decision
         if index is None:
             return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
                         reference_cost=1., incomplete=('no_accessible_individual',))
         identity = choices[index]
-        probability = float(logits.softmax(0)[index].detach())
+        probability = float(decision['probabilities'][index+1].detach())
         point = individuals[identity]['value'].detach().to(meaning.roles)
         witnesses = tuple(('sym', context['identity']) if isinstance(context.get('identity'), int)
                           else self.store.occurrence_of(location)
@@ -486,31 +509,11 @@ class ReferenceClose(nn.Module):
             witnesses=witnesses,
             support_true=probability, support_false=1-probability,
             reference_cost=float(self.choice_cost(features, logits, index).detach()),
-            reference_training=dict(features=features.detach().cpu().tolist(),
-                cue=cue.detach().cpu().tolist(), selected=index),
             incomplete=())
         result = fill(meaning, evidence, witnesses=witnesses,
                       operation='bind', slots=(('referent', role),))
-        from ThoughtReferences import with_slots
         result = with_slots(result, open_slots(result), pair=(probability, 1-probability))
         return dict(evidence, value=result, meaning=result)
-
-    def train_thought(self, result, errors):
-        """Only the kept episode trains the resolver's existing evidence cost."""
-        losses = []
-        for record in result.records:
-            value = record.result
-            if record.kind != 'thought' or value is None or value.semantic_id != 'bind':
-                continue
-            held = value.evidence.get('reference_training')
-            if held is None:
-                continue
-            features = self.policy.new_tensor(held['features'])
-            cue = self.policy.new_tensor(held['cue'])
-            losses.append(self.choice_cost(features, self.logits(features, cue), held['selected']))
-        if losses:
-            errors.add('expectation.reference', torch.stack(losses).sum(),
-                       category='expectation', weight=self.components.weight)
 
     def mention_loss(self, record, correct):
         """Negative log marginal mass of all known correct antecedents.
@@ -539,7 +542,7 @@ class ReferenceClose(nn.Module):
         correct = set(self.components.owner.word_concepts(word))
         losses = []
         for item in plan['items']:
-            if item['role'] not in roles or item['features'] is None:
+            if not roles.intersection(item['root_roles']) or item['features'] is None:
                 continue
             item['correct'] = correct.intersection(item['candidates'])
             losses.append(self.mention_loss(item, correct))
@@ -557,8 +560,9 @@ class ReferenceClose(nn.Module):
             *bindings(meaning).get('_bound_roles', ())) if kind == 'referent'}
         result = meaning
         for item in plan['items']:
-            identity, role = item['selected'], item['role']
-            if role not in roles or identity is None or item['mode'] == 'mint':
+            identity = item['selected']
+            answered = roles.intersection(item['root_roles'])
+            if not answered or identity is None or item['mode'] == 'mint':
                 continue
             if isinstance(identity, tuple) and identity[:1] == ('new',):
                 continue
@@ -567,7 +571,7 @@ class ReferenceClose(nn.Module):
                 continue
             result = fill(result, dict(reference=('sym', identity) if isinstance(identity, int) else identity,
                 binding_value=candidate['value'], support_true=1., support_false=0.),
-                operation='bind', slots=(('referent', role),))
+                operation='bind', slots=tuple(('referent', role) for role in sorted(answered)))
         return result
 
     def resolved(self, row, role, reference, errors):
@@ -665,6 +669,29 @@ class ReferenceClose(nn.Module):
                 lexical(child)
         for node in nodes:
             lexical(node.composition)
+        # Request roles belong to their immediate clause. Only direct root
+        # attachments can supply the root answer; nested role numbers cannot.
+        parents = {}
+        for parent in nodes:
+            for role, reference in enumerate(parent.refs):
+                if isinstance(reference, tuple) and reference[:1] == ('clause',):
+                    parents.setdefault(id(parent.children[reference[1]]), []).append((parent, role))
+        for site in result:
+            node = site['node']
+            positions = ([(site['parent'], site['site_role'])] if site['parent'] is not None
+                         else list(parents.get(id(node), ())))
+            roots = [0] if node is clause else []
+            if site.get('lexical'):
+                for original in nodes:
+                    if original.composition is node.composition:
+                        positions.extend(parents.get(id(original), ()))
+                        if original is clause:
+                            roots.append(0)
+            roots.extend(role for parent, role in positions if parent is clause)
+            site['root_roles'] = tuple(sorted(set(roots)))
+            site['asserted'] = tuple(parent.meaning.roles[2-role] for parent, role in positions
+                if role in (0, 2) and node.reference_request.get('forward_identity') is not None
+                and (parent.relation == 'equal' or bindings(parent.meaning).get('_equality')))
         return result
 
     def pending_names(self, clause, individuals, stream):
@@ -707,7 +734,8 @@ class ReferenceClose(nn.Module):
             content = self.coordinates(node.point)
             predicate = self.predicate_coordinates(request.get('predicate'))
             cue = self.cue(request.get('cue'))
-            choices, phi, logits = self.score(content, predicate, cue, role, individuals, stream=stream)
+            choices, phi, logits = self.score(content, predicate, cue, role, individuals,
+                                             stream=stream, asserted=site['asserted'])
             selected, probabilities = None, None
             if mode == 'mint':
                 # A trial-local handle is not a durable identity. It allows
@@ -803,6 +831,11 @@ class ReferenceClose(nn.Module):
         names, candidates = self._arrival_constituents(clause)
         sites = {}
         mtm, store = self.components.owner.mtm, self.store
+        asserted = {}
+        for item in plan['items']:
+            name = item['node'].reference_request.get('forward_identity')
+            if name is not None:
+                asserted.setdefault(name, []).extend(item['asserted'])
         # A posting locates a site; it does not bring its token into focus.
         # Use the occurrence records before the read-time split/merge pass,
         # which may represent an accessible token under another group key.
@@ -824,10 +857,10 @@ class ReferenceClose(nn.Module):
                 reference = value.role_refs[role]
                 occurrence = reference if reference is not None and reference[0] == 'ltm' else store.occurrence_of(location)
                 token = mtm.token_of(occurrence)
-                if token is None or token not in accessible_tokens or occurrence in sites:
+                if token != occurrence or token not in accessible_tokens or occurrence in sites:
                     continue
                 request = dict(requests.get(role, ()))
-                sites[occurrence] = (token, dict(forward_identity=name, role=request.get('role', role),
+                sites[occurrence] = (token, occurrence, dict(forward_identity=name, role=request.get('role', role),
                     content=value.roles[role] if request.get('content') is None else value.roles.new_tensor(request['content']),
                     predicate=value.roles[1] if request.get('predicate') is None else value.roles.new_tensor(request['predicate']),
                     cue=None if request.get('cue') is None else value.roles.new_tensor(request['cue'])))
@@ -836,9 +869,8 @@ class ReferenceClose(nn.Module):
             if request.get('forward_identity') is None:
                 continue
             selected = item['selected']
-            token = selected if isinstance(selected, tuple) and selected[:1] == ('new',) else mtm.token_of(selected)
-            if token is not None:
-                sites[('site', number)] = token, request
+            if isinstance(selected, tuple) and selected[:1] == ('new',):
+                sites[('site', number)] = selected, ('site', number), request
         plan['arrivals'], plan['arrival_count'] = [], len(candidates)
         if not sites:
             return
@@ -849,29 +881,30 @@ class ReferenceClose(nn.Module):
             menu[('arrival', number)] = dict(content=self.coordinates(node.point), value=node.point,
                 role=0, position=(latest[0]+1, number), kind=kind,
                 word_id=node.subject_word_id)
-        for site, (token, request) in sites.items():
+        for site, (token, occurrence, request) in sites.items():
             content = request.get('content')
             if content is None:
                 content = self.policy.new_zeros(self.store.slots.shape[-1])
             predicate = self.predicate_coordinates(request.get('predicate'))
             cue = self.cue(request.get('cue'))
             choices, phi, logits = self.score(content, predicate, cue, request.get('role', 0),
-                                              menu, stream=stream)
+                menu, stream=stream, asserted=asserted.get(request['forward_identity'], ()))
             index, decision = self.choose(plan, choices, phi, logits,
                 forward_identity=request['forward_identity'], individuals=menu)
             selected = None if index is None else choices[index]
-            occurrence = None
+            candidate_occurrence = None
             if isinstance(selected, int):
                 for address in reversed(menu[selected].get('occurrences', ())):
                     location = store.location(address)
                     if isinstance(location, int):
-                        occurrence = store.occurrence_of(location)
+                        candidate_occurrence = store.occurrence_of(location)
                         break
             plan['cost'] = plan['cost'] + (1 if index is None else self.choice_cost(phi, logits, index))
-            plan['arrivals'].append(dict(site=site, token=token, selected=selected, candidates=choices,
+            plan['arrivals'].append(dict(site=site, site_occurrence=occurrence,
+                token=token, selected=selected, candidates=choices,
                 features=phi, cue=cue, role=request.get('role', 0),
                 forward_identity=request['forward_identity'],
-                candidate_occurrence=occurrence,
+                candidate_occurrence=candidate_occurrence,
                 probabilities=decision['probabilities']))
 
     @torch.no_grad()
@@ -981,13 +1014,14 @@ class ReferenceClose(nn.Module):
         alloc = _concept_alloc_of(self.components.owner)
         mtm = self.components.owner.mtm
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
-        allocated, audit, uses = {}, [], []
+        allocated, audit, uses, sites = {}, [], [], {}
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
             if location is None:
                 raise RuntimeError('kept reference constituent has no closing address')
             occurrence = self.store.occurrence_of(location)
+            sites[('site', number)] = occurrence
             reference = item['reference']
             if item['mode'] == 'mint' or item.get('own_object'):
                 symbol = written.get(('symbol', id(node)))
@@ -1025,7 +1059,14 @@ class ReferenceClose(nn.Module):
                     allocated.get(identity, identity) for identity in item['candidates']),
                 missing_reason=None if reference is not None else 'no_accessible_individual'))
         for item in plan.get('arrivals', ()):
-            token = allocated.get(item['token'], item['token'])
+            token = sites.get(item['site_occurrence'], item['site_occurrence'])
+            item['site_occurrence'] = token
+            # A joined site's earlier identity is settled for this round.
+            # Planning and committing both guard it: another kept refinement
+            # in this close may have joined it since the plan was made.
+            if mtm.token_of(token) != token:
+                item['reference'] = mtm.token_of(token)
+                continue
             selected = item.get('candidate_occurrence') or allocated.get(item['selected'], item['selected'])
             node = plan.get('arrival_written', {}).get(selected)
             if node is not None:
@@ -1043,7 +1084,13 @@ class ReferenceClose(nn.Module):
                 from RowTime import encoder, stamp
                 when = int(encoder().decode_index(stamp(self.store)))
                 if mtm.token_of(selected) not in (None, mtm.token_of(token)):
-                    mtm.merge(token, selected, when=when)
+                    if mtm.entries[token].occurrences == (token,):
+                        mtm.merge(token, selected, when=when)
+                    else:
+                        selected = None
+                elif mtm.token_of(selected) == token:
+                    # Re-observing an existing member is no new use.
+                    pass
                 else:
                     mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when)
             item['reference'] = selected if selected is not None else token

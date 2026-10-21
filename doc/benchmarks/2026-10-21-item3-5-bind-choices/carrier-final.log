@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 240s, 8.0 GiB
+[collect] exit 0; 4.9s; peak 0.40 GiB
+[worker-000] 1 selectors; limit 240s, 8.0 GiB
+[worker-000] exit 0; 4.0s; peak 0.52 GiB
+Result: passed, exit 0; 1/1 cases completed.
+doc/benchmarks/2026-10-21-item3-5-bind-choices/carrier-final/result.json

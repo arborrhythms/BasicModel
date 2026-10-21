@@ -20,17 +20,16 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §19 round:** the bind chooser now has a zero-logit dummy and a
-sentence-level departure, credited only by R + A. Refinement preserves the
-chosen antecedent's pool entry. The carried OBJECT IDs stay references;
-WORD-carrier checks prevent their reinterpretation as empty lexical content.
-The retained bootstrap RNG passes zero R in development. The revised pending
-certificate removes named closure forcing; its old strict assertions move
-verbatim to item 0. [Current receipt](doc/benchmarks/2026-10-21-item3-5-bind-choices/README.md)
-retains every diagnostic failure, the six unchanged arrival failures under
-the dummy decision, and the remaining source-specific gates. Freeze, all
-new-source evidence, Claude review and publication remain. No earlier-source
-pass is promoted, second full sweep is run, or learning claim is made.
+**Active §20 round, based on frozen `575cab06c`:** the six authorized ports,
+live x resolver, joined-site guard, observed incompatibility, root-role
+answer view, kind fallback and episode R + A thought-bind credit are
+implemented in the working source. The [review-ten receipt](doc/benchmarks/2026-10-21-item3-5-review10/README.md)
+records development evidence and the retained test-contract conflicts;
+source freeze, all new-hash gates, Claude's review and publication remain.
+No `575cab06c` evidence is promoted to this source. The naming sweep is
+prepared with the October 20 amendments. Strict live closure remains item 0
+learning evidence; re-identification and reconstruction through a bind keep
+§20's separate follow-up scope. No second full sweep or learning claim.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
@@ -133,6 +132,12 @@ binding links it to an existing object or leaves it its own (a zero-logit
 dummy), learned like any choice; the pending-premise certificate's
 closure forcing is removed (no wrong binding is asserted; the strict
 closure assertions move verbatim to item 0). Then every gate on the new hash.
+*Tenth review (Claude, plan §20):* frozen `575cab06c` verified (carrier,
+regressions with the six authorized ports pending, bootstrap). Alec: a
+joined site is never re-bound; incompatibility makes the mention a new
+identity; re-identification is FutureWork; thought binds follow decision
+A; "reconstruction reads the bind" is the recommended next round after
+step 1b. Repairs: nested-role answer view, kind adoption on merge.
 
 **Naming sweep at the step 1b landing (Alec, 2026-10-21: "rename when
 you think best"):** LTM1 → LTM0 (the occurrence store: order 0, no

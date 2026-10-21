@@ -207,7 +207,7 @@ def test_empty_close_has_no_policy_gradient_or_store_side_effect():
     assert not resolver.components.individual_ids and not resolver._participants()
 
 
-def test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction():
+def test_answer_credit_credits_the_departure_without_changing_exact_reconstruction():
     from Layers import Error
     from SentenceCredit import components, comparison, score_function
     registry, like = Error(), torch.zeros(1)

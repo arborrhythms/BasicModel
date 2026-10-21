@@ -436,7 +436,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         live_values, live_ids, live_orders, live_relations, live_positions = live[:5]
         live_local = live[5] if len(live) > 5 else torch.zeros_like(live_ids, dtype=torch.bool)
         # A referent is an individual use, not a conceptual-order stamp.
-        # LTM1 and live constituents retain their actual, unrestricted order.
+        # LTM0 and live constituents retain their actual, unrestricted order.
         member = order == 1
         earlier = (live_positions[:, None] < pos[:, :, None]) & (
             member[:, :, None] | (live_orders[:, None] == order[:, :, None]))

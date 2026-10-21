@@ -5580,7 +5580,8 @@ class BasicModel(BaseModel):
         finally:
             self._query_sentence_depth = depth
 
-    def _thought_grammar_context(self, meaning, *, row, work, continuation):
+    def _thought_grammar_context(self, meaning, *, row, work, continuation,
+                                 reference_decisions=None):
         """Build the one capability-scoped context for a selected thought.
 
         This is intentionally the only model-to-thought bridge.  It freezes
@@ -5630,6 +5631,7 @@ class BasicModel(BaseModel):
                 equal=TruthGroundedReasoner.equal, tau_id=reasoner.tau_id,
                 memory=self._what_memory(), discourse=discourse, row=row,
                 reference_close=getattr(getattr(concept_owner, 'components', None), 'reference_close', None),
+                reference_decisions=reference_decisions,
                 primed=((primed.reshape(-1) > 1.).nonzero().reshape(-1).tolist()
                         if torch.is_tensor(primed) else ())),
             taxonomy=ThoughtTaxonomyCapability(concept_owner),
@@ -6128,7 +6130,7 @@ class BasicModel(BaseModel):
                     or search_exhausted() or (bool(actions) and not advances))
 
         def execute(current, *, actions=None, evidence_context=None,
-                    action=unselected):
+                    action=unselected, continuation=None):
             """Run one selected VP; nested ``what`` uses this same closure.
 
             The controller chooses an action from the actual root/active/
@@ -6207,9 +6209,24 @@ class BasicModel(BaseModel):
                 # Each selected request is a completed thought boundary;
                 # nested permission remains a narrowing of the parent's row.
                 with self._query_boundary_scope((row,)):
+                    reference_decisions = []
                     context = self._thought_grammar_context(
-                        current, row=row, work=meter, continuation=schedule_subgoal)
+                        current, row=row, work=meter, continuation=schedule_subgoal,
+                        reference_decisions=reference_decisions)
                     raw = registry.execute(current, context)
+                    walk = getattr(self, '_thought_walk', None)
+                    if reference_decisions and walk is not None:
+                        if len(reference_decisions) != 1:
+                            raise RuntimeError('one bind operation must have one reference decision')
+                        from WalkTrials import record_thought_bind, capture_thought_fork
+                        plan = reference_decisions[0]
+                        record_thought_bind(walk, plan)
+                        if walk.get('collect_fork'):
+                            capture_thought_fork(self, walk, meter,
+                                continuation=continuation,
+                                clock=(initial_spend, episode, recorded_spend),
+                                bind_resume=dict(goal=goal, request=current,
+                                    semantic_id=selected.semantic_id, plan=plan, template=raw))
                     from ThoughtStream import materialize
                     raw = materialize(raw)
                     from AccessibleMind import apply_thought_effect
@@ -6230,13 +6247,18 @@ class BasicModel(BaseModel):
                 raise
             if child_pending is not None:
                 return dict(child_pending, template=raw)
+            return accept_result(goal, current, selected.semantic_id, raw, parent_record)
+
+        def accept_result(goal, current, semantic_id, raw, parent_record=None):
+            """Integrate a checked result, including a resumed bind choice."""
+            state = memory.thought_state(b=row)
             evidence, checked = normalized(raw)
             if parent_record is not None and memory.thought_state(b=row).forced:
                 evidence = dict(evidence, incomplete=tuple(dict.fromkeys(
                     (*evidence['incomplete'], 'work_budget'))))
                 return dict(meaning=goal, evidence=evidence, result=checked, record=parent_record)
             record = event("thought", current, evidence,
-                           operation=selected.semantic_id,
+                           operation=semantic_id,
                            sources=refs(current), result=checked)
             history = tuple(item for item in memory.thought_history(b=row)
                             if item.episode == episode and item.level == state.level)
@@ -6287,6 +6309,29 @@ class BasicModel(BaseModel):
             if fork is not None:
                 current, outcome, parents = fork['continuation']
                 parents = list(parents)
+                if fork.get('bind_resume') is not None:
+                    # The checked VP and its frame reads were paid before
+                    # this fork. Resume only the choice, with no prefix reads.
+                    held = fork['bind_resume']
+                    resolver = self._concept_owner().components.reference_close
+                    evidence = resolver.finish_thought_bind(held['plan'], departure=True)
+                    template = held['template']
+                    metadata = {key: template.evidence[key] for key in (
+                        'semantic_id', 'domain', 'result_kind', 'evidence_kind',
+                        'records_scanned', 'resolution_records_scanned') if key in template.evidence}
+                    if not held['request'].polarity:
+                        evidence['support_true'], evidence['support_false'] = (
+                            evidence['support_false'], evidence['support_true'])
+                    from Queries import _freeze_boundary_value
+                    from ThoughtStream import materialize
+                    from WalkTrials import record_thought_bind
+                    from AccessibleMind import apply_thought_effect
+                    raw = materialize(replace(template,
+                        evidence=_freeze_boundary_value(dict(metadata, **evidence))))
+                    record_thought_bind(self._thought_walk, held['plan'])
+                    apply_thought_effect(self, raw, row=row, work=meter)
+                    outcome = accept_result(held['goal'], held['request'], held['semantic_id'], raw)
+                    current = outcome['meaning']
             while True:
                 state = memory.thought_state(b=row)
                 complete = state is None or state.forced or (outcome is not None and outcome['record'] is None)
@@ -6335,7 +6380,8 @@ class BasicModel(BaseModel):
                             outcome = exhausted(value)
                         complete = True
                     else:
-                        outcome = execute(value, actions=actions, evidence_context=evidence_context, action=action)
+                        outcome = execute(value, actions=actions, evidence_context=evidence_context, action=action,
+                            continuation=(current, outcome, tuple(parents)))
                         if 'child' in outcome:
                             parents.append(outcome)
                             current, outcome = outcome['child'], None

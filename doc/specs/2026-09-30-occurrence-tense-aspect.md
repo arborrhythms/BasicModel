@@ -1,5 +1,7 @@
 # Item 5.5: where and when a sentence occurred, tense, aspect, the preposition and surface form
 
+> **Naming amendment (2026-10-21, Alec):** LTM0 is the occurrence store (formerly LTM1); LTM1 is its relation stratum (formerly LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Names in this live contract are updated in place; retained evidence and source hashes are unchanged.
+
 > **Status:** specification, 2026-09-30, written by Claude from Alec's
 > decisions in conversation on 2026-09-30; **revised 2026-10-03 (§0): `.when`
 > stays in percepts and concepts as the sentence's index in its document
@@ -911,13 +913,13 @@ The syntax is the store's own shape (Alec, 2026-10-19: "that corresponds
 exactly to the use of LTM and STM slots"; [two truths §1, amended 2026-10-19](2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided)):
 a row has three positions, argument, kind, argument. An absolute truth `S`
 fills one position with its fused point — a vector, possibly unminted, in
-STM and in LTM1; minted on recurrence. A relative truth `S REL S` fills all three, the kind being a
+STM and in LTM0; minted on recurrence. A relative truth `S REL S` fills all three, the kind being a
 relation that takes a truth as an argument (`DEF`, *said*, *if-then*) and
 each argument an idea or a REF to a row. Parthood and kind membership are
 not rows but folds in the main tree (meronomy, taxonomy). So the *de re*
 reading writes membership evidence — Alec in the set of running things in
 the kept worlds — and the *de dicto* reading writes the fused point of
-`[Alec runs]` as an LTM1 row whose concept carries the world `W` as a context whole, as it carries the document (no address column). No new row kind is needed for the modal.
+`[Alec runs]` as an LTM0 row whose concept carries the world `W` as a context whole, as it carries the document (no address column). No new row kind is needed for the modal.
 Each `S` has its noun phrase, verb phrase and world, defaulting to
 everything, occurs and all possible worlds (§14.4); `[Alec]` and
 `[running things]` are such sentences with their defaults, and the modal

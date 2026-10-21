@@ -1,0 +1,213 @@
+{
+  "source": "575cab06cb7d2ecb94a0c02cf64cb71bc6de33b0",
+  "base": "d29480774a93dc7fba630c78ee1e08b750ce2632",
+  "source_files": 827,
+  "runs": [
+    {
+      "run": "fresh-final-forward-1",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-forward-2",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-forward-3",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-forward-4",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-forward-5",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-forward-6",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-1",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-2",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-3",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-4",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-5",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "fresh-final-reverse-6",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "native-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "native-final-02",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "regressions-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "decomposition-zero-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "decomposition-enabled-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "mm-saved-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "mm-fresh-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "bootstrap-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    },
+    {
+      "run": "carrier-final",
+      "files": 827,
+      "differences": [],
+      "phase_registry_override": null
+    }
+  ],
+  "current_source_differences": [],
+  "git_differences_from_frozen": [],
+  "helper_hashes": {
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/arrival_capture.py": "b6bd214a63121492db9e7bf6c8fc5fc7ffeb90973d421eddd54230f2af939684",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/arrival_keep_probe.py": "af0281b9fea2818c55c3111dae9a69782fdac71eba89fd52f4641b2184ded13f",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/bind_gate.py": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap_final.py": "7421da5a8e36098e7da72699d9d4490afe2ec49087ea570c62a54975c1f3803a",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap_probe.py": "6a75d9d8b035d0719e3193ee2e2ec984736b128f8e1d0fc8b4f265f270904b59",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/capacity_probe.py": "26a68fd30f91f55d13d259a0bcb6cc49fa1041b0b7038861ddc1ff07e10b631a",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/carrier_trace.py": "0e206e910cf80aca39ac86802af9d7aeb9b32ca9fe36c9c03bfb960ed7775073",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/context_probe.py": "1b3be36a64ff769a0dc855021a3e429e40e6c1b88dfeba9bfc373bd231934aff",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/fresh_arrivals.py": "d01d4e2c2d3b4cdea3c5f091214d1a899139f7c967be12702deac6c68f8bdaa5",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/mm_gates.py": "f96a485f538deee15caa7db041643dfdb676532084b23c5f0fc346815ce60d8d",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/old_carrier_probe.py": "52bc1e0780a3b224a339288814d69d5cbcb5e85da595c81010b1b01e8b3b5520",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/reference_probe.py": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/regression_gate.py": "b9b3da900dfb14a6022d93a0c0b12b0083aac2a193639dfe69f970f33574a6d9",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/run_native_02.py": "794aeb31c8d9be86c3588666a28331ad95cd7c16c628c6d0ecc0e6e29693436a",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/run_review_certificates.py": "21ce43110f35a36d0ffb3ace95bb09da29f5030390ba71916895b716de2f7b00",
+    "doc/benchmarks/2026-10-21-item3-5-bind-choices/summarize_gates.py": "1d9f9f8bb667c6f4cdbd113bf652c3a50b6c084fdace22acd75bbff6a1e866c3",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/bind_gate.py": "665437cfc335755be5f4dcb4cf8c3888b5f9227f2e18319faf0f33a8c92b86d2",
+    "doc/benchmarks/2026-10-20-item3-5-stm1/closing_probe.py": "7f74a5436fd9b376ae8bcfd82b944a525cbe74dd71f22cca0c8e80c4b1d55233"
+  },
+  "assertion_audit": {
+    "base": "d29480774a93dc7fba630c78ee1e08b750ce2632",
+    "strict_learning_assertions_verbatim": true,
+    "B_semantic_assertions_verbatim": true,
+    "credit_caller_assertions_verbatim": true,
+    "files": {
+      "bin/ClauseJournal.py": "ad7d23e25d24d868e91728596da224ca1ee41f44e0d03c5a655dbb056e29cc14",
+      "bin/Language.py": "320ead5af59ffb0b0482b4e5f77e9b54e81fa01fdfbc3f970ba893eb6ad72a55",
+      "bin/MediumTermMemory.py": "beadbf467215ebfd947142d0f8c46b40fbd5b015ea3c0167d0eb16198a588776",
+      "bin/Models.py": "7d0ddc3331fe2ad4c39486e5fae0daab40d5da5fa558e7aed194a2e346eb4d05",
+      "bin/ReferenceClose.py": "ef3dd3a17fb0ca4126f9fe1a29bbb7206a97d331b4e3c7e0fa406963eef1bc47",
+      "bin/SentenceCredit.py": "c35ae24e7296b3512bb01a787877e4bf414441bc1d8dbeec57bcfc98748c8797",
+      "test/fixtures/phase-artifacts.json": "226d30db4e503e776fa1841298e8b8f3da66d68c9a247977dfd503520cf082ad",
+      "test/test_math_chain_section14.py": "e8e6371a0d69305aeac4a72556aec644074fefc745d8d7d0e5842d92d2e5e33f",
+      "test/test_reference_arrival_review.py": "7d2c3fb1d7cea9cc6ebeada9e9a29b54ec031b822c1f7ad8880290ecc81613f7",
+      "test/test_reference_close.py": "e3653fe31cf232824e679cba742284394c8027ec1b2d9d74d409f412c25d483d",
+      "test/test_reference_choices.py": "d4b594a99cc57185b01a66b2b488101fb5c6675472a2e066cf80b5aac014245b"
+    },
+    "scope": "Closing resolver costs diagnostic only; sentence R+A bind score function; B merge; WORD carrier content read; D dummy and object opening; E correct/open gate; no MTM read detaches"
+  },
+  "harness_recovery": {
+    "reason": "native-final failed importing reference_probe before collection; native-final-02 uses the unchanged observer copied into the current receipt. bind_gate is also copied unchanged so subsequent metric writes land in this receipt. Production and test sources are unchanged.",
+    "helpers": {
+      "reference_probe.py": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+      "bind_gate.py": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+      "run_native_02.py": "794aeb31c8d9be86c3588666a28331ad95cd7c16c628c6d0ecc0e6e29693436a"
+    },
+    "zero_arm_metric_relocation": [
+      {
+        "from_path": "doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-metrics/zero/process-77984.json",
+        "to_path": "doc/benchmarks/2026-10-21-item3-5-bind-choices/bind-decomposition-metrics/zero/process-77984.json",
+        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+      },
+      {
+        "from_path": "doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-metrics/zero/process-78013.json",
+        "to_path": "doc/benchmarks/2026-10-21-item3-5-bind-choices/bind-decomposition-metrics/zero/process-78013.json",
+        "sha256": "a5c5d2ef1723b12f563aaebe9917ff6b6d64f207c753ff6b6d8debdd0f6b6ef5"
+      }
+    ],
+    "metric_note": "The zero arm imported the unchanged observer from the prior receipt before the local copy existed. Only the two new untracked metric files from this run were moved into this receipt. No historical metric was altered.",
+    "copy_sources": {
+      "reference_probe.py": {
+        "source": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/reference_probe.py",
+        "sha256": "4787dd4daf0af278313352450e41bd4f1563350271d23948500cbffe489cfbf1",
+        "byte_identical": true
+      },
+      "bind_gate.py": {
+        "source": "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-v3/bind_gate.py",
+        "sha256": "f0e8ccf6be7986fcba9e95bee7c7a91b7ae05f2fa913719d7289fd764863b9f4",
+        "byte_identical": true
+      }
+    },
+    "bind_observer_older_comparison": {
+      "source": "doc/benchmarks/2026-10-20-item3-5-stm1/bind_gate.py",
+      "ast_identical": true,
+      "difference": "The local/v3 file adds two provenance comment lines; the stm1 observer and local observer have identical Python ASTs."
+    }
+  }
+}

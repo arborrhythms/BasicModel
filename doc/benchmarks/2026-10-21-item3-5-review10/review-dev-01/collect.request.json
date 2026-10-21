@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_reference_review10.py",
+    "test/test_bind_thought.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

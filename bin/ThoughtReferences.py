@@ -200,7 +200,7 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
             references[role] = evidence['reference']
             value = evidence.get('binding_value', evidence.get('value')).to(roles)
             width = min(value.shape[-1], roles.shape[-1])
-            # An unminted LTM1 candidate can answer only at its retained
+            # An unminted LTM0 candidate can answer only at its retained
             # width. The rest remains the current working request, never a
             # reconstruction of lost occurrence structure.
             roles[role, :width], mask[role] = value[:width], True

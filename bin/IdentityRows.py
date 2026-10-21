@@ -61,7 +61,7 @@ def point(owner, identity):
 
 def meet_ratios(query, candidate):
     """Candidate coverage and request coverage, without a distance term."""
-    # A retained, unminted LTM1 concept has only its narrowed coordinates.
+    # A retained, unminted LTM0 concept has only its narrowed coordinates.
     # Neither operand acquires imaginary coordinates to match a wider one.
     width = min(query.shape[-1], candidate.shape[-1])
     query, candidate = query[..., :width], candidate[..., :width]

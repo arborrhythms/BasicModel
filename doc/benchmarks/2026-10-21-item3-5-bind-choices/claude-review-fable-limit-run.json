@@ -1,0 +1,25 @@
+{
+  "source": "575cab06cb7d2ecb94a0c02cf64cb71bc6de33b0",
+  "command": [
+    "/Users/arogers/.local/bin/claude",
+    "--print",
+    "--safe-mode",
+    "--restricted",
+    "--strict-mcp-config",
+    "--tools",
+    "Read,Grep,Glob",
+    "--allowedTools",
+    "Read,Grep,Glob",
+    "--permission-mode",
+    "dontAsk",
+    "--permission-prompts",
+    "none",
+    "--output-format",
+    "stream-json",
+    "--verbose"
+  ],
+  "request_sha256": "5f33cc69daf524197cdfb8db5935264098716453e74b2b8f455bbcbdec76c55f",
+  "started": "2026-10-21T16:21:29.926302+00:00",
+  "exit": 1,
+  "finished": "2026-10-21T16:21:31.423780+00:00"
+}

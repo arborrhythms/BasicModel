@@ -1,5 +1,7 @@
 # Two truths in LTM: ideas collapse, relations refer
 
+> **Naming amendment (2026-10-21, Alec):** LTM0 is the occurrence store (formerly LTM1); LTM1 is its relation stratum (formerly LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Names in this live contract are updated in place; retained evidence and source hashes are unchanged.
+
 > **Status:** specification, 2026-09-16, written by Claude from Alec's
 > decisions in conversation on 2026-09-16, including the answers to the
 > four questions the first draft left open and the fusion-over-references
@@ -49,8 +51,8 @@ them, and what is a row at all**
   relation that takes a truth as an argument — `DEF` (word DEF object),
   attribution (*he said REF*), the conditional (*if S then S*) — and each
   outer position holds a **symbol reference** (a minted idea's symbol, an
-  individual's, a word's) — *as finally decided below under "LTM1 and
-  LTM3": references are to symbols, never to rows*. The definition is one
+  individual's, a word's) — *as finally decided below under "LTM0 and
+  LTM1": references are to symbols, never to rows*. The definition is one
   such row, as `Interpret.define` already writes it (today with a REL code
   in the middle and refs `[word, −1, obj]`; after the row amendment the
   middle reference is the kind and there is no `rel_type`); the definition
@@ -70,46 +72,46 @@ them, and what is a row at all**
   reading (*Alec is a part of running things in the kept worlds*) writes
   membership evidence, not a row; only the *de dicto* reading writes a row
   (occurrence spec §14.3).
-- **Two forms of LTM, named by their slots: LTM1 and LTM3** (Alec,
-  2026-10-19, superseding "mint on write" of the same day). **LTM1** holds
+- **Two forms of LTM, named by their slots: LTM0 and LTM1** (Alec,
+  2026-10-19, superseding "mint on write" of the same day). **LTM0** holds
   **one concept per row**, which may be **unminted**: an idea written at
   the close goes in as its fused vector, with its address, lanes and
   surprise as columns, and no symbol is needed; item 5's retention by
   surprise acts on it as now. (The name says one slot, one concept — not
-  "absolute as all concepts".) **LTM3** holds **three symbol references**
+  "absolute as all concepts".) **LTM1** holds **three symbol references**
   — argument, kind, argument — so it remembers only known concepts; the
-  definition, attribution and conditional rows live here. **STM is STM1** (Alec, 2026-10-20): each of its entries (about eight) holds **one wide concept vector** — the full concept-space width of the composed value, not the codebook's symbol — plus the index of recent rows and the symbol activation field. The temporary identity of the open sentence is that wide vector; **it is computed in STM, may be reinterpreted, and is never written to LTM** (Alec, 2026-10-20), so nothing has to be reconstructed from it: it is a working object for `bind`, thought and output, and what persists is what the close writes — the narrowed LTM1 concept and the LTM2 edges from the derivation. No inversion gate applies to it, and item 3's content width stays item 3's. `bind`'s meet is computed on the wide vectors; a candidate no longer in STM compares at the width it was stored at (a minted symbol by its code, an unminted LTM1 row by containment at concept width), and recurrence is what buys the wide comparison back. Maps on the identity path (lift, lower) act through the chart so the cube is preserved and the meet is never fed a negative coordinate. **The path to a concept is
-  recurrence in LTM1:** a row remembered several times (the store's
+  definition, attribution and conditional rows live here. **STM is STM1** (Alec, 2026-10-20): each of its entries (about eight) holds **one wide concept vector** — the full concept-space width of the composed value, not the codebook's symbol — plus the index of recent rows and the symbol activation field. The temporary identity of the open sentence is that wide vector; **it is computed in STM, may be reinterpreted, and is never written to LTM** (Alec, 2026-10-20), so nothing has to be reconstructed from it: it is a working object for `bind`, thought and output, and what persists is what the close writes — the narrowed LTM0 concept and the LTM1 edges from the derivation. No inversion gate applies to it, and item 3's content width stays item 3's. `bind`'s meet is computed on the wide vectors; a candidate no longer in STM compares at the width it was stored at (a minted symbol by its code, an unminted LTM0 row by containment at concept width), and recurrence is what buys the wide comparison back. Maps on the identity path (lift, lower) act through the chart so the cube is preserved and the meet is never fed a negative coordinate. **The path to a concept is
+  recurrence in LTM0:** a row remembered several times (the store's
   re-witnessing count) is minted as a concept row and a symbol at the
   shared index — the type criterion of nested admission and the minting of
-  markers on recurrence, applied to ideas; only then can LTM3 reference
+  markers on recurrence, applied to ideas; only then can LTM1 reference
   it, and `bind` (item 3.5) resolves among minted individuals. A *de
-  dicto* modal idea is an LTM1 row whose concept carries the world's trace
+  dicto* modal idea is an LTM0 row whose concept carries the world's trace
   as a **context whole**, exactly as it carries the document's (the row
-  table below: no address columns). Psychologically LTM1 is the episodic trace
-  and LTM3 the index over cortical codes (Tulving; Teyler & DiScenna),
+  table below: no address columns). Psychologically LTM0 is the episodic trace
+  and LTM1 the index over cortical codes (Tulving; Teyler & DiScenna),
   with minting on recurrence as consolidation.
 - **One store in strata; a relation references rows (Alec, 2026-10-21;
-  supersedes "references are to symbols, never to rows" above and LTM2's
-  "only minted concepts").** "`S1 R S2` in LTM2 should now be `R` in LTM1
+  supersedes "references are to symbols, never to rows" above and LTM1's
+  "only minted concepts").** "`S1 R S2` in LTM1 should now be `R` in LTM0
   with two references to LTM objects in LTM0: `S1` and `S2`." The names
   shift by one and give each stratum's order: **LTM0** holds one concept
-  per row (today's LTM1: occurrences, no identity, order 0); **LTM1** is a
+  per row (today's LTM0: occurrences, no identity, order 0); **LTM0** is a
   stratum of the same store holding relation rows, three positions
   (argument, kind `R`, argument), each outer position a reference to an
   LTM0 object: an occurrence by its address, or a minted concept by its
-  symbol; **LTM2** holds relations whose arguments include an LTM1 row
+  symbol; **LTM1** holds relations whose arguments include an LTM0 row
   (attribution or a conditional over a relation). A relation sits at the
-  lowest order at which it can occur: "Felix is a cat" is an LTM1 row,
+  lowest order at which it can occur: "Felix is a cat" is an LTM0 row,
   decided by the kind's order-0 intersection (Orders §2). Definitions,
-  membership, subsumption and derivation pairs are LTM1 rows; the order-0
+  membership, subsumption and derivation pairs are LTM0 rows; the order-0
   meronomy stays in the perceptual tree. Every stratum keeps the same
   metadata: `.when`, the two lanes, the access count, `surprise`. This is
   step 2's row work; step 1b's Part store stands until then.
   Consequences, recommended: a sentence or token that is a relation's
   argument is referenced by its occurrence, so minting at the close for
   relation arguments (bind plan §10.1) ends with step 2 and minting is by
-  recurrence only; an LTM0 row is protected from forgetting while an LTM1
+  recurrence only; an LTM0 row is protected from forgetting while an LTM0
   row references it (item 5's value counts incoming references).
 - **Shared identity and self-reference (Alec, 2026-10-20).** Several
   references can tie to one identity present in STM1. They share its
@@ -118,17 +120,17 @@ them, and what is a row at all**
   Bounded readers report revisited occurrences without erasing the
   relation, manufacturing evidence or banning the binding.
 - **The row, field by field (Alec, 2026-10-20; decided after a walk
-  through every column of `TernaryTruthStore`).** The rule: LTM1 holds
-  one concept and a `.when`; LTM3 holds three symbol references and a
+  through every column of `TernaryTruthStore`).** The rule: LTM0 holds
+  one concept and a `.when`; LTM1 holds three symbol references and a
   `.when`; anything else must be justified. What survives, with its
   reason:
 
-  | field | LTM1 | LTM3 | reason |
+  | field | LTM0 | LTM1 | reason |
   |---|---|---|---|
   | slots | 1: the concept | 3: the symbol references | "slots" is the count of content columns and nothing more |
   | `.when` | model time, sinusoidally encoded, **a column composition never sees** (the §1.1 finding of the occurrence spec: the stamp must not ride inside the idea); the ladder's range covers the run | the same: when the relation was learned | the address and the order; streams and batches are told apart by a **unique whole** in the content, as a document is |
   | `truth_plus`, `truth_minus` | yes | yes | the row's truth, the two lanes (renamed from `c_plus`/`c_minus`) |
-  | access count | yes | yes | forgetting; recurrence mints a concept from LTM1 (renamed from `witness_count`) |
+  | access count | yes | yes | forgetting; recurrence mints a concept from LTM0 (renamed from `witness_count`) |
   | `surprise` | yes | yes | the residual at the moment of writing, read by item 5's retention beside the access count; not recomputable later |
 
   Nothing else. `.where` is already inside the concept's reserved band
@@ -164,11 +166,11 @@ them, and what is a row at all**
   keeps it; "what was said in *d*" and re-witnessing a document become
   content matches, and the four address columns (`document_keys`,
   `sentence_index`, `address_keys`, `sentence_content_keys`) go. Dropped
-  as derivable or redundant: `rel_type` (LTM3's middle reference is the
+  as derivable or redundant: `rel_type` (LTM1's middle reference is the
   kind), `role_mask`, `order` (the concept's), `polarity` (lanes swapped),
   `grammatical_mode` (a question is an open reference), `row_ids`
   (references are to symbols), `semantic_fingerprint` (an index outside
-  the row). Moved: `source_trust`/`origin` to attribution rows in LTM3 or
+  the row). Moved: `source_trust`/`origin` to attribution rows in LTM1 or
   folded into the lanes at write; `stream` to the reader's own history.
   The sidecar: `_open_references`/`_bound_roles`/`_forward_references`
   derivable from the references; `_reference_sites`/`_reference_mentions`/
@@ -177,9 +179,9 @@ them, and what is a row at all**
   `_pending`, `_record_revision`, `_current_gate`, the `_live_*` keys and
   `_texts` gone; `_definition_rows`, `_semantic_rows`, `_expectation_rows`
   rebuildable caches. (The earlier "storage note" and "identity column"
-  paragraphs above are superseded by this table where they differ: LTM1
-  carries **no identity**; identity needs LTM3's separate S, V, O.)
-- **LTM2, one relation (Alec, 2026-10-20; supersedes "LTM3" and the
+  paragraphs above are superseded by this table where they differ: LTM0
+  carries **no identity**; identity needs LTM1's separate S, V, O.)
+- **LTM1, one relation (Alec, 2026-10-20; supersedes "LTM1" and the
   three-position row above).** A relation is **two symbol references
   and the truth pair**: `Part(x, y)`, with `.when`, the access count and
   `surprise`. There is one relation. Its reading comes from the **types
@@ -190,17 +192,17 @@ them, and what is a row at all**
   and a word is a definition (the object a member of what the word
   names); two kinds is subsumption; equality is membership in a
   singleton. Retrieval context chooses among the readings the arguments
-  permit. So the "kind" position disappears and **LTM2 and the taxonomy
+  permit. So the "kind" position disappears and **LTM1 and the taxonomy
   over symbols are one structure**: Part edges with evidence are
   membership evidence (orders are fuzzy sets of symbols, membership by
   evidence per set); the meronomy at order 0 is the perceptual case.
   Yesterday's distinction between "folds in the main tree" and "rows in
-  LTM3" collapses into this one store. **Pairs are the derivation's,
+  LTM1" collapses into this one store. **Pairs are the derivation's,
   not STM's:** STM1 holds the constituents' wide vectors; the operation
   that composed two of them (its argument roles) says which is the part
   and which the whole; at the close each operation writes one edge, with
   its arguments minted as symbols (an S that is an argument of a relation
-  is minted at the close; an unreferenced idea stays an unminted LTM1 row
+  is minted at the close; an unreferenced idea stays an unminted LTM0 row
   until recurrence). Nesting is the derivation's nesting: an inner edge's
   result is minted and becomes an argument of the outer edge. STM's
   capacity (about eight) bounds what can be open at once.

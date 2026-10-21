@@ -1,15 +1,21 @@
 # Step 1b: current gates and carry ledger
 
-**Active §19 round, 2026-10-21.** Base `d29480774`; the next candidate
-implements the zero-logit dummy, unpriced object opening, sentence R + A bind
-credit, antecedent-directed merging and the WORD-carrier bootstrap repair.
-The revised §14 gate permits only correct or named-open x; strict closure
-is registered as item 0 learning evidence. The [current receipt](../2026-10-21-item3-5-bind-choices/README.md)
-retains all development failures, the exact zero-R replay pass and the six
-unchanged arrival failures that need review under the new dummy decision.
-Freeze and all evidence by the new source hash are next. Earlier sources'
-passes below are historical; publication remains pending.
-
+**Active §20 round, 2026-10-21, based on frozen `575cab06c`.** The six
+ports are applied, x's resolver is live at the two pending-premise fixtures,
+and the ownership, observed-exclusion, root-answer, anonymous-kind and
+thought-credit repairs are in the working source. Ten new regressions and
+the review/choice/Part-closing/occurrence-view set give 39 development
+passes. The unchanged reference set retains one arrival-count failure and
+four partition failures; two old thought tests still require the removed
+local reference objective. Their disposition is pending under the assertion
+restriction. Four additional reader-only arrival checks fail identically
+on `575cab06c` and the working source; the isolated baseline is retained.
+The [current receipt](../2026-10-21-item3-5-review10/README.md) separates all
+of this development evidence from the next frozen source. No incompatibility
+is recognized at initialization. Source freeze, the requested new-hash
+gates, Claude's review and both-main publication remain; the October 20
+docs and naming sweep are prepared. No earlier pass is promoted, second
+full sweep run, or learning claim made.
 
 **Review follow-up, 2026-10-21.** Intermediate source `a93f93c0e`
 repairs the occurrence witness, native-arrival synthetic row, missing

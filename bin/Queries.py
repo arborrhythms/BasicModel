@@ -828,10 +828,11 @@ class ThoughtLTMCapability:
     """Narrow LTM/episode/prediction reader used only at a thought boundary."""
 
     __slots__ = ('__store', '__equal', '__tau', '__memory',
-                 '__discourse', '__row', '__primed', '__reference_close')
+                 '__discourse', '__row', '__primed', '__reference_close', '__reference_decisions')
 
     def __init__(self, *, store, equal, tau_id,
-                 memory=None, discourse=None, row=0, primed=(), reference_close=None):
+                 memory=None, discourse=None, row=0, primed=(), reference_close=None,
+                 reference_decisions=None):
         if not callable(store) or not callable(equal):
             raise TypeError('thought LTM capability requires bounded reader callables')
         object.__setattr__(self, '_ThoughtLTMCapability__store', store)
@@ -842,6 +843,7 @@ class ThoughtLTMCapability:
         object.__setattr__(self, '_ThoughtLTMCapability__row', int(row))
         object.__setattr__(self, '_ThoughtLTMCapability__primed', tuple(primed))
         object.__setattr__(self, '_ThoughtLTMCapability__reference_close', reference_close)
+        object.__setattr__(self, '_ThoughtLTMCapability__reference_decisions', reference_decisions)
 
     def bind_reference(self, meaning, role, *, max_records, work):
         """Read only situated frames and this episode's already held rows."""
@@ -871,7 +873,8 @@ class ThoughtLTMCapability:
                 work.require('record')
                 frames.append(SituationFrame.from_row(store.row(index)))
                 seen.add(int(store.row_ids[index]))
-        return resolver.bind_site(meaning, role, tuple(frames), stream=row)
+        return resolver.bind_site(meaning, role, tuple(frames), stream=row,
+            decisions=object.__getattribute__(self, '_ThoughtLTMCapability__reference_decisions'))
 
     def held_frames(self, limit=32):
         memory = object.__getattribute__(self, '_ThoughtLTMCapability__memory')

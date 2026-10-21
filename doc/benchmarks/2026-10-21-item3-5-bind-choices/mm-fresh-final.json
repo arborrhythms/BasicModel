@@ -1,0 +1,8 @@
+{
+  "receipt": "mm-fresh-final",
+  "source": "575cab06cb7d2ecb94a0c02cf64cb71bc6de33b0",
+  "selector": "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal",
+  "exit": 0,
+  "initial_rng": "doc/benchmarks/2026-10-20-item3-5-inline-lowering/mm-fresh-02-state/initial-rng.pt",
+  "initial_rng_sha256": "c3bddd761c5c4a01e36523be8ebbff4be787f96649053134bb51b0ea69267f51"
+}

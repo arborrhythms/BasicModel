@@ -1,4 +1,4 @@
-"""Derived definition indexes over LTM2's Part(object, word) edges.
+"""Derived definition indexes over LTM1's Part(object, word) edges.
 
 All durable data lives on those rows. Lookups never scan, compare codes or
 reconstruct a retired META. Appends update the index; load and compaction

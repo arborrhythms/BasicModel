@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review10/partition-diagnostic/worker-000.recycle.json"
+}

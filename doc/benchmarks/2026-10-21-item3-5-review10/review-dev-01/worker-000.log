@@ -1,0 +1,55 @@
+FF.F.......................................FF.....                       [100%]
+=================================== FAILURES ===================================
+___ test_later_ball_mention_preserves_the_boxs_key_members_and_count[False] ____
+test/test_reference_review10.py:59: in test_later_ball_mention_preserves_the_boxs_key_members_and_count
+    first = Clause(ConceptualMeaning(torch.stack((a[5], pred, a[4])), torch.ones(3, dtype=torch.bool)),
+<string>:18: in __init__
+    ???
+bin/ClauseRow.py:115: in __post_init__
+    raise ValueError('a relative clause has no fused point')
+E   ValueError: a relative clause has no fused point
+____ test_later_ball_mention_preserves_the_boxs_key_members_and_count[True] ____
+test/test_reference_review10.py:59: in test_later_ball_mention_preserves_the_boxs_key_members_and_count
+    first = Clause(ConceptualMeaning(torch.stack((a[5], pred, a[4])), torch.ones(3, dtype=torch.bool)),
+<string>:18: in __init__
+    ???
+bin/ClauseRow.py:115: in __post_init__
+    raise ValueError('a relative clause has no fused point')
+E   ValueError: a relative clause has no fused point
+________ test_answer_view_and_loss_judge_only_a_direct_root_site[False] ________
+test/test_reference_review10.py:130: in test_answer_view_and_loss_judge_only_a_direct_root_site
+    assert bool(open_slots(judged)) == nested
+E   AssertionError: assert True == False
+E    +  where True = bool((('referent', 0), ('relation', 1)))
+E    +    where (('referent', 0), ('relation', 1)) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, ('ltm', 'address-v1', 3457749535485181639)),...ces', (('referent', 2),)), ('_producing_operation', 'bind'), ('_thought_witnesses', ())), scope=(), sentence_kind=None))
+____ test_bind_cost_trains_existing_form_and_content_only_after_kept_commit ____
+test/test_bind_thought.py:341: in test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+    f.resolver.train_thought(SimpleNamespace(records=(record,)), errors)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'ReferenceClose' object has no attribute 'train_thought'
+___________ test_paired_bind_trials_use_r_plus_a_with_no_work_reward ___________
+test/test_bind_thought.py:384: in test_paired_bind_trials_use_r_plus_a_with_no_work_reward
+    assert audit['costs'] == pytest.approx(measured)
+E   assert (0.0, 0.0) == approx([-0.02...96 ± 2.3e-08])
+E     
+E     comparison failed. Mismatched elements: 2 / 2:
+E     Max absolute difference: 0.023494184017181396
+E     Max relative difference: inf
+E     Index | Obtained | Expected                       
+E     0     | 0.0      | -0.023494184017181396 ± 2.3e-08
+E     1     | 0.0      | -0.023494184017181396 ± 2.3e-08
+=============================== warnings summary ===============================
+test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]
+FAILED test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]
+FAILED test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]
+FAILED test/test_bind_thought.py::test_bind_cost_trains_existing_form_and_content_only_after_kept_commit
+FAILED test/test_bind_thought.py::test_paired_bind_trials_use_r_plus_a_with_no_work_reward
+5 failed, 45 passed, 1 warning in 3.14s

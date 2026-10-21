@@ -5796,7 +5796,7 @@ class ConceptAllocator:
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
         from PartStore import PartStore
-        self.parts = PartStore()         # LTM2 and the symbol taxonomy, one owner
+        self.parts = PartStore()         # LTM1 and the symbol taxonomy, one owner
         self.parts.allocate = self._allocate_part_symbol
         self.symbol_types = {}           # types of bank arguments, never edge kinds
         self.word_descriptions = {}      # native form definitions, keyed by word symbol
@@ -8922,7 +8922,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             if target is None:
                 continue
             if target[0] == 'sym':
-                # LTM2 has only its six columns. Its inverse expectation
+                # LTM1 has only its six columns. Its inverse expectation
                 # link is a query over these retained estimate records.
                 continue
             inverse = records.get(target[2])

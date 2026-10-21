@@ -14277,7 +14277,7 @@ class ConceptualSpace(Space):
         capacity_raw = (None if legacy_relation_store
                         else getattr(self, "nVectors", None))
         capacity = None if capacity_raw is None else int(capacity_raw)
-        # Unseated relation handles live in LTM2's own allocation. Their
+        # Unseated relation handles live in LTM1's own allocation. Their
         # monotonic numbers are not reserved concept-bank coordinates.
         unseated = sum(self._csw_row_of(symbol) is None
                        for symbol in alloc.parts.indices().tolist())

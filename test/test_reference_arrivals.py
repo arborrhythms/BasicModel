@@ -89,7 +89,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     raw, refs = store.slots.clone(), store.refs.clone()
     arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
     entry = resolver.components.owner.mtm.entries[token]
-    assert entry.kind == words['three'] and entry.count == 2
+    assert entry.kind == words['three'] and entry.count == 3
     assert sum(item['token'] == token for item in plan['arrivals']) == 1
     assert all(item['features'].shape[-1] == 8 for item in plan['arrivals'])
     assert plan['cost'].requires_grad
@@ -169,6 +169,8 @@ def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
         reference_request=dict(mode='bind', leaves=(0,), content=a[1], cue=a[1], predicate=a[1]*0),
         composition=Composition(a[1], (Composition(a[1], reference=words['x']),),
                                 operation='definite_unary', head_role=1, order=1))
+    # A positive prime makes this a selected bind under the zero-logit dummy.
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
     used, plan = keep(resolver, site, (frame,), position=1)
     assert plan['items'][0]['reference'] == token
     assert resolver.components.owner.mtm.entries[token].kind is None
@@ -224,7 +226,7 @@ def test_named_trial_plans_only_refine_the_kept_close(monkeypatch, compiled):
     retained = snapshot(resolver)
     resolver.commit(plan, row, written, document='trial', position=1, training=False)
     unchanged(resolver, retained)
-    assert pool.entries[token].count == 2 and pool.entries[token].kind == words['three']
+    assert pool.entries[token].count == 3 and pool.entries[token].kind == words['three']
 
 
 def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
@@ -237,12 +239,13 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
     assert resolver.components.owner.mtm.entries[store.occurrence_of(row)].kind == words['three']
 
 
-def test_named_bind_to_a_native_individual_creates_no_pool_entry():
+def test_named_bind_to_a_native_individual_creates_no_pool_entry(monkeypatch):
     from IdentityRows import mint
     resolver, store, a, words, _ = world()
     native = mint(resolver.components.owner, a[0])
     frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
         torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
     row, plan = keep(resolver, named(a[0], words['x']), (frame,))
     assert plan['items'][0]['reference'] == native
     value = store.meaning_of(row)
@@ -251,11 +254,12 @@ def test_named_bind_to_a_native_individual_creates_no_pool_entry():
     assert not resolver.components.owner.mtm.entries
 
 
-def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind():
+def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch):
     resolver, store, a, words, model = world()
     antecedent = store.write_clause(Clause(ConceptualMeaning.from_description(a[0]),
         point=a[0], order=1, composition=Composition(a[0], reference=words['three'])))
     frame = SituationFrame.from_row(store.row(antecedent))
+    monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
     row, plan = keep(resolver, named(a[0], words['x']), (frame,), position=1)
     pool = resolver.components.owner.mtm
     token = pool.token_of(store.occurrence_of(row))

@@ -82,7 +82,8 @@ class MediumTermMemory:
         previous, antecedent = self.entries[source], self.entries[target]
         self.entries[target] = replace(antecedent,
             occurrences=antecedent.occurrences + previous.occurrences,
-            count=antecedent.count + previous.count, when=when)
+            count=antecedent.count + previous.count, when=when,
+            kind=previous.kind if antecedent.kind is None else antecedent.kind)
         for occurrence in previous.occurrences:
             self._tokens[occurrence] = target
         del self.entries[source]

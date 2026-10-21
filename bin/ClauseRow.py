@@ -195,7 +195,7 @@ class ClauseRows:
 
     @torch.no_grad()
     def part_row(self, symbol, *, reading=None):
-        """Read an LTM2 edge into a temporary grammatical view.
+        """Read an LTM1 edge into a temporary grammatical view.
 
         Only the two arguments and the six Part columns are durable. The
         grammatical operator in this view is chosen from the argument types.
@@ -227,7 +227,7 @@ class ClauseRows:
             if value is not None:
                 roles[role] = self._fit(value)
         # This is an operation request, not an identity coordinate or a
-        # third LTM2 column. It disappears with the read.
+        # third LTM1 column. It disappears with the read.
         roles[1] = predicate_point(reading, roles[1])
         pair = tuple(float(part[name]) for name in ('truth_plus', 'truth_minus'))
         from ThoughtReferences import with_slots
@@ -245,7 +245,7 @@ class ClauseRows:
             metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None)
 
     def location(self, reference):
-        """Find either an LTM1 occurrence or a native LTM2 symbol."""
+        """Find either an LTM0 occurrence or a native LTM1 symbol."""
         if isinstance(reference, tuple):
             if len(reference) == 2 and reference[0] == 'sym' and self.parts.contains(reference[1]):
                 return reference
@@ -366,7 +366,7 @@ class ClauseRows:
     def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
                     evidence=None, text=None, expectation=None, document_key=None,
                     sentence_index=0, content_key=None, written_rows=None):
-        """Close concepts into LTM1 and the derivation's argument pairs into LTM2.
+        """Close concepts into LTM0 and the derivation's argument pairs into LTM1.
 
         Wide working identities are never stored on occurrence rows. A completed
         relative field returns its native Part symbol; an absolute or still-open
@@ -659,7 +659,7 @@ class ClauseRows:
         return meaning
 
     def relation_operands(self, symbol):
-        """Read the two symbol arguments without reconstructing an LTM1 row."""
+        """Read the two symbol arguments without reconstructing an LTM0 row."""
         symbol = symbol[1] if isinstance(symbol, tuple) else int(symbol)
         return tuple(self.part_row(ref) if self.parts.contains(ref) else self.point_of_row(ref).clone()
                      for ref in self.parts.row(symbol)['refs'].tolist())

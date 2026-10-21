@@ -1,0 +1,61 @@
+......F..................FFFF................................            [100%]
+=================================== FAILURES ===================================
+_____________ test_bound_use_does_not_assign_a_kind_before_arrival _____________
+test/test_reference_arrivals.py:180: in test_bound_use_does_not_assign_a_kind_before_arrival
+    assert sum(item['token'] == token for item in refined['arrivals']) == 2
+E   assert 1 == 2
+E    +  where 1 = sum(<generator object test_bound_use_does_not_assign_a_kind_before_arrival.<locals>.<genexpr> at 0x12a0a3ac0>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0] _
+test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert references[0] == references[2] and references[1] == references[3]
+E   AssertionError: assert (('ltm', 'addr...0983127492346) == ('ltm', 'addr...0983127492346)
+E     
+E     Use -v to get more diff and ('ltm', 'addr...0983127492346) == ('ltm', 'addr...4796991834863)
+E     
+E     At index 2 diff: 7413710983127492346 != 616094796991834863
+E     Use -v to get more diff)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1] _
+test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert references[0] == references[2] and references[1] == references[3]
+E   AssertionError: assert (('ltm', 'addr...2319787671901) == ('ltm', 'addr...2319787671901)
+E     
+E     Use -v to get more diff and ('ltm', 'addr...2319787671901) == ('ltm', 'addr...0393665844214)
+E     
+E     At index 2 diff: -1576412319787671901 != 535290393665844214
+E     Use -v to get more diff)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2] _
+test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert references[0] == references[2] and references[1] == references[3]
+E   AssertionError: assert (('ltm', 'addr...3281326947878) == ('ltm', 'addr...3281326947878)
+E     
+E     Use -v to get more diff and ('ltm', 'addr...3281326947878) == ('ltm', 'addr...7202136398033)
+E     
+E     At index 2 diff: -4561473281326947878 != -482357202136398033
+E     Use -v to get more diff)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3] _
+test/test_reference_close.py:175: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert references[0] == references[2] and references[1] == references[3]
+E   AssertionError: assert (('ltm', 'addr...9583988972872) == ('ltm', 'addr...9583988972872)
+E     
+E     Use -v to get more diff and ('ltm', 'addr...9583988972872) == ('ltm', 'addr...9163790149807)
+E     
+E     At index 2 diff: 7307399583988972872 != 7167289163790149807
+E     Use -v to get more diff)
+=============================== warnings summary ===============================
+test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_mentions.py:42: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(all_correct) == 0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]
+5 failed, 56 passed, 2 warnings in 51.05s

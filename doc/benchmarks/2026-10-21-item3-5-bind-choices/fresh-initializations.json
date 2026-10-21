@@ -1,0 +1,54 @@
+{
+  "source": "575cab06cb7d2ecb94a0c02cf64cb71bc6de33b0",
+  "distinct": 12,
+  "parameter_hash_fingerprints": [
+    {
+      "capture": "fresh-final-forward-1-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "ff312da9ceb6edbd0416957cd1a582604abe7fc14179ec365a3102f90ac3589f"
+    },
+    {
+      "capture": "fresh-final-forward-2-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "2c2e2782e2d57c727dfbd51814f2fc3768f3a9de681b3d9763774523d6fbc46d"
+    },
+    {
+      "capture": "fresh-final-forward-3-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "42fa194b83312ecb5086c6f5203c4f16f7ab6ba467887cf8168eb72552b3f7f7"
+    },
+    {
+      "capture": "fresh-final-forward-4-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "614f6bb3e593ccb7f73947358869bd1b911f663078a2836209831b634c3542ba"
+    },
+    {
+      "capture": "fresh-final-forward-5-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "08bab0c98bd9af233f67473069d72da33d03282054ef991b5b24d56918b756a7"
+    },
+    {
+      "capture": "fresh-final-forward-6-state/test_forced_ordinary_pending_premise_in_both_orders[False]/initial-model.json",
+      "fingerprint": "13eb1c22bcc2259b4465977d7150fab0ddf9f5bb76c9ccd3fbfed861b582366e"
+    },
+    {
+      "capture": "fresh-final-reverse-1-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "528f7a2b7bb51b24e4a94896db54925739a8822dfb8ab543e2bb0183270521fe"
+    },
+    {
+      "capture": "fresh-final-reverse-2-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "c439a12951fec2795c1e18024a1a815130b14d4f0bfc52510dce3890c40311ca"
+    },
+    {
+      "capture": "fresh-final-reverse-3-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "d216f06a7fb047cb8900c675fba0436b866acd31d85fee95cafbfbd50d5d9cbb"
+    },
+    {
+      "capture": "fresh-final-reverse-4-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "5199fd71613762d4ee4bda2f165d12f09bcf4150d1d17c5848707d1d09062617"
+    },
+    {
+      "capture": "fresh-final-reverse-5-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "03e3259903a120c913c9714faef862dc23b64bea3b1842a1a82e54344e07d104"
+    },
+    {
+      "capture": "fresh-final-reverse-6-state/test_forced_ordinary_pending_premise_in_both_orders[True]/initial-model.json",
+      "fingerprint": "9f44ca3177737e595cfd2d5cd9f2784848e5c115812ce20b99cee6f12fd4636b"
+    }
+  ]
+}
