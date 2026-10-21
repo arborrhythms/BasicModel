@@ -1,5 +1,13 @@
 # Step 1b §21: participants at the closing boundary
 
+**Superseded source `0b2561914`:** all six fresh forward draws pass,
+but a subsequent source-audit reproduction found a provisional marker’s
+raw occurrence could enter an ordinary frame menu without an MTM object.
+`provisional-marker-audit.json` retains the failed reproduction. No reverse
+series or remaining gate was run. All six captures and their manifests
+remain here; none is promoted. The [next source receipt](../2026-10-21-item3-5-review11-final/README.md)
+owns the participant check at the provisional-word writer and the next frozen series.
+
 Base: accepted production source `f56fdf8ff337021ef744070cb3238c9c4fc7e8fa`
 and its stopped-series receipts. This directory owns the next frozen source;
 `frozen-source.json` records its exact hash and complete source manifest.

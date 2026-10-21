@@ -339,6 +339,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 (len(node['children']) == 2 and not node['has_point']
                  and getattr(node['rule'], 'clause_form', None) != 'VP'))
 
+    from ReferenceParticipants import participant_terms
+    noun_terms, _ = participant_terms(((composition(node), len(stack) == 3 and slot in (0, 2))
+        for slot, node in enumerate(stack)),
+        (*language._compose_binary_rules, *language._compose_unary_rules))
+
     def recover(root, *, top=False):
         # Syntactic assertion polarity is a grammar property. Identification
         # evidence remains a pair, including both and neither, through storage.
@@ -363,10 +368,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 request = current.get('close_request')
             if request is None:
                 return None
-            if request.get('leaf') and not referent:
+            if request.get('leaf') and (not referent or id(composition(item)) not in noun_terms):
                 # A predicate's form is an operator operand, not an
-                # objectless participant. Keep its raw identity in the
-                # ended VP's two-address cache.
+                # objectless participant. A provisional marker likewise
+                # cannot become an occurrence object merely by ending a
+                # field. Keep the kept derivation's raw identity/content.
                 return None
             word = head(item)
             leaf_request = word.get('close_request', {})

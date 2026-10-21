@@ -1,0 +1,43 @@
+{
+  "base": "f56fdf8ff337021ef744070cb3238c9c4fc7e8fa",
+  "source": "0b25619146fa3c398ae9228e16126252ef963a8f",
+  "ports": {
+    "test/test_reference_arrivals.py": "one count: 2 to 1; all other bytes unchanged",
+    "test/test_reference_close.py": "all assertion ASTs unchanged, including the four carried partition cases",
+    "test/test_bind_thought.py": "only the two superseded local-cost tests ported to episode-advantage credit",
+    "test/test_math_chain_section14.py": "both pending-premise certificates byte-identical"
+  },
+  "runs": [
+    {
+      "receipt": "fresh-final-forward-1",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-2",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-3",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-4",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-5",
+      "exit": 0,
+      "reason": "passed"
+    },
+    {
+      "receipt": "fresh-final-forward-6",
+      "exit": 0,
+      "reason": "passed"
+    }
+  ],
+  "source_files": 830
+}

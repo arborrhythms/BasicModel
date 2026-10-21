@@ -1,0 +1,20 @@
+{
+  "selectors": [
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+    "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+    "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+    "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+    "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11-final/objects-dev-01/worker-010.recycle.json"
+}

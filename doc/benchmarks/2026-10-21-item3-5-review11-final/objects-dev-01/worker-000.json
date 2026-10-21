@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+    "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+    "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations"
+  ],
+  "completed": [
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+    "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+    "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020436291117221117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005576915806159377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005013250047340989,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004956207936629653,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005256040953099728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0048686659429222345,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0037197081837803125,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033100841101258993,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

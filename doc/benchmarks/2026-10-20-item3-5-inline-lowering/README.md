@@ -3,7 +3,7 @@
 **Current §21:** the participant-position repair and Alec’s seven check
 dispositions are implemented for a new freeze. The captured forward-five
 regression passes with the original parameters and RNGs; the preceding
-stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11/README.md)
+stopped series remains historical. The [§21 receipt](../2026-10-21-item3-5-review11-final/README.md)
 owns the new source audit and gates. No earlier evidence is promoted.
 Claude review and publication remain pending.
 

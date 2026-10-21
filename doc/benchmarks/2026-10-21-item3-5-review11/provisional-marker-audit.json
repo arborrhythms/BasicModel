@@ -1,0 +1,26 @@
+{
+  "source": "0b25619146fa3c398ae9228e16126252ef963a8f",
+  "items": 0,
+  "mtm_entries": 0,
+  "no_object": true,
+  "accessible": [
+    {
+      "address": 5110036306330016691,
+      "location": 0,
+      "context": {
+        "role": 0,
+        "position": [
+          0,
+          0
+        ],
+        "identity": [
+          "ltm",
+          "address-v1",
+          5110036306330016691
+        ]
+      }
+    }
+  ],
+  "expected_candidates": 0,
+  "passed": false
+}

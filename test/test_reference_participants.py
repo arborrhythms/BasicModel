@@ -68,6 +68,26 @@ def test_an_objectless_marker_leaf_without_a_participant_position_has_no_site():
     unchanged(resolver, held)
 
 
+def test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu(monkeypatch):
+    from ClauseJournal import finish_clause
+    from reading_fixtures import record_reading
+    from test_bind_thought import native
+    f = native(monkeypatch)
+    word = f.cs.interpret.lookup_word([101], (), form='m')
+    f.words['m'] = word, word
+    program = replace(f.program('m'), close_references=True,
+                      leaf_orders=torch.zeros(1, dtype=torch.long))
+    clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
+    assert clause.reference_request is None and clause.order == 0
+    row, plan = keep(f.resolver, clause)
+    assert not plan['items'] and not f.cs.mtm.entries
+    held = snapshot(f.resolver)
+    frame = SituationFrame.from_row(f.store.row(row))
+    assert not f.resolver.accessible((frame,))
+    assert not f.resolver.preview(named(f.atoms[0], word), (frame,))['items'][0]['candidates']
+    unchanged(f.resolver, held)
+
+
 def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     from PartsOfSpeech import PartsOfSpeech
     resolver, store, atoms, words, _ = world()

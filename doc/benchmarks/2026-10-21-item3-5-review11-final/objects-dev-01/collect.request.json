@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_reference_participants.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_arrival_review.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_reference_occurrence_views.py",
+    "test/test_bind_thought.py",
+    "test/test_medium_term_memory.py",
+    "test/test_reference_review10.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}
