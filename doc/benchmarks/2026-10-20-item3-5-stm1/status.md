@@ -1,6 +1,27 @@
 # Step 1b: current gates and carry ledger
 
-**Current §12 repair round:** candidate `47652a9fe` follows `1be79c9d5` on
+**Active §13 round, base `266189eda`: stopped at D1's decision boundary.**
+Both native arrival probes reproduce the saved failures exactly. Both
+deciding comparisons keep explore: R=.0300561469 versus .0360673778,
+A=0 for both. No answer target is supplied; neither deciding trial has a
+reference-closing request. `arrival-21` retains open `three`, whereas
+`fresh-both-forward-4` attaches `three` as a modifier and binds x to `is`.
+There is no dropped supplied-answer score to restore; a new premise cost
+or an arrival-contract decision is required. Production and certificate
+are unchanged. Evidence: [cause and decision](closing-read-causes.md#66-d1-which-arrival-trial-wins-and-is-an-answer-score-missing),
+[both paired batches](review3/arrival-keep.jsonl),
+[16 document tables](review3/arrival-keep-tables.md),
+[exact replay/source audit](review3/arrival-keep-validation.json).
+
+D2's name-scoped reverse assertion is decided but not yet applied because
+the requested round stops at D1. Next, in order: D1 disposition/repair;
+D2; all twelve fresh runs; the eight-file set by commit hash; the separate
+§10.2 round and all of its gates (including its eight-file/decomposition
+set); publication to both mains. Both new failures remain failures. No
+fresh-run selection, training, second sweep or publication followed the
+probe.
+
+**Prior §12 repair round:** candidate `47652a9fe` follows `1be79c9d5` on
 `codex/item3-5-first-pass`. The [review-3 receipt](review3/README.md) owns
 the new evidence. MM_grammar passes the native-119 replay at the original
 eight seats and 900-epoch/.20 budget. Arrival repairs now cover the skipped

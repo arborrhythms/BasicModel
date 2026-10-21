@@ -1044,3 +1044,107 @@ capacity sequence, A's live-arrival certificates), then this round, then
 publication of both mains with the October 20 docs and a clean tree. No
 second full sweep; this round's evidence is the gates above, by commit
 hash.
+
+## 13. Claude's fourth review: the §12 round on `266189eda` (2026-10-20, night)
+
+Code commits reviewed: `2fa238049`, `1be79c9d5`, `47652a9fe`; receipts in
+`review3/` and `closing-read-causes.md` §5–§6.5. Tree clean.
+
+**Accepted.**
+
+- **B, as scoped.** `PartClosing._relations` is the boundary: a child is
+  planned as an argument only under `lift`, `part`, `assertPart`,
+  `whole`, `implies`, `equal`, `verb`; a determiner introduction or a
+  description fold reserves nothing and keeps a pair only when both
+  operands already have symbols; a relation argument seats or fails
+  loudly in `preflight`; no menu path reads pool state;
+  `IdentityRows.mint` is reached only through `expose_form(form=...)`
+  (the form-region cache). `mm-05`: the native-119 initialization at the
+  original eight seats and the 900-epoch / .20 budget passes, with the
+  ten close regressions; the 8192-row fixture is withdrawn and `mm-03`
+  is recorded as interrupted, not passing. Note for §10.2, not a block:
+  `capacity-05.jsonl` still shows a fresh order-1 leaf (symbol 15,
+  `reference: -1`) seated as a `verb` argument; that is the chooser's -1
+  on a relation operand, the same cut §10.2 change 1 removes, after
+  which the fixture allocates nothing per occurrence. §10.2 item 6 adds
+  the fresh-initialization run.
+- **A, three mechanism repairs,** each with an exact failing/passing
+  replay at one initialization and a regression: the answer reader
+  checks each declared head's identity before descending
+  (`head_reference` in `PartRead.expression_components`,
+  `BindingAnswers._matches`; arrival-13 → 17); the forward name is the
+  admitted lexical word id at all three journal sites
+  (`ClauseJournal.forward_name`; arrival-20 → 23); an admitted surface
+  pair with a composed marker is read (arrival-23 → 24). The RNG capture
+  now includes the private corpus generator; earlier RNG-only replays
+  are not promoted. Accepted.
+- **A, the line-422 port** (`carries_three` reads `meaning_of` role
+  references instead of raw `refs`): the certificate was reading the
+  store wrongly. Identity is computed on read and never written back
+  (§6.6(1)); raw `refs` are -1 on a closed row by design
+  (`test_absolute_close_keeps_only_the_concept_and_derivation_pairs`);
+  `raw-working-count-1.json` shows zero raw and eight working paths;
+  arrival-27/28 replay before and after; roots, cycle guard, forced
+  scope, budget and the `>= 2` assertion are unchanged. Not a loosening.
+- **Three reference-close cases red on this source**
+  (`test_mint_uses_the_selected_member_order_instead_of_the_source_word_order`,
+  `test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]`
+  and `[3]`): they assert a minted symbol for an ordinary token, which
+  §10.2 removes. Declared ports in the §10.2 round, as sequenced; not
+  waived, not green.
+- Scoped set on `47652a9fe`: 109 passed, 4 failed (the three above and
+  the forward contract case), 1 copular skip; both decomposition arms
+  pass, 8/8 companions; paired R passes. Recorded, not relabeled.
+
+**Not accepted yet: A stays open on one probe and two decisions.**
+
+- **D1, forward line 391** (`fresh-both-forward-4`; arrival-21/25): the
+  kept arrival "x is three" retains an open role naming `three` (row 54,
+  forward word 59), so x is bound to an expression rather than to the
+  supplied referent. Codex presents this as a certificate-contract
+  question. Precedent: item 4 step 0 ([plan "Gate 1"](2026-10-19-item4-start.md)):
+  when the kept live departure carries the wrong binding, "repair the
+  scoring, not the certificate, the keep rule or the forced scope", and
+  the keep probe (`2026-10-19-item4-step0/decomposition-keep/keep.jsonl`:
+  both trials' readings, `credit.components`, `keep_decision`,
+  `deciding`) named the judge defect. Required before any contract
+  change: that probe on the arrival batch at `fresh-both-forward-4` and
+  arrival-21: the exploit trial's reading of the arrival (is `three`
+  attached?), the explore trial's, R and A of both, which was kept and
+  what decided it. If A does not charge the kept reading's open
+  complement, that is step 0's cause 1 again: repair A, certificate
+  unchanged. Only if R + A legitimately prefer the open reading does the
+  contract question stand; then my recommendation is the reverse arm's
+  form: the pending x row is filled by the arrival, and the kept arrival
+  carries the supplied name as a bound object or as its own retained
+  open role, recorded in `certificate.json`. Not forcing the departure,
+  which the certificate's own `departures > 1` assertion forbids.
+  **Recommendation to Alec: hold the assertion; require the probe first.**
+- **D2, reverse line 398** (arrival-10/14; `fresh-both-reverse-5`): row
+  5 is an unverified explore-suffix constituent with an open word 14
+  (`is`); the universal "no forward references on any row" catches a
+  name the certificate does not test. Codex proposes scoping to x's
+  pending rows. **Recommendation: scope to the name, not the rows.**
+  Assert that no row anywhere keeps a forward reference naming x (the
+  universal over rows stays) and that each pending x row has no open
+  referent slot. The forward arm's comment already states that a live
+  departure may open another name. This is the certificate reading names
+  it does not intend, with the row evidence; the x claim is not
+  loosened.
+- Then the **six fresh initializations per order** on the final source,
+  both arms, all twelve retained, no seed chosen. The earlier 5 / 7 set
+  stands as recorded.
+
+**My runs on `266189eda`** (Codex's bounded runner, run directories
+under `/tmp`, nothing written into the tree): Part closing, Part read,
+bind thought, Part store: 68 passed. Pending-premise certificate at
+fresh initializations: forward 3 / 3 passed; reverse 2 / 3 passed, the
+failure at the line-398 assertion (line 432 after the port), a row
+keeping `_forward_references ((0, 14))`, word 14 (`is`): the D2 mode,
+not x. The D1 forward mode did not occur in three draws (Codex saw it
+once in six, twice). MM_grammar at one fresh initialization: passed
+(37.9 s), the §10.2 item-6 fresh run ahead of that round.
+
+**Order.** D1 probe (and the judge repair if it names one) and D2 →
+six per order → the §10.2 round → publication of both mains with the
+October 20 docs and a clean tree. No second full sweep.

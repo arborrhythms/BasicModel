@@ -140,12 +140,13 @@ all LTM1 rows agreed; `exact-replay-comparison.json` records that limitation.
 | Failing row | Stream 2's unverified constituent, with role 2 open on word 14 (`is`) |
 | Pending reference specified by the certificate | Word 12 (`x`), in the separate question at row 6 |
 | Conflict | The live explore suffix may open another name. The forward arm explicitly excludes those unrelated variables; the reverse arm asserts over every non-estimate row |
-| Decision pending | [Exact rows and proposed scope correction](review3/reverse-scope-question.md) |
+| Decision (Alec, §13 round) | Keep the universal over every non-estimate row, but reject forward-name IDs for x only; also require every pending x row's referent slot to be filled. Row 5 / word 14 (`is`) is outside the certificate's own forward-arm scope. D2 is authorized and queued after D1 |
 
-No assertion, forced scope, budget or initialization has been changed.
-The reverse raw-graph count also reads stored references instead of the
-working identity read; its disposition remains open. Publication and the
-six-fresh-initialization acceptance run remain pending.
+No assertion, forced scope, budget or initialization changed in this
+diagnosis. The separate raw-graph count was subsequently ported to the
+working read in §6.5 and accepted in plan §13. D2 has not yet been applied:
+the ordered round stopped at the D1 probe below. Publication and the
+six-fresh-per-order acceptance run remain pending.
 
 ### 6.3 Fresh forward initialization 2: a changing name key and a surface read
 
@@ -190,3 +191,87 @@ unresolved explored complement (§6.4). Those remain separate decisions.
 initialization (`raw-count-replay.json`); `arrival-28` passes after the
 working-read port, with all eight selected roots bound correctly. No
 assertion, root selection, forced scope or budget changed.
+
+### 6.6 D1: which arrival trial wins, and is an answer score missing?
+
+Source **`266189edab25985ac1d000b80553ee398f873b69`**, unchanged production,
+certificate, forced scope, budgets and keep law. The diagnostic wraps the
+same `_sentence_path_cost` and `runBatch` boundaries as the step-0 keep
+probe; it inspects already-produced readings and cost registries, without
+an additional model read or random draw.
+
+Both exact native replays **fail** the unchanged forward certificate.
+`review3/d1-forward-4-before` takes 39.1 seconds in the worker;
+`review3/d1-arrival-21-before` retains its own bounded-run report. The
+[validation](review3/arrival-keep-validation.json) verifies identical
+initial parameters, buffers, source manifest, thread count and complete
+RNG states (including the private corpus generator), and identical final
+LTM rows, Part rows, occupations, word identities, parameters and RNG.
+Type collections are compared as sets. This is observation of the saved
+failures, not replacement by different initializations.
+
+The two arrival batches, both trials in all eight streams, are in
+[arrival-keep.jsonl](review3/arrival-keep.jsonl): `readings` with refs/open,
+clause/composition graphs, reference plans and the named cost registry;
+`credit.costs`, `credit.components`, `keep_costs`, `keep_decision`,
+`deciding`, `departure`. There is
+[one table per document](review3/arrival-keep-tables.md). The full
+per-run logs also retain the first premise batch.
+
+**Question 1: what happened at `fresh-both-forward-4`, stream 6?**
+
+| Trial | Arrival reading | R | A | R + A | Kept / deciding |
+|---|---|---:|---:|---:|---|
+| Greedy (`exploit`) | x is open; complement is a completed child whose declared head is `three` (word 72) | .0360673778 | 0 | .0360673778 | Discarded |
+| Explore | x is open; complement is symbol 14 (`is`). `three` is attached under `adverb` as a modifier, **not** left open and not the complement's head | .0300561469 | 0 | .0300561469 | **Explore; reconstruction** |
+
+Departure is compose round 13. The kept equality becomes row 51 and the
+earlier pending row 26 is filled with symbol 14. Its `_forward_references`
+are empty, but the unchanged identity assertion correctly fails. The fourth
+review's description conflates this case with arrival-21: the three-slot
+open-`three` complement is **not** present here. The full composition in
+the probe preserves the distinction.
+
+**Question 2: what happened at `arrival-21`, stream 7?**
+
+| Trial | Arrival reading | R | A | R + A | Kept / deciding |
+|---|---|---:|---:|---:|---|
+| Greedy (`exploit`) | x is open; complement is a completed child whose declared head is `three` (word 59) | .0360673778 | 0 | .0360673778 | Discarded |
+| Explore | x is open; complement is a relative child `(is, part, open three)` | .0300561469 | 0 | .0300561469 | **Explore; reconstruction** |
+
+Departure is compose round 13. The kept relative child is row 54, with
+`_forward_references ((2,59),)`; equality row 55 supplies its occurrence
+to pending row 30. This is exactly §6.4's incomplete complement. A does
+not charge it. The R difference is **.006011230871081352** in both cases;
+the trained reconstruction term is `reconstruction.free_bytes`, and
+`forward_discard` / `content` contribute zero. E differs but is excluded
+from the comparison, as required.
+
+**Question 3: is this the step-0 supplied-answer judge defect?**
+
+| Read / contract | Evidence |
+|---|---|
+| Supplied targets | All 16 entries are `None` in each replay, including every arrival. `ChainDocument(str(i), sentences)` supplies neither `question` nor `answer`; `ChainDocument.target` therefore supplies no `ReferentTarget` |
+| Sentence answer reader | `_sentence_reader_error` returns `None` because no supplied target exists; `_sentence_answer_error` returns before invoking the referent judge |
+| Reference-closing credit | Both deciding trials have `reference_plans.items=[]`, cost 0. These journal-open operands are not order-1 `ReferenceClose` requests |
+| Final A | `SentenceCredit.components` maps absent answer cost to zero, plus the zero reference-closing credit. Thus **A=0 is actually recorded**, not an unreported surface or binding loss |
+| Previous step-0 cause | Its question had a supplied referent target but A used the wrong surface reader. The repair selected the existing binding judge for that supplied target; it did not introduce a target on unlabelled premises |
+| Existing boundary | `Data.what` makes missing supervised targets unavailable. Thinking §14.2 explicitly records zero answer cost without an answer; the accepted step-0 review keys the judge on the supplied answer's kind |
+| Required decision | A new cost for an unresolved input role, or a different arrival-certificate contract, must be declared. An open-role charge alone cannot repair `forward-4`, whose complement is complete but has the wrong head |
+
+**Disposition: D1 stop, as requested when the existing R + A judge
+legitimately prefers the alternative.** A is indeed zero on the open
+complement; the probe establishes that no supplied answer was lost or
+mis-scored. Under the current objective these are unlabelled premise
+readings and lower R selects explore. Treating the certificate's expected
+word as a new loss-side target, or adding an unsupervised open-role penalty,
+would change that contract. No such change has been made. This conclusion
+is not a claim that the kept semantic reading is correct or that the
+certificate passes. The two failures stand.
+
+D2 is decided but not applied because the requested order stops at D1.
+The twelve `fresh-final` captures, the first eight-file set, §10.2's eight
+changes and its own gates/receipt, the second eight-file/decomposition set,
+and publication to both mains remain explicitly queued. No fresh run,
+rescue training, second sweep, fixture change or assertion port followed
+these probes.

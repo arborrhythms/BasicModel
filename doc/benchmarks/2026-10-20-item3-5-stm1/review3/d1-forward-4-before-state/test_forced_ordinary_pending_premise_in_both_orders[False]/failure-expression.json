@@ -1,0 +1,16 @@
+{
+  "scanned": 2,
+  "incomplete": [],
+  "terms": {
+    "('sym', 14)": {
+      "kind": "concept",
+      "reference": null,
+      "operands": []
+    },
+    "('sym', 16)": {
+      "kind": "concept",
+      "reference": null,
+      "operands": []
+    }
+  }
+}

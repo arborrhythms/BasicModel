@@ -20,6 +20,17 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
+**Active §13 round (base `266189eda`): stopped at D1's decision boundary.**
+The [paired arrival probe](doc/benchmarks/2026-10-20-item3-5-stm1/closing-read-causes.md#66-d1-which-arrival-trial-wins-and-is-an-answer-score-missing)
+exactly reproduces both failures. A=0 because no answer target is supplied
+and neither deciding trial has a reference-closing request; lower R keeps
+explore. `arrival-21` leaves `three` open; `fresh-both-forward-4` instead
+attaches it as a modifier and binds x to `is`. A missing supplied-answer
+score is not the cause. A cost/arrival-contract decision is required
+before repair; no assertion or production change was made. Alec has
+decided D2's name-scoped reverse assertion, queued after D1, then all
+twelve fresh initializations, the eight-file set, the separate §10.2
+round and publication. Every failed run is retained; no second full sweep.
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
 `codex/item3-5-first-pass`; its
@@ -50,13 +61,21 @@ unseatable mint fails loudly; no capacity masking). Claude's third review
 reproduce it; named-head, lexical-key and composed-marker repairs and the
 working-read certificate port have passing regressions. The
 [live-exploration contract question](doc/benchmarks/2026-10-20-item3-5-stm1/review3/reverse-scope-question.md)
-and six-fresh-per-order gate remain open. Complete A without weakening
+has the D1 probe above; D2 is decided but queued, and the
+six-fresh-per-order gate remains open. Complete A without weakening
 the assertion or selecting passing seeds, then the
 [§10.2 round](doc/plans/2026-10-19-bind-thought-operation.md#102-decided-alec-2026-10-20-later-the-determiner-prepares-the-token-for-identity-in-stm)
 (Alec, 2026-10-20: the determiner's `lower` prepares the token to be
 bound by identity in STM; no concept row and no edge for the token, the
 lowering is inline; fixture back to 8 rows; the capacity certificate at the original inventory), then publish both
-mains with the October 20 docs and a clean BasicModel tree. The
+mains with the October 20 docs and a clean BasicModel tree.
+*Fourth review (Claude, 2026-10-20 night, plan §13):* B accepted as
+scoped (`mm-05` at eight seats; the 8192 fixture withdrawn); A's three
+mechanism repairs and the line-422 working-read port accepted; A stays
+open on the keep probe for the forward line-391 case (step-0 precedent:
+repair the judge, not the certificate), Alec's scope decision for the
+reverse line-398 assertion (recommended: no row keeps a forward
+reference naming x), then six fresh initializations per order. The
 [current gate/carry ledger](doc/benchmarks/2026-10-20-item3-5-stm1/status.md)
 records completed scoped work: transient full-width STM1 and close
 dissolution; shared six-column Part store; cube-coordinate maps and

@@ -1,5 +1,18 @@
 # Step 1b review §12: capacity and live arrival certificates
 
+**§13 follow-up, base `266189eda`: D1 probe complete; stopped for the
+requested contract decision.** Both saved native failures replay exactly;
+the lower reconstruction cost keeps explore with A=0. These premises have
+no supplied answer target. `arrival-21` leaves `three` open; the distinct
+`fresh-both-forward-4` mode attaches `three` as a modifier and gives x the
+head `is`. The [cause/table](../closing-read-causes.md#66-d1-which-arrival-trial-wins-and-is-an-answer-score-missing),
+[both trial batches](arrival-keep.jsonl),
+[one table per document](arrival-keep-tables.md) and
+[exact state/source checks](arrival-keep-validation.json) retain the result.
+No production, certificate, forced scope, budget, keep rule or fixture
+changed. D2 is authorized but queued after the D1 stop; the twelve fresh
+runs, scoped set, §10.2 round and publication remain pending in order.
+
 The base is `6903713c7` on `codex/item3-5-first-pass`. Alec's §10.1
 withdraws the seat-reservation proposal: ordinary new referents remain
 unminted LTM1 occurrences; relation arguments mint at close and fail loudly
