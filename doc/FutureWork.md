@@ -1615,3 +1615,8 @@ predicate-and-object verb. These remain unresolved for Alec's design
 decision; no new grammar rule, word class or marker mask was adopted in
 the landing. A follow-up needs explicit root-position semantics and
 commit-level coverage of both shapes.
+Claude's recommendation (bind plan §22): decide the root case by the
+non-head's recorded occupations, as the ordinary menus already do (a
+non-head whose occupations are marker positions is an attachment, never a
+participant); extend the standalone exception to any order-1 root
+composition, read through its declared head.

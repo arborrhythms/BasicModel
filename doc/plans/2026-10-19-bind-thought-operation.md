@@ -2055,3 +2055,64 @@ recommends land and accepts that correspondence repair. Its two ungated
 root-position findings are recorded in [FutureWork](../FutureWork.md#root-participant-positions-review-follow-up-2026-10-21)
 as unresolved design follow-ups, not new decisions. The [receipt](../benchmarks/2026-10-21-item3-5-review11-landing/README.md)
 retains every prior failure, exact-source gate and evidence limitation.
+
+## 22. Claude's twelfth review, after publication (`cc3672cfb`, main `cf61b5678`; 2026-10-21)
+
+**Step 1b is published.** BasicModel main is `cf61b5678` (the tested source
+`cc3672cfb` plus documentation and receipts); WikiOracle main is
+`4a9527f`. Codex published after the receipt's independent Claude review
+of the frozen hash recommended landing
+(`benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md`), which
+satisfies the hand-off's "Claude reviews the frozen hash". This review
+comes after publication and finds nothing to reopen.
+
+**Accepted.** The participant walk (`ReferenceParticipants`): determiner
+descriptions, lift subjects, verb participants and equal/part arguments
+are noun positions, and a headed attachment inside a noun keeps the noun;
+the same rule in the ordinary menus through `PartRead.argument_reader`;
+the journal guard that licenses a provisional objectless leaf only inside
+a participant position; the authorized ports, including the four
+re-identification assertions moved verbatim under the `mtm_reidentification`
+FutureWork phase; the decomposition certificate's occurrence-addressed
+episode lookup (it selects the episode by its `_query_occurrence`
+identity, never by outcome, after a zero-budget premise episode had
+shifted the list index: the certificate was reading the record wrongly,
+assertions verbatim). Every stop in the series followed the rules.
+
+**My checks on main** (plain pytest and the bounded runner, outside the
+tree): the participant, arrival, review, choice, review-ten, MTM,
+Part-closing, occurrence-view, reference-close and bind-thought files:
+144 passed, 4 skipped (the re-identification certificate); one fresh
+pending-premise draw per order passes; the bootstrap test passes at
+`bootstrap-diagnostic-01`'s initial RNG.
+
+**The two carried findings, my recommendations.**
+
+1. *Root `verb(noun, punctuation)`.* The forced grammar uses `verb` both
+   to apply a predicate (`plus two`) and to attach the full stop
+   (`two .`); inside a noun the walk reads the second as an attachment, at
+   a root it cannot. Recommendation for the eventual rule: decide by the
+   non-head's recorded occupations, as the ordinary menus already do: a
+   non-head whose occupations are marker positions is an attachment, never
+   a participant. Parts of speech stay distributional; no word class and
+   no grammar rule. Unreachable in the gated fixtures; FutureWork as
+   recorded.
+2. *A standalone composite object without a determiner has no site.*
+   Extend the standalone exception from leaf compositions to any order-1
+   root composition, reading its noun through the declared head, with a
+   commit-level regression. Small; the next round can carry it.
+
+**Evidence, stated plainly.** No native run closes x: all twelve first
+draws and the forward-five replay keep x open, so the native certificate
+shows only the absence of a wrong binding. My §21 expectation that
+`three` would beat the dummy did not hold in the kept path: explore trials
+departed onto arrival candidates, but every comparison tied on R + A and
+kept greedy. Closing is learned (Alec's decision), so native closure is
+item 0's evidence; the positive path is covered by the unit arrival
+regressions.
+
+**Next.** The round Alec proposed, reconstruction reading the bind, needs
+its spec first; then step 2 (one LTM store in strata, LTM1 rows
+referencing LTM0 occurrences, minting by recurrence), stage 4e and the NP
+continuation, steps 4 and 5, the remaining 5.5 mechanisms; `intuit` in
+item 3.

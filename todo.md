@@ -28,6 +28,9 @@ All fresh pending-name sites stay open; this is no learning claim. The next
 proposed round, reconstruction reading the bind, needs its spec first.
 Two nonblocking root-position findings remain in
 [FutureWork](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21).
+*Post-landing review (Claude, plan §22):* nothing to reopen; my checks on
+main pass (144 + 4 skips, one fresh draw per order, the bootstrap replay);
+recommendations recorded for the two carried findings.
 
 **Historical step 1b review ledger (superseded by Current).**
 
