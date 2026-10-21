@@ -1,5 +1,12 @@
 # Step 1b §10.3: medium-term token identity
 
+**Current §20 source `f56fdf8ff` is stopped for Alec:** forward first draw
+5 binds x to the captured space symbol instead of three. The
+[wrong-binding receipt](../2026-10-21-item3-5-review10-observer/wrong-binding.md)
+retains the resolver and keep evidence, with unchanged source and assertion.
+Remaining gates, Claude review and publication are pending. The evidence
+below retains its original source attribution; nothing is promoted.
+
 **§18 / §10.4 update:** accepted MTM remains `eac2fe87b`. The
 [third frozen source `3d453e6bb`](../2026-10-21-item3-5-anonymous-bind-v3/README.md)
 completes all requested gates: 10/12 fresh first draws pass, 48 focused

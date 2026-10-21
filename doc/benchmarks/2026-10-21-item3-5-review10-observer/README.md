@@ -1,5 +1,10 @@
 # Review-ten observer repair and next frozen series
 
+**Stopped on frozen source `f56fdf8ff337021ef744070cb3238c9c4fc7e8fa`: forward draw 5 binds x to the captured space symbol.**
+See [the wrong-binding diagnosis](wrong-binding.md). Four earlier forward
+draws pass with 0 bound / 16 open each. All remaining gates, Claude review
+and publication stop for Alec; no source is changed after this failure.
+
 This continues [the §20 implementation receipt](../2026-10-21-item3-5-review10/README.md).
 Base source `6c0db20afc1f8ccc097bae79447a040d2bb08d73` stopped on its first
 forward draw because the math-chain credit observer lacked the `category`

@@ -1,21 +1,28 @@
 # Step 1b: current gates and carry ledger
 
-**Active §20 round, 2026-10-21, based on frozen `575cab06c`.** The six
-ports are applied, x's resolver is live at the two pending-premise fixtures,
-and the ownership, observed-exclusion, root-answer, anonymous-kind and
-thought-credit repairs are in the working source. Ten new regressions and
-the review/choice/Part-closing/occurrence-view set give 39 development
-passes. The unchanged reference set retains one arrival-count failure and
-four partition failures; two old thought tests still require the removed
-local reference objective. Their disposition is pending under the assertion
-restriction. Four additional reader-only arrival checks fail identically
-on `575cab06c` and the working source; the isolated baseline is retained.
-The [current receipt](../2026-10-21-item3-5-review10/README.md) separates all
-of this development evidence from the next frozen source. No incompatibility
-is recognized at initialization. Source freeze, the requested new-hash
-gates, Claude's review and both-main publication remain; the October 20
-docs and naming sweep are prepared. No earlier pass is promoted, second
-full sweep run, or learning claim made.
+**§20 stopped, frozen source `f56fdf8ff`, 2026-10-21.** Forward first
+draws 1–4 pass (0 bound / 16 open each); draw 5 is a wrong antecedent:
+after `x is three.`, the earlier x reads the captured space symbol 13,
+not three (31). Its arrival candidate has native-prediction feature .25,
+logit .25 and probability .12150069; the dummy has logit 0 and probability
+.09462483. Both trials select that candidate for the old site. For row 0,
+R = .036067377775907516 and A = 0 in both trials; the batch keeps greedy
+on ties. The [diagnosis](../2026-10-21-item3-5-review10-observer/wrong-binding.md)
+contains both readings, menus and keep decisions. Five distinct first draws
+and all five 828-file source manifests are verified. Source is unchanged
+after the failure. The explicit stop rule returns the round to Alec;
+remaining fresh draws, all other frozen-source gates, Claude review and
+publication are not run. Every failed run is retained, including the prior
+`6c0db20af` observer API failure and its exact-RNG keep probe before repair.
+
+The §20 implementation and naming sweep are committed locally. Development
+checks include 39 focused passes and all ten new regressions through the
+repaired credit observer. Seven existing assertion-contract checks remain
+unchanged and unresolved; four legacy equality-reader failures reproduce
+on accepted `575cab06c`. These are development records, not promoted gates.
+No incompatibility is recognized at initialization. Both mains and the
+WikiOracle submodule pointer remain unpublished. No second full sweep or
+learning claim.
 
 **Review follow-up, 2026-10-21.** Intermediate source `a93f93c0e`
 repairs the occurrence witness, native-arrival synthetic row, missing

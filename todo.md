@@ -20,16 +20,18 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §20 round, based on frozen `575cab06c`:** the six authorized ports,
-live x resolver, joined-site guard, observed incompatibility, root-role
-answer view, kind fallback and episode R + A thought-bind credit are
-implemented in the working source. The [review-ten receipt](doc/benchmarks/2026-10-21-item3-5-review10/README.md)
-records development evidence and the retained test-contract conflicts;
-source freeze, all new-hash gates, Claude's review and publication remain.
-No `575cab06c` evidence is promoted to this source. The naming sweep is
-prepared with the October 20 amendments. Strict live closure remains item 0
-learning evidence; re-identification and reconstruction through a bind keep
-§20's separate follow-up scope. No second full sweep or learning claim.
+**§20 stopped on frozen source `f56fdf8ff`:** forward first draws 1–4
+pass with 0 bound / 16 open each. Draw 5 binds the earlier x to the space
+symbol (13), instead of three (31): native prediction gives its arrival
+candidate logit .25 against the dummy's 0. Both trials tie on R + A and
+keep greedy. The [full diagnosis and source audit](doc/benchmarks/2026-10-21-item3-5-review10-observer/wrong-binding.md)
+retain every capture; all five manifests match 828 frozen files. The
+explicit wrong-binding stop rule returns the round to Alec. Remaining
+gates, Claude's review, both-main publication and the WikiOracle bump are
+pending. The implementation, October 20 docs and naming sweep are committed
+locally. Seven earlier assertion-contract checks remain unchanged and
+recorded; no prior-source pass is promoted, second full sweep run, or
+learning claim made.
 
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
