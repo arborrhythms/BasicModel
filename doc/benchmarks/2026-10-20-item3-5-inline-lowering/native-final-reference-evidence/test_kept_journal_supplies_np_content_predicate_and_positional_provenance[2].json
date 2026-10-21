@@ -1,0 +1,90 @@
+{
+  "node": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+  "outcome": "failed",
+  "failure": "test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1\nE   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())\nE    +  where () = IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n).individual_ids",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 7873483260437102423,
+          "reference": [
+            "ltm",
+            "address-v1",
+            7873483260437102423
+          ],
+          "operation": "mint",
+          "candidates": [],
+          "missing_reason": null
+        }
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            7873483260437102423
+          ],
+          "refs": [
+            [
+              "sym",
+              16
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3925709220694569444
+          ],
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

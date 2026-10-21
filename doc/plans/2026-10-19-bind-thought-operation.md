@@ -1211,3 +1211,50 @@ three reference-close ports; replay of `fresh-both-forward-4` and
 arrival-21 on that source) → twelve fresh initializations per order →
 eight-file set and both decomposition arms → contract decision only if
 failures remain → publication. No second full sweep.
+
+## 15. Codex's §14 candidate and follow-up evidence (2026-10-20)
+
+Receipt: [§10.2 inline lowering](../benchmarks/2026-10-20-item3-5-inline-lowering/README.md).
+D2 is `eb75de56a`; both requested reverse replays pass. The eight changes
+are in `f9faae610`. Both saved D1 failures now pass: the paired comparisons
+tie on R+A and retain greedy. All twelve fresh initializations pass, six
+per order, all retained with complete initialization and paired-trial
+captures. No forward assertion, forced scope, budget, objective or keep
+rule changed.
+
+The one scoped set on that source records **70 passed, 43 failed, one
+copular prerequisite skip**. Section 14 passes (12/one skip); paired
+zero-cost R passes. Both decomposition lengths pass in both gain arms;
+all eight companion bindings and proof chains are correct. The failures
+are reference close (9), bind thought (29), and native identity rows (5).
+They are recorded individually, not waived as ports.
+
+The original eight-seat saved MM state passed, but the one fresh draw
+exhausted its pool. Exact diagnostics found lost source identities, not
+new content: numerical leaves exactly matched existing native IDs 1, 2
+and 3, but capture omitted the mixing reader's already-staged OBJECT IDs,
+and lexical order staging independently cut known non-individual IDs to
+-1. Follow-up `67c5b203f` carries those IDs and removes that second cut.
+Both MM initializations pass at the original budget with **zero seats**;
+the fresh draw was replayed, never replaced. B's accepted PartClosing
+boundary and the eight-seat fixture remain unchanged.
+
+The follow-up also reads an occurrence candidate's retained Part symbol
+for participant expectation and its predicate context, without converting
+the token into a symbol individual. Four new regressions pass. Its
+targeted set records 37 passed/five failures: five assertions demand the
+retired -1 cut. Two unchanged working-group merge certificates still
+produce four/six groups instead of one. The correct selected binding at
+close and the later lost grouping are both captured.
+
+**Review required before more ports/publication:**
+[the exact questions and proposed scope](../benchmarks/2026-10-20-item3-5-inline-lowering/review-required.md)
+cover additional address/native-fixture ports beyond the three declared,
+and which retained fact a working read should use to group already-bound
+unminted occurrences while keeping independent same-kind mints distinct.
+No extra existing assertion is changed and no grouping-by-seat shortcut,
+new identity metadata, or objective term is added. The earlier fresh and
+scoped results are not promoted to the follow-up source. Final arrival and
+scoped/decomposition evidence must cover the eventual frozen source by
+hash; publication to both mains and the WikiOracle bump remain pending.
+No second full sweep. Item 0 and the separate 5.5 gates keep their ledger.

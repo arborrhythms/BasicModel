@@ -1,0 +1,71 @@
+.................FFFFFF..F........FF....                                 [100%]
+=================================== FAILURES ===================================
+_ test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them _
+test/test_reference_close.py:145: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+    assert len({identities[a] for a in addresses}) == 1
+E   AssertionError: assert 4 == 1
+E    +  where 4 = len({('ltm', 'address-v1', -8286165563797862330), ('ltm', 'address-v1', -6997856705104047482), ('ltm', 'address-v1', -2907652584967542766), ('ltm', 'address-v1', 1934400735842808986)})
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0] _
+test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x11ef67840>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1] _
+test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x11ef67840>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2] _
+test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x10714cac0>)
+_ test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3] _
+test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding
+    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])
+E   assert False
+E    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x10714ec00>)
+_____ test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised ______
+test/test_reference_close.py:184: in test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised
+    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 1
+E   assert (None is None and 0 == 1)
+E    +  where 0 = len(())
+E    +    where () = IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n).individual_ids
+E    +      where IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n) = ReferenceClose().components
+_ test_revision_merges_three_accessible_groups_transitively_across_cued_documents _
+test/test_reference_close.py:239: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+    assert len({identities[a] for a in addresses}) == 1
+E   AssertionError: assert 6 == 1
+E    +  where 6 = len({('ltm', 'address-v1', -4098209026200192379), ('ltm', 'address-v1', -3433510135052858015), ('ltm', 'address-v1', -3408...ess-v1', -2847588295512550313), ('ltm', 'address-v1', 4576792239911004056), ('ltm', 'address-v1', 5059024907979507958)})
+_ test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0] _
+test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
+E   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())
+E    +  where () = IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n).individual_ids
+_ test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2] _
+test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
+E   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())
+E    +  where () = IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n).individual_ids
+=============================== warnings summary ===============================
+test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_mentions.py:42: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(all_correct) == 0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]
+FAILED test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]
+FAILED test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised
+FAILED test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents
+FAILED test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]
+FAILED test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]
+9 failed, 31 passed, 2 warnings in 2.54s

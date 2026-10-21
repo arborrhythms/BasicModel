@@ -1,0 +1,38 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.028043166967108846,
+      "message": "test/test_reference_close.py:145: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them\n    assert len({identities[a] for a in addresses}) == 1\nE   AssertionError: assert 4 == 1\nE    +  where 4 = len({('ltm', 'address-v1', -8286165563797862330), ('ltm', 'address-v1', -6997856705104047482), ('ltm', 'address-v1', -2907652584967542766), ('ltm', 'address-v1', 1934400735842808986)})",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.015353624941781163,
+      "message": "test/test_reference_close.py:239: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents\n    assert len({identities[a] for a in addresses}) == 1\nE   AssertionError: assert 6 == 1\nE    +  where 6 = len({('ltm', 'address-v1', -4098209026200192379), ('ltm', 'address-v1', -3433510135052858015), ('ltm', 'address-v1', -3408...ess-v1', -2847588295512550313), ('ltm', 'address-v1', 4576792239911004056), ('ltm', 'address-v1', 5059024907979507958)})",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

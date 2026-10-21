@@ -1,0 +1,60 @@
+..FFF....FF...                                                           [100%]
+=================================== FAILURES ===================================
+__ test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient ___
+test/test_identity_rows.py:59: in test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient
+    residual = resolver.components.innovation(observation, prediction)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IndependentComponents.py:370: in innovation
+    axes = F.normalize(torch.stack([coordinates(self.owner, point(self.owner, cid))
+E   RuntimeError: stack expects a non-empty TensorList
+______ test_native_row_is_the_only_content_and_witnesses_are_live_queries ______
+test/test_identity_rows.py:73: in test_native_row_is_the_only_content_and_witnesses_are_live_queries
+    assert witness_count(resolver.components.owner,cid) == 1
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:108: in witness_count
+    return sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:103: in witnesses
+    return tuple(rows[(parts.refs[rows] == int(identity)).any(-1)].tolist())
+                                           ^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_____ test_forgetting_and_reinterpretation_never_refold_a_native_identity ______
+test/test_identity_rows.py:96: in test_forgetting_and_reinterpretation_never_refold_a_native_identity
+    torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:56: in point
+    row = owner._csw_row_of(int(identity))
+                            ^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_ test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False] _
+test/test_identity_rows.py:187: in test_loader_permanently_rejects_signed_identity_without_modifying_the_row
+    native = point(resolver.components.owner, identity).clone()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/IdentityRows.py:56: in point
+    row = owner._csw_row_of(int(identity))
+                            ^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+_ test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True] _
+test/test_identity_rows.py:183: in test_loader_permanently_rejects_signed_identity_without_modifying_the_row
+    owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:15891: in _csw_row_of
+    rows = self._csw_rows_of(concept_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Spaces.py:15879: in _csw_rows_of
+    r = ly.row_of((ns, int(concept_id)))
+                       ^^^^^^^^^^^^^^^
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'
+=============================== warnings summary ===============================
+test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient
+FAILED test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries
+FAILED test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity
+FAILED test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]
+FAILED test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]
+5 failed, 9 passed, 1 warning in 2.08s

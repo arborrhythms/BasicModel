@@ -1,0 +1,42 @@
+.FFF.F....                                                               [100%]
+=================================== FAILURES ===================================
+__________ test_selected_grammar_context_selects_order[particular-1] ___________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+E   assert [-1, 2] == [-1, -1]
+E     
+E     At index 1 diff: 2 != -1
+E     Use -v to get more diff
+_____________ test_selected_grammar_context_selects_order[name-1] ______________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+E   assert [-1, 2] == [-1, -1]
+E     
+E     At index 1 diff: 2 != -1
+E     Use -v to get more diff
+____________ test_selected_grammar_context_selects_order[pronoun-1] ____________
+test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order
+    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]
+E   assert [-1, 2] == [-1, -1]
+E     
+E     At index 1 diff: 2 != -1
+E     Use -v to get more diff
+_____ test_capture_owns_grammar_resolution_without_changing_reconstruction _____
+test/test_lexical_reference_orders.py:69: in test_capture_owns_grammar_resolution_without_changing_reconstruction
+    assert entry.reference_ids.tolist() == [-1, -1]
+E   assert [-1, 2] == [-1, -1]
+E     
+E     At index 1 diff: 2 != -1
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]
+FAILED test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]
+FAILED test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction
+4 failed, 6 passed, 1 warning in 2.16s

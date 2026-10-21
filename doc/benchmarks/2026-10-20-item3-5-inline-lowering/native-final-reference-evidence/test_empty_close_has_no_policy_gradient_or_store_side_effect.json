@@ -1,0 +1,50 @@
+{
+  "node": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+  "outcome": "passed",
+  "failure": "None",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            5758427928827805929
+          ],
+          "refs": [
+            null,
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+  ],
+  "completed": [
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.026535582961514592,
+      "message": "test/test_operators_final.py:199: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once\n    assert refs[1] == -1 and orders[1] == 1\nE   assert (tensor(16) == -1)",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

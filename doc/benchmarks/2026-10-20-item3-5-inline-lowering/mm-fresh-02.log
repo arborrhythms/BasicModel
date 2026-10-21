@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 240s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.41 GiB
+[worker-000] 1 selectors; limit 240s, 8.0 GiB
+[worker-000] exit 1; 40.8s; peak 0.95 GiB
+Result: test_failure, exit 1; 1/1 cases completed.
+doc/benchmarks/2026-10-20-item3-5-inline-lowering/mm-fresh-02/result.json

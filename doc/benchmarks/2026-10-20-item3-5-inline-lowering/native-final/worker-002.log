@@ -1,0 +1,22 @@
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0] _
+test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
+E   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())
+E    +  where () = IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n).individual_ids
+_ test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2] _
+test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance
+    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1
+E   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())
+E    +  where () = IndependentComponents(\n  (verbs): SparseDictionary(\n    (directions): ParameterDict()\n    (relevance): ParameterDict()\n  )\n  (reference_close): ReferenceClose()\n).individual_ids
+=============================== warnings summary ===============================
+test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]
+FAILED test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]
+2 failed, 4 passed, 1 warning in 1.94s

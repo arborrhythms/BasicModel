@@ -1,0 +1,14 @@
+{
+  "selectors": [
+    "test/test_reference_occurrence_views.py",
+    "test/test_part_closing.py",
+    "test/test_relation_closing.py",
+    "test/test_query_native_ids.py",
+    "test/test_lexical_reference_orders.py",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

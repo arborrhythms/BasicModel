@@ -1,0 +1,789 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+    "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+    "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+    "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+    "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+    "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+    "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+  ],
+  "completed": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+    "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+    "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+    "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+    "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+    "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+    "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+    "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+    "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+    "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+    "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+    "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+    "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+    "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+    "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+    "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-000.json"
+      ],
+      "pid": 38849,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440436008,
+      "elapsed_seconds": 3.8239279999397695,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+      ],
+      "completed": [
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.026881666854023933,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01697662496007979,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017096708063036203,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.016750124981626868,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-001.json"
+      ],
+      "pid": 38861,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 439207232,
+      "elapsed_seconds": 3.85347874998115,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+        "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+        "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+        "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word"
+      ],
+      "completed": [
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+        "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+        "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+        "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013846915913745761,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00680204201489687,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009283834137022495,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008358624996617436,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0074952091090381145,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006962584098801017,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005872791865840554,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0070111670065671206,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007391124963760376,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0075112078338861465,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008396541932597756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00671679200604558,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006943208863958716,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006881042150780559,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-002.json"
+      ],
+      "pid": 38873,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 575194504,
+      "elapsed_seconds": 4.268526459112763,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats"
+      ],
+      "completed": [
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01388533296994865,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008066333131864667,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007976958062499762,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008418750017881393,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008171874796971679,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008969374932348728,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007683624979108572,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.22999654104933143,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.2283150409348309,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-003.json"
+      ],
+      "pid": 38884,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 690505216,
+      "elapsed_seconds": 6.532424625009298,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "completed": [
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.8127161669544876,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00013487506657838821,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012837490066885948,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001875001471489668,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-004.json"
+      ],
+      "pid": 38918,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 439436632,
+      "elapsed_seconds": 3.8134517909493297,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "completed": [
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006060959072783589,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0031339158304035664,
+          "message": "test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]\nE   assert [-1, 2] == [-1, -1]\nE     \nE     At index 1 diff: 2 != -1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0029704589396715164,
+          "message": "test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]\nE   assert [-1, 2] == [-1, -1]\nE     \nE     At index 1 diff: 2 != -1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0024963750038295984,
+          "message": "test/test_lexical_reference_orders.py:49: in test_selected_grammar_context_selects_order\n    assert got.tolist() == [-1, -1 if order == 1 else ids[order]]\nE   assert [-1, 2] == [-1, -1]\nE     \nE     At index 1 diff: 2 != -1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0026087078731507063,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0028162498492747545,
+          "message": "test/test_lexical_reference_orders.py:69: in test_capture_owns_grammar_resolution_without_changing_reconstruction\n    assert entry.reference_ids.tolist() == [-1, -1]\nE   assert [-1, 2] == [-1, -1]\nE     \nE     At index 1 diff: 2 != -1\nE     Use -v to get more diff",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004088916117325425,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005541791906580329,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011250792071223259,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003253083908930421,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-005.json"
+      ],
+      "pid": 38927,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 440141144,
+      "elapsed_seconds": 3.782961582997814,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+      ],
+      "completed": [
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+          "phase": "call",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.026535582961514592,
+          "message": "test/test_operators_final.py:199: in test_determiner_kept_closing_is_the_only_mint_and_lowers_once\n    assert refs[1] == -1 and orders[1] == 1\nE   assert (tensor(16) == -1)",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 240.0,
+    "suite_seconds": 900.0,
+    "batch_size": 256,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07",
+  "elapsed_seconds": 30.759447375079617,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 690505216,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/collect.json"
+    ],
+    "pid": 38800,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432358600,
+    "elapsed_seconds": 3.8224823749624193,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+        "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+        "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+        "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[False-unknown2]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown0]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown1]",
+        "test/test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent[True-unknown2]",
+        "test/test_relation_closing.py::test_three_slot_relation_closes_unindexed_numerical_operands",
+        "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats",
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging",
+        "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
+        "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+        "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[event-0]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[particular-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[name-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[pronoun-1]",
+        "test/test_lexical_reference_orders.py::test_selected_grammar_context_selects_order[kind-2]",
+        "test/test_lexical_reference_orders.py::test_capture_owns_grammar_resolution_without_changing_reconstruction",
+        "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
+        "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
+        "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
+        "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference",
+        "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_relation_closing.py::test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows",
+        "test/test_query_native_ids.py::test_real_sentence_capture_owns_native_object_ids_across_later_staging"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

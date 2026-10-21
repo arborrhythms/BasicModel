@@ -1,0 +1,11 @@
+{
+  "calls": 84,
+  "seat_true": 1,
+  "lower_nodes": 80,
+  "lower_edges": 0,
+  "errors": 0,
+  "inventory": [
+    8
+  ],
+  "distinct_plans": 4
+}

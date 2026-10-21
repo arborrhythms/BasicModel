@@ -1,0 +1,192 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+    "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+    "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008929374860599637,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005542667116969824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034528339747339487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.012803917052224278,
+      "message": "test/test_reference_close.py:145: in test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them\n    assert len({identities[a] for a in addresses}) == 1\nE   AssertionError: assert 4 == 1\nE    +  where 4 = len({('ltm', 'address-v1', -8286165563797862330), ('ltm', 'address-v1', -6997856705104047482), ('ltm', 'address-v1', -2907652584967542766), ('ltm', 'address-v1', 1934400735842808986)})",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.04383820807561278,
+      "message": "test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])\nE   assert False\nE    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x10cc86880>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.04236408299766481,
+      "message": "test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])\nE   assert False\nE    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x10cc86ce0>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.044857250060886145,
+      "message": "test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])\nE   assert False\nE    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x11fe22180>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.04802441596984863,
+      "message": "test/test_reference_close.py:170: in test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding\n    assert all(isinstance(ref, int) for ref in plan['items'][0]['candidates'])\nE   assert False\nE    +  where False = all(<generator object test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding.<locals>.<genexpr> at 0x11ffef3e0>)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.005411041900515556,
+      "message": "test/test_reference_close.py:184: in test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised\n    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 1\nE   assert (None is None and 0 == 1)\nE    +  where 0 = len(())\nE    +    where () = IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n).individual_ids\nE    +      where IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n) = ReferenceClose().components",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030395828653126955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011176208034157753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.01646283408626914,
+      "message": "test/test_reference_close.py:239: in test_revision_merges_three_accessible_groups_transitively_across_cued_documents\n    assert len({identities[a] for a in addresses}) == 1\nE   AssertionError: assert 6 == 1\nE    +  where 6 = len({('ltm', 'address-v1', -4098209026200192379), ('ltm', 'address-v1', -3433510135052858015), ('ltm', 'address-v1', -3408...ess-v1', -2847588295512550313), ('ltm', 'address-v1', 4576792239911004056), ('ltm', 'address-v1', 5059024907979507958)})",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008128459099680185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010025829542428255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003406249452382326,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00028145802207291126,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

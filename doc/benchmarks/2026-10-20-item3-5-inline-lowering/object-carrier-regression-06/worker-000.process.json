@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/object-carrier-regression-06/worker-000.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/object-carrier-regression-06/worker-000.json"
+  ],
+  "pid": 38490,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 576914824,
+  "elapsed_seconds": 4.322413499932736,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/object-carrier-regression-06/worker-000.log"
+}

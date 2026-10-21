@@ -1,0 +1,239 @@
+{
+  "node": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+  "outcome": "failed",
+  "failure": "test/test_reference_close.py:184: in test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised\n    assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 1\nE   assert (None is None and 0 == 1)\nE    +  where 0 = len(())\nE    +    where () = IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n).individual_ids\nE    +      where IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n) = ReferenceClose().components",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 1614321865599755792,
+          "reference": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "operation": "mint",
+          "candidates": [],
+          "missing_reason": null
+        }
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -4667331872043823676
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 8725664765839810377,
+          "reference": null,
+          "operation": "pronoun",
+          "candidates": [],
+          "missing_reason": "no_accessible_individual"
+        }
+      ],
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -4667331872043823676
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 2,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            8725664765839810377
+          ],
+          "refs": [
+            null,
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 3,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3812300363716444904
+          ],
+          "refs": [
+            null,
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

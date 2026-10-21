@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/mm-saved-repair-07/collect.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/mm-saved-repair-07/collect.json"
+  ],
+  "pid": 38840,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 438142128,
+  "elapsed_seconds": 3.6261330421548337,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/mm-saved-repair-07/collect.log"
+}

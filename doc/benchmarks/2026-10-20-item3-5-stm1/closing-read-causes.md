@@ -277,3 +277,39 @@ changes and its own gates/receipt, the second eight-file/decomposition set,
 and publication to both mains remain explicitly queued. No fresh run,
 rescue training, second sweep, fixture change or assertion port followed
 these probes.
+
+### 6.7 D1 after the decided §10.2 round
+
+Source `f9faae610f35d5ca660d0ac49249637cb23e7adf`. D2 was applied in
+`eb75de56a`; both saved reverse replays passed. The eight §10.2 changes
+then produced the candidate above. The forward assertion, forced scope,
+budget, objective and keep rule remain unchanged.
+
+Both formerly failing forward initializations now **pass**. The retained
+[validation](../2026-10-20-item3-5-inline-lowering/arrival-keep-validation.json)
+checks identical initial parameters, buffers, source manifest, thread
+count, all three process RNGs and the private corpus generator. The
+different closing mechanism changes the subsequent native trajectory;
+final stores are not claimed identical to the old failing stores.
+[Both trials](../2026-10-20-item3-5-inline-lowering/arrival-keep.jsonl)
+and [one table per document](../2026-10-20-item3-5-inline-lowering/arrival-keep-tables.md)
+are retained, including both premise batches in the individual run files.
+
+**Question 1: fresh-both-forward-4, original failing stream 6.**
+
+| Trial | Arrival reading on §10.2 | R | A | R + A | Keep |
+|---|---|---:|---:|---:|---|
+| Greedy | x open; completed complement headed by three (word 56), whose derivation reference survives the mint | .0360673778 | 0 | .0360673778 | Tie: greedy |
+| Explore | Same completed complement in this stream | .0360673778 | 0 | .0360673778 | Discarded by the existing tie rule |
+
+**Question 2: arrival-21, original failing stream 7.**
+
+| Trial | Arrival reading on §10.2 | R | A | R + A | Keep |
+|---|---|---:|---:|---:|---|
+| Greedy | x open; completed complement headed by three (word 45), whose derivation reference survives the mint | .0360673778 | 0 | .0360673778 | Tie: greedy |
+| Explore | Relative child with a bound occurrence and symbol 14 (`is`); no open three role in this new reading | .0360673778 | 0 | .0360673778 | Discarded by the existing tie rule |
+
+No answer target was introduced and A remains zero. The old failures are
+not regraded: the new source passes their exact initializations. Twelve
+fresh initializations, six per order, are the separate next gate; these
+saved passes do not replace it.

@@ -20,16 +20,23 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 step 1 is published on both mains: BasicModel
 `204e1be55`, WikiOracle `a89c958`
 ([landing receipt](doc/benchmarks/2026-10-19-item3-5-bind/landing.md)).
-**Active §14 round (base `93788f9d2`):** the exact D1 probe is accepted;
-Alec decided to implement §10.2 before revisiting its contract. D2's
-name-scoped reverse assertion passes both saved replays on `eb75de56a`.
-The [§10.2 round](doc/benchmarks/2026-10-20-item3-5-inline-lowering/README.md)
-is implemented, with its closing/capacity gates next, then both D1 replays
-with paired R/A, all twelve fresh initializations, and the eight-file set
-plus both decomposition arms by commit hash. Any remaining forward
-contract question is decided on that source before publication to both
-mains. The forward assertion and objective remain unchanged. Every failed
-run is retained; no second full sweep or learning claim.
+**Active §14 round (base `93788f9d2`), publication held:** D2's two
+saved reverse replays pass on `eb75de56a`. The §10.2 candidate `f9faae610`
+passes both D1 replays, all twelve fresh initializations (six per order),
+both decomposition lengths in both arms, and paired zero-cost R. Its one
+scoped set records **70 passed, 43 failed, one prerequisite skip**.
+Follow-up `67c5b203f` repairs lost grammar OBJECT IDs, the remaining lexical
+-1 cut and occurrence participant reads. Both original eight-seat MM
+initializations now pass with zero seats; the failed fresh draw is replayed,
+never replaced. Targeted checks: 37 passed, five old -1 assertions failed;
+two working-identity merge certificates still fail. The
+[review questions and exact proposed ports](doc/benchmarks/2026-10-20-item3-5-inline-lowering/review-required.md)
+are recorded for Alec/Claude; no additional existing assertion is changed.
+After those are resolved, the final source still needs its arrival and
+scoped/decomposition evidence by hash. Earlier results are not promoted to
+the follow-up source. No full second sweep, objective change or learning
+claim; all failed runs are retained. Both-main publication and the
+WikiOracle bump remain pending.
 Step 1b's native identity candidate `027ce224d` and STM1 candidate
 `dde893527` are on
 `codex/item3-5-first-pass`; its

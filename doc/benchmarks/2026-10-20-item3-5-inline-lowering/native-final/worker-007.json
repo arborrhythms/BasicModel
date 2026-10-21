@@ -1,0 +1,170 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+    "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+    "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address"
+  ],
+  "completed": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+    "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+    "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006686583161354065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027944999746978283,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.007546874927356839,
+      "message": "test/test_identity_rows.py:59: in test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient\n    residual = resolver.components.innovation(observation, prediction)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IndependentComponents.py:370: in innovation\n    axes = F.normalize(torch.stack([coordinates(self.owner, point(self.owner, cid))\nE   RuntimeError: stack expects a non-empty TensorList",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00367079209536314,
+      "message": "test/test_identity_rows.py:73: in test_native_row_is_the_only_content_and_witnesses_are_live_queries\n    assert witness_count(resolver.components.owner,cid) == 1\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:108: in witness_count\n    return sum(int(parts.access_count[row]) for row in witnesses(owner, identity))\n                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:103: in witnesses\n    return tuple(rows[(parts.refs[rows] == int(identity)).any(-1)].tolist())\n                                           ^^^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0053761249873787165,
+      "message": "test/test_identity_rows.py:96: in test_forgetting_and_reinterpretation_never_refold_a_native_identity\n    torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])\n                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:56: in point\n    row = owner._csw_row_of(int(identity))\n                            ^^^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022489160764962435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004012624965980649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011109590996056795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0035097079817205667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0034146669786423445,
+      "message": "test/test_identity_rows.py:187: in test_loader_permanently_rejects_signed_identity_without_modifying_the_row\n    native = point(resolver.components.owner, identity).clone()\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/IdentityRows.py:56: in point\n    row = owner._csw_row_of(int(identity))\n                            ^^^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0029977501835674047,
+      "message": "test/test_identity_rows.py:183: in test_loader_permanently_rejects_signed_identity_without_modifying_the_row\n    owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125\n                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:15891: in _csw_row_of\n    rows = self._csw_rows_of(concept_id)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:15879: in _csw_rows_of\n    r = ly.row_of((ns, int(concept_id)))\n                       ^^^^^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024304171092808247,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025071660056710243,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011544957989826798,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

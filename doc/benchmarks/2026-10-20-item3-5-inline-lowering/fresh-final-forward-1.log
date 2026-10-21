@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 240s, 8.0 GiB
+[collect] exit 0; 1.9s; peak 0.17 GiB
+[worker-000] 1 selectors; limit 240s, 8.0 GiB
+[worker-000] exit 0; 33.9s; peak 2.09 GiB
+Result: passed, exit 0; 1/1 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/fresh-final-forward-1/result.json

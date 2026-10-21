@@ -1,0 +1,82 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011699588503688574,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005847499705851078,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016269458224996924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004221659619361162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009998749941587448,
+      "message": "test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1\nE   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())\nE    +  where () = IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n).individual_ids",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009674333035945892,
+      "message": "test/test_reference_close.py:394: in test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n    assert identity in component.individual_ids and f.cs._concept_source_order(identity) == 1\nE   AssertionError: assert (('ltm', 'address-v1', 7873483260437102423) in ())\nE    +  where () = IndependentComponents(\\n  (verbs): SparseDictionary(\\n    (directions): ParameterDict()\\n    (relevance): ParameterDict()\\n  )\\n  (reference_close): ReferenceClose()\\n).individual_ids",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
