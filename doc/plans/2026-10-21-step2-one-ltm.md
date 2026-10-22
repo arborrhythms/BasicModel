@@ -12,8 +12,10 @@ replacement. §17 authorizes the remaining shape-test port. The
 [where receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
 records frozen source `d4f316411`, 223 passes / seven existing skips and
 Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
-(WikiOracle `baa2e7f`). **2b stops at §§18–19 for the reviewed representation
-and layout decisions; no implementation has begun.** Original code facts below describe
+(WikiOracle `baa2e7f`). **2b's design is decided in §§20–23. The additional
+assertion-port proposals in §§24–25 await Alec; no implementation has begun.**
+Main includes the published documentation handoff at `c39ef9f3a`; all work
+now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
 
 
@@ -1482,3 +1484,67 @@ run or a same-round setup exception. Claude reviews the exact scope, then
 Alec decides P1–P5 before implementation resumes on main. There is no 2b
 freeze, gate pass or publication to claim. The two arrival notes remain
 in 2c; the one full sweep stays at step 2's end. Item 3.0 is not reached.
+
+## 25. Claude's assertion-port review and amended proposals — 2026-10-22
+
+The actual read-only [Claude review](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/claude-review.md)
+of input `76de86f7a` confirms the stop required by the assertion rule.
+No production/test edit, test run or implementation freeze has occurred.
+The already authorized standalone restore, adjacency-only retirements,
+evidence, coarsening/snapshot and named role-0 reader ports are not being
+requested again. §§20–23 remain decided.
+
+The [amended proposal](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/amended-port-proposal.md)
+contains the concrete dispositions for Alec. It supersedes §24's proposed
+ports where they differ:
+
+- P1 checks **question kind and zero evidence**, not just evidence, since
+  origin withdrawal zeros the evidence of every row. The review also
+  identifies the stored-mode reader in `reasoning.py:170`. The proposed
+  implementation keeps `ConceptualMeaning`'s existing default on read and
+  removes that redundant mode guard, preserving kind/metadata/evidence
+  guards and incoming live-mode admission. It stores no replacement mode.
+- P2's seven-column checks are correct. P3 also needs the existing
+  vocabulary-cached form snapshot to survive unchanged, with the removed
+  adjacency key/switch gone; remove the unused config/schema entries.
+- P4 snapshots pre-existing tagged rows **by handle**, declares expected
+  additions separately, and compares cross-path graphs through their
+  address/structure mapping. This strengthens the old all-`-1` snapshots;
+  a failure stops. Two address/migration fixtures and the repeated-role
+  fixture need typed derivations, not an untyped occurrence edge. Their
+  role, address, timing, evidence and restore checks remain obligations.
+- P5 covers the complete-model corruption check and the full-owner stale
+  posting test. Require the owning LTM1 validator to reject invalid tag
+  values and shape by name; preserve the preceding learning-readiness
+  assertions and retained-source membership assertions. Keep
+  `leaf_complete` as a non-persistent derived buffer so its live assertions
+  need no port.
+- The review found an LTM0 row-export `refs` check missed by the first
+  inventory and a remaining `where` comparison in
+  `test_selected_nested_meaning.py:81`. Port the former to absence and
+  remove only `where` from the latter, retaining all `.when` checks. The
+  `where` conflict is established by inspection; no 2a failure is claimed
+  and no additional 2a run is proposed.
+
+One review question is already decided: **§11.1 ends close-time argument
+minting in 2b**, when tagged occurrence arguments arrive. It does not move
+to 2c. The amended proposal's P6 supplies the requested limited audit of
+tests requiring argument seats, symbol-only reads and rejection solely
+because the working bank is full. Recommended ports assert the same
+retained content and typed derivation through OCC, no new argument seat,
+and successful closing with unchanged bank capacities; actual memory
+exhaustion still rejects atomically. These are explicit changed
+expectations for Alec, not mechanical ports disguised as unchanged checks.
+
+P7 lists further old derivation-root and pending-name reads, and proposes
+injecting a corrupt tagged graph for the defensive cycle-reader test
+while leaving its reachable-leaf assertion unchanged. The public writer
+still rejects self/forward references. The amendments get a focused
+read-only follow-up review before Alec's decision; no design implementation
+or test port is authorized by this review record alone.
+
+The implementation receipt will enumerate every final changed assertion,
+fixture and retired test. No proposed rule permits weakening semantic
+checks, changing capacities, promoting earlier evidence or continuing
+after an existing-test/production failure. The two R10 notes remain in
+2c, one full sweep remains at step 2's end, and item 3.0 is not reached.

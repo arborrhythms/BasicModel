@@ -26,15 +26,16 @@ frozen source `d4f316411` passed 223 cases with seven existing skips;
 Claude approved publication. `where` is off the LTM0 row and frame;
 `.when` and percept location stay, with both storage-test ports authorized.
 The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-retains every report and capture. **2b stops before implementation** at
-[spec §18](doc/plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec):
-leaf-posting restoration, adjacency witnesses and legacy/live unspecified
-mode need decisions; the implicit-pair expected values and old coarsening
-policy need explicit test dispositions. Claude's [§19 review](doc/plans/2026-10-21-step2-one-ltm.md#19-claudes-2b-preflight-review--2026-10-22-decisions-still-open)
-confirms the main recommendations and identifies additional relation-polarity
-and reading-protection layout questions. Alec's dispositions and the completed
-layout are required before implementation. Metadata authentication stays while sidecar content
-needs it. 2c retains the two R10 arrival notes; the recall-history location
+retains every report and capture. **2b's design is decided in §§20–23.**
+The repository handoff is published at `c39ef9f3a`, including both preflight
+commits and Claude's unchanged seven-file commit; no documentation-only
+WikiOracle bump. All work now stays on main. **Implementation stops for the
+additional assertion ports** in [spec §§24–25](doc/plans/2026-10-21-step2-one-ltm.md#24-test-port-audit-before-2b-implementation--2026-10-22).
+The [port receipt](doc/benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
+retains Claude's review and the amended proposals: stored mode, tagged
+layout/restore, typed fixtures and the end of argument minting. No 2b code
+or test has changed and no gate has run. Metadata authentication stays
+while sidecar content needs it. 2c retains the two R10 arrival notes; the recall-history location
 note belongs to the 5.5 context-wholes spec. No fresh series or full sweep;
 one full sweep remains at step 2's end. Item 3.0 has not been reached.
 
@@ -175,7 +176,7 @@ optional cold-start boundary learning certificate is also incomplete:
 runner bound during the original six epochs. Carry it to Item 0's learning
 evidence with that budget unchanged; it is not a step-1b mechanism pass.
 
-**Active mechanism:** Item **3.5**, on a separate branch after Item 4 publication,
+**Active mechanism:** Item **3.5**, on main after Item 4 publication,
 in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
 continuation before identity; verb group element; tense/aspect and second
@@ -714,10 +715,11 @@ not by a passing identity lesson.
    gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
-   seven existing skips and Claude's approval. 2b stops at the dated
-   [§18 questions](doc/plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec)
-   before implementation. The other fields stay until their decided
-   replacements and representation choices. No step-2 completion is claimed.
+   seven existing skips and Claude's approval. 2b's design is decided in
+   §§20–23, and the documentation handoff is published on main at
+   `c39ef9f3a`. The additional [§§24–25 assertion ports](doc/plans/2026-10-21-step2-one-ltm.md#24-test-port-audit-before-2b-implementation--2026-10-22)
+   await Alec before implementation. No 2b source/test change or gate;
+   no step-2 completion is claimed. All subsequent work stays on main.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),

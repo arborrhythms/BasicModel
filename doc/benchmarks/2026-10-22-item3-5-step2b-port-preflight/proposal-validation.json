@@ -1,0 +1,14 @@
+{
+  "proposed_fixed_patch_applies": true,
+  "patch_applied": false,
+  "inspected_test_source_sha256": {
+    "test/test_nested_retention.py": "e812ce6b34df16804132d37ffc1394b49e38c9e1efc90fb071d3af03bbbe4c1f",
+    "test/test_clause_storage.py": "26fd5d72c3b18e57d5647a25198585bca6bfe4a7bddd69f5a7315c1df7867061",
+    "test/test_part_expectation.py": "6de7c5e7f87904fc49ba9068dfed9e7ecc341f433cda6bcb2a494b3079392a27",
+    "test/test_operators_final_b.py": "1c823a6e73cfada965b0a47dbe1140d9f92476ec19b19c47956152e15d954b92",
+    "test/test_learning_readiness.py": "dea45169102446275ad4589745b18713c34ceb3c8c20dc8ff33fad179d9f510a",
+    "test/test_operators_final.py": "488170cee35852a6c59699779e1e1b61a166ac4896f8844f05bbc821fa686ed8",
+    "test/test_review14_contracts.py": "ef7673ef37b60011ed58e312010b019f7e496f06772585dfd6ecafb4a4f0c5b3"
+  },
+  "tests_executed": false
+}

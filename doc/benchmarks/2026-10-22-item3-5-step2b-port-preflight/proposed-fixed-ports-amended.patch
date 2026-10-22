@@ -1,0 +1,45 @@
+--- a/test/test_nested_retention.py
++++ b/test/test_nested_retention.py
+@@ -53,7 +53,8 @@
+     assert kept["kind"] == "unverified" and kept["trust"] == 0
+     assert kept["text"] == "reported content"
+     assert kept["meaning"].scope == (("quote", "inner"),)
+-    assert store.meaning_of(_index(store, inner_ref)).mode == "interrogative"
++    inner = store.row(_index(store, inner_ref))
++    assert inner["kind"] == "question" and inner["evidence"] == (0., 0.)
+     assert store.clear_origin(store.ORIGIN_USER) == 0
+ 
+ 
+--- a/test/test_clause_storage.py
++++ b/test/test_clause_storage.py
+@@ -37,7 +37,7 @@
+ 
+ def test_relation_has_no_kind_column_or_catch_all():
+     from LTM1 import LTM1
+-    assert LTM1.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
++    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','when')
+     assert not any(name.startswith('REL_') for name in vars(LTM0))
+ 
+ 
+--- a/test/test_part_expectation.py
++++ b/test/test_part_expectation.py
+@@ -28,7 +28,7 @@
+     torch.testing.assert_close(pair['residual'], target-logits.sigmoid())
+     assert pair['source_occurrences'] == (f.store.occurrence_of(source),)
+     assert pair['surprise'] == pytest.approx(comparison.surprise)
+-    assert len(f.store.parts.columns) == 6
++    assert len(f.store.parts.columns) == 7
+     # The mutable current bank is not the historical target's owner.
+     with torch.no_grad():
+         f.cs.similarity_codebook.W.fill_(.25)
+--- a/test/test_operators_final_b.py
++++ b/test/test_operators_final_b.py
+@@ -130,7 +130,7 @@
+         model,_,data=_fresh_model('data/XOR_grammar.xml')
+         try:
+             derived=model._concept_owner().similarity_codebook.mereology
+-            assert derived.context_width == 128 and derived.symbol_centroid
++            assert derived.context_width == 128
+             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
+             batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+             inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
