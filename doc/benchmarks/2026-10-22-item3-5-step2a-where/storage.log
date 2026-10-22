@@ -1,0 +1,12 @@
+[collect] 3 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 6.6s; peak 0.43 GiB
+[worker-000] 16 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 3.9s; peak 0.47 GiB
+[worker-001] 6 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 3.7s; peak 0.42 GiB
+[worker-002] 2 selectors; limit 900s, 8.0 GiB
+[worker-002] exit 0; 3.6s; peak 0.40 GiB
+[worker-003] 1 selectors; limit 900s, 8.0 GiB
+[worker-003] exit 0; 3.8s; peak 0.41 GiB
+Result: passed, exit 0; 25/25 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/result.json

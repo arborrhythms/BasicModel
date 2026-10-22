@@ -1,0 +1,31 @@
+{
+  "source": "d4f316411a1b51965f2448390743c46ee191b6ac",
+  "selectors": {
+    "storage": [
+      "test/test_clause_storage.py",
+      "test/test_ltm0_location.py",
+      "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+    ],
+    "regressions": [
+      "test/test_medium_term_memory.py",
+      "test/test_reference_arrivals.py",
+      "test/test_reference_arrival_review.py",
+      "test/test_reference_choices.py",
+      "test/test_part_closing.py",
+      "test/test_reference_occurrence_views.py",
+      "test/test_reference_review10.py",
+      "test/test_reference_participants.py"
+    ],
+    "native": [
+      "test/test_math_chain_section14.py",
+      "test/test_reference_close.py",
+      "test/test_reference_mentions.py",
+      "test/test_bind_thought.py",
+      "test/test_identity_rows.py",
+      "test/test_identity_cube.py",
+      "test/test_part_store.py",
+      "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+    ]
+  },
+  "production_change": "retire the LTM0 where column and the row/frame exports; when unchanged"
+}

@@ -1,0 +1,19 @@
+{
+  "parent_source": "dbd9b522997347ee0af2d75adba317ea7ce3f774",
+  "command": [
+    "rg",
+    "-n",
+    "SituationFrame|\\b(?:ltm0?|store|frame)\\.where\\b|\\[\\s*['\"]where['\"]\\s*\\]",
+    "--glob",
+    "*.py",
+    "--glob",
+    "!basicmodel/**",
+    "--glob",
+    "!nanochat/**",
+    "."
+  ],
+  "exit": 1,
+  "matches": "",
+  "stderr": "",
+  "nanochat_excluded": true
+}

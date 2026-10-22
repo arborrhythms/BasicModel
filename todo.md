@@ -26,7 +26,8 @@ skips. Alec's [§16 decisions](doc/plans/2026-10-21-step2-one-ltm.md#16-claudes-
 authorize 2a's one cull: remove the stored `where` column and row/frame
 exports, retaining `.when`. The exact-value and shape-check ports are
 authorized; the [new receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-tracks its frozen source, scoped gates and review before publication.
+records frozen source `d4f316411`: 223 passes and seven existing skips,
+with Claude's approval to publish. This completes 2a's rename and sole cull.
 2b follows with tagged references and the structural move, `refs` retired
 when replaced, and removal of the implicit negative-meaning evidence swap.
 Its leaf-posting restore contract, adjacency representation and legacy

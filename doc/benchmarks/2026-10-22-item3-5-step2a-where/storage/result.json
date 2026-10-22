@@ -1,0 +1,502 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+    "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+    "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+    "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+    "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]",
+    "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+  ],
+  "completed": [
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+    "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+    "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+    "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+    "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+    "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+    "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+    "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+    "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]",
+    "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-000.json"
+      ],
+      "pid": 54691,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 507512200,
+      "elapsed_seconds": 3.896726083010435,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+        "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+        "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+        "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+        "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade"
+      ],
+      "completed": [
+        "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+        "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+        "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+        "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+        "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004793749889358878,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01112470799125731,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00010516680777072906,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.13324541598558426,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00011345790699124336,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0036834999918937683,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003374250140041113,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0033037501852959394,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0030449170153588057,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002479917136952281,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002379166893661022,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0025965829845517874,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0022692091297358274,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004608958028256893,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006662080995738506,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007183749694377184,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-001.json"
+      ],
+      "pid": 54741,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 447087888,
+      "elapsed_seconds": 3.6865468330215663,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+        "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles"
+      ],
+      "completed": [
+        "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+        "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.05196558404713869,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004398874938488007,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000974500086158514,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0022475419100373983,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007002792088314891,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.019101332873106003,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-002.json"
+      ],
+      "pid": 54751,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 434062632,
+      "elapsed_seconds": 3.6285493338946253,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]"
+      ],
+      "completed": [
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02012524986639619,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005562291946262121,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-003.json"
+      ],
+      "pid": 54758,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438207784,
+      "elapsed_seconds": 3.80379333300516,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+      ],
+      "completed": [
+        "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.018675874918699265,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage",
+  "elapsed_seconds": 22.71377654094249,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 507512200,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/collect.json"
+    ],
+    "pid": 54677,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 461915360,
+    "elapsed_seconds": 6.6291041248477995,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/storage/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+        "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+        "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+        "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+        "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+        "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+        "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+        "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+        "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+        "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+        "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+        "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+        "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+        "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+        "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+        "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+        "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+        "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
+        "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
+        "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
+        "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
+        "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
+        "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]",
+        "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

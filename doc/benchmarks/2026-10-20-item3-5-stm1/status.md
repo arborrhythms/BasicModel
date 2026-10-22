@@ -1,5 +1,20 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2a location cull, frozen source `d4f316411`, 2026-10-22:** the
+rename is published at BasicModel `804d8adcb` / WikiOracle `dbd9b52`.
+Alec's step-2 §§16–17 decisions remove `where` from the LTM0 row and
+frame, with both storage-test ports authorized; `.when` and percept
+location stay. The [separate receipt](../2026-10-22-item3-5-step2a-where/README.md)
+records 25 direct storage/time passes, 85 regression passes, and 113
+passes / seven existing skips in the eight-file set. Total: 223 passed,
+seven skipped, no failures. The pending-premise draws give 0 bound / 8
+open forward and 0 bound / 16 open reverse, with full captures. Claude
+approves publication with no blockers; the parent consumer search is
+clean. The reviewed source and receipts land on both mains with the
+WikiOracle bump, completing 2a's rename and sole cull. No fresh series or full sweep; 2b and
+2c remain outstanding, including the three §16 representation decisions
+and the two R10 arrival notes. No learning claim or item-3.0 transition.
+
 **Step 2a rename, frozen source `eb6980e7d`, 2026-10-22:** R10 is
 published at BasicModel `e243d7bdf` / WikiOracle `2ffda78`. The separate
 class rename passes the saved-class-path audit and its requested gates:

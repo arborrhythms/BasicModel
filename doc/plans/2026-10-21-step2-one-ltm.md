@@ -10,7 +10,8 @@ records that evidence. **Alec's cull decisions are §16:** 2a removes
 `where`, keeps `.when`, and leaves the other columns until their decided
 replacement. §17 authorizes the remaining shape-test port. The
 [where receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-tracks this source and its gates. Original code facts below describe
+records frozen source `d4f316411`, 223 passes / seven existing skips and
+Claude's approval to publish the sole cull, completing 2a. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
 
 

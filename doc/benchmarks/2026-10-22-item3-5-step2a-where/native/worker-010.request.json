@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2a-where/native/worker-010.recycle.json"
+}
