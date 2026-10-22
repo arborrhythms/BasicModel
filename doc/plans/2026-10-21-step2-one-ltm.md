@@ -1353,3 +1353,132 @@ With §§16, 21 and 22, every 2b question from §18 is decided: postings and
 adjacency removed; mode no longer stored; polarity semantic, with the
 writer's reversal limited to LTM1 edges and the two tuple ports; and the
 staged forgetting rule.
+
+## 24. Test-port audit before 2b implementation — 2026-10-22
+
+The repository handoff is complete. Claude's seven uncommitted documents
+were committed **without any content change** as `c39ef9f3a`, with the
+requested message, then fast-forwarded with `d5fc19791` and `61860c849`
+onto main and pushed. No WikiOracle bump was made for these documents.
+All subsequent work is on main. Production and tests still match the
+published 2a source; no 2b code or test has changed and no gate has run.
+
+§§20–23 settle the design. This audit does not reopen those decisions.
+It identifies existing assertions not covered by the specifically
+authorized test ports. §22 explicitly requires an assertion that depends
+on stored mode to return to Alec, and the latest handoff says any other
+assertion change stops for Claude and Alec. The [port-preflight receipt](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
+retains the audit and the proposed patch; nothing in that patch is applied.
+
+### P1. One stored-mode assertion must change
+
+`test_nested_retention.py:56`, in
+`test_origin_replacement_retains_reachable_content_without_fact_authority`,
+requires the restored LTM0 meaning's mode to be `interrogative`. The fixture
+writes a question with zero evidence and later clears its origin while a
+parent still references it. There is no allowed implementation of §22
+that remembers this mode solely to satisfy that assertion.
+
+**Recommended exact port for Alec:** replace only that assertion with
+`assert store.row(_index(store, inner_ref))["evidence"] == (0., 0.)`.
+It checks §22's reason the retained question makes no truth claim. Keep
+all reachability, content, scope, origin, count and idempotence assertions
+verbatim. Do not replace it with an assertion that stored mode is
+`assertive` or reconstruct it from the retained structure. Other mode
+assertions found in the live parse and `WhatInteractionMemory` are outside
+this removal and stay unchanged.
+
+### P2. Exact LTM1 column assertions must include the decided tags
+
+§1's `ref_kinds[cap, 2]` adds the argument tags to LTM1. Two existing
+checks require precisely the old six-column layout:
+
+- `test_clause_storage.py:40`: the exact `LTM1.columns` tuple;
+- `test_part_expectation.py:31`: `len(f.store.parts.columns) == 6`
+  (both parametrizations).
+
+**Recommended exact ports:** add `ref_kinds` immediately after `refs` in
+the first tuple and change the count to seven in the second. The two
+references, poles, access count, surprise and time remain checked. Every
+expectation target, residual, source, bank-isolation and restore assertion
+stays verbatim. Do not hide the tags outside the row export to keep a
+six-column assertion passing.
+
+### P3. A mixed certificate still checks the removed nudge's switch
+
+`test_operators_final_b.py:133`, inside `forced_prefix_certificate`,
+asserts both `derived.context_width == 128` and `derived.symbol_centroid`.
+The enclosing certificate also checks descent, reconstruction and shared
+snapshots, so it is not an adjacency-only test to retire under §23.
+
+**Recommended exact port:** remove only `and derived.symbol_centroid`.
+Keep the context-width check and all certificate assertions, including
+zero R/residual and both-trial snapshot counts. Retire the now-unused
+switch with the mechanism rather than retaining an inert true flag for
+the test.
+
+P1–P3 are the four edits in
+[proposed-fixed-ports.patch](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/proposed-fixed-ports.patch).
+They have not been applied.
+
+### P4. `refs` audit: more than the coarsening case reads the old column
+
+The [complete direct-access inventory](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/ltm0-refs-audit.json)
+records the current file, function, line and source for each match. Besides
+the already authorized coarsening/snapshot ports, these include:
+
+- empty-column shape/absence checks in `test_clause_storage`,
+  `test_clause_acceptance`, `test_part_closing`, `test_sentence_end_state`
+  and `test_sentence_retention`;
+- immutability and restore snapshots in `test_medium_term_memory`,
+  `test_identity_rows`, `test_reference_close`, `test_reference_arrivals`,
+  `test_reference_mentions`, `test_reference_occurrence_views` and
+  `test_selected_nested_meaning`;
+- native-reference and legacy-migration fixtures in
+  `test_concept_forgetting` and `test_operators_round4a0`, plus the
+  observer in `identity_measurement.py`.
+
+**Recommended port rule for Alec:** replace accesses to the retired LTM0
+column with the corresponding tagged reading/derivation rows. Preserve
+every antecedent, semantic content, occurrence address, evidence, bank
+value, immutability extent, restore outcome and rejection. Snapshot both
+`refs` and `ref_kinds` of the corresponding retained LTM1 structure when
+checking that binding has not rewritten it; do not delete immutability
+coverage. Pure assertions that the old empty LTM0 column exists should
+become assertions that it is absent, beside positive checks of the new
+tagged layout. Record each exact port in the implementation receipt and
+source audit. Any change to these semantic outcomes still stops. This is
+not authority to preserve a fabricated all-`-1` compatibility column or
+to add an untyped occurrence-role edge.
+
+### P5. A complete-model checkpoint test pins malformed saved postings
+
+`test_learning_readiness.py:188–195`, at the end of
+`test_native_progress_and_trained_artifact_evaluation_path`, reshapes the
+saved `posting_codes` and requires a load failure naming that column.
+Unlike the authorized standalone-memory restore ports, this is the
+complete-model path and part of a larger training-progress test.
+
+**Recommended disposition for Alec:** retain the full learning-progress
+and evaluation case; replace only this obsolete corruption subcase with
+a malformed `ref_kinds` checkpoint under the existing `part_store` path,
+requiring loud load rejection. Keep all earlier assertions verbatim. The
+exact new key/path will follow the decided one-owner export in the 2b
+source; no change has been applied here and no learning run has been made.
+
+### Already authorized changes are kept separate
+
+The standalone-memory posting restore ports, the two evidence tuples,
+the coarsening test across two passes and §19's snapshot port, and the
+reader change in `test_live_parent_pins_its_child` are authorized by the
+handoff. Tests solely of adjacency/nudging can be retired and individually
+listed: `test_centroid_moves_without_losing_identity_and_caps_containment`,
+`test_adjacent_wholes_rewitness_compact_and_checkpoint` and
+`test_absent_adjacent_wholes_leave_the_lower_form`. Their removal does not
+authorize retiring mixed certificates such as P3 or P5.
+
+This is an assertion-authorization stop found by inspection, not a failed
+run or a same-round setup exception. Claude reviews the exact scope, then
+Alec decides P1–P5 before implementation resumes on main. There is no 2b
+freeze, gate pass or publication to claim. The two arrival notes remain
+in 2c; the one full sweep stays at step 2's end. Item 3.0 is not reached.

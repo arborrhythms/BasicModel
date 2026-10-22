@@ -1,0 +1,242 @@
+[
+  {
+    "file": "test/identity_measurement.py",
+    "function": "native_observer",
+    "line": 197,
+    "text": "reference = None if index is None else int(store.refs[index, 0])"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "function": "test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "line": 113,
+    "text": "assert f.store.refs[row].tolist() == [-1, -1, -1]"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_end_row_has_shared_references_and_field_coordinates",
+    "line": 20,
+    "text": "assert store.refs.shape == (8, 3)"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_end_row_has_shared_references_and_field_coordinates",
+    "line": 21,
+    "text": "assert store.refs.dtype == torch.int64"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_end_row_has_shared_references_and_field_coordinates",
+    "line": 22,
+    "text": "assert bool((store.refs == -1).all())"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_compound_idea_stores_only_fused_point_without_factored_target",
+    "line": 95,
+    "text": "assert store.refs[row].tolist() == [-1, -1, -1]"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_recursive_absolute_clauses_each_write_one_idea",
+    "line": 114,
+    "text": "assert bool((store.refs[:3, 2] == -1).all())"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "function": "test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "line": 201,
+    "text": "torch.testing.assert_close(restored.refs, store.refs)"
+  },
+  {
+    "file": "test/test_concept_forgetting.py",
+    "function": "test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "line": 53,
+    "text": "store.refs[0, 0] = weak"
+  },
+  {
+    "file": "test/test_concept_forgetting.py",
+    "function": "test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "line": 85,
+    "text": "store.refs[stored, 0] = referenced"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "function": "linked_store",
+    "line": 139,
+    "text": "store.refs[parent, 0] = int(store.address_keys[child])"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "function": "test_idea_coarsens_parent_and_relation_cascades",
+    "line": 156,
+    "text": "assert index is not None and store.refs[index, 0] == -1"
+  },
+  {
+    "file": "test/test_identity_rows.py",
+    "function": "test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "line": 105,
+    "text": "original = store.slots.clone(), store.refs.clone()"
+  },
+  {
+    "file": "test/test_identity_rows.py",
+    "function": "test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "line": 109,
+    "text": "torch.testing.assert_close(store.refs,original[1],rtol=0,atol=0)"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "function": "snapshot",
+    "line": 15,
+    "text": "return (store.refs.clone(), store.slots.clone(), store.when.clone(),"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "function": "test_bound_use_reads_as_its_introduction_without_rewriting_rows",
+    "line": 59,
+    "text": "before = store.refs.clone(), store.slots.clone()"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "function": "test_bound_use_reads_as_its_introduction_without_rewriting_rows",
+    "line": 68,
+    "text": "for current, old in zip((store.refs, store.slots), before):"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "function": "test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "line": 96,
+    "text": "for current, before in zip((store.refs, store.slots, store.when), old[:3]):"
+  },
+  {
+    "file": "test/test_operators_round4a0.py",
+    "function": "test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "line": 98,
+    "text": "store.refs[target, 0] = store.address_keys[source]"
+  },
+  {
+    "file": "test/test_operators_round4a0.py",
+    "function": "test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "line": 103,
+    "text": "assert int(store.refs[1, 0]) == int(store.address_keys[0])"
+  },
+  {
+    "file": "test/test_operators_round4a0.py",
+    "function": "test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "line": 141,
+    "text": "assert int(restored.refs[1, 0]) == reference[2]"
+  },
+  {
+    "file": "test/test_part_closing.py",
+    "function": "test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "line": 42,
+    "text": "assert f.store.refs[row].eq(-1).all()"
+  },
+  {
+    "file": "test/test_reference_arrivals.py",
+    "function": "test_arrival_bind_refines_and_reads_three_through_the_token",
+    "line": 93,
+    "text": "raw, refs = store.slots.clone(), store.refs.clone()"
+  },
+  {
+    "file": "test/test_reference_arrivals.py",
+    "function": "test_arrival_bind_refines_and_reads_three_through_the_token",
+    "line": 113,
+    "text": "torch.testing.assert_close(store.refs[:pending+1], refs[:pending+1], rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "current_identities",
+    "line": 79,
+    "text": "before = store.refs.clone(), store.slots.clone(), bank.W.detach().clone()"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "current_identities",
+    "line": 83,
+    "text": "for actual, expected in zip((store.refs, store.slots, bank.W), before):"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "line": 194,
+    "text": "before = store.refs.clone()"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "line": 198,
+    "text": "assert int(store.refs[store.index_of_row(missing), 0]) == -1"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "line": 199,
+    "text": "torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "line": 213,
+    "text": "required, refs = store.metadata_required.clone(), store.refs.clone()"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "line": 217,
+    "text": "torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "function": "test_kept_journal_supplies_np_content_predicate_and_positional_provenance",
+    "line": 421,
+    "text": "torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_mentions.py",
+    "function": "test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "line": 74,
+    "text": "rows, refs = store.slots.clone(), store.refs.clone()"
+  },
+  {
+    "file": "test/test_reference_mentions.py",
+    "function": "test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "line": 94,
+    "text": "torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_occurrence_views.py",
+    "function": "test_occurrence_candidates_use_retained_part_participants",
+    "line": 16,
+    "text": "before = f.store.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()"
+  },
+  {
+    "file": "test/test_reference_occurrence_views.py",
+    "function": "test_occurrence_candidates_use_retained_part_participants",
+    "line": 26,
+    "text": "for actual, expected in zip((f.store.refs, f.store.slots, f.cs.similarity_codebook.W), before):"
+  },
+  {
+    "file": "test/test_selected_nested_meaning.py",
+    "function": "test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "line": 78,
+    "text": "return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "function": "test_reading_an_idea_returns_its_one_occupied_slot",
+    "line": 21,
+    "text": "assert store.refs[row].tolist() == [-1, -1, -1]"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "function": "test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "line": 49,
+    "text": "torch.testing.assert_close(restored.refs, store.refs, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_sentence_retention.py",
+    "function": "test_narrow_idea_retains_no_implicit_operand_reference",
+    "line": 62,
+    "text": "assert store.refs[second].tolist() == [-1, -1, -1]"
+  }
+]
