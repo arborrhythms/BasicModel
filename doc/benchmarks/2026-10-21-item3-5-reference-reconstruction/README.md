@@ -1,9 +1,10 @@
 # Reconstruction reads the bind — 2026-10-21
 
 Status: source frozen at `3a9db635e69e87c17dc50c13c42c2f3eee10910f`;
-all requested scoped gates pass and Claude recommends landing. Publication
-is held for Alec's new design decision in [spec §14](../../plans/2026-10-21-reconstruction-reads-the-bind.md#14-codex-post-implementation-review--2026-10-21-stopped-for-alec),
-under the handoff's stop rule for new questions.
+all requested scoped gates pass. Claude approved landing in [spec §15](../../plans/2026-10-21-reconstruction-reads-the-bind.md#15-claudes-review-of-line-1-and-of-the-delegated-review--2026-10-21),
+and Alec authorized publication with receipts `63c600712`, without further
+gates. R10 is decided as a separate repair before step 2. The earlier
+hold and probe below remain the historical record.
 Authority: [spec §§8–13](../../plans/2026-10-21-reconstruction-reads-the-bind.md).
 The grammar contract commits are `15f154dca` and `eb858be39`; their
 [receipt](../2026-10-21-item3-5-grammar-contract/README.md) retains every
@@ -121,3 +122,17 @@ plus **87** arrival departures. This corrects the tally without changing
 the review, its null conclusion or any gate outcome. The review's raw text
 is preserved. Marker status from historical occupations is carried with
 parts-of-speech work, and the gap exemption is clarified in spec §8.
+
+## Publication decision — 2026-10-21
+
+Claude's §15 review accepts the source and these receipts. Alec decided
+that the trial-local own-object record is the token before the sentence
+closes: it must retain the site's content while remaining anonymous and
+pending. He explicitly authorized publishing line 1 first, with no more
+gates. The R10 source repair, repeated-name gate and scoped reference-file
+run follow in a separate frozen commit, with their own receipt and Claude
+review. The historical `publication-hold.json` is retained unchanged.
+
+This landing includes Claude's documentation edits and the reviewed step-2
+spec. Production, tests and configuration are unchanged from `3a9db635e`;
+no prior evidence is promoted and no additional gate or sweep is run.

@@ -164,6 +164,18 @@ decided gates of the plans and specs they cite.
 | 9 | **The age-appropriate corpus** | Wordbank → `interpret` → AO-CHILDES by age band ([FutureWork, gradual training](FutureWork.md)) | text; supplied answers where the corpus has them | the stall diagnostic flat per level | everything above, at scale; item 3's corpus |
 | 10 | **The full train** | the target corpus (item 0) | — | the standing gates unchanged or better | — |
 
+**Word classes in order (Alec, 2026-10-21; built in item 3).** Parts of
+speech are learned "in virtue of learning certain words first (proper
+nouns, then nouns (mass and non-count), then count nouns (for languages
+that have them)". Proper nouns come from demonstratives, which point at
+events: "this is Felix, that is Felix" makes Felix the class of two
+events, an individual at order 1. Count nouns come from definitions over
+individuals: "Felix is a cat, Ciao is a cat" makes cat a kind at order 2.
+This refines stages 4a and 4b; the mechanism, a raise by equivalence
+class, is [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
+Until it is learned, unit tests force parts of speech (Alec: "they may
+take a while to learn, and we need to test without that").
+
 **Item 6 part 2 amendment (Alec, 2026-10-10).** The
 [identity-from-data lesson design](plans/2026-10-10-item-6-stored-idea-generativity.md#2-identity-from-data-amendment-alec-2026-10-10)
 governs the stage 1 and stage 5 identity lessons: vary object, property and

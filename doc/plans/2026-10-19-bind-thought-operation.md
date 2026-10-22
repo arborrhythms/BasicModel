@@ -536,7 +536,7 @@ capacity gate in §10. Publication is held for that decision and repair.
 | second difference: `position` with a world object; de re = membership evidence; de dicto = LTM0 row with the world as a context whole | occurrence §14.3 | not started; step 5 | step 5 |
 | defaults NP = everything, VP = occurs, MP = all worlds | occurrence §14.4 | spec only | step 5 |
 | minimal operators; no language named; six generated carrier variants | occurrence §13 | spec only; gate at the tense pass | step 5 |
-| generated math suite under `RUN_SLOW`; compiler parity at scale | Testing.md; Training.md | not started | item 3.5 line; item 1 |
+| generated math suite under `RUN_SLOW`; compiler parity at scale | Testing.md; Training.md | not started | item 3 (moved from 3.5, 2026-10-21); item 1 |
 | doc amendments of 2026-10-20 (39 docs) ride with the next landing | this tree | done in tree | step 1b landing |
 | one full sweep, repairs, commit, push, WikiOracle bump and both mains; clean BasicModel tree | landing rule | scoped expression-read and decomposition gates complete; one full landing sweep and publication pending | step 1b landing |
 

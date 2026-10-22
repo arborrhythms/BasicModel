@@ -17,25 +17,19 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 1 is frozen at `3a9db635e`, implementing the
-grammar-only reference-site contract and `reconstruction.reference` under
-[spec §§8–13](doc/plans/2026-10-21-reconstruction-reads-the-bind.md).
+**Current:** Item 3.5 line 1 lands at reviewed source `3a9db635e` with
+receipts `63c600712`, under [spec §15](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#15-claudes-review-of-line-1-and-of-the-delegated-review--2026-10-21).
+All requested scoped gates passed: 233 case executions and seven existing
+prerequisite skips. Claude's verdict is land; Alec authorized publication
+without further gates. R10 follows as its own small commit: the named
+own-object preview record keeps its content before the kept close writes
+the token. It gets the repeated-name gate and scoped reference files,
+then Claude's review and publication; no fresh series or sweep. Line 2
+then follows the decided [one-LTM spec](doc/plans/2026-10-21-step2-one-ltm.md).
 The [receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)
-records its source audit and all requested scoped gates: 233 passed case
-executions and seven existing prerequisite skips. The prior contract
-source `eb858be39` passed its scoped files and both fresh pending-premise
-orders; those results are not promoted to the new hash. Claude recommends
-landing with no blocker, but publication is held under the handoff's rule
-for new questions: [spec §14](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#14-codex-post-implementation-review--2026-10-21-stopped-for-alec)
-asks whether a named own-object record should retain its own content.
-The probe finds a 0.1 same-close cost versus zero after the close. Claude
-and Codex recommend retaining the content; Alec decides its disposition.
-Step 1b is
-published at BasicModel `cf61b5678` / WikiOracle `4a9527f`; its §22 review
-reopens nothing. Line 2 follows the decided
-[one-LTM spec](doc/plans/2026-10-21-step2-one-ltm.md). Order in the parts of
-speech and learning parts of speech remain in FutureWork, to be decided
-before item 3. No learning claim is made.
+retains the prior hold, probe and every failed run. Step 1b is published
+at BasicModel `cf61b5678` / WikiOracle `4a9527f`. Item 3's order and
+parts-of-speech work remains outside 3.5. No learning claim is made.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -705,10 +699,11 @@ not by a passing identity lesson.
 
    Step 1b is published at `cf61b5678` ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
    Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
-   line 1, the grammar contract and reconstruction reading the bind, is
-   frozen at `3a9db635e` under [spec §§8–13](doc/plans/2026-10-21-reconstruction-reads-the-bind.md),
-   with all scoped gates passing and Claude recommending landing. Publication
-   waits for Alec's new §14 decision, recorded in its [receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md).
+   line 1's grammar contract and reconstruction term are Done at reviewed
+   source `3a9db635e`, receipts `63c600712` ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
+   The separately decided R10 repair precedes step 2: preserve the named
+   own object's content in its trial-local record, with the repeated-name
+   and scoped reference gates, a receipt and Claude's review.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
@@ -791,7 +786,9 @@ not by a passing identity lesson.
      rows; today's Part store merges in as the LTM1 stratum; a relation's
      argument needs no mint (recommended: §10.1's close-time mint ends,
      minting by recurrence only), and a referenced LTM0 row is protected
-     from forgetting while referenced.
+     from forgetting while referenced. Alec, 2026-10-21: the classes are
+     renamed to match, `TernaryTruthStore` → `LTM0` and `PartStore` → `LTM1`,
+     as round 2a's first commit ([step 2 spec](doc/plans/2026-10-21-step2-one-ltm.md)).
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.
@@ -812,6 +809,11 @@ not by a passing identity lesson.
      context whole (§14.2 Alec's, §14.3 the minimal mechanism decided,
      §14.4 defaults NP=everything / VP=exists (read "occurs") / MP=all
      worlds, §14.5 open).
+   - *Direction (Alec, 2026-10-21, tentative):* "probably verbs do too"
+     become objects at their determination, "so we can bind those to help
+     Modality": a verb's event, determined by its tense, aspect or modal
+     operation, would be an MTM object bindable like a noun phrase. Spec
+     with step 5.
    - **The second difference: the modal as the verb phrase's preposition
      over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
@@ -828,7 +830,6 @@ not by a passing identity lesson.
    - **Direct-operand word classes** — the distributional categorizer
      ([parts-of-speech §3](doc/specs/2026-10-18-parts-of-speech.md#3-how-the-categorizer-is-learned-decided-membership-is-not-taught));
      output typing deferred (§4).
-   - **Order-2 kinds** (§15 item 5).
 
    *From item 5.5* (its entry above; [mechanism-round review and follow-ups](doc/plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
    - Retire the legacy clock `timestamp` column and `Clause.eternal`
@@ -868,31 +869,322 @@ not by a passing identity lesson.
      offset-independence, addressed-chain, interleaving, preposition and
      surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
 
-   - **Priming diffusion** (Alec, 2026-10-20): spreading activation stays
-     on by default at a small `primingSpread` (0.05, down from 0.25); the
-     step 1b carries the config default and the symbolic graph along the
-     one store's `Part(x, y)` edges, including word-to-sentence membership
-     read from the retained derivation. Per the later
-     [Orders §9 amendment](doc/Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided),
-     item 3 carries per-order strata, geometric overlap only at order 0,
-     and placement with its declared read point. One conservative budget;
-     no N×N matrix ([Architecture, priming](doc/Architecture.md)).
-   - **The generated math suite under `RUN_SLOW`** (Alec, 2026-10-20): a
-     generated, graded corpus of mathematical sentences in English that
-     trains a grammar for real, at scale, with the learning claims as its
-     gates (names and equality, roles, decomposition, `what` bound,
-     conditionals and counterfactuals, ellipsis, generics, attribution,
-     the inverse verb and the verb groups' exact bases, the carrier
-     variants) — [Testing](doc/Testing.md#fast-regression-and-slow-experiments),
-     coverage in [Training](doc/Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
-     The same run is item 1's compiler parity test at scale (compiled and
-     eager agree in actions, probabilities, costs, updates). Built from the
-     `MM_math_chain` generator in the Viterbi order; throughput recorded,
-     since item 1's runtime is where it bites.
+   - **Priming diffusion** (Alec, 2026-10-20): the step-1b part (default
+     `primingSpread` 0.05, diffusion along the one store's `Part(x, y)` edges
+     and word-to-sentence membership) landed with step 1b (`cf61b5678`);
+     strata, order-0 geometry and placement are item 3's.
+   Moved to item 3 (Claude, 2026-10-21, at Alec's invitation): order-2
+   kinds, kind-level verbs and the generated math suite.
    Not here: dimensional `lift`/`lower` (FutureWork); the 6.5, 6.2 and 6.1
    learning gates and 9's and 8's empirical evidence (item 0). Exit: the
    list above empty, each line with a receipt hash or a written move.
-- **3. Corpus at target size.** *Added 2026-10-20 (Alec):* placement from
+- **3. Corpus at target size.** *Moved from FutureWork (Alec,
+   2026-10-21):* **orders are learned, not written into the grammar**
+   (design record below).
+   Alec: "we need not create an ordered grammar, because we have the
+   rule that raises order." Parts of speech stay order-free.
+   - **The definition: IS and its raise.** An equality writes an LTM1
+     row and changes no order. When a second, distinct member joins
+     the same side, the shared referent is raised one order and the
+     word is given the raised concept as its object. "The same side"
+     is the symbol the mentions read to, through their reading rows.
+     Distinct means two events at different places or times, or two
+     different identities in MTM, so "y is three. x is three." raises
+     nothing. The trigger is the second member joining the singleton
+     the equality's close marks (`PartClosing` ≈325);
+     `ConceptIndex.index_part_row` performs the raise, which has no
+     live caller today and must wait for that second row. This creates
+     individuals ("this is Felix, that is Felix": 0 to 1) and kinds
+     ("Felix is a cat, Ciao is a cat": 1 to 2).
+   - **Return to S0 by lowering.** Three compositions each lower one
+     order, stopping at 0: the determiner, whose output then follows
+     its noun's order instead of the fixed order 1
+     (`ReferenceContext.operation_order`); NP + VP, predication
+     (`LiftLayer.order_delta` becomes one down); and VP + MP, the
+     modal over possibilities. 3.5's step 5 builds the modal itself;
+     its lowering is this line's. The determiner's change comes after
+     the raise works, since every noun starts at order 0.
+     Open, to decide before building: [Orders §7](doc/Orders.md#7-grammatical-operations-are-order-operations)
+     (2026-10-16) makes a determined mass noun ("the water") an
+     individual at order 1, while the lowering rule would leave it at
+     0; "the explosion" raises the same question. The comments at
+     `Language.py` ≈627 and ≈1577 still say `lift` raises order;
+     `LiftLayer.order_delta` is 0 today.
+   - **Every symbol's order; folds with definitions** (Alec, 2026-10-21;
+     design record below).
+     Every concept has an order, but 0 doubles as "unknown", a recorded
+     order overrides structure unchecked, relation rows always read 0,
+     and a test-only API keeps an outdated ladder. Alec: keep both the
+     explicit and the implicit definitions. Several DEF rows in LTM1
+     that share a side train the fold the symbolic order loop uses,
+     and "their match or mismatch is a judgement process, just as in
+     human cognition", carried in the two truth lanes. Both raises
+     still need two distinct members, with thresholds by strength of
+     evidence. The fold raise runs only in `XOR_exact.xml` today.
+   - **Learning parts of speech** follows the same order: proper
+     nouns, then mass nouns, then count nouns where the language has
+     them. Until this lands, 3.5's order-1 stand-ins stay, and unit
+     tests force parts of speech.
+   - **Design record: order in the parts of speech** (moved from
+     FutureWork, 2026-10-21).
+
+     Alec: "Would the grammar benefit from order? … how do we learn that some
+     nouns are categorically different than others in a cognitive sense, and
+     live at a higher order? A collapse to NP is, in some real sense, not
+     correct." Moved here from FutureWork (Alec, 2026-10-21). The
+     paragraphs below are the design record of the lines above, in the
+     order they were written; later paragraphs supersede earlier ones.
+
+     **The gap.** Parts of speech are recorded as occupations of operand
+     positions, with no order (`PartsOfSpeech.observe_kept`), so every noun
+     falls in one category. Participation cannot separate "cat" from
+     "species": both take determiners. Only order relations across a sentence
+     can: in "the cat is a species", species sits one order above the cat.
+     Kind-level verbs such as "die out" or "spread" (item 3) likewise take
+     only kinds as subjects, which a flat category cannot say.
+
+     **Two order-1 stand-ins in item 3.5.** Without order in the parts of
+     speech, 3.5 works with two assumptions
+     ([reconstruction spec §12](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#12-decided-alec-2026-10-21-latest-a-name-is-order-1-by-its-reading-the-fixtures-supply-it)):
+
+     - A determiner always outputs order 1 (`ReferenceContext.operation_order`),
+       whatever its noun, and never raises the noun. "The cat" comes out
+       right. "The explosion" should pick out one event at order 0, and
+       "a species" one kind at order 2; both come out as order-1 individuals.
+     - A bare word is order 0, a type standing for itself, until something
+       says otherwise. A bare name such as Felix should be order 1. The parse
+       cannot tell a name from an event word, so 3.5's fixtures supply the
+       name's order.
+
+     **History.** The May 2026 order-typed grammar (plan
+     `2026-05-20-knowledge-artifact-order-typed-stm`, git `6c92c790c`)
+     declared `NP3`, `NP4`, `VP1` and `S4 = lift(NP3, VP1)`, with polymorphic
+     forms `NP*`, `NP*+1` and `NP*-1`; lift raised order and lower lowered
+     it. The grammar was later collapsed to role-only positions, with
+     categories recovered from participation ([Language](doc/Language.md#grammar)).
+     `Grammar._parse_category` still accepts the old forms, and
+     `test_role_collapsed_grammar` bans them from shipped grammars. That scale
+     also differs from [Orders](doc/Orders.md): lift now keeps its subject's
+     order.
+
+     **Claude's recommendation.**
+
+     - *Relations, not constants.* Each rule states how its operands' orders
+       relate: lowering one down, membership one up, equality the same. Fixed
+       labels such as `NP3` would declare a word's order in advance, a lexical
+       fact the grammar-only contract excludes.
+     - *Inferred, not filtered.* The parse solves for orders as type
+       inference does, and a word whose position requires a higher order is
+       raised through the existing raise (`ConceptIndex.index_part_row`). The
+       chooser does not filter by order, so nothing is blocked while every
+       word starts at order 0.
+     - *Parts of speech carry it.* Occupations are recorded by position and
+       order, so a noun at order 1 and a noun at order 2 are different parts
+       of speech, learned from participation.
+
+     This replaces both stand-ins: a name becomes a noun at order 1 by its
+     occupations, and a determiner's output follows its noun's order. It
+     changes the parser, the occupation records and the determiner fixtures,
+     so it belongs with item 3's order-2 kinds and kind-level verbs, not in
+     3.5.
+
+     **Learning parts of speech (Alec, 2026-10-21).** "We need to learn parts
+     of speech. Much of that work will be in virtue of learning certain words
+     first (proper nouns, then nouns (mass and non-count), then count nouns
+     (for languages that have them)." Claude's reading: this order follows
+     the orders. Names are individuals at order 1 and need no determiner.
+     Mass nouns are types at order 0. Count nouns are kinds at order 2, which
+     a determiner lowers. Each stage therefore gives the parse one new order
+     class to infer. Stages 4a and 4b of the
+     [curriculum](doc/Training.md#the-generated-supervised-curriculum-in-order-alec-2026-10-09)
+     are where this order would go. Until parts of speech are learned, unit
+     tests force them. Alec: "Unit tests can force parts of speech; they may
+     take a while to learn, and we need to test without that."
+
+     **Historical marker occupations (Claude's line-1 review, 2026-10-21).**
+     The grammar-only contract is implemented as specified: any recorded
+     `surface_argin1` occupation makes that symbol a literal in implicit
+     participant reads and a marker in `PartRead.argument_reader`. This is a
+     history-based classification, not a check of the present occurrence's
+     position. Revisit that distinction with parts-of-speech learning. The
+     `ReferenceContext` comment still calls it an "objectless marker"; update
+     that wording with the future classification work. This is distinct from
+     the root-position and re-identification findings. See the
+     [review](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/claude-review.md);
+     no source change or new learning claim is made in this receipt.
+
+     **The learning sequence (Alec, 2026-10-21).** "This is Felix, that is
+     Felix: 0 → 1. Felix is a cat, Ciao is a cat: 1 → 2." Demonstratives
+     ("this", "that") point at events, at order 0. Alec: "'Is' does not
+     cross order by itself, but when used with multiple identical RHS or
+     LHS, it creates an equivalence class." The class is one order above its
+     members: the events this and that make Felix, and Felix and Ciao make
+     cat. This is Frege's definition by abstraction, as a direction is the
+     class of lines parallel to a given line. Since no one asserts "a is a",
+     nearly every definition adds a second member to some class. "Paris is
+     the capital of France" is the identity case: both sides pick out one
+     individual, and the definite article allows no second subject, so no
+     class forms and nothing is raised. A determiner's lowering picks a
+     member out of such a class. In the code today, binding occurrences into one identity yields
+     an order-1 identity concept, but the word itself stays at order 0. The
+     raise of a parent above its part (`ConceptIndex.index_part_row`) has no
+     live caller, so closing "Felix is a cat" does not raise cat yet.
+
+     **Where the two sentences are stored (open; decide with this entry).**
+     Alec: "in the two sentences I gave, we have an S1 and an S2, possibly
+     (which would be stored in LTM1 and LTM2, I guess?)". As decided for step 2
+     ([step-2 spec](doc/plans/2026-10-21-step2-one-ltm.md), S9), strata are
+     structural: a relation over LTM0 objects is LTM1, and one whose argument
+     is a relation row is LTM2. Both sentences are therefore LTM1 rows, and
+     their orders 1 and 2 belong to Felix and cat, in the conceptual order.
+     Alec's reading would put each relation in the stratum of the class it
+     adds to, so "Felix is a cat" would be LTM2. LTM2 is derived when read, so
+     this changes how rows are read, not how they are stored, and step 2
+     proceeds as decided. In either reading, the sentence as read is an
+     order-0 occurrence in LTM0, linked to its content by the reading row;
+     closing a sentence changes no order.
+
+     **Learned orders instead of an ordered grammar (Alec, 2026-10-21).** Alec:
+     if UG learns the ordered grammar, none need be written, "because we have
+     the rule that raises order." Claude checked this against the code the same
+     day. The operations already express the ordered rules: lift, verb and the
+     relations keep order, and equality is stored as membership in a singleton,
+     changing no order. Three pieces are missing before the orders are learned:
+
+     1. **The raise is not wired.** `ConceptIndex.index_part_row` is called
+        only by tests, the close's `_index_part_row` hook is never read, and a
+        grammar-requested order only selects an existing concept
+        (`ConceptualSpace.resolve_word_concept`); it never creates a raised one.
+     2. **Nothing forms a class from repeated "is".** Equality rows that share
+        a side are never grouped, and a word's object is set only inside
+        `Interpret`, never from a closed sentence. After "this is Felix, that is
+        Felix", Felix still reads at order 0.
+     3. **The determiner's output is fixed at order 1**
+        (`ReferenceContext.operation_order`). It can follow its noun's order
+        only after nouns are raised, since every word starts at order 0.
+
+     The raise needs one condition: the shared side must hold two different
+     identities, or two different events. Otherwise "y is three. x is three."
+     would raise three, though x and y are both bound to three itself. With
+     these three pieces, parts of speech can stay order-free, because the order
+     lives in the concepts. Claude's earlier recommendation to record
+     occupations by position and order would then be unnecessary.
+
+     **One raise, three lowerings (Alec, 2026-10-21).** "So we need IS and it
+     needs to raise the order when necessary. And two things lower the order:
+     a determiner and the combination of NP and VP." He added the third, "vp
+     mp for modal". Why predication lowers
+     (Claude): a noun phrase names a class at order n, the invariant across
+     its members, as an individual is the class of its occurrences. A verb is
+     the step between two of those members (the occurrence spec's first
+     difference), so it holds at some members, not at the class as a whole.
+     "Felix runs" therefore picks out occurrences of Felix, at order 0, one
+     below Felix. A kind-level verb does the same one order up: "dodos died
+     out" is a change across the kind's members, at order 1. At order 0 the
+     step stops: a mass noun's instances are located portions, still order 0
+     ("water flows"). The determiner lowers for the same reason, picking a
+     member out of a class, and IS raises, collecting members into one. The
+     modal lowers the same way: it ranges over possible worlds, so a verb
+     phrase under it holds in some of them, not all, and the combination
+     lands among those possibilities, one order down. In the
+     code, `LiftLayer.order_delta` would become one down, stopping at 0. That
+     leaves sentences about individuals at order 0, as now, and changes only
+     sentences whose subject is a kind.
+
+     **Creating individuals by the same rule (Alec, 2026-10-21).** Alec: "def
+     will create LTM1 that, once there are multiple LTM1 that have the same
+     side, raise the order of the referent LTM0. Might this work even for
+     creation of Felix in the first place?" Claude: yes. "This is Felix" writes
+     one LTM1 row from the event "this" to Felix, and nothing is raised.
+     "That is Felix" writes a second row with the same right side and a
+     different event, so Felix is raised to order 1: the class of those events,
+     which is what an individual is. Hooks in the code: an equality's close
+     already marks its right side a singleton (`PartClosing`, ≈325), so the
+     raise fires when a second, distinct member joins that singleton.
+     `ConceptIndex.index_part_row` already performs the creation, making a
+     concept one order up that inherits the name's forms and holds the member;
+     it raises on its first call, so the trigger must wait for the second row.
+     Three conditions are new:
+
+     1. "The same side" is read through each mention's reading row, since
+        every mention of Felix is its own LTM0 occurrence; what the rows share
+        is the symbol those mentions read to.
+     2. The other sides must be distinct: two events at different places or
+        times, or two different identities in MTM.
+     3. The word must be given the raised concept as its object. Today a
+        word's object is set only inside `Interpret`, so "Felix" would keep
+        reading to itself at order 0.
+
+     In 3.5, Felix is created differently: with its order forced to 1, its
+     first mention becomes its own identity in MTM, later mentions bind to it,
+     and step 2 promotes the identity after three sentences. This rule comes
+     before that, as the way a name reaches order 1 at all; binding and
+     promotion then proceed unchanged.
+
+     **Every symbol's order; folds and definitions (Alec, 2026-10-21).** Alec:
+     "please verify that all symbols have an identifiable order, and let's
+     coordinate the use of folds to increase order and the use of definition;
+     it may amount to implicit vs explicit learning, but we need to make sure
+     they play nicely with one another." Claude checked the code the same day.
+
+     *Orders.* Every concept has an order from `ConceptAllocator.order_of`: a
+     recorded order first, else one above its highest symbolic part, else 0.
+     Words record 0 at admission, identities 1, and a raised taxonomy parent one
+     above its member. LTM rows carry their own order column, read when a row is
+     not an allocator concept. An unnamed learned row takes the order of its
+     storage slice (`ConceptualSpace._row_order`). MTM tokens record no order
+     but hold only individuals. Four gaps:
+
+     1. 0 is also the default, so "order 0" and "never identified" read the
+        same; a new name and an event type cannot be told apart.
+     2. A recorded order overrides structure unchecked. One disagreement exists
+        today: a raised symbol over raw codes reads 0 from the allocator and 1
+        from `ThoughtConceptualCapability.order`, which takes the larger of its
+        order and its raised flag.
+     3. A relation row's handle has no parts, so every LTM1 relation reads
+        order 0 as a symbol, whatever it relates.
+     4. `conceptualize`, called only by its own test, keeps an outdated ladder
+        (order 1 "object isa word", order 2 "higher-order object").
+
+     *Folds and definitions.* The fold raise (`ConceptualSpace.maybe_raise_order`,
+     in the promotion pass, enabled only in `XOR_exact.xml`) gives two rows of
+     one order that occur in matching contexts a parent row one order up,
+     recorded as weighted edges between rows, which `order_of` does not read.
+     The definition raise (`ConceptIndex.index_part_row`, unwired) writes a Part
+     edge and a recorded order. So one class could be made twice, with its order
+     read two ways. Orders §9 already decided the remedy: above order 0 nothing
+     is stored but `Part(member, whole)` edges, and centroids are derived
+     caches. Claude's proposal:
+
+     - *One membership record.* Both raises add the class's members as Part
+       edges, so one reader derives every order; the fold's row weights become a
+       cache over that membership.
+     - *One class per member set.* A definition whose members already form a
+       fold class names that class instead of making a second one, and a fold
+       over members of a named class joins it. Implicit learning finds classes,
+       explicit learning names them, and they meet when a word is given a class
+       already found.
+     - *One distinctness rule.* Both need two different members. The fold raise
+       already requires the matched row to be absent from the current field.
+     - *Thresholds by strength of evidence.* A definition raises at its second
+       distinct member. The fold raise keeps its context match and, above
+       order 0, its stalled-refinement gate.
+
+     **Integration by training (Alec, 2026-10-21).** "I think that multiple
+     DEF in LTM1 can be used to train the fold being used in the symbolic
+     order loop, and that's really all we need for integration. We can
+     keep the explicit and implicit definitions, and their match or
+     mismatch is a judgement process, just as in human cognition." This
+     supersedes the proposal above of one membership record and one class
+     per member set; its distinctness rule and thresholds stand. Claude's
+     reading: a class built from DEF rows supplies the fold's target, so
+     the fold over those members should reach that class. The judgement
+     needs no new machinery. A definition is evidence for membership and
+     the fold's own reading is evidence too; agreement fills one lane,
+     and a mismatch fills both, the corner already decided to prompt
+     refinement (Alec, 2026-09-23). The lanes are never netted.
+
+   *Added 2026-10-20 (Alec):* placement from
    the registered priming surface — SBOW's context is the surface after
    the seen bumps and the symbolic diffusion, before the conceptual
    channel; the objective in the cube's own metric (raise the meet ratio
@@ -917,6 +1209,22 @@ not by a passing identity lesson.
    union of clipped consequents; no parameters; after step 2); it leaves the knowing set, from
    which the answer and output are composed; expectation stays the
    bottom-up gain and its three top-down reads move to `intuit`.
+   *Moved from item 3.5 (Claude, 2026-10-21, at Alec's invitation):*
+   **order-2 kinds** (item 6 plan §15, item 5) and **kind-level verbs**
+   (step 4's verb groups acting on a kind's extension over time, such as
+   "die out" or "spread"), both on the per-order spaces above; and
+   **The generated math suite under `RUN_SLOW`** (Alec, 2026-10-20): a
+   generated, graded corpus of mathematical sentences in English that
+   trains a grammar for real, at scale, with the learning claims as its
+   gates (names and equality, roles, decomposition, `what` bound,
+   conditionals and counterfactuals, ellipsis, generics, attribution,
+   the inverse verb and the verb groups' exact bases, the carrier
+   variants) — [Testing](doc/Testing.md#fast-regression-and-slow-experiments),
+   coverage in [Training](doc/Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20).
+   The same run is item 1's compiler parity test at scale (compiled and
+   eager agree in actions, probabilities, costs, updates). Built from the
+   `MM_math_chain` generator in the Viterbi order; throughput recorded,
+   since item 1's runtime is where it bites.
    *Takes from item 4 (Alec, 2026-10-19,
    [spec §3.1](doc/specs/2026-10-08-expectation-at-every-level.md#31-withdrawn-the-unfolding-by-inversion-rev-3--moved-to-item-3)):*
    the invertible-path program — exact inverted targets for the maps,
@@ -1002,7 +1310,7 @@ not by a passing identity lesson.
    §12 headings still say "(uncommitted)" and its table lists `bind` as
    open (decided, thought-loop plan §3–§4).
 - **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
-   `RUN_SLOW` (item 3.5) is the compiler test at scale — compiled and eager
+   `RUN_SLOW` (item 3, moved from 3.5 on 2026-10-21) is the compiler test at scale — compiled and eager
    runs of the identical corpus, seed and budget agree in actions,
    probabilities, costs and parameter updates. *Added 2026-10-04:* the open read of 6.8-1 made the
    whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
@@ -1051,6 +1359,9 @@ not by a passing identity lesson.
   unregistered. Measure live closure at the trained checkpoint; correct-or-open
   is the step-1b mechanism gate. Arrival menus remain excluded from delayed
   mention training and answer supervision, carried here under bind plan §19.
+  Under the grammar-only contract, x is a site only when its reading is
+  order 1; this certificate gets no fixture order, so learning that a name
+  reads at order 1 is part of what it must show (reconstruction spec §12).
 
 - **0. The full training session**: the long FineWeb run, only with items 11–2
    done and item 1 measured. Expectation on in `model.xml`; the
@@ -1113,6 +1424,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 line 1 — grammar-only reference sites and reconstruction reads the bind:** reviewed source `3a9db635e`, receipts `63c600712`; Claude verdict land, all scoped gates pass, R10 follows separately ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
 
 - **Item 3.5 step 1b — native binding, MTM and participant menus:** reviewed source `cc3672cfb`; all requested gates pass, seven prerequisite skips and two nonblocking root-position follow-ups declared, no learning claim ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
 

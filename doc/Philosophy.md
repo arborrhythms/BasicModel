@@ -1754,6 +1754,27 @@ pair seen from the shared index — a symbol is one situated occurrence, a
 concept is the meet over occurrences, the set of a symbol's activations is
 the union — and a minted individual carries all three.
 
+## Explicit and Implicit Definitions, Judged Together (Alec, 2026-10-21)
+
+Order is learned in two ways. Implicitly, a fold collects two things that
+keep occurring in matching contexts under a class one order up; nothing
+names the class. Explicitly, definitions do it: "is" is identity at one
+order, but several "is" statements that share a side, with different
+things on the other side, make an equivalence class, which sits one order
+up. "This is Felix, that is Felix" makes Felix the class of two events; "Felix
+is a cat, Ciao is a cat" makes cat the class of two individuals. This is
+Frege's definition by abstraction.
+
+Alec keeps both: "We can keep the explicit and implicit definitions, and
+their match or mismatch is a judgement process, just as in human
+cognition." The definitions also teach the fold, so what is said trains
+what is noticed. When the two agree, one truth lane fills; when they
+disagree, both fill, and that corner is the prompt to refine. Neither
+overrides the other, and the lanes are never netted. Implicit learning
+finds classes; explicit learning names them; a word learned for a class
+already found is where they meet. The mechanism is
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

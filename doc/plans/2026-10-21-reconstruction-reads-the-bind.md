@@ -2,8 +2,9 @@
 
 **Status:** Alec's decisions are §§8–13, superseding the earlier open
 choices. Implemented in frozen `3a9db635e`; all scoped gates pass and Claude
-recommends landing. Publication is held for the new question in §14 under
-the handoff's stop rule. Evidence and review are recorded in the
+approved landing in §15. Alec decided R10 there and authorized line 1
+publication without further gates; R10 follows separately before step 2.
+The historical hold remains in §14. Evidence and review are recorded in the
 [line-1 receipt](../benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md).
 The original proposal is bind plan §20, decision 2 ("Maybe reconstruction
 should read the bind?"). The original code facts below describe `bb1678d17`.
@@ -658,8 +659,9 @@ name needs none.
 
 **Stand-ins, not the design.** The fixtures' order-1 readings and the
 determiner's fixed order-1 output stand in for order in the parts of
-speech, which Alec will decide before item 3
-([FutureWork](../FutureWork.md#order-in-the-parts-of-speech-alec-2026-10-21-decide-before-item-3)).
+speech. Item 3 replaces them with learned orders: IS raises, and the
+determiner, NP + VP and VP + MP lower
+([todo item 3](../../todo.md)).
 3.5's binding concerns individuals, where both hold.
 
 **Gates, added to §10's.** G2 as ported. The forced pending-premise
@@ -684,7 +686,7 @@ Alec: "We need to learn parts of speech. Much of that work will be in
 virtue of learning certain words first (proper nouns, then nouns (mass
 and non-count), then count nouns (for languages that have them)." This is
 deferred to item 3, with order in the parts of speech
-([FutureWork](../FutureWork.md#order-in-the-parts-of-speech-alec-2026-10-21-decide-before-item-3)).
+([todo item 3](../../todo.md)).
 3.5 adds no part-of-speech learning, and its order-1 stand-ins (§12)
 remain until then.
 
@@ -739,3 +741,70 @@ above; the historical-occupation marker limitation is carried with parts
 of speech; and copies of both original decomposition snapshots are retained
 in the receipt for publication. No second sweep or learning claim follows
 from these documentation changes.
+
+## 15. Claude's review of line 1 and of the delegated review — 2026-10-21
+
+Reviewed: frozen source `3a9db635e` with `15f154dca` and `eb858be39`, the
+receipts in `63c600712`, the delegated read-only
+[review](../benchmarks/2026-10-21-item3-5-reference-reconstruction/claude-review.md)
+and §14.
+
+**Verdict: land `3a9db635e`.** Line 1 implements §§8–13 as decided. The
+delegated review is accurate on every point I checked. Codex corrected its
+count of closing departures from 11 to 15, which changes no conclusion.
+
+**Checked against the source.**
+
+- *Contract.* The journal opens a provisional bind request only for a leaf
+  stamped 1, with its own content; `close_member` requires order 1 and a
+  participant position. `resolve_lexical_references` and
+  `reference_requests` take no lexical flag. The bank's marker set reads
+  `surface_argin1` alone, and `PartClosing.preflight` finds markers by their
+  surface position in the plan. Both `ReferenceClose.sites` recovery branches
+  require a participant leaf stamped 1 that carries the forward name, and keep
+  its content and order. `PartRead.argument_reader` reads only the symbol's
+  own occupations.
+- *Term.* `ReferenceReconstruction.cost` skips unselected items, mints, own
+  objects and wordless gaps, and empty content costs zero. Both operands are
+  coordinates: the query at the preview, the candidate in the cost. A
+  narrower candidate leaves its missing coordinates uncovered. The term is
+  registered once after the preview, with baseline 1, the active mask and the
+  validated weight.
+- *Fixtures.* The order supplies and the three lexical-check ports match
+  §§12–13 and are listed in the contract receipt; the failed unstamped run is
+  retained.
+
+**Additional observations.**
+
+1. R10 is confirmed at `ReferenceClose.preview` ≈791–797. The probe shows a
+   second effect: the resolver's features for that same-sentence candidate
+   are all zero, so its choice there is a 0.5/0.5 tie. Keeping the content
+   affects what the resolver can learn, not only R.
+2. The term's live evidence is null by construction: x has no conceptual
+   coordinates, and arrivals are excluded. The unit gate is the only nonzero
+   evidence, which suffices for a mechanism landing.
+3. The contract removed the journal's word-lane guard for mixing-reader
+   addresses. The carrier certificate and the exact bootstrap replay pass on
+   the frozen source, and the receipt states that no mixing-reader leaf
+   becomes a site. That evidence is accepted.
+4. *How identity accumulates* (Alec asked). A token stores only addresses,
+   kind, count and time. It is opened at its introduction's kept close, and
+   each later bind adds an occurrence. `token_value` reads the identity on
+   demand as the element-wise maximum, a union, of its occurrences' rows and,
+   for an anonymous introduction, its kind. The bind then scores a new mention
+   by the meet: the share of the mention that the union covers. Within the
+   introducing sentence no token exists yet; the preview's stand-in record is
+   R10.
+
+**R10: decided (Alec, 2026-10-21).** "So, the token should exist before the
+sentence closes, no?" It does, as a trial-local record: from the mention on,
+the preview's own-object record is the token that later mentions in the
+sentence bind to. It cannot enter MTM before the close, because two trials
+read each sentence and only the kept one writes. So that record keeps its
+site's content, as the token will read it after the close, and stays
+anonymous and a pending name until an arrival refines it. Line 1 lands now;
+the repair is its own small commit before step 2, gated by a same-sentence
+repeated-name test plus the reference files (sequencing: Claude's
+recommendation). Alec on union versus intersection: "I'm not worried
+about 2 ... Although flag the intersection/union basis of identity as
+future work" ([FutureWork](../FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21)).

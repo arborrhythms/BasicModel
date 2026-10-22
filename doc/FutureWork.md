@@ -1620,3 +1620,23 @@ non-head's recorded occupations, as the ordinary menus already do (a
 non-head whose occupations are marker positions is an attachment, never a
 participant); extend the standalone exception to any order-1 root
 composition, read through its declared head.
+
+## Intersection or union as the basis of identity (Alec, 2026-10-21)
+
+Alec asked whether successive binds intersect an identity, so that it is
+defined progressively, and asked that its intersection or union basis be
+flagged as future work. Today an MTM token stores only addresses, kind,
+count and time, and each kept bind adds an occurrence.
+`ReferenceClose.token_value` reads the identity on demand, never at the
+close, as the element-wise maximum, a union, of its occurrences' rows and,
+for an anonymous introduction, its kind. A new mention is scored by the
+meet: the share of its description that the union covers. The union admits
+partial descriptions: "the black cat" is covered when any earlier
+occurrence said black. An intersection would keep only what every
+occurrence shares, the invariant that [Orders](Orders.md) §2 and §10 make
+the noun's characterization. [Philosophy](Philosophy.md)'s "Identity by
+Intersection and by Union" and Orders §9 already hold both models: the
+intersection as a cache kept while each member's meet with it stays high,
+the set otherwise. Open: which basis the token's read uses for binding and
+which for characterizing the individual, or whether both are kept, as for
+explicit and implicit definitions.

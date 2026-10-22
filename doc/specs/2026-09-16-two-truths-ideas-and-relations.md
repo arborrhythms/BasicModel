@@ -235,7 +235,10 @@ is nominalised as a type (*animal*, *breathing thing*), so both write the
 same kind of row, the cat region part of the predicate's region. "This
 cat breathes" and "the cat is an animal" (definite, a token) are ideas: a
 property of one situation. §7 test 12 asserts this parse from rules
-alone.
+alone. *(Clarified, Alec, 2026-10-21: "cats is not events but multiple
+individuals." The inclusion is between two order-2 kinds over their
+order-1 members, every cat a member of animals, as Orders §3 states; it is
+not containment of order-0 regions. The row is unchanged.)*
 
 **Every S gets exactly one row.** Registration is about *reference*: the
 row is written when the S endings, so anything that refers to it (a later

@@ -5,6 +5,7 @@
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
+> - **Orders are learned (Alec, 2026-10-21; [§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).** No ordered grammar is written and parts of speech stay order-free. Definitions raise, through equivalence classes; the determiner, NP + VP and VP + MP lower, returning to S0. Definitions are kept both as LTM1 rows (explicit) and as folds (implicit), which supersedes "folds, not rows" above; the rows train the fold, and their match or mismatch is judged. Built in todo item 3.
 
 
 *Alec, 2026-10-15, in dialogue with Claude; recorded as decided theory.
@@ -260,3 +261,91 @@ conceptual spaces, but keep all symbols in the mereological space."
 - **Where:** todo item 3, with placement; the stratified surface and the
   per-order kernel land with the LTM2 store (3.5 step 1b carries the
   edges; item 3 carries the strata and placement).
+
+## 10. Orders are learned: definitions raise, three compositions lower (Alec, 2026-10-21; decided, built in item 3)
+
+Alec: "we need not create an ordered grammar, because we have the rule
+that raises order." Orders live in the concepts, not in the grammar's
+categories. Parts of speech stay order-free and come only from the
+grammar's positions and occupations
+([reconstruction spec §10](plans/2026-10-21-reconstruction-reads-the-bind.md#10-decided-alec-2026-10-21-later-parts-of-speech-only-from-the-grammar)).
+The full design record, with the verification against the code, is in
+todo item 3.
+
+**Definitions raise, by equivalence class.** Alec: "'Is' does not cross
+order by itself, but when used with multiple identical RHS or LHS, it
+creates an equivalence class." The class sits one order above its
+members; this is Frege's definition by abstraction, as a direction is the
+class of lines parallel to a given line. The learning sequence (Alec):
+
+- "This is Felix, that is Felix": 0 to 1. Demonstratives point at events,
+  at order 0. Two different events that are both Felix make Felix the
+  class of his occurrences, an individual. The same rule therefore
+  creates individuals in the first place.
+- "Felix is a cat, Ciao is a cat": 1 to 2. Two different individuals make
+  cat a kind.
+- "Paris is the capital of France" is identity: both sides pick out one
+  individual, and nothing is raised. "y is three. x is three." raises
+  nothing either, since x and y are both bound to three itself.
+
+Conditions (Claude's reading, accepted into item 3): "the same side" is
+the symbol the mentions read to; the other sides must be distinct, as
+events at different places or times or as different identities in MTM;
+and the word is given the raised concept as its object. Each definition
+is an LTM1 row; the raise fires when a second distinct member joins the
+singleton an equality already marks.
+
+**Three compositions lower, returning to S0.** Alec: "two things lower
+the order: a determiner and the combination of NP and VP", and "vp mp for
+modal". Each lowers one order and stops at 0:
+
+- The **determiner** picks a member out of a class: "the cat".
+- **NP + VP**: a noun phrase names a class, the invariant across its
+  members, and a verb is the step between two of them (the occurrence
+  spec's first difference). The verb holds at some members, not at the
+  class, so the sentence lands among them: "Felix runs" is an occurrence
+  of Felix at order 0; "dodos died out" is a change across the kind's
+  members, at order 1. A mass noun's instances are already order 0, so
+  "water flows" stays there.
+- **VP + MP**: the modal ranges over possible worlds, the second
+  difference; a verb phrase under it holds in some of them, one order
+  down.
+
+IS raises by collecting members, and these three lower by landing among
+them. This supersedes §5's count for predications, under which a
+sentence about individuals was order 2.
+
+**Explicit and implicit definitions, judged together.** Alec: "multiple
+DEF in LTM1 can be used to train the fold being used in the symbolic
+order loop, and that's really all we need for integration. We can keep
+the explicit and implicit definitions, and their match or mismatch is a
+judgement process, just as in human cognition." The fold raise collects
+two rows that occur in matching contexts under a parent one order up;
+definition rows supply its targets. A definition is evidence for
+membership and the fold's reading is evidence too; agreement fills one
+truth lane and a mismatch fills both, the corner that prompts refinement
+(2026-09-23). The lanes are never netted.
+
+**Every symbol's order.** Each concept has an order: a recorded one
+first, else one above its highest symbolic part, else 0. Item 3 closes
+four gaps: 0 doubles as "unknown"; a recorded order overrides structure
+unchecked; a relation row's handle always reads 0; and a test-only
+formation API keeps an outdated ladder.
+
+**Learning parts of speech** follows the same order: proper nouns first,
+then mass nouns, then count nouns where the language has them. Until item
+3 lands, 3.5 uses two stand-ins: a determiner always outputs order 1, and
+unit tests force a name's order 1 (Alec: "unit tests can force parts of
+speech").
+
+**Open, decided with item 3.**
+
+- *A determined mass or event noun.* §7 (2026-10-16) makes "the water" an
+  individual at order 1, collected by continuity. The lowering rule with
+  its stop at 0 would leave it at 0. The same question applies to "the
+  explosion".
+- *Where a definition is stored.* Step 2 reads a relation's stratum from
+  its argument tags, so both "this is Felix" and "Felix is a cat" are
+  LTM1 rows. Alec's reading would store each in the stratum of the class
+  it builds, putting the second in LTM2. The stratum is derived when read,
+  so this changes reading, not storage.

@@ -7,11 +7,12 @@ records the source audit and all scoped gates passing: 233 passed case
 executions and seven declared prerequisite skips. Twelve distinct fresh
 first draws give 0 bound / 8 open forward and 0 bound / 16 open reverse;
 all 102 actual bind departures tie with zero reference-term difference.
-Claude recommends landing with no blocker. Publication is held for Alec's
-new own-object content decision in reconstruction spec §14: the retained
-probe reads a 0.1 same-close alias cost versus zero on the next close.
-The handoff requires this stop for a new question; production remains
-unchanged. The [contract receipt](../2026-10-21-item3-5-grammar-contract/README.md)
+Claude approved landing in reconstruction spec §15. Alec authorized
+publication without further gates, with receipts `63c600712`, and decided
+R10 as a separate repair before step 2. The earlier probe and hold remain
+retained: a named own-object record must now keep its content before the
+kept close writes it. R10 gets its own frozen source, repeated-name gate,
+scoped reference files and Claude review; no fresh series or sweep. The [contract receipt](../2026-10-21-item3-5-grammar-contract/README.md)
 retains the failed unstamped fixture on `15f154dca`, its authorized order
 port, and the passing contract gates on `eb858be39`. None are promoted to
 the term's source. Step 1b itself is published at `cf61b5678` (WikiOracle

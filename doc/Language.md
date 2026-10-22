@@ -176,6 +176,16 @@ plus `symbolize`. They act within conceptual space at the field's current
 order; what raises order is symbolization, not sigma
 ([11c plan, entry 9](plans/2026-09-24-item-11c.md)).
 
+> **Orders are learned (Alec, 2026-10-21; built in item 3).** No ordered
+> grammar is written; orders live in the concepts
+> ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
+> Definitions raise: several "is" rows that share a side, with distinct
+> other sides, make an equivalence class one order up. Three compositions
+> lower one order, stopping at 0: the determiner, `lift` as NP + VP, and
+> VP + MP. So `lift` will lower rather than keep the subject's order.
+> Parts of speech come only from positions and occupations, never from
+> definitions ([reconstruction spec §10](plans/2026-10-21-reconstruction-reads-the-bind.md#10-decided-alec-2026-10-21-later-parts-of-speech-only-from-the-grammar)).
+
 > **SS-analysis vs CS-execution.** `SymbolSubSpace.compose` is the
 > SS-side *analysis* stage (it selects the per-space hard rule dict
 > `current_rules`); the CS-side *execution* (applying lift / lower /
@@ -287,7 +297,8 @@ VP1)`, `NP*` Kleene forms — for backward compatibility, but that style is
 now **explicitly legacy**: `NP3`, `NP4`, `VP1`, `MP1`, `S4`, and `S5` are
 members of `_FORBIDDEN_STATE_TOKENS` in
 `test/test_role_collapsed_grammar.py`, and no shipped grammar file
-declares any of them.
+declares any of them. None is planned: orders are learned, not declared
+([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
 
 ### GrammarLayer forward / reverse inventory
 
