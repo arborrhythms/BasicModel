@@ -878,7 +878,12 @@ not by a passing identity lesson.
    - The **nested-admission criterion** and its performance: the landed
      shared-run criterion carves 7 of the 17 4e words at shared letter
      pairs (plan, "Before the 4e pass"); scoped to one named marker today.
-   - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after.
+   - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after. *Added (Alec, 2026-10-22):* word adjacency is removed
+     in step 2b with no replacement here: neighbours are distributional
+     information, already carried into a word's meaning by the sentences it
+     occurs in; a whole built from left/right neighbours "is not really
+     characterizing the whole" (withdrawn the same day;
+     [step-2 spec §23](doc/plans/2026-10-21-step2-one-ltm.md#23-decided-alec-2026-10-22-postings-adjacency-and-forgetting)).
    - The spec's certificates, measured: clock-independence,
      offset-independence, addressed-chain, interleaving, preposition and
      surface-inverse ([spec §8](doc/specs/2026-09-30-occurrence-tense-aspect.md#8-tests)).
@@ -939,6 +944,34 @@ not by a passing identity lesson.
      nouns, then mass nouns, then count nouns where the language has
      them. Until this lands, 3.5's order-1 stand-ins stay, and unit
      tests force parts of speech.
+   - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
+     of 3.0"; moved from FutureWork).
+
+     Alec: "The model produces output when it wants to, and it calls ask() or
+     query() when it wants." Inside a thought episode that is already so: the
+     chooser picks query, conclude or output. What remains is whether an episode
+     opens at all. `ThoughtReferences.needs_episode` opens one for a closed
+     sentence with an open slot ("what is x?"), and otherwise only when its live
+     mode is interrogative and its evidence empty, which is how a yes/no
+     question ("is x three?") gets one. Without mode, that question looks
+     exactly like an unasserted "x is three": no open slot, no evidence. Step 2
+     stops storing mode ([step-2 spec §22](doc/plans/2026-10-21-step2-one-ltm.md#22-decided-alec-2026-10-22-mode-is-not-stored));
+     retiring the live mode means offering the episode at every close, with not
+     thinking among the chooser's options, so the decision is learned from the
+     parse's form. The remaining live uses go with it: `question()` in
+     `ThoughtClosing`, the record kind `question` set at write, the asked
+     roles' mask in the expectation image (`Models` ≈20276), and the answer
+     seed that skips interrogative fields (`Models` ≈8700).
+
+     Alec: "The model always gets a chance to say something. But it should
+     learn to say nothing unless it is asked a question." The first half
+     already holds: an output is produced for every row. The second does not:
+     the answer loss masks out rows with no supplied answer (`Models` ≈14193,
+     `_what_answer_target`), so silence is never taught. The teacher, which
+     knows from the data where an answer is expected, gives silence as the
+     target on every other row, and the model learns from the form when to
+     speak. Its gate is a learning claim, measured at item 0.
+
    - **Design record: order in the parts of speech** (moved from
      FutureWork, 2026-10-21).
 
@@ -1205,6 +1238,11 @@ not by a passing identity lesson.
    with the registered context, lower it against negatives; the collapse
    diagnostic as the gate); one metric for SBOW, diffusion and `bind`
    ([FutureWork](doc/FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
+   *Reversed 2026-10-22 (Alec; [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): one conceptual
+   space, concrete and abstract intermingled; the per-order spaces and the
+   stratified surface read below are withdrawn, while the symbol tree, the
+   Part edges as membership, membership by edge and the cross-order
+   diffusion stand. The record:*
    *Added 2026-10-20 (Alec; [Orders §9](doc/Orders.md#9-per-order-conceptual-spaces-ramsified-over-one-symbol-tree-the-stratified-priming-surface-alec-2026-10-20-decided)):*
    **per-order conceptual spaces, ramsified over the one symbol tree** —
    order *n*'s space is the cube over the order-(*n−1*) symbol index, its

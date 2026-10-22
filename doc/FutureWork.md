@@ -58,10 +58,11 @@ are not taking advantage of."
   the negatives are the brake and the existing collapse diagnostic (the
   mean meet ratio against random codes must not rise while the ratio
   against context rises) is the measurement.
-- **The read points.** Placement reads the **order-0 stratum** of the
-  surface (Orders §9) after the seen bumps and the edge diffusion and
-  **before** the order-0 geometric channel; chooser and attention read the
-  full surface, all strata. Codes never read what was computed from codes (Architecture,
+- **The read points.** Placement reads the surface, one space for every
+  order ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3), 2026-10-22; the stratified read of
+  Orders §9 is reversed), after the seen bumps and the edge diffusion and
+  **before** the geometric channel; chooser and attention read the full
+  surface. Codes never read what was computed from codes (Architecture,
   priming guard).
 - **Where.** Phase 1 pretraining (`embed.py`, SBOW/CBOW) and the online
   code updates of the codebook; todo item 3 carries it with the corpus,

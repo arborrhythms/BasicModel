@@ -544,8 +544,9 @@ relation `Part(x, y)`, read by argument tags and types:
   site (the `what` mention); its mode is derived from that.
 - *Order:* a lowered token's order cannot be read from its reading (the
   inline lower writes no edge and the root is the kind). Decision for
-  Alec below: keep `order` as a justified LTM0 column until item 3's
-  per-order spaces carry it in the concept.
+  Alec below: keep `order` as a justified LTM0 column until item 3
+  carries it in the concept (its recorded order and Part edges; one
+  conceptual space since 2026-10-22, Orders §10).
 
 2a deletes none of these sources. Line 1 no longer needs `recorded_words`.
 
@@ -1177,3 +1178,178 @@ not a permission request for the already completed 2a work. The next
 implementation must start from the published 2a source after these
 dispositions. No second sweep, no learning claim, and no item-3.0
 transition.
+
+## 20. Claude's answers to §§18–19 — 2026-10-22
+
+**The `where` cull.** Reviewed `d4f316411`, published as `0b030e3eb`: the
+column, its write, its export and the frame field are gone, an old
+checkpoint drops the column on load, and the new location test covers both.
+No finding.
+
+**The three layout questions, completing S2 and S7.**
+
+1. *The participant edge.* A sentence occurrence's role 0 is read through
+   its reading row and its derivation, never through a separate role edge.
+   `Part(OCC S, SYM root)` names the derivation root; the root's operation
+   declares the participant position (for `lift`, `argin1`), and that
+   argument is the child occurrence, tagged `OCC F`. Worked layout for
+   "Felix runs" after an earlier mention F of Felix: LTM0 holds F and S;
+   LTM1 holds F's reading `Part(OCC F, SYM felix)`, the derivation edge
+   `e = lift(OCC F, SYM runs)`, and S's reading `Part(OCC S, SYM e)`. The
+   forgetting fixture's parent-to-child dependency is that argument: S
+   reaches F through e. No untyped role edge exists.
+2. *A surviving occurrence keeps its reading.* An occurrence owns its
+   reading row. The row lives and dies with the occurrence: it is never
+   chosen for forgetting on its own, and it is removed with its occurrence.
+   Ownership is a lifetime rule, not a reference, so no back-edge enters
+   the graph and it stays acyclic. The rest follows from the decided
+   protection: the reading row protects its root, and the derivation
+   protects its arguments transitively, so a surviving occurrence keeps its
+   readable structure. A derivation symbol shared by several readings
+   survives while any of them does. Forgetting therefore values occurrences
+   and independent relations, never reading rows. A fact row, an LTM1
+   relation that is not a reading, is forgotten by its own value whenever
+   nothing protects it.
+3. *A pass is one boundary call.* `model_boundary` calls `forget_parts`
+   and then `forget`; together they are one pass. A release made during
+   that call takes effect at the next boundary.
+
+**Q1–Q5.**
+
+- **Q1.** Keep the validated wire view with the owner rebuild, supporting
+  all three restore contracts (standalone wire, complete-owner stale
+  rebuild, missing postings), with §19's load ordering.
+- **Q2.** Keep the four adjacency columns as non-protecting witness data.
+  The remap gap, adjacency keys that `remap_leaf_codes` never updates, is
+  an existing bug: fix it as its own small commit at the start of 2b, with
+  a failing-before regression, since 2b touches `MemoryIndex` anyway.
+- **Q3.** Keep `grammatical_mode` as the three-valued column. Like
+  polarity (§16), mode is a field of the meaning, semantic, and not
+  derivable from open sites.
+- **Q4.** Authorize the two tuple ports. For the sentence writer's swap
+  (`ClauseRow.py` ≈468–472), the destination decides, under §16: reverse a
+  trust-derived pair only when it goes to an LTM1 edge, which stores no
+  polarity, so a negative relation is counterevidence on its positive
+  edge. Never reverse it for an LTM0 meaning, which keeps its polarity and
+  its pair as stated. The tests that pin the edge convention stay
+  unchanged; any existing assertion that pins the LTM0 reversal comes back
+  to Alec.
+- **Q5.** Authorize the coarsening port as §19 proposes, built on the
+  layout above: parent, child and reference retained, zero coarsening,
+  zero same-pass cascade, the two independent rows removed and the target
+  reached, plus the next-pass release case.
+
+## 21. Alec's answers to §20, and Claude's revisions — 2026-10-22
+
+**Decided: evidence.** Alec approved both parts of Q4: the two tuple ports
+in `test_trust_to_pair_and_negation`, and limiting the sentence writer's
+reversal to LTM1 edges. An LTM0 meaning keeps its polarity and its pair as
+stated.
+
+**Leaf postings and mode.** Alec: "I don't know what they are, so I'm
+inclined to remove."
+
+- *Leaf postings* are the inverted index from each leaf code to the
+  stored rows and roles that contain it, used to find stored sentences
+  that mention a code. The index is derived: with its model attached,
+  `configure_model_index` rebuilds it from the rows. Only a store restored
+  without its model reads the saved copy. Claude's revised recommendation:
+  remove the saved columns and `leaf_complete`, keep the in-memory index
+  rebuilt at load, and port the standalone-restore tests. A derived cache
+  is rebuilt, not stored.
+- *Mode* says whether a stored sentence was a statement, a question or the
+  model's own guess (`unspecified`), so a stored question is never read
+  back as a fact. It can go once each case has a structural source: a
+  question by the `ask` operation at the root of its derivation, which the
+  reading row reaches; a guess by being written as an estimate; and a
+  legacy row read as unverified. Claude's revised recommendation: remove
+  it in 2b with that replacement, porting the tests that read it.
+
+**Adjacency.** Alec: "Probably design layout. Again, why do we need word
+adjacency?" Its one use is `SymbolCentroid.place`, reached through
+`MereologicalCodes.centroid_forms`: it pulls each word's *form*, the
+perceptual half of the `[form | meaning]` pairing, toward what its
+neighbouring words' forms share, weighted by how often they were adjacent.
+That moves forms by context, which the two-spaces rule forbids: context
+places meanings, in conceptual space, where the occurrence-context mean
+and item 3's placement already work. Claude's revised recommendation:
+remove the four columns and the nudge, leaving each form at its letters'
+fold, rather than design a layout. The stale-key bug goes with them.
+
+**Forgetting: held by Alec; §20's answer 2 is withdrawn.** It contradicted
+the forgetting spec's decided "coarsening, not cascade, where the gist
+survives" and its rule that a pass takes each row one stage further.
+Revised rule:
+
+- An occurrence's reading and derivation rows are stages of that
+  occurrence's forgetting. They never outlive it and are not chosen by
+  their own value, but they can be dropped before it. The occurrence then
+  keeps its fused point as its gist and reads thereafter without inner
+  structure: coarsening without rewriting a row.
+- A child referenced by a derivation stays protected until that derivation
+  is dropped, and is released for the next pass.
+- One boundary call, `forget_parts` and then `forget`, is one pass.
+
+The coarsening test then ports across two passes. In the idea variant,
+pass 1 coarsens the parent (structure dropped, content kept,
+`coarsened == 1`) and releases the child, and pass 2 removes the child. In
+the relation variant, pass 1 removes the relation parent and pass 2 the
+released child. Capacity, weights and the content check stay.
+
+All three remain Alec's decisions; no implementation has started.
+
+## 22. Decided (Alec, 2026-10-22): mode is not stored
+
+Alec: "I'm not sure mode is even needed structurally. If there is a
+question, we expect an answer. That is something the teacher should know,
+who has access to the data. The model will learn from the form of the
+question that they need to provide an answer or not."
+
+So 2b removes the stored `grammatical_mode` column with no structural
+replacement; §21's proposed replacement is withdrawn. A stored question
+already makes no truth claim: its evidence pair is empty, so it is never
+read back as a fact. The readers of the stored column (`raw_meaning_of`
+and `accept_fact`) stop using it; any existing assertion that depends on a
+stored mode comes back to Alec.
+
+The live parse keeps its mode in this round. It is the form the grammar's
+`ask` operation gives the current sentence. Answering inside an episode is
+already the chooser's choice (Alec: "it calls ask() or query() when it
+wants"); mode's last live use is deciding whether a yes/no question,
+which has no open slot, opens an episode at all. Offering the episode at
+every close instead is item 3's work
+([todo item 3](../../todo.md)).
+
+## 23. Decided (Alec, 2026-10-22): postings, adjacency and forgetting
+
+1. **Leaf postings: remove the saved copy.** Drop `posting_codes`,
+   `posting_roles`, `posting_rows` and `leaf_complete` from the checkpoint.
+   The in-memory index is rebuilt at load from the stored rows, after both
+   tables have loaded (§19's ordering). The tests that restore memory
+   without a model are ported; Alec's choice authorizes those ports, listed
+   in the receipt.
+2. **Word adjacency: removed, with context to come from WholeSpace.**
+   Alec: "We don't need to nudge toward neighbors: we need context in the
+   WholeSpace, which would achieve the same thing; so maybe we need to make
+   wholes of part unions, which would include neighbors in the
+   WholeSpace?" 2b removes the four `adjacent_*` columns, the
+   `witness_adjacency` writer and the neighbour nudge in
+   `SymbolCentroid.place`, so each form stays at its letters' fold. Tests
+   that exist only to check the removed mechanism are retired and listed in
+   the receipt. The stale-key gap goes with it. *Later the same day Alec
+   withdrew the WholeSpace replacement:* a whole storing left/right
+   neighbours "is not really characterizing the whole". Nothing replaces
+   adjacency: neighbours are distributional information, and a word's
+   order-0 meaning is already the occurrence-context mean of the sentences
+   it occurs in (`MereologicalCodes.occurrence_terms`).
+3. **Forgetting: §21's staged rule is adopted.** A sentence's reading and
+   derivation are dropped before the sentence, leaving its fused content as
+   a gist with no row rewritten; a referenced child is released for the
+   next pass; one boundary call is one pass. The coarsening test is ported
+   across two passes as §21 describes, with capacity, weights and the
+   content check unchanged.
+
+With §§16, 21 and 22, every 2b question from §18 is decided: postings and
+adjacency removed; mode no longer stored; polarity semantic, with the
+writer's reversal limited to LTM1 edges and the two tuple ports; and the
+staged forgetting rule.

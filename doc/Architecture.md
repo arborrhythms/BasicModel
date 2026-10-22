@@ -572,6 +572,16 @@ STM's recent rows, never stored, and the one that placement must not
 read. Both feed the one degree-normalized, energy-conserving budget. No
 matrix, and never the percept cube (forms and meanings do not share a
 metric, [SymbolFirewall](SymbolFirewall.md)).
+**Amended 2026-10-22 (Alec; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): one conceptual
+space.** The per-order reading above is reversed: the surface is read
+whole, not per order, and every concept of every order is placed by
+context in the one similarity space, concrete and abstract intermingled.
+The edge channel still crosses orders along the Part and membership
+edges. The conceptual channel, the overlap of placed codes, then applies
+at every order rather than at order 0 only (Claude's reading of the
+decision, to confirm when item 3 builds that channel). The loop guard is
+unchanged: placement reads the surface before the conceptual channel,
+the chooser and attention after. Strata remain the structure of LTM.
 **Guard against the feedback loop (Alec's question, 2026-10-20):** codes
 are written from content only — the fold of parts and wholes, the fold
 over occurrences, the pretraining's observed context — and *(amended the same day, Alec: "can the priming surface be used to
@@ -604,9 +614,10 @@ transfer (dst gains exactly what src loses), not amplification, so
 successive SEEN events propagate energy further out into the connected
 symbols before decay + bump apply. `0` restores pure decay+bump (the
 pre-diffusion behavior).
-Step 1b carries this edge path and the default. Orders §9 assigns the
-stratified reads, the order-0 geometric channel and placement to item 3;
-the geometric channel is not yet a production read.
+Step 1b carries this edge path and the default. Orders §10 (2026-10-22)
+replaces the stratified reads with one conceptual space; the geometric
+channel and placement remain item 3's, and the geometric channel is not
+yet a production read.
 
 **Frozen concepts (`freeze_concept` / `_frozen_concepts`, Alec 2026-07-11).**
 A concept's relational structure can be FROZEN: no FORMING of new edges, no

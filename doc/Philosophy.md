@@ -72,7 +72,10 @@ variables, so the theory's content lives in the *roles its structure
 realizes* rather than in privileged names. In the model, the per-order
 conceptual/symbolic spaces are exactly such role-realizations — what a space-role
 *is* is exhausted by its position in the recurrent loop, not by an intrinsic
-label; the same structural theory is instantiated at each conceptual order.
+label; the same structural theory is instantiated at each conceptual order. *(Since 2026-10-22 the conceptual space is one,
+[Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3); what is ramsified is the symbol tree and its
+orders, an order-n concept defined over order-(n−1) symbols, not the
+space.)*
 
 > Scholarship hedge (recorded deliberately): this section states the
 > project's working usage. Verify the mapping against Ramsey's "Theories"

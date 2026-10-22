@@ -5,6 +5,7 @@
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
+> - **One conceptual space (Alec, 2026-10-22; §10):** §9's per-order spaces and stratified read are reversed; one surface places every concept at every order; strata stay in LTM.
 > - **Orders are learned (Alec, 2026-10-21; [§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).** No ordered grammar is written and parts of speech stay order-free. Definitions raise, through equivalence classes; the determiner, NP + VP and VP + MP lower, returning to S0. Definitions are kept both as LTM1 rows (explicit) and as folds (implicit), which supersedes "folds, not rows" above; the rows train the fold, and their match or mismatch is judged. Built in todo item 3.
 
 
@@ -182,6 +183,11 @@ while its kind changes — kinds do not change, members do.
 
 ## 9. Per-order conceptual spaces, ramsified over one symbol tree; the stratified priming surface (Alec, 2026-10-20; decided)
 
+*Amended 2026-10-22 ([§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): the per-order conceptual spaces and
+the stratified read are reversed; the conceptual space is one. The symbol
+tree, the Part edges as the record of membership, membership read by edge
+and the cross-order diffusion stand.*
+
 Alec's summary: the perceptual tree up to the zeroth-order symbol is
 mereological (the word form at the centroid of its letters and wholes in
 the percept cube); zeroth-order concepts are distributed relative to each
@@ -325,6 +331,59 @@ definition rows supply its targets. A definition is evidence for
 membership and the fold's reading is evidence too; agreement fills one
 truth lane and a mismatch fills both, the corner that prompts refinement
 (2026-09-23). The lanes are never netted.
+
+**Two meanings of a concept (Alec, 2026-10-22).** "The contextual words
+provide a subsymbolic definition. We have also definitions in LTM1, and
+somehow those two are the explicit and implicit meanings of concepts, for
+now." The implicit meaning is the concept's place in conceptual space, set
+by the registered priming surface: the words that occur with it. The
+explicit meaning is its definitions, LTM1 rows that give its members and
+its classes. They are the same pair as the two learning routes above: the
+fold reads the implicit meaning and definitions supply the explicit one,
+the rows train the fold, and their agreement or mismatch is judged in the
+two truth lanes. Each has what the other lacks. The implicit meaning
+places a concept before anything is said about it, and grades similarity.
+The explicit meaning is exact, can be stated and recalled, and raises
+order. A concept with only an implicit meaning is a placed order-0 type.
+A concept with only an explicit meaning has not yet been met in use.
+
+**The surface places the concepts (Alec, 2026-10-22).** "We are doing
+explicit spreading over the priming surface, and then using the activation
+of the priming surface to distribute vectors in conceptual space, including
+the order-zero concepts. That said, the priming is across orders, and the
+concepts each have their own space, so there is still some disconnect."
+Agreed, with §9's resolution of the disconnect (reversed in the next
+paragraph): the spread crosses orders
+along the Part edges and the shared occurrences, but the read is per
+stratum. Restricted to the symbols of order n-1, the surface is a point in
+order n's space, so each concept is placed by the one surface read at its
+own stratum. One energy, many strata, no shared space. In the code the
+spread crosses orders (`Priming.diffuse`) and each row's order is known
+(`priming_row_orders`), but no reader yet restricts the surface to a
+stratum; that read, with placement, is item 3's. Placement itself is
+unchanged: the same meet-raising objective at every order, over the stratum
+the concept's order names.
+
+**Decided (Alec, 2026-10-22, later): one conceptual space, not strata.**
+"I am not convinced we should sort by stratum, which is good for LTM. Here
+we are connecting priming across orders (good), and the more I think about
+it, the more I am in favor of a single conceptual space (so concrete and
+abstract concepts all intermingled)." This reverses §9's per-order
+conceptual spaces and the stratified read of the surface. Strata remain
+the structure of LTM: LTM0 occurrences, LTM1 relations, the derived LTM2.
+In conceptual space, one surface places every concept, at every order,
+with the same objective: raise its meet with what the surface activates,
+lower it against negatives. A kind is then placed among the words,
+individuals and events it occurs with, and an abstract concept sits beside
+the concrete ones it is used with. The code already has this shape: one
+`similarity_codebook` holds every order's rows, and `context_similarities`
+compares them in one space. What §9 keeps: all symbols in the one
+mereological tree, the Part edges as the record of membership, membership
+read by edge rather than by distance, and the cross-order diffusion. What
+goes: the per-order cubes, the "point in every order's space at once"
+read, and `priming_row_orders` as a read restriction. §9's crowding
+objection is answered by the objective's negatives; the collapse
+diagnostic measures it.
 
 **Every symbol's order.** Each concept has an order: a recorded one
 first, else one above its highest symbolic part, else 0. Item 3 closes
