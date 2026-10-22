@@ -29,9 +29,16 @@ The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
 retains every report and capture. **2b's design is decided in §§20–23.**
 The repository handoff is published at `c39ef9f3a`, including both preflight
 commits and Claude's unchanged seven-file commit; no documentation-only
-WikiOracle bump. All work now stays on main. **Implementation stops for the
-additional assertion ports and the occurrence-only occupation decision**
-in [spec §26](doc/plans/2026-10-21-step2-one-ltm.md#26-follow-up-review-two-decisions-for-alec--2026-10-22).
+WikiOracle bump. All work now stays on main. **§27 authorizes P1–P7 and
+decides the occurrence-only occupation read.** Claude's six subsequent
+documents are committed unchanged at `00bc915a9`. **Implementation stops
+for the reading-row discriminator in
+[spec §28](doc/plans/2026-10-21-step2-one-ltm.md#28-reading-row-discrimination--2026-10-22-reviewed-by-claude-for-alec):**
+Claude confirms that the two tags cannot distinguish a reading from an
+ordinary relation with the same arguments; the recommended third READING
+tag needs Alec's decision. The [2b receipt](doc/benchmarks/2026-10-22-item3-5-step2b/README.md)
+retains that review and the source audit. The authorized ports remain
+pending implementation in the two frozen commits.
 The [port receipt](doc/benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
 retains both Claude reviews and the corrected proposals: stored mode, tagged
 layout/restore, typed fixtures and the end of argument minting. No 2b code

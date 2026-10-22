@@ -1,5 +1,18 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2b layout stop, 2026-10-22:** §27 and Alec's handoff authorize
+P1–P7 and the occurrence-only occupation read; those choices stand.
+Claude's six incoming documentation edits are committed unchanged on main
+at `00bc915a9`. The [2b receipt](../2026-10-22-item3-5-step2b/README.md)
+retains a new static layout audit and the actual read-only Claude review.
+Reading and ordinary Part rows can share the same tagged arguments;
+[spec §28](../../plans/2026-10-21-step2-one-ltm.md#28-reading-row-discrimination--2026-10-22-reviewed-by-claude-for-alec)
+recommends a third READING tag for Alec's decision. No production/test
+edit, assertion port, failed gate, implementation freeze or publication
+has occurred. Both requested frozen commits and their scoped gates remain
+pending. The two R10 notes stay in 2c; the full sweep stays at step 2's
+end. Item 3.0 is not reached.
+
 **Step 2b assertion-port stop, 2026-10-22:** the design questions are
 decided in step-2 §§20–23. Claude's seven files were committed unchanged
 as `c39ef9f3a` and published on main with both preflight commits. No

@@ -13,7 +13,8 @@ replacement. §17 authorizes the remaining shape-test port. The
 records frozen source `d4f316411`, 223 passes / seven existing skips and
 Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
 (WikiOracle `baa2e7f`). **2b's design is decided in §§20–23. The additional
-assertion-port proposals in §§24–26 await Alec; no implementation has begun.**
+assertion ports and occupation read are authorized in §27. The reading-row
+discriminator is a new decision for Alec in §28; no implementation has begun.**
 Main includes the published documentation handoff at `c39ef9f3a`; all work
 now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
@@ -1687,3 +1688,96 @@ further change or failure still stops. An occurrence-only argument's
 position is read through its reading row to its word's grammar
 occupations; no separate occupation is stored, and the nested-terminal
 test's symbol-keyed count and restore checks are retired.
+
+## 28. Reading-row discrimination — 2026-10-22; reviewed by Claude, for Alec
+
+§27 and Alec's handoff authorize P1–P7, including both reviews'
+corrections, and decide the occurrence-only occupation read. Those choices
+stand. Claude's six incoming documents were committed unchanged on main
+as `00bc915a9`. Production and tests still match published 2a
+`0b030e3eb`; no production/test edit, gate, failure or 2b freeze has occurred.
+The [2b receipt](../benchmarks/2026-10-22-item3-5-step2b/README.md)
+retains the static audit and the actual
+[Claude review](../benchmarks/2026-10-22-item3-5-step2b/layout-preflight/claude-review.md).
+
+**One missing layout fact.** The decided tags identify what an argument
+references, but do not distinguish an occurrence's reading row from an
+ordinary relation with that occurrence as its first argument. In §20's
+worked layout:
+
+```
+rF = Part(OCC F, SYM felix)   # F's reading
+e  = Part(OCC F, SYM runs)    # the lift derivation
+rS = Part(OCC S, SYM e)      # S's reading
+```
+
+`rF` and `e` have the same tag pattern. Excluding the current edge, or
+selecting an unreferenced row, can distinguish this small example, but
+does not determine the answer when there are further incident relations.
+A completed relative close remains an independent LTM1 edge without an
+LTM0 sentence row (`ClauseRows.write_clause`, `retained_pair` path).
+Its `(OCC, SYM)` arguments do not distinguish it from a reading either.
+More decisively, a reading and an ordinary relation with the **same**
+tagged arguments coalesce under `LTM1.find`; one row would then have two
+different retention obligations.
+
+Today the occurrence's sidecar `role_refs[0]` identifies its root. Removing
+that structural pointer requires a recoverable replacement for the
+P4/P7 readers, the new OCC-to-word occupation read and the staged
+forgetting policy. A derived cache cannot supply a missing distinction
+after restore. Word occupations are not exclusive row types; direct
+semantic pairs need not have a formal operation, and occupation recording
+may be frozen (`PartClosing.preflight`, `PartsOfSpeech.add`). MTM's kind
+precedence settles the working token read while its entry exists, but MTM
+does not provide the permanent reading-row discriminator.
+
+**Claude confirms the gap and corrects the diagnosis.** This is ambiguity,
+not an unavoidable recursive loop: a reader can exclude the edge it is
+currently classifying. Also, the existing forgetting code protects a child
+while its parent lives, so the example of dropping F's reading while e
+survives is not an observed production failure. These corrections do not
+resolve multiple eligible rows or a coalesced reading/relation pair.
+No failing executable diagnostic is claimed.
+
+**Recommendation to Alec: add `READING` as a third `ref_kinds` value.**
+It denotes an occurrence handle in argument 0 of its reading row, with a
+SYMBOL argument 1: `Part(READING F, SYM felix)`. Ordinary uses of F remain
+OCCURRENCE. No column, identity label, working vector or capacity is added.
+
+- Exactly one live reading row is permitted per occurrence. Re-witnessing
+  that same reading remains allowed; writing or loading a conflicting
+  reading fails before mutation. With no reading row, the occurrence is
+  read as a gist.
+- Pair keys include the tag, so a reading and an ordinary relation with
+  equal integer arguments are separate rows. Readers and restore recover
+  the distinction without time, handle order or lexical guesses.
+- For address validity, READING resolves to LTM0 like OCCURRENCE. Its
+  owner endpoint is a lifetime association, not a self-protecting edge;
+  its SYMBOL root and that root's dependencies remain protected until
+  the reading is dropped. This preserves §§21–23's staged policy.
+- Reading rows remain excluded from definitions. All tag-aware readers,
+  validation and retention paths must explicitly handle the third value.
+
+This adds an explicit reading role to the tags and therefore amends
+§10 S2's claim that the reading is indistinguishable membership. It is
+**not implemented or authorized by the existing two-tag decision**.
+Restoring a root column on LTM0 would be a larger alternative and would
+reverse the decided structural move and absence ports; it is not
+recommended.
+
+If approved, P2 still has seven columns. P5 rejects invalid tag values and
+shapes with the three valid values accounted for. P4/P7 identify readings
+through READING; every other authorized semantic assertion stays. New
+coverage should check a reading and ordinary relation with identical
+arguments, restore, removal of a reading without inventing a substitute,
+the same integer in both namespaces, exclusion from definitions, and loud
+rejection of a conflicting second reading. A retained occurrence without
+a reading must have no claimed word occupations.
+
+**Decision requested:** approve this discriminator, or have Claude revise
+the layout with an alternative that uniquely recovers readings and their
+retention obligations. Work stops here under the standing rule for a new
+spec choice. The two frozen commits and their per-commit scoped gates
+remain pending; no earlier evidence is promoted. P1–P7 are authorized,
+not awaiting approval again. The two arrival notes remain in 2c, with
+step 2's one full sweep at its end. Item 3.0 has not been reached.

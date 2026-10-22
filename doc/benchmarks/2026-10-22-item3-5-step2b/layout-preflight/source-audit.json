@@ -1,0 +1,19 @@
+{
+  "source": "00bc915a98ebf072b87c0fb7bb9d54a831128b25",
+  "published_production_source": "0b030e3ebdeca87f9ebf80739237437c3c75ea8f",
+  "production_test_config_changes": [],
+  "scope": "static reading-row discrimination audit; no gate or executable production diagnostic",
+  "file_sha256": {
+    "bin/LTM1.py": "8baa4335c780113bb39a9ea4e42621bb444820854c1cb7af3c68a18565799dc2",
+    "bin/PartRead.py": "666cb31aea5dadcca10ea45346c8668142a449f51e3b1b901e5198ada1ac8621",
+    "bin/ClauseRow.py": "318daff6b8feb7b269d98c8ee639b107d16c402b6329ec7e891fb8f5bc1aecb5",
+    "bin/Forgetting.py": "72b5afaeff9dd70429933bdece5ab8eba1a1b342b4b2751e044513aa140658c1",
+    "doc/plans/2026-10-21-step2-one-ltm.md": "6d52abf20c094ee22b5e97dcb62672beb2c6f59b1b49dfcba0816e5aa8d12e40"
+  },
+  "assertion_changes": [],
+  "fixture_rewrites": [],
+  "retired_tests": [],
+  "frozen_layout_source": null,
+  "frozen_mint_removal_source": null,
+  "gates_run": []
+}
