@@ -3,7 +3,10 @@
 **Status:** Alec's decisions are §§8–13, superseding the earlier open
 choices. Implemented in frozen `3a9db635e`; all scoped gates pass and Claude
 approved landing in §15. Alec decided R10 there and authorized line 1
-publication without further gates; R10 follows separately before step 2.
+publication without further gates. R10’s approved fixture correction (§17)
+is frozen at `23a41540f`: the five scoped files pass with 111 cases and four
+existing prerequisite skips ([R10 receipt](../benchmarks/2026-10-21-item3-5-r10-final/README.md));
+Claude approves publication of `23a41540f`; step 2 follows its landing.
 The historical hold remains in §14. Evidence and review are recorded in the
 [line-1 receipt](../benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md).
 The original proposal is bind plan §20, decision 2 ("Maybe reconstruction
@@ -890,3 +893,18 @@ same-close joined site plans an arrival that commit skips, because uses are
 bound after arrivals; and the next read plans a preview-only arrival for a
 still-pending address. Both lie outside the reference term. Check them when
 2c changes arrivals or promotion.
+
+## 18. R10 corrected source and review — 2026-10-21
+
+Codex applied the exact §17 fixture patch and froze `23a41540f`. The same
+five scoped files ran once on that hash: 111 passed, four existing
+prerequisite skips, zero failures. All assertions remain verbatim, none
+added. Original lines 145–151 are now 148–154 and all pass, including the
+record-value equality at line 150. Both cases have the same nonzero
+coverage features and zero registered reference cost.
+
+[Claude's read-only review](../benchmarks/2026-10-21-item3-5-r10-final/claude-review.md)
+verdict is **publish `23a41540f`**. Source and receipts land on both mains
+with the WikiOracle bump, then step 2 begins. The earlier failed gate at
+`58722725d` is retained unchanged; no fresh series or sweep was run. The
+two arrival-plan notes are carried into step-2 spec §13, for round 2c.

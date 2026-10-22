@@ -17,20 +17,18 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 1 is published at BasicModel `a514a71e0`
-(source `3a9db635e`, receipts `63c600712`) and WikiOracle `b49960a`, after
-Claude's §15 review, without further gates. R10 is frozen at `58722725d`;
-its [receipt](doc/benchmarks/2026-10-21-item3-5-r10/README.md) records 110
-passed, four existing prerequisite skips and one failed new gate. The
-same-sentence bind has positive features and zero reference cost. The new
-fixture's next frame omits the close's occurrence activations; a retained
-diagnostic with the actual metadata binds correctly at zero cost. The
-failure remains failed. [Spec §16](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#16-r10-gate-review--2026-10-21-stopped-for-claude-and-alec)
-records the required forced-order stop and recommends fixing only the
-frame assembly, with all assertions preserved. Claude confirms the production change and fixture correction;
-Alec's approval under the stop rule is pending before a new freeze, the
-same five scoped files, review and publication. Step 2 has not started. No fresh
-series, sweep or learning claim. Item 3.0 has not been reached.
+**Current:** Item 3.5 line 1 and R10 are complete as mechanisms. R10's
+reviewed source `23a41540f` passes its one five-file run: 111 passed and
+four existing prerequisite skips, with every assertion unchanged and the
+record-value and read-isolation checks passing. [Claude approves publication](doc/benchmarks/2026-10-21-item3-5-r10-final/claude-review.md);
+source and [receipts](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)
+land on both mains with the WikiOracle bump. The earlier failed run stays
+retained at `58722725d`. **Next: line 2, step 2**, under the
+[decided spec §§10–12](doc/plans/2026-10-21-step2-one-ltm.md), starting with
+the saved-class-path check and the class rename as its own commit, then
+2a's safe culls. The two arrival-plan notes are carried into 2c. The new
+fixture-only stop-rule exception is recorded in reconstruction spec §17.
+No fresh series, sweep or learning claim. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -702,9 +700,10 @@ not by a passing identity lesson.
    Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
    line 1's grammar contract and reconstruction term are Done at reviewed
    source `3a9db635e`, receipts `63c600712` ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
-   The separately decided R10 repair precedes step 2: preserve the named
-   own object's content in its trial-local record, with the repeated-name
-   and scoped reference gates, a receipt and Claude's review.
+   R10 is Done at reviewed source `23a41540f`: the named preview token
+   retains content, and its approved fixture correction passes every scoped
+   gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
+   Step 2 is next, with its separate class rename and then the safe culls.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
@@ -1425,6 +1424,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 R10 — named token content before the close:** reviewed source `23a41540f`; exact authorized fixture correction, 111 scoped passes and four existing prerequisite skips, Claude verdict publish ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
 
 - **Item 3.5 line 1 — grammar-only reference sites and reconstruction reads the bind:** landing `a514a71e0` (WikiOracle `b49960a`), reviewed source `3a9db635e`, receipts `63c600712`; Claude verdict land, all scoped gates pass, R10 follows separately ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
 

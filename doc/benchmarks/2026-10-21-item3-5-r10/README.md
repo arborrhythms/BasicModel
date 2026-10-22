@@ -90,3 +90,12 @@ The full review request, stream, stderr and execution metadata are retained.
 No production, test or configuration changed after the freeze. Alec has
 been asked to approve the reviewed fixture correction; work remains at
 R10, before step 2 and before item 3.0.
+
+## Disposition after Alec's §17 decision
+
+Alec approved the retained fixture patch exactly. The corrected frozen
+source `23a41540f` passes its own five-file run (111 passed, four existing
+prerequisite skips), and Claude's verdict is publish. The separate
+[final receipt](../2026-10-21-item3-5-r10-final/README.md) records that
+source, captures and review. This earlier run stays failed; its diagnostic
+is not promoted to a pass.

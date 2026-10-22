@@ -1,5 +1,14 @@
 # Step 1b: current gates and carry ledger
 
+**R10 corrected source `23a41540f`, 2026-10-21:** Alec approved the exact
+fixture patch in reconstruction spec §17. The [new receipt](../2026-10-21-item3-5-r10-final/README.md)
+records 111 passed and four existing prerequisite skips, with no failures,
+on the one five-file run. Every assertion is unchanged; the record-value
+check and final isolation checks pass. The earlier `58722725d` failure
+remains failed and retained below. Claude approves publication of the
+corrected source and receipts to both mains, with the WikiOracle bump.
+The two arrival-plan notes are carried to step 2c. No fresh series or sweep.
+
 **Item 3.5 line 1, frozen source `3a9db635e`, 2026-10-21:** the
 grammar-only contract and reconstruction-reference term are implemented
 under the reconstruction spec §§8–13. Its [separate receipt](../2026-10-21-item3-5-reference-reconstruction/README.md)
