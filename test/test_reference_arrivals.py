@@ -43,8 +43,12 @@ def equality(point, word, complement, *, witness=1.):
             '_reference_sites': ((0, dict(role=0, leaves=(0,), cue=(point*0).tolist(),
                                           content=(point*0).tolist(), predicate=pred.tolist())),)})
     value = with_slots(value, (('referent', 0),), pair=(witness, 0.))
+    # Supply the named participant's reading, as the journal does. Its
+    # grammatical position and order license recovery of the open site.
+    source = Composition(point*0, reference=word, word_id=word, leaves=(0,), order=1)
+    composition = Composition(point, (source, child.composition), operation='equal')
     return Clause(value, relation='equal', refs=(-1, ClausePredicate(pred, 'equal'), ('clause', 0)),
-                  children=(child,), evidence=(witness, 0.))
+                  children=(child,), evidence=(witness, 0.), composition=composition)
 
 
 def force_named(resolver, monkeypatch, target):
@@ -152,12 +156,15 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
     from test_bind_thought import native
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
+    from Spaces import _concept_alloc_of
+    _concept_alloc_of(f.cs).reference_orders[word] = 1
     f.words['m'] = word, word
     program = replace(f.program(('definite_unary', 'm')), close_references=True,
-                      leaf_orders=torch.zeros(1, dtype=torch.long))
+                      leaf_orders=torch.tensor([f.cs._concept_source_order(word)]))
     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
     assert clause.reference_request['forward_identity'] == word
-    assert clause.reference_request['mode'] == 'bind' and not clause.point.any()
+    assert clause.reference_request['mode'] == 'bind'
+    torch.testing.assert_close(clause.point, program.leaves[0], rtol=0, atol=0)
 
 
 def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):

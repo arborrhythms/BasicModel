@@ -20604,7 +20604,7 @@ class BasicModel(BaseModel):
             lexical_capacity = max(collections.Counter(word for word, _ in pairs).values(), default=0)
             occupations = self.languageSpace.parts_of_speech.counts
             literals = ids.new_tensor([identity for identity, counts in occupations.items()
-                if counts.get('surface_argin1', 0) and interpreter.no_object(identity)])
+                if counts.get('surface_argin1', 0)])
         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
                              types, cases, inventory, interpreter, associations, orders,
                              close_references=bool(getattr(self, '_component_reading', False)),

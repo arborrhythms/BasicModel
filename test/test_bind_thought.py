@@ -167,19 +167,22 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     from Spaces import _concept_alloc_of
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
     assert word in f.cs.word_concepts(marker)
+    _concept_alloc_of(f.cs).reference_orders[word] = 1
     f.words[marker] = word, word
     program = f.program(('lift', marker, VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
-                      leaf_orders=torch.zeros(2, dtype=torch.long), close_references=True)
+                      leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]),
+                      close_references=True)
     program = record_reading(f.language, program)
+    assert f.cs._concept_source_order(word) == 1
     requests = reference_requests(f.language, program.actions,
-        leaf_orders=program.leaf_orders, no_object=[True, False])
-    assert requests[0] == (1, 'pronoun')
+        leaf_orders=program.leaf_orders)
+    assert 0 not in requests
     clause = finish_clause(f.language, program, registry=f.registry)
     from ReferenceClose import constituents
     nodes = constituents(clause)
-    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'pronoun'
-    assert not nodes[0].point.any()
+    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'bind' and nodes[0].order == 1
+    torch.testing.assert_close(nodes[0].point, f.atoms[7], rtol=0, atol=0)
     # Commit while the antecedents are outside the current situation, then
     # cue them. The real closing must open the NP, not invent a missing
     # object role in its containing intransitive clause.
@@ -339,10 +342,12 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     from ReferenceClose import constituents
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
+    from Spaces import _concept_alloc_of
+    _concept_alloc_of(f.cs).reference_orders[word] = 1
     f.words['m'] = word, word
     program = f.program(('lift', 'm', VERBS[0]))
     program = replace(program, binding_choices=True,
-        leaf_orders=torch.zeros(2, dtype=torch.long))
+        leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]))
     program = record_reading(f.language, program)
     refs = program.operation_refs.clone()
     refs[-1, 0] = 0
@@ -351,7 +356,8 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     assert ('referent', 0) in open_slots(clause.meaning)
     assert not constituents(clause), 'an explicit open role is not a second NP request'
     metadata = dict(dict(bindings(clause.meaning)['_reference_sites'])[0])
-    assert metadata['leaves'] == (0,) and not any(metadata['content'])
+    assert metadata['leaves'] == (0,)
+    assert tuple(metadata['content']) == tuple(program.leaves[0].tolist())
     assert tuple(metadata['cue']) == tuple(program.leaves[0].tolist())
 
 

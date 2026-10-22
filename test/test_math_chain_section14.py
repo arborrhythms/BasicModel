@@ -355,6 +355,12 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     from math_chain_corpus import ChainDocument
     from BindingAnswers import matches
     model = ordinary_model(tmp_path, budget=0)
+    from Spaces import _concept_alloc_of
+    owner = model._concept_owner()
+    if not owner.word_concepts('x'):
+        owner.interpret.lookup_word((ord('x'),), (), form='x')
+    for identity in owner.word_concepts('x'):
+        _concept_alloc_of(owner).reference_orders[identity] = 1
     sentences = ('y is x plus two.', 'x is three.')
     if reverse:
         sentences = sentences[::-1]

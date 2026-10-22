@@ -24,14 +24,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         raise ValueError('cannot finish a reading that is not open')
     from Language import TheGrammar
     from ReferenceContext import binding_spec, operation_modes, result_order
-    interpreter = getattr(getattr(registry, 'space', None), 'interpret', None)
-    no_object = set() if interpreter is None else {
-        leaf for leaf, identity in enumerate(program.concept_ids)
-        if int(program.word_rows[leaf]) >= 0 and interpreter.no_object(int(identity))}
-    # A staged OBJECT address is retained even in the mixing reader, whose
-    # WORD lane is absent. It must not be interpreted again as an objectless
-    # word: that would replace the captured bank value with an empty subject
-    # and bootstrap an extra occurrence context for the next reconstruction.
+    orders = program.leaf_orders
+    if program.reference_orders is not None:
+        orders = (program.reference_orders if orders is None else
+                  torch.where(program.reference_orders >= 0, program.reference_orders, orders))
+    # The carried address identifies the referent; the leaf keeps its own
+    # captured content. Site eligibility comes from its reading and position.
     refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
     native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
@@ -79,10 +77,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             known = selected > 0
             minimum = torch.where(known, selected, torch.inf).amin(0)
             pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
-        orders = program.leaf_orders
-        if program.reference_orders is not None:
-            orders = (program.reference_orders if orders is None else
-                      torch.where(program.reference_orders >= 0, program.reference_orders, orders))
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
         return dict(order=order, evidence=pair)
     # Each node owns the exact grammar action and its live operands.
@@ -93,11 +87,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             has_point = reference_has_point(int(refs[word]),
                 program.reference_relations is None or not bool(program.reference_relations[word]))
             stack.append(dict(value=values[word], composed_value=values[word], ref=int(refs[word]), rule=None,
-                              order=-1 if program.leaf_orders is None else int(program.leaf_orders[word]),
+                              order=-1 if orders is None else int(orders[word]),
                               children=(), leaves=(word,), has_point=has_point))
-            if word in no_object:
-                stack[-1]['close_request'] = dict(mode='pronoun', leaves=(word,),
-                    cue=values[word], content=torch.zeros_like(values[word]),
+            if stack[-1]['order'] == 1:
+                stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
+                    cue=values[word], content=values[word],
                     forward_identity=forward_name(word), leaf=True)
             continue
         if kind == 3:
@@ -366,11 +360,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     break
                 current = current['children'][role - 1]
                 request = current.get('close_request')
-            if request is None:
+            if request is None or item['order'] != 1:
                 return None
             if request.get('leaf') and (not referent or id(composition(item)) not in noun_terms):
                 # A predicate's form is an operator operand, not an
-                # objectless participant. A provisional marker likewise
+                # participant. A provisional marker likewise
                 # cannot become an occurrence object merely by ending a
                 # field. Keep the kept derivation's raw identity/content.
                 return None
@@ -380,8 +374,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if forward is not None and request['mode'] != 'mint':
                 request = dict(request, forward_identity=forward)
                 if leaf_request.get('leaf'):
-                    # A unary bind still owns the same objectless word site.
-                    # Keep its name and empty content when wrapping the leaf.
+                    # A unary bind still owns the same word site. Keep its
+                    # name and content when wrapping the leaf.
                     request.update(content=leaf_request['content'],
                                    cue=leaf_request.get('cue'))
             point = request['content'] if current is item or request.get('leaf') else region(item)

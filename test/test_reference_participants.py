@@ -114,3 +114,56 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     records = resolver.accessible((frame,))
     assert words['three'] in records and words['wrong'] not in records
     unchanged(resolver, held)
+
+
+@pytest.mark.parametrize('position', ('participant', 'marker', 'predicate'))
+@pytest.mark.parametrize('order', (0, 1))
+def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypatch, order, position):
+    from ClauseJournal import finish_clause
+    from reading_fixtures import record_reading
+    from Spaces import _concept_alloc_of
+    from test_bind_thought import native
+    f = native(monkeypatch)
+    word = f.cs.interpret.lookup_word([101], (), form='m')
+    _concept_alloc_of(f.cs).reference_orders[word] = order
+    f.words['m'] = word, word
+    tree = (('lift', 'm', 'v') if position == 'participant' else
+            ('surface', 'm', 'v') if position == 'marker' else ('lift', 'v', 'm'))
+    program = f.program(tree)
+    orders = torch.zeros(2, dtype=torch.long)
+    orders[program.word_ids == word] = f.cs._concept_source_order(word)
+    program = replace(program, leaf_orders=orders, close_references=True)
+    clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
+    expected = int(order == 1 and position == 'participant')
+    held = snapshot(f.resolver)
+    plan = f.resolver.preview(clause, ())
+    assert len(plan['items']) == expected
+    if expected:
+        node = plan['items'][0]['node']
+        assert node.order == order and node.reference_request['mode'] == 'bind'
+        torch.testing.assert_close(node.point, program.leaves[0], rtol=0, atol=0)
+    unchanged(f.resolver, held)
+    _, committed = keep(f.resolver, clause)
+    assert len(committed['items']) == expected
+    assert len(f.cs.mtm.entries) == expected
+
+
+def test_retained_argument_classification_uses_only_its_own_occupations(monkeypatch):
+    from PartRead import argument_reader
+    from Spaces import _concept_alloc_of
+    from test_bind_thought import native
+    f = native(monkeypatch)
+    marker, head = f.noun('m'), f.noun('n')
+    occupations = f.language.parts_of_speech
+    occupations.add(marker, 'surface_argin1')
+    occupations.add(head, 'surface_argin2')
+    _concept_alloc_of(f.cs).symbol_types.setdefault(marker, set()).add('object')
+    def no_definition_read(*args, **kwargs):
+        raise AssertionError('argument classification read lexical definitions')
+    monkeypatch.setattr(type(f.cs.definitions), 'words', no_definition_read)
+    operation, is_marker = argument_reader(f.store)
+    assert is_marker(marker, set())
+    assert operation((marker, head)).method_name == 'surface'
+    word = f.words['m'][0]
+    assert not is_marker(word, set())
+    assert operation((word, head)) is None

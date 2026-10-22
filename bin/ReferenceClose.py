@@ -620,13 +620,25 @@ class ReferenceClose(nn.Module):
         The journal need not invent a second NP request. Its retained forward
         name supplies the anonymous constituent only at the closing boundary.
         """
-        from ClauseRow import Clause, Composition
+        from ClauseRow import Clause
         from Meaning import ConceptualMeaning
         from ThoughtReferences import bindings, open_slots
         from ReferenceParticipants import clause_participants
         _, participants, terms = clause_participants(clause,
             self.store.__dict__.get('_part_read_rules', ()))
-        noun_leaves = {leaf for term in terms.values() if not term.children for leaf in term.leaves}
+        def source_leaf(node, name, held):
+            leaves = set(held.get('leaves', ()))
+            pending = [node.composition]
+            while pending:
+                term = pending.pop()
+                if term is None:
+                    continue
+                if (not term.children and id(term) in terms and term.order == 1
+                        and term.word_id == name
+                        and (not leaves or leaves.intersection(term.leaves))):
+                    return term
+                pending.extend(reversed(term.children))
+            return None
         result, seen, nodes = [], set(), []
         def visit(node):
             if node is None or id(node) in seen:
@@ -648,20 +660,18 @@ class ReferenceClose(nn.Module):
                         if (child.reference_request or {}).get('forward_identity') == name:
                             continue
                     held = dict(requests.get(role, ()))
-                    if role not in (0, 2) or (node.composition is not None
-                            and not set(held.get('leaves', ())).intersection(noun_leaves)):
+                    term = source_leaf(node, name, held)
+                    if role not in (0, 2) or term is None:
                         continue
-                    zero = torch.zeros_like(node.meaning.roles[role])
                     def value(key, fallback):
-                        return fallback if held.get(key) is None else zero.new_tensor(held[key])
-                    request = dict(mode='pronoun', forward_identity=name, role=role,
-                        leaves=tuple(held.get('leaves', ())), content=zero,
-                        cue=value('cue', node.meaning.roles[role]),
+                        return fallback if held.get(key) is None else term.point.new_tensor(held[key])
+                    request = dict(mode='bind', forward_identity=name, role=role,
+                        leaves=term.leaves, content=term.point,
+                        cue=value('cue', term.point),
                         predicate=value('predicate', node.meaning.roles[1]))
-                    site = Clause(ConceptualMeaning.from_description(zero), point=zero,
-                        order=1, evidence=node.evidence, subject_word_id=name,
-                        reference_request=request, composition=Composition(zero,
-                            word_id=name, leaves=request['leaves'], order=1))
+                    site = Clause(ConceptualMeaning.from_description(term.point), point=term.point,
+                        order=term.order, evidence=node.evidence, subject_word_id=name,
+                        reference_request=request, composition=term)
                     result.append(dict(node=site, parent=node, site_role=role))
             for child in (*node.children, *node.companions):
                 visit(child)
@@ -675,11 +685,13 @@ class ReferenceClose(nn.Module):
             if term is None or id(term) in visited_terms:
                 return
             visited_terms.add(id(term))
-            if not term.children and id(term) in terms and term.word_id in names:
-                zero = torch.zeros_like(term.point)
-                request = dict(mode='pronoun', forward_identity=term.word_id,
-                    role=0, leaves=term.leaves, cue=term.point, content=zero, predicate=zero)
-                node = Clause(ConceptualMeaning.from_description(zero), point=zero, order=1,
+            if (not term.children and id(term) in terms and term.order == 1
+                    and term.word_id in names):
+                request = dict(mode='bind', forward_identity=term.word_id,
+                    role=0, leaves=term.leaves, cue=term.point, content=term.point,
+                    predicate=torch.zeros_like(term.point))
+                node = Clause(ConceptualMeaning.from_description(term.point), point=term.point,
+                    order=term.order,
                     evidence=clause.evidence, subject_word_id=term.word_id,
                     composition=term, reference_request=request)
                 result.append(dict(node=node, parent=None, site_role=None, lexical=True))

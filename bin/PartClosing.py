@@ -182,14 +182,10 @@ class PartClosing:
         self._plan.append(record)
         return reference
 
-    def _definition(self, symbol, word, evidence):
-        if symbol is None or not self._native(word) or word == symbol:
+    def _definition(self, symbol, word, evidence, *, marker=False):
+        if marker or symbol is None or not self._native(word) or word == symbol:
             return
         interpreter = getattr(self.owner, 'interpret', None)
-        if interpreter is not None and interpreter.no_object(symbol):
-            # A selected existing marker is not a newly minted object. An
-            # enclosing mint must not redefine that marker as its noun.
-            return
         description = self.alloc.word_descriptions.get(word)
         if description is None and interpreter is not None:
             description = interpreter._pending.get(word)
@@ -242,10 +238,21 @@ class PartClosing:
                 self._word_origins[id(term)] = int(clause.subject_word_id), clause.evidence
 
     def preflight(self):
+        # A surface argument contributes form, not a noun definition. The
+        # kept plan supplies this position even when the word has an object.
+        markers = set()
+        pending = [record['value'].children[0] for record in self._plan
+                   if record['value'].operation == 'surface'
+                   and len(record['value'].children) == 2]
+        while pending:
+            term = pending.pop()
+            if id(term) not in markers:
+                markers.add(id(term))
+                pending.extend(term.children)
         for term, (word, evidence) in self._word_origins.items():
             record = self._planned[term]
             if record['seat'] or self._point(record['symbol']) is not None:
-                self._definition(record['symbol'], word, evidence)
+                self._definition(record['symbol'], word, evidence, marker=term in markers)
         ref = self.store.__dict__.get('_occupation_owner')
         occupations = None if ref is None else ref()
         for record in self._plan:

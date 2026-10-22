@@ -93,51 +93,39 @@ def argument_reader(store, incomplete=None):
     """Classify retained pairs from their admitted argument occupations."""
     from collections import Counter
     from PartsOfSpeech import operation_name
-    from Spaces import _concept_alloc_of
-    owner = store._concept_owner()
-    allocator = _concept_alloc_of(owner)
     ref = store.__dict__.get('_occupation_owner')
     occupations = None if ref is None else ref()
     rules = store.__dict__.get('_part_read_rules', ())
     incomplete = [] if incomplete is None else incomplete
 
     def counts(symbol):
-        direct = Counter() if occupations is None else Counter(occupations.counts.get(symbol, {}))
-        words = Counter()
-        if occupations is not None:
-            for word in owner.definitions.words(symbol):
-                words.update(occupations.counts.get(word, {}))
-        return direct, words
+        return Counter() if occupations is None else Counter(occupations.counts.get(symbol, {}))
 
     def operation(arguments):
         evidence = [counts(symbol) for symbol in arguments]
         # A marker contributes surface form, even when the admitted
         # numerical derivation combined it with an unheaded operation.
-        # Its objectless argument type owns the semantic head read.
+        # Its recorded argument position owns the semantic head read.
         if marker(arguments[0], set()):
             surface = next((rule for rule in rules if rule.method_name == 'surface'), None)
             if surface is not None:
                 return surface
-        for fallback in (False, True):
-            matches = {}
-            for rule in rules:
-                if len(rule.rhs_symbols) != 2:
-                    continue
-                name = operation_name(rule)
-                # The objectless-marker rule above resolves a surface use
-                # even when other occupations coexist. Otherwise the
-                # catalogue still admits an unambiguous recorded surface
-                # pair: its marker argument may itself be a composed value.
-                roles = (2, 1) if rule.method_name == 'whole' else (1, 2)
-                if all((direct + words if fallback else direct)[f'{name}_argin{role}'] > 0
-                       for (direct, words), role in zip(evidence, roles)):
-                    reading = (int(rule.head_role or 0), rule.clause_form, rule.relation_kind)
-                    matches.setdefault(reading, rule)
-            if len(matches) == 1:
-                return next(iter(matches.values()))
-            if len(matches) > 1:
-                incomplete.append('ambiguous_argument_occupations')
-                return None
+        matches = {}
+        for rule in rules:
+            if len(rule.rhs_symbols) != 2:
+                continue
+            name = operation_name(rule)
+            # The catalogue admits an unambiguous recorded pair; its marker
+            # argument may itself be a composed value.
+            roles = (2, 1) if rule.method_name == 'whole' else (1, 2)
+            if all(count[f'{name}_argin{role}'] > 0
+                   for count, role in zip(evidence, roles)):
+                reading = (int(rule.head_role or 0), rule.clause_form, rule.relation_kind)
+                matches.setdefault(reading, rule)
+        if len(matches) == 1:
+            return next(iter(matches.values()))
+        if len(matches) > 1:
+            incomplete.append('ambiguous_argument_occupations')
         return None
 
     def marker(symbol, seen):
@@ -146,11 +134,7 @@ def argument_reader(store, incomplete=None):
         if store.parts.contains(symbol):
             return all(marker(child, seen | {symbol})
                        for child in store.parts.refs[symbol].tolist())
-        direct, words = counts(symbol)
-        # Read this argument's type. A later definition of an object named
-        # by the same word does not turn the retained marker into that object.
-        return ('object' not in allocator.symbol_types.get(symbol, ())
-                and (direct + words)['surface_argin1'] > 0)
+        return counts(symbol)['surface_argin1'] > 0
 
     return operation, marker
 
