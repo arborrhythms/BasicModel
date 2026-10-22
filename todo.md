@@ -30,9 +30,10 @@ retains every report and capture. **2b's design is decided in §§20–23.**
 The repository handoff is published at `c39ef9f3a`, including both preflight
 commits and Claude's unchanged seven-file commit; no documentation-only
 WikiOracle bump. All work now stays on main. **Implementation stops for the
-additional assertion ports** in [spec §§24–25](doc/plans/2026-10-21-step2-one-ltm.md#24-test-port-audit-before-2b-implementation--2026-10-22).
+additional assertion ports and the occurrence-only occupation decision**
+in [spec §26](doc/plans/2026-10-21-step2-one-ltm.md#26-follow-up-review-two-decisions-for-alec--2026-10-22).
 The [port receipt](doc/benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
-retains Claude's review and the amended proposals: stored mode, tagged
+retains both Claude reviews and the corrected proposals: stored mode, tagged
 layout/restore, typed fixtures and the end of argument minting. No 2b code
 or test has changed and no gate has run. Metadata authentication stays
 while sidecar content needs it. 2c retains the two R10 arrival notes; the recall-history location
@@ -717,8 +718,9 @@ not by a passing identity lesson.
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
    seven existing skips and Claude's approval. 2b's design is decided in
    §§20–23, and the documentation handoff is published on main at
-   `c39ef9f3a`. The additional [§§24–25 assertion ports](doc/plans/2026-10-21-step2-one-ltm.md#24-test-port-audit-before-2b-implementation--2026-10-22)
-   await Alec before implementation. No 2b source/test change or gate;
+   `c39ef9f3a`. The additional ports and occurrence-only occupation in
+   [§26](doc/plans/2026-10-21-step2-one-ltm.md#26-follow-up-review-two-decisions-for-alec--2026-10-22)
+   await Alec after both Claude reviews. No 2b source/test change or gate;
    no step-2 completion is claimed. All subsequent work stays on main.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),

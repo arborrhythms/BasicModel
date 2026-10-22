@@ -1,0 +1,31 @@
+{
+  "source": "a9409901c41ccd88ab71c9ed8153f20f37e6711d",
+  "command": [
+    "/Users/arogers/.local/bin/claude",
+    "--print",
+    "--model",
+    "opus",
+    "--safe-mode",
+    "--restricted",
+    "--strict-mcp-config",
+    "--tools",
+    "Read,Grep,Glob",
+    "--allowedTools",
+    "Read,Grep,Glob",
+    "--permission-mode",
+    "dontAsk",
+    "--permission-prompts",
+    "none",
+    "--output-format",
+    "stream-json",
+    "--verbose"
+  ],
+  "request_sha256": "cf57968b97c98d360e3780e3313036e2e82da92cbfa295c3658274e7fcd9d060",
+  "started": "2026-10-22T18:59:32.630249+00:00",
+  "exit": 0,
+  "finished": "2026-10-22T19:04:07.912715+00:00",
+  "model": "claude-opus-5-5",
+  "is_error": false,
+  "subtype": "success",
+  "report": "claude-review.md"
+}

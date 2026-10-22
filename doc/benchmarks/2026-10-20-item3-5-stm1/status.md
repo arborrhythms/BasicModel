@@ -4,10 +4,11 @@
 decided in step-2 §§20–23. Claude's seven files were committed unchanged
 as `c39ef9f3a` and published on main with both preflight commits. No
 WikiOracle bump for documentation alone; all work now stays on main.
-[Spec §§24–25](../../plans/2026-10-21-step2-one-ltm.md#24-test-port-audit-before-2b-implementation--2026-10-22)
+[Spec §26](../../plans/2026-10-21-step2-one-ltm.md#26-follow-up-review-two-decisions-for-alec--2026-10-22)
 and the [port-preflight receipt](../2026-10-22-item3-5-step2b-port-preflight/README.md)
-retain the static audit, actual Claude review and amended proposals for
-additional existing-test assertions. These require Alec under the
+retain the static audit, both actual Claude reviews and the corrected
+proposals for additional assertions and the occurrence-only argument's
+occupation. These require Alec under the
 handoff's assertion rule and §22's explicit stored-mode rule. Production
 and tests still match published 2a; no new test run, failure or 2b freeze.
 The two R10 notes remain in 2c and the full sweep remains at step 2's end.

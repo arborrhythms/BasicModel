@@ -13,7 +13,7 @@ replacement. §17 authorizes the remaining shape-test port. The
 records frozen source `d4f316411`, 223 passes / seven existing skips and
 Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
 (WikiOracle `baa2e7f`). **2b's design is decided in §§20–23. The additional
-assertion-port proposals in §§24–25 await Alec; no implementation has begun.**
+assertion-port proposals in §§24–26 await Alec; no implementation has begun.**
 Main includes the published documentation handoff at `c39ef9f3a`; all work
 now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
@@ -1548,3 +1548,86 @@ fixture and retired test. No proposed rule permits weakening semantic
 checks, changing capacities, promoting earlier evidence or continuing
 after an existing-test/production failure. The two R10 notes remain in
 2c, one full sweep remains at step 2's end, and item 3.0 is not reached.
+
+## 26. Follow-up review; two decisions for Alec — 2026-10-22
+
+Claude's actual [read-only follow-up](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/followup/claude-review.md)
+reviewed input `a9409901c`. It accepts amended P1–P3, tightens P4–P5 and
+the close-time-mint ports, and identifies one genuine design choice:
+where an occurrence-only argument's occupation would be recorded after
+its forced native mint disappears. No code or test changed and no gate
+ran. The [final port proposal](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/amended-port-proposal.md)
+incorporates the review's corrections; this section recommends decisions,
+not authorization already received.
+
+**1. Authorize the corrected existing-test ports, apart from the
+occupation decision below. Recommended.** P1 checks retained question
+kind plus zero evidence; P2–P3 port the tag-column layout and removed
+switch while preserving the form snapshot; P4 compares pre-existing
+tagged structure and ports the retired-column/read-root assumptions;
+P5 uses owner-validated bad tags/shapes and a no-saved-postings check;
+P6 expresses §11.1's OCC/content/no-seat outcomes; P7 preserves pending
+word readings and injects corruption only for defensive-reader fixtures.
+The receipt lists the individual cases and the already authorized
+retirements separately. No capacities, tolerances or unrelated assertions
+change. Corrections made explicit after the follow-up:
+
+- The two address/migration fixtures use
+  `e = lift(OCC child, SYM predicate)` and `Part(OCC parent, SYM e)`.
+  The repeated-edges fixture uses `e = equal(OCC child, OCC child)` and
+  `Part(OCC parent, SYM e)`; its two arguments supply roles 0 and 2.
+  Its `records_scanned == 2` remains verbatim: the current implementation
+  (`Layers.py:9060–9064`) counts the bounded LTM0 address scan, and the
+  fixture still has two occurrence rows. Its node/depth/record limits
+  stay, as do the separate query work-meter obligations.
+- A full-bank successful close preserves `rows` and `placement`, not
+  the whole allocation inventory: relation handles advance `next_id`.
+  Record exact new occurrence/relation/handle counts from the declared
+  layout. Existing `test_complete_derivation_capacity_failure_has_no_prefix`
+  retains the real exhaustion/atomicity obligation. The zero-seat test
+  writes once; it does not restore caps and write a second occurrence.
+- For MTM occurrences, `_derivation_symbol` must give token kind
+  precedence over the immutable word reading; an anonymous token gives
+  None. A bound use retains its own `Part(OCC used, SYM x)` reading,
+  with the identity link in MTM. The arrival must still read `three`,
+  never `x`; no antecedent assertion is ported. The pending reading is
+  additionally checked unchanged through arrival.
+- Invalid tag values are out of range on occupied rows; shape validation
+  precedes PyTorch's loader, and both cases raise `ValueError` naming
+  `ref_kinds`. Only occupied pre-2b pairs default to SYMBOL; empty tags
+  stay zero. Reading rows never become definitions. Defensive cycles are
+  planted directly in buffers, while the public writer rejects self or
+  forward references, including a newly assigned handle that an existing
+  row already references.
+
+The last two bullets preserve the existing semantics and are implementation
+consequences, not requests to reconsider the decided layouts. The same
+applies to removing the additional stored-mode guard in `reasoning.py`:
+its kind, metadata, shape, mask and content checks stay; no replacement
+mode is added. The live incoming-mode admission check stays.
+
+**2. Decide the occurrence-only occupation.** In
+`test_nested_terminal_mint_keeps_its_word_and_admitted_occupation`, the
+existing count/restore checks refer to a freshly minted symbol.
+`PartClosing.py:265–271` keys occupations by symbol and skips bare words.
+After §11.1 there is no such new symbol. An OCC cannot enter that map
+untagged.
+
+**Claude's recommendation, also recommended here:** record no separate
+symbol-keyed occupation for this occurrence-only argument; its typed
+derivation already carries the grammatical position. Explicitly retire
+that test's stored-count and count-restore expectations and check the
+retained word and position through the tagged structure, without a new
+definition or seat. **Alternative:** record the occupation on the word,
+changing the current bare-word rule. A new tagged occupation map would be
+a further layout decision and is not proposed for 2b. Nothing is
+implemented before Alec chooses.
+
+This stop comes from the handoff's explicit assertion-change rule and
+§22's stored-mode requirement. It is not a failed gate or an application
+of the same-round setup exception. The repository handoff remains
+published at `c39ef9f3a`; these proposals and receipts are on main pending
+Alec. After the decisions, implementation, a source freeze, the requested
+scoped gates and Claude's source review still precede 2b publication and
+the WikiOracle bump. No fresh series or full sweep has run; 2c keeps its
+two arrival notes, and item 3.0 has not been reached.
