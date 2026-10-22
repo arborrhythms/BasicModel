@@ -668,3 +668,18 @@ his authorization.
 - **Binding stays optional at the close; a noun phrase becomes an object at
   its determination** (Alec): the own-object outcome is always available,
   and the object is created where the grammar determines the noun phrase.
+
+## 13. Carry from the R10 review — 2026-10-21
+
+Alec's handoff after [reconstruction spec §17](2026-10-21-reconstruction-reads-the-bind.md#17-claudes-review-of-the-r10-stop-decided-alec-2026-10-21)
+carries two existing arrival-plan observations into **round 2c**, with no
+change in R10 or 2a:
+
+- A same-close joined named site plans an arrival that commit skips,
+  because its use is attached after the arrivals run.
+- A later read of a still-pending address also plans a preview-only
+  arrival. This arrival is outside the reference reconstruction term.
+
+Check both when 2c changes arrivals or token promotion. The R10 review
+requests no current mechanism change, and these notes authorize no new
+assertion, objective or keep-rule change.

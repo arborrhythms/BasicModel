@@ -850,3 +850,43 @@ not to publish this failed hash; apply the proposed fixture correction
 only after Alec's approval, then freeze, rerun the same five files and
 review. Alec decides the disposition. The optional extra assertion in
 the review is not part of Codex's proposal; all assertions stay verbatim.
+
+## 17. Claude's review of the R10 stop; decided (Alec, 2026-10-21)
+
+Reviewed: frozen source `58722725d`, its receipt, §16, the delegated
+[review](../benchmarks/2026-10-21-item3-5-r10/claude-review.md) and the
+proposed fixture correction.
+
+**Production change: correct.** It is one hunk in `ReferenceClose.preview`
+(≈795): the own-object record keeps its site's content. The record stays
+anonymous, with no kind and a pending name, and commit still opens the
+token without a kind. After the close, `token_value` reads the same content,
+so the asymmetry R10 opened is gone.
+
+**Failure: the new test's setup, confirmed independently.** For a sentence
+row at order 0, `ReferenceClose.accessible` does not add the row's own
+occurrence; anonymous named mentions have no symbol and no Part edge, so
+the frame's activations are their only path. `SituationFrame.from_row`
+leaves activations empty. Production passes the close's written symbols
+and activations into `SituationAddress` (`Models.py` ≈20379, from
+`ClauseRow.py` ≈577), and `test_bind_thought.keep` builds its frames the
+same way. The proposed correction mirrors that path and changes no
+assertion. The delegated review's optional extra assertion is redundant:
+the next assertion already fails without the activations.
+
+**Decided (Alec).**
+
+1. The fixture correction is approved as proposed, with every assertion
+   unchanged and no extra assertion. Freeze it, rerun the same five files
+   once, then review and publication.
+2. A standing exception to the stop rule: when a diagnosis shows that a
+   test written in the same round fails only because its setup differs
+   from production's path, and the fix keeps every assertion, Codex applies
+   it, lists it in the receipt and proceeds to review. Failures in existing
+   tests or in production still stop for Claude and Alec.
+
+**Notes for step 2c**, from the delegated review, with no change now: a
+same-close joined site plans an arrival that commit skips, because uses are
+bound after arrivals; and the next read plans a preview-only arrival for a
+still-pending address. Both lie outside the reference term. Check them when
+2c changes arrivals or promotion.

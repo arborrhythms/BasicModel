@@ -1,0 +1,7 @@
+{
+  "base": "58722725d",
+  "assertion_nodes": 39,
+  "all_assertions_unchanged": true,
+  "production_and_configuration_unchanged": true,
+  "applied_patch": "../2026-10-21-item3-5-r10/proposed-fixture-correction.patch"
+}
