@@ -875,3 +875,157 @@ The constructor in `test_independent_components.py` also supplied
 the decided frame API removal; all of its assertions remain verbatim.
 No production or existing-test failure is being treated as a same-round
 setup exception.
+
+## 18. Codex's 2b preflight — 2026-10-22; for Claude and Alec
+
+2a is published: BasicModel **`0b030e3eb`**, WikiOracle **`baa2e7f`**.
+The cull's frozen source is `d4f316411`; its [receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
+records 223 passes, seven existing skips and Claude's **publish, no
+blockers** verdict. The separately published rename and this sole cull
+complete 2a. No 2b production or test change has been made, and no 2b gate
+has run. These questions are a code review of the published source, not
+failed-test diagnoses. The [2b spec-review receipt](../benchmarks/2026-10-22-item3-5-step2b-spec-review/README.md)
+retains this review and Claude's response.
+
+The decided owner, tagged layouts, whole-entry occurrence handles,
+acyclic graph and transitive protection in §§10–12 are not reopened.
+`metadata_required` and `semantic_fingerprint` stay while they authenticate
+sidecar content. §16 requires the following three representation decisions
+before their implementation; the two test dispositions follow from the
+same preflight and the standing assertion rule.
+
+### Q1. Leaf-posting restoration: keep the specified standalone wire view?
+
+`MemoryIndex.LeafCodeIndex` serializes `posting_codes`, `posting_roles`,
+`posting_rows` and `leaf_complete`. Its loader validates dimensions,
+dtypes, row ranges and unique/sorted postings, then exposes the restored
+cache to a standalone store. With a complete owner,
+`configure_model_index` calls `reindex_meanings`, replacing that cache from
+the retained readings. These are two live contracts:
+
+- `test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe`
+  requires the compact serialized column and retrieval from the restored
+  standalone store, including subsequent append and reset.
+- `test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point`
+  supplies a structurally valid stale cache and requires the attached
+  owner to rebuild the correct terms. The integrated checkpoint case in
+  `test_learning_readiness.py` requires malformed `posting_codes` to fail.
+
+**Recommendation:** retain these wire columns and `leaf_complete` as the
+specified standalone cache view in 2b. Keep their current validation;
+once the owner and both tables have loaded, rebuild from tagged reading
+rows before owner-backed retrieval. The serialized cache does not become
+an authority over the loaded derivation. This preserves the current
+standalone and complete-owner restore contracts and needs no assertion
+port in those cases. Removing the wire cache instead would require an
+explicit change to the standalone API and S10 ports. **Decision for Alec:**
+keep this specified wire view, or make complete-owner restoration a
+prerequisite and authorize its concrete test ports?
+
+### Q2. Adjacency: retained witness columns or a new LTM1 layout?
+
+`Models._commit_sentence` calls `witness_adjacency(row, identified_codes)`.
+`MemoryIndex` stores `(left code, right code) -> {(occurrence address,
+pair position)}` and serializes it through `adjacent_left`,
+`adjacent_right`, `adjacent_address` and `adjacent_position`. Re-witnessing
+replaces that address's pair witnesses; compaction removes dead addresses;
+codebook remapping updates code addresses. `reindex_meanings` does not
+reconstruct these observations.
+
+The data is consumed: `MereologicalCodes.centroid_forms` supplies it to
+`SymbolCentroid.place`, where distinct witnesses weight adjacent wholes;
+`begin_forward` snapshots it for both trials. The keys are word-bank code
+addresses, not untagged native concept IDs. The checkpoint, replacement
+and compaction assertions in
+`test_operators_final.py::test_adjacent_wholes_rewitness_compact_and_checkpoint`
+require the exact witnesses, including pair position. A bare
+`Part(SYM left, SYM right)` would not preserve that occurrence/position
+multiplicity or identify the pair whole.
+
+**Recommendation:** retain the four columns as justified inverted witness
+data in 2b, preserving those assertions. Do not describe them as a cache
+that the new reading rows already rebuild. Moving them to LTM1 needs a
+reviewed pair-whole and witness-position layout, with a code-to-symbol
+mapping and no reference into part of an LTM0 entry. **Decision for Alec:**
+retain the columns for this round, or specify that layout before 2b?
+
+### Q3. `unspecified` mode is also produced by live writes
+
+`LTM0._load_from_state_dict` gives legacy conversation rows mode
+`unspecified`; only the accepted user/provisioned origins get assertive
+fact status. More than migration depends on this value:
+`ClauseRows.write_clause` constructs a live prediction's estimate with
+`mode='unspecified'` (`ClauseRow.py:443–445`). `ConceptualMeaning` permits
+all three modes and `raw_meaning_of` returns the stored one. Thus §16's
+"legacy `unspecified` rows" understates the boundary. Absence of an open
+reference does not establish an assertion, and an open pending name is
+not by itself a question.
+
+**Recommendation:** keep `grammatical_mode` as a justified column through
+2b for the accepted three-mode API, including live estimates and legacy
+unknowns. Implement the decided question layout, but do not default
+unknown rows to assertions or infer mode from the presence of any open
+site. Retire the column only once all accepted modes have a specified
+lossless structural source. No new flag or duplicate compatibility field.
+**Decision for Alec:** retain the column on this basis, or specify the
+unknown/live-estimate layout and restore rule before deleting it?
+
+### Q4. The implicit-pair decision requires two expected-value ports
+
+§16 already decides the production rule: the pair is evidence for the
+meaning as stated; polarity remains a separate semantic field. The shared
+implicit-pair branch in `LTM0.append_meaning` currently reverses that pair
+for a negative meaning. The existing parametrized
+`test_operators_round3a.py::test_trust_to_pair_and_negation` requires the
+old reversal in exactly two cases.
+
+**Recommended port for Alec's authorization:** change only these two
+parameter tuples:
+
+```python
+(.7, False, (0., .7))  ->  (.7, False, (.7, 0.))
+(-.4, False, (.4, 0.)) ->  (-.4, False, (0., .4))
+```
+
+Every assertion body, the other three cases, the retained trust-derived
+pair check and the absence-of-retired-`trust` check stay verbatim. This is
+an expected-value change required by §16, not a setup correction; it is
+proposed here and has not been applied. New regression coverage will
+exercise the affected write paths and retained polarity on the 2b source.
+
+### Q5. The coarsening fixture also tests the old deletion policy
+
+The `refs` representation port has two straightforward locations in
+`test_forgetting.py`: replace the removed-column snapshot at `:126` with
+the tagged-reference representation, and replace the raw `refs` fixture
+write at `:139` with the retained occurrence edge. But the assertion at
+`:156` is not the only issue.
+
+`test_idea_coarsens_parent_and_relation_cascades` also requires the child
+to be deleted, the idea parent's reference to become `None` and
+`coarsened == 1`, or the relation parent to be deleted in the same pass
+with `cascade == 1`. `Forgetting.forget` implements precisely this in
+`deletion()`: it edits a surviving parent's references or adds its parent
+to the removal set. Under §§10–11, a surviving relation protects its
+targets, no row is rewritten, and a removed relation releases targets
+only for the next pass. Merely porting `store.refs[index, 0] == -1` to a
+new reader would retain the wrong policy once the dependency is in LTM1.
+
+**Recommendation for Claude to check and Alec to decide:** port this
+case to the already decided protection contract, preserving both
+idea/relation variants, capacity, value weights and the content equality
+check. With the parent surviving, require the child and its reference to
+remain, with zero coarsening and zero same-pass cascade. Add a separate
+case that removes an unreferenced relation, proves its target survives
+that pass, and permits reclamation on the next pass. Authorize the
+corresponding old-policy assertions to change; do not call them mere
+column-name changes or keep a second legacy deletion policy. The exact
+tagged accessors and snapshot patch will be listed with the 2b source
+before freezing; no existing assertion has changed in this preflight.
+
+Work stops before 2b implementation for Claude's code-fact review and
+Alec's dispositions. The two R10 arrival observations remain in 2c. The
+2a review's `SentenceEndState.where` recall-history observation goes to
+the 5.5 context-wholes spec; it does not expand this cull or 2b. No gates
+are rerun, and the one full sweep remains at step 2's end. No learning
+claim and no transition to item 3.0.

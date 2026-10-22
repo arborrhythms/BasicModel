@@ -20,21 +20,21 @@ lines below keep the numbers their items had when they landed.
 **Current:** Item 3.5 line 1 and R10 are published. R10 landed at
 `e243d7bdf` (WikiOracle `2ffda78`), with its unchanged assertions, 111
 passes and four existing skips; the earlier failure stays retained.
-**Line 2, step 2a:** the separate rename landed at `804d8adcb` (WikiOracle
-`dbd9b52`), reviewed source `eb6980e7d`, with 198 passes and seven existing
-skips. Alec's [§16 decisions](doc/plans/2026-10-21-step2-one-ltm.md#16-claudes-review-of-step-2a-decided-alec-2026-10-22)
-authorize 2a's one cull: remove the stored `where` column and row/frame
-exports, retaining `.when`. The exact-value and shape-check ports are
-authorized; the [new receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-records frozen source `d4f316411`: 223 passes and seven existing skips,
-with Claude's approval to publish. This completes 2a's rename and sole cull.
-2b follows with tagged references and the structural move, `refs` retired
-when replaced, and removal of the implicit negative-meaning evidence swap.
-Its leaf-posting restore contract, adjacency representation and legacy
-`unspecified` modes need dated spec questions and decisions. Metadata
-authentication remains while sidecar content needs it. 2b and 2c are
-unstarted; the two R10 arrival notes stay in 2c. No fresh series, sweep or
-learning claim. Item 3.0 has not been reached.
+**Line 2, step 2a is published:** rename at `804d8adcb` (WikiOracle
+`dbd9b52`), sole cull at `0b030e3eb` (WikiOracle `baa2e7f`). The cull's
+frozen source `d4f316411` passed 223 cases with seven existing skips;
+Claude approved publication. `where` is off the LTM0 row and frame;
+`.when` and percept location stay, with both storage-test ports authorized.
+The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
+retains every report and capture. **2b stops before implementation** at
+[spec §18](doc/plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec):
+leaf-posting restoration, adjacency witnesses and legacy/live unspecified
+mode need decisions; the implicit-pair expected values and old coarsening
+policy need explicit test dispositions. Claude reviews these code facts
+before Alec decides. Metadata authentication stays while sidecar content
+needs it. 2c retains the two R10 arrival notes; the recall-history location
+note belongs to the 5.5 context-wholes spec. No fresh series or full sweep;
+one full sweep remains at step 2's end. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -710,11 +710,12 @@ not by a passing identity lesson.
    source `23a41540f`: the named preview token
    retains content, and its approved fixture correction passes every scoped
    gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
-   Step 2a's separate rename landed at `804d8adcb`. Its one cull, `where`,
-   is authorized by [§16](doc/plans/2026-10-21-step2-one-ltm.md#16-claudes-review-of-step-2a-decided-alec-2026-10-22),
-   with the remaining shape-test port authorized in §17. The other fields
-   stay until 2b's replacements and representation choices. No step-2
-   completion is claimed.
+   Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
+   (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
+   seven existing skips and Claude's approval. 2b stops at the dated
+   [§18 questions](doc/plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec)
+   before implementation. The other fields stay until their decided
+   replacements and representation choices. No step-2 completion is claimed.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),

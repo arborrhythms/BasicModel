@@ -1,5 +1,15 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2b preflight, 2026-10-22:** 2a is published at BasicModel
+`0b030e3eb` / WikiOracle `baa2e7f`, with source `d4f316411` and the
+reviewed gates below. [Step-2 spec §18](../../plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec)
+records the required restore, adjacency and mode questions, the implicit
+evidence expected-value port and the old coarsening-policy conflict.
+The [separate spec-review receipt](../2026-10-22-item3-5-step2b-spec-review/README.md)
+contains the review input and response. No production/test change or 2b
+gate; implementation stops for Claude and Alec. The two arrival notes
+stay in 2c; no learning claim and item 3.0 has not been reached.
+
 **Step 2a location cull, frozen source `d4f316411`, 2026-10-22:** the
 rename is published at BasicModel `804d8adcb` / WikiOracle `dbd9b52`.
 Alec's step-2 §§16–17 decisions remove `where` from the LTM0 row and
