@@ -1,0 +1,170 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+    "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+    "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address"
+  ],
+  "completed": [
+    "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+    "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+    "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+    "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+    "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+    "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+    "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+    "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+    "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+    "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+    "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006636959034949541,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022518751211464405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014934708131477237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004245875170454383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005035832989960909,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002495124936103821,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005288542015478015,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000961958896368742,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0032356251031160355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033003748394548893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0033404999412596226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002283375011757016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018481661099940538,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010499457828700542,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

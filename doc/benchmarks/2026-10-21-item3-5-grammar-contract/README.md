@@ -1,6 +1,8 @@
 # Grammar-only reference sites — 2026-10-21
 
-Status: contract source prepared for its first freeze; no gates claimed yet.
+Status: contract gates pass on `eb858be39`; the first failed source and its
+authorized fixture port remain below. The subsequent reconstruction term
+has its own [source and receipt](../2026-10-21-item3-5-reference-reconstruction/README.md).
 Base: `bb1678d170c8b7e98a8c6e2b1abe3250887d0087`, whose production,
 test and config files match published `cf61b5678`.
 Authority: reconstruction spec §§10, 12–13. This is the first commit of

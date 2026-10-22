@@ -1,0 +1,29 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_reconstruction.py::test_bind_departure_changes_r_keep_and_the_resolvers_score_function",
+    "test/test_reference_reconstruction.py::test_same_close_alias_charges_the_bound_mention_and_not_the_mint",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.0]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.1]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.35]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[own]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[mint]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[gap]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[arrival]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[covered]",
+    "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description",
+    "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
+    "test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+    "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,5 +1,23 @@
 # Step 1b: current gates and carry ledger
 
+**Item 3.5 line 1, frozen source `3a9db635e`, 2026-10-21:** the
+grammar-only contract and reconstruction-reference term are implemented
+under the reconstruction spec §§8–13. Its [separate receipt](../2026-10-21-item3-5-reference-reconstruction/README.md)
+records the source audit and all scoped gates passing: 233 passed case
+executions and seven declared prerequisite skips. Twelve distinct fresh
+first draws give 0 bound / 8 open forward and 0 bound / 16 open reverse;
+all 102 actual bind departures tie with zero reference-term difference.
+Claude recommends landing with no blocker. Publication is held for Alec's
+new own-object content decision in reconstruction spec §14: the retained
+probe reads a 0.1 same-close alias cost versus zero on the next close.
+The handoff requires this stop for a new question; production remains
+unchanged. The [contract receipt](../2026-10-21-item3-5-grammar-contract/README.md)
+retains the failed unstamped fixture on `15f154dca`, its authorized order
+port, and the passing contract gates on `eb858be39`. None are promoted to
+the term's source. Step 1b itself is published at `cf61b5678` (WikiOracle
+`4a9527f`), with the post-landing review in bind plan §22. The following
+step-1b ledger is historical; no failed run or learning boundary is erased.
+
 **Current §21 source `cc3672cfb`:** all requested gates pass by this
 hash: twelve distinct fresh first draws, the eight-file set, both original
 decomposition arms, both eight-seat MM draws, C's pair, carrier and 78

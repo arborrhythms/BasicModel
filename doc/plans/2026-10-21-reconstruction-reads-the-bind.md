@@ -1,9 +1,12 @@
 # Reconstruction reads the bind (Claude, 2026-10-21; for Codex)
 
-**Status:** spec for Codex's review before any code. Alec's proposal
-(bind plan §20, decision 2: "Maybe reconstruction should read the
-bind?"); the open choices are §6. Facts about the current code come from a
-read of `bin/` on `bb1678d17`.
+**Status:** Alec's decisions are §§8–13, superseding the earlier open
+choices. Implemented in frozen `3a9db635e`; all scoped gates pass and Claude
+recommends landing. Publication is held for the new question in §14 under
+the handoff's stop rule. Evidence and review are recorded in the
+[line-1 receipt](../benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md).
+The original proposal is bind plan §20, decision 2 ("Maybe reconstruction
+should read the bind?"). The original code facts below describe `bb1678d17`.
 
 ## 1. The problem, in the code
 
@@ -301,7 +304,8 @@ selected reference may be a candidate key, an occurrence or a same-close
 alias `('new', n)`; an alias bind pays like any bind. The candidate's
 content is its record's `value` when present and its `content` otherwise
 (a fresh mint carries only `content`). A same-close alias bind is gated
-separately from the earlier site's mint.
+separately from the earlier site's mint. A gap has no word and costs zero
+even when it binds; this retains §3's explicit gap exemption.
 
 **R5, accepted, and my weight rationale was wrong.** The free-bytes term
 uses `reconstruction_scale` (default 0.5; 1.0 in `BasicModel.xml`; 0.1 in
@@ -683,3 +687,55 @@ deferred to item 3, with order in the parts of speech
 ([FutureWork](../FutureWork.md#order-in-the-parts-of-speech-alec-2026-10-21-decide-before-item-3)).
 3.5 adds no part-of-speech learning, and its order-1 stand-ins (§12)
 remain until then.
+
+## 14. Codex post-implementation review — 2026-10-21; stopped for Alec
+
+Frozen source `3a9db635e69e87c17dc50c13c42c2f3eee10910f` passes every
+requested scoped gate: 233 passed case executions and seven existing
+prerequisite skips. [Claude's read-only review](../benchmarks/2026-10-21-item3-5-reference-reconstruction/claude-review.md)
+recommends landing and finds no blocking contract or correctness issue.
+It raises the following new design choice, with a recommendation that it
+can be a separate follow-up. The handoff says, "any new question goes
+into the spec as a dated section, and you stop for Claude and Alec."
+Accordingly publication is held here for Alec; production and certificate
+assertions remain unchanged. Lines 2–7 have not started.
+
+### R10. What content does a named own-object record expose within its first close?
+
+`ReferenceClose.preview` still sets `value = content*0 if anonymous else
+content` (lines 791–797). An own object is anonymous when its request has
+a forward name. Before this round those leaf sites always had empty
+content. Under §12 an order-one leaf keeps its own content, which can be
+nonempty. Its temporary candidate record nevertheless stays empty. A
+later occurrence in the same close can bind that alias and pay the full
+reference cost; after the introducing close, `token_value` reads the same
+content from its retained row and a covering bind pays zero.
+
+The [retained fixture probe](../benchmarks/2026-10-21-item3-5-reference-reconstruction/named-alias-probe/result.json)
+reproduces this on the frozen source without a production edit. It gives
+the named participant an order-one reading with one coordinate of content,
+as §13 permits. The second site's ordinary bind departure chooses
+`('new', 0)`: request mass 1, candidate mass 0, weighted cost **0.1**.
+The same mention in the next close chooses the introducing occurrence:
+request mass 1, candidate mass 1, weighted cost **0**. Preview and cost
+leave rows, bank and pool unchanged in both cases. The probe's initial
+RNG, model, source and menus are retained. This is a record asymmetry,
+not a wrong antecedent or a failed gate; no assertion has been relaxed.
+
+**Question for Alec:** should that temporary own-object record retain its
+site's content, or remain empty until an arrival? **Claude and Codex
+recommend retaining the content**, preserving its anonymous kind and
+pending-name status until refinement. This changes ordinary resolver
+features as well as reconstruction, so it needs a declared change and a
+same-sentence repeated-name regression. Claude recommends treating it as
+a separate small follow-up. Alec may authorize that disposition and land
+this reviewed source, or require the repair before publication; no scope
+choice is inferred here.
+
+The remaining review notes do not require a source change: the receipt
+explains the null fresh series (87 arrival departures outside the term,
+15 closing departures with empty queries); the gap exemption is explicit
+above; the historical-occupation marker limitation is carried with parts
+of speech; and copies of both original decomposition snapshots are retained
+in the receipt for publication. No second sweep or learning claim follows
+from these documentation changes.

@@ -1,0 +1,762 @@
+diff --git a/bin/ClauseJournal.py b/bin/ClauseJournal.py
+index 8869b264c..1f1df23a4 100644
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -24,14 +24,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+         raise ValueError('cannot finish a reading that is not open')
+     from Language import TheGrammar
+     from ReferenceContext import binding_spec, operation_modes, result_order
+-    interpreter = getattr(getattr(registry, 'space', None), 'interpret', None)
+-    no_object = set() if interpreter is None else {
+-        leaf for leaf, identity in enumerate(program.concept_ids)
+-        if int(program.word_rows[leaf]) >= 0 and interpreter.no_object(int(identity))}
+-    # A staged OBJECT address is retained even in the mixing reader, whose
+-    # WORD lane is absent. It must not be interpreted again as an objectless
+-    # word: that would replace the captured bank value with an empty subject
+-    # and bootstrap an extra occurrence context for the next reconstruction.
++    orders = program.leaf_orders
++    if program.reference_orders is not None:
++        orders = (program.reference_orders if orders is None else
++                  torch.where(program.reference_orders >= 0, program.reference_orders, orders))
++    # The carried address identifies the referent; the leaf keeps its own
++    # captured content. Site eligibility comes from its reading and position.
+     refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+     native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
+     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
+@@ -79,10 +77,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             known = selected > 0
+             minimum = torch.where(known, selected, torch.inf).amin(0)
+             pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+-        orders = program.leaf_orders
+-        if program.reference_orders is not None:
+-            orders = (program.reference_orders if orders is None else
+-                      torch.where(program.reference_orders >= 0, program.reference_orders, orders))
+         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
+         return dict(order=order, evidence=pair)
+     # Each node owns the exact grammar action and its live operands.
+@@ -93,11 +87,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             has_point = reference_has_point(int(refs[word]),
+                 program.reference_relations is None or not bool(program.reference_relations[word]))
+             stack.append(dict(value=values[word], composed_value=values[word], ref=int(refs[word]), rule=None,
+-                              order=-1 if program.leaf_orders is None else int(program.leaf_orders[word]),
++                              order=-1 if orders is None else int(orders[word]),
+                               children=(), leaves=(word,), has_point=has_point))
+-            if word in no_object:
+-                stack[-1]['close_request'] = dict(mode='pronoun', leaves=(word,),
+-                    cue=values[word], content=torch.zeros_like(values[word]),
++            if stack[-1]['order'] == 1:
++                stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
++                    cue=values[word], content=values[word],
+                     forward_identity=forward_name(word), leaf=True)
+             continue
+         if kind == 3:
+@@ -366,11 +360,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                     break
+                 current = current['children'][role - 1]
+                 request = current.get('close_request')
+-            if request is None:
++            if request is None or item['order'] != 1:
+                 return None
+             if request.get('leaf') and (not referent or id(composition(item)) not in noun_terms):
+                 # A predicate's form is an operator operand, not an
+-                # objectless participant. A provisional marker likewise
++                # participant. A provisional marker likewise
+                 # cannot become an occurrence object merely by ending a
+                 # field. Keep the kept derivation's raw identity/content.
+                 return None
+@@ -380,8 +374,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             if forward is not None and request['mode'] != 'mint':
+                 request = dict(request, forward_identity=forward)
+                 if leaf_request.get('leaf'):
+-                    # A unary bind still owns the same objectless word site.
+-                    # Keep its name and empty content when wrapping the leaf.
++                    # A unary bind still owns the same word site. Keep its
++                    # name and content when wrapping the leaf.
+                     request.update(content=leaf_request['content'],
+                                    cue=leaf_request.get('cue'))
+             point = request['content'] if current is item or request.get('leaf') else region(item)
+diff --git a/bin/Language.py b/bin/Language.py
+index bf03ef9c8..32a5377c1 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -12593,9 +12593,7 @@ class LanguageSpace(nn.Module):
+         if leaf_orders is None:
+             leaf_orders = concept_ids.new_tensor([
+                 owner._concept_source_order(int(identity)) for identity in concept_ids])
+-        selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders,
+-            no_object=[int(word_rows[leaf]) >= 0 and owner.interpret.no_object(int(identity))
+-                       for leaf, identity in enumerate(concept_ids)])
++        selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders)
+         for leaf, (order, mode) in selected_requests.items():
+             if order < 0:
+                 continue
+diff --git a/bin/Models.py b/bin/Models.py
+index 18bfa8501..5b9cde62e 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -2409,6 +2409,10 @@ class BaseModel(Mereology, nn.Module):
+             TheXMLConfig.training("reconstructionBasisLimit", 16))
+         if self.reconstruction_basis_limit < 1:
+             raise ValueError("reconstructionBasisLimit must be positive")
++        self.reconstruction_reference_weight = float(
++            TheXMLConfig.training('reconstructionReferenceWeight', .1))
++        if not math.isfinite(self.reconstruction_reference_weight) or self.reconstruction_reference_weight < 0:
++            raise ValueError('reconstructionReferenceWeight must be finite and nonnegative')
+         # Slice 3: the answer realisation's generate walk as the second
+         # compiled loop (its own state, policy and termination).
+         self.output_in_loop = bool(
+@@ -19816,7 +19820,17 @@ class BasicModel(BaseModel):
+         record = self._trial_understanding(state, sid, active)
+         observation = self._sentence_observation(state, sid, active)
+         observation['record'] = record
+-        if getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop):
++        reconstruct = getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop)
++        reference = None
++        if reconstruct and observation.get('reference_plans'):
++            from ReferenceReconstruction import cost as reference_cost
++            reference = reference_cost(self._concept_owner().components.reference_close,
++                                       observation['reference_plans'], root)
++        if reconstruct:
++            if reference is not None:
++                errors.error('reconstruction.reference', reference, 1., mask=active,
++                    weight=getattr(self, 'reconstruction_reference_weight', .1),
++                    category='reconstruction')
+             reconstruction = self._reconstruct_trial(record)
+             available = self.inputSpace._reconstruction_sentence_available[:, sid] & active
+             errors.error('reconstruction.free_bytes', reconstruction[2], math.log(256), mask=available,
+@@ -20604,7 +20618,7 @@ class BasicModel(BaseModel):
+             lexical_capacity = max(collections.Counter(word for word, _ in pairs).values(), default=0)
+             occupations = self.languageSpace.parts_of_speech.counts
+             literals = ids.new_tensor([identity for identity, counts in occupations.items()
+-                if counts.get('surface_argin1', 0) and interpreter.no_object(identity)])
++                if counts.get('surface_argin1', 0)])
+         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
+                              types, cases, inventory, interpreter, associations, orders,
+                              close_references=bool(getattr(self, '_component_reading', False)),
+diff --git a/bin/PartClosing.py b/bin/PartClosing.py
+index cc8da92fd..b33d1cf2f 100644
+--- a/bin/PartClosing.py
++++ b/bin/PartClosing.py
+@@ -182,14 +182,10 @@ class PartClosing:
+         self._plan.append(record)
+         return reference
+ 
+-    def _definition(self, symbol, word, evidence):
+-        if symbol is None or not self._native(word) or word == symbol:
++    def _definition(self, symbol, word, evidence, *, marker=False):
++        if marker or symbol is None or not self._native(word) or word == symbol:
+             return
+         interpreter = getattr(self.owner, 'interpret', None)
+-        if interpreter is not None and interpreter.no_object(symbol):
+-            # A selected existing marker is not a newly minted object. An
+-            # enclosing mint must not redefine that marker as its noun.
+-            return
+         description = self.alloc.word_descriptions.get(word)
+         if description is None and interpreter is not None:
+             description = interpreter._pending.get(word)
+@@ -242,10 +238,21 @@ class PartClosing:
+                 self._word_origins[id(term)] = int(clause.subject_word_id), clause.evidence
+ 
+     def preflight(self):
++        # A surface argument contributes form, not a noun definition. The
++        # kept plan supplies this position even when the word has an object.
++        markers = set()
++        pending = [record['value'].children[0] for record in self._plan
++                   if record['value'].operation == 'surface'
++                   and len(record['value'].children) == 2]
++        while pending:
++            term = pending.pop()
++            if id(term) not in markers:
++                markers.add(id(term))
++                pending.extend(term.children)
+         for term, (word, evidence) in self._word_origins.items():
+             record = self._planned[term]
+             if record['seat'] or self._point(record['symbol']) is not None:
+-                self._definition(record['symbol'], word, evidence)
++                self._definition(record['symbol'], word, evidence, marker=term in markers)
+         ref = self.store.__dict__.get('_occupation_owner')
+         occupations = None if ref is None else ref()
+         for record in self._plan:
+diff --git a/bin/PartRead.py b/bin/PartRead.py
+index 72ecef3cc..d4e78898c 100644
+--- a/bin/PartRead.py
++++ b/bin/PartRead.py
+@@ -93,51 +93,39 @@ def argument_reader(store, incomplete=None):
+     """Classify retained pairs from their admitted argument occupations."""
+     from collections import Counter
+     from PartsOfSpeech import operation_name
+-    from Spaces import _concept_alloc_of
+-    owner = store._concept_owner()
+-    allocator = _concept_alloc_of(owner)
+     ref = store.__dict__.get('_occupation_owner')
+     occupations = None if ref is None else ref()
+     rules = store.__dict__.get('_part_read_rules', ())
+     incomplete = [] if incomplete is None else incomplete
+ 
+     def counts(symbol):
+-        direct = Counter() if occupations is None else Counter(occupations.counts.get(symbol, {}))
+-        words = Counter()
+-        if occupations is not None:
+-            for word in owner.definitions.words(symbol):
+-                words.update(occupations.counts.get(word, {}))
+-        return direct, words
++        return Counter() if occupations is None else Counter(occupations.counts.get(symbol, {}))
+ 
+     def operation(arguments):
+         evidence = [counts(symbol) for symbol in arguments]
+         # A marker contributes surface form, even when the admitted
+         # numerical derivation combined it with an unheaded operation.
+-        # Its objectless argument type owns the semantic head read.
++        # Its recorded argument position owns the semantic head read.
+         if marker(arguments[0], set()):
+             surface = next((rule for rule in rules if rule.method_name == 'surface'), None)
+             if surface is not None:
+                 return surface
+-        for fallback in (False, True):
+-            matches = {}
+-            for rule in rules:
+-                if len(rule.rhs_symbols) != 2:
+-                    continue
+-                name = operation_name(rule)
+-                # The objectless-marker rule above resolves a surface use
+-                # even when other occupations coexist. Otherwise the
+-                # catalogue still admits an unambiguous recorded surface
+-                # pair: its marker argument may itself be a composed value.
+-                roles = (2, 1) if rule.method_name == 'whole' else (1, 2)
+-                if all((direct + words if fallback else direct)[f'{name}_argin{role}'] > 0
+-                       for (direct, words), role in zip(evidence, roles)):
+-                    reading = (int(rule.head_role or 0), rule.clause_form, rule.relation_kind)
+-                    matches.setdefault(reading, rule)
+-            if len(matches) == 1:
+-                return next(iter(matches.values()))
+-            if len(matches) > 1:
+-                incomplete.append('ambiguous_argument_occupations')
+-                return None
++        matches = {}
++        for rule in rules:
++            if len(rule.rhs_symbols) != 2:
++                continue
++            name = operation_name(rule)
++            # The catalogue admits an unambiguous recorded pair; its marker
++            # argument may itself be a composed value.
++            roles = (2, 1) if rule.method_name == 'whole' else (1, 2)
++            if all(count[f'{name}_argin{role}'] > 0
++                   for count, role in zip(evidence, roles)):
++                reading = (int(rule.head_role or 0), rule.clause_form, rule.relation_kind)
++                matches.setdefault(reading, rule)
++        if len(matches) == 1:
++            return next(iter(matches.values()))
++        if len(matches) > 1:
++            incomplete.append('ambiguous_argument_occupations')
+         return None
+ 
+     def marker(symbol, seen):
+@@ -146,11 +134,7 @@ def argument_reader(store, incomplete=None):
+         if store.parts.contains(symbol):
+             return all(marker(child, seen | {symbol})
+                        for child in store.parts.refs[symbol].tolist())
+-        direct, words = counts(symbol)
+-        # Read this argument's type. A later definition of an object named
+-        # by the same word does not turn the retained marker into that object.
+-        return ('object' not in allocator.symbol_types.get(symbol, ())
+-                and (direct + words)['surface_argin1'] > 0)
++        return counts(symbol)['surface_argin1'] > 0
+ 
+     return operation, marker
+ 
+diff --git a/bin/ReferenceClose.py b/bin/ReferenceClose.py
+index 5815153a6..9a11ad73b 100644
+--- a/bin/ReferenceClose.py
++++ b/bin/ReferenceClose.py
+@@ -620,13 +620,25 @@ class ReferenceClose(nn.Module):
+         The journal need not invent a second NP request. Its retained forward
+         name supplies the anonymous constituent only at the closing boundary.
+         """
+-        from ClauseRow import Clause, Composition
++        from ClauseRow import Clause
+         from Meaning import ConceptualMeaning
+         from ThoughtReferences import bindings, open_slots
+         from ReferenceParticipants import clause_participants
+         _, participants, terms = clause_participants(clause,
+             self.store.__dict__.get('_part_read_rules', ()))
+-        noun_leaves = {leaf for term in terms.values() if not term.children for leaf in term.leaves}
++        def source_leaf(node, name, held):
++            leaves = set(held.get('leaves', ()))
++            pending = [node.composition]
++            while pending:
++                term = pending.pop()
++                if term is None:
++                    continue
++                if (not term.children and id(term) in terms and term.order == 1
++                        and term.word_id == name
++                        and (not leaves or leaves.intersection(term.leaves))):
++                    return term
++                pending.extend(reversed(term.children))
++            return None
+         result, seen, nodes = [], set(), []
+         def visit(node):
+             if node is None or id(node) in seen:
+@@ -648,20 +660,18 @@ class ReferenceClose(nn.Module):
+                         if (child.reference_request or {}).get('forward_identity') == name:
+                             continue
+                     held = dict(requests.get(role, ()))
+-                    if role not in (0, 2) or (node.composition is not None
+-                            and not set(held.get('leaves', ())).intersection(noun_leaves)):
++                    term = source_leaf(node, name, held)
++                    if role not in (0, 2) or term is None:
+                         continue
+-                    zero = torch.zeros_like(node.meaning.roles[role])
+                     def value(key, fallback):
+-                        return fallback if held.get(key) is None else zero.new_tensor(held[key])
+-                    request = dict(mode='pronoun', forward_identity=name, role=role,
+-                        leaves=tuple(held.get('leaves', ())), content=zero,
+-                        cue=value('cue', node.meaning.roles[role]),
++                        return fallback if held.get(key) is None else term.point.new_tensor(held[key])
++                    request = dict(mode='bind', forward_identity=name, role=role,
++                        leaves=term.leaves, content=term.point,
++                        cue=value('cue', term.point),
+                         predicate=value('predicate', node.meaning.roles[1]))
+-                    site = Clause(ConceptualMeaning.from_description(zero), point=zero,
+-                        order=1, evidence=node.evidence, subject_word_id=name,
+-                        reference_request=request, composition=Composition(zero,
+-                            word_id=name, leaves=request['leaves'], order=1))
++                    site = Clause(ConceptualMeaning.from_description(term.point), point=term.point,
++                        order=term.order, evidence=node.evidence, subject_word_id=name,
++                        reference_request=request, composition=term)
+                     result.append(dict(node=site, parent=node, site_role=role))
+             for child in (*node.children, *node.companions):
+                 visit(child)
+@@ -675,11 +685,13 @@ class ReferenceClose(nn.Module):
+             if term is None or id(term) in visited_terms:
+                 return
+             visited_terms.add(id(term))
+-            if not term.children and id(term) in terms and term.word_id in names:
+-                zero = torch.zeros_like(term.point)
+-                request = dict(mode='pronoun', forward_identity=term.word_id,
+-                    role=0, leaves=term.leaves, cue=term.point, content=zero, predicate=zero)
+-                node = Clause(ConceptualMeaning.from_description(zero), point=zero, order=1,
++            if (not term.children and id(term) in terms and term.order == 1
++                    and term.word_id in names):
++                request = dict(mode='bind', forward_identity=term.word_id,
++                    role=0, leaves=term.leaves, cue=term.point, content=term.point,
++                    predicate=torch.zeros_like(term.point))
++                node = Clause(ConceptualMeaning.from_description(term.point), point=term.point,
++                    order=term.order,
+                     evidence=clause.evidence, subject_word_id=term.word_id,
+                     composition=term, reference_request=request)
+                 result.append(dict(node=node, parent=None, site_role=None, lexical=True))
+diff --git a/bin/ReferenceContext.py b/bin/ReferenceContext.py
+index 58386779d..ca53d9f08 100644
+--- a/bin/ReferenceContext.py
++++ b/bin/ReferenceContext.py
+@@ -127,7 +127,7 @@ def operation_modes(rule):
+     return modes
+ 
+ 
+-def reference_requests(language, actions, *, leaf_orders=None, operation_refs=None, no_object=None):
++def reference_requests(language, actions, *, leaf_orders=None, operation_refs=None):
+     """Resolve a selected role at its head; the enclosing scope owns its kind.
+ 
+     A kept numerical journal optionally adds the selected native reference
+@@ -140,8 +140,6 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
+         if kind < 0:
+             break
+         if kind == 0:
+-            if no_object is not None and bool(no_object[word]):
+-                requests[word] = (1, 'pronoun') if references is None else (1, 'pronoun', 0)
+             stack.append(((word,), -1 if stamps is None else int(stamps[word])))
+             continue
+         if kind == 3:
+diff --git a/bin/ReferenceReconstruction.py b/bin/ReferenceReconstruction.py
+new file mode 100644
+index 000000000..30fbe4525
+--- /dev/null
++++ b/bin/ReferenceReconstruction.py
+@@ -0,0 +1,32 @@
++"""Reconstruct a closing mention's description from its chosen record."""
++import torch
++
++
++def cost(resolver, plans, like):
++    """Sum uncovered description shares per sentence, without reading memory.
++
++    The preview already owns the candidate records. A first mention and an
++    elided role supply no reference reconstruction; arrivals are separate
++    thought operations. Same-close aliases are ordinary selected records.
++    """
++    if len(plans) != len(like):
++        raise ValueError('reference reconstruction plans must align with sentence rows')
++    rows = []
++    for plan in plans:
++        total = like.new_zeros(())
++        for item in (() if plan is None else plan['items']):
++            selected = item['selected']
++            if (selected is None or item['mode'] == 'mint' or item.get('own_object')
++                    or not resolver.has_word(item['node'])):
++                continue
++            query = item['content']
++            mass = query.sum()
++            if not bool(mass > 0):
++                continue
++            record = plan['individuals'][selected]
++            candidate = resolver.coordinates(record['value'] if 'value' in record else record['content'])
++            width = min(query.shape[-1], candidate.shape[-1])
++            covered = torch.minimum(query[..., :width], candidate[..., :width]).sum()
++            total = total + 1 - covered / mass
++        rows.append(total)
++    return torch.stack(rows) if rows else like.new_zeros(0)
+diff --git a/data/model.xsd b/data/model.xsd
+index 6fe17af7c..6f2ef1088 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -857,6 +857,7 @@
+       <!-- Independent priority of normalized reconstruction terms;
+            it does not subtract from the answer's priority. -->
+       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
++      <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
+       <!-- Every N batches, log weighted reconstruction/output/expectation
+            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
+       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
+diff --git a/doc/Params.md b/doc/Params.md
+index 82abaa71b..e1c2c2f6f 100644
+--- a/doc/Params.md
++++ b/doc/Params.md
+@@ -169,6 +169,7 @@ Training loop and I/O.
+ | `numWorkers` | int | `0` | DataLoader prefetch workers. `0` = synchronous in-process batch assembly. |
+ | `learningRate` | float | `0.001` | Adam learning rate. |
+ | `reconstructionScale` | float | `0.5` | Weight of reconstruction loss vs prediction loss in $[0, 1]$: $\mathcal{L}_{\text{total}} = (1-r)\,\mathcal{L}_{\text{output}} + r\,\mathcal{L}_{\text{recon}}$.  Legacy name `reverseScale` is still parsed with a one-shot deprecation warning. |
++| `reconstructionReferenceWeight` | float | `0.1` | Independent cost per wholly uncovered closing description bound to an existing referent, including a same-close alias. First mentions, mints, gaps, arrivals and thought episodes cost zero. Enabled with sentence reconstruction; finite and nonnegative. |
+ | `conceptualContextLearningRate` | float | `0.0` | Enables the context-owned ConceptualSpace dictionary updater. Each completed sentence produces one deterministic, reduced tangent rotation per observed codebook row; `similarity_codebook.W` is a persistent non-grad buffer, read through an eager compiler boundary, and never enters Adam. Mutually exclusive with `conceptualSimilarityScale`. |
+ | `conceptualContextSituationWeight` | unitInterval | `0.0` | Weight of bounded predictor anchors added to the sentence's distributional context. The snapshot is taken before that sentence is perceived. Zero retains sentence-local context. |
+ | `conceptualContextSituationAnchors` | nonnegative int | `8` | Maximum number of recent predictor frames contributing to situation context. Zero excludes situation anchors; this never searches LTM. |
+diff --git a/test/test_bind_thought.py b/test/test_bind_thought.py
+index 706877d08..d109be179 100644
+--- a/test/test_bind_thought.py
++++ b/test/test_bind_thought.py
+@@ -167,19 +167,22 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind,
+     from Spaces import _concept_alloc_of
+     assert word in _concept_alloc_of(f.cs).word_forms[marker]
+     assert word in f.cs.word_concepts(marker)
++    _concept_alloc_of(f.cs).reference_orders[word] = 1
+     f.words[marker] = word, word
+     program = f.program(('lift', marker, VERBS[0]))
+     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
+-                      leaf_orders=torch.zeros(2, dtype=torch.long), close_references=True)
++                      leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]),
++                      close_references=True)
+     program = record_reading(f.language, program)
++    assert f.cs._concept_source_order(word) == 1
+     requests = reference_requests(f.language, program.actions,
+-        leaf_orders=program.leaf_orders, no_object=[True, False])
+-    assert requests[0] == (1, 'pronoun')
++        leaf_orders=program.leaf_orders)
++    assert 0 not in requests
+     clause = finish_clause(f.language, program, registry=f.registry)
+     from ReferenceClose import constituents
+     nodes = constituents(clause)
+-    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'pronoun'
+-    assert not nodes[0].point.any()
++    assert len(nodes) == 1 and nodes[0].reference_request['mode'] == 'bind' and nodes[0].order == 1
++    torch.testing.assert_close(nodes[0].point, f.atoms[7], rtol=0, atol=0)
+     # Commit while the antecedents are outside the current situation, then
+     # cue them. The real closing must open the NP, not invent a missing
+     # object role in its containing intransitive clause.
+@@ -339,10 +342,12 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
+     from ReferenceClose import constituents
+     f = native(monkeypatch)
+     word = f.cs.interpret.lookup_word([101], (), form='m')
++    from Spaces import _concept_alloc_of
++    _concept_alloc_of(f.cs).reference_orders[word] = 1
+     f.words['m'] = word, word
+     program = f.program(('lift', 'm', VERBS[0]))
+     program = replace(program, binding_choices=True,
+-        leaf_orders=torch.zeros(2, dtype=torch.long))
++        leaf_orders=torch.tensor([f.cs._concept_source_order(word), 0]))
+     program = record_reading(f.language, program)
+     refs = program.operation_refs.clone()
+     refs[-1, 0] = 0
+@@ -351,7 +356,8 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
+     assert ('referent', 0) in open_slots(clause.meaning)
+     assert not constituents(clause), 'an explicit open role is not a second NP request'
+     metadata = dict(dict(bindings(clause.meaning)['_reference_sites'])[0])
+-    assert metadata['leaves'] == (0,) and not any(metadata['content'])
++    assert metadata['leaves'] == (0,)
++    assert tuple(metadata['content']) == tuple(program.leaves[0].tolist())
+     assert tuple(metadata['cue']) == tuple(program.leaves[0].tolist())
+ 
+ 
+diff --git a/test/test_math_chain_section14.py b/test/test_math_chain_section14.py
+index a6a255332..72ee512ee 100644
+--- a/test/test_math_chain_section14.py
++++ b/test/test_math_chain_section14.py
+@@ -355,6 +355,12 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
+     from math_chain_corpus import ChainDocument
+     from BindingAnswers import matches
+     model = ordinary_model(tmp_path, budget=0)
++    from Spaces import _concept_alloc_of
++    owner = model._concept_owner()
++    if not owner.word_concepts('x'):
++        owner.interpret.lookup_word((ord('x'),), (), form='x')
++    for identity in owner.word_concepts('x'):
++        _concept_alloc_of(owner).reference_orders[identity] = 1
+     sentences = ('y is x plus two.', 'x is three.')
+     if reverse:
+         sentences = sentences[::-1]
+diff --git a/test/test_reference_arrivals.py b/test/test_reference_arrivals.py
+index 9ed6da763..d9cfaaf8e 100644
+--- a/test/test_reference_arrivals.py
++++ b/test/test_reference_arrivals.py
+@@ -43,8 +43,12 @@ def equality(point, word, complement, *, witness=1.):
+             '_reference_sites': ((0, dict(role=0, leaves=(0,), cue=(point*0).tolist(),
+                                           content=(point*0).tolist(), predicate=pred.tolist())),)})
+     value = with_slots(value, (('referent', 0),), pair=(witness, 0.))
++    # Supply the named participant's reading, as the journal does. Its
++    # grammatical position and order license recovery of the open site.
++    source = Composition(point*0, reference=word, word_id=word, leaves=(0,), order=1)
++    composition = Composition(point, (source, child.composition), operation='equal')
+     return Clause(value, relation='equal', refs=(-1, ClausePredicate(pred, 'equal'), ('clause', 0)),
+-                  children=(child,), evidence=(witness, 0.))
++                  children=(child,), evidence=(witness, 0.), composition=composition)
+ 
+ 
+ def force_named(resolver, monkeypatch, target):
+@@ -152,12 +156,15 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
+     from test_bind_thought import native
+     f = native(monkeypatch)
+     word = f.cs.interpret.lookup_word([101], (), form='m')
++    from Spaces import _concept_alloc_of
++    _concept_alloc_of(f.cs).reference_orders[word] = 1
+     f.words['m'] = word, word
+     program = replace(f.program(('definite_unary', 'm')), close_references=True,
+-                      leaf_orders=torch.zeros(1, dtype=torch.long))
++                      leaf_orders=torch.tensor([f.cs._concept_source_order(word)]))
+     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
+     assert clause.reference_request['forward_identity'] == word
+-    assert clause.reference_request['mode'] == 'bind' and not clause.point.any()
++    assert clause.reference_request['mode'] == 'bind'
++    torch.testing.assert_close(clause.point, program.leaves[0], rtol=0, atol=0)
+ 
+ 
+ def test_bound_use_does_not_assign_a_kind_before_arrival(monkeypatch):
+@@ -308,13 +315,13 @@ def test_cached_word_mention_still_binds_to_its_accessible_token(monkeypatch):
+     token = store.occurrence_of(pending)
+     frame = SituationFrame.from_row(store.row(pending))
+     keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+-    # The lexical cache supplies a concept, so the journal has no no-object
+-    # request. The accessible named token still owns this occurrence's bind.
++    # The cached concept carries no provisional request. Its order-one
++    # participant reading still owns this occurrence's bind to the token.
+     with torch.no_grad():
+         owner = resolver.components.owner
+         owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[1])
+     cached = Clause(ConceptualMeaning.from_description(a[1]), point=a[1], order=1,
+-        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,)))
++        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,), order=1))
+     row, plan = keep(resolver, cached, (frame,), position=2)
+     assert len(plan['items']) == 1 and plan['items'][0]['lexical']
+     assert plan['items'][0]['reference'] == token
+diff --git a/test/test_reference_participants.py b/test/test_reference_participants.py
+index c934e4028..75edcd2da 100644
+--- a/test/test_reference_participants.py
++++ b/test/test_reference_participants.py
+@@ -114,3 +114,56 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
+     records = resolver.accessible((frame,))
+     assert words['three'] in records and words['wrong'] not in records
+     unchanged(resolver, held)
++
++
++@pytest.mark.parametrize('position', ('participant', 'marker', 'predicate'))
++@pytest.mark.parametrize('order', (0, 1))
++def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypatch, order, position):
++    from ClauseJournal import finish_clause
++    from reading_fixtures import record_reading
++    from Spaces import _concept_alloc_of
++    from test_bind_thought import native
++    f = native(monkeypatch)
++    word = f.cs.interpret.lookup_word([101], (), form='m')
++    _concept_alloc_of(f.cs).reference_orders[word] = order
++    f.words['m'] = word, word
++    tree = (('lift', 'm', 'v') if position == 'participant' else
++            ('surface', 'm', 'v') if position == 'marker' else ('lift', 'v', 'm'))
++    program = f.program(tree)
++    orders = torch.zeros(2, dtype=torch.long)
++    orders[program.word_ids == word] = f.cs._concept_source_order(word)
++    program = replace(program, leaf_orders=orders, close_references=True)
++    clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
++    expected = int(order == 1 and position == 'participant')
++    held = snapshot(f.resolver)
++    plan = f.resolver.preview(clause, ())
++    assert len(plan['items']) == expected
++    if expected:
++        node = plan['items'][0]['node']
++        assert node.order == order and node.reference_request['mode'] == 'bind'
++        torch.testing.assert_close(node.point, program.leaves[0], rtol=0, atol=0)
++    unchanged(f.resolver, held)
++    _, committed = keep(f.resolver, clause)
++    assert len(committed['items']) == expected
++    assert len(f.cs.mtm.entries) == expected
++
++
++def test_retained_argument_classification_uses_only_its_own_occupations(monkeypatch):
++    from PartRead import argument_reader
++    from Spaces import _concept_alloc_of
++    from test_bind_thought import native
++    f = native(monkeypatch)
++    marker, head = f.noun('m'), f.noun('n')
++    occupations = f.language.parts_of_speech
++    occupations.add(marker, 'surface_argin1')
++    occupations.add(head, 'surface_argin2')
++    _concept_alloc_of(f.cs).symbol_types.setdefault(marker, set()).add('object')
++    def no_definition_read(*args, **kwargs):
++        raise AssertionError('argument classification read lexical definitions')
++    monkeypatch.setattr(type(f.cs.definitions), 'words', no_definition_read)
++    operation, is_marker = argument_reader(f.store)
++    assert is_marker(marker, set())
++    assert operation((marker, head)).method_name == 'surface'
++    word = f.words['m'][0]
++    assert not is_marker(word, set())
++    assert operation((word, head)) is None
+diff --git a/test/test_reference_reconstruction.py b/test/test_reference_reconstruction.py
+new file mode 100644
+index 000000000..62793f77a
+--- /dev/null
++++ b/test/test_reference_reconstruction.py
+@@ -0,0 +1,138 @@
++"""A closing bind's uncovered description reaches R and chooser credit."""
++from dataclasses import replace
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from ClauseRow import Clause
++from Meaning import ConceptualMeaning
++from ReferenceContext import SituationFrame
++from ReferenceReconstruction import cost
++from test_medium_term_memory import keep, mention, snapshot, unchanged
++from test_reference_arrivals import world, named
++from test_reference_choices import noun
++
++
++def description(atoms, words, point):
++    node = noun(atoms, words)
++    return replace(node, point=point, meaning=ConceptualMeaning.from_description(point),
++        composition=replace(node.composition, point=point),
++        reference_request=dict(node.reference_request, content=point))
++
++
++def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
++    """Exercise the production registration with unrelated objectives zero."""
++    from Models import BasicModel
++    root = resolver.policy.new_zeros(len(plans), 12)
++    active = torch.ones(len(plans), dtype=torch.bool) if active is None else active
++    record = SimpleNamespace(primed=SimpleNamespace(meaning_start=None))
++    observation = dict(reference_plans=plans, entries=(None,)*len(plans), meanings=(None,)*len(plans))
++    model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=enabled,
++        reconstruction_reference_weight=weight, loss=SimpleNamespace(reconstruction_scale=7.),
++        inter_loss_weight=0., symbolSpace=SimpleNamespace(expectation=None),
++        inputSpace=SimpleNamespace(_reconstruction_sentence_available=active[:, None]),
++        _concept_owner=lambda: resolver.components.owner,
++        _publish_sentence_scratch=lambda state: None,
++        _trial_understanding=lambda *args: record,
++        _tensor_pushed_ideas=root[:, None],
++        _sentence_observation=lambda *args: observation,
++        _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
++                                         active, root[:, 0]))
++    lang = [None]*12
++    lang[6], lang[10], lang[11] = root[:, None], root.repeat(1, 3)[:, None], active[:, None]
++    BasicModel._sentence_path_cost(model, (None, lang, None), 0, active)
++    return model._sentence_cost_registry
++
++
++def test_bind_departure_changes_r_keep_and_the_resolvers_score_function():
++    from SentenceCredit import components, comparison, score_function
++    resolver, store, a, words, _ = world()
++    first, _ = keep(resolver, mention(a[0], reference=words['three']))
++    frame = SituationFrame.from_row(store.row(first))
++    node = description(a, words, a[0]+a[1])
++    with torch.no_grad():
++        resolver.policy.zero_()
++    before = snapshot(resolver)
++    greedy = resolver.preview(node, (frame,))
++    explore = resolver.preview(node, (frame,), departure=0)
++    assert greedy['items'][0]['own_object']
++    selected = explore['items'][0]
++    assert not selected['own_object'] and selected['selected'] in selected['candidates']
++    assert explore['decisions'][0]['departed']
++    registries = [sentence_cost(resolver, [plan]) for plan in (greedy, explore)]
++    parts = torch.stack([components(registry, None, torch.zeros(1)) for registry in registries], 1)
++    torch.testing.assert_close(parts, torch.tensor([[[0., 0., 0.], [.05, 0., 0.]]]))
++    audit = comparison(parts, torch.tensor([True]))
++    assert audit['keep_decision'] == ['greedy'] and audit['deciding'] == ['reconstruction']
++    decision = explore['decisions'][0]
++    probability = decision['probabilities'][decision['selected']].reshape(1, 1)
++    loss, _ = score_function(probability, torch.ones(1, 1), torch.ones(1, 1, dtype=torch.bool), audit['costs'])
++    loss.sum().backward()
++    assert resolver.policy.grad is not None and resolver.policy.grad.abs().sum() > 0
++    unchanged(resolver, before)
++
++
++def test_same_close_alias_charges_the_bound_mention_and_not_the_mint():
++    resolver, _, a, words, _ = world()
++    first = mention(a[0], reference=words['three'])
++    second = description(a, words, a[0]+a[1])
++    clause = Clause(ConceptualMeaning.from_description(a[0]+a[1]), point=a[0]+a[1],
++        children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
++    before = snapshot(resolver)
++    plan = resolver.preview(clause, ())
++    assert plan['items'][0]['mode'] == 'mint'
++    assert plan['items'][1]['selected'] == ('new', 0) and not plan['items'][1]['own_object']
++    assert 'value' not in plan['individuals'][('new', 0)]
++    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([.5]))
++    unchanged(resolver, before)
++
++
++@pytest.mark.parametrize('weight', (0., .1, .35))
++def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
++    resolver, store, a, words, _ = world()
++    first, _ = keep(resolver, mention(a[0], reference=words['three']))
++    plan = resolver.preview(description(a, words, a[0]+a[1]), (SituationFrame.from_row(store.row(first)),))
++    assert not plan['items'][0]['own_object']
++    twice = dict(plan, items=plan['items']*2)
++    empty = dict(plan, items=[])
++    registry = sentence_cost(resolver, [twice, plan, empty, twice],
++        active=torch.tensor([True, True, True, False]), weight=weight)
++    torch.testing.assert_close(registry.total(objective='reconstruction'),
++        torch.tensor([weight, weight/2, 0., 0.]))
++    assert registry._terms['reconstruction.reference']['count'] == 1
++    disabled = sentence_cost(resolver, [twice], enabled=False)
++    assert 'reconstruction.reference' not in disabled._terms
++
++
++@pytest.mark.parametrize('ending', ('own', 'mint', 'gap', 'empty', 'arrival', 'covered'))
++def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(ending):
++    resolver, store, a, words, _ = world()
++    first, _ = keep(resolver, mention(a[0], reference=words['three']))
++    frame = SituationFrame.from_row(store.row(first))
++    if ending == 'own':
++        plan = resolver.preview(description(a, words, a[1]), ())
++    elif ending == 'mint':
++        plan = resolver.preview(mention(a[1], reference=words['wrong']), (frame,))
++    elif ending == 'gap':
++        plan = resolver.preview(mention(a[1], mode='elision'), (frame,))
++    elif ending == 'empty':
++        plan = resolver.preview(named(a[0], words['x']), (frame,), departure=0)
++        assert not plan['items'][0]['own_object']
++    else:
++        plan = resolver.preview(description(a, words, a[0]), (frame,))
++        assert not plan['items'][0]['own_object']
++        if ending == 'arrival':
++            # An arrival is outside the closing-item sum, even with uncovered content.
++            plan = dict(plan, arrivals=[dict(plan['items'][0], content=a[1])], items=[])
++    before = snapshot(resolver)
++    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.zeros(1))
++    unchanged(resolver, before)
++
++
++def test_missing_candidate_coordinates_are_uncovered_description():
++    resolver, _, a, words, _ = world()
++    node = description(a, words, a[0]+a[-1])
++    plan = dict(items=[dict(node=node, selected=('new', 0), mode='bind', content=node.point)],
++                individuals={('new', 0): dict(content=a[0, :1])})
++    torch.testing.assert_close(cost(resolver, [plan], a[:1]), torch.tensor([.5]))

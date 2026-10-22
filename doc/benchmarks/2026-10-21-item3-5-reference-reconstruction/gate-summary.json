@@ -1,0 +1,596 @@
+{
+  "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+  "source_files": 832,
+  "all_requested_gates_pass": true,
+  "gates": [
+    {
+      "receipt": "reference-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 15
+      },
+      "selected": 15,
+      "completed": [
+        "test/test_reference_reconstruction.py::test_bind_departure_changes_r_keep_and_the_resolvers_score_function",
+        "test/test_reference_reconstruction.py::test_same_close_alias_charges_the_bound_mention_and_not_the_mint",
+        "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.0]",
+        "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.1]",
+        "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.35]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[own]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[mint]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[gap]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[arrival]",
+        "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[covered]",
+        "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description",
+        "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
+        "test/test_free_reconstruction.py::test_readback_error_reaches_true_and_competing_codes_without_unit_constraint",
+        "test/test_free_reconstruction.py::test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit"
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-1",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-2",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-3",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-4",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-5",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-forward-6",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-1",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-2",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-3",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-4",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-5",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "fresh-final-reverse-6",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "native-final-02",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 113,
+        "skipped": 7
+      },
+      "selected": 120,
+      "completed": [
+        "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+        "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+        "test/test_math_chain_section14.py::test_copula_fills_the_addressed_open_column_without_a_word_alias",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[True]",
+        "test/test_math_chain_section14.py::test_one_empty_region_query_permits_conclude_and_only_source_mints[False]",
+        "test/test_math_chain_section14.py::test_binding_answer_cost_scores_filled_referent_while_relation_is_open",
+        "test/test_math_chain_section14.py::test_episode_work_is_reported_without_changing_the_reconstruction_and_answer_judge",
+        "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+        "test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate",
+        "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+        "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]",
+        "test/test_math_chain_section14.py::test_live_pending_premise_closes_in_both_orders[False]",
+        "test/test_math_chain_section14.py::test_live_pending_premise_closes_in_both_orders[True]",
+        "test/test_reference_close.py::test_mint_uses_the_selected_member_order_instead_of_the_source_word_order",
+        "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[0]",
+        "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+        "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding[3]",
+        "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+        "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+        "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+        "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+        "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+        "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect",
+        "test/test_reference_close.py::test_answer_credit_credits_the_departure_without_changing_exact_reconstruction",
+        "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents",
+        "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+        "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+        "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+        "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+        "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+        "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+        "test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content",
+        "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu",
+        "test/test_reference_mentions.py::test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+        "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[0-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-2]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[1-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-3]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[2-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-0]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-1]",
+        "test/test_bind_thought.py::test_g1_definite_generator_referent_with_distractor[3-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[0-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-2]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[1-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-0]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-1]",
+        "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[3-2]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[0-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[2-False]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-True]",
+        "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]",
+        "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+        "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows",
+        "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[False]",
+        "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[True]",
+        "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+        "test/test_bind_thought.py::test_bind_has_no_update_when_episode_r_plus_a_ties",
+        "test/test_bind_thought.py::test_bind_resolver_and_form_learn_only_from_episode_advantage",
+        "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+        "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+        "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+        "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+        "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]",
+        "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+        "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
+        "test/test_identity_rows.py::test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient",
+        "test/test_identity_rows.py::test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+        "test/test_identity_rows.py::test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+        "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+        "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
+        "test/test_identity_rows.py::test_model_time_is_independent_of_source_position_and_covers_the_run_horizon",
+        "test/test_identity_rows.py::test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time",
+        "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[False]",
+        "test/test_identity_rows.py::test_loader_permanently_rejects_signed_identity_without_modifying_the_row[True]",
+        "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[-0.125]",
+        "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
+        "test/test_identity_rows.py::test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_address",
+        "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse",
+        "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
+        "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
+        "test/test_identity_cube.py::test_verb_translation_is_inside_cube_chart_and_inverts",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[-0.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+        "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[nan]",
+        "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.0]",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]",
+        "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[1.0]",
+        "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails",
+        "test/test_part_store.py::test_taxonomy_and_nested_relations_share_symbol_rows",
+        "test/test_part_store.py::test_pair_rewitnesses_both_lanes_without_a_relation_kind",
+        "test/test_part_store.py::test_part_checkpoint_and_retention_keep_native_addresses",
+        "test/test_part_store.py::test_definition_cannot_answer_identity_query_with_its_singleton_word",
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ],
+      "certificates": [
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[False]",
+          "bound": 0,
+          "open": 8
+        },
+        {
+          "case": "test_forced_ordinary_pending_premise_in_both_orders[True]",
+          "bound": 0,
+          "open": 16
+        }
+      ]
+    },
+    {
+      "receipt": "decomposition-zero-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 2
+      },
+      "selected": 2,
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ]
+    },
+    {
+      "receipt": "decomposition-enabled-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 2
+      },
+      "selected": 2,
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ]
+    },
+    {
+      "receipt": "mm-saved-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ]
+    },
+    {
+      "receipt": "mm-fresh-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal"
+      ]
+    },
+    {
+      "receipt": "bootstrap-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
+      ]
+    },
+    {
+      "receipt": "carrier-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 1
+      },
+      "selected": 1,
+      "completed": [
+        "test/test_relation_closing.py::test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats"
+      ]
+    },
+    {
+      "receipt": "regressions-final",
+      "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+      "exit": 0,
+      "reason": "passed",
+      "outcomes": {
+        "passed": 85
+      },
+      "selected": 85,
+      "completed": [
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+        "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+        "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+        "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+        "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+        "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+        "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+        "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+        "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+        "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+        "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]",
+        "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+        "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+        "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+        "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+        "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+        "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+        "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+        "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+        "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+        "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+        "test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind",
+        "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[False]",
+        "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[True]",
+        "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token",
+        "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+        "test/test_reference_arrival_review.py::test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
+        "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+        "test/test_reference_arrival_review.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+        "test/test_reference_arrival_review.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+        "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+        "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+        "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+        "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+        "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+        "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+        "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+        "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+        "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+        "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+        "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+        "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+        "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+        "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+        "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+        "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+        "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+        "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+        "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+        "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+        "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+        "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+        "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+        "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+        "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+        "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+        "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+        "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+        "test/test_reference_participants.py::test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu",
+        "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-participant]",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-marker]",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-predicate]",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-marker]",
+        "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-predicate]",
+        "test/test_reference_participants.py::test_retained_argument_classification_uses_only_its_own_occupations"
+      ]
+    }
+  ]
+}

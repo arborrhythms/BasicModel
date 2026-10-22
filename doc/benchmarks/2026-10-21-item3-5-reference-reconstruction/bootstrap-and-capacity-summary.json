@@ -1,0 +1,59 @@
+{
+  "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+  "bootstrap": [
+    {
+      "batch": 1,
+      "trials": 8,
+      "minimum_r": 0.0,
+      "maximum_r": 0.0,
+      "reference_terms": [
+        null,
+        null
+      ]
+    },
+    {
+      "batch": 2,
+      "trials": 8,
+      "minimum_r": 0.0,
+      "maximum_r": 0.0,
+      "reference_terms": [
+        null,
+        null
+      ]
+    },
+    {
+      "batch": 3,
+      "trials": 8,
+      "minimum_r": 0.0,
+      "maximum_r": 0.0,
+      "reference_terms": [
+        null,
+        null
+      ]
+    }
+  ],
+  "mm": {
+    "saved": {
+      "calls": 44,
+      "seat_true": 0,
+      "lower_nodes": 33,
+      "lower_edges": 0,
+      "errors": 0,
+      "inventory": [
+        8
+      ],
+      "distinct_plans": 6
+    },
+    "fresh": {
+      "calls": 24,
+      "seat_true": 0,
+      "lower_nodes": 0,
+      "lower_edges": 0,
+      "errors": 0,
+      "inventory": [
+        8
+      ],
+      "distinct_plans": 9
+    }
+  }
+}

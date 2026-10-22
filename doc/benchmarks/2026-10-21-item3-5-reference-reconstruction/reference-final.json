@@ -1,0 +1,29 @@
+{
+  "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+  "receipt": "reference-final",
+  "selectors": [
+    "test/test_reference_reconstruction.py",
+    "test/test_free_reconstruction.py"
+  ],
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_reference_reconstruction.py",
+    "test/test_free_reconstruction.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "600",
+    "--suite-timeout",
+    "900",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/reference-final"
+  ],
+  "exit": 0
+}

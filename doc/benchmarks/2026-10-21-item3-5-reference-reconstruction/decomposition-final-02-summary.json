@@ -1,0 +1,18 @@
+[
+  {
+    "receipt": "decomposition-zero-final",
+    "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+    "selectors": [
+      "test/test_math_chain_decomposition.py"
+    ],
+    "exit": 0
+  },
+  {
+    "receipt": "decomposition-enabled-final",
+    "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+    "selectors": [
+      "test/test_math_chain_decomposition.py"
+    ],
+    "exit": 0
+  }
+]

@@ -1,0 +1,338 @@
+{
+  "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
+  "fixture_order": 1,
+  "description": [
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "same_close": {
+    "selected": [
+      "new",
+      0
+    ],
+    "query": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "record": {
+      "content": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "value": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "role": 0,
+      "position": [
+        0,
+        0
+      ]
+    },
+    "decisions": [
+      {
+        "candidates": [
+          null
+        ],
+        "features": [],
+        "logits": [
+          0.0
+        ],
+        "probabilities": [
+          1.0
+        ],
+        "greedy": 0,
+        "selected": 0,
+        "next": 0,
+        "departed": false,
+        "forward_identity": 1
+      },
+      {
+        "candidates": [
+          null,
+          [
+            "new",
+            0
+          ]
+        ],
+        "features": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          0.0,
+          0.0
+        ],
+        "probabilities": [
+          0.5,
+          0.5
+        ],
+        "greedy": 0,
+        "selected": 1,
+        "next": 1,
+        "departed": true,
+        "forward_identity": 1
+      },
+      {
+        "candidates": [
+          null,
+          [
+            "new",
+            0
+          ]
+        ],
+        "features": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          0.0,
+          0.0
+        ],
+        "probabilities": [
+          0.5,
+          0.5
+        ],
+        "greedy": 0,
+        "selected": 0,
+        "next": 1,
+        "departed": false,
+        "forward_identity": 1
+      },
+      {
+        "candidates": [
+          null,
+          [
+            "new",
+            0
+          ]
+        ],
+        "features": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          0.0,
+          0.0
+        ],
+        "probabilities": [
+          0.5,
+          0.5
+        ],
+        "greedy": 0,
+        "selected": 0,
+        "next": 1,
+        "departed": false,
+        "forward_identity": 1
+      }
+    ],
+    "uncovered_share": [
+      1.0
+    ],
+    "weighted_cost": [
+      0.10000000149011612
+    ]
+  },
+  "next_close": {
+    "selected": [
+      "ltm",
+      "address-v1",
+      4317693631606009918
+    ],
+    "query": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "record": {
+      "content": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "value": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "role": 0,
+      "position": [
+        0,
+        0
+      ],
+      "occurrences": [
+        4317693631606009918
+      ]
+    },
+    "decisions": [
+      {
+        "candidates": [
+          null,
+          [
+            "ltm",
+            "address-v1",
+            4317693631606009918
+          ]
+        ],
+        "features": [
+          [
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          0.0,
+          1.0
+        ],
+        "probabilities": [
+          0.2689414322376251,
+          0.7310585975646973
+        ],
+        "greedy": 1,
+        "selected": 1,
+        "next": 0,
+        "departed": false,
+        "forward_identity": 1
+      },
+      {
+        "candidates": [
+          null,
+          [
+            "ltm",
+            "address-v1",
+            4317693631606009918
+          ]
+        ],
+        "features": [
+          [
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "logits": [
+          0.0,
+          1.0
+        ],
+        "probabilities": [
+          0.2689414322376251,
+          0.7310585975646973
+        ],
+        "greedy": 1,
+        "selected": 1,
+        "next": 0,
+        "departed": false,
+        "forward_identity": 1
+      }
+    ],
+    "uncovered_share": [
+      0.0
+    ],
+    "weighted_cost": [
+      0.0
+    ]
+  },
+  "preview_and_cost_leave_rows_bank_and_pool_unchanged": true
+}

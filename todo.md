@@ -17,20 +17,25 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 step 1b lands with reviewed source `cc3672cfb`:
-all requested gates pass on that hash (212 passed cases, seven declared
-prerequisite skips), including twelve distinct first draws and both
-original decomposition/MM arms. [Claude recommends landing](doc/benchmarks/2026-10-21-item3-5-review11-landing/claude-review.md).
-The [receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)
-retains every failure and source audit; the October 20 docs and accepted
-naming sweep ride with publication to both mains and the WikiOracle bump.
-All fresh pending-name sites stay open; this is no learning claim. The next
-proposed round, reconstruction reading the bind, needs its spec first.
-Two nonblocking root-position findings remain in
-[FutureWork](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21).
-*Post-landing review (Claude, plan §22):* nothing to reopen; my checks on
-main pass (144 + 4 skips, one fresh draw per order, the bootstrap replay);
-recommendations recorded for the two carried findings.
+**Current:** Item 3.5 line 1 is frozen at `3a9db635e`, implementing the
+grammar-only reference-site contract and `reconstruction.reference` under
+[spec §§8–13](doc/plans/2026-10-21-reconstruction-reads-the-bind.md).
+The [receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)
+records its source audit and all requested scoped gates: 233 passed case
+executions and seven existing prerequisite skips. The prior contract
+source `eb858be39` passed its scoped files and both fresh pending-premise
+orders; those results are not promoted to the new hash. Claude recommends
+landing with no blocker, but publication is held under the handoff's rule
+for new questions: [spec §14](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#14-codex-post-implementation-review--2026-10-21-stopped-for-alec)
+asks whether a named own-object record should retain its own content.
+The probe finds a 0.1 same-close cost versus zero after the close. Claude
+and Codex recommend retaining the content; Alec decides its disposition.
+Step 1b is
+published at BasicModel `cf61b5678` / WikiOracle `4a9527f`; its §22 review
+reopens nothing. Line 2 follows the decided
+[one-LTM spec](doc/plans/2026-10-21-step2-one-ltm.md). Order in the parts of
+speech and learning parts of speech remain in FutureWork, to be decided
+before item 3. No learning claim is made.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -698,9 +703,12 @@ not by a passing identity lesson.
    item 0 or FutureWork with the reason written here; when the list is
    empty the 6 and 5.5 entries collapse to Done lines.
 
-   Step 1b is reviewed at `cc3672cfb` ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
+   Step 1b is published at `cf61b5678` ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
    Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
-   reconstruction reading the bind needs a spec before its next round.
+   line 1, the grammar contract and reconstruction reading the bind, is
+   frozen at `3a9db635e` under [spec §§8–13](doc/plans/2026-10-21-reconstruction-reads-the-bind.md),
+   with all scoped gates passing and Claude recommending landing. Publication
+   waits for Alec's new §14 decision, recorded in its [receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md).
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
