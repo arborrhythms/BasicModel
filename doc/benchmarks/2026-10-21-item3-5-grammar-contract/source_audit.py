@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[3]
 BASE = 'bb1678d170c8b7e98a8c6e2b1abe3250887d0087'
@@ -66,7 +67,9 @@ result = dict(source=git('rev-parse', 'HEAD').strip(), base=BASE,
     files=manifest, changed_assertion_tests=changed_assertions,
     forced_grammar_unchanged=True, live_learning_certificate_unchanged=True,
     pending_certificate_assertions_unchanged=True, classification_audit='passed')
-target = Path(__file__).with_name('frozen-source.json')
+target = (Path(__file__).parent/sys.argv[1]/'frozen-source.json' if len(sys.argv) > 1
+          else Path(__file__).with_name('frozen-source.json'))
 assert not target.exists()
+target.parent.mkdir(parents=True, exist_ok=True)
 target.write_text(json.dumps(result, indent=2)+'\n')
 print(result['source'], len(manifest), 'files; source audit passed')

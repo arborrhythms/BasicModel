@@ -51,3 +51,21 @@ the keep probe from the outset. The probe records x's actual composition
 stamp in each trial. Every outcome remains beside its source hash. A failure
 under the forced order stops the round for Claude and Alec. No publication,
 full sweep or learning claim is made by this receipt.
+
+## First frozen source: `15f154dca`
+
+The 853-file [source audit](frozen-source.json) passed. The scoped unit run
+stopped at **75 passed, 1 failed**; see [log](units.log), [results](results.json)
+and [captured failed case](units-state/test_cached_word_mention_still_binds_to_its_accessible_token/outcome.json).
+G2 with its supplied order, the new actual-journal gates and the preceding
+arrival cases passed. The pending-premise orders were not run.
+
+The failed cached-word fixture supplied `Clause.order=1` but left its
+`Composition.order` at the default zero. Its final preview has zero sites;
+the new source-leaf check correctly declines that unstamped reading. This
+is a fixture not yet given the authorized order, not a failure under a
+forced order-one leaf. Apply §13's port to
+`test_cached_word_mention_still_binds_to_its_accessible_token`: stamp that
+source leaf at one and keep every assertion verbatim. Production stays
+byte-identical to `15f154dca`. The failed run remains failed and retained;
+no result from it will be promoted to the next frozen source.

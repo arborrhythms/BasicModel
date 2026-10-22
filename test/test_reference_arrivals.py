@@ -315,13 +315,13 @@ def test_cached_word_mention_still_binds_to_its_accessible_token(monkeypatch):
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
     keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
-    # The lexical cache supplies a concept, so the journal has no no-object
-    # request. The accessible named token still owns this occurrence's bind.
+    # The cached concept carries no provisional request. Its order-one
+    # participant reading still owns this occurrence's bind to the token.
     with torch.no_grad():
         owner = resolver.components.owner
         owner.similarity_codebook.W[owner._csw_row_of(words['x'])].copy_(a[1])
     cached = Clause(ConceptualMeaning.from_description(a[1]), point=a[1], order=1,
-        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,)))
+        composition=Composition(a[1], reference=words['wrong'], word_id=words['x'], leaves=(0,), order=1))
     row, plan = keep(resolver, cached, (frame,), position=2)
     assert len(plan['items']) == 1 and plan['items'][0]['lexical']
     assert plan['items'][0]['reference'] == token
