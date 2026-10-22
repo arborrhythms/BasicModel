@@ -1,0 +1,34 @@
+{
+  "source": "58722725d50ab5d009c98f99c27e93c39458dac0",
+  "selectors": [
+    "test/test_bind_thought.py",
+    "test/test_reference_close.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_participants.py",
+    "test/test_reference_reconstruction.py"
+  ],
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_bind_thought.py",
+    "test/test_reference_close.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_participants.py",
+    "test/test_reference_reconstruction.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "600",
+    "--suite-timeout",
+    "900",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-r10/scoped"
+  ],
+  "exit": 1
+}

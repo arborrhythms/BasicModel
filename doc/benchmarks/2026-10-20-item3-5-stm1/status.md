@@ -19,6 +19,17 @@ the term's source. Step 1b itself is published at `cf61b5678` (WikiOracle
 `4a9527f`), with the post-landing review in bind plan §22. The following
 step-1b ledger is historical; no failed run or learning boundary is erased.
 
+**R10 follow-up, frozen `58722725d`, 2026-10-21:** line 1 is now published
+at BasicModel `a514a71e0` / WikiOracle `b49960a`. The [R10 receipt](../2026-10-21-item3-5-r10/README.md)
+records 110 passed, four prerequisite skips and one failed new gate. The
+new fixture omitted the close's occurrence activations from its next
+frame; the retained diagnostic with the actual metadata binds correctly
+at zero reference cost. Source and assertions are unchanged after failure.
+The forced-order stop rule returns the fixture correction to Claude and
+Alec (reconstruction spec §16). Claude confirms the fixture diagnosis and
+recommends correcting only its frame construction, with every assertion
+preserved, after Alec approves. R10 is unpublished; step 2 is unstarted.
+
 **Current §21 source `cc3672cfb`:** all requested gates pass by this
 hash: twelve distinct fresh first draws, the eight-file set, both original
 decomposition arms, both eight-seat MM draws, C's pair, carrier and 78

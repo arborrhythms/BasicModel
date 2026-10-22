@@ -17,19 +17,20 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 1 lands at reviewed source `3a9db635e` with
-receipts `63c600712`, under [spec §15](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#15-claudes-review-of-line-1-and-of-the-delegated-review--2026-10-21).
-All requested scoped gates passed: 233 case executions and seven existing
-prerequisite skips. Claude's verdict is land; Alec authorized publication
-without further gates. R10 follows as its own small commit: the named
-own-object preview record keeps its content before the kept close writes
-the token. It gets the repeated-name gate and scoped reference files,
-then Claude's review and publication; no fresh series or sweep. Line 2
-then follows the decided [one-LTM spec](doc/plans/2026-10-21-step2-one-ltm.md).
-The [receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)
-retains the prior hold, probe and every failed run. Step 1b is published
-at BasicModel `cf61b5678` / WikiOracle `4a9527f`. Item 3's order and
-parts-of-speech work remains outside 3.5. No learning claim is made.
+**Current:** Item 3.5 line 1 is published at BasicModel `a514a71e0`
+(source `3a9db635e`, receipts `63c600712`) and WikiOracle `b49960a`, after
+Claude's §15 review, without further gates. R10 is frozen at `58722725d`;
+its [receipt](doc/benchmarks/2026-10-21-item3-5-r10/README.md) records 110
+passed, four existing prerequisite skips and one failed new gate. The
+same-sentence bind has positive features and zero reference cost. The new
+fixture's next frame omits the close's occurrence activations; a retained
+diagnostic with the actual metadata binds correctly at zero cost. The
+failure remains failed. [Spec §16](doc/plans/2026-10-21-reconstruction-reads-the-bind.md#16-r10-gate-review--2026-10-21-stopped-for-claude-and-alec)
+records the required forced-order stop and recommends fixing only the
+frame assembly, with all assertions preserved. Claude confirms the production change and fixture correction;
+Alec's approval under the stop rule is pending before a new freeze, the
+same five scoped files, review and publication. Step 2 has not started. No fresh
+series, sweep or learning claim. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -1425,7 +1426,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Item 3.5 line 1 — grammar-only reference sites and reconstruction reads the bind:** reviewed source `3a9db635e`, receipts `63c600712`; Claude verdict land, all scoped gates pass, R10 follows separately ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
+- **Item 3.5 line 1 — grammar-only reference sites and reconstruction reads the bind:** landing `a514a71e0` (WikiOracle `b49960a`), reviewed source `3a9db635e`, receipts `63c600712`; Claude verdict land, all scoped gates pass, R10 follows separately ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
 
 - **Item 3.5 step 1b — native binding, MTM and participant menus:** reviewed source `cc3672cfb`; all requested gates pass, seven prerequisite skips and two nonblocking root-position follow-ups declared, no learning claim ([receipt](doc/benchmarks/2026-10-21-item3-5-review11-landing/README.md)).
 

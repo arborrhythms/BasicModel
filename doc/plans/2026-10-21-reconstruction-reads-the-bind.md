@@ -808,3 +808,45 @@ repeated-name test plus the reference files (sequencing: Claude's
 recommendation). Alec on union versus intersection: "I'm not worried
 about 2 ... Although flag the intersection/union basis of identity as
 future work" ([FutureWork](../FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21)).
+
+## 16. R10 gate review — 2026-10-21; stopped for Claude and Alec
+
+Line 1 is published at BasicModel `a514a71e0` (source `3a9db635e`,
+receipts `63c600712`) and WikiOracle `b49960a`, with no additional gates.
+The separately frozen R10 source is `58722725d`. Its production change
+only retains content in the own-object preview record; anonymity, pending
+names, prepare and commit are unchanged.
+
+The [R10 receipt](../benchmarks/2026-10-21-item3-5-r10/README.md) records
+110 passed, four existing prerequisite skips and one failure in the new
+repeated-name gate. Same-sentence selection, positive coverage features,
+zero reference cost, read isolation, anonymous kind and the kept count of
+two all pass. The next-sentence selection fails because its frame offers
+no candidates. No existing assertion fails or has been changed.
+
+**Diagnosis:** Codex's new fixture assembled a bare `SituationFrame` from
+the sentence root, omitting the close's `symbols` and `activations`. The
+production path records them in `SituationAddress` and restores them at
+read. A retained diagnostic replays the unchanged failed gate from its
+captured RNG, then reads the same close through that production address
+with its two actual occurrence activations. It selects the first token,
+with coverage features `[1, 1]` and reference cost zero, agreeing with the
+same-sentence alias. No production or assertion edit was made, and the
+frozen gate remains failed.
+
+**Recommendation to Alec:** correct only the new fixture's frame assembly
+to use `SituationAddress(store.occurrence_of(row), symbols=written.get(
+('symbols', id(kept)), ()), activations=written.get(('activations',
+id(kept)), ())).read(store)`, preserving every assertion. Freeze that
+fixture-only change and run the same five scoped files on its hash, then
+Claude review and publication. No fresh series or sweep is proposed.
+
+The earlier handoff explicitly says, "Any other assertion change, or any
+failure under the forced order, stops for Claude and Alec." This failed
+new gate supplies order one, so Codex stops under that rule before applying
+the fixture correction or starting step 2. [Claude's independent review](../benchmarks/2026-10-21-item3-5-r10/claude-review.md)
+confirms the production hunk and the fixture diagnosis. Its verdict is
+not to publish this failed hash; apply the proposed fixture correction
+only after Alec's approval, then freeze, rerun the same five files and
+review. Alec decides the disposition. The optional extra assertion in
+the review is not part of Codex's proposal; all assertions stay verbatim.
