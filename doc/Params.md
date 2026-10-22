@@ -533,7 +533,7 @@ symbol (line anchors drift).
 | `whatThinkingPressure` | `Models.py` (`_thinking_pressure`) | `linear` | Retained numerical schedule utility (`linear`, `quadratic`, `step`). The normal controller derives pressure from shared work; this setting does not change its execution. |
 | `reasoningIterations` | `Models.py` (BaseModel init; public reasoning APIs) | `1` | Shared work allowance for explicit `reason_about` / `answer_query`; `0` disables those APIs. Normal `resolveAnswer` shares `attentionBudget`. A selected completed meaning grants execution; raw prompt words do not. |
 | `queryReasoning` | `Models.py` (BaseModel init) | `false` | DEPRECATED alias: `true` $\Rightarrow$ `reasoningIterations = 10`. Read only when `<reasoningIterations>` is absent. |
-| `ltmConsolidation` | retired compatibility input | ignored | The shared `TernaryTruthStore` is unconditional; this input selects no alternate path. |
+| `ltmConsolidation` | retired compatibility input | ignored | The shared `LTM0` is unconditional; this input selects no alternate path. |
 | `stateless` | `Models.py`, `Language.py` | `true` | Request-scoped user TruthSet rows: on state-dict load the consolidated LTM is revived without `ORIGIN_USER` rows. `false` = stateful deployment. |
 | `globalAttention` | retired | rejected | The typed registry and learned answer reader are unconditional parts of one attention. |
 | `globalAttentionConsume` | retired | rejected | The answer-owned consume gate starts at zero and is trained by answer loss. |

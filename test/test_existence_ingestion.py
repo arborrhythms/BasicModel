@@ -1,7 +1,7 @@
 """Only the explicit evidence owner can admit assertions after kernel retirement."""
 import pytest
 import torch
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 
@@ -16,7 +16,7 @@ def test_part_without_supplied_evidence_stays_unverified():
 
 def test_prediction_and_observation_occurrences_cannot_certify_their_content():
     description = ConceptualMeaning.from_description(torch.eye(6)[:3])
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     for kind in ('estimate', 'observation', 'unverified'):
         store.append_meaning(description, kind=kind, trust=1)
     result = TruthGroundedReasoner(store=store).evaluate(QuerySpec.from_surface('exist', description))
@@ -26,7 +26,7 @@ def test_prediction_and_observation_occurrences_cannot_certify_their_content():
 def test_explicit_fact_admission_preserves_full_description_and_source():
     description = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3,
         layout='infix', scope={'where': ('sym', 5)})
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     row = store.append_meaning(description, kind='fact', trust=-.8)
     store.set_origin(row, store.ORIGIN_USER, text='named witness')
     reasoner = TruthGroundedReasoner(store=store)

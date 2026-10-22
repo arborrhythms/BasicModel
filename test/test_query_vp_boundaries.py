@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Language import Grammar
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Queries import (
     GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtConceptualCapability,
@@ -138,7 +138,7 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
 
 def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     cs, _, registry, _, _, _ = _world()
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
     first = store.append_meaning(description, sentence_index=len(store))
     second = store.append_meaning(description, sentence_index=len(store))

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import torch
 
-from PartStore import PartStore
+from LTM1 import LTM1
 from Priming import diffuse, part_edges
 
 
@@ -12,7 +12,7 @@ def owner(points):
         raise AssertionError('Part diffusion must not read code placement')
     return SimpleNamespace(
         similarity_codebook=SimpleNamespace(W=points, lookup_rows=lookup),
-        _concept_allocator=SimpleNamespace(parts=PartStore(256)),
+        _concept_allocator=SimpleNamespace(parts=LTM1(256)),
         _closed_clause_store=lambda: None,
         _csw_row_of=lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None)
 
@@ -38,7 +38,7 @@ def test_part_graph_follows_native_addresses_after_forgetting_and_load():
     parts = native._concept_allocator.parts
     parts.add(1, 2, symbol=100)
     parts.add(2, 3, symbol=101)
-    restored = PartStore(1)
+    restored = LTM1(1)
     restored.load_state_dict(parts.state_dict())
     native._concept_allocator.parts = restored
     restored.remove(1, 2)

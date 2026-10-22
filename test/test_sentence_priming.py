@@ -24,10 +24,10 @@ def test_batch_rows_never_prime_each_other():
 
 def test_part_graph_has_no_edge_cap(monkeypatch):
     from types import SimpleNamespace
-    from PartStore import PartStore
+    from LTM1 import LTM1
     cs, _, _ = _chain_cs()
     count = 4100
-    parts = PartStore(capacity=count + 2)
+    parts = LTM1(capacity=count + 2)
     parts.refs[1:count+1] = torch.stack((torch.arange(1, count+1), torch.arange(2, count+2)), -1)
     parts.count.fill_(count)
     monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(parts=parts))

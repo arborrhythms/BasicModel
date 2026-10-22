@@ -1,5 +1,7 @@
 # `bind` as a thought operation: the concrete design (Claude, 2026-10-19; for Codex, item 3.5 step 1)
 
+> Runtime class naming (step 2a, 2026-10-22): `TernaryTruthStore` → `LTM0`; `PartStore` → `LTM1` in `bin/LTM1.py`. Earlier code facts and receipts below retain their historical names.
+
 > **Naming amendment (2026-10-21, Alec):** LTM0 is the occurrence store (formerly LTM1); LTM1 is its relation stratum (formerly LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Names in this live contract are updated in place; retained evidence and source hashes are unchanged.
 
 Decided by Alec on 2026-10-19 ([todo 3.5](../../todo.md), [catalogue §3.3](../specs/2026-09-29-operator-catalogue.md#33-bind),

@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from ConceptForgetting import reclaim_concepts, warn_capacity
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from test_concept_capacity_policy import _cs
 
 
@@ -48,7 +48,7 @@ def test_live_reference_preserves_weak_candidate_and_keeps_a_representative():
     cs = _cs(8)
     weak, _ = concept(cs, magnitude=.1)
     strong, _ = concept(cs, magnitude=.9)
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     store.append_idea(torch.ones(8), sentence_index=0)
     store.refs[0, 0] = weak
     report = reclaim_concepts(cs, store)

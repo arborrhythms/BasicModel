@@ -224,10 +224,10 @@ def test_addressable_spaces_gathers_input_stm_codebook():
 @pytest.mark.slow
 def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
-    # synthetic TernaryTruthStore so the path is exercised without
+    # synthetic LTM0 so the path is exercised without
     # <ltmConsolidation>.
     from Attention import PrimedSymbolReader as GA
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     m = _build("MM_global.xml")
     if getattr(m, "symbolSpace", None) is None:
         pytest.skip("no symbolSpace on this config")
@@ -238,7 +238,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     in_sub = m._lex_embed_stem(x)
     ps = m.perceptualSpace.forward(in_sub)
     D = int(ps.materialize().shape[-1])
-    store = TernaryTruthStore(D, capacity=8)
+    store = LTM0(D, capacity=8)
     store.slots[:3] = torch.randn(3, 3, D)
     store.count = torch.tensor(3)
     store.record_kind[2] = store.KINDS.index("estimate")

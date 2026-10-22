@@ -272,7 +272,7 @@ exactly the degeneracy a scalar $a_P - a_N$ collapse loses.
 > the concept-relation meronomy: a two-code part$\leftrightarrow$whole LUT (absolute) plus relations
 > over concept indices (relative) — both live in the Concept codebook. These
 > **are integrated**, behind `<ltmConsolidation>`: the unified
-> `TernaryTruthStore` is the canonical store — the part$\leftrightarrow$whole LUT *is* the
+> `LTM0` is the canonical store — the part$\leftrightarrow$whole LUT *is* the
 > absolute table; the concept-taxonomy relations *are* the relative table —
 > and `TruthLayer` becomes a compatibility read model over it
 > (`attach_ltm` binds the store; `sync_from_ltm` rematerializes the view).

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore, WhatInteractionMemory
+from Layers import LTM0, WhatInteractionMemory
 from Models import BasicModel, _append_observed_meaning
 from test_selected_relation_meaning import _program_owner
 from reading_fixtures import commit_reading, sentence_state
@@ -91,7 +91,7 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
     cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
     model = BasicModel()
     model.spaces = []
-    store = TernaryTruthStore(8, capacity=16)
+    store = LTM0(8, capacity=16)
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -116,7 +116,7 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
 def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write(monkeypatch):
     _cs, registry, language, entry, _ = _nested(monkeypatch)
     meaning = language.program_meaning(entry, registry)
-    store = TernaryTruthStore(8, capacity=1)
+    store = LTM0(8, capacity=1)
     with pytest.raises(OverflowError, match='forgetting'):
         store.append_meaning(meaning, kind='observation')
     assert len(store) == 0
@@ -126,7 +126,7 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
     assert len(store) == 0
 
 def _write_selected_observation(language, registry, entry, path):
-    store = TernaryTruthStore(8, capacity=16)
+    store = LTM0(8, capacity=16)
     from ClauseRow import attach_clause_index
     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
     attach_clause_index(host, store, registry.space)

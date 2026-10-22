@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from Forgetting import ForgettingConfig, forget, history_age, retention_values, model_boundary
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -23,14 +23,14 @@ def append(store, index, *, trust=.5, surprise=1., stream=0, origin=0, evidence=
 
 
 def full_store():
-    store = TernaryTruthStore(4, capacity=10)
+    store = LTM0(4, capacity=10)
     for i in range(8):
         append(store, i)
     return store
 
 
 def test_age_is_per_stream_and_rewitnessing_does_not_refresh():
-    store = TernaryTruthStore(4, capacity=10)
+    store = LTM0(4, capacity=10)
     append(store, 0, stream=0)
     append(store, 1, stream=1)
     append(store, 2, stream=0)
@@ -78,7 +78,7 @@ def test_value_terms_outweigh_age(term):
 
 
 def test_source_trust_is_separate_from_both_evidence():
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     row = append(store, 0, trust=.9, evidence=(1., 1.))
     assert store.trust[row] == 0
     assert retention_values(store, config())['trust'][row] == pytest.approx(.9)
@@ -89,7 +89,7 @@ def test_source_trust_is_separate_from_both_evidence():
 
 
 def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
-    store = TernaryTruthStore(4, capacity=2)
+    store = LTM0(4, capacity=2)
     meaning = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool))
     for stream, surprise in enumerate((.9, .05)):
         store.append_meaning(meaning, trust=.5, surprise=surprise, stream=stream,
@@ -106,7 +106,7 @@ def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
 
 
 def test_dissonance_drops_weaker_opposition_not_intrinsic_both():
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     append(store, 0, trust=.9, evidence=(.9, 0))
     append(store, 1, trust=.2, evidence=(0, .8))
     append(store, 2, trust=.1, evidence=(1, 1))
@@ -128,7 +128,7 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
 
 
 def linked_store(*, child_is_relation=False):
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     child = (store.append_meaning(ConceptualMeaning(torch.eye(4)[:3],
         torch.ones(3, dtype=torch.bool)), trust=0., sentence_index=0)
         if child_is_relation else append(store, 0, trust=0.))
@@ -176,7 +176,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
     assert result['wording'] == 8 and result['after'] == 8
     torch.testing.assert_close(store.slots, before)
     assert all(store.text_of(row) is None for row in range(8))
-    restored = TernaryTruthStore(4, capacity=10)
+    restored = LTM0(4, capacity=10)
     restored.load_state_dict(store.state_dict())
     restored.load_semantic_extras(store.semantic_extras())
     assert int(restored.forget_passes) == 1
@@ -188,7 +188,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
 
 
 def test_pair_unlinking_preserves_observation_and_restores_cleanly():
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     value = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
     from meaning_fixtures import symbol_prediction, estimate_meaning
     estimate = store.append_estimate(estimate_meaning(symbol_prediction(torch.eye(4),
@@ -202,15 +202,15 @@ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
     forget(store, cfg, document_boundary=True)
     assert store.index_of_row(observed[2]) is not None
     assert store._expectation_rows == {}
-    restored = TernaryTruthStore(4, capacity=4)
+    restored = LTM0(4, capacity=4)
     restored.load_state_dict(store.state_dict())
     restored.load_semantic_extras(store.semantic_extras())
 
 
 def test_transitive_row_is_expendable_but_its_proof_survives():
-    from PartStore import PartStore
+    from LTM1 import LTM1
     from Forgetting import part_supports, forget_parts
-    store = PartStore(capacity=5)
+    store = LTM1(capacity=5)
     rows = [store.add(left, right, truth_plus=1)
             for left, right in ((10, 20), (20, 30), (10, 30))]
     store.add(40, 50, truth_plus=.5)
@@ -235,7 +235,7 @@ def test_legacy_checkpoint_does_not_infer_trust_from_evidence():
     del state['source_trust']
     for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
         del state[name]
-    restored = TernaryTruthStore(4, capacity=10)
+    restored = LTM0(4, capacity=10)
     restored.load_state_dict(state)
     assert not restored.source_trust.any()
     torch.testing.assert_close(restored.c_plus, store.c_plus)
@@ -262,7 +262,7 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     cs, interpret = _operator()
     left = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
     right = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     attach_clause_index(SimpleNamespace(), store, cs)
     with torch.no_grad():
         cs.similarity_codebook.W[cs._csw_row_of(left)].fill_(.25)
@@ -397,7 +397,7 @@ def test_scope_prevents_false_deduction_or_dissonance():
 
 
 def test_optional_coverage_separates_both_from_neither():
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     append(store, 0, evidence=(1, 0))
     append(store, 1, evidence=(0, 0))
     terms = retention_values(store, config(coverage=True))
@@ -416,7 +416,7 @@ def test_invalid_configuration_fails_before_a_pass(kwargs):
 def test_packed_and_single_presentations_keep_the_same_stream_history():
     snapshots = []
     for packing in (1, 4):
-        store = TernaryTruthStore(4, capacity=10)
+        store = LTM0(4, capacity=10)
         for first in range(0, 8, packing):
             for sentence in range(first, min(8, first + packing)):
                 append(store, sentence, surprise=sentence / 8)
@@ -433,7 +433,7 @@ def test_legacy_source_trust_can_load_into_a_larger_inventory():
     store = full_store()
     state = copy.deepcopy(store.state_dict())
     state['trust'] = state.pop('source_trust')
-    restored = TernaryTruthStore(4, capacity=20)
+    restored = LTM0(4, capacity=20)
     restored.load_state_dict(state)
     torch.testing.assert_close(restored.source_trust[:8], store.source_trust[:8])
     assert not restored.source_trust[8:].any()
@@ -441,8 +441,8 @@ def test_legacy_source_trust_can_load_into_a_larger_inventory():
 
 def test_losing_a_proof_raises_pending_conclusions_utility():
     from Forgetting import part_supports, forget_parts
-    from PartStore import PartStore
-    store = PartStore(capacity=5)
+    from LTM1 import LTM1
+    store = LTM1(capacity=5)
     proof = store.add(10, 20, truth_plus=1)
     store.add(20, 30, truth_plus=1)
     conclusion = store.add(10, 30, truth_plus=1)
@@ -481,6 +481,6 @@ def test_compaction_preserves_protected_row_columns_and_optional_metadata():
         torch.testing.assert_close(getattr(store, name)[row], value, msg=name)
     # Point-only rows remain recoverable from tensor state without a sidecar.
     assert not store.metadata_required[:len(store)].any()
-    restored = TernaryTruthStore(4, capacity=10)
+    restored = LTM0(4, capacity=10)
     restored.load_state_dict(store.state_dict())
     assert all(restored.meaning_of(i) is not None for i in range(len(restored)))

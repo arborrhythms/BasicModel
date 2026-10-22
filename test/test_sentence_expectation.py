@@ -10,7 +10,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import SymbolExpectation, TernaryTruthStore
+from Layers import SymbolExpectation, LTM0
 
 
 def layer(batch=1, consolidated=False):
@@ -21,7 +21,7 @@ def layer(batch=1, consolidated=False):
     result.set_symbol_bank(torch.eye(result.concept_dim))
     result.set_symbol_bank(torch.eye(4))
     if consolidated:
-        result._ltm_store = TernaryTruthStore(4, capacity=32)
+        result._ltm_store = LTM0(4, capacity=32)
     return result
 
 

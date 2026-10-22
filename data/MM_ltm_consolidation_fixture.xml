@@ -4,7 +4,7 @@
   <!-- MM_ltm_consolidation_fixture: dedicated test fixture for the LTM
        consolidation suite (test/test_ltm_consolidation.py; Alec 2026-06-18).
        Mirrors MM_xor_fixture but turns ON <ltmConsolidation> so the unified
-       TernaryTruthStore (SymbolicSubSpace.ltm_store) is constructed in place of
+       LTM0 (SymbolicSubSpace.ltm_store) is constructed in place of
        the RelativeTruthStore, and provisions a small <truthSet> so the
        XML->LTM append mechanism is exercised at load (provision_ltm). Do not
        consume from production code. -->

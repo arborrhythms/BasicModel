@@ -73,12 +73,12 @@ def test_old_context_checkpoint_resets_policy_and_its_optimizer_moments():
 
 
 def test_memory_attention_is_bounded_metered_and_row_local():
-    from Layers import WhatInteractionMemory, TernaryTruthStore
+    from Layers import WhatInteractionMemory, LTM0
     from QueryWork import QueryWorkBudget
     model, registry, _, part, whole = _catalog_world()
     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode='episode')
     model.symbolSpace.what_memory = memory
-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+    store = model.symbolSpace.ltm_store = LTM0(8, capacity=16)
     question = registry.form('part', part, whole)
     fact = replace(question, mode='assertive')
     store.append_meaning(fact, kind='fact', trust=.8)

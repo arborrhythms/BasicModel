@@ -3,7 +3,7 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import TruthGroundedReasoner
 from reasoning import QuerySpec
 
@@ -12,7 +12,7 @@ from reasoning import QuerySpec
 def test_checked_reader_accepts_complete_description_without_collapsing_roles(structured):
     roles = torch.eye(6)[:3]
     fact = ConceptualMeaning.from_description(roles)
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_meaning(fact, trust=.8)
     reasoner = TruthGroundedReasoner(store=store)
     query = fact if structured else roles
@@ -25,7 +25,7 @@ def test_checked_reader_accepts_complete_description_without_collapsing_roles(st
 
 @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
 def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     row = store.append_idea(torch.eye(6)[0], trust=.4)
     with pytest.raises(ValueError, match="finite"):
         store.set_trust(row, trust)

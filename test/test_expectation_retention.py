@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import torch
 import pytest
 
-from Layers import SymbolExpectation, TernaryTruthStore
+from Layers import SymbolExpectation, LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation, symbol_prediction, estimate_meaning
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
@@ -46,7 +46,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
     must remain distinct, cross-linked, scoped to the stream/document, and
     recoverable through the store's checkpoint sidecar.
     """
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     discourse = _discourse()
     discourse._ltm_store = store
     document = "conversation-17"
@@ -84,7 +84,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
         QuerySpec.from_surface("exist", estimate["meaning"]))
     assert result["posture"] == UNKNOWN
 
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()), strict=True)
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     replayed = restored.expectation_pair(1)
@@ -95,7 +95,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
 
 
 def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
-    store = TernaryTruthStore(4, capacity=2)
+    store = LTM0(4, capacity=2)
     source = _meaning(1.0)
     source_row = store.append_meaning(source, kind="observation", stream=0)
     with pytest.raises(OverflowError, match='forgetting'):
@@ -110,7 +110,7 @@ def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
 
 def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
     """A forecast is available to its residual policy, not ordinary LTM reads."""
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     source = _meaning(1.0)
     source_row = store.append_meaning(source, kind="observation", stream=0)
     estimate_row, observed_row = store.append_expectation_pair(

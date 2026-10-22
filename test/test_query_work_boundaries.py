@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Queries import THOUGHT_EXECUTORS, ThoughtSignature
 from QueryWork import QueryWorkBudget, QueryWorkExhausted
@@ -41,7 +41,7 @@ def test_selected_vp_validation_cannot_read_before_its_allowance(monkeypatch):
 def test_registry_description_resolution_and_fact_scan_use_one_budget():
     cs, registry, a, b, context = _world()
     del a, b, context
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
     slot = store.append_meaning(description, kind="fact", trust=.6)
     context = _context(cs, store=store)

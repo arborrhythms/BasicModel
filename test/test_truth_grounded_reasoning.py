@@ -1,7 +1,7 @@
 """Phase 0/1 of truth-grounded reasoning (doc/plans/2026-06-23-truth-grounded-
 reasoning.md): QuerySpec framing + the hard tools is_true / is_part_direct /
 evaluate. Unit tests, no trained model -- the reasoner reads a hand-built
-TernaryTruthStore and an optional model stub.
+LTM0 and an optional model stub.
 """
 
 import sys
@@ -15,7 +15,7 @@ import reasoning
 from reasoning import (QuerySpec, TruthGroundedReasoner,
                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL,
                        TRUE, FALSE, UNKNOWN, BOTH)
-from Layers import TernaryTruthStore
+from Layers import LTM0
 
 
 def _v(*xs):
@@ -65,9 +65,9 @@ class TestQuerySpec(unittest.TestCase):
 
 
 def _store(rows_ideas=(), rows_partof=()):
-    """Build a TernaryTruthStore. rows_ideas = [(vec, trust)]; rows_partof =
+    """Build a LTM0. rows_ideas = [(vec, trust)]; rows_partof =
     [(np1, np2, trust)]."""
-    s = TernaryTruthStore(nDim=8, capacity=32)
+    s = LTM0(nDim=8, capacity=32)
     for vec, trust in rows_ideas:
         s.append_idea(vec, trust=trust)
     for np1, np2, trust in rows_partof:

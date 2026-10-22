@@ -2,7 +2,7 @@
 (doc/specs/mereological-order-raising.md "Two consolidation questions"; Alec
 2026-06-18).
 
-``TernaryTruthStore`` combines the LTM end-state chain and the
+``LTM0`` combines the LTM end-state chain and the
 RelativeTruthStore into ONE tensor of ``(NP1, VP, NP2)`` rows (full idea
 vectors; Null = zero) + stream membership + a per-row scalar trust:
 
@@ -49,7 +49,7 @@ def _v(*vals):
 class TestSchema(unittest.TestCase):
     def test_absolute_idea_is_np_null_null(self):
         s = _store()
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         r = s.append_idea(_v(1), trust=0.6)
         self.assertEqual(r, 0)
         row = s.row(0)
@@ -169,7 +169,7 @@ class TestOriginProvenance(unittest.TestCase):
     semantics without touching the other writers' rows."""
 
     def test_append_defaults_conversation_origin(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         r = s.row(0)
@@ -177,7 +177,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertIsNone(r['text'])
 
     def test_set_origin_tags_row_and_text(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1), trust=0.4)
         s.set_origin(0, T.ORIGIN_USER, text="the cat sat")
@@ -188,13 +188,13 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertAlmostEqual(r['trust'], 0.4, places=6)
 
     def test_set_origin_out_of_range_raises(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         with self.assertRaises(IndexError):
             s.set_origin(0, T.ORIGIN_USER)
 
     def test_rows_of_origin_filters_in_row_order(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))                       # 0: conversation
         s.append_idea(_v(2))                       # 1: -> provisioned
@@ -214,7 +214,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(s.rows_of_origin().tolist(), [])
 
     def test_clear_origin_compacts_survivors_in_place(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1), trust=0.1)            # 0: conversation
         s.append_idea(_v(2), trust=0.2)            # 1: user
@@ -242,7 +242,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(s.clear_origin(T.ORIGIN_USER), 0)
 
     def test_reset_clears_origin_and_texts(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         s.set_origin(0, T.ORIGIN_USER, text="u")
@@ -254,7 +254,7 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertIsNone(r['text'])
 
     def test_origin_rides_state_dict_texts_do_not(self):
-        from Layers import TernaryTruthStore as T
+        from Layers import LTM0 as T
         s = _store()
         s.append_idea(_v(1))
         s.set_origin(0, T.ORIGIN_USER, text="u")

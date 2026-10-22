@@ -21,7 +21,7 @@
 
 ## 1. The problem
 
-The unified LTM store (`TernaryTruthStore`, `symbolSpace.ltm_store`) is
+The unified LTM store (`LTM0`, `symbolSpace.ltm_store`) is
 append-only to a fixed capacity (`<ltmCapacity>`, default 1024). Under the
 two-truths contract every ended S writes a row, so the capacity is
 reached in ordinary training and the store then refuses writes. Something

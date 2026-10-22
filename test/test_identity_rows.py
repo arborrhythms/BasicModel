@@ -4,7 +4,7 @@ import torch
 import pytest
 
 from IdentityRows import meet_ratios, point, witness_count
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from test_reference_close import fixture, close, form_exposure
 
@@ -123,7 +123,7 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
     from test_sentence_expectation import layer, observe
     from ReferenceContext import SituationAddress
     discourse = layer()
-    store = TernaryTruthStore(4,capacity=8)
+    store = LTM0(4,capacity=8)
     discourse._ltm_store = store
     observed=torch.eye(4)[:3]
     observe(discourse,observed)
@@ -141,7 +141,7 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
 
 def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon():
     from RowTime import encoder,HORIZON
-    store=TernaryTruthStore(4,capacity=8)
+    store=LTM0(4,capacity=8)
     tick=[731]
     object.__setattr__(store,'_model_present',lambda:tick[0])
     row=store.append_idea(torch.ones(4),document_key='first',sentence_index=9000)
@@ -176,7 +176,7 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     assert not stable
     store.append_idea(a[0])
     saved=store.state_dict();saved.pop('model_clock')
-    target=TernaryTruthStore(12,capacity=512);target.load_state_dict(saved)
+    target=LTM0(12,capacity=512);target.load_state_dict(saved)
     assert not target.when.any()
     torch.testing.assert_close(target.slots,store.slots,rtol=0,atol=0)
 

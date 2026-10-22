@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from ClauseRow import Clause, Composition, attach_clause_index
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
 from ReferenceContext import SituationFrame
@@ -16,7 +16,7 @@ def fixture():
     from test_cs_sparse_weights import _cs
     from IdentityRows import point
     owner = _cs(nS=512, order=3, dim=12)
-    store = TernaryTruthStore(12, capacity=512)
+    store = LTM0(12, capacity=512)
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
@@ -415,7 +415,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     assert int(f.store.witness_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
     occurrence = resolver.last_audit[0]['occurrence']
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
-    restored = TernaryTruthStore(8, capacity=64)
+    restored = LTM0(8, capacity=64)
     restored.load_state_dict(f.store.state_dict())
     restored.load_semantic_extras(f.store.semantic_extras())
     torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)

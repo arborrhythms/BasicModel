@@ -34,10 +34,10 @@ def test_definedness_keeps_direction_input_uncertainty_and_evidence_separate():
 
 
 def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     from MeaningCodes import sentence_key
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     meaning = ConceptualMeaning.from_description(torch.ones(8))
     key = sentence_key([b'a', b'cat'])
     args = dict(document_key='fixture', sentence_index=0, content_key=key, evidence=(1., 1.))
@@ -49,13 +49,13 @@ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_trut
     torch.testing.assert_close(second / second.norm(), first / first.norm())
     assert second.norm().item() == pytest.approx(2 / 6)
     assert store.c_plus[row] == store.c_minus[row] == 1
-    restored = TernaryTruthStore(8, capacity=4)
+    restored = LTM0(8, capacity=4)
     restored.load_state_dict(store.state_dict())
     torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
 
 
 def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows(monkeypatch):
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     from MeaningCodes import sentence_key
     from MereologicalCodes import MereologicalCodes
@@ -250,10 +250,10 @@ def component_fixture():
 
 def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     import Spaces
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     columns = component_fixture()
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     meaning = ConceptualMeaning.from_description(torch.eye(4)[0])
     row = store.append_meaning(meaning, document_key='retained', sentence_index=0, kind='observation')
     owner = columns.owner

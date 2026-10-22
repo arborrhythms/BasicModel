@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Language import Grammar
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Queries import THOUGHT_EXECUTORS, ThoughtExecutorDescriptor
 from test_cs_symbol_table import _cs
@@ -14,7 +14,7 @@ from test_query_vp_boundaries import _context, _signature
 
 
 def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatch):
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
     meaning = ConceptualMeaning.from_description(torch.ones(8))
     for strength in (0.2, 0.8):
@@ -55,7 +55,7 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
 
 
 def test_unified_query_returns_complete_record_and_does_not_admit_observation():
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
     roles = torch.eye(8)[:3]
     meaning = ConceptualMeaning.from_description(roles)

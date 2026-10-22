@@ -71,13 +71,13 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from types import SimpleNamespace
     import torch
     from ClauseRow import Clause, attach_clause_index
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
     first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
     second = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
     predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
-    store = TernaryTruthStore(8, capacity=16)
+    store = LTM0(8, capacity=16)
     model = SimpleNamespace()
     attach_clause_index(model, store, cs)
     store._predicate_kind = lambda ref: 'part' if ref == predicate else 'operator'
@@ -96,12 +96,12 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     from types import SimpleNamespace
     import torch
     from ClauseRow import Clause, attach_clause_index
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
     left = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
     right = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
-    store = TernaryTruthStore(8, capacity=1)
+    store = LTM0(8, capacity=1)
     attach_clause_index(SimpleNamespace(), store, cs)
     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(left, left, right))
@@ -144,7 +144,7 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
 @pytest.mark.parametrize('invalid', ['width', 'capacity'])
 def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     from ClauseRow import attach_clause_index
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))

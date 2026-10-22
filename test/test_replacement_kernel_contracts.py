@@ -4,7 +4,7 @@ from dataclasses import replace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from test_cs_symbol_table import _cs
 from test_thought_model_fixture import model_for
 
@@ -15,7 +15,7 @@ def _world():
                  for _ in range(4))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
-    store = TernaryTruthStore(8, capacity=32)
+    store = LTM0(8, capacity=32)
     model = model_for(cs, store)
     return model, model.grammatical_thoughts, store, refs
 

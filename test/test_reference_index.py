@@ -4,13 +4,13 @@ from types import SimpleNamespace
 
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from MemoryIndex import unfold_idea
 
 
 def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     seen = []
     def read(value, limit, *, meaning, role, **kwargs):
         seen.append(meaning.role_refs[role])
@@ -28,7 +28,7 @@ def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
 
 
 def test_only_the_inverted_index_is_owned_or_checkpointed():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     store.configure_leaf_index(read=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))
     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
     b = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([3., 0., 0., 0.])))
@@ -36,7 +36,7 @@ def test_only_the_inverted_index_is_owned_or_checkpointed():
     for name in ('leaf_codes', 'leaf_offsets', '_leaf_used'):
         assert not hasattr(store, name)
         assert name not in store.state_dict()
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     assert restored.rows_for_code(2) == (a,)

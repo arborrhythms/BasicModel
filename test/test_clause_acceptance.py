@@ -10,7 +10,7 @@ import pytest
 import Language
 from ClauseRow import attach_clause_index
 from reading_fixtures import finish_reading
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Queries import GrammaticalThoughtRegistry
 from Understanding import AnswerProgram
 from test_cs_sparse_weights import _cs
@@ -53,7 +53,7 @@ class SentenceFixture:
         self.words = {}
         from PartsOfSpeech import PartsOfSpeech, formal_arguments
         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
-        self.store = TernaryTruthStore(8, capacity=64)
+        self.store = LTM0(8, capacity=64)
         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
         attach_clause_index(self.model, self.store, self.cs)
 

@@ -89,7 +89,7 @@ from Layers import ConceptualCombine
 from Layers import LinearLayer
 from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
 from Layers import Error, TheError
-from Layers import MeaningExpectation, TernaryTruthStore
+from Layers import MeaningExpectation, LTM0
 from Meaning import ConceptualMeaning
 from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
 from Teacher import Teacher
@@ -4097,7 +4097,7 @@ class BaseModel(Mereology, nn.Module):
         truth_semantics = {
             name: module.semantic_extras()
             for name, module in self.named_modules()
-            if isinstance(module, TernaryTruthStore)
+            if isinstance(module, LTM0)
         }
         memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
         what_history = (memory.thought_extras() if memory is not None
@@ -4399,7 +4399,7 @@ class BaseModel(Mereology, nn.Module):
         modules = dict(self.named_modules())
         for name, saved in (extras.get("truth_semantics") or {}).items():
             store = modules.get(name)
-            if not isinstance(store, TernaryTruthStore):
+            if not isinstance(store, LTM0):
                 raise ValueError(f"checkpoint truth store {name!r} is not present")
             store.load_semantic_extras(saved)
 
@@ -4417,7 +4417,7 @@ class BaseModel(Mereology, nn.Module):
             if memory is None:
                 raise ValueError("checkpoint thought history has no interaction memory owner")
             for module in modules.values():
-                if isinstance(module, TernaryTruthStore):
+                if isinstance(module, LTM0):
                     what_history = module.remap_legacy_references(what_history)
             memory.load_thought_extras(what_history)
 
@@ -4999,9 +4999,9 @@ class BaseModel(Mereology, nn.Module):
         self._widen_what_projection_checkpoint_state(state, model_state)
 
         # Only global inverted postings have variable-length checkpoint columns.
-        from Layers import TernaryTruthStore
+        from Layers import LTM0
         index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
-                        if isinstance(module, TernaryTruthStore)]
+                        if isinstance(module, LTM0)]
         variable_leaf_columns = {name + '.' + column for name in index_owners
             for column in ('posting_codes', 'posting_roles', 'posting_rows',
                            'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')}
@@ -22954,7 +22954,7 @@ class BasicModel(BaseModel):
         if (stm_snap is not None and torch.is_tensor(stm_snap)
                 and stm_snap.dim() == 3 and int(stm_snap.shape[1]) > 0):
             spaces.append({"id": GA.SPACE_STM, "keys": stm_snap})
-        # LTM: the consolidated TernaryTruthStore rows (present only under
+        # LTM: the consolidated LTM0 rows (present only under
         # <ltmConsolidation>); pool the three idea slots to one content key.
         ss = getattr(self, "symbolSpace", None)
         ltm = getattr(ss, "ltm_store", None) if ss is not None else None

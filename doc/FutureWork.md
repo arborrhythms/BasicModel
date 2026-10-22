@@ -397,7 +397,7 @@ such as surprise and use count. The question behind it: to which of our own
 actions do we have conscious access afterward, since a metacognitive memory
 is what lets later control improve on earlier performance.
 
-**What the row already carries** (`TernaryTruthStore` columns): `surprise`
+**What the row already carries** (`LTM0` columns): `surprise`
 at write time (`-1` when no expectation was staged), `witness_count`
 (re-witnessing of the same address), `trust`, `stream` witnesses, `where`,
 `when`, `order`, `refs`. The stream history in store order is the record of

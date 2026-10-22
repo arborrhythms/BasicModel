@@ -457,7 +457,7 @@ This preserves the tetralemma without logical explosion.
 > Implementation note (2026-07): the exclusion above is stated design
 > intent, not implemented machinery. No `<feeling>` tag exists, and there
 > is no feeling-specific training or TruthSet filter; the `<truthSet>` /
-> trust machinery (provisioning in `bin/Models.py`, `TernaryTruthStore` in
+> trust machinery (provisioning in `bin/Models.py`, `LTM0` in
 > `bin/Layers.py`) is real but generic over truth texts. The hedonic
 > *reading* of the stored trust sign (next subsection) is the current
 > stand-in for a feeling channel.

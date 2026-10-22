@@ -235,12 +235,12 @@ def restore_warmup(model, path, restore):
     # migration while leaving the new sidecar in place, corrupting the next
     # checkpoint. Only this derived metadata tensor changes; learned tensors
     # still receive the exact-retention checks below.
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     migrated_stores={id(model.get_submodule(name)) for name,extras in
         (bundle.get('structural_extras',{}).get('truth_semantics') or {}).items()
         if extras.get('version',0)<6}
     for name,module in model.named_modules(remove_duplicate=False):
-        if isinstance(module,TernaryTruthStore) and id(module) in migrated_stores:
+        if isinstance(module,LTM0) and id(module) in migrated_stores:
             key=name+'.semantic_fingerprint'
             if key in saved and not torch.equal(saved[key],current[key]):
                 drift[key]={'schema_migration':'retained estimate sidecar v6'}

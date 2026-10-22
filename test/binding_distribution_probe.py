@@ -11,7 +11,7 @@ def retained_bank_distributions(model):
     Supply stored context here without training or forcing a chooser action;
     the ordinary document audit remains separate and unchanged.
     """
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from ReferenceContext import ReferenceBank
     language = model.languageSpace
     layer = language.language_layer.operation_layer
@@ -24,7 +24,7 @@ def retained_bank_distributions(model):
             points = torch.arange(1, (count+2)*width+1, device=like.device,
                                   dtype=like.dtype).reshape(count+2, width)
             points = torch.nn.functional.normalize(points, dim=-1)
-            store = TernaryTruthStore(width, capacity=count)
+            store = LTM0(width, capacity=count)
             rows = [store.append_idea(point, order=order, document_key='retained-context',
                                      sentence_index=i) for i, point in enumerate(points[:count])]
             ids = store.row_ids[rows].to(device=like.device)[None]

@@ -33,10 +33,10 @@ def align(model, state, old):
     result, drift, transforms = dict(state), {}, {}
     from IdentityRows import migrate_checkpoint
     migrate_checkpoint(model, result, live, drift, transforms)
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from RowTime import migrate
     for name, module in model.named_modules(remove_duplicate=False):
-        if isinstance(module, TernaryTruthStore) and name+'.slots' in result:
+        if isinstance(module, LTM0) and name+'.slots' in result:
             if migrate(module, result, name+'.'):
                 drift[name+'.when'] = dict(action='historical model time unknown; source-position phasor retired')
     from Language import MarkerUnaryLayer

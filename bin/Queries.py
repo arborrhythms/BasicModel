@@ -883,8 +883,8 @@ class ThoughtLTMCapability:
 
     def _cued(self, description, *, max_records, work, references=(), role_mask=None):
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import TernaryTruthStore
-        if not isinstance(store, TernaryTruthStore):
+        from Layers import LTM0
+        if not isinstance(store, LTM0):
             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
         return store.cued_rows(description,
             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
@@ -922,8 +922,8 @@ class ThoughtLTMCapability:
     def end_evidence(self, reference, *, max_records, work):
         """Read the two poles of one addressed ended clause, under the same bound."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import TernaryTruthStore
-        if not isinstance(store, TernaryTruthStore) or store.location(reference) is None:
+        from Layers import LTM0
+        if not isinstance(store, LTM0) or store.location(reference) is None:
             raise ValueError('ended clause occurrence is unavailable')
         if not max_records:
             raise ValueError('ended clause is unavailable within the query read limit')
@@ -1121,8 +1121,8 @@ class ThoughtLTMCapability:
                 or type(reference[2]) is not int or reference[2] in (-1, 0)):
             raise TypeError('description argument requires an existing occurrence reference')
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import TernaryTruthStore
-        if (not isinstance(store, TernaryTruthStore)
+        from Layers import LTM0
+        if (not isinstance(store, LTM0)
                 or store.address_domain != reference[1]):
             raise ValueError('description occurrence namespace is unavailable')
         # Description addresses are owner-given cue metadata, not a store
@@ -1644,7 +1644,7 @@ def _occurrence_description(context, reference):
             raise ValueError(
                 'thought LTM description capability returned invalid occurrence data')
         return resolved
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     if not isinstance(context, QueryContext):
         raise TypeError('occurrence reference requires its query context')
     if isinstance(reference, tuple) and reference and reference[0] == 'thought':
@@ -1662,7 +1662,7 @@ def _occurrence_description(context, reference):
             or type(reference[2]) is not int or reference[2] in (-1, 0)):
         raise TypeError('description argument requires an existing occurrence reference')
     store = context.reasoner.reasoning_store()
-    if (not isinstance(store, TernaryTruthStore)
+    if (not isinstance(store, LTM0)
             or store.address_domain != reference[1]):
         raise ValueError('description occurrence namespace is unavailable')
     for index in range(min(len(store), context.max_records)):

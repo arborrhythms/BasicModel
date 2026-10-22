@@ -665,7 +665,7 @@ relation readers and the declared `true` thought operator.
 
 ## 10. LTM as the chain of STM end-states
 
-`symbolSpace.ltm_store` is the shared `TernaryTruthStore` for all completed
+`symbolSpace.ltm_store` is the shared `LTM0` for all completed
 clauses. `<ltmConsolidation>` is an ignored compatibility input and selects
 no alternative backing store. Storage alone does not certify that a
 described referent exists. Production observations must provide their owned

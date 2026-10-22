@@ -3,14 +3,14 @@ from types import SimpleNamespace
 
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import TruthGroundedReasoner
 from test_cs_symbol_table import _cs
 
 
 def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
     a, b = torch.eye(8)[:2]
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     from Meaning import ConceptualMeaning
     store.append_meaning(ConceptualMeaning.from_payload(torch.stack((a, torch.ones(8), b)),
         depth=3, layout='infix'), kind='fact', trust=1)
@@ -25,7 +25,7 @@ def test_public_part_helpers_follow_typed_links_without_world_materialization():
     a, b, c = (("sym", cs.new_concept()) for _ in range(3))
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     reasoner = TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=store)
     assert reasoner.is_part_direct(a, b) == (1., "taxonomy")
     assert len(reasoner.is_part(a, c, materialize=True)[0]["path"]) == 2

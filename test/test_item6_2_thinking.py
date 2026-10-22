@@ -7,7 +7,7 @@ import pytest
 import torch
 
 from Language import Grammar, OperationSelectionLayer
-from Layers import TernaryTruthStore, WhatInteractionMemory, Error
+from Layers import LTM0, WhatInteractionMemory, Error
 from Meaning import ConceptualMeaning, ClosingImage
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS
@@ -25,7 +25,7 @@ def world():
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
-    store = TernaryTruthStore(cs.outputShape[-1], capacity=128)
+    store = LTM0(cs.outputShape[-1], capacity=128)
     memory = WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')
     model = BasicModel()
     model.spaces = []

@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Language import Grammar
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Queries import GrammaticalThoughtRegistry, ThoughtTaxonomyCapability
 from test_cs_symbol_table import _cs
@@ -98,7 +98,7 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
 
 def test_unary_query_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
                                    scope={'place': 'workshop'},
                                    role_refs=registry.form('isPart', a, b).role_refs)

@@ -9,14 +9,14 @@ from dataclasses import replace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore, TruthLayer
+from Layers import LTM0, TruthLayer
 from Spaces import ConceptualSpace
 from ClauseRow import Clause
 from Meaning import ConceptualMeaning
 
 
 def test_end_row_has_shared_references_and_field_coordinates():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     assert store.refs.shape == (8, 3)
     assert store.refs.dtype == torch.int64
     assert bool((store.refs == -1).all())
@@ -24,11 +24,11 @@ def test_end_row_has_shared_references_and_field_coordinates():
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     both = store.append_idea(torch.ones(4))
     neither = store.append_idea(torch.ones(4), sentence_index=1)
     store.set_evidence(both, .8, .8)
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(store.state_dict())
     assert restored.row(both)['evidence'] == pytest.approx((.8, .8))
     assert restored.row(neither)['evidence'] == (0., 0.)
@@ -36,9 +36,9 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 
 
 def test_relation_has_no_kind_column_or_catch_all():
-    from PartStore import PartStore
-    assert PartStore.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
-    assert not any(name.startswith('REL_') for name in vars(TernaryTruthStore))
+    from LTM1 import LTM1
+    assert LTM1.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
+    assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 
 def test_relation_rows_never_enter_luminosity():
@@ -203,21 +203,21 @@ def test_clause_end_state_and_evidence_checkpoint_roundtrip():
 
 
 def test_retired_relation_columns_are_rejected_without_dropping_rows():
-    store = TernaryTruthStore(4,capacity=8)
+    store = LTM0(4,capacity=8)
     store.append_idea(torch.ones(4),evidence=(.5,0.))
     state = store.state_dict(); state['rel_type'] = torch.ones(8,dtype=torch.long)
-    restored = TernaryTruthStore(4,capacity=8)
+    restored = LTM0(4,capacity=8)
     with pytest.raises(ValueError, match='retired'):
         restored.load_state_dict(state)
     assert len(restored) == 0
 
 
 def test_native_provisioned_content_survives_a_schema_stamp_upgrade():
-    store = TernaryTruthStore(4,capacity=8)
+    store = LTM0(4,capacity=8)
     row = store.append_idea(torch.ones(4),evidence=(.8,0.))
     store.set_origin(row,store.ORIGIN_PROVISIONED)
     state = store.state_dict();state.pop('truth_schema')
-    restored = TernaryTruthStore(4,capacity=8);restored.load_state_dict(state)
+    restored = LTM0(4,capacity=8);restored.load_state_dict(state)
     assert len(restored) == 1 and restored.origin[0] == store.ORIGIN_PROVISIONED
     assert restored.row(0)['evidence'] == pytest.approx((.8,0.))
 
@@ -244,13 +244,13 @@ def test_invalid_parent_never_partially_writes_its_child():
 
 
 def test_retired_relation_checkpoint_is_rejected_with_dependents_intact():
-    store = TernaryTruthStore(4,capacity=8)
+    store = LTM0(4,capacity=8)
     old = store.append_idea(torch.ones(4))
     child = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
         role_refs=(store.occurrence_of(old),None,None))
     store.append_meaning(child,kind='question')
     state=store.state_dict();state['rel_type']=torch.tensor([0,1,0,0,0,0,0,0])
-    restored=TernaryTruthStore(4,capacity=8)
+    restored=LTM0(4,capacity=8)
     with pytest.raises(ValueError,match='retired'):
         restored.load_state_dict(state)
     assert len(restored) == 0 and len(store) == 2
@@ -276,7 +276,7 @@ def test_full_store_can_update_an_existing_relation():
 def test_query_returns_end_clause_content_and_preserves_both_poles():
     from test_query_vp_boundaries import _world, _context
     cs, _grammar, registry, _a, _b, _ = _world()
-    store = TernaryTruthStore(8, capacity=8)
+    store = LTM0(8, capacity=8)
     from ClauseRow import attach_clause_index
     attach_clause_index(SimpleNamespace(),store,cs)
     point = torch.arange(8.).float() / 8

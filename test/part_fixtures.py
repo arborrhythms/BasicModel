@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import torch
 
 from ClauseRow import attach_clause_index
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Spaces import ConceptualSpace
 from test_basicmodel import _populate_test_config
 
@@ -16,7 +16,7 @@ def native_store(width=4, capacity=32, points=()):
     owner = ConceptualSpace([4, width], [512, width], [512, width])
     with torch.no_grad():
         owner.similarity_codebook.W.sigmoid_()
-    store = TernaryTruthStore(width, capacity=capacity)
+    store = LTM0(width, capacity=capacity)
     object.__setattr__(store, '_fixture_owner', owner)
     attach_clause_index(SimpleNamespace(), store, owner)
     symbols = tuple(symbol(store, point) for point in points)

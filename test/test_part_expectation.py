@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from ClauseRow import attach_clause_index
-from Layers import ExpectationComparison, MeaningExpectation, TernaryTruthStore
+from Layers import ExpectationComparison, MeaningExpectation, LTM0
 from test_clause_acceptance import SentenceFixture
 
 
@@ -33,7 +33,7 @@ def test_closing_audit_survives_bank_changes_and_checkpoint(monkeypatch, relativ
     with torch.no_grad():
         f.cs.similarity_codebook.W.fill_(.25)
     state, extras = copy.deepcopy(f.store.state_dict()), copy.deepcopy(f.store.semantic_extras())
-    restored = TernaryTruthStore(8, capacity=64)
+    restored = LTM0(8, capacity=64)
     attach_clause_index(f.model, restored, f.cs)
     restored.load_state_dict(state)
     restored.load_semantic_extras(extras)

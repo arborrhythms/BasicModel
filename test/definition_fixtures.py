@@ -1,11 +1,11 @@
 """Definition owner for isolated conceptual-inventory mechanism fixtures."""
-from Layers import TernaryTruthStore
+from Layers import LTM0
 
 
 def with_definitions(cs):
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
-    store = TernaryTruthStore(cs.nDim, capacity=1024)
+    store = LTM0(cs.nDim, capacity=1024)
     object.__setattr__(cs, '_fixture_occurrences', store)
     attach_clause_index(SimpleNamespace(), store, cs)
     return cs

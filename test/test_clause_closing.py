@@ -50,7 +50,7 @@ def test_selected_clause_tree_owns_its_local_references(monkeypatch):
 
 
 def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     _, registry, language, entry, _ = _nested(monkeypatch)
     entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
                     activations=entry.activations[:1], leaves=entry.leaves[:1],
@@ -58,7 +58,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
                     actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]),
                     end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
     clause = finish_reading(language, entry, registry=registry)
-    store = TernaryTruthStore(entry.leaves.shape[-1], capacity=4)
+    store = LTM0(entry.leaves.shape[-1], capacity=4)
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
@@ -70,7 +70,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
 
 def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     from Meaning import ConceptualMeaning
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     _, registry, language, entry, _ = _nested(monkeypatch)
     # A relative S may finish as a three-slot forest. Its left operand is a
     # completed inner relation and therefore has no fused-point reference.
@@ -88,7 +88,7 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     clause = finish_reading(language, entry, meaning=meaning, depth=3, registry=registry)
     assert clause.refs[0] == ('clause', 0)
     assert len(clause.children) == 1 and clause.children[0].relation == 'part'
-    store = TernaryTruthStore(leaves.shape[-1], capacity=8)
+    store = LTM0(leaves.shape[-1], capacity=8)
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)

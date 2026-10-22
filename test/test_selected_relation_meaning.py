@@ -371,7 +371,7 @@ def test_selected_relation_preserves_declared_outer_polarity(
 @pytest.mark.parametrize("path", ["forward", "packed"])
 def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         monkeypatch, path):
-    from Layers import SymbolExpectation, TernaryTruthStore
+    from Layers import SymbolExpectation, LTM0
     from reading_fixtures import commit_reading
 
     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
@@ -386,7 +386,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         calls.append((depths, payloads, kwargs))
         return predict(depths, payloads, mask, **kwargs)
     monkeypatch.setattr(discourse, 'sentence_prediction_cost', capture)
-    store = TernaryTruthStore(8, capacity=16)
+    store = LTM0(8, capacity=16)
     monkeypatch.setattr(
         registry, "execute",
         lambda *args, **kwargs: pytest.fail("query executed during observation"))

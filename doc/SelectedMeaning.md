@@ -85,7 +85,7 @@ The ordinary perceptual/numeric output remains available. Independent numerical
 generation ownership remains item 3.
 
 `ConceptualMeaning.constituents` owns complete nested role triples and local
-references. `TernaryTruthStore.bind_constituents` validates references, depth,
+references. `LTM0.bind_constituents` validates references, depth,
 cycles and capacity before writing children in postorder. Children become
 questions or unverified occurrences, never facts by containment. Eager,
 pending and packed observation share this owner. Durable records detach;

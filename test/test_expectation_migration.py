@@ -2,13 +2,13 @@
 import copy
 import pytest
 import torch
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import symbol_prediction, estimate_meaning
 
 
 def historical_pair():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     prior = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
     actual = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3,dtype=torch.bool))
     e,o = store.append_expectation_pair(estimate_meaning(prior),actual,
@@ -24,7 +24,7 @@ def historical_pair():
 
 def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
     old,e,o,sidecar = historical_pair()
-    new = TernaryTruthStore(4,capacity=8)
+    new = LTM0(4,capacity=8)
     new.load_state_dict(copy.deepcopy(old.state_dict()))
     new.load_semantic_extras(copy.deepcopy(sidecar))
     assert new.semantic_extras()['version'] == 6
@@ -35,7 +35,7 @@ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
     torch.testing.assert_close(new.meaning_of(o).roles, old.meaning_of(o).roles)
     assert new.row(o)['surprise'] == pytest.approx(.123)
     pair = new.expectation_pair(o)
-    again = TernaryTruthStore(4,capacity=8)
+    again = LTM0(4,capacity=8)
     again.load_state_dict(copy.deepcopy(new.state_dict()))
     again.load_semantic_extras(copy.deepcopy(new.semantic_extras()))
     torch.testing.assert_close(again.expectation_pair(o)['residual'],pair['residual'])
@@ -45,7 +45,7 @@ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
 def test_migration_does_not_bless_corrupt_historical_estimates():
     old,e,o,sidecar = historical_pair()
     sidecar['records'][e]['expectation']['presence_logits'] = (9.,9.,9.)
-    new = TernaryTruthStore(4,capacity=8)
+    new = LTM0(4,capacity=8)
     new.load_state_dict(old.state_dict())
     with pytest.raises(ValueError,match='fingerprint'):
         new.load_semantic_extras(sidecar)

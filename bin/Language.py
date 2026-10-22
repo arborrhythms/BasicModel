@@ -30,7 +30,7 @@ from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model
 from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer
 from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
                     ModelLoss, epsilon, Ops)
-from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+from Layers import SortingLayer, TruthLayer, LTM0, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
 from Layers import WhatInteractionMemory
 from Meaning import ConceptualMeaning
 from Queries import ConceptualSpaceCapability, StructuralGrammarContext
@@ -9219,7 +9219,7 @@ class SymbolSubSpace(SubSpace):
         # restricted to idea rows; inference reads relations by native address.
         _ltm_cap = int(TheXMLConfig.space(
             "SymbolSpace", "ltmCapacity", default=max_truths) or max_truths)
-        self.ltm_store = TernaryTruthStore(muxed, capacity=_ltm_cap, content_width=symbol_dim)
+        self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim)
         self.truth_layer.attach_ltm(self.ltm_store)
         self._stateless = bool(TheXMLConfig.get("architecture.stateless", default=True))
         self.register_load_state_dict_post_hook(self._revive_ltm_post_load)

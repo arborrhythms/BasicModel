@@ -46,11 +46,11 @@ def test_reified_relation_is_visible_without_endpoint_mutation():
 
 
 def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     cs, (a, b, _c) = _world()
     cs.add_part(b, a)  # raw percept code, not a sym reference
     cs.add_whole(a, b)  # raw whole-space code, not a sym reference
-    cs._ltm_store = TernaryTruthStore(4)
+    cs._ltm_store = LTM0(4)
     from Meaning import ConceptualMeaning
     cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
         torch.stack((torch.eye(4)[0], torch.eye(4)[2], torch.ones(4))), depth=3, layout='infix'),

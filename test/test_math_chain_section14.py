@@ -38,10 +38,10 @@ def test_formation_provenance_is_not_a_chooser_input():
 
 
 def test_copula_fills_the_addressed_open_column_without_a_word_alias():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Occurrence import slot_key
     from ThoughtStream import write
-    store = TernaryTruthStore(4, capacity=32)
+    store = LTM0(4, capacity=32)
     points = {5:torch.tensor([.1,.2,.3,.4]), 7:torch.tensor([.4,.3,.2,.1])}
     store.configure_clause_index(concept_point=points.get)
     root = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
@@ -136,11 +136,11 @@ def test_episode_work_is_reported_without_changing_the_reconstruction_and_answer
 
 
 def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     from index_fixtures import one_hot_unfold
-    store = TernaryTruthStore(8,capacity=16)
+    store = LTM0(8,capacity=16)
     store.configure_leaf_index(code_row=lambda ref:ref[-1], read=one_hot_unfold)
     source = ConceptualMeaning(torch.eye(8)[:3],torch.ones(3,dtype=torch.bool),
         role_refs=(None,('sym',1),('sym',2)),sentence_kind='relation')

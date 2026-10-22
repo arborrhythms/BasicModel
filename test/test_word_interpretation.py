@@ -226,7 +226,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     The closing receives resolved objects and never performs lexical resolution.
     """
     from dataclasses import replace
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Models import _append_observed_meaning
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)
@@ -261,7 +261,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     meaning = language.program_meaning(entry, registry)
     assert meaning.role_refs[0] == ('sym', int(refs[0]))
     assert meaning.role_refs[2] == ('sym', int(refs[1]))
-    store = TernaryTruthStore(leaves.shape[-1], capacity=8)
+    store = LTM0(leaves.shape[-1], capacity=8)
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)

@@ -47,9 +47,9 @@ def _word_concept(model, raw):
 
 def _idea_store(model):
     from ClauseRow import attach_clause_index
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     owner = model._concept_owner()
-    store = TernaryTruthStore(int(owner.outputShape[-1]), capacity=8)
+    store = LTM0(int(owner.outputShape[-1]), capacity=8)
     attach_clause_index(model, store, owner)
     return store
 

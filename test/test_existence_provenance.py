@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner
 from reasoning import BOTH as CONFLICTING, UNKNOWN
 
@@ -25,7 +25,7 @@ def _occurrences(value):
 
 def test_checked_result_retains_matching_fact_occurrences_and_both_degrees():
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix")
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     rows = [store.append_meaning(meaning, trust=degree, sentence_index=len(store)) for degree in (.8, -.9)]
     expected = {store.row(i)["occurrence"] for i in rows}
     result = TruthGroundedReasoner(store=store).evaluate(
@@ -39,9 +39,9 @@ def test_checked_result_retains_matching_fact_occurrences_and_both_degrees():
 def test_missing_semantic_context_remains_visible_in_the_checked_result():
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
                                              scope={"where": ("sym", 11)})
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_meaning(meaning, trust=.8, sentence_index=len(store))
-    restored = TernaryTruthStore(6, capacity=8)
+    restored = LTM0(6, capacity=8)
     restored.load_state_dict(store.state_dict(), strict=True)
     result = TruthGroundedReasoner(store=restored).evaluate(
         QuerySpec.from_surface("exist", meaning))
@@ -52,7 +52,7 @@ def test_missing_semantic_context_remains_visible_in_the_checked_result():
 def test_consolidated_pending_chain_reads_the_actual_two_role_presence():
     from types import SimpleNamespace
     from Layers import SymbolExpectation
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     roles = torch.eye(6)[:2]
     store.append_meaning(ConceptualMeaning.from_payload(roles, depth=2, layout='infix'),
                          trust=.8, stream=0)
@@ -67,10 +67,10 @@ def test_consolidated_pending_chain_reads_the_actual_two_role_presence():
 def test_partial_new_checkpoint_cannot_forget_required_scope(missing):
     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
                                              scope={"where": ("sym", 11)})
-    source = TernaryTruthStore(6, capacity=8)
+    source = LTM0(6, capacity=8)
     source.append_meaning(meaning, trust=.8, sentence_index=len(source))
     state = dict(source.state_dict())
     del state[missing]
-    restored = TernaryTruthStore(6, capacity=8)
+    restored = LTM0(6, capacity=8)
     with pytest.raises(RuntimeError, match="semantic checkpoint"):
         restored.load_state_dict(state, strict=False)

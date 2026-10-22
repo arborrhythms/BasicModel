@@ -124,8 +124,8 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
 
 
 def test_configured_store_still_raises_when_full():
-    from Layers import TernaryTruthStore
-    store = TernaryTruthStore(4, capacity=1)
+    from Layers import LTM0
+    store = LTM0(4, capacity=1)
     store.append_idea(torch.ones(4), document_key='first')
     with pytest.raises(OverflowError, match='capacity 1 exhausted'):
         store.append_idea(torch.zeros(4), document_key='second')

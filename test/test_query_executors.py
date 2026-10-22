@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from test_cs_symbol_table import _cs
 from Language import Grammar
 from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature, _existing_row
@@ -23,7 +23,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     from index_fixtures import one_hot_unfold
     store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), read=one_hot_unfold)
     idea = replace(_meaning(), role_refs=refs)

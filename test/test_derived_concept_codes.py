@@ -15,11 +15,11 @@ def fixture():
 
 
 def test_rows_conduct_to_other_words_without_crossing_batch_streams():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, alloc = fixture()
     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]
-    store = TernaryTruthStore(3, capacity=8)
+    store = LTM0(3, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
     root = cs.new_concept()
     store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b), symbol=root)

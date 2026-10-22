@@ -36,7 +36,7 @@ SITES = {
     'bin/ClauseJournal.py': {'finish_clause': ['pair', 'evidence']},
     'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
     'bin/Understanding.py': {'AnswerProgram.__post_init__': []},
-    'bin/Layers.py': {'TernaryTruthStore.append_meaning': ['evidence']},
+    'bin/Layers.py': {'LTM0.append_meaning': ['evidence']},
     'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
 }
 

@@ -66,7 +66,7 @@ explicit checked `not` inference; it is never an external observation.
 
 ## One pair, one observation
 
-`TernaryTruthStore` is the single durable owner. A warm external boundary writes
+`LTM0` is the single durable owner. A warm external boundary writes
 an `estimate` row before its `observation` (or interrogative `question`) row and
 links their stable occurrences in both directions. Only the observation enters
 the chronological predictor context. Provisioned truths and internal thoughts

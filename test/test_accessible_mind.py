@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from index_fixtures import append_indexed, one_hot_unfold
 
@@ -18,7 +18,7 @@ def _meaning(a=0, b=1, *, width=8, scope=()):
 
 
 def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
-    store = TernaryTruthStore(8, capacity=32)
+    store = LTM0(8, capacity=32)
     first = append_indexed(store, _meaning(), terms=((3, 17, 9), (), (6,)))
     for i in range(20):
         append_indexed(store, _meaning(2, 3), terms=((40 + i,), (), (70 + i,)))
@@ -30,7 +30,7 @@ def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
 
 def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
     import io
-    store = TernaryTruthStore(8, capacity=256)
+    store = LTM0(8, capacity=256)
     pointers = set()
     for _ in range(128):
         append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
@@ -43,7 +43,7 @@ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
     column = state["posting_codes"]
     assert column.numel() == 384
     assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
-    restored = TernaryTruthStore(8, capacity=256)
+    restored = LTM0(8, capacity=256)
     restored.load_state_dict(state)
     restored.load_semantic_extras(store.semantic_extras())
     row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
@@ -75,12 +75,12 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
 
 def test_index_checkpoint_compaction_and_codebook_remap():
     import copy
-    store = TernaryTruthStore(8, capacity=8)
+    store = LTM0(8, capacity=8)
     old = append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
     kept = append_indexed(store, _meaning(2, 3), terms=((17, 40), (), (70,)))
     store.set_origin(old, store.ORIGIN_USER)
     reference = store.occurrence_of(kept)
-    restored = TernaryTruthStore(8, capacity=8)
+    restored = LTM0(8, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(store.semantic_extras())
     assert restored.rows_for_code(17) == (0, 1)
@@ -97,7 +97,7 @@ def test_index_checkpoint_compaction_and_codebook_remap():
 
 
 def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     calls = []
     def unfold(idea, limit, **kwargs):
         calls.append((idea.clone(), limit))
@@ -113,7 +113,7 @@ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
 
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
-    store = TernaryTruthStore(8, capacity=32)
+    store = LTM0(8, capacity=32)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     for i in range(12):
         store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0, sentence_index=len(store))
@@ -126,7 +126,7 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
 
 
 def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
-    store = TernaryTruthStore(8, capacity=8)
+    store = LTM0(8, capacity=8)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
     second = append_indexed(store, _meaning(), terms=((92,), (), (93,)), stream=1)
@@ -177,7 +177,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
-    store = TernaryTruthStore(8, capacity=32)
+    store = LTM0(8, capacity=32)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     fact = _meaning()
     oldest = store.append_meaning(fact, trust=.2, sentence_index=len(store))
@@ -219,7 +219,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     from test_normal_thought_controller import _catalog_world
     from Queries import ThoughtResult
     model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
+    store = model.symbolSpace.ltm_store = LTM0(8, capacity=32)
     fact = registry.form('part', part, whole, mode='assertive')
     from MemoryIndex import configure_model_index
     from Queries import _existing_row
@@ -310,7 +310,7 @@ def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
     from MemoryIndex import configure_model_index
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, _, _, _ = _program_owner(monkeypatch)
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     host = SimpleNamespace(conceptualSpace=cs, languageSpace=language,
                            grammatical_thoughts=registry)
     configure_model_index(host, store)
@@ -321,7 +321,7 @@ def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
 
 
 def test_completed_forest_indexes_each_actual_slot_by_unfolding():
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     field = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool))
     row = append_indexed(store, field, terms=((10,), (6, 8), (12,)))
     assert tuple(store.leaf_terms(row, slot) for slot in range(3)) == ((10,), (6, 8), (12,))
@@ -345,7 +345,7 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
     from test_normal_thought_controller import _catalog_world
     from test_query_vp_boundaries import _signature
     model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=4)
+    store = model.symbolSpace.ltm_store = LTM0(8, capacity=4)
     fact = registry.form('part', part, whole, mode='assertive')
     append_indexed(store, fact, terms=((50,), (51,), (52,)))
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
@@ -385,14 +385,14 @@ def test_legacy_index_rebuild_uses_real_rows_and_shares_truth(monkeypatch):
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
     meaning = registry.form('part', a, b, mode='assertive')
-    original = TernaryTruthStore(8, capacity=4)
+    original = LTM0(8, capacity=4)
     original.append_meaning(meaning, kind='fact', order=2, sentence_index=len(original))
     original.append_meaning(meaning, kind='observation', order=2, sentence_index=len(original))
     state = copy.deepcopy(original.state_dict())
     for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
         state.pop(key, None)
     state['index_stream'] = torch.tensor([-1, 7, -1, -1])
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     store.load_state_dict(state)
     store.load_semantic_extras(original.semantic_extras())
     from Queries import _existing_row
@@ -412,7 +412,7 @@ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch
     from test_selected_relation_meaning import _program_owner
     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
     meaning = registry.form('part', a, b, mode='assertive')
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     store.append_meaning(meaning, order=2, sentence_index=len(store))
     append_indexed(store, meaning, terms=((3, 7), (), (11,)), order=2)
     assert store.leaf_terms(0, 0) == ()
@@ -432,7 +432,7 @@ def test_nested_writes_are_shared_across_batch_positions():
     child = _meaning()
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
                      role_refs=(('constituent', 0), None, None), constituents=(child,))
-    store = TernaryTruthStore(8, capacity=4)
+    store = LTM0(8, capacity=4)
     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
     assert not hasattr(store, 'index_stream')

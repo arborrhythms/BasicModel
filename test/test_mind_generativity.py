@@ -3,7 +3,7 @@ import json
 
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from MemoryIndex import unfold_idea
 from test_prepared_answer_boundary import _native_answer_model
@@ -40,7 +40,7 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
             for code in reversed(range(length - 1)):
                 value = op.compose(leaves[code:code + 1], value)
                 operations = (('binary', op_index), ('code', code), *operations)
-            store = TernaryTruthStore(leaves.shape[-1], capacity=1)
+            store = LTM0(leaves.shape[-1], capacity=1)
             row = store.append_meaning(ConceptualMeaning.from_description(value[0]))
             records.append((length, store, row, operations))
         parameters = tuple(language.generate_policy.parameters()) + tuple(op.parameters())

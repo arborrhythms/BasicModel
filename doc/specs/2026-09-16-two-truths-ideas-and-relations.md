@@ -120,7 +120,7 @@ them, and what is a row at all**
   Bounded readers report revisited occurrences without erasing the
   relation, manufacturing evidence or banning the binding.
 - **The row, field by field (Alec, 2026-10-20; decided after a walk
-  through every column of `TernaryTruthStore`).** The rule: LTM0 holds
+  through every column of `LTM0`).** The rule: LTM0 holds
   one concept and a `.when`; LTM1 holds three symbol references and a
   `.when`; anything else must be justified. What survives, with its
   reason:
@@ -422,7 +422,7 @@ inside the row carries either coordinate
 ([Architecture](../Architecture.md#one-where-one-when-many-whats-the-field-attention-and-the-two-modes-item-9b-september-25)).
 
 
-An idea row in the unified `TernaryTruthStore` (`symbolSpace.ltm_store`)
+An idea row in the unified `LTM0` (`symbolSpace.ltm_store`)
 has `rel_type = REL_NONE`, its fused vector in the NP1 slot, Null in VP
 and NP2, scalar trust, timestamp, origin and optional source text as
 today. Two additions:

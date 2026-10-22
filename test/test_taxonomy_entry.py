@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN
 from test_thought_model_fixture import model_for
 from test_cs_symbol_table import _cs
@@ -16,7 +16,7 @@ def _world():
                  for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
-    cs._ltm_store = TernaryTruthStore(8, capacity=16)
+    cs._ltm_store = LTM0(8, capacity=16)
     return cs, refs, TruthGroundedReasoner(model_for(cs, cs._ltm_store),
                                           store=cs._ltm_store)
 

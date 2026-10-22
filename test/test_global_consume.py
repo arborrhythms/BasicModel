@@ -212,7 +212,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     # reaches the consumer: the soft-read content (which ranges over SPACE_LTM)
     # injected into a head changes it.
     from Attention import PrimedSymbolReader as GA
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     m = _build("MM_qa.xml")
     if getattr(m, "symbolSpace", None) is None:
         pytest.skip("no symbolSpace")
@@ -223,7 +223,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     in_sub = m._lex_embed_stem(x)
     ps = m.perceptualSpace.forward(in_sub)
     D = int(ps.materialize().shape[-1])
-    store = TernaryTruthStore(D, capacity=8)
+    store = LTM0(D, capacity=8)
     store.slots[:3] = torch.randn(3, 3, D)
     store.count = torch.tensor(3)
     object.__setattr__(m.symbolSpace, "ltm_store", store)

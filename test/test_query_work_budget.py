@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Queries import THOUGHT_EXECUTORS, ThoughtSignature
 from Taxonomy import capture_taxonomy
@@ -88,7 +88,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     cs._csw_concept_row(0, ref[1])
     meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
                       role_refs=(ref, None, None))
-    store = TernaryTruthStore(8)
+    store = LTM0(8)
     store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
     code = _existing_row(cs, ref)
     append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)

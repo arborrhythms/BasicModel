@@ -143,10 +143,10 @@ def test_offset_independence(tmp_path):
 
 @pytest.mark.usefixtures('eager_reading')
 def test_stream_chain(tmp_path,monkeypatch):
-    from Layers import TernaryTruthStore, SymbolExpectation
+    from Layers import LTM0, SymbolExpectation
     from Meaning import ConceptualMeaning
     from Occurrence import sentence_key
-    store = TernaryTruthStore(4,capacity=8)
+    store = LTM0(4,capacity=8)
     history = SimpleNamespace(_ltm_store=store)
     rows = {}
     for index in (1,2):
@@ -174,7 +174,7 @@ def test_stream_chain(tmp_path,monkeypatch):
     store.witness_stream(rows[0,1],1)
     assert store.stream_rows(0).tolist() == [0,2]
     assert store.stream_rows(1).tolist() == [0,1,3]
-    restored = TernaryTruthStore(4,capacity=8)
+    restored = LTM0(4,capacity=8)
     restored.load_state_dict(store.state_dict())
     assert torch.equal(restored.stream,store.stream)
     # The production closing supplies stream witnesses and model processing time.
@@ -527,8 +527,8 @@ def test_nested_wholes_from_stage3_artifact(tmp_path, monkeypatch, restore_phase
 def test_absences():
     import Language
     from ClauseRow import Clause
-    from Layers import TernaryTruthStore
-    store = TernaryTruthStore(4,8)
+    from Layers import LTM0
+    store = LTM0(4,8)
     assert not {'timestamp','_next_ts'} & set(store.state_dict())
     assert not any(hasattr(store,name) for name in ('timestamp','_next_ts','write_timestamp','recent','_timestamp_source'))
     assert 'eternal' not in {f.name for f in fields(Clause)}

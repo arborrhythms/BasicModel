@@ -5795,8 +5795,8 @@ class ConceptAllocator:
         self.reference_orders = {}       # grammar-resolved object order
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
-        from PartStore import PartStore
-        self.parts = PartStore()         # LTM1 and the symbol taxonomy, one owner
+        from LTM1 import LTM1
+        self.parts = LTM1()         # LTM1 and the symbol taxonomy, one owner
         self.parts.allocate = self._allocate_part_symbol
         self.symbol_types = {}           # types of bank arguments, never edge kinds
         self.word_descriptions = {}      # native form definitions, keyed by word symbol
@@ -7194,7 +7194,7 @@ class TruthLayer(Layer):
       - ``equals(S, S)`` -- identity / equivalence
 
     LTM-BACKED MODE (``<ltmConsolidation>`` on): the canonical user-truth
-    store is the unified ``TernaryTruthStore`` (``symbolSpace.ltm_store``);
+    store is the unified ``LTM0`` (``symbolSpace.ltm_store``);
     this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
     wires the back-reference and ``sync_from_ltm`` materializes the
     provisioned + user rows into ``truths``/``count``/``_sources``/
@@ -8292,7 +8292,7 @@ class TruthLayer(Layer):
     # The absolute truth set is a CONSISTENT CORPUS governing admission:
     # it (1) governs the admissibility of new truths/beliefs, (2) serves
     # as the basis for causal reasoning (relations between ideas live in
-    # the relation rows in ``TernaryTruthStore`` and NEVER enter this store or
+    # the relation rows in ``LTM0`` and NEVER enter this store or
     # its luminosity), and (3) provides user feedback on the truth of a
     # statement. The conflict region ``min(T_k, F_k)`` is MEASURED,
     # never stored; the preemption/admissibility statistic is its
@@ -8724,7 +8724,7 @@ class TruthLayer(Layer):
         print("TruthLayer tests passed.")
 
 
-class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     """Durable clause rows with shared references and independent evidence.
 
     An idea stores one fused point without its reading derivation. A
@@ -8796,8 +8796,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
         self._init_leaf_index()
-        from PartStore import PartStore
-        object.__setattr__(self, 'parts', PartStore())
+        from LTM1 import LTM1
+        object.__setattr__(self, 'parts', LTM1())
 
     @staticmethod
     def _context_fingerprint(context, text, expectation=None):
@@ -8810,7 +8810,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # actually carry expectation provenance add this key.
         if expectation is not None:
             content["expectation"] = expectation
-        return TernaryTruthStore._fingerprint_payload(content)
+        return LTM0._fingerprint_payload(content)
 
     @staticmethod
     def _fingerprint_payload(content):
@@ -8825,10 +8825,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if isinstance(value, dict):
             if any(not isinstance(key, str) for key in value):
                 raise TypeError("expectation provenance mapping keys must be strings")
-            return tuple((key, TernaryTruthStore._freeze_expectation_value(item))
+            return tuple((key, LTM0._freeze_expectation_value(item))
                          for key, item in sorted(value.items()))
         if isinstance(value, (tuple, list)):
-            return tuple(TernaryTruthStore._freeze_expectation_value(item)
+            return tuple(LTM0._freeze_expectation_value(item)
                          for item in value)
         if value is None or isinstance(value, (str, bool, int)):
             return value
@@ -8973,7 +8973,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     @staticmethod
     def _occurrence_references(meaning):
         """The ordered compound-role edges of one complete meaning."""
-        return TernaryTruthStore._role_occurrence_references(meaning.role_refs)
+        return LTM0._role_occurrence_references(meaning.role_refs)
 
     @staticmethod
     def _context_occurrence_references(context):
@@ -9012,12 +9012,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         nor a successful binding grants evidence to the referenced row.
         """
         for context in contexts.values():
-            references = TernaryTruthStore._context_occurrence_references(context)
+            references = LTM0._context_occurrence_references(context)
             if any(ref[2] not in contexts
                    for ref in references
                    if ref[:2] == ('ltm', namespace)):
                 raise ValueError("semantic context occurrence is unavailable")
-            for _, reference in TernaryTruthStore._role_occurrence_references(
+            for _, reference in LTM0._role_occurrence_references(
                     context.get("role_refs", (None, None, None))):
                 if reference[:2] == ('ltm', namespace):
                     if reference[2] not in contexts:

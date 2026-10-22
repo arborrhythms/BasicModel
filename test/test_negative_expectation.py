@@ -7,7 +7,7 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
 import pytest
 import torch
 
-from Layers import MeaningExpectation, ExpectationComparison, TernaryTruthStore
+from Layers import MeaningExpectation, ExpectationComparison, LTM0
 from Meaning import ConceptualMeaning
 from meaning_fixtures import record_observation
 from test_sentence_expectation import layer, observe
@@ -36,11 +36,11 @@ def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
 
 
 def test_old_checkpoint_unknown_surprise_is_not_zero():
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     store.append_idea(torch.ones(4), sentence_index=len(store))
     state = store.state_dict()
     state.pop("surprise", None)
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(state, strict=True)
     assert restored.row(0)["surprise"] == -1
 
@@ -55,7 +55,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     assert 'not' in registry.executable_operation_ids
     source = with_slots(registry.form('part', part, whole, mode='assertive'), (), pair=(.3,.7))
     request = registry.form('not', source)
-    store = TernaryTruthStore(8, capacity=8)
+    store = LTM0(8, capacity=8)
     model.symbolSpace.ltm_store = store
     observation = store.append_meaning(source,kind='observation')
     with model._query_boundary_scope((0,)):
@@ -76,7 +76,7 @@ def _anticipating_model():
     model, registry, memory, part, whole = _catalog_world()
     meaning = registry.form("part", part, whole)
     width = meaning.roles.shape[-1]
-    store = TernaryTruthStore(width, capacity=64)
+    store = LTM0(width, capacity=64)
     discourse = SymbolExpectation(4, 8, width, concept_dim=width)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     discourse._ltm_store = store
@@ -151,7 +151,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
 
 @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
 def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
-    store = TernaryTruthStore(4, capacity=64)
+    store = LTM0(4, capacity=64)
     meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
     for _ in range(24):
         row = store.append_idea(torch.ones(4), sentence_index=len(store))
@@ -163,7 +163,7 @@ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch
         source_occurrences=(store.occurrence_of(source),))
     eref, oref = store.occurrence_of(e), store.occurrence_of(o)
     if state == "restored":
-        restored = TernaryTruthStore(4, capacity=64)
+        restored = LTM0(4, capacity=64)
         restored.load_state_dict(copy.deepcopy(store.state_dict()))
         restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
         store = restored
@@ -382,7 +382,7 @@ def test_omission_is_residual_only_and_content_has_no_predictor_credit():
 def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
     from meaning_fixtures import symbol_prediction, estimate_meaning
     from Expectation import retention_surprise
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     actual = ConceptualMeaning(torch.eye(4)[:3], torch.tensor([True,True,False]))
     source = store.append_meaning(actual, kind='observation')
     prediction = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
@@ -392,7 +392,7 @@ def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
     torch.testing.assert_close(pair['observation'].roles, actual.roles)
     torch.testing.assert_close(pair['expected_activation'], prediction.expected_activation)
     assert pair['surprise'] == pytest.approx(float(retention_surprise(pair['residual'], pair['expected_activation'])))
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     torch.testing.assert_close(restored.expectation_pair(row)['residual'], pair['residual'])

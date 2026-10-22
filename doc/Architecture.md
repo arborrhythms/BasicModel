@@ -1528,7 +1528,7 @@ NP1/VP/NP2 roles, bindings, scope and constituent references. It retains
 positive and negative support plus occurrence provenance independently;
 missing evidence is unknown. Observations, questions, estimates and unverified
 legacy records cannot certify their own referents. `ConceptualMeaning` is an
-owned value; `TernaryTruthStore` remains the durable evidence owner.
+owned value; `LTM0` remains the durable evidence owner.
 [Lookup](../bin/reasoning.py#L156),
 [value](../bin/Meaning.py#L67),
 [store](../bin/Layers.py#L8674).

@@ -9,7 +9,7 @@ from typing import Any, Optional
 import torch
 
 from Spaces import ConceptualSpace
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Taxonomy import capture_taxonomy, concept_reference
 
@@ -107,7 +107,7 @@ class TruthGroundedReasoner:
 
     def reasoning_store(self):
         """The reasoning corpus: an explicit ``store=`` wins; else the model's
-        shared ``TernaryTruthStore``; else None."""
+        shared ``LTM0``; else None."""
         if self._store is not None:
             return self._store
         cs = getattr(self.model, "conceptualSpace", None)
@@ -151,7 +151,7 @@ class TruthGroundedReasoner:
         diagnostics, scanned = [], 0
         support_true = support_false = 0.0
         store = self.reasoning_store()
-        if isinstance(store, TernaryTruthStore):
+        if isinstance(store, LTM0):
             count = len(store) if max_records is None else min(len(store), max_records)
             if count < len(store):
                 diagnostics.append("capture_limit")
@@ -306,10 +306,10 @@ class TruthGroundedReasoner:
         """The symbolic face reads the proposition's ended evidence pair."""
         from Queries import ThoughtLTMCapability
         from QueryWork import QueryWorkBudget
-        from Layers import TernaryTruthStore
+        from Layers import LTM0
         store = self.reasoning_store()
         meter = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
-        if isinstance(store, TernaryTruthStore):
+        if isinstance(store, LTM0):
             reader = ThoughtLTMCapability(store=lambda:store, equal=self.equal, tau_id=self.tau_id)
             if isinstance(A, tuple) and A and A[0] == 'ltm':
                 return reader.end_evidence(A, max_records=meter.remaining, work=meter)

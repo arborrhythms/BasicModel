@@ -357,8 +357,8 @@
       <!-- LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
            Ideas processing", "Two consolidation questions"; Alec 2026-06-18).
            When true, the discourse LTM (InterSentenceLayer end-state chain) and
-           the RelativeTruthStore are COMBINED into ONE unified TernaryTruthStore
-           tensor (Layers.TernaryTruthStore): rows (NP1, VP, NP2) of FULL idea
+           the RelativeTruthStore are COMBINED into ONE unified LTM0
+           tensor (Layers.LTM0): rows (NP1, VP, NP2) of FULL idea
            vectors + a per-row timestamp + a scalar trust, stored UNSCALED. The
            store is constructed on SymbolicSubSpace (ltm_store), written at the
            observe site (every end-state appends a row), retired RelativeTruthStore

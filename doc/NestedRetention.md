@@ -8,7 +8,7 @@
 
 Implementation reference, September 18.
 
-`TernaryTruthStore` remains the durable owner of full role payloads, stable
+`LTM0` remains the durable owner of full role payloads, stable
 occurrence IDs, semantic context and evidence. `read_structure()` derives a
 bounded detached view from those records; it does not create another semantic
 store, learned parameter, or reference-count table. Ordered role edges retain

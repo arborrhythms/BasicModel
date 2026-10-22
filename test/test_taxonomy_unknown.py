@@ -2,13 +2,13 @@
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner
 
 
 @pytest.mark.parametrize("predicate", ["exist", "isPart"])
 def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
-    reasoner = TruthGroundedReasoner(store=TernaryTruthStore(8))
+    reasoner = TruthGroundedReasoner(store=LTM0(8))
     first, second = torch.eye(8)[:2]
     query = QuerySpec.from_surface(predicate, first, second)
     result = reasoner.evaluate(query, tau=0.)

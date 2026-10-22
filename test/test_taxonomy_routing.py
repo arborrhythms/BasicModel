@@ -1,14 +1,14 @@
 """PartOf must obtain evidence from the conceptual taxonomy."""
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
 
 
 def test_partof_is_not_established_by_vector_containment():
     part = torch.tensor([1., 0., 0., 0.])
     whole = torch.ones(4)
-    result = TruthGroundedReasoner(store=TernaryTruthStore(4)).evaluate(
+    result = TruthGroundedReasoner(store=LTM0(4)).evaluate(
         QuerySpec.from_surface("isPart", part, whole))
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == 0
@@ -16,7 +16,7 @@ def test_partof_is_not_established_by_vector_containment():
 
 def test_partof_is_not_established_by_an_ltm1_description():
     part, whole = torch.eye(4)[:2]
-    store = TernaryTruthStore(4)
+    store = LTM0(4)
     from Meaning import ConceptualMeaning
     store.append_meaning(ConceptualMeaning.from_payload(torch.stack((part, torch.eye(4)[2], whole)),
         depth=3, layout='infix'), kind='fact', trust=.9)

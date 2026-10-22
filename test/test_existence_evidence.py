@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN, BOTH
 
 
@@ -15,7 +15,7 @@ def _description():
 @pytest.mark.parametrize("changed_role", [None, 1, 2])
 def test_exist_matches_the_complete_relational_description(changed_role):
     roles = _description()
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     from Meaning import ConceptualMeaning
     store.append_meaning(ConceptualMeaning.from_payload(roles, depth=3, layout='infix'),
                          kind='fact', trust=.85)
@@ -35,7 +35,7 @@ def test_exist_matches_the_complete_relational_description(changed_role):
 
 def test_exist_preserves_conflicting_fact_support():
     subject = _description()[0]
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_idea(subject, trust=.8, sentence_index=len(store))
     store.append_idea(subject, trust=-.9, sentence_index=len(store))
     result = TruthGroundedReasoner(store=store).evaluate(

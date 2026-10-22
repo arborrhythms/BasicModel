@@ -65,7 +65,7 @@ retains its VP in the store and the legacy chain reader.
 [prediction adapter](../bin/Layers.py),
 [observation writer](../bin/Models.py).
 
-`TernaryTruthStore` remains the owner of role vectors and fact evidence. Fixed
+`LTM0` remains the owner of role vectors and fact evidence. Fixed
 buffers add role presence, grammatical mode, polarity, record kind, occurrence
 identity and the required-metadata flag. Supported kinds are `fact`, `question`,
 `estimate`, `observation` and `unverified`. Only assertive facts qualify for

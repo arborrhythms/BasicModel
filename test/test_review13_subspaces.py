@@ -56,11 +56,11 @@ def test_group_uses_native_perceptual_fold_without_letter_concept_rows():
 
 
 def test_occurrence_mean_is_confined_to_detached_context_coordinates():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, ps, _ = fixture()
     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
-    store = TernaryTruthStore(5, capacity=8)
+    store = LTM0(5, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
     part = store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b),
                            symbol=cs.new_concept())

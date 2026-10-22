@@ -96,11 +96,11 @@ def test_taxonomy_keeps_the_forms_derived_from_definition_rows():
 def test_retired_meta_checkpoint_is_permanently_rejected():
     from test_cs_sparse_weights import _cs
     from test_structural_checkpoint import _model_with
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     fixture = torch.load(Path('test/fixtures/item7_legacy_definition.pt'), weights_only=False)
     cs = _cs(nS=64, order=3)
     target = _model_with(cs, SimpleNamespace())
-    target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
+    target.symbolSpace = SimpleNamespace(ltm_store=LTM0(cs.nDim, capacity=32))
     object.__setattr__(cs, '_model', target)
     with pytest.raises(ValueError, match='retired META'):
         target._restore_structural_extras(fixture['structural'])

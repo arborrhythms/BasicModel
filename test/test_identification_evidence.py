@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from ClauseRow import Clause
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -45,7 +45,7 @@ def test_clause_order_and_evidence_are_stored_without_a_program():
     row = store.write_clause(clause)
     assert store.row(row)['order'] == 3
     assert store.row(row)['evidence'] == pytest.approx((.75, .5))
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(store.state_dict(), strict=True)
     assert restored.row(row)['order'] == 3
     assert restored.row(row)['trust'] == pytest.approx(.25)
@@ -129,7 +129,7 @@ def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
     state['trust'] = torch.full((store.capacity,), .8)  # legacy provenance
     for name in ('order', 'c_plus', 'c_minus'):
         del state[name]
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     with pytest.warns(UserWarning, match='unknown order'):
         restored.load_state_dict(state, strict=True)
     assert restored.row(0)['order'] == -1

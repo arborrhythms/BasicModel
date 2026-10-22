@@ -29,9 +29,9 @@ def test_sentence_identity_is_recomputable_and_does_not_consume_global_rng():
 
 
 def test_content_address_is_independent_of_store_and_persists_with_occurrences():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
-    stores = [TernaryTruthStore(8, capacity=4) for _ in range(2)]
+    stores = [LTM0(8, capacity=4) for _ in range(2)]
     keys = []
     for store in stores:
         from Occurrence import sentence_key
@@ -45,7 +45,7 @@ def test_content_address_is_independent_of_store_and_persists_with_occurrences()
         assert store.content_key(row) == keys[-1]
     assert stores[0].occurrence_of(0) == stores[1].occurrence_of(0)
     assert keys[0] == keys[1]
-    restored = TernaryTruthStore(8, capacity=4)
+    restored = LTM0(8, capacity=4)
     restored.load_state_dict(stores[0].state_dict())
     assert restored.content_key(0) == keys[0]
 
@@ -217,7 +217,7 @@ def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
 
 
 def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(monkeypatch):
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     from MereologicalCodes import MereologicalCodes
     from MeaningCodes import defined_code

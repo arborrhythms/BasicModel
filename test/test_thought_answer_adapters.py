@@ -26,8 +26,8 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 
 
 def _stored_query(model, registry, part, whole):
-    from Layers import TernaryTruthStore
-    store=TernaryTruthStore(8,capacity=16)
+    from Layers import LTM0
+    store=LTM0(8,capacity=16)
     store.configure_leaf_index(read=lambda idea,limit,**kwargs:((7,),1,True))
     model.symbolSpace.ltm_store=store
     source=registry.form('part',part,whole,mode='assertive')
@@ -110,8 +110,8 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     elif kind == 'concept':
         query = registry.form('exist', registry._payload(part))
     else:
-        from Layers import TernaryTruthStore
-        model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
+        from Layers import LTM0
+        model.symbolSpace.ltm_store = LTM0(8, capacity=16)
         query = registry.form('ask', query)
     entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),

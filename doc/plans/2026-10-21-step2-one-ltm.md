@@ -1,10 +1,13 @@
 # Step 2 of item 3.5: one long-term memory in strata (Claude, 2026-10-21; for Codex)
 
-**Status:** spec for Codex's review before any code. It consolidates
-decisions already made; the open ones are §8, each with a recommendation
-for Alec. Facts about the current code come from a read of `bin/` on
-`cf61b5678` and the step-1b row audit
-(`benchmarks/2026-10-20-item3-5-identity/row-audit.md`).
+**Status:** reviewed and decided in §§10–12; they supersede the original
+round boundaries and open choices below. R10 is published at `e243d7bdf`
+(WikiOracle `2ffda78`). Round 2a starts with the separate class rename and
+its own scoped gates, after checking saved class paths; only safe culls
+follow. The [rename receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
+records the source audit and evidence. Original code facts below describe
+`cf61b5678`; old class names in those historical facts locate that source.
+
 
 **Names used below.** LTM0 is the occurrence rows, held today by the class
 `TernaryTruthStore`; LTM1 is the relation rows, held today by the class

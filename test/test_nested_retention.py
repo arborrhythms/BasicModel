@@ -5,7 +5,7 @@ import copy
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
@@ -29,7 +29,7 @@ def _unchanged(store, before):
 
 
 def test_origin_replacement_retains_reachable_content_without_fact_authority():
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     leaf = store.append_meaning(_meaning(scope={"quote": "inner"}), trust=.8, sentence_index=len(store))
     store.set_origin(leaf, store.ORIGIN_USER, text="reported content")
     leaf_ref = store.occurrence_of(leaf)
@@ -58,7 +58,7 @@ def test_origin_replacement_retains_reachable_content_without_fact_authority():
 
 
 def test_external_live_root_pins_an_occurrence_through_origin_replacement():
-    store = TernaryTruthStore(6, capacity=3)
+    store = LTM0(6, capacity=3)
     row = store.append_meaning(_meaning(), trust=1, sentence_index=len(store))
     store.set_origin(row, store.ORIGIN_USER)
     ref = store.occurrence_of(row)
@@ -69,7 +69,7 @@ def test_external_live_root_pins_an_occurrence_through_origin_replacement():
 
 
 def test_missing_local_constituent_rejects_append_before_owner_mutation():
-    store = TernaryTruthStore(6, capacity=3)
+    store = LTM0(6, capacity=3)
     row = store.append_meaning(_meaning(), sentence_index=len(store))
     prefix = store.occurrence_of(row)[:2]
     before = copy.deepcopy(store.state_dict())
@@ -79,7 +79,7 @@ def test_missing_local_constituent_rejects_append_before_owner_mutation():
 
 
 def test_repeated_edges_keep_role_order_without_evidence_inheritance():
-    store = TernaryTruthStore(6, capacity=4)
+    store = LTM0(6, capacity=4)
     row = store.append_meaning(
         _meaning(mode="interrogative", scope={"quote": True}), kind="question"
     , sentence_index=len(store))
@@ -104,7 +104,7 @@ def test_repeated_edges_keep_role_order_without_evidence_inheritance():
      ({"max_records": 1}, "record_limit")),
 )
 def test_nested_read_limits_are_separate_and_explicit(limit, reason):
-    store = TernaryTruthStore(6, capacity=4)
+    store = LTM0(6, capacity=4)
     child = store.occurrence_of(store.append_meaning(_meaning(), sentence_index=len(store)))
     root = store.occurrence_of(store.append_meaning(_meaning(child=child), sentence_index=len(store)))
     before = copy.deepcopy(store.state_dict())
@@ -116,12 +116,12 @@ def test_nested_read_limits_are_separate_and_explicit(limit, reason):
 
 
 def test_retained_structure_and_reference_identity_survive_checkpoint_restore():
-    store = TernaryTruthStore(6, capacity=4)
+    store = LTM0(6, capacity=4)
     child = store.occurrence_of(store.append_meaning(_meaning(), sentence_index=len(store)))
     store.set_origin(0, store.ORIGIN_USER)
     root = store.occurrence_of(store.append_meaning(_meaning(child=child), sentence_index=len(store)))
     store.clear_origin(store.ORIGIN_USER)
-    restored = TernaryTruthStore(6, capacity=4)
+    restored = LTM0(6, capacity=4)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     view = restored.read_structure(root)
@@ -138,7 +138,7 @@ def _boundary_meaning(ref=None):
 
 
 def _world():
-    store = TernaryTruthStore(5, capacity=5)
+    store = LTM0(5, capacity=5)
     child = store.occurrence_of(store.append_meaning(_boundary_meaning(), kind="question", sentence_index=len(store)))
     root = store.occurrence_of(store.append_meaning(_boundary_meaning(child), kind="observation", sentence_index=len(store)))
     return store, child, root
@@ -159,7 +159,7 @@ def test_structural_restore_rejects_dangling_local_links_atomically():
     wrong = child[:2] + (999,)
     _corrupt_child(store, child, wrong)
     saved, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
-    restored = TernaryTruthStore(5, capacity=5)
+    restored = LTM0(5, capacity=5)
     restored.load_state_dict(saved)
     before_context = copy.deepcopy(restored._semantic_rows)
     before_texts = list(restored._texts)
@@ -176,7 +176,7 @@ def test_cycle_is_reported_without_unbounded_read_or_evidence_transfer():
     assert view["incomplete"] == ("cycle",)
     assert len(view["rows"]) == 2 and view["records_scanned"] == 2
     assert view["rows"][1]["kind"] == "question"
-    restored = TernaryTruthStore(5, capacity=5)
+    restored = LTM0(5, capacity=5)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     reread = restored.read_structure(root, max_nodes=2, max_depth=2, max_records=2)
@@ -207,7 +207,7 @@ def test_derived_structure_read_does_not_expose_mutable_store_slots():
 
 def test_unavailable_owner_and_retired_reference_have_explicit_incomplete_results():
     store, child, root = _world()
-    other = TernaryTruthStore(5, capacity=5)
+    other = LTM0(5, capacity=5)
     foreign = other.occurrence_of(other.append_meaning(_boundary_meaning(), document_key='other-document', sentence_index=len(other)))
     assert store.read_structure(foreign)["incomplete"] == ("unavailable_reference",)
     store.reset()
@@ -218,7 +218,7 @@ def test_unavailable_owner_and_retired_reference_have_explicit_incomplete_result
 
 @pytest.mark.parametrize("field", ("bindings", "scope"))
 def test_withdrawal_preserves_occurrences_in_retained_semantic_context(field):
-    store = TernaryTruthStore(6, capacity=4)
+    store = LTM0(6, capacity=4)
     child = store.append_meaning(_meaning(), trust=.8, sentence_index=len(store))
     store.set_origin(child, store.ORIGIN_USER)
     ref = store.occurrence_of(child)
@@ -235,7 +235,7 @@ def test_withdrawal_preserves_occurrences_in_retained_semantic_context(field):
 
 @pytest.mark.parametrize("field", ("bindings", "scope"))
 def test_missing_local_context_reference_rejects_append_before_mutation(field):
-    store = TernaryTruthStore(6, capacity=4)
+    store = LTM0(6, capacity=4)
     row = store.append_meaning(_meaning(), sentence_index=len(store))
     missing = store.occurrence_of(row)[:2] + (99,)
     before = copy.deepcopy(store.state_dict())

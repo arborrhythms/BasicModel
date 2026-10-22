@@ -108,7 +108,7 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.append_meaning",
+      "function": "LTM0.append_meaning",
       "attributes": [
         "when"
       ],
@@ -118,7 +118,7 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.reset",
+      "function": "LTM0.reset",
       "attributes": [
         "when"
       ],
@@ -128,7 +128,7 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.row",
+      "function": "LTM0.row",
       "attributes": [
         "when"
       ],
@@ -230,8 +230,8 @@
       "now": "Reads the common row model-time band; no identity operator consumes it."
     },
     {
-      "file": "bin/PartStore.py",
-      "function": "PartStore.add",
+      "file": "bin/LTM1.py",
+      "function": "LTM1.add",
       "attributes": [
         "when"
       ],
@@ -890,7 +890,7 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.recent",
+      "function": "LTM0.recent",
       "previous_absolute_time": false,
       "now": "Reads the timestamp column (absolute model time), never the when band."
     },
@@ -926,19 +926,19 @@
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.__init__",
+      "function": "LTM0.__init__",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore._load_from_state_dict",
+      "function": "LTM0._load_from_state_dict",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
       "file": "bin/Layers.py",
-      "function": "TernaryTruthStore.clear_origin",
+      "function": "LTM0.clear_origin",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },

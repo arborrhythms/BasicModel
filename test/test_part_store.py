@@ -2,7 +2,7 @@
 import torch
 
 from Layers import ConceptAllocator
-from PartStore import PartStore
+from LTM1 import LTM1
 
 
 def test_taxonomy_and_nested_relations_share_symbol_rows():
@@ -19,13 +19,13 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
     before = outer
     alloc.parts.retain([inner, outer])
     assert alloc.parts.find(inner, z) == before
-    assert set(alloc.parts.row(inner)) == set(PartStore.columns)
+    assert set(alloc.parts.row(inner)) == set(LTM1.columns)
     assert alloc.parts.refs.shape[-1] == 2
     assert not hasattr(alloc.parts, 'rel_type')
 
 
 def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
-    store = PartStore(16)
+    store = LTM1(16)
     first = store.add(2, 3, truth_plus=.7, truth_minus=.1, when=torch.ones(4))
     assert store.add(2, 3, truth_plus=.2, truth_minus=.8) == first
     assert len(store) == 1 and store.access_count[first] == 2
@@ -36,10 +36,10 @@ def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
 
 
 def test_part_checkpoint_and_retention_keep_native_addresses():
-    store = PartStore(16)
+    store = LTM1(16)
     a = store.add(2, 3, truth_plus=.6)
     b = store.add(a, 4, truth_minus=.4)
-    clone = PartStore(4)
+    clone = LTM1(4)
     clone.load_state_dict(store.state_dict())
     clone.retain([b])
     assert clone.find(a, 4) == b

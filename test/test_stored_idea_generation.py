@@ -84,10 +84,10 @@ def test_compound_candidates_are_not_word_emissions(compiled):
 @pytest.mark.parametrize('reference', [('meta', 1), ('sym', -1), ('sym', 0),
                                       ('sym', -42), ('sym', True), ('sym', 1.5)])
 def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
     from Taxonomy import concept_reference
-    store = TernaryTruthStore(4, capacity=2)
+    store = LTM0(4, capacity=2)
     calls = []
     def code_row(reference):
         calls.append(reference)

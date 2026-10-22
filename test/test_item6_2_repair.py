@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from ThoughtReferences import bindings, evidence_pair, fill, open_slots, question
 from ThoughtStream import write
@@ -28,7 +28,7 @@ def test_saved_construction_binds_and_writes_the_child():
     assert resolved.constituents == (child,)
     assert not open_slots(resolved)
     assert evidence_pair(resolved) == (.8, .2)
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     index = write(model, resolved, row=0)
     assert len(store) == 2
@@ -52,7 +52,7 @@ def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
     assert nested.constituents == (leaf,)
     assert nested.role_refs[0] == ('constituent', 0)
     assert goal.constituents == (existing,) and goal.role_refs[0] is None
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
     index = write(model, resolved, row=0)
     assert len(store) == 4
@@ -78,7 +78,7 @@ def test_multiple_roles_share_the_imported_child_without_reindexing_goal():
 def test_occurrence_binding_also_carries_the_supplied_constituent_table():
     child = atom(.5)
     supplied = replace(atom(), constituents=(child,))
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     index = store.append_meaning(supplied, kind='fact', evidence=(.8, .2))
     occurrence = store.occurrence_of(index)
     result = fill(question(atom(), (('referent', 0),)),

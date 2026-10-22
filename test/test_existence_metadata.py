@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN, BOTH
 
 
@@ -47,14 +47,14 @@ def test_actual_observation_writers_keep_roles_without_asserting_world_facts(mon
 
 
 def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
-    source = TernaryTruthStore(6, capacity=8)
+    source = LTM0(6, capacity=8)
     idea = torch.eye(6)[0]
     source.append_idea(idea, trust=.95, sentence_index=len(source))
     provisioned = source.append_idea(idea, trust=.6, sentence_index=len(source))
     source.set_origin(provisioned, source.ORIGIN_PROVISIONED)
     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
-    restored = TernaryTruthStore(6, capacity=8)
+    restored = LTM0(6, capacity=8)
     with pytest.warns(UserWarning, match='unknown order'):
         restored.load_state_dict(old_state, strict=True)
     assert len(restored) == 2
@@ -77,7 +77,7 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
         "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
     }
     description = _meaning(**initial)
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_meaning(description, kind="fact", trust=.85, sentence_index=len(store))
     assert _evaluate(store, description)["posture"] == TRUE
     initial[field] = changed[field]
@@ -90,7 +90,7 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
     ("observation", "unspecified"),
 ])
 def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0, sentence_index=len(store))
     result = _evaluate(store, _meaning())
     assert result["posture"] == UNKNOWN
@@ -98,14 +98,14 @@ def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
 
 
 def test_question_cannot_be_written_as_accepted_fact():
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     with pytest.raises(ValueError, match="interrogative|question"):
         store.append_meaning(_meaning(mode="interrogative"), kind="fact", trust=1, sentence_index=len(store))
     assert len(store) == 0
 
 
 def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     first = store.append_meaning(_meaning(), kind="fact", trust=.8, sentence_index=len(store))
     second = store.append_meaning(_meaning(), kind="fact", trust=-.9, sentence_index=len(store))
     first_ref, second_ref = (store.row(i)["occurrence"] for i in (first, second))
@@ -123,7 +123,7 @@ def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
 
 
 def test_repeated_evidence_does_not_inflate_partial_support():
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     for _ in range(4):
         store.append_meaning(_meaning(), kind="fact", trust=.4, sentence_index=len(store))
     result = _evaluate(store, _meaning())
@@ -138,7 +138,7 @@ def test_live_description_owns_values_but_fact_storage_detaches():
     description = ConceptualMeaning.from_payload(source, depth=3, layout="infix")
     gradient = torch.autograd.grad(description.roles.square().sum(), source)[0]
     torch.testing.assert_close(gradient, 2 * source)
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     row = store.append_meaning(description, kind="fact", trust=.8, sentence_index=len(store))
     with torch.no_grad():
         source.zero_()
@@ -161,13 +161,13 @@ def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(dep
 
 
 def test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar():
-    source = TernaryTruthStore(6, capacity=8)
+    source = LTM0(6, capacity=8)
     description = _meaning(scope={"where": ("sym", 11)}, bindings={"x": ("sym", 7)})
     row = source.append_meaning(description, kind="fact", trust=.85, sentence_index=len(source))
     source.set_origin(row, source.ORIGIN_USER, text="scoped witness")
     state = {k: v.clone() for k, v in source.state_dict().items()}
     extras = source.semantic_extras()
-    restored = TernaryTruthStore(6, capacity=8)
+    restored = LTM0(6, capacity=8)
     restored.load_state_dict(state, strict=True)
     # Required semantic context cannot be silently replaced by empty scope.
     incomplete = _evaluate(restored, _meaning())
@@ -212,7 +212,7 @@ def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
 
 
 def test_checked_reader_keeps_both_sides_of_exist_evidence():
-    store = TernaryTruthStore(6, capacity=8)
+    store = LTM0(6, capacity=8)
     store.append_meaning(_meaning(), kind="fact", trust=.8, sentence_index=len(store))
     store.append_meaning(_meaning(), kind="fact", trust=-.9, sentence_index=len(store))
     reasoner = TruthGroundedReasoner(store=store)

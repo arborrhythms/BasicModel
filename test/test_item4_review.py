@@ -5,7 +5,7 @@ from dataclasses import replace
 import pytest
 import torch
 from Expectation import sample_alternative, retention_surprise
-from Layers import SymbolExpectation, ExpectationComparison, TernaryTruthStore
+from Layers import SymbolExpectation, ExpectationComparison, LTM0
 from Meaning import ClosingImage, ConceptualMeaning, retained_symbol_prediction, withheld_symbols
 from meaning_fixtures import symbol_prediction, estimate_meaning
 
@@ -79,7 +79,7 @@ def test_omission_surprise_and_non_marks_agree_at_both_native_writers():
     assert comparison.surprise_for(ordinary)>0
     assert comparison.surprise_for(withheld)==0
     for observation in (ordinary,withheld):
-        store=TernaryTruthStore(4,capacity=8)
+        store=LTM0(4,capacity=8)
         _,row=store.append_expectation_pair(estimate_meaning(prior),observation,presence_logits=prior.presence_logits)
         assert store.expectation_pair(row)['surprise']==pytest.approx(float(comparison.surprise_for(observation)))
 
@@ -99,9 +99,9 @@ def test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact
     assert sum(key is not None for _,_,key,_ in entries)<=2
     estimate=ConceptualMeaning(prior.roles,torch.ones(3,dtype=torch.bool),bindings=bindings)
     observation=ConceptualMeaning(roles,occupied,bindings={'_observed_symbol_activations':((5,(1.,0.)),)})
-    store=TernaryTruthStore(width,capacity=8)
+    store=LTM0(width,capacity=8)
     _,row=store.append_expectation_pair(estimate,observation,presence_logits=prior.presence_logits)
-    restored=TernaryTruthStore(width,capacity=8)
+    restored=LTM0(width,capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     for owner in (store,restored):

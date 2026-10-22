@@ -122,7 +122,7 @@ def test_trial_keep_and_credit_use_same_r_plus_a_judge():
 
 
 def test_expected_identity_survives_zero_content_and_retained_pair_restore():
-    from Layers import MeaningExpectation, TernaryTruthStore
+    from Layers import MeaningExpectation, LTM0
     from Meaning import ConceptualMeaning, ClosingImage
     keys = torch.eye(4)
     logits = torch.full((4,2), -60.); logits[0,0] = 60.
@@ -138,7 +138,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
     assert view.awareness()['identities'][0] == 0
     observed = ConceptualMeaning(roles, occupied)
     estimate = ConceptualMeaning(roles, occupied, mode='unspecified', bindings=prediction.retained_bindings())
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     source = store.append_meaning(observed, kind='observation')
     e, o = store.append_expectation_pair(estimate, observed, presence_logits=prediction.presence_logits,
         source_occurrences=(store.occurrence_of(source),), document='test', stream='test')
@@ -146,7 +146,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
     assert pair['estimate_occurrence'] == store.occurrence_of(e)
     assert pair['expected_activation'].shape == (4,2)
     assert not pair['conceived'].any()
-    restored = TernaryTruthStore(4, capacity=8)
+    restored = LTM0(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     other = restored.expectation_pair(o)
@@ -175,7 +175,7 @@ def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
 
 def test_fused_retained_row_replays_original_two_lane_target():
     """A fused row is not a new observation of its nearest bank identity."""
-    from Layers import MeaningExpectation, TernaryTruthStore
+    from Layers import MeaningExpectation, LTM0
     from Meaning import ConceptualMeaning
     keys = torch.eye(4)
     expected = torch.tensor([[.8, .1], [.1, .7], [.2, .2], [.1, .1]])
@@ -193,13 +193,13 @@ def test_fused_retained_row_replays_original_two_lane_target():
             for i, pair in zip(ids, target.tolist()))})
     estimate = ConceptualMeaning(roles, occupied, mode='unspecified',
         bindings=prediction.retained_bindings())
-    store = TernaryTruthStore(4, capacity=8)
+    store = LTM0(4, capacity=8)
     _, row = store.append_expectation_pair(estimate, observed,
         presence_logits=prediction.presence_logits, document='fused', stream='fused')
     residual = target-expected
     from Expectation import retention_surprise
     surprise = retention_surprise(residual, expected)
-    for replay in (store, TernaryTruthStore(4, capacity=8)):
+    for replay in (store, LTM0(4, capacity=8)):
         if replay is not store:
             replay.load_state_dict(copy.deepcopy(store.state_dict()))
             replay.load_semantic_extras(copy.deepcopy(store.semantic_extras()))

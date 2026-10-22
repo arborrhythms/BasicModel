@@ -35,8 +35,8 @@ def test_postings_rebuild_from_part_without_inverting_the_narrowed_point(monkeyp
 
 def test_part_membership_terminates_on_cycles_and_retains_reachable_leaves():
     from PartRead import leaves
-    from PartStore import PartStore
-    parts = PartStore(32)
+    from LTM1 import LTM1
+    parts = LTM1(32)
     parts.add(11, 2, symbol=10)
     parts.add(10, 3, symbol=11)
     assert set(leaves(parts, 10)) == {2, 3}

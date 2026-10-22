@@ -47,7 +47,7 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
 
 
 def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     m = model()
     word, obj = admit(m, 'hello')
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
@@ -172,13 +172,13 @@ def test_34_learning_codes_cannot_change_definition_identity():
 
 def test_32_retired_head_meta_checkpoint_is_rejected():
     from types import SimpleNamespace
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from test_cs_sparse_weights import _cs
     from test_structural_checkpoint import _model_with
     fixture = torch.load(Path(__file__).with_name('fixtures') / 'item7_legacy_definition.pt', weights_only=False)
     cs = _cs(nS=64, order=3)
     target = _model_with(cs, SimpleNamespace())
-    target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
+    target.symbolSpace = SimpleNamespace(ltm_store=LTM0(cs.nDim, capacity=32))
     object.__setattr__(cs, '_model', target)
     with pytest.raises(ValueError, match='retired META'):
         target._restore_structural_extras(fixture['structural'])

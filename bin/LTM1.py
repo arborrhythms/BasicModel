@@ -10,7 +10,7 @@ import torch
 from torch import nn
 
 
-class PartStore(nn.Module):
+class LTM1(nn.Module):
     columns = ('refs', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'when')
 
     def __init__(self, capacity=8192):

@@ -1,6 +1,6 @@
 """Normal thought credit and evidence cannot regain world-vector shortcuts."""
 import torch
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec
 from test_cs_symbol_table import _cs
@@ -9,7 +9,7 @@ from test_thought_model_fixture import model_for
 
 def _setup():
     cs = _cs(nS=128)
-    store = TernaryTruthStore(8, capacity=32)
+    store = LTM0(8, capacity=32)
     model = model_for(cs, store)
     refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
                  for _ in range(3))
@@ -34,7 +34,7 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     store.append_meaning(fact, trust=1, order=order,
                          evidence=(1., 0.))
     assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
-    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     cs._concept_allocator.parts.remove(a[1], b[1])
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == 0
@@ -50,7 +50,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
     assert len(store) == 0
     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
-    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
+    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     # Remove the derived conclusion as well as its shared-store premises.
     cs._concept_allocator.parts.remove(a[1],c[1])
     cs.retire_concept(b[1])

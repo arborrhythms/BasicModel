@@ -26,9 +26,9 @@ def test_centroid_moves_without_losing_identity_and_caps_containment():
 
 
 def test_adjacent_wholes_rewitness_compact_and_checkpoint():
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     value = ConceptualMeaning.from_description(torch.ones(4))
     discarded = store.append_meaning(value, document_key='gone')
     store.origin[discarded] = store.ORIGIN_USER
@@ -40,7 +40,7 @@ def test_adjacent_wholes_rewitness_compact_and_checkpoint():
     store.witness_adjacency(discarded, [7, 8])
     store.clear_origin(store.ORIGIN_USER)
     assert store.index_of_row(address) == 0 and (7, 8) not in store._adjacent_postings
-    loaded = TernaryTruthStore(4, capacity=4)
+    loaded = LTM0(4, capacity=4)
     loaded.load_state_dict(store.state_dict())
     assert loaded._adjacent_postings == store._adjacent_postings
     store.witness_adjacency(0, [2, 4])
@@ -51,9 +51,9 @@ def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
     import MereologicalCodes
     from Priming import diffuse
     from util import TheXMLConfig
-    from Layers import TernaryTruthStore
+    from Layers import LTM0
     from Meaning import ConceptualMeaning
-    store = TernaryTruthStore(4, capacity=4)
+    store = LTM0(4, capacity=4)
     store.append_meaning(ConceptualMeaning.from_description(torch.ones(4)))
     owner = SimpleNamespace(_closed_clause_store=lambda: store)
     import PartRead

@@ -8,7 +8,7 @@ import sys
 import pytest
 import torch
 
-from Layers import TernaryTruthStore
+from Layers import LTM0
 from Meaning import ConceptualMeaning
 from Occurrence import address_key, document_digest, sentence_key
 
@@ -31,7 +31,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
               'sentence_key((b"the",b"cat"))))')
     assert key == int(subprocess.check_output([sys.executable, '-c', source], text=True))
     assert torch.equal(rng, torch.get_rng_state())
-    left, right = TernaryTruthStore(4, 8), TernaryTruthStore(4, 8)
+    left, right = LTM0(4, 8), LTM0(4, 8)
     a, b = write(left), write(right)
     assert left.occurrence_of(a) == right.occurrence_of(b)
     assert not {'occurrence_id', '_next_occurrence', '_occurrence_namespace'} & set(left.state_dict())
@@ -39,7 +39,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
 
 
 def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
-    store = TernaryTruthStore(4, 4)
+    store = LTM0(4, 4)
     for epoch in range(400):
         for row in range(4):
             assert write(store, ('xor', row), value=epoch + 1.) == row
@@ -52,7 +52,7 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
 
 
 def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
-    store = TernaryTruthStore(4, 4)
+    store = LTM0(4, 4)
     row = write(store, value=2., evidence=(.8, .1))
     band = store.when[row].clone()
     assert write(store, value=3., evidence=(.2, .7)) == row
@@ -66,7 +66,7 @@ def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
 
 
 def test_full_store_can_rewitness_both_existing_prediction_pair_addresses():
-    store = TernaryTruthStore(4, 2)
+    store = LTM0(4, 2)
     from meaning_fixtures import symbol_prediction, estimate_meaning
     predicted = estimate_meaning(symbol_prediction(torch.ones(1,4), torch.full((1,2),.5)))
     arguments = dict(presence_logits=torch.zeros(3), document='turn')
@@ -88,7 +88,7 @@ def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
 
 
 def test_references_and_content_keys_survive_compaction_and_checkpoint():
-    store = TernaryTruthStore(4, 8)
+    store = LTM0(4, 8)
     removed = write(store, 'discard')
     store.set_origin(removed, store.ORIGIN_USER)
     source = write(store, 'kept')
@@ -101,7 +101,7 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
     assert store._index_occurrences[reference] == 0
     assert store.meaning_of(1).role_refs[0] == reference
     assert int(store.refs[1, 0]) == int(store.address_keys[0])
-    restored = TernaryTruthStore(4, 8)
+    restored = LTM0(4, 8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     assert restored._index_occurrences[reference] == 0
@@ -109,7 +109,7 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
 
 
 def test_legacy_checkpoint_rekeys_native_and_typed_edges():
-    store = TernaryTruthStore(4, 8)
+    store = LTM0(4, 8)
     source = write(store)
     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
                              role_refs=(store.occurrence_of(source), None, None))
@@ -133,7 +133,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
     state['refs'][target, 0] = 2**62
     state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
     state['stream'][0,0] = state['stream'][1,1] = True
-    restored = TernaryTruthStore(4, 8)
+    restored = LTM0(4, 8)
     restored.load_state_dict(state)
     restored.load_semantic_extras(extras)
     reference = restored.occurrence_of(0)
@@ -239,7 +239,7 @@ def test_prepared_dataset_value_retains_its_source_after_cursor_advances():
 
 def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
     from reasoning import TruthGroundedReasoner
-    store = TernaryTruthStore(4, 2)
+    store = LTM0(4, 2)
     value = meaning()
     row = store.append_meaning(value, kind='fact', evidence=(.8, 0.))
     assert store.append_meaning(value, kind='fact', evidence=(0., .9)) == row
@@ -251,10 +251,10 @@ def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
 
 
 def test_checkpoint_can_grow_capacity_without_changing_an_address():
-    source = TernaryTruthStore(4, 2)
+    source = LTM0(4, 2)
     write(source, 'one', position=1)
     write(source, 'two', position=1)
-    restored = TernaryTruthStore(4, 8)
+    restored = LTM0(4, 8)
     restored.load_state_dict(copy.deepcopy(source.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(source.semantic_extras()))
     assert restored.capacity == 8 and len(restored) == 2
@@ -278,7 +278,7 @@ def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
 
 
 def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
-    store = TernaryTruthStore(4, 2)
+    store = LTM0(4, 2)
     row = write(store)
     before = copy.deepcopy(store.state_dict())
     reference = store.occurrence_of(row)
