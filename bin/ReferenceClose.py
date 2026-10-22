@@ -792,8 +792,7 @@ class ReferenceClose(nn.Module):
             if own_object:
                 selected = ('new', len(items))
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
-                value = content*0 if anonymous else content
-                individuals[selected] = dict(content=value, value=value,
+                individuals[selected] = dict(content=content, value=content,
                     role=role, position=(latest[0]+1, len(items)))
             items.append(dict(**site, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),

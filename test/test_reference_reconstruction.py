@@ -88,6 +88,69 @@ def test_same_close_alias_charges_the_bound_mention_and_not_the_mint():
     unchanged(resolver, before)
 
 
+def test_named_token_keeps_its_content_before_and_after_the_close():
+    from Spaces import _concept_alloc_of
+    from ThoughtReferences import bindings, open_slots
+    resolver, store, a, words, _ = world()
+    owner, word = resolver.components.owner, words['x']
+    # A unit fixture may supply the word's reading order (spec section 13).
+    _concept_alloc_of(owner).reference_orders[word] = 1
+    with torch.no_grad():
+        owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(a[0])
+    order = owner._concept_source_order(word)
+
+    def site(leaf):
+        node = named(a[0], word)
+        return replace(node, point=a[0], order=order,
+            meaning=ConceptualMeaning.from_description(a[0]),
+            composition=replace(node.composition, point=a[0], order=order, leaves=(leaf,)),
+            reference_request=dict(node.reference_request, mode='bind', leaves=(leaf,),
+                                   content=a[0], cue=a[0]))
+
+    first, second = site(0), site(1)
+    clause = Clause(ConceptualMeaning.from_description(a[0]), point=a[0],
+        children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
+    before, pool = snapshot(resolver), dict(owner.mtm.entries)
+    same = resolver.preview(clause, ())
+    assert first.composition.order == second.composition.order == 1
+    assert same['items'][0]['own_object'] and same['items'][0]['anonymous']
+    assert same['items'][1]['selected'] == ('new', 0)
+    assert not same['items'][1]['own_object'] and not same['decisions'][1]['departed']
+    record = same['individuals'][('new', 0)]
+    assert record.get('kind') is None
+    torch.testing.assert_close(record['value'], a[0], rtol=0, atol=0)
+    assert same['items'][1]['features'][0, :2].gt(0).all()
+    torch.testing.assert_close(sentence_cost(resolver, [same]).total(objective='reconstruction'),
+                               torch.zeros(1), rtol=0, atol=0)
+    kept = resolver.prepare(clause, same)
+    unchanged(resolver, before)
+    assert owner.mtm.entries == pool
+    for child in kept.children:
+        assert bindings(child.meaning)['_forward_references'] == ((0, word),)
+        assert ('referent', 0) in open_slots(child.meaning)
+    written = {}
+    row = store.write_clause(kept, document_key='r10', sentence_index=0, written_rows=written)
+    assert owner.mtm.entries == pool
+    retained = snapshot(resolver)
+    resolver.commit(same, row, written, document='r10', position=0, training=False)
+    unchanged(resolver, retained)
+    token = same['items'][0]['reference']
+    assert same['items'][1]['reference'] == token
+    assert owner.mtm.entries[token].kind is None
+    assert owner.mtm.entries[token].count == 2
+    torch.testing.assert_close(resolver.token_value(token), a[0], rtol=0, atol=0)
+
+    before, pool = snapshot(resolver), dict(owner.mtm.entries)
+    later = resolver.preview(site(0), (SituationFrame.from_row(store.row(row)),))
+    assert later['items'][0]['selected'] == token and not later['items'][0]['own_object']
+    assert later['items'][0]['features'][0, :2].gt(0).all()
+    torch.testing.assert_close(later['individuals'][token]['value'], record['value'], rtol=0, atol=0)
+    torch.testing.assert_close(sentence_cost(resolver, [later]).total(objective='reconstruction'),
+                               torch.zeros(1), rtol=0, atol=0)
+    unchanged(resolver, before)
+    assert owner.mtm.entries == pool
+
+
 @pytest.mark.parametrize('weight', (0., .1, .35))
 def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
     resolver, store, a, words, _ = world()
