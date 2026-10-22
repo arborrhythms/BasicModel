@@ -1,0 +1,17 @@
+{
+  "source": "eb858be3924136651acb080b7b2fcc5ce93c1a24",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-x",
+    "--tb=long",
+    "--showlocals",
+    "--basetemp=/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-grammar-contract/round-02/pending-forward-tmp",
+    "--junitxml=/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-grammar-contract/round-02/pending-forward.xml",
+    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
+  ],
+  "fresh": true,
+  "started": 1792644363.1446102
+}

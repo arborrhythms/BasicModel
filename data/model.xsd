@@ -857,6 +857,7 @@
       <!-- Independent priority of normalized reconstruction terms;
            it does not subtract from the answer's priority. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
+      <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Every N batches, log weighted reconstruction/output/expectation
            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>

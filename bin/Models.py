@@ -2409,6 +2409,10 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training("reconstructionBasisLimit", 16))
         if self.reconstruction_basis_limit < 1:
             raise ValueError("reconstructionBasisLimit must be positive")
+        self.reconstruction_reference_weight = float(
+            TheXMLConfig.training('reconstructionReferenceWeight', .1))
+        if not math.isfinite(self.reconstruction_reference_weight) or self.reconstruction_reference_weight < 0:
+            raise ValueError('reconstructionReferenceWeight must be finite and nonnegative')
         # Slice 3: the answer realisation's generate walk as the second
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
@@ -19816,7 +19820,17 @@ class BasicModel(BaseModel):
         record = self._trial_understanding(state, sid, active)
         observation = self._sentence_observation(state, sid, active)
         observation['record'] = record
-        if getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop):
+        reconstruct = getattr(self, '_sentence_reconstruction', self.reconstruct_in_loop)
+        reference = None
+        if reconstruct and observation.get('reference_plans'):
+            from ReferenceReconstruction import cost as reference_cost
+            reference = reference_cost(self._concept_owner().components.reference_close,
+                                       observation['reference_plans'], root)
+        if reconstruct:
+            if reference is not None:
+                errors.error('reconstruction.reference', reference, 1., mask=active,
+                    weight=getattr(self, 'reconstruction_reference_weight', .1),
+                    category='reconstruction')
             reconstruction = self._reconstruct_trial(record)
             available = self.inputSpace._reconstruction_sentence_available[:, sid] & active
             errors.error('reconstruction.free_bytes', reconstruction[2], math.log(256), mask=available,

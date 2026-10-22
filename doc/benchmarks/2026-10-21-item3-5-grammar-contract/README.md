@@ -69,3 +69,15 @@ forced order-one leaf. Apply §13's port to
 source leaf at one and keep every assertion verbatim. Production stays
 byte-identical to `15f154dca`. The failed run remains failed and retained;
 no result from it will be promoted to the next frozen source.
+
+## Contract source: `eb858be39`
+
+The next [source audit](round-02/frozen-source.json) passed. Scoped files:
+**98 passed, 4 prerequisite skips**. Both fresh pending-premise orders
+passed on their first draw, with full captures and both trials' keep probe
+enabled from the outset. Forward: **0 bound / 8 open**. Reverse:
+**0 bound / 16 open**. See [results](round-02/results.json) and
+[x's kept reading stamps](round-02/x-reading-stamps.json): all 32 kept
+readings carry x at order one, with no determining composition. No
+occupation-copying repair was needed by these gates. These results cover
+the contract commit, not the subsequent reconstruction-term source.

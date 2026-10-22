@@ -1,0 +1,20 @@
+{
+  "source": "eb858be3924136651acb080b7b2fcc5ce93c1a24",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-x",
+    "--tb=long",
+    "--showlocals",
+    "--basetemp=/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-grammar-contract/round-02/units-tmp",
+    "--junitxml=/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-grammar-contract/round-02/units.xml",
+    "test/test_bind_thought.py",
+    "test/test_reference_participants.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_close.py"
+  ],
+  "fresh": true,
+  "started": 1792644357.916291
+}
