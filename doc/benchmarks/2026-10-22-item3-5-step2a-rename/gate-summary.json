@@ -1,0 +1,57 @@
+{
+  "source": "eb6980e7de493e8b35791404851ef749acee6a08",
+  "groups": {
+    "native": {
+      "source": "eb6980e7de493e8b35791404851ef749acee6a08",
+      "exit": 0,
+      "reason": "passed",
+      "counts": {
+        "passed": 113,
+        "skipped": 7
+      },
+      "selected": 120,
+      "completed": 120,
+      "elapsed_seconds": 234.83478666609153,
+      "report": "native/result.json",
+      "report_sha256": "575a9964557778736b5cf5ba3270c6f711fa98a3f8941e345a18949040bc5c4d"
+    },
+    "regressions": {
+      "source": "eb6980e7de493e8b35791404851ef749acee6a08",
+      "exit": 0,
+      "reason": "passed",
+      "counts": {
+        "passed": 85
+      },
+      "selected": 85,
+      "completed": 85,
+      "elapsed_seconds": 84.9451298750937,
+      "report": "regressions/result.json",
+      "report_sha256": "598beede221ac4431e3b88d1d4822da794c9c3420eb5eb009f8f2682985ec363"
+    }
+  },
+  "counts": {
+    "passed": 198,
+    "skipped": 7
+  },
+  "all_requested_gates_pass": true,
+  "pending_premise": [
+    {
+      "certificate": "native-reports/test_forced_ordinary_pending_premise_in_both_orders[False]/certificate.json",
+      "reverse": false,
+      "bound": 0,
+      "open": 8,
+      "closure_forced": false,
+      "attention_budget": 0
+    },
+    {
+      "certificate": "native-reports/test_forced_ordinary_pending_premise_in_both_orders[True]/certificate.json",
+      "reverse": true,
+      "bound": 0,
+      "open": 16,
+      "closure_forced": false,
+      "attention_budget": 0
+    }
+  ],
+  "full_sweep": false,
+  "fresh_series": false
+}

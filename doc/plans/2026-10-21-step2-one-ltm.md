@@ -2,11 +2,14 @@
 
 **Status:** reviewed and decided in §§10–12; they supersede the original
 round boundaries and open choices below. R10 is published at `e243d7bdf`
-(WikiOracle `2ffda78`). Round 2a starts with the separate class rename and
-its own scoped gates, after checking saved class paths; only safe culls
-follow. The [rename receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
-records the source audit and evidence. Original code facts below describe
-`cf61b5678`; old class names in those historical facts locate that source.
+(WikiOracle `2ffda78`). Round 2a's separate rename is reviewed at
+`eb6980e7d`: the saved-class-path check and scoped gates pass, and Claude
+approves publication. The [rename receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
+records that evidence. **Further storage changes stop at §§14–15 for
+Alec's cull dispositions.** None of §10's listed culls has a complete
+derived source today; retaining them now is already required by its
+conditional rule. Original code facts below describe `cf61b5678`; old
+class names in those historical facts locate that source.
 
 
 **Names used below.** LTM0 is the occurrence rows, held today by the class
@@ -686,3 +689,100 @@ change in R10 or 2a:
 Check both when 2c changes arrivals or token promotion. The R10 review
 requests no current mechanism change, and these notes authorize no new
 assertion, objective or keep-rule change.
+
+## 14. Codex cull preflight — 2026-10-22; for Claude and Alec
+
+The separate class rename is frozen at `eb6980e7d`, based on R10's
+published `e243d7bdf`. The rename-only gates pass: **113 passed, seven
+existing prerequisite skips** in the eight-file set and **85 passed** in
+the regression files. The [receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
+retains the class-path audit, exact identifier-only source audit, captures
+and reports. No column has been culled and no assertion has changed.
+
+§10 explicitly limits 2a to culls whose readers **already** have another
+source. The following preflight corrects code facts in its examples; it
+does not reopen the decided layouts, source addresses or order column.
+
+| Proposed cull | Current source and reader | Consequence before a replacement exists |
+| --- | --- | --- |
+| `rel_type` | Already absent from the row. `LTM0._load_from_state_dict` drops a zero legacy column and rejects active retired relations. | There is no live column left to remove; retain the loud rejection. |
+| `refs` | Current closes do not populate it, but `Forgetting._references`, coarsening, `clear_origin` and `ClauseRows._native_reference_indexes` still read it. Coarsening writes the retained column. `test_forgetting.py:139` explicitly supplies an address and checks it is cleared. | "No live writer" needs qualification: no close-time introduction, but there are live maintenance/read paths and a retained fixture contract. A constant empty reader would not preserve that contract. |
+| `where` | `ClauseRows.write_clause` copies `Clause.where`; `row()` and `SituationFrame` return it. `test_clause_storage.py:96` requires the exact value. | No numerical consumer does not make the stored value derivable. The current opaque point has no declared reader for this four-coordinate stamp. |
+| `metadata_required`, `semantic_fingerprint` | `raw_meaning_of`, `semantic_extras` and `load_semantic_extras` use them to reject missing or mismatched scope. The flag's partial-checkpoint test and the fingerprint's sidecar-corruption tests are live. | Deleting them, or rebuilding the fingerprint from the sidecar it authenticates, changes the restore contract before 2b supplies the structure. |
+| Leaf postings and `leaf_complete` | With a configured owner, `reindex_meanings` rebuilds them. Standalone restore can also consume saved postings; existing tests inspect their wire columns, exact retrieval and malformed-column rejection. | The owner-backed rebuild exists, but removing the serialized fields needs the S10 representation ports or an explicitly specified wire view. |
+| `adjacent_*` | `Models._commit_sentence` writes identified-code pairs through `witness_adjacency`. Restore reads these columns; `reindex_meanings` does **not** rebuild them. `test_operators_final.py:45` requires their round trip. | These are not yet rebuildable from the retained reading by any live reader. Dropping them loses observed order and positions. |
+| `polarity` | `append_meaning` stores it independently when evidence is supplied. Equal positive/negative evidence pairs may accompany either polarity. | Exchanged lanes cannot recover this bit for all accepted rows. |
+| `grammatical_mode` | `append_meaning` permits an unverified interrogative or assertive reading with the same closed roles; admission also reads the mode. | Open-reference status alone cannot recover every currently accepted mode. |
+
+The isolated [preflight probe](../benchmarks/2026-10-22-item3-5-step2a-rename/cull-preflight.json)
+demonstrates the last three information gaps on `eb6980e7d`: identical
+content, roles and evidence with opposite polarities or different modes;
+and adjacency lost after omitting its columns and reindexing. It changes
+no production state. Its first invocation mistakenly used the default
+fact admission for an interrogative and was rejected; that script and log
+are retained. The corrected diagnostic uses `kind='unverified'` for all
+three rows. This was a new diagnostic setup error, not a failed gate.
+
+**Questions for Claude.** Verify these boundaries and identify any cull
+that is safe now without a new representation, test port or changed
+admission behavior. In particular, the adjacency columns are not rebuilt
+by the reader that rebuilds leaf postings. The two must not be treated as
+one cache migration.
+
+**Decision for Alec, with recommendation.** Land the rename on its own
+evidence, and leave the listed fields in place until their derived source
+and any exact S10 test ports have been reviewed. Keep the undecided culls
+explicitly on step 2's line; do not declare the row reduction complete or
+remove them from 3.5. Do not add compatibility storage or broaden the
+accepted row/restore contract merely to make a deletion pass. If a cull
+must precede 2b, its representation and concrete test ports need a decision
+first. This is a stop before further implementation, under the handoff's
+rule for new spec questions; no gate failed and no sweep has run.
+
+## 15. Claude's review of the rename and culls — 2026-10-22; decisions for Alec
+
+[Claude's read-only review](../benchmarks/2026-10-22-item3-5-step2a-rename/claude-review.md)
+of frozen source `eb6980e7d` says **safe to publish the rename**, with no
+BasicModel blocker. It confirms the exact rename, saved-class-path audit
+and 198 passes / seven existing skips. The requested parent WikiOracle
+import search was then checked by Codex: neither old class name occurs
+outside BasicModel and the unrelated nanochat submodule. No extra gate or
+collect-only pass was run. Publication of the separately authorized rename
+does not settle the culls or complete 2a/line 2.
+
+Claude confirms §14's central finding: **none of the listed culls meets
+§10's current derived-source condition.** Keeping those fields now is
+already authorized, not a new approval request. The future replacement
+and disposition choices below still need Alec.
+
+The review adds these code facts: `ConceptForgetting.py:66` also reads
+`refs`, as do the row export and the predicate lookup through
+`point_of_row`. The coarsening fixture sets the address at
+`test_forgetting.py:139`, checks it is cleared at `:156`, and checks the
+column snapshot at `:126`. The local `refs` binding at
+`Forgetting.py:166`, described in the review as scoring, is unused; it
+does not supply a derived representation. `where` is stamped by
+`ClauseJournal.py:256–264` before its close-time write. The metadata flag
+also feeds `row()['metadata_complete']` and `Language.py:11865`. Without
+explicit evidence, zero trust still loses the polarity distinction in the
+lanes. `grammatical_mode` also includes legacy `unspecified`, which an
+open-reference test cannot recover. The adjacency writer is
+`Models._commit_sentence`; §14's initial method-name typo was corrected.
+
+**Claude's recommendations for Alec (not yet decisions):**
+
+| Field or boundary | Recommended disposition |
+| --- | --- |
+| `refs` | Retire in 2b only when tagged references replace it. Propose the exact coarsening-fixture port to stored role references then; do not change its assertions now. |
+| `metadata_required`, `semantic_fingerprint` | Keep through 2b while they authenticate sidecar content. Revisit after the structural sidecar has moved, accounting for any remaining scope/text/provenance. |
+| Leaf postings, `leaf_complete` | Keep. Decide the S10 restore contract in 2b before any cull: owner-backed restoration or a specified standalone wire view. |
+| `adjacent_*` | Treat as retained data. Before changing it in 2b, decide whether pair wholes become LTM1 rows or remain justified columns. |
+| `polarity` | Keep as a justified column. A narrower admission contract that makes lanes sufficient requires its own spec. |
+| `grammatical_mode` | Keep until 2b's question layout exists; decide the disposition of legacy `unspecified` rows before deriving it. |
+| `where` | Keep beside `when` until the 5.5 context-wholes spec. This changes the original removal disposition and needs Alec's decision. |
+
+After Alec's decisions, amend §10's examples and the carried cull list to
+match. These fields remain explicit work on step 2's line until their
+disposition is recorded; no cull, representation port or admission change
+has been implemented. The two R10 arrival observations remain in 2c.
+No learning claim, no second sweep, and item 3.0 has not been reached.

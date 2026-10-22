@@ -1,0 +1,22 @@
+{
+  "source": "eb6980e7de493e8b35791404851ef749acee6a08",
+  "checked_at": "2026-10-22T07:24:52.569570+00:00",
+  "root": "/Users/arogers/github/WikiOracle",
+  "command": [
+    "rg",
+    "-n",
+    "TernaryTruthStore|PartStore",
+    "--glob",
+    "!basicmodel/**",
+    "--glob",
+    "!nanochat/**",
+    "--glob",
+    "!output/**",
+    "--glob",
+    "!node_modules/**",
+    "."
+  ],
+  "exit": 1,
+  "matches": [],
+  "note": "Exit 1 is rg no matches; unrelated nanochat submodule and generated output/dependencies excluded."
+}

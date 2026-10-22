@@ -1,0 +1,3506 @@
+diff --git a/bin/GrammarCheckpoint.py b/bin/GrammarCheckpoint.py
+index fac2908de..205989e72 100644
+--- a/bin/GrammarCheckpoint.py
++++ b/bin/GrammarCheckpoint.py
+@@ -33,10 +33,10 @@ def align(model, state, old):
+     result, drift, transforms = dict(state), {}, {}
+     from IdentityRows import migrate_checkpoint
+     migrate_checkpoint(model, result, live, drift, transforms)
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from RowTime import migrate
+     for name, module in model.named_modules(remove_duplicate=False):
+-        if isinstance(module, TernaryTruthStore) and name+'.slots' in result:
++        if isinstance(module, LTM0) and name+'.slots' in result:
+             if migrate(module, result, name+'.'):
+                 drift[name+'.when'] = dict(action='historical model time unknown; source-position phasor retired')
+     from Language import MarkerUnaryLayer
+diff --git a/bin/PartStore.py b/bin/LTM1.py
+similarity index 99%
+rename from bin/PartStore.py
+rename to bin/LTM1.py
+index a9af1961e..6948a954b 100644
+--- a/bin/PartStore.py
++++ b/bin/LTM1.py
+@@ -10,7 +10,7 @@ import torch
+ from torch import nn
+ 
+ 
+-class PartStore(nn.Module):
++class LTM1(nn.Module):
+     columns = ('refs', 'truth_plus', 'truth_minus', 'access_count', 'surprise', 'when')
+ 
+     def __init__(self, capacity=8192):
+diff --git a/bin/Language.py b/bin/Language.py
+index 32a5377c1..f150fe628 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -30,7 +30,7 @@ from Layers import Layer, PiLayer, SigmaLayer  # Import custom layers from Model
+ from Layers import LinearLayer, InvertibleLinearLayer, AssociationLayer, MapppingLayer
+ from Layers import (CertaintyWeightedCrossEntropy, LeafDecoderHead, Loss,
+                     ModelLoss, epsilon, Ops)
+-from Layers import SortingLayer, TruthLayer, TernaryTruthStore, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
++from Layers import SortingLayer, TruthLayer, LTM0, LiftingLayer, SymbolExpectation, SparsityRegLayer, SmoothingRegLayer, ImpenetrableLayer
+ from Layers import WhatInteractionMemory
+ from Meaning import ConceptualMeaning
+ from Queries import ConceptualSpaceCapability, StructuralGrammarContext
+@@ -9219,7 +9219,7 @@ class SymbolSubSpace(SubSpace):
+         # restricted to idea rows; inference reads relations by native address.
+         _ltm_cap = int(TheXMLConfig.space(
+             "SymbolSpace", "ltmCapacity", default=max_truths) or max_truths)
+-        self.ltm_store = TernaryTruthStore(muxed, capacity=_ltm_cap, content_width=symbol_dim)
++        self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim)
+         self.truth_layer.attach_ltm(self.ltm_store)
+         self._stateless = bool(TheXMLConfig.get("architecture.stateless", default=True))
+         self.register_load_state_dict_post_hook(self._revive_ltm_post_load)
+diff --git a/bin/Layers.py b/bin/Layers.py
+index 64e77de8f..1ae682b18 100644
+--- a/bin/Layers.py
++++ b/bin/Layers.py
+@@ -5795,8 +5795,8 @@ class ConceptAllocator:
+         self.reference_orders = {}       # grammar-resolved object order
+         self.testimony_seen = {}         # object id -> first two distinct occurrences
+         self.testimony_current = {}      # deduplication within this observation boundary
+-        from PartStore import PartStore
+-        self.parts = PartStore()         # LTM1 and the symbol taxonomy, one owner
++        from LTM1 import LTM1
++        self.parts = LTM1()         # LTM1 and the symbol taxonomy, one owner
+         self.parts.allocate = self._allocate_part_symbol
+         self.symbol_types = {}           # types of bank arguments, never edge kinds
+         self.word_descriptions = {}      # native form definitions, keyed by word symbol
+@@ -7194,7 +7194,7 @@ class TruthLayer(Layer):
+       - ``equals(S, S)`` -- identity / equivalence
+ 
+     LTM-BACKED MODE (``<ltmConsolidation>`` on): the canonical user-truth
+-    store is the unified ``TernaryTruthStore`` (``symbolSpace.ltm_store``);
++    store is the unified ``LTM0`` (``symbolSpace.ltm_store``);
+     this layer is then a COMPATIBILITY READ MODEL over it. ``attach_ltm``
+     wires the back-reference and ``sync_from_ltm`` materializes the
+     provisioned + user rows into ``truths``/``count``/``_sources``/
+@@ -8292,7 +8292,7 @@ class TruthLayer(Layer):
+     # The absolute truth set is a CONSISTENT CORPUS governing admission:
+     # it (1) governs the admissibility of new truths/beliefs, (2) serves
+     # as the basis for causal reasoning (relations between ideas live in
+-    # the relation rows in ``TernaryTruthStore`` and NEVER enter this store or
++    # the relation rows in ``LTM0`` and NEVER enter this store or
+     # its luminosity), and (3) provides user feedback on the truth of a
+     # statement. The conflict region ``min(T_k, F_k)`` is MEASURED,
+     # never stored; the preemption/admissibility statistic is its
+@@ -8724,7 +8724,7 @@ class TruthLayer(Layer):
+         print("TruthLayer tests passed.")
+ 
+ 
+-class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
++class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+     """Durable clause rows with shared references and independent evidence.
+ 
+     An idea stores one fused point without its reading derivation. A
+@@ -8796,8 +8796,8 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         # IDs, role vectors and evidence kind remain in the buffers above.
+         self._expectation_rows = {}
+         self._init_leaf_index()
+-        from PartStore import PartStore
+-        object.__setattr__(self, 'parts', PartStore())
++        from LTM1 import LTM1
++        object.__setattr__(self, 'parts', LTM1())
+ 
+     @staticmethod
+     def _context_fingerprint(context, text, expectation=None):
+@@ -8810,7 +8810,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         # actually carry expectation provenance add this key.
+         if expectation is not None:
+             content["expectation"] = expectation
+-        return TernaryTruthStore._fingerprint_payload(content)
++        return LTM0._fingerprint_payload(content)
+ 
+     @staticmethod
+     def _fingerprint_payload(content):
+@@ -8825,10 +8825,10 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         if isinstance(value, dict):
+             if any(not isinstance(key, str) for key in value):
+                 raise TypeError("expectation provenance mapping keys must be strings")
+-            return tuple((key, TernaryTruthStore._freeze_expectation_value(item))
++            return tuple((key, LTM0._freeze_expectation_value(item))
+                          for key, item in sorted(value.items()))
+         if isinstance(value, (tuple, list)):
+-            return tuple(TernaryTruthStore._freeze_expectation_value(item)
++            return tuple(LTM0._freeze_expectation_value(item)
+                          for item in value)
+         if value is None or isinstance(value, (str, bool, int)):
+             return value
+@@ -8973,7 +8973,7 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+     @staticmethod
+     def _occurrence_references(meaning):
+         """The ordered compound-role edges of one complete meaning."""
+-        return TernaryTruthStore._role_occurrence_references(meaning.role_refs)
++        return LTM0._role_occurrence_references(meaning.role_refs)
+ 
+     @staticmethod
+     def _context_occurrence_references(context):
+@@ -9012,12 +9012,12 @@ class TernaryTruthStore(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
+         nor a successful binding grants evidence to the referenced row.
+         """
+         for context in contexts.values():
+-            references = TernaryTruthStore._context_occurrence_references(context)
++            references = LTM0._context_occurrence_references(context)
+             if any(ref[2] not in contexts
+                    for ref in references
+                    if ref[:2] == ('ltm', namespace)):
+                 raise ValueError("semantic context occurrence is unavailable")
+-            for _, reference in TernaryTruthStore._role_occurrence_references(
++            for _, reference in LTM0._role_occurrence_references(
+                     context.get("role_refs", (None, None, None))):
+                 if reference[:2] == ('ltm', namespace):
+                     if reference[2] not in contexts:
+diff --git a/bin/Models.py b/bin/Models.py
+index 5b9cde62e..93d3fd8ae 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -89,7 +89,7 @@ from Layers import ConceptualCombine
+ from Layers import LinearLayer
+ from Layers import LiftingLayer, CertaintyWeightedCrossEntropy, Loss, ModelLoss, epsilon
+ from Layers import Error, TheError
+-from Layers import MeaningExpectation, TernaryTruthStore
++from Layers import MeaningExpectation, LTM0
+ from Meaning import ConceptualMeaning
+ from Layers import Ops, GRAMMAR_LAYER_CLASSES, CONTIGUITY_PRESERVING_OPS
+ from Teacher import Teacher
+@@ -4097,7 +4097,7 @@ class BaseModel(Mereology, nn.Module):
+         truth_semantics = {
+             name: module.semantic_extras()
+             for name, module in self.named_modules()
+-            if isinstance(module, TernaryTruthStore)
++            if isinstance(module, LTM0)
+         }
+         memory = getattr(getattr(self, "symbolSpace", None), "what_memory", None)
+         what_history = (memory.thought_extras() if memory is not None
+@@ -4399,7 +4399,7 @@ class BaseModel(Mereology, nn.Module):
+         modules = dict(self.named_modules())
+         for name, saved in (extras.get("truth_semantics") or {}).items():
+             store = modules.get(name)
+-            if not isinstance(store, TernaryTruthStore):
++            if not isinstance(store, LTM0):
+                 raise ValueError(f"checkpoint truth store {name!r} is not present")
+             store.load_semantic_extras(saved)
+ 
+@@ -4417,7 +4417,7 @@ class BaseModel(Mereology, nn.Module):
+             if memory is None:
+                 raise ValueError("checkpoint thought history has no interaction memory owner")
+             for module in modules.values():
+-                if isinstance(module, TernaryTruthStore):
++                if isinstance(module, LTM0):
+                     what_history = module.remap_legacy_references(what_history)
+             memory.load_thought_extras(what_history)
+ 
+@@ -4999,9 +4999,9 @@ class BaseModel(Mereology, nn.Module):
+         self._widen_what_projection_checkpoint_state(state, model_state)
+ 
+         # Only global inverted postings have variable-length checkpoint columns.
+-        from Layers import TernaryTruthStore
++        from Layers import LTM0
+         index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
+-                        if isinstance(module, TernaryTruthStore)]
++                        if isinstance(module, LTM0)]
+         variable_leaf_columns = {name + '.' + column for name in index_owners
+             for column in ('posting_codes', 'posting_roles', 'posting_rows',
+                            'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')}
+@@ -22954,7 +22954,7 @@ class BasicModel(BaseModel):
+         if (stm_snap is not None and torch.is_tensor(stm_snap)
+                 and stm_snap.dim() == 3 and int(stm_snap.shape[1]) > 0):
+             spaces.append({"id": GA.SPACE_STM, "keys": stm_snap})
+-        # LTM: the consolidated TernaryTruthStore rows (present only under
++        # LTM: the consolidated LTM0 rows (present only under
+         # <ltmConsolidation>); pool the three idea slots to one content key.
+         ss = getattr(self, "symbolSpace", None)
+         ltm = getattr(ss, "ltm_store", None) if ss is not None else None
+diff --git a/bin/Queries.py b/bin/Queries.py
+index 1c17dd905..8821ea8cc 100644
+--- a/bin/Queries.py
++++ b/bin/Queries.py
+@@ -883,8 +883,8 @@ class ThoughtLTMCapability:
+ 
+     def _cued(self, description, *, max_records, work, references=(), role_mask=None):
+         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+-        from Layers import TernaryTruthStore
+-        if not isinstance(store, TernaryTruthStore):
++        from Layers import LTM0
++        if not isinstance(store, LTM0):
+             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
+         return store.cued_rows(description,
+             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
+@@ -922,8 +922,8 @@ class ThoughtLTMCapability:
+     def end_evidence(self, reference, *, max_records, work):
+         """Read the two poles of one addressed ended clause, under the same bound."""
+         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+-        from Layers import TernaryTruthStore
+-        if not isinstance(store, TernaryTruthStore) or store.location(reference) is None:
++        from Layers import LTM0
++        if not isinstance(store, LTM0) or store.location(reference) is None:
+             raise ValueError('ended clause occurrence is unavailable')
+         if not max_records:
+             raise ValueError('ended clause is unavailable within the query read limit')
+@@ -1121,8 +1121,8 @@ class ThoughtLTMCapability:
+                 or type(reference[2]) is not int or reference[2] in (-1, 0)):
+             raise TypeError('description argument requires an existing occurrence reference')
+         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+-        from Layers import TernaryTruthStore
+-        if (not isinstance(store, TernaryTruthStore)
++        from Layers import LTM0
++        if (not isinstance(store, LTM0)
+                 or store.address_domain != reference[1]):
+             raise ValueError('description occurrence namespace is unavailable')
+         # Description addresses are owner-given cue metadata, not a store
+@@ -1644,7 +1644,7 @@ def _occurrence_description(context, reference):
+             raise ValueError(
+                 'thought LTM description capability returned invalid occurrence data')
+         return resolved
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     if not isinstance(context, QueryContext):
+         raise TypeError('occurrence reference requires its query context')
+     if isinstance(reference, tuple) and reference and reference[0] == 'thought':
+@@ -1662,7 +1662,7 @@ def _occurrence_description(context, reference):
+             or type(reference[2]) is not int or reference[2] in (-1, 0)):
+         raise TypeError('description argument requires an existing occurrence reference')
+     store = context.reasoner.reasoning_store()
+-    if (not isinstance(store, TernaryTruthStore)
++    if (not isinstance(store, LTM0)
+             or store.address_domain != reference[1]):
+         raise ValueError('description occurrence namespace is unavailable')
+     for index in range(min(len(store), context.max_records)):
+diff --git a/bin/reasoning.py b/bin/reasoning.py
+index d0730da0e..385854550 100644
+--- a/bin/reasoning.py
++++ b/bin/reasoning.py
+@@ -9,7 +9,7 @@ from typing import Any, Optional
+ import torch
+ 
+ from Spaces import ConceptualSpace
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Taxonomy import capture_taxonomy, concept_reference
+ 
+@@ -107,7 +107,7 @@ class TruthGroundedReasoner:
+ 
+     def reasoning_store(self):
+         """The reasoning corpus: an explicit ``store=`` wins; else the model's
+-        shared ``TernaryTruthStore``; else None."""
++        shared ``LTM0``; else None."""
+         if self._store is not None:
+             return self._store
+         cs = getattr(self.model, "conceptualSpace", None)
+@@ -151,7 +151,7 @@ class TruthGroundedReasoner:
+         diagnostics, scanned = [], 0
+         support_true = support_false = 0.0
+         store = self.reasoning_store()
+-        if isinstance(store, TernaryTruthStore):
++        if isinstance(store, LTM0):
+             count = len(store) if max_records is None else min(len(store), max_records)
+             if count < len(store):
+                 diagnostics.append("capture_limit")
+@@ -306,10 +306,10 @@ class TruthGroundedReasoner:
+         """The symbolic face reads the proposition's ended evidence pair."""
+         from Queries import ThoughtLTMCapability
+         from QueryWork import QueryWorkBudget
+-        from Layers import TernaryTruthStore
++        from Layers import LTM0
+         store = self.reasoning_store()
+         meter = QueryWorkBudget(getattr(self.model, 'attention_budget', 32))
+-        if isinstance(store, TernaryTruthStore):
++        if isinstance(store, LTM0):
+             reader = ThoughtLTMCapability(store=lambda:store, equal=self.equal, tau_id=self.tau_id)
+             if isinstance(A, tuple) and A and A[0] == 'ltm':
+                 return reader.end_evidence(A, max_records=meter.remaining, work=meter)
+diff --git a/data/MM_ltm_consolidation_fixture.xml b/data/MM_ltm_consolidation_fixture.xml
+index aaa88bedd..aec945d26 100644
+--- a/data/MM_ltm_consolidation_fixture.xml
++++ b/data/MM_ltm_consolidation_fixture.xml
+@@ -4,7 +4,7 @@
+   <!-- MM_ltm_consolidation_fixture: dedicated test fixture for the LTM
+        consolidation suite (test/test_ltm_consolidation.py; Alec 2026-06-18).
+        Mirrors MM_xor_fixture but turns ON <ltmConsolidation> so the unified
+-       TernaryTruthStore (SymbolicSubSpace.ltm_store) is constructed in place of
++       LTM0 (SymbolicSubSpace.ltm_store) is constructed in place of
+        the RelativeTruthStore, and provisions a small <truthSet> so the
+        XML->LTM append mechanism is exercised at load (provision_ltm). Do not
+        consume from production code. -->
+diff --git a/data/MM_ltm_consolidation_serial_fixture.xml b/data/MM_ltm_consolidation_serial_fixture.xml
+index b3ec2e2ff..e83339ffc 100644
+--- a/data/MM_ltm_consolidation_serial_fixture.xml
++++ b/data/MM_ltm_consolidation_serial_fixture.xml
+@@ -10,7 +10,7 @@
+        this fixture turns ON BOTH:
+          * a DISCOURSE via training/sentenceExpectation=true (builds
+            symbolSpace.discourse, the InterSentenceLayer AR predictor), and
+-         * ltmConsolidation=true (the unified TernaryTruthStore).
++         * ltmConsolidation=true (the unified LTM0).
+        With legacy serial derivation from symbolicOrder=1, the per-word forward
+        (_forward_body_per_word) runs, so the observe-site conversation push
+        (the SINGLE store-append, Change 1) fires per sentence. That is what
+diff --git a/data/model.xsd b/data/model.xsd
+index 6f2ef1088..343c6b10e 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -357,8 +357,8 @@
+       <!-- LTM consolidation (doc/specs/mereological-order-raising.md "Truth /
+            Ideas processing", "Two consolidation questions"; Alec 2026-06-18).
+            When true, the discourse LTM (InterSentenceLayer end-state chain) and
+-           the RelativeTruthStore are COMBINED into ONE unified TernaryTruthStore
+-           tensor (Layers.TernaryTruthStore): rows (NP1, VP, NP2) of FULL idea
++           the RelativeTruthStore are COMBINED into ONE unified LTM0
++           tensor (Layers.LTM0): rows (NP1, VP, NP2) of FULL idea
+            vectors + a per-row timestamp + a scalar trust, stored UNSCALED. The
+            store is constructed on SymbolicSubSpace (ltm_store), written at the
+            observe site (every end-state appends a row), retired RelativeTruthStore
+diff --git a/test/binding_distribution_probe.py b/test/binding_distribution_probe.py
+index 474e6d412..ee802f5ab 100644
+--- a/test/binding_distribution_probe.py
++++ b/test/binding_distribution_probe.py
+@@ -11,7 +11,7 @@ def retained_bank_distributions(model):
+     Supply stored context here without training or forcing a chooser action;
+     the ordinary document audit remains separate and unchanged.
+     """
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from ReferenceContext import ReferenceBank
+     language = model.languageSpace
+     layer = language.language_layer.operation_layer
+@@ -24,7 +24,7 @@ def retained_bank_distributions(model):
+             points = torch.arange(1, (count+2)*width+1, device=like.device,
+                                   dtype=like.dtype).reshape(count+2, width)
+             points = torch.nn.functional.normalize(points, dim=-1)
+-            store = TernaryTruthStore(width, capacity=count)
++            store = LTM0(width, capacity=count)
+             rows = [store.append_idea(point, order=order, document_key='retained-context',
+                                      sentence_index=i) for i, point in enumerate(points[:count])]
+             ids = store.row_ids[rows].to(device=like.device)[None]
+diff --git a/test/definition_fixtures.py b/test/definition_fixtures.py
+index 96da7a681..d79a2dc02 100644
+--- a/test/definition_fixtures.py
++++ b/test/definition_fixtures.py
+@@ -1,11 +1,11 @@
+ """Definition owner for isolated conceptual-inventory mechanism fixtures."""
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ 
+ 
+ def with_definitions(cs):
+     from ClauseRow import attach_clause_index
+     from types import SimpleNamespace
+-    store = TernaryTruthStore(cs.nDim, capacity=1024)
++    store = LTM0(cs.nDim, capacity=1024)
+     object.__setattr__(cs, '_fixture_occurrences', store)
+     attach_clause_index(SimpleNamespace(), store, cs)
+     return cs
+diff --git a/test/fixtures/when-readers-round4a0.json b/test/fixtures/when-readers-round4a0.json
+index dec6c536d..3eb8c6e7f 100644
+--- a/test/fixtures/when-readers-round4a0.json
++++ b/test/fixtures/when-readers-round4a0.json
+@@ -108,7 +108,7 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.append_meaning",
++      "function": "LTM0.append_meaning",
+       "attributes": [
+         "when"
+       ],
+@@ -118,7 +118,7 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.reset",
++      "function": "LTM0.reset",
+       "attributes": [
+         "when"
+       ],
+@@ -128,7 +128,7 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.row",
++      "function": "LTM0.row",
+       "attributes": [
+         "when"
+       ],
+@@ -230,8 +230,8 @@
+       "now": "Reads the common row model-time band; no identity operator consumes it."
+     },
+     {
+-      "file": "bin/PartStore.py",
+-      "function": "PartStore.add",
++      "file": "bin/LTM1.py",
++      "function": "LTM1.add",
+       "attributes": [
+         "when"
+       ],
+@@ -890,7 +890,7 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.recent",
++      "function": "LTM0.recent",
+       "previous_absolute_time": false,
+       "now": "Reads the timestamp column (absolute model time), never the when band."
+     },
+@@ -926,19 +926,19 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.__init__",
++      "function": "LTM0.__init__",
+       "previous_absolute_time": false,
+       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore._load_from_state_dict",
++      "function": "LTM0._load_from_state_dict",
+       "previous_absolute_time": false,
+       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "TernaryTruthStore.clear_origin",
++      "function": "LTM0.clear_origin",
+       "previous_absolute_time": false,
+       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+     },
+diff --git a/test/identity_experiment.py b/test/identity_experiment.py
+index 05af15306..f8141fc5b 100644
+--- a/test/identity_experiment.py
++++ b/test/identity_experiment.py
+@@ -235,12 +235,12 @@ def restore_warmup(model, path, restore):
+     # migration while leaving the new sidecar in place, corrupting the next
+     # checkpoint. Only this derived metadata tensor changes; learned tensors
+     # still receive the exact-retention checks below.
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     migrated_stores={id(model.get_submodule(name)) for name,extras in
+         (bundle.get('structural_extras',{}).get('truth_semantics') or {}).items()
+         if extras.get('version',0)<6}
+     for name,module in model.named_modules(remove_duplicate=False):
+-        if isinstance(module,TernaryTruthStore) and id(module) in migrated_stores:
++        if isinstance(module,LTM0) and id(module) in migrated_stores:
+             key=name+'.semantic_fingerprint'
+             if key in saved and not torch.equal(saved[key],current[key]):
+                 drift[key]={'schema_migration':'retained estimate sidecar v6'}
+diff --git a/test/part_fixtures.py b/test/part_fixtures.py
+index 9e5d4923f..ea64b059b 100644
+--- a/test/part_fixtures.py
++++ b/test/part_fixtures.py
+@@ -4,7 +4,7 @@ from types import SimpleNamespace
+ import torch
+ 
+ from ClauseRow import attach_clause_index
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Spaces import ConceptualSpace
+ from test_basicmodel import _populate_test_config
+ 
+@@ -16,7 +16,7 @@ def native_store(width=4, capacity=32, points=()):
+     owner = ConceptualSpace([4, width], [512, width], [512, width])
+     with torch.no_grad():
+         owner.similarity_codebook.W.sigmoid_()
+-    store = TernaryTruthStore(width, capacity=capacity)
++    store = LTM0(width, capacity=capacity)
+     object.__setattr__(store, '_fixture_owner', owner)
+     attach_clause_index(SimpleNamespace(), store, owner)
+     symbols = tuple(symbol(store, point) for point in points)
+diff --git a/test/test_accessible_mind.py b/test/test_accessible_mind.py
+index caa3b8f4a..397109121 100644
+--- a/test/test_accessible_mind.py
++++ b/test/test_accessible_mind.py
+@@ -4,7 +4,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from index_fixtures import append_indexed, one_hot_unfold
+ 
+@@ -18,7 +18,7 @@ def _meaning(a=0, b=1, *, width=8, scope=()):
+ 
+ 
+ def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
+-    store = TernaryTruthStore(8, capacity=32)
++    store = LTM0(8, capacity=32)
+     first = append_indexed(store, _meaning(), terms=((3, 17, 9), (), (6,)))
+     for i in range(20):
+         append_indexed(store, _meaning(2, 3), terms=((40 + i,), (), (70 + i,)))
+@@ -30,7 +30,7 @@ def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
+ 
+ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
+     import io
+-    store = TernaryTruthStore(8, capacity=256)
++    store = LTM0(8, capacity=256)
+     pointers = set()
+     for _ in range(128):
+         append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
+@@ -43,7 +43,7 @@ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
+     column = state["posting_codes"]
+     assert column.numel() == 384
+     assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
+-    restored = TernaryTruthStore(8, capacity=256)
++    restored = LTM0(8, capacity=256)
+     restored.load_state_dict(state)
+     restored.load_semantic_extras(store.semantic_extras())
+     row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
+@@ -75,12 +75,12 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
+ 
+ def test_index_checkpoint_compaction_and_codebook_remap():
+     import copy
+-    store = TernaryTruthStore(8, capacity=8)
++    store = LTM0(8, capacity=8)
+     old = append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
+     kept = append_indexed(store, _meaning(2, 3), terms=((17, 40), (), (70,)))
+     store.set_origin(old, store.ORIGIN_USER)
+     reference = store.occurrence_of(kept)
+-    restored = TernaryTruthStore(8, capacity=8)
++    restored = LTM0(8, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(store.semantic_extras())
+     assert restored.rows_for_code(17) == (0, 1)
+@@ -97,7 +97,7 @@ def test_index_checkpoint_compaction_and_codebook_remap():
+ 
+ 
+ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     calls = []
+     def unfold(idea, limit, **kwargs):
+         calls.append((idea.clone(), limit))
+@@ -113,7 +113,7 @@ def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
+ 
+ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
+     from QueryWork import QueryWorkBudget
+-    store = TernaryTruthStore(8, capacity=32)
++    store = LTM0(8, capacity=32)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+     for i in range(12):
+         store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0, sentence_index=len(store))
+@@ -126,7 +126,7 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
+ 
+ 
+ def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
+-    store = TernaryTruthStore(8, capacity=8)
++    store = LTM0(8, capacity=8)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+     first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
+     second = append_indexed(store, _meaning(), terms=((92,), (), (93,)), stream=1)
+@@ -177,7 +177,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
+     from dataclasses import replace
+     from test_cs_symbol_table import _cs
+     from test_query_vp_boundaries import _context, _signature
+-    store = TernaryTruthStore(8, capacity=32)
++    store = LTM0(8, capacity=32)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+     fact = _meaning()
+     oldest = store.append_meaning(fact, trust=.2, sentence_index=len(store))
+@@ -219,7 +219,7 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
+     from test_normal_thought_controller import _catalog_world
+     from Queries import ThoughtResult
+     model, registry, memory, part, whole = _catalog_world()
+-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
++    store = model.symbolSpace.ltm_store = LTM0(8, capacity=32)
+     fact = registry.form('part', part, whole, mode='assertive')
+     from MemoryIndex import configure_model_index
+     from Queries import _existing_row
+@@ -310,7 +310,7 @@ def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
+     from MemoryIndex import configure_model_index
+     from test_selected_relation_meaning import _program_owner
+     cs, _, registry, language, _, _, _, _ = _program_owner(monkeypatch)
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     host = SimpleNamespace(conceptualSpace=cs, languageSpace=language,
+                            grammatical_thoughts=registry)
+     configure_model_index(host, store)
+@@ -321,7 +321,7 @@ def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
+ 
+ 
+ def test_completed_forest_indexes_each_actual_slot_by_unfolding():
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     field = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool))
+     row = append_indexed(store, field, terms=((10,), (6, 8), (12,)))
+     assert tuple(store.leaf_terms(row, slot) for slot in range(3)) == ((10,), (6, 8), (12,))
+@@ -345,7 +345,7 @@ def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
+     from test_normal_thought_controller import _catalog_world
+     from test_query_vp_boundaries import _signature
+     model, registry, memory, part, whole = _catalog_world()
+-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=4)
++    store = model.symbolSpace.ltm_store = LTM0(8, capacity=4)
+     fact = registry.form('part', part, whole, mode='assertive')
+     append_indexed(store, fact, terms=((50,), (51,), (52,)))
+     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
+@@ -385,14 +385,14 @@ def test_legacy_index_rebuild_uses_real_rows_and_shares_truth(monkeypatch):
+     from test_selected_relation_meaning import _program_owner
+     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
+     meaning = registry.form('part', a, b, mode='assertive')
+-    original = TernaryTruthStore(8, capacity=4)
++    original = LTM0(8, capacity=4)
+     original.append_meaning(meaning, kind='fact', order=2, sentence_index=len(original))
+     original.append_meaning(meaning, kind='observation', order=2, sentence_index=len(original))
+     state = copy.deepcopy(original.state_dict())
+     for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
+         state.pop(key, None)
+     state['index_stream'] = torch.tensor([-1, 7, -1, -1])
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     store.load_state_dict(state)
+     store.load_semantic_extras(original.semantic_extras())
+     from Queries import _existing_row
+@@ -412,7 +412,7 @@ def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch
+     from test_selected_relation_meaning import _program_owner
+     cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
+     meaning = registry.form('part', a, b, mode='assertive')
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     store.append_meaning(meaning, order=2, sentence_index=len(store))
+     append_indexed(store, meaning, terms=((3, 7), (), (11,)), order=2)
+     assert store.leaf_terms(0, 0) == ()
+@@ -432,7 +432,7 @@ def test_nested_writes_are_shared_across_batch_positions():
+     child = _meaning()
+     parent = replace(child, role_mask=torch.tensor([True, False, False]),
+                      role_refs=(('constituent', 0), None, None), constituents=(child,))
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
+     assert not hasattr(store, 'index_stream')
+diff --git a/test/test_clause_acceptance.py b/test/test_clause_acceptance.py
+index cf8321773..9872fe360 100644
+--- a/test/test_clause_acceptance.py
++++ b/test/test_clause_acceptance.py
+@@ -10,7 +10,7 @@ import pytest
+ import Language
+ from ClauseRow import attach_clause_index
+ from reading_fixtures import finish_reading
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Queries import GrammaticalThoughtRegistry
+ from Understanding import AnswerProgram
+ from test_cs_sparse_weights import _cs
+@@ -53,7 +53,7 @@ class SentenceFixture:
+         self.words = {}
+         from PartsOfSpeech import PartsOfSpeech, formal_arguments
+         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
+-        self.store = TernaryTruthStore(8, capacity=64)
++        self.store = LTM0(8, capacity=64)
+         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
+         attach_clause_index(self.model, self.store, self.cs)
+ 
+diff --git a/test/test_clause_closing.py b/test/test_clause_closing.py
+index b414692f1..7a02d6b71 100644
+--- a/test/test_clause_closing.py
++++ b/test/test_clause_closing.py
+@@ -50,7 +50,7 @@ def test_selected_clause_tree_owns_its_local_references(monkeypatch):
+ 
+ 
+ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     _, registry, language, entry, _ = _nested(monkeypatch)
+     entry = replace(entry, rows=entry.rows[:1], word_rows=entry.word_rows[:1],
+                     activations=entry.activations[:1], leaves=entry.leaves[:1],
+@@ -58,7 +58,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
+                     actions=torch.tensor([[0, -1, 0]]), targets=torch.tensor([-1]),
+                     end_state=torch.cat((entry.leaves[:1], torch.zeros_like(entry.end_state[1:]))))
+     clause = finish_reading(language, entry, registry=registry)
+-    store = TernaryTruthStore(entry.leaves.shape[-1], capacity=4)
++    store = LTM0(entry.leaves.shape[-1], capacity=4)
+     from ClauseRow import attach_clause_index
+     from types import SimpleNamespace
+     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
+@@ -70,7 +70,7 @@ def test_bare_unlocated_np_rewitnesses_its_address(monkeypatch):
+ 
+ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
+     from Meaning import ConceptualMeaning
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     _, registry, language, entry, _ = _nested(monkeypatch)
+     # A relative S may finish as a three-slot forest. Its left operand is a
+     # completed inner relation and therefore has no fused-point reference.
+@@ -88,7 +88,7 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
+     clause = finish_reading(language, entry, meaning=meaning, depth=3, registry=registry)
+     assert clause.refs[0] == ('clause', 0)
+     assert len(clause.children) == 1 and clause.children[0].relation == 'part'
+-    store = TernaryTruthStore(leaves.shape[-1], capacity=8)
++    store = LTM0(leaves.shape[-1], capacity=8)
+     from ClauseRow import attach_clause_index
+     from types import SimpleNamespace
+     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)
+diff --git a/test/test_clause_storage.py b/test/test_clause_storage.py
+index 341300a73..949b4770f 100644
+--- a/test/test_clause_storage.py
++++ b/test/test_clause_storage.py
+@@ -9,14 +9,14 @@ from dataclasses import replace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore, TruthLayer
++from Layers import LTM0, TruthLayer
+ from Spaces import ConceptualSpace
+ from ClauseRow import Clause
+ from Meaning import ConceptualMeaning
+ 
+ 
+ def test_end_row_has_shared_references_and_field_coordinates():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     assert store.refs.shape == (8, 3)
+     assert store.refs.dtype == torch.int64
+     assert bool((store.refs == -1).all())
+@@ -24,11 +24,11 @@ def test_end_row_has_shared_references_and_field_coordinates():
+ 
+ 
+ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     both = store.append_idea(torch.ones(4))
+     neither = store.append_idea(torch.ones(4), sentence_index=1)
+     store.set_evidence(both, .8, .8)
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(store.state_dict())
+     assert restored.row(both)['evidence'] == pytest.approx((.8, .8))
+     assert restored.row(neither)['evidence'] == (0., 0.)
+@@ -36,9 +36,9 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
+ 
+ 
+ def test_relation_has_no_kind_column_or_catch_all():
+-    from PartStore import PartStore
+-    assert PartStore.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
+-    assert not any(name.startswith('REL_') for name in vars(TernaryTruthStore))
++    from LTM1 import LTM1
++    assert LTM1.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
++    assert not any(name.startswith('REL_') for name in vars(LTM0))
+ 
+ 
+ def test_relation_rows_never_enter_luminosity():
+@@ -203,21 +203,21 @@ def test_clause_end_state_and_evidence_checkpoint_roundtrip():
+ 
+ 
+ def test_retired_relation_columns_are_rejected_without_dropping_rows():
+-    store = TernaryTruthStore(4,capacity=8)
++    store = LTM0(4,capacity=8)
+     store.append_idea(torch.ones(4),evidence=(.5,0.))
+     state = store.state_dict(); state['rel_type'] = torch.ones(8,dtype=torch.long)
+-    restored = TernaryTruthStore(4,capacity=8)
++    restored = LTM0(4,capacity=8)
+     with pytest.raises(ValueError, match='retired'):
+         restored.load_state_dict(state)
+     assert len(restored) == 0
+ 
+ 
+ def test_native_provisioned_content_survives_a_schema_stamp_upgrade():
+-    store = TernaryTruthStore(4,capacity=8)
++    store = LTM0(4,capacity=8)
+     row = store.append_idea(torch.ones(4),evidence=(.8,0.))
+     store.set_origin(row,store.ORIGIN_PROVISIONED)
+     state = store.state_dict();state.pop('truth_schema')
+-    restored = TernaryTruthStore(4,capacity=8);restored.load_state_dict(state)
++    restored = LTM0(4,capacity=8);restored.load_state_dict(state)
+     assert len(restored) == 1 and restored.origin[0] == store.ORIGIN_PROVISIONED
+     assert restored.row(0)['evidence'] == pytest.approx((.8,0.))
+ 
+@@ -244,13 +244,13 @@ def test_invalid_parent_never_partially_writes_its_child():
+ 
+ 
+ def test_retired_relation_checkpoint_is_rejected_with_dependents_intact():
+-    store = TernaryTruthStore(4,capacity=8)
++    store = LTM0(4,capacity=8)
+     old = store.append_idea(torch.ones(4))
+     child = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
+         role_refs=(store.occurrence_of(old),None,None))
+     store.append_meaning(child,kind='question')
+     state=store.state_dict();state['rel_type']=torch.tensor([0,1,0,0,0,0,0,0])
+-    restored=TernaryTruthStore(4,capacity=8)
++    restored=LTM0(4,capacity=8)
+     with pytest.raises(ValueError,match='retired'):
+         restored.load_state_dict(state)
+     assert len(restored) == 0 and len(store) == 2
+@@ -276,7 +276,7 @@ def test_full_store_can_update_an_existing_relation():
+ def test_query_returns_end_clause_content_and_preserves_both_poles():
+     from test_query_vp_boundaries import _world, _context
+     cs, _grammar, registry, _a, _b, _ = _world()
+-    store = TernaryTruthStore(8, capacity=8)
++    store = LTM0(8, capacity=8)
+     from ClauseRow import attach_clause_index
+     attach_clause_index(SimpleNamespace(),store,cs)
+     point = torch.arange(8.).float() / 8
+diff --git a/test/test_concept_forgetting.py b/test/test_concept_forgetting.py
+index ee5b969ca..84f5067d5 100644
+--- a/test/test_concept_forgetting.py
++++ b/test/test_concept_forgetting.py
+@@ -7,7 +7,7 @@ import pytest
+ import torch
+ 
+ from ConceptForgetting import reclaim_concepts, warn_capacity
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from test_concept_capacity_policy import _cs
+ 
+ 
+@@ -48,7 +48,7 @@ def test_live_reference_preserves_weak_candidate_and_keeps_a_representative():
+     cs = _cs(8)
+     weak, _ = concept(cs, magnitude=.1)
+     strong, _ = concept(cs, magnitude=.9)
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     store.append_idea(torch.ones(8), sentence_index=0)
+     store.refs[0, 0] = weak
+     report = reclaim_concepts(cs, store)
+diff --git a/test/test_definition_integrity.py b/test/test_definition_integrity.py
+index fd5ca85a9..1ac5b2f72 100644
+--- a/test/test_definition_integrity.py
++++ b/test/test_definition_integrity.py
+@@ -96,11 +96,11 @@ def test_taxonomy_keeps_the_forms_derived_from_definition_rows():
+ def test_retired_meta_checkpoint_is_permanently_rejected():
+     from test_cs_sparse_weights import _cs
+     from test_structural_checkpoint import _model_with
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     fixture = torch.load(Path('test/fixtures/item7_legacy_definition.pt'), weights_only=False)
+     cs = _cs(nS=64, order=3)
+     target = _model_with(cs, SimpleNamespace())
+-    target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
++    target.symbolSpace = SimpleNamespace(ltm_store=LTM0(cs.nDim, capacity=32))
+     object.__setattr__(cs, '_model', target)
+     with pytest.raises(ValueError, match='retired META'):
+         target._restore_structural_extras(fixture['structural'])
+diff --git a/test/test_definition_rows.py b/test/test_definition_rows.py
+index f42e19e5e..9a64dc311 100644
+--- a/test/test_definition_rows.py
++++ b/test/test_definition_rows.py
+@@ -47,7 +47,7 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
+ 
+ 
+ def test_24_index_is_bidirectional_and_rebuilds_from_saved_rows(monkeypatch):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     m = model()
+     word, obj = admit(m, 'hello')
+     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
+@@ -172,13 +172,13 @@ def test_34_learning_codes_cannot_change_definition_identity():
+ 
+ def test_32_retired_head_meta_checkpoint_is_rejected():
+     from types import SimpleNamespace
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from test_cs_sparse_weights import _cs
+     from test_structural_checkpoint import _model_with
+     fixture = torch.load(Path(__file__).with_name('fixtures') / 'item7_legacy_definition.pt', weights_only=False)
+     cs = _cs(nS=64, order=3)
+     target = _model_with(cs, SimpleNamespace())
+-    target.symbolSpace = SimpleNamespace(ltm_store=TernaryTruthStore(cs.nDim, capacity=32))
++    target.symbolSpace = SimpleNamespace(ltm_store=LTM0(cs.nDim, capacity=32))
+     object.__setattr__(cs, '_model', target)
+     with pytest.raises(ValueError, match='retired META'):
+         target._restore_structural_extras(fixture['structural'])
+diff --git a/test/test_definition_taxonomy.py b/test/test_definition_taxonomy.py
+index 03b33a8c0..a8b288504 100644
+--- a/test/test_definition_taxonomy.py
++++ b/test/test_definition_taxonomy.py
+@@ -71,13 +71,13 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
+     from types import SimpleNamespace
+     import torch
+     from ClauseRow import Clause, attach_clause_index
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     cs, interpret = _operator()
+     first = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
+     second = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
+     predicate = interpret.forward(interpret.lookup_word([9], [1], form='part'))
+-    store = TernaryTruthStore(8, capacity=16)
++    store = LTM0(8, capacity=16)
+     model = SimpleNamespace()
+     attach_clause_index(model, store, cs)
+     store._predicate_kind = lambda ref: 'part' if ref == predicate else 'operator'
+@@ -96,12 +96,12 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
+     from types import SimpleNamespace
+     import torch
+     from ClauseRow import Clause, attach_clause_index
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     cs, interpret = _operator()
+     left = witness_object(cs, interpret.lookup_word([7], [1], form='cat'), point=torch.full((8,), .3))
+     right = witness_object(cs, interpret.lookup_word([8], [1], form='animal'), point=torch.full((8,), .7))
+-    store = TernaryTruthStore(8, capacity=1)
++    store = LTM0(8, capacity=1)
+     attach_clause_index(SimpleNamespace(), store, cs)
+     source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
+                     relation='part', refs=(left, left, right))
+@@ -144,7 +144,7 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
+ @pytest.mark.parametrize('invalid', ['width', 'capacity'])
+ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
+     from ClauseRow import attach_clause_index
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     f = SentenceFixture(monkeypatch)
+     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
+diff --git a/test/test_derived_concept_codes.py b/test/test_derived_concept_codes.py
+index 92bf6e9b1..f98620715 100644
+--- a/test/test_derived_concept_codes.py
++++ b/test/test_derived_concept_codes.py
+@@ -15,11 +15,11 @@ def fixture():
+ 
+ 
+ def test_rows_conduct_to_other_words_without_crossing_batch_streams():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     cs, cb, alloc = fixture()
+     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]
+-    store = TernaryTruthStore(3, capacity=8)
++    store = LTM0(3, capacity=8)
+     cs.symbolSpace = SimpleNamespace(ltm_store=store)
+     root = cs.new_concept()
+     store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b), symbol=root)
+diff --git a/test/test_existence_evidence.py b/test/test_existence_evidence.py
+index c9e0b7815..5d8a718cf 100644
+--- a/test/test_existence_evidence.py
++++ b/test/test_existence_evidence.py
+@@ -4,7 +4,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN, BOTH
+ 
+ 
+@@ -15,7 +15,7 @@ def _description():
+ @pytest.mark.parametrize("changed_role", [None, 1, 2])
+ def test_exist_matches_the_complete_relational_description(changed_role):
+     roles = _description()
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     from Meaning import ConceptualMeaning
+     store.append_meaning(ConceptualMeaning.from_payload(roles, depth=3, layout='infix'),
+                          kind='fact', trust=.85)
+@@ -35,7 +35,7 @@ def test_exist_matches_the_complete_relational_description(changed_role):
+ 
+ def test_exist_preserves_conflicting_fact_support():
+     subject = _description()[0]
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_idea(subject, trust=.8, sentence_index=len(store))
+     store.append_idea(subject, trust=-.9, sentence_index=len(store))
+     result = TruthGroundedReasoner(store=store).evaluate(
+diff --git a/test/test_existence_ingestion.py b/test/test_existence_ingestion.py
+index 31a05efc3..b31322de0 100644
+--- a/test/test_existence_ingestion.py
++++ b/test/test_existence_ingestion.py
+@@ -1,7 +1,7 @@
+ """Only the explicit evidence owner can admit assertions after kernel retirement."""
+ import pytest
+ import torch
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
+ 
+@@ -16,7 +16,7 @@ def test_part_without_supplied_evidence_stays_unverified():
+ 
+ def test_prediction_and_observation_occurrences_cannot_certify_their_content():
+     description = ConceptualMeaning.from_description(torch.eye(6)[:3])
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     for kind in ('estimate', 'observation', 'unverified'):
+         store.append_meaning(description, kind=kind, trust=1)
+     result = TruthGroundedReasoner(store=store).evaluate(QuerySpec.from_surface('exist', description))
+@@ -26,7 +26,7 @@ def test_prediction_and_observation_occurrences_cannot_certify_their_content():
+ def test_explicit_fact_admission_preserves_full_description_and_source():
+     description = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3,
+         layout='infix', scope={'where': ('sym', 5)})
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     row = store.append_meaning(description, kind='fact', trust=-.8)
+     store.set_origin(row, store.ORIGIN_USER, text='named witness')
+     reasoner = TruthGroundedReasoner(store=store)
+diff --git a/test/test_existence_metadata.py b/test/test_existence_metadata.py
+index 4661669d7..c6ebee75c 100644
+--- a/test/test_existence_metadata.py
++++ b/test/test_existence_metadata.py
+@@ -4,7 +4,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN, BOTH
+ 
+ 
+@@ -47,14 +47,14 @@ def test_actual_observation_writers_keep_roles_without_asserting_world_facts(mon
+ 
+ 
+ def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     idea = torch.eye(6)[0]
+     source.append_idea(idea, trust=.95, sentence_index=len(source))
+     provisioned = source.append_idea(idea, trust=.6, sentence_index=len(source))
+     source.set_origin(provisioned, source.ORIGIN_PROVISIONED)
+     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
+     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     with pytest.warns(UserWarning, match='unknown order'):
+         restored.load_state_dict(old_state, strict=True)
+     assert len(restored) == 2
+@@ -77,7 +77,7 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
+         "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
+     }
+     description = _meaning(**initial)
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_meaning(description, kind="fact", trust=.85, sentence_index=len(store))
+     assert _evaluate(store, description)["posture"] == TRUE
+     initial[field] = changed[field]
+@@ -90,7 +90,7 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
+     ("observation", "unspecified"),
+ ])
+ def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0, sentence_index=len(store))
+     result = _evaluate(store, _meaning())
+     assert result["posture"] == UNKNOWN
+@@ -98,14 +98,14 @@ def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+ 
+ 
+ def test_question_cannot_be_written_as_accepted_fact():
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     with pytest.raises(ValueError, match="interrogative|question"):
+         store.append_meaning(_meaning(mode="interrogative"), kind="fact", trust=1, sentence_index=len(store))
+     assert len(store) == 0
+ 
+ 
+ def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     first = store.append_meaning(_meaning(), kind="fact", trust=.8, sentence_index=len(store))
+     second = store.append_meaning(_meaning(), kind="fact", trust=-.9, sentence_index=len(store))
+     first_ref, second_ref = (store.row(i)["occurrence"] for i in (first, second))
+@@ -123,7 +123,7 @@ def test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset():
+ 
+ 
+ def test_repeated_evidence_does_not_inflate_partial_support():
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     for _ in range(4):
+         store.append_meaning(_meaning(), kind="fact", trust=.4, sentence_index=len(store))
+     result = _evaluate(store, _meaning())
+@@ -138,7 +138,7 @@ def test_live_description_owns_values_but_fact_storage_detaches():
+     description = ConceptualMeaning.from_payload(source, depth=3, layout="infix")
+     gradient = torch.autograd.grad(description.roles.square().sum(), source)[0]
+     torch.testing.assert_close(gradient, 2 * source)
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     row = store.append_meaning(description, kind="fact", trust=.8, sentence_index=len(store))
+     with torch.no_grad():
+         source.zero_()
+@@ -161,13 +161,13 @@ def test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles(dep
+ 
+ 
+ def test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar():
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     description = _meaning(scope={"where": ("sym", 11)}, bindings={"x": ("sym", 7)})
+     row = source.append_meaning(description, kind="fact", trust=.85, sentence_index=len(source))
+     source.set_origin(row, source.ORIGIN_USER, text="scoped witness")
+     state = {k: v.clone() for k, v in source.state_dict().items()}
+     extras = source.semantic_extras()
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     restored.load_state_dict(state, strict=True)
+     # Required semantic context cannot be silently replaced by empty scope.
+     incomplete = _evaluate(restored, _meaning())
+@@ -212,7 +212,7 @@ def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
+ 
+ 
+ def test_checked_reader_keeps_both_sides_of_exist_evidence():
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_meaning(_meaning(), kind="fact", trust=.8, sentence_index=len(store))
+     store.append_meaning(_meaning(), kind="fact", trust=-.9, sentence_index=len(store))
+     reasoner = TruthGroundedReasoner(store=store)
+diff --git a/test/test_existence_provenance.py b/test/test_existence_provenance.py
+index c0acba447..ea7f92b83 100644
+--- a/test/test_existence_provenance.py
++++ b/test/test_existence_provenance.py
+@@ -5,7 +5,7 @@ import pytest
+ import torch
+ 
+ from Meaning import ConceptualMeaning
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner
+ from reasoning import BOTH as CONFLICTING, UNKNOWN
+ 
+@@ -25,7 +25,7 @@ def _occurrences(value):
+ 
+ def test_checked_result_retains_matching_fact_occurrences_and_both_degrees():
+     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix")
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     rows = [store.append_meaning(meaning, trust=degree, sentence_index=len(store)) for degree in (.8, -.9)]
+     expected = {store.row(i)["occurrence"] for i in rows}
+     result = TruthGroundedReasoner(store=store).evaluate(
+@@ -39,9 +39,9 @@ def test_checked_result_retains_matching_fact_occurrences_and_both_degrees():
+ def test_missing_semantic_context_remains_visible_in_the_checked_result():
+     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
+                                              scope={"where": ("sym", 11)})
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_meaning(meaning, trust=.8, sentence_index=len(store))
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     restored.load_state_dict(store.state_dict(), strict=True)
+     result = TruthGroundedReasoner(store=restored).evaluate(
+         QuerySpec.from_surface("exist", meaning))
+@@ -52,7 +52,7 @@ def test_missing_semantic_context_remains_visible_in_the_checked_result():
+ def test_consolidated_pending_chain_reads_the_actual_two_role_presence():
+     from types import SimpleNamespace
+     from Layers import SymbolExpectation
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     roles = torch.eye(6)[:2]
+     store.append_meaning(ConceptualMeaning.from_payload(roles, depth=2, layout='infix'),
+                          trust=.8, stream=0)
+@@ -67,10 +67,10 @@ def test_consolidated_pending_chain_reads_the_actual_two_role_presence():
+ def test_partial_new_checkpoint_cannot_forget_required_scope(missing):
+     meaning = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3, layout="infix",
+                                              scope={"where": ("sym", 11)})
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     source.append_meaning(meaning, trust=.8, sentence_index=len(source))
+     state = dict(source.state_dict())
+     del state[missing]
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     with pytest.raises(RuntimeError, match="semantic checkpoint"):
+         restored.load_state_dict(state, strict=False)
+diff --git a/test/test_existence_public_inputs.py b/test/test_existence_public_inputs.py
+index 18cd1e9fb..7f6fad907 100644
+--- a/test/test_existence_public_inputs.py
++++ b/test/test_existence_public_inputs.py
+@@ -3,7 +3,7 @@ import pytest
+ import torch
+ 
+ from Meaning import ConceptualMeaning
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import TruthGroundedReasoner
+ from reasoning import QuerySpec
+ 
+@@ -12,7 +12,7 @@ from reasoning import QuerySpec
+ def test_checked_reader_accepts_complete_description_without_collapsing_roles(structured):
+     roles = torch.eye(6)[:3]
+     fact = ConceptualMeaning.from_description(roles)
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     store.append_meaning(fact, trust=.8)
+     reasoner = TruthGroundedReasoner(store=store)
+     query = fact if structured else roles
+@@ -25,7 +25,7 @@ def test_checked_reader_accepts_complete_description_without_collapsing_roles(st
+ 
+ @pytest.mark.parametrize("trust", [float("nan"), float("inf"), -float("inf")])
+ def test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence(trust):
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     row = store.append_idea(torch.eye(6)[0], trust=.4)
+     with pytest.raises(ValueError, match="finite"):
+         store.set_trust(row, trust)
+diff --git a/test/test_existence_sidecar.py b/test/test_existence_sidecar.py
+index f4f75b0f2..87ee65b76 100644
+--- a/test/test_existence_sidecar.py
++++ b/test/test_existence_sidecar.py
+@@ -5,13 +5,13 @@ import pytest
+ import torch
+ 
+ from Meaning import ConceptualMeaning
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ 
+ 
+ @pytest.mark.parametrize("text", [None, "a scoped assertion"])
+ @pytest.mark.parametrize("mutation", ["erase", "replace"])
+ def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation):
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     meaning = ConceptualMeaning.from_payload(
+         torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+     row = source.append_meaning(meaning, trust=.8, sentence_index=len(source))
+@@ -20,7 +20,7 @@ def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation)
+     extras = deepcopy(source.semantic_extras())
+     extras["records"][0]["context"]["scope"] = (() if mutation == "erase"
+                                                  else (("where", ("sym", 12)),))
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     restored.load_state_dict(source.state_dict(), strict=True)
+     with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+         restored.load_semantic_extras(extras)
+@@ -28,7 +28,7 @@ def test_restored_sidecar_cannot_erase_or_replace_recorded_scope(text, mutation)
+ 
+ 
+ def test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences():
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     for concept in (11, 12):
+         meaning = ConceptualMeaning.from_payload(
+             torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", concept)})
+@@ -36,18 +36,18 @@ def test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences():
+     extras = deepcopy(source.semantic_extras())
+     records = extras["records"]
+     records[0]["context"], records[1]["context"] = records[1]["context"], records[0]["context"]
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     restored.load_state_dict(source.state_dict(), strict=True)
+     with pytest.raises(ValueError, match="semantic.*(fingerprint|content|scope)"):
+         restored.load_semantic_extras(extras)
+ 
+ 
+ def test_source_update_cannot_certify_missing_semantic_context():
+-    source = TernaryTruthStore(6, capacity=8)
++    source = LTM0(6, capacity=8)
+     meaning = ConceptualMeaning.from_payload(
+         torch.eye(6)[:3], depth=3, layout="infix", scope={"where": ("sym", 11)})
+     source.append_meaning(meaning, trust=.8, sentence_index=len(source))
+-    restored = TernaryTruthStore(6, capacity=8)
++    restored = LTM0(6, capacity=8)
+     restored.load_state_dict(source.state_dict(), strict=True)
+     with pytest.raises(ValueError, match="missing semantic"):
+         restored.set_origin(0, source.ORIGIN_USER, text="new source")
+diff --git a/test/test_expectation_gain.py b/test/test_expectation_gain.py
+index fc4f96937..02cf15ebc 100644
+--- a/test/test_expectation_gain.py
++++ b/test/test_expectation_gain.py
+@@ -122,7 +122,7 @@ def test_trial_keep_and_credit_use_same_r_plus_a_judge():
+ 
+ 
+ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
+-    from Layers import MeaningExpectation, TernaryTruthStore
++    from Layers import MeaningExpectation, LTM0
+     from Meaning import ConceptualMeaning, ClosingImage
+     keys = torch.eye(4)
+     logits = torch.full((4,2), -60.); logits[0,0] = 60.
+@@ -138,7 +138,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
+     assert view.awareness()['identities'][0] == 0
+     observed = ConceptualMeaning(roles, occupied)
+     estimate = ConceptualMeaning(roles, occupied, mode='unspecified', bindings=prediction.retained_bindings())
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     source = store.append_meaning(observed, kind='observation')
+     e, o = store.append_expectation_pair(estimate, observed, presence_logits=prediction.presence_logits,
+         source_occurrences=(store.occurrence_of(source),), document='test', stream='test')
+@@ -146,7 +146,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
+     assert pair['estimate_occurrence'] == store.occurrence_of(e)
+     assert pair['expected_activation'].shape == (4,2)
+     assert not pair['conceived'].any()
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     other = restored.expectation_pair(o)
+@@ -175,7 +175,7 @@ def test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier():
+ 
+ def test_fused_retained_row_replays_original_two_lane_target():
+     """A fused row is not a new observation of its nearest bank identity."""
+-    from Layers import MeaningExpectation, TernaryTruthStore
++    from Layers import MeaningExpectation, LTM0
+     from Meaning import ConceptualMeaning
+     keys = torch.eye(4)
+     expected = torch.tensor([[.8, .1], [.1, .7], [.2, .2], [.1, .1]])
+@@ -193,13 +193,13 @@ def test_fused_retained_row_replays_original_two_lane_target():
+             for i, pair in zip(ids, target.tolist()))})
+     estimate = ConceptualMeaning(roles, occupied, mode='unspecified',
+         bindings=prediction.retained_bindings())
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     _, row = store.append_expectation_pair(estimate, observed,
+         presence_logits=prediction.presence_logits, document='fused', stream='fused')
+     residual = target-expected
+     from Expectation import retention_surprise
+     surprise = retention_surprise(residual, expected)
+-    for replay in (store, TernaryTruthStore(4, capacity=8)):
++    for replay in (store, LTM0(4, capacity=8)):
+         if replay is not store:
+             replay.load_state_dict(copy.deepcopy(store.state_dict()))
+             replay.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+diff --git a/test/test_expectation_migration.py b/test/test_expectation_migration.py
+index b9cef7d8e..aa26b964c 100644
+--- a/test/test_expectation_migration.py
++++ b/test/test_expectation_migration.py
+@@ -2,13 +2,13 @@
+ import copy
+ import pytest
+ import torch
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from meaning_fixtures import symbol_prediction, estimate_meaning
+ 
+ 
+ def historical_pair():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     prior = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
+     actual = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3,dtype=torch.bool))
+     e,o = store.append_expectation_pair(estimate_meaning(prior),actual,
+@@ -24,7 +24,7 @@ def historical_pair():
+ 
+ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
+     old,e,o,sidecar = historical_pair()
+-    new = TernaryTruthStore(4,capacity=8)
++    new = LTM0(4,capacity=8)
+     new.load_state_dict(copy.deepcopy(old.state_dict()))
+     new.load_semantic_extras(copy.deepcopy(sidecar))
+     assert new.semantic_extras()['version'] == 6
+@@ -35,7 +35,7 @@ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
+     torch.testing.assert_close(new.meaning_of(o).roles, old.meaning_of(o).roles)
+     assert new.row(o)['surprise'] == pytest.approx(.123)
+     pair = new.expectation_pair(o)
+-    again = TernaryTruthStore(4,capacity=8)
++    again = LTM0(4,capacity=8)
+     again.load_state_dict(copy.deepcopy(new.state_dict()))
+     again.load_semantic_extras(copy.deepcopy(new.semantic_extras()))
+     torch.testing.assert_close(again.expectation_pair(o)['residual'],pair['residual'])
+@@ -45,7 +45,7 @@ def test_role_estimate_migrates_after_authentication_and_roundtrips_once():
+ def test_migration_does_not_bless_corrupt_historical_estimates():
+     old,e,o,sidecar = historical_pair()
+     sidecar['records'][e]['expectation']['presence_logits'] = (9.,9.,9.)
+-    new = TernaryTruthStore(4,capacity=8)
++    new = LTM0(4,capacity=8)
+     new.load_state_dict(old.state_dict())
+     with pytest.raises(ValueError,match='fingerprint'):
+         new.load_semantic_extras(sidecar)
+diff --git a/test/test_expectation_retention.py b/test/test_expectation_retention.py
+index 314591b1a..d37a982c7 100644
+--- a/test/test_expectation_retention.py
++++ b/test/test_expectation_retention.py
+@@ -6,7 +6,7 @@ from types import SimpleNamespace
+ import torch
+ import pytest
+ 
+-from Layers import SymbolExpectation, TernaryTruthStore
++from Layers import SymbolExpectation, LTM0
+ from Meaning import ConceptualMeaning
+ from meaning_fixtures import record_observation, symbol_prediction, estimate_meaning
+ from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
+@@ -46,7 +46,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
+     must remain distinct, cross-linked, scoped to the stream/document, and
+     recoverable through the store's checkpoint sidecar.
+     """
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     discourse = _discourse()
+     discourse._ltm_store = store
+     document = "conversation-17"
+@@ -84,7 +84,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
+         QuerySpec.from_surface("exist", estimate["meaning"]))
+     assert result["posture"] == UNKNOWN
+ 
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()), strict=True)
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     replayed = restored.expectation_pair(1)
+@@ -95,7 +95,7 @@ def test_retained_estimate_links_its_external_observation_and_restores():
+ 
+ 
+ def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
+-    store = TernaryTruthStore(4, capacity=2)
++    store = LTM0(4, capacity=2)
+     source = _meaning(1.0)
+     source_row = store.append_meaning(source, kind="observation", stream=0)
+     with pytest.raises(OverflowError, match='forgetting'):
+@@ -110,7 +110,7 @@ def test_estimate_pair_overflow_raises_without_publishing_half_a_pair():
+ 
+ def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
+     """A forecast is available to its residual policy, not ordinary LTM reads."""
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     source = _meaning(1.0)
+     source_row = store.append_meaning(source, kind="observation", stream=0)
+     estimate_row, observed_row = store.append_expectation_pair(
+diff --git a/test/test_forgetting.py b/test/test_forgetting.py
+index f069d6c7c..66a02d1cf 100644
+--- a/test/test_forgetting.py
++++ b/test/test_forgetting.py
+@@ -7,7 +7,7 @@ import pytest
+ import torch
+ 
+ from Forgetting import ForgettingConfig, forget, history_age, retention_values, model_boundary
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
+@@ -23,14 +23,14 @@ def append(store, index, *, trust=.5, surprise=1., stream=0, origin=0, evidence=
+ 
+ 
+ def full_store():
+-    store = TernaryTruthStore(4, capacity=10)
++    store = LTM0(4, capacity=10)
+     for i in range(8):
+         append(store, i)
+     return store
+ 
+ 
+ def test_age_is_per_stream_and_rewitnessing_does_not_refresh():
+-    store = TernaryTruthStore(4, capacity=10)
++    store = LTM0(4, capacity=10)
+     append(store, 0, stream=0)
+     append(store, 1, stream=1)
+     append(store, 2, stream=0)
+@@ -78,7 +78,7 @@ def test_value_terms_outweigh_age(term):
+ 
+ 
+ def test_source_trust_is_separate_from_both_evidence():
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     row = append(store, 0, trust=.9, evidence=(1., 1.))
+     assert store.trust[row] == 0
+     assert retention_values(store, config())['trust'][row] == pytest.approx(.9)
+@@ -89,7 +89,7 @@ def test_source_trust_is_separate_from_both_evidence():
+ 
+ 
+ def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
+-    store = TernaryTruthStore(4, capacity=2)
++    store = LTM0(4, capacity=2)
+     meaning = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool))
+     for stream, surprise in enumerate((.9, .05)):
+         store.append_meaning(meaning, trust=.5, surprise=surprise, stream=stream,
+@@ -106,7 +106,7 @@ def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
+ 
+ 
+ def test_dissonance_drops_weaker_opposition_not_intrinsic_both():
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     append(store, 0, trust=.9, evidence=(.9, 0))
+     append(store, 1, trust=.2, evidence=(0, .8))
+     append(store, 2, trust=.1, evidence=(1, 1))
+@@ -128,7 +128,7 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
+ 
+ 
+ def linked_store(*, child_is_relation=False):
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     child = (store.append_meaning(ConceptualMeaning(torch.eye(4)[:3],
+         torch.ones(3, dtype=torch.bool)), trust=0., sentence_index=0)
+         if child_is_relation else append(store, 0, trust=0.))
+@@ -176,7 +176,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
+     assert result['wording'] == 8 and result['after'] == 8
+     torch.testing.assert_close(store.slots, before)
+     assert all(store.text_of(row) is None for row in range(8))
+-    restored = TernaryTruthStore(4, capacity=10)
++    restored = LTM0(4, capacity=10)
+     restored.load_state_dict(store.state_dict())
+     restored.load_semantic_extras(store.semantic_extras())
+     assert int(restored.forget_passes) == 1
+@@ -188,7 +188,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
+ 
+ 
+ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     value = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
+     from meaning_fixtures import symbol_prediction, estimate_meaning
+     estimate = store.append_estimate(estimate_meaning(symbol_prediction(torch.eye(4),
+@@ -202,15 +202,15 @@ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
+     forget(store, cfg, document_boundary=True)
+     assert store.index_of_row(observed[2]) is not None
+     assert store._expectation_rows == {}
+-    restored = TernaryTruthStore(4, capacity=4)
++    restored = LTM0(4, capacity=4)
+     restored.load_state_dict(store.state_dict())
+     restored.load_semantic_extras(store.semantic_extras())
+ 
+ 
+ def test_transitive_row_is_expendable_but_its_proof_survives():
+-    from PartStore import PartStore
++    from LTM1 import LTM1
+     from Forgetting import part_supports, forget_parts
+-    store = PartStore(capacity=5)
++    store = LTM1(capacity=5)
+     rows = [store.add(left, right, truth_plus=1)
+             for left, right in ((10, 20), (20, 30), (10, 30))]
+     store.add(40, 50, truth_plus=.5)
+@@ -235,7 +235,7 @@ def test_legacy_checkpoint_does_not_infer_trust_from_evidence():
+     del state['source_trust']
+     for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+         del state[name]
+-    restored = TernaryTruthStore(4, capacity=10)
++    restored = LTM0(4, capacity=10)
+     restored.load_state_dict(state)
+     assert not restored.source_trust.any()
+     torch.testing.assert_close(restored.c_plus, store.c_plus)
+@@ -262,7 +262,7 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
+     cs, interpret = _operator()
+     left = interpret.forward(interpret.lookup_word([7], [1], form='cat'))
+     right = interpret.forward(interpret.lookup_word([8], [1], form='animal'))
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     attach_clause_index(SimpleNamespace(), store, cs)
+     with torch.no_grad():
+         cs.similarity_codebook.W[cs._csw_row_of(left)].fill_(.25)
+@@ -397,7 +397,7 @@ def test_scope_prevents_false_deduction_or_dissonance():
+ 
+ 
+ def test_optional_coverage_separates_both_from_neither():
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     append(store, 0, evidence=(1, 0))
+     append(store, 1, evidence=(0, 0))
+     terms = retention_values(store, config(coverage=True))
+@@ -416,7 +416,7 @@ def test_invalid_configuration_fails_before_a_pass(kwargs):
+ def test_packed_and_single_presentations_keep_the_same_stream_history():
+     snapshots = []
+     for packing in (1, 4):
+-        store = TernaryTruthStore(4, capacity=10)
++        store = LTM0(4, capacity=10)
+         for first in range(0, 8, packing):
+             for sentence in range(first, min(8, first + packing)):
+                 append(store, sentence, surprise=sentence / 8)
+@@ -433,7 +433,7 @@ def test_legacy_source_trust_can_load_into_a_larger_inventory():
+     store = full_store()
+     state = copy.deepcopy(store.state_dict())
+     state['trust'] = state.pop('source_trust')
+-    restored = TernaryTruthStore(4, capacity=20)
++    restored = LTM0(4, capacity=20)
+     restored.load_state_dict(state)
+     torch.testing.assert_close(restored.source_trust[:8], store.source_trust[:8])
+     assert not restored.source_trust[8:].any()
+@@ -441,8 +441,8 @@ def test_legacy_source_trust_can_load_into_a_larger_inventory():
+ 
+ def test_losing_a_proof_raises_pending_conclusions_utility():
+     from Forgetting import part_supports, forget_parts
+-    from PartStore import PartStore
+-    store = PartStore(capacity=5)
++    from LTM1 import LTM1
++    store = LTM1(capacity=5)
+     proof = store.add(10, 20, truth_plus=1)
+     store.add(20, 30, truth_plus=1)
+     conclusion = store.add(10, 30, truth_plus=1)
+@@ -481,6 +481,6 @@ def test_compaction_preserves_protected_row_columns_and_optional_metadata():
+         torch.testing.assert_close(getattr(store, name)[row], value, msg=name)
+     # Point-only rows remain recoverable from tensor state without a sidecar.
+     assert not store.metadata_required[:len(store)].any()
+-    restored = TernaryTruthStore(4, capacity=10)
++    restored = LTM0(4, capacity=10)
+     restored.load_state_dict(store.state_dict())
+     assert all(restored.meaning_of(i) is not None for i in range(len(restored)))
+diff --git a/test/test_global_attention.py b/test/test_global_attention.py
+index 55162b767..fe331a074 100644
+--- a/test/test_global_attention.py
++++ b/test/test_global_attention.py
+@@ -224,10 +224,10 @@ def test_addressable_spaces_gathers_input_stm_codebook():
+ @pytest.mark.slow
+ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
+     # The LTM address space is gathered from symbolSpace.ltm_store; stage a
+-    # synthetic TernaryTruthStore so the path is exercised without
++    # synthetic LTM0 so the path is exercised without
+     # <ltmConsolidation>.
+     from Attention import PrimedSymbolReader as GA
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     m = _build("MM_global.xml")
+     if getattr(m, "symbolSpace", None) is None:
+         pytest.skip("no symbolSpace on this config")
+@@ -238,7 +238,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
+     in_sub = m._lex_embed_stem(x)
+     ps = m.perceptualSpace.forward(in_sub)
+     D = int(ps.materialize().shape[-1])
+-    store = TernaryTruthStore(D, capacity=8)
++    store = LTM0(D, capacity=8)
+     store.slots[:3] = torch.randn(3, 3, D)
+     store.count = torch.tensor(3)
+     store.record_kind[2] = store.KINDS.index("estimate")
+diff --git a/test/test_global_consume.py b/test/test_global_consume.py
+index 09ba2c323..8a25b1b3e 100644
+--- a/test/test_global_consume.py
++++ b/test/test_global_consume.py
+@@ -212,7 +212,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
+     # reaches the consumer: the soft-read content (which ranges over SPACE_LTM)
+     # injected into a head changes it.
+     from Attention import PrimedSymbolReader as GA
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     m = _build("MM_qa.xml")
+     if getattr(m, "symbolSpace", None) is None:
+         pytest.skip("no symbolSpace")
+@@ -223,7 +223,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
+     in_sub = m._lex_embed_stem(x)
+     ps = m.perceptualSpace.forward(in_sub)
+     D = int(ps.materialize().shape[-1])
+-    store = TernaryTruthStore(D, capacity=8)
++    store = LTM0(D, capacity=8)
+     store.slots[:3] = torch.randn(3, 3, D)
+     store.count = torch.tensor(3)
+     object.__setattr__(m.symbolSpace, "ltm_store", store)
+diff --git a/test/test_grammatical_query_vps.py b/test/test_grammatical_query_vps.py
+index 7fb05cc06..0b8c1077e 100644
+--- a/test/test_grammatical_query_vps.py
++++ b/test/test_grammatical_query_vps.py
+@@ -6,7 +6,7 @@ import pytest
+ import torch
+ 
+ from Language import Grammar
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Queries import GrammaticalThoughtRegistry, ThoughtTaxonomyCapability
+ from test_cs_symbol_table import _cs
+@@ -98,7 +98,7 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
+ 
+ def test_unary_query_keeps_full_description_through_an_existing_occurrence():
+     cs, registry, a, b, _ = _world()
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
+                                    scope={'place': 'workshop'},
+                                    role_refs=registry.form('isPart', a, b).role_refs)
+diff --git a/test/test_identification_evidence.py b/test/test_identification_evidence.py
+index 382257c96..ac023f9ec 100644
+--- a/test/test_identification_evidence.py
++++ b/test/test_identification_evidence.py
+@@ -5,7 +5,7 @@ import pytest
+ import torch
+ 
+ from ClauseRow import Clause
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
+@@ -45,7 +45,7 @@ def test_clause_order_and_evidence_are_stored_without_a_program():
+     row = store.write_clause(clause)
+     assert store.row(row)['order'] == 3
+     assert store.row(row)['evidence'] == pytest.approx((.75, .5))
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(store.state_dict(), strict=True)
+     assert restored.row(row)['order'] == 3
+     assert restored.row(row)['trust'] == pytest.approx(.25)
+@@ -129,7 +129,7 @@ def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
+     state['trust'] = torch.full((store.capacity,), .8)  # legacy provenance
+     for name in ('order', 'c_plus', 'c_minus'):
+         del state[name]
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     with pytest.warns(UserWarning, match='unknown order'):
+         restored.load_state_dict(state, strict=True)
+     assert restored.row(0)['order'] == -1
+diff --git a/test/test_identity_rows.py b/test/test_identity_rows.py
+index ae11412e7..5bd881ce4 100644
+--- a/test/test_identity_rows.py
++++ b/test/test_identity_rows.py
+@@ -4,7 +4,7 @@ import torch
+ import pytest
+ 
+ from IdentityRows import meet_ratios, point, witness_count
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from test_reference_close import fixture, close, form_exposure
+ 
+@@ -123,7 +123,7 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
+     from test_sentence_expectation import layer, observe
+     from ReferenceContext import SituationAddress
+     discourse = layer()
+-    store = TernaryTruthStore(4,capacity=8)
++    store = LTM0(4,capacity=8)
+     discourse._ltm_store = store
+     observed=torch.eye(4)[:3]
+     observe(discourse,observed)
+@@ -141,7 +141,7 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
+ 
+ def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon():
+     from RowTime import encoder,HORIZON
+-    store=TernaryTruthStore(4,capacity=8)
++    store=LTM0(4,capacity=8)
+     tick=[731]
+     object.__setattr__(store,'_model_present',lambda:tick[0])
+     row=store.append_idea(torch.ones(4),document_key='first',sentence_index=9000)
+@@ -176,7 +176,7 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
+     assert not stable
+     store.append_idea(a[0])
+     saved=store.state_dict();saved.pop('model_clock')
+-    target=TernaryTruthStore(12,capacity=512);target.load_state_dict(saved)
++    target=LTM0(12,capacity=512);target.load_state_dict(saved)
+     assert not target.when.any()
+     torch.testing.assert_close(target.slots,store.slots,rtol=0,atol=0)
+ 
+diff --git a/test/test_independent_components.py b/test/test_independent_components.py
+index 7e58e2819..5fe76449c 100644
+--- a/test/test_independent_components.py
++++ b/test/test_independent_components.py
+@@ -34,10 +34,10 @@ def test_definedness_keeps_direction_input_uncertainty_and_evidence_separate():
+ 
+ 
+ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     from MeaningCodes import sentence_key
+-    store = TernaryTruthStore(8, capacity=4)
++    store = LTM0(8, capacity=4)
+     meaning = ConceptualMeaning.from_description(torch.ones(8))
+     key = sentence_key([b'a', b'cat'])
+     args = dict(document_key='fixture', sentence_index=0, content_key=key, evidence=(1., 1.))
+@@ -49,13 +49,13 @@ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_trut
+     torch.testing.assert_close(second / second.norm(), first / first.norm())
+     assert second.norm().item() == pytest.approx(2 / 6)
+     assert store.c_plus[row] == store.c_minus[row] == 1
+-    restored = TernaryTruthStore(8, capacity=4)
++    restored = LTM0(8, capacity=4)
+     restored.load_state_dict(store.state_dict())
+     torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
+ 
+ 
+ def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows(monkeypatch):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     from MeaningCodes import sentence_key
+     from MereologicalCodes import MereologicalCodes
+@@ -250,10 +250,10 @@ def component_fixture():
+ 
+ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
+     import Spaces
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     columns = component_fixture()
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     meaning = ConceptualMeaning.from_description(torch.eye(4)[0])
+     row = store.append_meaning(meaning, document_key='retained', sentence_index=0, kind='observation')
+     owner = columns.owner
+diff --git a/test/test_item4_review.py b/test/test_item4_review.py
+index 1b73d06b6..b039e2f69 100644
+--- a/test/test_item4_review.py
++++ b/test/test_item4_review.py
+@@ -5,7 +5,7 @@ from dataclasses import replace
+ import pytest
+ import torch
+ from Expectation import sample_alternative, retention_surprise
+-from Layers import SymbolExpectation, ExpectationComparison, TernaryTruthStore
++from Layers import SymbolExpectation, ExpectationComparison, LTM0
+ from Meaning import ClosingImage, ConceptualMeaning, retained_symbol_prediction, withheld_symbols
+ from meaning_fixtures import symbol_prediction, estimate_meaning
+ 
+@@ -79,7 +79,7 @@ def test_omission_surprise_and_non_marks_agree_at_both_native_writers():
+     assert comparison.surprise_for(ordinary)>0
+     assert comparison.surprise_for(withheld)==0
+     for observation in (ordinary,withheld):
+-        store=TernaryTruthStore(4,capacity=8)
++        store=LTM0(4,capacity=8)
+         _,row=store.append_expectation_pair(estimate_meaning(prior),observation,presence_logits=prior.presence_logits)
+         assert store.expectation_pair(row)['surprise']==pytest.approx(float(comparison.surprise_for(observation)))
+ 
+@@ -99,9 +99,9 @@ def test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact
+     assert sum(key is not None for _,_,key,_ in entries)<=2
+     estimate=ConceptualMeaning(prior.roles,torch.ones(3,dtype=torch.bool),bindings=bindings)
+     observation=ConceptualMeaning(roles,occupied,bindings={'_observed_symbol_activations':((5,(1.,0.)),)})
+-    store=TernaryTruthStore(width,capacity=8)
++    store=LTM0(width,capacity=8)
+     _,row=store.append_expectation_pair(estimate,observation,presence_logits=prior.presence_logits)
+-    restored=TernaryTruthStore(width,capacity=8)
++    restored=LTM0(width,capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     for owner in (store,restored):
+diff --git a/test/test_item55_mechanisms.py b/test/test_item55_mechanisms.py
+index 972c9e9c1..b59b13dea 100644
+--- a/test/test_item55_mechanisms.py
++++ b/test/test_item55_mechanisms.py
+@@ -143,10 +143,10 @@ def test_offset_independence(tmp_path):
+ 
+ @pytest.mark.usefixtures('eager_reading')
+ def test_stream_chain(tmp_path,monkeypatch):
+-    from Layers import TernaryTruthStore, SymbolExpectation
++    from Layers import LTM0, SymbolExpectation
+     from Meaning import ConceptualMeaning
+     from Occurrence import sentence_key
+-    store = TernaryTruthStore(4,capacity=8)
++    store = LTM0(4,capacity=8)
+     history = SimpleNamespace(_ltm_store=store)
+     rows = {}
+     for index in (1,2):
+@@ -174,7 +174,7 @@ def test_stream_chain(tmp_path,monkeypatch):
+     store.witness_stream(rows[0,1],1)
+     assert store.stream_rows(0).tolist() == [0,2]
+     assert store.stream_rows(1).tolist() == [0,1,3]
+-    restored = TernaryTruthStore(4,capacity=8)
++    restored = LTM0(4,capacity=8)
+     restored.load_state_dict(store.state_dict())
+     assert torch.equal(restored.stream,store.stream)
+     # The production closing supplies stream witnesses and model processing time.
+@@ -527,8 +527,8 @@ def test_nested_wholes_from_stage3_artifact(tmp_path, monkeypatch, restore_phase
+ def test_absences():
+     import Language
+     from ClauseRow import Clause
+-    from Layers import TernaryTruthStore
+-    store = TernaryTruthStore(4,8)
++    from Layers import LTM0
++    store = LTM0(4,8)
+     assert not {'timestamp','_next_ts'} & set(store.state_dict())
+     assert not any(hasattr(store,name) for name in ('timestamp','_next_ts','write_timestamp','recent','_timestamp_source'))
+     assert 'eternal' not in {f.name for f in fields(Clause)}
+diff --git a/test/test_item6_2_repair.py b/test/test_item6_2_repair.py
+index 376279196..a4e2b8d02 100644
+--- a/test/test_item6_2_repair.py
++++ b/test/test_item6_2_repair.py
+@@ -5,7 +5,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from ThoughtReferences import bindings, evidence_pair, fill, open_slots, question
+ from ThoughtStream import write
+@@ -28,7 +28,7 @@ def test_saved_construction_binds_and_writes_the_child():
+     assert resolved.constituents == (child,)
+     assert not open_slots(resolved)
+     assert evidence_pair(resolved) == (.8, .2)
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+     index = write(model, resolved, row=0)
+     assert len(store) == 2
+@@ -52,7 +52,7 @@ def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
+     assert nested.constituents == (leaf,)
+     assert nested.role_refs[0] == ('constituent', 0)
+     assert goal.constituents == (existing,) and goal.role_refs[0] is None
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+     index = write(model, resolved, row=0)
+     assert len(store) == 4
+@@ -78,7 +78,7 @@ def test_multiple_roles_share_the_imported_child_without_reindexing_goal():
+ def test_occurrence_binding_also_carries_the_supplied_constituent_table():
+     child = atom(.5)
+     supplied = replace(atom(), constituents=(child,))
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     index = store.append_meaning(supplied, kind='fact', evidence=(.8, .2))
+     occurrence = store.occurrence_of(index)
+     result = fill(question(atom(), (('referent', 0),)),
+diff --git a/test/test_item6_2_thinking.py b/test/test_item6_2_thinking.py
+index c57edb8d0..8096fd888 100644
+--- a/test/test_item6_2_thinking.py
++++ b/test/test_item6_2_thinking.py
+@@ -7,7 +7,7 @@ import pytest
+ import torch
+ 
+ from Language import Grammar, OperationSelectionLayer
+-from Layers import TernaryTruthStore, WhatInteractionMemory, Error
++from Layers import LTM0, WhatInteractionMemory, Error
+ from Meaning import ConceptualMeaning, ClosingImage
+ from Models import BasicModel
+ from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS
+@@ -25,7 +25,7 @@ def world():
+     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
+     for ref in refs:
+         cs._csw_concept_row(0, ref[1])
+-    store = TernaryTruthStore(cs.outputShape[-1], capacity=128)
++    store = LTM0(cs.outputShape[-1], capacity=128)
+     memory = WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')
+     model = BasicModel()
+     model.spaces = []
+diff --git a/test/test_ltm_consolidation.py b/test/test_ltm_consolidation.py
+index ad61f56e1..5b0dec503 100644
+--- a/test/test_ltm_consolidation.py
++++ b/test/test_ltm_consolidation.py
+@@ -88,11 +88,11 @@ def _make_model_provisioned(config):
+ 
+ class TestConstruction(unittest.TestCase):
+     def test_shared_store_is_unconditional(self):
+-        from Layers import TernaryTruthStore
++        from Layers import LTM0
+         for config in (_OFF_CONFIG, _ON_CONFIG):
+             m = _make_model(config)
+             self.assertTrue(m.ltm_consolidation)
+-            self.assertIsInstance(m.symbolSpace.ltm_store, TernaryTruthStore)
++            self.assertIsInstance(m.symbolSpace.ltm_store, LTM0)
+             self.assertFalse(hasattr(m.symbolSpace, 'relative_store'))
+             self.assertTrue(m.conceptualSpace._ltm_consolidation)
+ 
+@@ -133,7 +133,7 @@ class TestProvisioning(unittest.TestCase):
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_truthset_rows_land_via_real_forward(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model_provisioned(_SERIAL_CONFIG)
+         store = m.symbolSpace.ltm_store
+         # This numerical fixture's grammar composes absolute scenes. XML
+@@ -201,7 +201,7 @@ class TestObserveWrites(unittest.TestCase):
+         ``_forward_body_per_word``) against the model's ltm_store. The live
+         forward needs sentenceExpectation + relative end-states; this isolates
+         the write contract under test."""
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         store = m.symbolSpace.ltm_store
+         for b in range(len(payloads)):
+             payload = payloads[b]
+@@ -218,7 +218,7 @@ class TestObserveWrites(unittest.TestCase):
+         return store
+ 
+     def test_absolute_depth1_appends_idea(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         m.symbolSpace.ltm_store.reset()
+         D = m.symbolSpace.ltm_store.nDim
+@@ -232,7 +232,7 @@ class TestObserveWrites(unittest.TestCase):
+         self.assertAlmostEqual(float(r["np1"][0]), .3, places=5)
+ 
+     def test_relative_depth3_slot_mapping(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         m.symbolSpace.ltm_store.reset()
+         D = m.symbolSpace.ltm_store.nDim
+@@ -269,7 +269,7 @@ class TestObserveWrites(unittest.TestCase):
+ 
+ class TestReasonOverLtm(unittest.TestCase):
+     def test_reason_selects_ltm_store_when_consolidated(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         cs = m.conceptualSpace
+         store = m.symbolSpace.ltm_store
+@@ -290,7 +290,7 @@ class TestReasonOverLtm(unittest.TestCase):
+         self.assertAlmostEqual(res["luminosity_gain"], 0.4, places=5)
+ 
+     def test_reason_skips_absolute_idea_rows(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         cs = m.conceptualSpace
+         store = m.symbolSpace.ltm_store
+@@ -306,7 +306,7 @@ class TestReasonOverLtm(unittest.TestCase):
+         self.assertEqual(len(res["derived"]), 0)
+ 
+     def test_verify_relation_joins_evidence_without_changing_provenance_or_vectors(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         cs = m.conceptualSpace
+         store = m.symbolSpace.ltm_store
+@@ -377,7 +377,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
+                 f"ltm_store.{suffix} must ride the state_dict")
+ 
+     def test_save_load_roundtrip(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         store = m.symbolSpace.ltm_store
+         store.reset()
+@@ -437,7 +437,7 @@ class TestDiscourseConsolidationWiring(unittest.TestCase):
+ class TestStoreBackedChain(unittest.TestCase):
+     def test_get_stm_chain_reads_stream_oldest_first(self):
+         # The stream's occurrence rows retain store order.
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_SERIAL_CONFIG)
+         store = m.symbolSpace.ltm_store
+         disc = m.symbolSpace.expectation
+@@ -462,7 +462,7 @@ class TestStoreBackedChain(unittest.TestCase):
+         # A relation row -> depth 3, payload = [np1, vp, np2]
+         # (INFIX = [idea1, predicate, idea2], the store's native order;
+         # Alec 2026-06-18 -- idea1 may be present without a predicate).
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_SERIAL_CONFIG)
+         store = m.symbolSpace.ltm_store
+         disc = m.symbolSpace.expectation
+@@ -559,7 +559,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
+             "attach_ltm must not re-register the store under truth_layer")
+ 
+     def test_sync_materializes_user_and_provisioned_rows_only(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         store = m.symbolSpace.ltm_store
+         tl = m.symbolSpace.truth_layer
+@@ -590,7 +590,7 @@ class TestTruthLayerLtmView(unittest.TestCase):
+         self.assertFalse(tl.is_empty())
+ 
+     def test_sync_excludes_relation_rows(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         store = m.symbolSpace.ltm_store
+         tl = m.symbolSpace.truth_layer
+@@ -631,7 +631,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_unary_preference_still_ends_and_records_user_truth(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m, store, _ = self._fresh()
+         m.provision_ltm()
+         before = len(store)
+@@ -652,7 +652,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_user_rows_land_alongside_provisioned(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m, store, tl = self._fresh()
+         with warnings.catch_warnings():
+             warnings.filterwarnings("ignore")
+@@ -704,7 +704,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_resubmit_replaces_user_rows_only(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m, store, tl = self._fresh()
+         with warnings.catch_warnings():
+             warnings.filterwarnings("ignore")
+@@ -733,7 +733,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+         # provisioned model (a raw state_dict round-trip can't be used here:
+         # real provisioning grows the dynamic vocab, so the production reload
+         # goes through load_weights' vocab restore, not bare load_state_dict).
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model_provisioned(_SERIAL_CONFIG)
+         store = m.symbolSpace.ltm_store
+         n_prov = len(store.rows_of_origin(T.ORIGIN_PROVISIONED))
+@@ -750,7 +750,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+ 
+     @pytest.mark.usefixtures('eager_reading')
+     def test_user_rows_coexist_with_conversation_rows(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m, store, tl = self._fresh()
+         with warnings.catch_warnings():
+             warnings.filterwarnings("ignore")
+@@ -783,7 +783,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
+ class TestStatelessRevive(unittest.TestCase):
+     def _seed(self, m):
+         """Seed one row per origin (provisioned / user / conversation)."""
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         store = m.symbolSpace.ltm_store
+         store.reset()
+         D = store.nDim
+@@ -808,7 +808,7 @@ class TestStatelessRevive(unittest.TestCase):
+         self.assertFalse(m.symbolSpace._stateless)
+ 
+     def test_stateless_load_prunes_only_after_structural_owners_are_restored(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         self._seed(m)
+         sd = m.state_dict()
+@@ -834,7 +834,7 @@ class TestStatelessRevive(unittest.TestCase):
+         self.assertEqual(int(m2.symbolSpace.truth_layer.count.item()), 1)
+ 
+     def test_stateful_load_keeps_user_rows(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG, stateless=False)
+         self._seed(m)
+         sd = m.state_dict()
+@@ -850,7 +850,7 @@ class TestStatelessRevive(unittest.TestCase):
+     def test_load_syncs_view_even_with_no_user_rows(self):
+         # A checkpoint with only provisioned + conversation rows still
+         # rematerializes the view on load (stateless drop is a no-op).
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         m = _make_model(_ON_CONFIG)
+         store = m.symbolSpace.ltm_store
+         store.reset()
+diff --git a/test/test_math_chain_repair.py b/test/test_math_chain_repair.py
+index f0570fb21..529ecf162 100644
+--- a/test/test_math_chain_repair.py
++++ b/test/test_math_chain_repair.py
+@@ -124,8 +124,8 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
+ 
+ 
+ def test_configured_store_still_raises_when_full():
+-    from Layers import TernaryTruthStore
+-    store = TernaryTruthStore(4, capacity=1)
++    from Layers import LTM0
++    store = LTM0(4, capacity=1)
+     store.append_idea(torch.ones(4), document_key='first')
+     with pytest.raises(OverflowError, match='capacity 1 exhausted'):
+         store.append_idea(torch.zeros(4), document_key='second')
+diff --git a/test/test_math_chain_section14.py b/test/test_math_chain_section14.py
+index 72ee512ee..052e23dc4 100644
+--- a/test/test_math_chain_section14.py
++++ b/test/test_math_chain_section14.py
+@@ -38,10 +38,10 @@ def test_formation_provenance_is_not_a_chooser_input():
+ 
+ 
+ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Occurrence import slot_key
+     from ThoughtStream import write
+-    store = TernaryTruthStore(4, capacity=32)
++    store = LTM0(4, capacity=32)
+     points = {5:torch.tensor([.1,.2,.3,.4]), 7:torch.tensor([.4,.3,.2,.1])}
+     store.configure_clause_index(concept_point=points.get)
+     root = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
+@@ -136,11 +136,11 @@ def test_episode_work_is_reported_without_changing_the_reconstruction_and_answer
+ 
+ 
+ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Queries import ThoughtLTMCapability
+     from QueryWork import QueryWorkBudget
+     from index_fixtures import one_hot_unfold
+-    store = TernaryTruthStore(8,capacity=16)
++    store = LTM0(8,capacity=16)
+     store.configure_leaf_index(code_row=lambda ref:ref[-1], read=one_hot_unfold)
+     source = ConceptualMeaning(torch.eye(8)[:3],torch.ones(3,dtype=torch.bool),
+         role_refs=(None,('sym',1),('sym',2)),sentence_kind='relation')
+diff --git a/test/test_mind_generativity.py b/test/test_mind_generativity.py
+index 79668ec04..75025eb70 100644
+--- a/test/test_mind_generativity.py
++++ b/test/test_mind_generativity.py
+@@ -3,7 +3,7 @@ import json
+ 
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from MemoryIndex import unfold_idea
+ from test_prepared_answer_boundary import _native_answer_model
+@@ -40,7 +40,7 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
+             for code in reversed(range(length - 1)):
+                 value = op.compose(leaves[code:code + 1], value)
+                 operations = (('binary', op_index), ('code', code), *operations)
+-            store = TernaryTruthStore(leaves.shape[-1], capacity=1)
++            store = LTM0(leaves.shape[-1], capacity=1)
+             row = store.append_meaning(ConceptualMeaning.from_description(value[0]))
+             records.append((length, store, row, operations))
+         parameters = tuple(language.generate_policy.parameters()) + tuple(op.parameters())
+diff --git a/test/test_native_attention_field.py b/test/test_native_attention_field.py
+index 9be7f561f..73f9e00ea 100644
+--- a/test/test_native_attention_field.py
++++ b/test/test_native_attention_field.py
+@@ -138,10 +138,10 @@ def test_native_candidate_departure_credits_only_scorer_parameters(tmp_path, mon
+ 
+ def test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces():
+     from ReferenceContext import exclude_replaced_occurrences
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     from Occurrence import document_digest, sentence_key
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     point = ConceptualMeaning.from_description(torch.ones(4))
+     content = sentence_key((b'field',))
+     rows = []
+diff --git a/test/test_negative_expectation.py b/test/test_negative_expectation.py
+index b12ffbb45..136262a18 100644
+--- a/test/test_negative_expectation.py
++++ b/test/test_negative_expectation.py
+@@ -7,7 +7,7 @@ os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
+ import pytest
+ import torch
+ 
+-from Layers import MeaningExpectation, ExpectationComparison, TernaryTruthStore
++from Layers import MeaningExpectation, ExpectationComparison, LTM0
+ from Meaning import ConceptualMeaning
+ from meaning_fixtures import record_observation
+ from test_sentence_expectation import layer, observe
+@@ -36,11 +36,11 @@ def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
+ 
+ 
+ def test_old_checkpoint_unknown_surprise_is_not_zero():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     store.append_idea(torch.ones(4), sentence_index=len(store))
+     state = store.state_dict()
+     state.pop("surprise", None)
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(state, strict=True)
+     assert restored.row(0)["surprise"] == -1
+ 
+@@ -55,7 +55,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
+     assert 'not' in registry.executable_operation_ids
+     source = with_slots(registry.form('part', part, whole, mode='assertive'), (), pair=(.3,.7))
+     request = registry.form('not', source)
+-    store = TernaryTruthStore(8, capacity=8)
++    store = LTM0(8, capacity=8)
+     model.symbolSpace.ltm_store = store
+     observation = store.append_meaning(source,kind='observation')
+     with model._query_boundary_scope((0,)):
+@@ -76,7 +76,7 @@ def _anticipating_model():
+     model, registry, memory, part, whole = _catalog_world()
+     meaning = registry.form("part", part, whole)
+     width = meaning.roles.shape[-1]
+-    store = TernaryTruthStore(width, capacity=64)
++    store = LTM0(width, capacity=64)
+     discourse = SymbolExpectation(4, 8, width, concept_dim=width)
+     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
+     discourse._ltm_store = store
+@@ -151,7 +151,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch,
+ 
+ @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
+ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
+-    store = TernaryTruthStore(4, capacity=64)
++    store = LTM0(4, capacity=64)
+     meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+     for _ in range(24):
+         row = store.append_idea(torch.ones(4), sentence_index=len(store))
+@@ -163,7 +163,7 @@ def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch
+         source_occurrences=(store.occurrence_of(source),))
+     eref, oref = store.occurrence_of(e), store.occurrence_of(o)
+     if state == "restored":
+-        restored = TernaryTruthStore(4, capacity=64)
++        restored = LTM0(4, capacity=64)
+         restored.load_state_dict(copy.deepcopy(store.state_dict()))
+         restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+         store = restored
+@@ -382,7 +382,7 @@ def test_omission_is_residual_only_and_content_has_no_predictor_credit():
+ def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
+     from meaning_fixtures import symbol_prediction, estimate_meaning
+     from Expectation import retention_surprise
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     actual = ConceptualMeaning(torch.eye(4)[:3], torch.tensor([True,True,False]))
+     source = store.append_meaning(actual, kind='observation')
+     prediction = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
+@@ -392,7 +392,7 @@ def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
+     torch.testing.assert_close(pair['observation'].roles, actual.roles)
+     torch.testing.assert_close(pair['expected_activation'], prediction.expected_activation)
+     assert pair['surprise'] == pytest.approx(float(retention_surprise(pair['residual'], pair['expected_activation'])))
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     torch.testing.assert_close(restored.expectation_pair(row)['residual'], pair['residual'])
+diff --git a/test/test_nested_retention.py b/test/test_nested_retention.py
+index eb2088ee5..1d6f35eda 100644
+--- a/test/test_nested_retention.py
++++ b/test/test_nested_retention.py
+@@ -5,7 +5,7 @@ import copy
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
+@@ -29,7 +29,7 @@ def _unchanged(store, before):
+ 
+ 
+ def test_origin_replacement_retains_reachable_content_without_fact_authority():
+-    store = TernaryTruthStore(6, capacity=8)
++    store = LTM0(6, capacity=8)
+     leaf = store.append_meaning(_meaning(scope={"quote": "inner"}), trust=.8, sentence_index=len(store))
+     store.set_origin(leaf, store.ORIGIN_USER, text="reported content")
+     leaf_ref = store.occurrence_of(leaf)
+@@ -58,7 +58,7 @@ def test_origin_replacement_retains_reachable_content_without_fact_authority():
+ 
+ 
+ def test_external_live_root_pins_an_occurrence_through_origin_replacement():
+-    store = TernaryTruthStore(6, capacity=3)
++    store = LTM0(6, capacity=3)
+     row = store.append_meaning(_meaning(), trust=1, sentence_index=len(store))
+     store.set_origin(row, store.ORIGIN_USER)
+     ref = store.occurrence_of(row)
+@@ -69,7 +69,7 @@ def test_external_live_root_pins_an_occurrence_through_origin_replacement():
+ 
+ 
+ def test_missing_local_constituent_rejects_append_before_owner_mutation():
+-    store = TernaryTruthStore(6, capacity=3)
++    store = LTM0(6, capacity=3)
+     row = store.append_meaning(_meaning(), sentence_index=len(store))
+     prefix = store.occurrence_of(row)[:2]
+     before = copy.deepcopy(store.state_dict())
+@@ -79,7 +79,7 @@ def test_missing_local_constituent_rejects_append_before_owner_mutation():
+ 
+ 
+ def test_repeated_edges_keep_role_order_without_evidence_inheritance():
+-    store = TernaryTruthStore(6, capacity=4)
++    store = LTM0(6, capacity=4)
+     row = store.append_meaning(
+         _meaning(mode="interrogative", scope={"quote": True}), kind="question"
+     , sentence_index=len(store))
+@@ -104,7 +104,7 @@ def test_repeated_edges_keep_role_order_without_evidence_inheritance():
+      ({"max_records": 1}, "record_limit")),
+ )
+ def test_nested_read_limits_are_separate_and_explicit(limit, reason):
+-    store = TernaryTruthStore(6, capacity=4)
++    store = LTM0(6, capacity=4)
+     child = store.occurrence_of(store.append_meaning(_meaning(), sentence_index=len(store)))
+     root = store.occurrence_of(store.append_meaning(_meaning(child=child), sentence_index=len(store)))
+     before = copy.deepcopy(store.state_dict())
+@@ -116,12 +116,12 @@ def test_nested_read_limits_are_separate_and_explicit(limit, reason):
+ 
+ 
+ def test_retained_structure_and_reference_identity_survive_checkpoint_restore():
+-    store = TernaryTruthStore(6, capacity=4)
++    store = LTM0(6, capacity=4)
+     child = store.occurrence_of(store.append_meaning(_meaning(), sentence_index=len(store)))
+     store.set_origin(0, store.ORIGIN_USER)
+     root = store.occurrence_of(store.append_meaning(_meaning(child=child), sentence_index=len(store)))
+     store.clear_origin(store.ORIGIN_USER)
+-    restored = TernaryTruthStore(6, capacity=4)
++    restored = LTM0(6, capacity=4)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     view = restored.read_structure(root)
+@@ -138,7 +138,7 @@ def _boundary_meaning(ref=None):
+ 
+ 
+ def _world():
+-    store = TernaryTruthStore(5, capacity=5)
++    store = LTM0(5, capacity=5)
+     child = store.occurrence_of(store.append_meaning(_boundary_meaning(), kind="question", sentence_index=len(store)))
+     root = store.occurrence_of(store.append_meaning(_boundary_meaning(child), kind="observation", sentence_index=len(store)))
+     return store, child, root
+@@ -159,7 +159,7 @@ def test_structural_restore_rejects_dangling_local_links_atomically():
+     wrong = child[:2] + (999,)
+     _corrupt_child(store, child, wrong)
+     saved, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
+-    restored = TernaryTruthStore(5, capacity=5)
++    restored = LTM0(5, capacity=5)
+     restored.load_state_dict(saved)
+     before_context = copy.deepcopy(restored._semantic_rows)
+     before_texts = list(restored._texts)
+@@ -176,7 +176,7 @@ def test_cycle_is_reported_without_unbounded_read_or_evidence_transfer():
+     assert view["incomplete"] == ("cycle",)
+     assert len(view["rows"]) == 2 and view["records_scanned"] == 2
+     assert view["rows"][1]["kind"] == "question"
+-    restored = TernaryTruthStore(5, capacity=5)
++    restored = LTM0(5, capacity=5)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     reread = restored.read_structure(root, max_nodes=2, max_depth=2, max_records=2)
+@@ -207,7 +207,7 @@ def test_derived_structure_read_does_not_expose_mutable_store_slots():
+ 
+ def test_unavailable_owner_and_retired_reference_have_explicit_incomplete_results():
+     store, child, root = _world()
+-    other = TernaryTruthStore(5, capacity=5)
++    other = LTM0(5, capacity=5)
+     foreign = other.occurrence_of(other.append_meaning(_boundary_meaning(), document_key='other-document', sentence_index=len(other)))
+     assert store.read_structure(foreign)["incomplete"] == ("unavailable_reference",)
+     store.reset()
+@@ -218,7 +218,7 @@ def test_unavailable_owner_and_retired_reference_have_explicit_incomplete_result
+ 
+ @pytest.mark.parametrize("field", ("bindings", "scope"))
+ def test_withdrawal_preserves_occurrences_in_retained_semantic_context(field):
+-    store = TernaryTruthStore(6, capacity=4)
++    store = LTM0(6, capacity=4)
+     child = store.append_meaning(_meaning(), trust=.8, sentence_index=len(store))
+     store.set_origin(child, store.ORIGIN_USER)
+     ref = store.occurrence_of(child)
+@@ -235,7 +235,7 @@ def test_withdrawal_preserves_occurrences_in_retained_semantic_context(field):
+ 
+ @pytest.mark.parametrize("field", ("bindings", "scope"))
+ def test_missing_local_context_reference_rejects_append_before_mutation(field):
+-    store = TernaryTruthStore(6, capacity=4)
++    store = LTM0(6, capacity=4)
+     row = store.append_meaning(_meaning(), sentence_index=len(store))
+     missing = store.occurrence_of(row)[:2] + (99,)
+     before = copy.deepcopy(store.state_dict())
+diff --git a/test/test_nested_retention_owners.py b/test/test_nested_retention_owners.py
+index 56704d023..d48e8d033 100644
+--- a/test/test_nested_retention_owners.py
++++ b/test/test_nested_retention_owners.py
+@@ -2,7 +2,7 @@
+ 
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from test_ltm_consolidation import _ON_CONFIG, _make_model
+ 
+diff --git a/test/test_operators_final.py b/test/test_operators_final.py
+index d887e5d1e..b33be65c5 100644
+--- a/test/test_operators_final.py
++++ b/test/test_operators_final.py
+@@ -26,9 +26,9 @@ def test_centroid_moves_without_losing_identity_and_caps_containment():
+ 
+ 
+ def test_adjacent_wholes_rewitness_compact_and_checkpoint():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     value = ConceptualMeaning.from_description(torch.ones(4))
+     discarded = store.append_meaning(value, document_key='gone')
+     store.origin[discarded] = store.ORIGIN_USER
+@@ -40,7 +40,7 @@ def test_adjacent_wholes_rewitness_compact_and_checkpoint():
+     store.witness_adjacency(discarded, [7, 8])
+     store.clear_origin(store.ORIGIN_USER)
+     assert store.index_of_row(address) == 0 and (7, 8) not in store._adjacent_postings
+-    loaded = TernaryTruthStore(4, capacity=4)
++    loaded = LTM0(4, capacity=4)
+     loaded.load_state_dict(store.state_dict())
+     assert loaded._adjacent_postings == store._adjacent_postings
+     store.witness_adjacency(0, [2, 4])
+@@ -51,9 +51,9 @@ def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
+     import MereologicalCodes
+     from Priming import diffuse
+     from util import TheXMLConfig
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     store.append_meaning(ConceptualMeaning.from_description(torch.ones(4)))
+     owner = SimpleNamespace(_closed_clause_store=lambda: store)
+     import PartRead
+diff --git a/test/test_operators_round3a.py b/test/test_operators_round3a.py
+index 6e9d17eb5..a82a596ab 100644
+--- a/test/test_operators_round3a.py
++++ b/test/test_operators_round3a.py
+@@ -151,9 +151,9 @@ def test_numeric_mm_keeps_its_original_geometry():
+ @pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),
+     (.7,False,(0.,.7)),(-.4,False,(.4,0.)),(0.,True,(0.,0.))])
+ def test_trust_to_pair_and_negation(trust, polarity, expected):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+-    store = TernaryTruthStore(4, capacity=4)
++    store = LTM0(4, capacity=4)
+     meaning = ConceptualMeaning(torch.ones(3,4), torch.tensor([True,False,False]),
+                                 mode='assertive', polarity=polarity)
+     row = store.append_meaning(meaning, trust=trust)
+diff --git a/test/test_operators_round4a.py b/test/test_operators_round4a.py
+index a5c1e1c4b..fc301fe21 100644
+--- a/test/test_operators_round4a.py
++++ b/test/test_operators_round4a.py
+@@ -29,9 +29,9 @@ def test_sentence_identity_is_recomputable_and_does_not_consume_global_rng():
+ 
+ 
+ def test_content_address_is_independent_of_store_and_persists_with_occurrences():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+-    stores = [TernaryTruthStore(8, capacity=4) for _ in range(2)]
++    stores = [LTM0(8, capacity=4) for _ in range(2)]
+     keys = []
+     for store in stores:
+         from Occurrence import sentence_key
+@@ -45,7 +45,7 @@ def test_content_address_is_independent_of_store_and_persists_with_occurrences()
+         assert store.content_key(row) == keys[-1]
+     assert stores[0].occurrence_of(0) == stores[1].occurrence_of(0)
+     assert keys[0] == keys[1]
+-    restored = TernaryTruthStore(8, capacity=4)
++    restored = LTM0(8, capacity=4)
+     restored.load_state_dict(stores[0].state_dict())
+     assert restored.content_key(0) == keys[0]
+ 
+@@ -217,7 +217,7 @@ def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
+ 
+ 
+ def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(monkeypatch):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     from MereologicalCodes import MereologicalCodes
+     from MeaningCodes import defined_code
+diff --git a/test/test_operators_round4a0.py b/test/test_operators_round4a0.py
+index 9c6a5cd3b..af86a44bf 100644
+--- a/test/test_operators_round4a0.py
++++ b/test/test_operators_round4a0.py
+@@ -8,7 +8,7 @@ import sys
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Occurrence import address_key, document_digest, sentence_key
+ 
+@@ -31,7 +31,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
+               'sentence_key((b"the",b"cat"))))')
+     assert key == int(subprocess.check_output([sys.executable, '-c', source], text=True))
+     assert torch.equal(rng, torch.get_rng_state())
+-    left, right = TernaryTruthStore(4, 8), TernaryTruthStore(4, 8)
++    left, right = LTM0(4, 8), LTM0(4, 8)
+     a, b = write(left), write(right)
+     assert left.occurrence_of(a) == right.occurrence_of(b)
+     assert not {'occurrence_id', '_next_occurrence', '_occurrence_namespace'} & set(left.state_dict())
+@@ -39,7 +39,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
+ 
+ 
+ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
+-    store = TernaryTruthStore(4, 4)
++    store = LTM0(4, 4)
+     for epoch in range(400):
+         for row in range(4):
+             assert write(store, ('xor', row), value=epoch + 1.) == row
+@@ -52,7 +52,7 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
+ 
+ 
+ def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
+-    store = TernaryTruthStore(4, 4)
++    store = LTM0(4, 4)
+     row = write(store, value=2., evidence=(.8, .1))
+     band = store.when[row].clone()
+     assert write(store, value=3., evidence=(.2, .7)) == row
+@@ -66,7 +66,7 @@ def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
+ 
+ 
+ def test_full_store_can_rewitness_both_existing_prediction_pair_addresses():
+-    store = TernaryTruthStore(4, 2)
++    store = LTM0(4, 2)
+     from meaning_fixtures import symbol_prediction, estimate_meaning
+     predicted = estimate_meaning(symbol_prediction(torch.ones(1,4), torch.full((1,2),.5)))
+     arguments = dict(presence_logits=torch.zeros(3), document='turn')
+@@ -88,7 +88,7 @@ def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
+ 
+ 
+ def test_references_and_content_keys_survive_compaction_and_checkpoint():
+-    store = TernaryTruthStore(4, 8)
++    store = LTM0(4, 8)
+     removed = write(store, 'discard')
+     store.set_origin(removed, store.ORIGIN_USER)
+     source = write(store, 'kept')
+@@ -101,7 +101,7 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
+     assert store._index_occurrences[reference] == 0
+     assert store.meaning_of(1).role_refs[0] == reference
+     assert int(store.refs[1, 0]) == int(store.address_keys[0])
+-    restored = TernaryTruthStore(4, 8)
++    restored = LTM0(4, 8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     assert restored._index_occurrences[reference] == 0
+@@ -109,7 +109,7 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
+ 
+ 
+ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
+-    store = TernaryTruthStore(4, 8)
++    store = LTM0(4, 8)
+     source = write(store)
+     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
+                              role_refs=(store.occurrence_of(source), None, None))
+@@ -133,7 +133,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
+     state['refs'][target, 0] = 2**62
+     state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
+     state['stream'][0,0] = state['stream'][1,1] = True
+-    restored = TernaryTruthStore(4, 8)
++    restored = LTM0(4, 8)
+     restored.load_state_dict(state)
+     restored.load_semantic_extras(extras)
+     reference = restored.occurrence_of(0)
+@@ -239,7 +239,7 @@ def test_prepared_dataset_value_retains_its_source_after_cursor_advances():
+ 
+ def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
+     from reasoning import TruthGroundedReasoner
+-    store = TernaryTruthStore(4, 2)
++    store = LTM0(4, 2)
+     value = meaning()
+     row = store.append_meaning(value, kind='fact', evidence=(.8, 0.))
+     assert store.append_meaning(value, kind='fact', evidence=(0., .9)) == row
+@@ -251,10 +251,10 @@ def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
+ 
+ 
+ def test_checkpoint_can_grow_capacity_without_changing_an_address():
+-    source = TernaryTruthStore(4, 2)
++    source = LTM0(4, 2)
+     write(source, 'one', position=1)
+     write(source, 'two', position=1)
+-    restored = TernaryTruthStore(4, 8)
++    restored = LTM0(4, 8)
+     restored.load_state_dict(copy.deepcopy(source.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(source.semantic_extras()))
+     assert restored.capacity == 8 and len(restored) == 2
+@@ -278,7 +278,7 @@ def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
+ 
+ 
+ def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
+-    store = TernaryTruthStore(4, 2)
++    store = LTM0(4, 2)
+     row = write(store)
+     before = copy.deepcopy(store.state_dict())
+     reference = store.occurrence_of(row)
+diff --git a/test/test_part_expectation.py b/test/test_part_expectation.py
+index e0e2ebfd0..63f3d8fe9 100644
+--- a/test/test_part_expectation.py
++++ b/test/test_part_expectation.py
+@@ -4,7 +4,7 @@ import pytest
+ import torch
+ 
+ from ClauseRow import attach_clause_index
+-from Layers import ExpectationComparison, MeaningExpectation, TernaryTruthStore
++from Layers import ExpectationComparison, MeaningExpectation, LTM0
+ from test_clause_acceptance import SentenceFixture
+ 
+ 
+@@ -33,7 +33,7 @@ def test_closing_audit_survives_bank_changes_and_checkpoint(monkeypatch, relativ
+     with torch.no_grad():
+         f.cs.similarity_codebook.W.fill_(.25)
+     state, extras = copy.deepcopy(f.store.state_dict()), copy.deepcopy(f.store.semantic_extras())
+-    restored = TernaryTruthStore(8, capacity=64)
++    restored = LTM0(8, capacity=64)
+     attach_clause_index(f.model, restored, f.cs)
+     restored.load_state_dict(state)
+     restored.load_semantic_extras(extras)
+diff --git a/test/test_part_read.py b/test/test_part_read.py
+index bbb930900..5758520aa 100644
+--- a/test/test_part_read.py
++++ b/test/test_part_read.py
+@@ -35,8 +35,8 @@ def test_postings_rebuild_from_part_without_inverting_the_narrowed_point(monkeyp
+ 
+ def test_part_membership_terminates_on_cycles_and_retains_reachable_leaves():
+     from PartRead import leaves
+-    from PartStore import PartStore
+-    parts = PartStore(32)
++    from LTM1 import LTM1
++    parts = LTM1(32)
+     parts.add(11, 2, symbol=10)
+     parts.add(10, 3, symbol=11)
+     assert set(leaves(parts, 10)) == {2, 3}
+diff --git a/test/test_part_store.py b/test/test_part_store.py
+index 4ff72e86e..1a9801ecd 100644
+--- a/test/test_part_store.py
++++ b/test/test_part_store.py
+@@ -2,7 +2,7 @@
+ import torch
+ 
+ from Layers import ConceptAllocator
+-from PartStore import PartStore
++from LTM1 import LTM1
+ 
+ 
+ def test_taxonomy_and_nested_relations_share_symbol_rows():
+@@ -19,13 +19,13 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
+     before = outer
+     alloc.parts.retain([inner, outer])
+     assert alloc.parts.find(inner, z) == before
+-    assert set(alloc.parts.row(inner)) == set(PartStore.columns)
++    assert set(alloc.parts.row(inner)) == set(LTM1.columns)
+     assert alloc.parts.refs.shape[-1] == 2
+     assert not hasattr(alloc.parts, 'rel_type')
+ 
+ 
+ def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
+-    store = PartStore(16)
++    store = LTM1(16)
+     first = store.add(2, 3, truth_plus=.7, truth_minus=.1, when=torch.ones(4))
+     assert store.add(2, 3, truth_plus=.2, truth_minus=.8) == first
+     assert len(store) == 1 and store.access_count[first] == 2
+@@ -36,10 +36,10 @@ def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
+ 
+ 
+ def test_part_checkpoint_and_retention_keep_native_addresses():
+-    store = PartStore(16)
++    store = LTM1(16)
+     a = store.add(2, 3, truth_plus=.6)
+     b = store.add(a, 4, truth_minus=.4)
+-    clone = PartStore(4)
++    clone = LTM1(4)
+     clone.load_state_dict(store.state_dict())
+     clone.retain([b])
+     assert clone.find(a, 4) == b
+diff --git a/test/test_priming_diffusion.py b/test/test_priming_diffusion.py
+index 1c873f3dd..d369561c8 100644
+--- a/test/test_priming_diffusion.py
++++ b/test/test_priming_diffusion.py
+@@ -3,7 +3,7 @@ from types import SimpleNamespace
+ 
+ import torch
+ 
+-from PartStore import PartStore
++from LTM1 import LTM1
+ from Priming import diffuse, part_edges
+ 
+ 
+@@ -12,7 +12,7 @@ def owner(points):
+         raise AssertionError('Part diffusion must not read code placement')
+     return SimpleNamespace(
+         similarity_codebook=SimpleNamespace(W=points, lookup_rows=lookup),
+-        _concept_allocator=SimpleNamespace(parts=PartStore(256)),
++        _concept_allocator=SimpleNamespace(parts=LTM1(256)),
+         _closed_clause_store=lambda: None,
+         _csw_row_of=lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None)
+ 
+@@ -38,7 +38,7 @@ def test_part_graph_follows_native_addresses_after_forgetting_and_load():
+     parts = native._concept_allocator.parts
+     parts.add(1, 2, symbol=100)
+     parts.add(2, 3, symbol=101)
+-    restored = PartStore(1)
++    restored = LTM1(1)
+     restored.load_state_dict(parts.state_dict())
+     native._concept_allocator.parts = restored
+     restored.remove(1, 2)
+diff --git a/test/test_query_contract_boundaries.py b/test/test_query_contract_boundaries.py
+index 875e197f3..5214a269b 100644
+--- a/test/test_query_contract_boundaries.py
++++ b/test/test_query_contract_boundaries.py
+@@ -6,7 +6,7 @@ import pytest
+ import torch
+ 
+ from Language import Grammar
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Queries import THOUGHT_EXECUTORS, ThoughtExecutorDescriptor
+ from test_cs_symbol_table import _cs
+@@ -14,7 +14,7 @@ from test_query_vp_boundaries import _context, _signature
+ 
+ 
+ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatch):
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
+     meaning = ConceptualMeaning.from_description(torch.ones(8))
+     for strength in (0.2, 0.8):
+@@ -55,7 +55,7 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
+ 
+ 
+ def test_unified_query_returns_complete_record_and_does_not_admit_observation():
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
+     roles = torch.eye(8)[:3]
+     meaning = ConceptualMeaning.from_description(roles)
+diff --git a/test/test_query_executors.py b/test/test_query_executors.py
+index 46e768beb..8fcd7ab42 100644
+--- a/test/test_query_executors.py
++++ b/test/test_query_executors.py
+@@ -6,7 +6,7 @@ import pytest
+ import torch
+ 
+ from Meaning import ConceptualMeaning
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from test_cs_symbol_table import _cs
+ from Language import Grammar
+ from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature, _existing_row
+@@ -23,7 +23,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
+     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
+     for ref in refs:
+         cs._csw_concept_row(0, ref[1])
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     from index_fixtures import one_hot_unfold
+     store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), read=one_hot_unfold)
+     idea = replace(_meaning(), role_refs=refs)
+diff --git a/test/test_query_vp_boundaries.py b/test/test_query_vp_boundaries.py
+index 165ab051c..b53bb6be3 100644
+--- a/test/test_query_vp_boundaries.py
++++ b/test/test_query_vp_boundaries.py
+@@ -6,7 +6,7 @@ import pytest
+ import torch
+ 
+ from Language import Grammar
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Queries import (
+     GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtConceptualCapability,
+@@ -138,7 +138,7 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
+ 
+ def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
+     cs, _, registry, _, _, _ = _world()
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+     first = store.append_meaning(description, sentence_index=len(store))
+     second = store.append_meaning(description, sentence_index=len(store))
+diff --git a/test/test_query_work_boundaries.py b/test/test_query_work_boundaries.py
+index 370e65bf2..e77541273 100644
+--- a/test/test_query_work_boundaries.py
++++ b/test/test_query_work_boundaries.py
+@@ -6,7 +6,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Queries import THOUGHT_EXECUTORS, ThoughtSignature
+ from QueryWork import QueryWorkBudget, QueryWorkExhausted
+@@ -41,7 +41,7 @@ def test_selected_vp_validation_cannot_read_before_its_allowance(monkeypatch):
+ def test_registry_description_resolution_and_fact_scan_use_one_budget():
+     cs, registry, a, b, context = _world()
+     del a, b, context
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+     slot = store.append_meaning(description, kind="fact", trust=.6)
+     context = _context(cs, store=store)
+diff --git a/test/test_query_work_budget.py b/test/test_query_work_budget.py
+index db3bd6a14..e6c7aa84c 100644
+--- a/test/test_query_work_budget.py
++++ b/test/test_query_work_budget.py
+@@ -6,7 +6,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from Queries import THOUGHT_EXECUTORS, ThoughtSignature
+ from Taxonomy import capture_taxonomy
+@@ -88,7 +88,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
+     cs._csw_concept_row(0, ref[1])
+     meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
+                       role_refs=(ref, None, None))
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+     code = _existing_row(cs, ref)
+     append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)
+diff --git a/test/test_reference_close.py b/test/test_reference_close.py
+index 773a63120..5c757eca2 100644
+--- a/test/test_reference_close.py
++++ b/test/test_reference_close.py
+@@ -6,7 +6,7 @@ import pytest
+ import torch
+ 
+ from ClauseRow import Clause, Composition, attach_clause_index
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from ReferenceClose import ReferenceClose
+ from ReferenceContext import SituationFrame
+@@ -16,7 +16,7 @@ def fixture():
+     from test_cs_sparse_weights import _cs
+     from IdentityRows import point
+     owner = _cs(nS=512, order=3, dim=12)
+-    store = TernaryTruthStore(12, capacity=512)
++    store = LTM0(12, capacity=512)
+     import weakref
+     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
+     resolver = owner.components.reference_close
+@@ -415,7 +415,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
+     assert int(f.store.witness_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
+     occurrence = resolver.last_audit[0]['occurrence']
+     assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
+-    restored = TernaryTruthStore(8, capacity=64)
++    restored = LTM0(8, capacity=64)
+     restored.load_state_dict(f.store.state_dict())
+     restored.load_semantic_extras(f.store.semantic_extras())
+     torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)
+diff --git a/test/test_reference_index.py b/test/test_reference_index.py
+index 32b3ac969..9b2c012f4 100644
+--- a/test/test_reference_index.py
++++ b/test/test_reference_index.py
+@@ -4,13 +4,13 @@ from types import SimpleNamespace
+ 
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from MemoryIndex import unfold_idea
+ 
+ 
+ def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     seen = []
+     def read(value, limit, *, meaning, role, **kwargs):
+         seen.append(meaning.role_refs[role])
+@@ -28,7 +28,7 @@ def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
+ 
+ 
+ def test_only_the_inverted_index_is_owned_or_checkpointed():
+-    store = TernaryTruthStore(4, capacity=8)
++    store = LTM0(4, capacity=8)
+     store.configure_leaf_index(read=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))
+     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
+     b = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([3., 0., 0., 0.])))
+@@ -36,7 +36,7 @@ def test_only_the_inverted_index_is_owned_or_checkpointed():
+     for name in ('leaf_codes', 'leaf_offsets', '_leaf_used'):
+         assert not hasattr(store, name)
+         assert name not in store.state_dict()
+-    restored = TernaryTruthStore(4, capacity=8)
++    restored = LTM0(4, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     assert restored.rows_for_code(2) == (a,)
+diff --git a/test/test_replacement_kernel_contracts.py b/test/test_replacement_kernel_contracts.py
+index a769d9773..48936847e 100644
+--- a/test/test_replacement_kernel_contracts.py
++++ b/test/test_replacement_kernel_contracts.py
+@@ -4,7 +4,7 @@ from dataclasses import replace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from test_cs_symbol_table import _cs
+ from test_thought_model_fixture import model_for
+ 
+@@ -15,7 +15,7 @@ def _world():
+                  for _ in range(4))
+     for ref in refs:
+         cs._csw_concept_row(0, ref[1])
+-    store = TernaryTruthStore(8, capacity=32)
++    store = LTM0(8, capacity=32)
+     model = model_for(cs, store)
+     return model, model.grammatical_thoughts, store, refs
+ 
+diff --git a/test/test_review13_subspaces.py b/test/test_review13_subspaces.py
+index ec0639f1b..f8a870667 100644
+--- a/test/test_review13_subspaces.py
++++ b/test/test_review13_subspaces.py
+@@ -56,11 +56,11 @@ def test_group_uses_native_perceptual_fold_without_letter_concept_rows():
+ 
+ 
+ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     cs, cb, ps, _ = fixture()
+     a, b = word(cs, [(4, 1.)]), word(cs, [(7, 1.)])
+-    store = TernaryTruthStore(5, capacity=8)
++    store = LTM0(5, capacity=8)
+     cs.symbolSpace = SimpleNamespace(ltm_store=store)
+     part = store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b),
+                            symbol=cs.new_concept())
+diff --git a/test/test_selected_nested_meaning.py b/test/test_selected_nested_meaning.py
+index 304a81f8e..71f60fcd7 100644
+--- a/test/test_selected_nested_meaning.py
++++ b/test/test_selected_nested_meaning.py
+@@ -6,7 +6,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore, WhatInteractionMemory
++from Layers import LTM0, WhatInteractionMemory
+ from Models import BasicModel, _append_observed_meaning
+ from test_selected_relation_meaning import _program_owner
+ from reading_fixtures import commit_reading, sentence_state
+@@ -91,7 +91,7 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
+     cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
+     model = BasicModel()
+     model.spaces = []
+-    store = TernaryTruthStore(8, capacity=16)
++    store = LTM0(8, capacity=16)
+     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
+     object.__setattr__(model, "conceptualSpace", cs)
+     object.__setattr__(model, "languageSpace", language)
+@@ -116,7 +116,7 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
+ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write(monkeypatch):
+     _cs, registry, language, entry, _ = _nested(monkeypatch)
+     meaning = language.program_meaning(entry, registry)
+-    store = TernaryTruthStore(8, capacity=1)
++    store = LTM0(8, capacity=1)
+     with pytest.raises(OverflowError, match='forgetting'):
+         store.append_meaning(meaning, kind='observation')
+     assert len(store) == 0
+@@ -126,7 +126,7 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
+     assert len(store) == 0
+ 
+ def _write_selected_observation(language, registry, entry, path):
+-    store = TernaryTruthStore(8, capacity=16)
++    store = LTM0(8, capacity=16)
+     from ClauseRow import attach_clause_index
+     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
+     attach_clause_index(host, store, registry.space)
+diff --git a/test/test_selected_relation_meaning.py b/test/test_selected_relation_meaning.py
+index a51478d01..603cf3e78 100644
+--- a/test/test_selected_relation_meaning.py
++++ b/test/test_selected_relation_meaning.py
+@@ -371,7 +371,7 @@ def test_selected_relation_preserves_declared_outer_polarity(
+ @pytest.mark.parametrize("path", ["forward", "packed"])
+ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
+         monkeypatch, path):
+-    from Layers import SymbolExpectation, TernaryTruthStore
++    from Layers import SymbolExpectation, LTM0
+     from reading_fixtures import commit_reading
+ 
+     cs, _grammar, registry, owner, leaves, program, _a, _b = _program_owner(
+@@ -386,7 +386,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
+         calls.append((depths, payloads, kwargs))
+         return predict(depths, payloads, mask, **kwargs)
+     monkeypatch.setattr(discourse, 'sentence_prediction_cost', capture)
+-    store = TernaryTruthStore(8, capacity=16)
++    store = LTM0(8, capacity=16)
+     monkeypatch.setattr(
+         registry, "execute",
+         lambda *args, **kwargs: pytest.fail("query executed during observation"))
+diff --git a/test/test_sentence_expectation.py b/test/test_sentence_expectation.py
+index da35dcc4b..e20be53f3 100644
+--- a/test/test_sentence_expectation.py
++++ b/test/test_sentence_expectation.py
+@@ -10,7 +10,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import SymbolExpectation, TernaryTruthStore
++from Layers import SymbolExpectation, LTM0
+ 
+ 
+ def layer(batch=1, consolidated=False):
+@@ -21,7 +21,7 @@ def layer(batch=1, consolidated=False):
+     result.set_symbol_bank(torch.eye(result.concept_dim))
+     result.set_symbol_bank(torch.eye(4))
+     if consolidated:
+-        result._ltm_store = TernaryTruthStore(4, capacity=32)
++        result._ltm_store = LTM0(4, capacity=32)
+     return result
+ 
+ 
+diff --git a/test/test_sentence_priming.py b/test/test_sentence_priming.py
+index 239e88e15..c99a034da 100644
+--- a/test/test_sentence_priming.py
++++ b/test/test_sentence_priming.py
+@@ -24,10 +24,10 @@ def test_batch_rows_never_prime_each_other():
+ 
+ def test_part_graph_has_no_edge_cap(monkeypatch):
+     from types import SimpleNamespace
+-    from PartStore import PartStore
++    from LTM1 import LTM1
+     cs, _, _ = _chain_cs()
+     count = 4100
+-    parts = PartStore(capacity=count + 2)
++    parts = LTM1(capacity=count + 2)
+     parts.refs[1:count+1] = torch.stack((torch.arange(1, count+1), torch.arange(2, count+2)), -1)
+     parts.count.fill_(count)
+     monkeypatch.setattr(cs, '_concept_allocator', SimpleNamespace(parts=parts))
+diff --git a/test/test_stored_idea_generation.py b/test/test_stored_idea_generation.py
+index 3307a430b..bc8c0c06a 100644
+--- a/test/test_stored_idea_generation.py
++++ b/test/test_stored_idea_generation.py
+@@ -84,10 +84,10 @@ def test_compound_candidates_are_not_word_emissions(compiled):
+ @pytest.mark.parametrize('reference', [('meta', 1), ('sym', -1), ('sym', 0),
+                                       ('sym', -42), ('sym', True), ('sym', 1.5)])
+ def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Meaning import ConceptualMeaning
+     from Taxonomy import concept_reference
+-    store = TernaryTruthStore(4, capacity=2)
++    store = LTM0(4, capacity=2)
+     calls = []
+     def code_row(reference):
+         calls.append(reference)
+diff --git a/test/test_taxonomy_entry.py b/test/test_taxonomy_entry.py
+index 3a818afcf..925504ca7 100644
+--- a/test/test_taxonomy_entry.py
++++ b/test/test_taxonomy_entry.py
+@@ -4,7 +4,7 @@ from types import SimpleNamespace
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN
+ from test_thought_model_fixture import model_for
+ from test_cs_symbol_table import _cs
+@@ -16,7 +16,7 @@ def _world():
+                  for _ in range(3))
+     for ref in refs:
+         cs._csw_concept_row(0, ref[1])
+-    cs._ltm_store = TernaryTruthStore(8, capacity=16)
++    cs._ltm_store = LTM0(8, capacity=16)
+     return cs, refs, TruthGroundedReasoner(model_for(cs, cs._ltm_store),
+                                           store=cs._ltm_store)
+ 
+diff --git a/test/test_taxonomy_policy.py b/test/test_taxonomy_policy.py
+index 759c3628f..359d43e2a 100644
+--- a/test/test_taxonomy_policy.py
++++ b/test/test_taxonomy_policy.py
+@@ -1,6 +1,6 @@
+ """Normal thought credit and evidence cannot regain world-vector shortcuts."""
+ import torch
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from reasoning import QuerySpec
+ from test_cs_symbol_table import _cs
+@@ -9,7 +9,7 @@ from test_thought_model_fixture import model_for
+ 
+ def _setup():
+     cs = _cs(nS=128)
+-    store = TernaryTruthStore(8, capacity=32)
++    store = LTM0(8, capacity=32)
+     model = model_for(cs, store)
+     refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
+                  for _ in range(3))
+@@ -34,7 +34,7 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
+     store.append_meaning(fact, trust=1, order=order,
+                          evidence=(1., 0.))
+     assert model.reason_about(model.grammatical_thoughts.form('ask', fact)).support_true == 1
+-    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
++    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
+     cs._concept_allocator.parts.remove(a[1], b[1])
+     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
+     assert result.support_true == 0
+@@ -50,7 +50,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
+     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
+     assert len(store) == 0
+     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
+-    model.symbolSpace.ltm_store=TernaryTruthStore(8,capacity=32)
++    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
+     # Remove the derived conclusion as well as its shared-store premises.
+     cs._concept_allocator.parts.remove(a[1],c[1])
+     cs.retire_concept(b[1])
+diff --git a/test/test_taxonomy_public_helpers.py b/test/test_taxonomy_public_helpers.py
+index 42476371b..10c985e83 100644
+--- a/test/test_taxonomy_public_helpers.py
++++ b/test/test_taxonomy_public_helpers.py
+@@ -3,14 +3,14 @@ from types import SimpleNamespace
+ 
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import TruthGroundedReasoner
+ from test_cs_symbol_table import _cs
+ 
+ 
+ def test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence():
+     a, b = torch.eye(8)[:2]
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     from Meaning import ConceptualMeaning
+     store.append_meaning(ConceptualMeaning.from_payload(torch.stack((a, torch.ones(8), b)),
+         depth=3, layout='infix'), kind='fact', trust=1)
+@@ -25,7 +25,7 @@ def test_public_part_helpers_follow_typed_links_without_world_materialization():
+     a, b, c = (("sym", cs.new_concept()) for _ in range(3))
+     cs.add_whole(a[1], b)
+     cs.add_whole(b[1], c)
+-    store = TernaryTruthStore(8)
++    store = LTM0(8)
+     reasoner = TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=store)
+     assert reasoner.is_part_direct(a, b) == (1., "taxonomy")
+     assert len(reasoner.is_part(a, c, materialize=True)[0]["path"]) == 2
+diff --git a/test/test_taxonomy_routing.py b/test/test_taxonomy_routing.py
+index f32f96dfb..2ff268ede 100644
+--- a/test/test_taxonomy_routing.py
++++ b/test/test_taxonomy_routing.py
+@@ -1,14 +1,14 @@
+ """PartOf must obtain evidence from the conceptual taxonomy."""
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner, UNKNOWN
+ 
+ 
+ def test_partof_is_not_established_by_vector_containment():
+     part = torch.tensor([1., 0., 0., 0.])
+     whole = torch.ones(4)
+-    result = TruthGroundedReasoner(store=TernaryTruthStore(4)).evaluate(
++    result = TruthGroundedReasoner(store=LTM0(4)).evaluate(
+         QuerySpec.from_surface("isPart", part, whole))
+     assert result["posture"] == UNKNOWN
+     assert result["support_true"] == 0
+@@ -16,7 +16,7 @@ def test_partof_is_not_established_by_vector_containment():
+ 
+ def test_partof_is_not_established_by_an_ltm1_description():
+     part, whole = torch.eye(4)[:2]
+-    store = TernaryTruthStore(4)
++    store = LTM0(4)
+     from Meaning import ConceptualMeaning
+     store.append_meaning(ConceptualMeaning.from_payload(torch.stack((part, torch.eye(4)[2], whole)),
+         depth=3, layout='infix'), kind='fact', trust=.9)
+diff --git a/test/test_taxonomy_unknown.py b/test/test_taxonomy_unknown.py
+index 64e5592e1..b8014f1ae 100644
+--- a/test/test_taxonomy_unknown.py
++++ b/test/test_taxonomy_unknown.py
+@@ -2,13 +2,13 @@
+ import pytest
+ import torch
+ 
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ from reasoning import QuerySpec, TruthGroundedReasoner
+ 
+ 
+ @pytest.mark.parametrize("predicate", ["exist", "isPart"])
+ def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
+-    reasoner = TruthGroundedReasoner(store=TernaryTruthStore(8))
++    reasoner = TruthGroundedReasoner(store=LTM0(8))
+     first, second = torch.eye(8)[:2]
+     query = QuerySpec.from_surface(predicate, first, second)
+     result = reasoner.evaluate(query, tau=0.)
+diff --git a/test/test_taxonomy_view.py b/test/test_taxonomy_view.py
+index 4d2df7c2e..1a8c918f9 100644
+--- a/test/test_taxonomy_view.py
++++ b/test/test_taxonomy_view.py
+@@ -46,11 +46,11 @@ def test_reified_relation_is_visible_without_endpoint_mutation():
+ 
+ 
+ def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     cs, (a, b, _c) = _world()
+     cs.add_part(b, a)  # raw percept code, not a sym reference
+     cs.add_whole(a, b)  # raw whole-space code, not a sym reference
+-    cs._ltm_store = TernaryTruthStore(4)
++    cs._ltm_store = LTM0(4)
+     from Meaning import ConceptualMeaning
+     cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
+         torch.stack((torch.eye(4)[0], torch.eye(4)[2], torch.ones(4))), depth=3, layout='infix'),
+diff --git a/test/test_ternary_truth_store.py b/test/test_ternary_truth_store.py
+index 1da77623f..1395563d9 100644
+--- a/test/test_ternary_truth_store.py
++++ b/test/test_ternary_truth_store.py
+@@ -2,7 +2,7 @@
+ (doc/specs/mereological-order-raising.md "Two consolidation questions"; Alec
+ 2026-06-18).
+ 
+-``TernaryTruthStore`` combines the LTM end-state chain and the
++``LTM0`` combines the LTM end-state chain and the
+ RelativeTruthStore into ONE tensor of ``(NP1, VP, NP2)`` rows (full idea
+ vectors; Null = zero) + stream membership + a per-row scalar trust:
+ 
+@@ -49,7 +49,7 @@ def _v(*vals):
+ class TestSchema(unittest.TestCase):
+     def test_absolute_idea_is_np_null_null(self):
+         s = _store()
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         r = s.append_idea(_v(1), trust=0.6)
+         self.assertEqual(r, 0)
+         row = s.row(0)
+@@ -169,7 +169,7 @@ class TestOriginProvenance(unittest.TestCase):
+     semantics without touching the other writers' rows."""
+ 
+     def test_append_defaults_conversation_origin(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1))
+         r = s.row(0)
+@@ -177,7 +177,7 @@ class TestOriginProvenance(unittest.TestCase):
+         self.assertIsNone(r['text'])
+ 
+     def test_set_origin_tags_row_and_text(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1), trust=0.4)
+         s.set_origin(0, T.ORIGIN_USER, text="the cat sat")
+@@ -188,13 +188,13 @@ class TestOriginProvenance(unittest.TestCase):
+         self.assertAlmostEqual(r['trust'], 0.4, places=6)
+ 
+     def test_set_origin_out_of_range_raises(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         with self.assertRaises(IndexError):
+             s.set_origin(0, T.ORIGIN_USER)
+ 
+     def test_rows_of_origin_filters_in_row_order(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1))                       # 0: conversation
+         s.append_idea(_v(2))                       # 1: -> provisioned
+@@ -214,7 +214,7 @@ class TestOriginProvenance(unittest.TestCase):
+         self.assertEqual(s.rows_of_origin().tolist(), [])
+ 
+     def test_clear_origin_compacts_survivors_in_place(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1), trust=0.1)            # 0: conversation
+         s.append_idea(_v(2), trust=0.2)            # 1: user
+@@ -242,7 +242,7 @@ class TestOriginProvenance(unittest.TestCase):
+         self.assertEqual(s.clear_origin(T.ORIGIN_USER), 0)
+ 
+     def test_reset_clears_origin_and_texts(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1))
+         s.set_origin(0, T.ORIGIN_USER, text="u")
+@@ -254,7 +254,7 @@ class TestOriginProvenance(unittest.TestCase):
+         self.assertIsNone(r['text'])
+ 
+     def test_origin_rides_state_dict_texts_do_not(self):
+-        from Layers import TernaryTruthStore as T
++        from Layers import LTM0 as T
+         s = _store()
+         s.append_idea(_v(1))
+         s.set_origin(0, T.ORIGIN_USER, text="u")
+diff --git a/test/test_thought_answer_adapters.py b/test/test_thought_answer_adapters.py
+index da3e9249c..09ce65c6d 100644
+--- a/test/test_thought_answer_adapters.py
++++ b/test/test_thought_answer_adapters.py
+@@ -26,8 +26,8 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
+ 
+ 
+ def _stored_query(model, registry, part, whole):
+-    from Layers import TernaryTruthStore
+-    store=TernaryTruthStore(8,capacity=16)
++    from Layers import LTM0
++    store=LTM0(8,capacity=16)
+     store.configure_leaf_index(read=lambda idea,limit,**kwargs:((7,),1,True))
+     model.symbolSpace.ltm_store=store
+     source=registry.form('part',part,whole,mode='assertive')
+@@ -110,8 +110,8 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
+     elif kind == 'concept':
+         query = registry.form('exist', registry._payload(part))
+     else:
+-        from Layers import TernaryTruthStore
+-        model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
++        from Layers import LTM0
++        model.symbolSpace.ltm_store = LTM0(8, capacity=16)
+         query = registry.form('ask', query)
+     entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
+diff --git a/test/test_thought_model_fixture.py b/test/test_thought_model_fixture.py
+index f0bf84aef..7d51f65aa 100644
+--- a/test/test_thought_model_fixture.py
++++ b/test/test_thought_model_fixture.py
+@@ -1,7 +1,7 @@
+ """Small normal model shells for checked-boundary tests (no alternate executor)."""
+ from types import SimpleNamespace
+ from Language import Grammar, OperationSelectionLayer
+-from Layers import WhatInteractionMemory, TernaryTruthStore
++from Layers import WhatInteractionMemory, LTM0
+ from Models import BasicModel
+ from Queries import GrammaticalThoughtRegistry
+ 
+diff --git a/test/test_thought_review.py b/test/test_thought_review.py
+index 464dd6a50..26a538c99 100644
+--- a/test/test_thought_review.py
++++ b/test/test_thought_review.py
+@@ -73,12 +73,12 @@ def test_old_context_checkpoint_resets_policy_and_its_optimizer_moments():
+ 
+ 
+ def test_memory_attention_is_bounded_metered_and_row_local():
+-    from Layers import WhatInteractionMemory, TernaryTruthStore
++    from Layers import WhatInteractionMemory, LTM0
+     from QueryWork import QueryWorkBudget
+     model, registry, _, part, whole = _catalog_world()
+     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode='episode')
+     model.symbolSpace.what_memory = memory
+-    store = model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=16)
++    store = model.symbolSpace.ltm_store = LTM0(8, capacity=16)
+     question = registry.form('part', part, whole)
+     fact = replace(question, mode='assertive')
+     store.append_meaning(fact, kind='fact', trust=.8)
+diff --git a/test/test_truth_grounded_reasoning.py b/test/test_truth_grounded_reasoning.py
+index 349d22072..a0757a11d 100644
+--- a/test/test_truth_grounded_reasoning.py
++++ b/test/test_truth_grounded_reasoning.py
+@@ -1,7 +1,7 @@
+ """Phase 0/1 of truth-grounded reasoning (doc/plans/2026-06-23-truth-grounded-
+ reasoning.md): QuerySpec framing + the hard tools is_true / is_part_direct /
+ evaluate. Unit tests, no trained model -- the reasoner reads a hand-built
+-TernaryTruthStore and an optional model stub.
++LTM0 and an optional model stub.
+ """
+ 
+ import sys
+@@ -15,7 +15,7 @@ import reasoning
+ from reasoning import (QuerySpec, TruthGroundedReasoner,
+                        KIND_IS_TRUE, KIND_IS_PART, KIND_IS_EQUAL,
+                        TRUE, FALSE, UNKNOWN, BOTH)
+-from Layers import TernaryTruthStore
++from Layers import LTM0
+ 
+ 
+ def _v(*xs):
+@@ -65,9 +65,9 @@ class TestQuerySpec(unittest.TestCase):
+ 
+ 
+ def _store(rows_ideas=(), rows_partof=()):
+-    """Build a TernaryTruthStore. rows_ideas = [(vec, trust)]; rows_partof =
++    """Build a LTM0. rows_ideas = [(vec, trust)]; rows_partof =
+     [(np1, np2, trust)]."""
+-    s = TernaryTruthStore(nDim=8, capacity=32)
++    s = LTM0(nDim=8, capacity=32)
+     for vec, trust in rows_ideas:
+         s.append_idea(vec, trust=trust)
+     for np1, np2, trust in rows_partof:
+diff --git a/test/test_truth_text.py b/test/test_truth_text.py
+index 258196b0e..a7c9ebb19 100644
+--- a/test/test_truth_text.py
++++ b/test/test_truth_text.py
+@@ -3,7 +3,7 @@ from pathlib import Path
+ import pytest
+ import torch
+ from ClauseRow import Clause
+-from Layers import ConceptAllocator, TernaryTruthStore
++from Layers import ConceptAllocator, LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
+diff --git a/test/test_two_codebook_meta_taxonomy.py b/test/test_two_codebook_meta_taxonomy.py
+index b39595be0..16fea4b5c 100644
+--- a/test/test_two_codebook_meta_taxonomy.py
++++ b/test/test_two_codebook_meta_taxonomy.py
+@@ -47,9 +47,9 @@ def _word_concept(model, raw):
+ 
+ def _idea_store(model):
+     from ClauseRow import attach_clause_index
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     owner = model._concept_owner()
+-    store = TernaryTruthStore(int(owner.outputShape[-1]), capacity=8)
++    store = LTM0(int(owner.outputShape[-1]), capacity=8)
+     attach_clause_index(model, store, owner)
+     return store
+ 
+diff --git a/test/test_unified_thought_controller.py b/test/test_unified_thought_controller.py
+index 47945e2a1..92d092a78 100644
+--- a/test/test_unified_thought_controller.py
++++ b/test/test_unified_thought_controller.py
+@@ -193,9 +193,9 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
+ @pytest.mark.parametrize('budget', [0, 1, 6, 12, 24])
+ @pytest.mark.parametrize('with_expectation', [False, True])
+ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_expectation):
+-    from Layers import TernaryTruthStore, SymbolExpectation
++    from Layers import LTM0, SymbolExpectation
+     model, registry, memory, part, whole = _catalog_world()
+-    model.symbolSpace.ltm_store = TernaryTruthStore(8, capacity=32)
++    model.symbolSpace.ltm_store = LTM0(8, capacity=32)
+     question = registry.form('isPart', part, whole)
+     if with_expectation:
+         from test_sentence_expectation import observe
+diff --git a/test/test_word_interpretation.py b/test/test_word_interpretation.py
+index a938067c4..343d04381 100644
+--- a/test/test_word_interpretation.py
++++ b/test/test_word_interpretation.py
+@@ -226,7 +226,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
+     The closing receives resolved objects and never performs lexical resolution.
+     """
+     from dataclasses import replace
+-    from Layers import TernaryTruthStore
++    from Layers import LTM0
+     from Models import _append_observed_meaning
+     from test_selected_relation_meaning import _program_owner
+     cs, _, registry, language, _, make_program, _, _ = _program_owner(monkeypatch)
+@@ -261,7 +261,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
+     meaning = language.program_meaning(entry, registry)
+     assert meaning.role_refs[0] == ('sym', int(refs[0]))
+     assert meaning.role_refs[2] == ('sym', int(refs[1]))
+-    store = TernaryTruthStore(leaves.shape[-1], capacity=8)
++    store = LTM0(leaves.shape[-1], capacity=8)
+     from ClauseRow import attach_clause_index
+     from types import SimpleNamespace
+     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
+diff --git a/test/tetralemma_audit.py b/test/tetralemma_audit.py
+index 5cb3b3d1a..fee2d8844 100644
+--- a/test/tetralemma_audit.py
++++ b/test/tetralemma_audit.py
+@@ -36,7 +36,7 @@ SITES = {
+     'bin/ClauseJournal.py': {'finish_clause': ['pair', 'evidence']},
+     'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
+     'bin/Understanding.py': {'AnswerProgram.__post_init__': []},
+-    'bin/Layers.py': {'TernaryTruthStore.append_meaning': ['evidence']},
++    'bin/Layers.py': {'LTM0.append_meaning': ['evidence']},
+     'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
+ }
+ 

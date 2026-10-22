@@ -17,18 +17,21 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 1 and R10 are complete as mechanisms. R10's
-reviewed source `23a41540f` passes its one five-file run: 111 passed and
-four existing prerequisite skips, with every assertion unchanged and the
-record-value and read-isolation checks passing. [Claude approves publication](doc/benchmarks/2026-10-21-item3-5-r10-final/claude-review.md);
-source and [receipts](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)
-land on both mains with the WikiOracle bump. The earlier failed run stays
-retained at `58722725d`. **Next: line 2, step 2**, under the
-[decided spec §§10–12](doc/plans/2026-10-21-step2-one-ltm.md), starting with
-the saved-class-path check and the class rename as its own commit, then
-2a's safe culls. The two arrival-plan notes are carried into 2c. The new
-fixture-only stop-rule exception is recorded in reconstruction spec §17.
-No fresh series, sweep or learning claim. Item 3.0 has not been reached.
+**Current:** Item 3.5 line 1 and R10 are published. R10 landed at
+`e243d7bdf` (WikiOracle `2ffda78`), with its unchanged assertions, 111
+passes and four existing skips; the earlier failure stays retained.
+**Line 2, step 2a:** the separate class rename is frozen at `eb6980e7d`.
+The saved-class-path audit found no dependency on the old names in 91
+files; its eight-file set passes 113 cases with seven existing skips and
+its regression files pass 85. The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
+and [dated cull preflight in spec §14](doc/plans/2026-10-21-step2-one-ltm.md#14-codex-cull-preflight--2026-10-22-for-claude-and-alec)
+have Claude's approval for the rename alone; the parent import check is
+clean. No columns have been culled: several listed
+fields still lack their proposed derived source, and their exact restore
+contracts need a disposition before removal. [Spec §15](doc/plans/2026-10-21-step2-one-ltm.md#15-claudes-review-of-the-rename-and-culls--2026-10-22-decisions-for-alec)
+records Claude's recommendations for Alec; further storage changes stop
+there. These culls remain on step 2's line; 2b and 2c are unstarted. The two R10 arrival-plan notes stay in
+2c. No fresh series, sweep or learning claim. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -700,10 +703,14 @@ not by a passing identity lesson.
    Remaining root-participant semantics are [review follow-ups](doc/FutureWork.md#root-participant-positions-review-follow-up-2026-10-21);
    line 1's grammar contract and reconstruction term are Done at reviewed
    source `3a9db635e`, receipts `63c600712` ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
-   R10 is Done at reviewed source `23a41540f`: the named preview token
+   R10 is Done at landing `e243d7bdf` (WikiOracle `2ffda78`), reviewed
+   source `23a41540f`: the named preview token
    retains content, and its approved fixture correction passes every scoped
    gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
-   Step 2 is next, with its separate class rename and then the safe culls.
+   Step 2a's separate rename is frozen at `eb6980e7d`, with its scoped
+   gates passing. The culls remain outstanding pending the
+   [§14 disposition](doc/plans/2026-10-21-step2-one-ltm.md#14-codex-cull-preflight--2026-10-22-for-claude-and-alec);
+   no row-reduction or step-2 completion is claimed.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
@@ -1425,7 +1432,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Item 3.5 R10 — named token content before the close:** reviewed source `23a41540f`; exact authorized fixture correction, 111 scoped passes and four existing prerequisite skips, Claude verdict publish ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
+- **Item 3.5 R10 — named token content before the close:** landing `e243d7bdf` (WikiOracle `2ffda78`), reviewed source `23a41540f`; exact authorized fixture correction, 111 scoped passes and four existing prerequisite skips, Claude verdict publish ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
 
 - **Item 3.5 line 1 — grammar-only reference sites and reconstruction reads the bind:** landing `a514a71e0` (WikiOracle `b49960a`), reviewed source `3a9db635e`, receipts `63c600712`; Claude verdict land, all scoped gates pass, R10 follows separately ([receipt](doc/benchmarks/2026-10-21-item3-5-reference-reconstruction/README.md)).
 

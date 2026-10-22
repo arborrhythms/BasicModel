@@ -1,0 +1,126 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+    "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+    "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+  ],
+  "completed": [
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+    "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+    "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+    "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+    "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+    "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+    "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03632270800881088,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_later_ball_mention_preserves_the_boxs_key_members_and_count[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020687542157247663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_arrival_cannot_merge_a_pending_token_with_other_members",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007515541044995189,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006440834142267704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_own_content_excludes_an_observed_incompatible_antecedent[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006804957985877991,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005860457895323634,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00569341704249382,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.043067875085398555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_thought_bind_is_credited_only_by_episode_advantage[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04917529202066362,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_review10.py::test_merging_into_an_anonymous_token_adopts_the_joined_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006678084144368768,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,5 +1,19 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2a rename, frozen source `eb6980e7d`, 2026-10-22:** R10 is
+published at BasicModel `e243d7bdf` / WikiOracle `2ffda78`. The separate
+class rename passes the saved-class-path audit and its requested gates:
+113 passes / seven existing skips in the eight-file set, 85 regression
+passes. No column, layout, ownership or assertion semantics changed.
+The [receipt](../2026-10-22-item3-5-step2a-rename/README.md) and
+[step-2 spec §14](../../plans/2026-10-21-step2-one-ltm.md#14-codex-cull-preflight--2026-10-22-for-claude-and-alec)
+record the source and the pre-cull questions for Claude and Alec. Claude
+approves the rename; its additional parent import check is clean. Spec
+§15 records the cull recommendations awaiting Alec. No gate failed; a first
+diagnostic setup rejection is retained beside its corrected
+probe. The row culls and 2b/2c remain outstanding; no sweep or learning
+claim, and no item-3.0 transition.
+
 **R10 corrected source `23a41540f`, 2026-10-21:** Alec approved the exact
 fixture patch in reconstruction spec §17. The [new receipt](../2026-10-21-item3-5-r10-final/README.md)
 records 111 passed and four existing prerequisite skips, with no failures,

@@ -67,3 +67,6 @@ retained, and no gate or sweep is repeated at publication.
 Publish this source and these receipts to BasicModel main, then bump and
 publish WikiOracle main. Step 2 starts afterwards with the class-path check
 and separate rename commit. No learning claim.
+
+Publication completed at BasicModel **`e243d7bdf`** and WikiOracle
+**`2ffda78`**, both on their remote mains. No gate was repeated at landing.
