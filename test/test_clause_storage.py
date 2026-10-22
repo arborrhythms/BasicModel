@@ -20,7 +20,7 @@ def test_end_row_has_shared_references_and_field_coordinates():
     assert store.refs.shape == (8, 3)
     assert store.refs.dtype == torch.int64
     assert bool((store.refs == -1).all())
-    assert store.where.shape == store.when.shape == (8, 4)
+    assert store.when.shape == (8, 4)
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
@@ -93,7 +93,6 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     torch.testing.assert_close(store.meaning_of(row).roles[0], clause.point)
     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]
     assert store.refs[row].tolist() == [-1, -1, -1]
-    torch.testing.assert_close(store.where[row], clause.where)
     from Spaces import WhenEncoding
     from Occurrence import document_digest
     assert int(store.sentence_index[row]) == 0

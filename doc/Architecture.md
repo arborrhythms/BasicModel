@@ -1392,8 +1392,14 @@ band. Absolute model time is separate and appears only in the LTM timestamp
 column. The situation code in content, and learned before/after operators,
 remain item 5.5 work.
 
-**Consequently (Alec, 2026-09-25): every LTM row carries a `.where` and a
-`.when`**, the field's pair, written once by the closing (item 7). **`.where`
+**Updated (Alec, 2026-10-22, step-2 spec §16):** LTM rows retain `.when`;
+input location stays with the percepts. The LTM0 `where` column, its row
+export and `SituationFrame.where` are removed. Loading an older checkpoint
+discards that retired column while preserving `.when`.
+
+**Historical (Alec, 2026-09-25; row `.where` superseded above): every LTM
+row carried a `.where` and a `.when`**, the field's pair, written once by
+the closing (item 7). **`.where`
 uses one address space over input and stored percepts**: input positions
 come first, then PartSpace and WholeSpace rows, then one address per symbol
 pole. A word's percept and symbol occurrences carry its input byte start,

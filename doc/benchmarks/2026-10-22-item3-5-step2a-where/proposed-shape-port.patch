@@ -1,0 +1,12 @@
+diff --git a/test/test_clause_storage.py b/test/test_clause_storage.py
+--- a/test/test_clause_storage.py
++++ b/test/test_clause_storage.py
+@@ -20,7 +20,7 @@ def test_end_row_has_shared_references_and_field_coordinates():
+     assert store.refs.shape == (8, 3)
+     assert store.refs.dtype == torch.int64
+     assert bool((store.refs == -1).all())
+-    assert store.where.shape == store.when.shape == (8, 4)
++    assert store.when.shape == (8, 4)
+ 
+ 
+ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():

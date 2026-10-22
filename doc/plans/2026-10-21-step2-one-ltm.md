@@ -4,12 +4,14 @@
 round boundaries and open choices below. R10 is published at `e243d7bdf`
 (WikiOracle `2ffda78`). Round 2a's separate rename is reviewed at
 `eb6980e7d`: the saved-class-path check and scoped gates pass, and Claude
-approves publication. The [rename receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
-records that evidence. **Further storage changes stop at §§14–15 for
-Alec's cull dispositions.** None of §10's listed culls has a complete
-derived source today; retaining them now is already required by its
-conditional rule. Original code facts below describe `cf61b5678`; old
-class names in those historical facts locate that source.
+approved its publication at `804d8adcb` (WikiOracle `dbd9b52`). The
+[rename receipt](../benchmarks/2026-10-22-item3-5-step2a-rename/README.md)
+records that evidence. **Alec's cull decisions are §16:** 2a removes
+`where`, keeps `.when`, and leaves the other columns until their decided
+replacement. §17 authorizes the remaining shape-test port. The
+[where receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
+tracks this source and its gates. Original code facts below describe
+`cf61b5678`; old class names in those historical facts locate that source.
 
 
 **Names used below.** LTM0 is the occurrence rows, held today by the class
@@ -493,6 +495,10 @@ to replace source addresses. So the rounds change first, then the answers.
   `grammatical_mode` (a question is an open reference), each only where
   its readers already have the derived source. 2a removes nothing from
   `_semantic_rows`, the address columns, `order` or `stream`.
+  *Corrected 2026-10-22 (§§14–16): these examples were wrong about the
+  code, and no listed field had a derived source. Alec's dispositions are
+  in §16: `where` comes off the row in 2a, polarity is semantic and
+  stays, and the rest stay until 2b replaces them.*
 - **2b:** LTM1 under LTM0, the tagged references, the layouts below, the
   sidecar's structural content moved into LTM1 rows, then those sidecar
   keys deleted. Source addressing stays.
@@ -786,3 +792,85 @@ match. These fields remain explicit work on step 2's line until their
 disposition is recorded; no cull, representation port or admission change
 has been implemented. The two R10 arrival observations remain in 2c.
 No learning claim, no second sweep, and item 3.0 has not been reached.
+
+## 16. Claude's review of step 2a; decided (Alec, 2026-10-22)
+
+Reviewed: frozen source `eb6980e7d`, published with WikiOracle `dbd9b52`;
+its receipt; §§14–15; and the delegated
+[review](../benchmarks/2026-10-22-item3-5-step2a-rename/claude-review.md).
+
+**The rename is correct and published.** The class-path audit, the
+identifier-only source audit and 198 passes with seven existing skips
+support it.
+
+**The culls: Codex was right to stop.** §10's examples were mine and were
+wrong about the code. `refs` has live maintenance readers; `where` is
+stamped at every close; the adjacency columns are data that no reader
+rebuilds; and polarity and mode carry information that the lanes and open
+references cannot recover. Spot-checked: `ClauseJournal.bands` stamps
+`where` from the words' input positions, and `append_meaning` folds
+polarity into the lanes only when no evidence pair is supplied.
+
+**Decided (Alec).**
+
+1. **`where` comes off the LTM row in 2a.** Alec: ".where is associated
+   with all percepts. .when is associated with LTM." The column holds the
+   encoded input position of the sentence's first word, copied from its
+   percepts at the close, and nothing computes with it. The row export and
+   `SituationFrame` stop carrying it, and `test_clause_storage.py` drops
+   its exact-value check of `where`; that port is authorized. Location
+   stays with the percepts.
+2. **Polarity is semantic and stays.** Alec: "Polarity is semantic; since
+   they are always paired, I would expect the first of the pair to be pos
+   evidence, and the second of the pair as neg evidence." Polarity is a
+   field of the meaning, and the evidence pair is always (positive,
+   negative) for the meaning as stated. Live closes already write that way.
+   Writes without an explicit pair (`append_estimate`, the observation in
+   `append_expectation_pair`, and `append_idea` without evidence) swap the
+   pair for a negative meaning; 2b removes that swap. Any existing
+   assertion that depends on the swap comes back to Alec.
+3. **Kept until 2b replaces them**, as §10's conditional rule already
+   requires:
+   - `refs`, retired when tagged references replace it; the coarsening
+     fixture's port is proposed then;
+   - `metadata_required` and `semantic_fingerprint`, kept while they
+     authenticate sidecar content;
+   - leaf postings and `leaf_complete`, after 2b decides the S10 restore
+     contract;
+   - `adjacent_*`, retained data, after 2b decides whether word-pair wholes
+     become LTM1 rows or stay a justified column;
+   - `grammatical_mode`, kept until 2b's question layout exists; 2b also
+     decides what happens to legacy `unspecified` rows.
+
+   `rel_type` has nothing left to cull. Where 2b chooses a representation
+   above, it comes to Claude and Alec as a dated spec question with a
+   recommendation.
+
+## 17. The remaining `where` shape check — 2026-10-22
+
+§16 authorizes removing the exact-value check at
+`test/test_clause_storage.py:96`. The same file also asserts at line 23:
+
+```python
+assert store.where.shape == store.when.shape == (8, 4)
+```
+
+The authorized representation port is exactly:
+
+```python
+assert store.when.shape == (8, 4)
+```
+
+This removes only the expectation that the deleted column exists and
+preserves the entire time-shape check. The
+[patch](../benchmarks/2026-10-22-item3-5-step2a-where/proposed-shape-port.patch)
+is retained for review. **Alec authorized this shape-check port on
+2026-10-22**, in the handoff conversation. It is applied with the original
+exact-value removal; every other assertion is unchanged. No existing test
+was run or failed before the authorization, and it uses no setup exception.
+
+The constructor in `test_independent_components.py` also supplied
+`where=` to `SituationFrame`. Removing that unused fixture argument follows
+the decided frame API removal; all of its assertions remain verbatim.
+No production or existing-test failure is being treated as a same-round
+setup exception.

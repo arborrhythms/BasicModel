@@ -8762,7 +8762,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('forget_cutoff', torch.tensor(0.))
         self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
-        self.register_buffer('where', torch.zeros(capacity, 4))
         self.register_buffer('when', torch.zeros(capacity, 4))
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
         self.register_buffer('truth_schema', torch.tensor(10, dtype=torch.long))
@@ -9330,6 +9329,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         legacy_trust = state_dict.pop(prefix + 'trust', None)
         if legacy_trust is not None:
             state_dict.setdefault(prefix + 'source_trust', legacy_trust)
+        # Input position belongs to percepts, not retained occurrences.
+        state_dict.pop(prefix + 'where', None)
         self._resize_checkpoint_rows(state_dict, prefix)
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
@@ -9352,7 +9353,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                           UserWarning, stacklevel=2)
             state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
         state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
-        for name in ('refs', 'row_ids', 'where', 'when', 'truth_schema'):
+        for name in ('refs', 'row_ids', 'when', 'truth_schema'):
             state_dict.setdefault(prefix + name, getattr(self, name).clone())
 
         semantic_keys = (
@@ -9848,7 +9849,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             'corners': self.corners(i),
             'refs': self.refs[i].clone(),
             'row_id': int(self.row_ids[i]),
-            'where': self.where[i].clone(),
             'when': self.when[i].clone(),
             'surprise': float(self.surprise[i].item()),
             'origin': int(self.origin[i].item()),
@@ -10091,7 +10091,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                    'grammatical_mode', 'polarity', 'address_keys', 'document_keys',
                    'sentence_content_keys', 'sentence_index', 'witness_count',
                    'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
-                   'source_trust', 'refs', 'row_ids', 'where', 'when', 'order', 'stream',
+                   'source_trust', 'refs', 'row_ids', 'when', 'order', 'stream',
                    'leaf_complete')
         minus_one = {'surprise', 'address_keys', 'sentence_index', 'refs', 'row_ids', 'order'}
         for name in columns:
@@ -10140,7 +10140,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.refs.fill_(-1)
         self.row_ids.fill_(-1)
         self.order.fill_(-1)
-        self.where.zero_()
         self.when.zero_()
         self.leaf_complete.zero_()
         self._leaf_postings, self._index_occurrences = {}, AddressIndex()

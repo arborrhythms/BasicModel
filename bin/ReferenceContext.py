@@ -57,7 +57,6 @@ class SituationFrame:
     row_id: int
     point: object
     order: int = 1
-    where: object = None
     when: object = None
     symbol_ids: tuple = ()
     activations: tuple = ()
@@ -69,7 +68,6 @@ class SituationFrame:
     def detached(self):
         return replace(self, roles=self.roles.detach().clone(),
                        point=None if self.point is None else self.point.detach().clone(),
-                       where=None if self.where is None else self.where.detach().clone(),
                        when=None if self.when is None else self.when.detach().clone())
 
     @classmethod
@@ -80,8 +78,7 @@ class SituationFrame:
         return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
                    meaning.role_mask, row['row_id'],
                    meaning.roles[0].detach().clone() if meaning.sentence_kind == 'idea' else None,
-                   order=int(row.get('order', -1)),
-                   where=row.get('where'), when=row.get('when'))
+                   order=int(row.get('order', -1)), when=row.get('when'))
 
 
 def shifted_order(stamp, delta):

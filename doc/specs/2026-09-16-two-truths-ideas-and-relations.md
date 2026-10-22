@@ -133,8 +133,12 @@ them, and what is a row at all**
   | access count | yes | yes | forgetting; recurrence mints a concept from LTM0 (renamed from `witness_count`) |
   | `surprise` | yes | yes | the residual at the moment of writing, read by item 5's retention beside the access count; not recomputable later |
 
-  Nothing else. `.where` is already inside the concept's reserved band
-  and needs no column unless an index independent of content is wanted.
+  **Updated (Alec, 2026-10-22, step-2 spec §16):** `.where` belongs to
+  percepts and comes off the LTM0 row; `.when` stays. Row exports and
+  situation frames do not carry a duplicate input-location stamp.
+  The earlier claim that this stamp was derivable from the stored concept
+  is withdrawn; no such reader exists. The other proposed culls below are
+  governed by step-2 spec §§10–12 and §16, not by this earlier removal list.
   *Two notes for the step 1b audit:* the per-dimension *withheld* mark of
   `non` (expectation spec §4.6) is content — a mark beside the lanes in the
   concept — not a column; and `IntraSentenceLayer`/`intraLossWeight`, still
@@ -413,7 +417,12 @@ share one index, no new reference mechanism exists.
 
 ### 3.1 Idea rows (decided)
 
-*Amended (Alec, 2026-09-25, item 9b):* the row schema gains **`.where`
+*Amended (Alec, 2026-10-22, step-2 spec §16):* the LTM0 row, row export
+and situation frame no longer retain `where`. Location remains with the
+percepts; the stored `.when` and its model-time interpretation are unchanged.
+
+*Historical amendment (Alec, 2026-09-25, item 9b; row `.where` superseded
+above):* the row schema gains **`.where`
 and `.when`**, the ended field's one bracket and one interval, written
 once per row by the closing beside `refs`, the surprise column and the
 `(c⁺, c⁻)` pair. A row's address is its `.when` alone; its `.where`

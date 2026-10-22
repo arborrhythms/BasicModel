@@ -241,7 +241,7 @@ class ClauseRows:
             row_id=symbol, refs=part['refs'].clone(), readings=readings,
             evidence=pair, trust=pair[0]-pair[1], source_trust=0.,
             kind='observation' if any(pair) else 'unverified', order=alloc.order_of(symbol),
-            where=roles.new_zeros(4), stream=(), pending=False,
+            stream=(), pending=False,
             metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None)
 
     def location(self, reference):
@@ -558,8 +558,6 @@ class ClauseRows:
                 **addresses[id(value)])
             if row >= before_count:
                 self.when[row].copy_(closing.when)
-            if value.where is not None:
-                self.where[row].copy_(value.where.to(self.where))
             if origin is not None:
                 self.set_origin(row, origin, text=text if asserted else None)
             rows[id(value)] = row
