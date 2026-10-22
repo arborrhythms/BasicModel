@@ -321,6 +321,37 @@ IS raises by collecting members, and these three lower by landing among
 them. This supersedes §5's count for predications, under which a
 sentence about individuals was order 2.
 
+**Amended (Alec, 2026-10-22): determiners select; only NP + VP and VP + MP
+lower.** "Determiners might not even be dropping the order: they might just
+be selecting one of a plurality, and leaving the order untouched. Which
+means only NP VP and VP MP combinations are dropping the order." A
+determiner picks one of a plurality, and the phrase's order is the order
+of what it picks, read by lookup: a member of a kind is an individual, a
+shaped portion of a mass is an individual. So "the water" is an individual
+at order 1, as §7 has it: "It is a count noun as an elision of 'the glass
+of water', and a mass noun that needs a shape or form in 'the cup of
+water'." The §7 question below is closed. And "raises and lowers had been
+sigmas and pi's within the context of the grammar, and we can leave them
+calling those operations, but order assignment is by lookup these days
+(which is set by equivalence classes, not calling these methods)": `lift`
+and `lower` keep their numerical folds, and a constituent's order is read
+from the concept it denotes, whose order the equivalence classes set. The
+two lowerings are facts about what the compositions denote, an occurrence
+and a difference, one order below their subject, which the lookup returns.
+Credit: "binds should just be adding to the MTM pool, which is input to
+output prediction, so binds should get credit assignment through the
+derivative"; raises carry no price of their own either.
+
+**Modals (Alec, 2026-10-22; for 3.5 step 5).** "Verbs and nouns are both
+of the same order ... So modals may also be of that order. But MPs are
+differences of VPs just as VPs are differences of NPs (not really
+differences, but diagonals within quadratics). Running and walking are
+both possibilities for Joe's movement. So they should be treated
+analogously to VPs." The step-5 spec builds the modal as the second
+difference in that form: a group over a noun phrase's alternative verb
+phrases, a diagonal per modal in a shared basis, as step 4 builds the verb
+over an identity's occurrences.
+
 **Explicit and implicit definitions, judged together.** Alec: "multiple
 DEF in LTM1 can be used to train the fold being used in the symbolic
 order loop, and that's really all we need for integration. We can keep
@@ -346,6 +377,10 @@ places a concept before anything is said about it, and grades similarity.
 The explicit meaning is exact, can be stated and recalled, and raises
 order. A concept with only an implicit meaning is a placed order-0 type.
 A concept with only an explicit meaning has not yet been met in use.
+The basis of a class's identity, the intersection that is its invariant
+or the union that is its extension, is kept open in
+[FutureWork](FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21)
+(Alec, 2026-10-22: important for kinds and for the Buddhist reading).
 
 **The surface places the concepts (Alec, 2026-10-22).** "We are doing
 explicit spreading over the priming surface, and then using the activation
@@ -399,10 +434,8 @@ speech").
 
 **Open, decided with item 3.**
 
-- *A determined mass or event noun.* §7 (2026-10-16) makes "the water" an
-  individual at order 1, collected by continuity. The lowering rule with
-  its stop at 0 would leave it at 0. The same question applies to "the
-  explosion".
+- *A determined mass or event noun.* Closed above (2026-10-22): the
+  determiner selects, and "the water" is an individual at order 1.
 - *Where a definition is stored.* Step 2 reads a relation's stratum from
   its argument tags, so both "this is Felix" and "Felix is a cat" are
   LTM1 rows. Alec's reading would store each in the stratum of the class

@@ -1019,6 +1019,19 @@ things above:
 - Whether this section moves to its own spec when item 3.5 reaches the
   verb line; the first difference is that line's teacher.
 
+**Direction (Alec, 2026-10-22; the step-5 spec works it out).** "Verbs
+and nouns are both of the same order, contrary to what I had thought
+before. So modals may also be of that order. But MPs are differences of
+VPs just as VPs are differences of NPs (not really differences, but
+diagonals within quadratics as we discussed before). Running and walking
+are both possibilities for Joe's movement, as an example. So they should
+be treated analogously to VPs." So the second bullet's possible situation
+is an alternative verb phrase of the same noun phrase, neither a minted
+world nor a lane, and the modal is a group over those alternatives with a
+diagonal per modal in a shared basis, built as §14.1 builds the verb.
+Necessity as the dual stays Claude's recommendation. The section moves to
+its own spec when step 5 starts (last bullet).
+
 ## 11. References
 
 Bybee, J., Perkins, R., & Pagliuca, W. (1994). *The Evolution of Grammar.*

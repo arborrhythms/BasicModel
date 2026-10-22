@@ -1757,6 +1757,14 @@ pair seen from the shared index — a symbol is one situated occurrence, a
 concept is the meet over occurrences, the set of a symbol's activations is
 the union — and a minted individual carries all three.
 
+Which basis the mechanism uses, and where, remains open
+([FutureWork](FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21)):
+today a token's content is read as the union of its occurrences, and a
+mention is tested against it by the meet. Alec (2026-10-22) keeps the
+question open on purpose, for what it says about kinds and for the
+Buddhist reading above: a self read by intersection has an essence, a
+self read by union is only its occurrences, designated and never found.
+
 ## Explicit and Implicit Definitions, Judged Together (Alec, 2026-10-21)
 
 Order is learned in two ways. Implicitly, a fold collects two things that

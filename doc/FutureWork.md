@@ -34,6 +34,9 @@ pruning of learned columns using their relevance scales.
 
 ## Placement from the registered priming surface: one metric for SBOW, diffusion and `bind` (Alec, 2026-10-20; proposed, with the objective to decide)
 
+**Decided (Alec, 2026-10-22): the objective stands as proposed**, in the
+one conceptual space of [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
+
 Alec: "can the priming surface be used to do the SBOW after registering
 the context on that surface? I think there is a shared metric here that we
 are not taking advantage of."
@@ -1641,3 +1644,7 @@ intersection as a cache kept while each member's meet with it stays high,
 the set otherwise. Open: which basis the token's read uses for binding and
 which for characterizing the individual, or whether both are kept, as for
 explicit and implicit definitions.
+Alec (2026-10-22): the basis is important for kinds and for the Buddhist
+reading; it is noted in [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3) and in
+[Philosophy](Philosophy.md#identity-by-intersection-and-by-union-the-materialist-and-the-uncollapsed-models-alec-2026-10-20),
+and stays here as future work.

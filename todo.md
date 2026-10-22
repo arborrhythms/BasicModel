@@ -729,8 +729,10 @@ not by a passing identity lesson.
    - **Stage 4e, constituents**, to a passing gate under
      [parts-of-speech §5a](doc/specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
      (behaviors, no operator named): the next pass from the stage-3
-     artifact with stage scoping of the menu and Alec's choice (a)/(b) on
-     the chooser's reference variants
+     artifact with stage scoping of the menu and, **decided (Alec,
+     2026-10-22), one action per operator**: the per-referent copies of a
+     determiner leave the compose menu, the grammar chooses the
+     operation, and the close's `bind` chooses the member
      ([5.5 plan, "Next pass"](doc/plans/2026-10-17-item5-5-start.md)); the
      [2026-10-17 gate failure](doc/benchmarks/2026-10-17-stage4e/) and the
      [§5a regrade of the archived description rows](doc/benchmarks/2026-10-19-np-continuation/)
@@ -832,6 +834,15 @@ not by a passing identity lesson.
      Modality": a verb's event, determined by its tense, aspect or modal
      operation, would be an MTM object bindable like a noun phrase. Spec
      with step 5.
+   - *Direction (Alec, 2026-10-22, [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)):*
+     modals are of the same order as verbs and nouns; "MPs are differences
+     of VPs just as VPs are differences of NPs (not really differences, but
+     diagonals within quadratics)"; "running and walking are both
+     possibilities for Joe's movement"; treat them analogously to VPs. The
+     step-5 spec builds the modal as step 4 builds the verb: a group over
+     a noun phrase's alternative verb phrases, a diagonal per modal in a
+     shared basis. This answers occurrence §14.5's possible situation:
+     an alternative VP, neither a minted world nor a lane.
    - **The second difference: the modal as the verb phrase's preposition
      over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
@@ -850,12 +861,12 @@ not by a passing identity lesson.
      output typing deferred (§4).
 
    *From item 5.5* (its entry above; [mechanism-round review and follow-ups](doc/plans/2026-10-17-item5-5-start.md#review-of-the-55-mechanism-round-claude-2026-10-17-evening--approve-to-sweep-and-land-with-four-disclosures-and-one-decision)):
-   - Retire the legacy clock `timestamp` column and `Clause.eternal`
-     (2026-10-20: `.when` is model time in the row's column; the stream is a
-     context whole — two truths §1 row table);
-     recency by the row's source-addressed chain, replacing `get_stm_chain`
-     across batch rows (two truths §21); decide the `timestamp` column's
-     fate with the recency use.
+   - *Checked 2026-10-22:* the legacy `timestamp` column is dropped at load
+     and `Clause.eternal` is gone; nothing to retire. **Recency is store
+     order, as landed** (Alec, 2026-10-22): `get_stm_chain` reads a stream's
+     rows oldest first and re-witnessing keeps a row's place. When context
+     wholes replace the stream column, the chain becomes the stream whole's
+     rows in `.when` order, the same order; nothing else to build.
    - The **learned surface transformations and their inverses** (absorb and transpose; split and insert left the grammar, occurrence §12/§13.1)
      replacing the English analyzer, `surface` as one operator with four
      suboperations trained by reconstruction under parsimony; removes the
@@ -919,20 +930,20 @@ not by a passing identity lesson.
      live caller today and must wait for that second row. This creates
      individuals ("this is Felix, that is Felix": 0 to 1) and kinds
      ("Felix is a cat, Ciao is a cat": 1 to 2).
-   - **Return to S0 by lowering.** Three compositions each lower one
-     order, stopping at 0: the determiner, whose output then follows
-     its noun's order instead of the fixed order 1
-     (`ReferenceContext.operation_order`); NP + VP, predication
-     (`LiftLayer.order_delta` becomes one down); and VP + MP, the
-     modal over possibilities. 3.5's step 5 builds the modal itself;
-     its lowering is this line's. The determiner's change comes after
-     the raise works, since every noun starts at order 0.
-     Open, to decide before building: [Orders §7](doc/Orders.md#7-grammatical-operations-are-order-operations)
-     (2026-10-16) makes a determined mass noun ("the water") an
-     individual at order 1, while the lowering rule would leave it at
-     0; "the explosion" raises the same question. The comments at
-     `Language.py` ≈627 and ≈1577 still say `lift` raises order;
-     `LiftLayer.order_delta` is 0 today.
+   - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
+     Two compositions lower one order: NP + VP, predication, and VP + MP,
+     the modal over possibilities. A determiner does not: it selects one
+     of a plurality, and the phrase's order is that of what it selects,
+     by lookup (a member of a kind, or a shaped portion of a mass, is an
+     individual; "the water" is order 1). Order assignment is by lookup
+     throughout: `lift` and `lower` keep their sigma and pi folds, and the
+     stamp machinery (`ReferenceContext.operation_order`, `result_order`,
+     `LiftLayer.order_delta`) gives way to reading the denoted concept's
+     order, set by the equivalence classes. 3.5's step 5 builds the modal
+     itself; its lowering is this line's. Raises carry no price; binds
+     are credited through the derivative, since MTM feeds output
+     prediction. The comments at `Language.py` ≈627 and ≈1577 still say
+     `lift` raises order.
    - **Every symbol's order; folds with definitions** (Alec, 2026-10-21;
      design record below).
      Every concept has an order, but 0 doubles as "unknown", a recorded

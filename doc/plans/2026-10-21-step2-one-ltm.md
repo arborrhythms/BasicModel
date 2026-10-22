@@ -1631,3 +1631,59 @@ Alec. After the decisions, implementation, a source freeze, the requested
 scoped gates and Claude's source review still precede 2b publication and
 the WikiOracle bump. No fresh series or full sweep has run; 2c keeps its
 two arrival notes, and item 3.0 has not been reached.
+
+## 27. Claude's review of the 2b port package — 2026-10-22
+
+Reviewed: §§24–26, the [port-preflight receipt](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md),
+the amended proposal, both delegated reviews and the amended patch, on
+`4eb955198`. The repository hand-off was done as asked: Claude's seven
+documents are `c39ef9f3a` on main, verbatim, and work is on main.
+
+**Verdict: the package is sound and complete enough to authorize.** The
+audit found what the §23 hand-off missed: existing assertions that pin the
+old six-column LTM1 layout, the stored mode, the removed nudge's switch,
+the empty LTM0 `refs` column, the saved postings on the full-model path,
+and the close-time mints that §11.1 ends. The two delegated reviews'
+corrections are right, and I checked the ones the ports rest on:
+
+- `withdraw_origin` downgrades only facts, so a withdrawn question keeps
+  kind `question`; P1's kind-plus-evidence check is the right port.
+- `_derivation_symbol` reads the raw role 0 before MTM. With a pending
+  name's reading row `Part(OCC x, SYM x)`, it would return the word
+  instead of `None`; the follow-up's precedence rule (token kind first for
+  pooled occurrences, `None` for an anonymous token) keeps the arrival
+  tests' antecedent and is required.
+- The `round4a0` fixtures plant an occurrence directly in role 0 with no
+  derivation, which the decided layout forbids; the typed rewrites are the
+  right port.
+- `test_selected_nested_meaning.py:81` compares a `where` buffer that 2a
+  removed. It is outside 2a's gate files, so published 2a very likely has
+  one failing test there. 2b's port covers it; no 2a rerun.
+
+**One addition: how an occurrence-only argument's position is read.**
+`PartClosing` records occupations under an admitted object symbol and
+skips a bare word, and `PartRead.argument_reader` classifies a retained
+pair from its arguments' occupations, all of which must carry the
+operation's position. After §11.1 an argument tagged OCC has no symbol and
+no occupations of its own, so the reader would classify nothing. The
+recommended disposition (no separate occupation) therefore needs its
+other half stated: the tag-aware reader resolves an OCC argument through
+its reading row to the word it reads to, and uses that word's grammar
+occupations (`PartsOfSpeech`, keyed by word). That is the §10 contract's
+own source and needs no new map. The nested-terminal test then checks the
+word and its position through that read, and its symbol-keyed count and
+restore checks are retired.
+
+**Recommendation on sequencing.** 2b lands as two frozen commits with one
+receipt: first the layout (LTM1 under LTM0, tags, reading rows, the
+removals, evidence, forgetting and ports P1–P5, P7), then the end of
+close-time minting (P6) on that source. The second is a behavior change
+with six changed expectations and deserves its own diff. Step 2's one
+sweep stays at its end.
+
+**Decided (Alec, 2026-10-22).** P1–P7 are authorized as amended, with
+every changed assertion and retired test listed in the receipt; any
+further change or failure still stops. An occurrence-only argument's
+position is read through its reading row to its word's grammar
+occupations; no separate occupation is stored, and the nested-terminal
+test's symbol-keyed count and restore checks are retired.
