@@ -30,8 +30,10 @@ retains every report and capture. **2b stops before implementation** at
 [spec §18](doc/plans/2026-10-21-step2-one-ltm.md#18-codexs-2b-preflight--2026-10-22-for-claude-and-alec):
 leaf-posting restoration, adjacency witnesses and legacy/live unspecified
 mode need decisions; the implicit-pair expected values and old coarsening
-policy need explicit test dispositions. Claude reviews these code facts
-before Alec decides. Metadata authentication stays while sidecar content
+policy need explicit test dispositions. Claude's [§19 review](doc/plans/2026-10-21-step2-one-ltm.md#19-claudes-2b-preflight-review--2026-10-22-decisions-still-open)
+confirms the main recommendations and identifies additional relation-polarity
+and reading-protection layout questions. Alec's dispositions and the completed
+layout are required before implementation. Metadata authentication stays while sidecar content
 needs it. 2c retains the two R10 arrival notes; the recall-history location
 note belongs to the 5.5 context-wholes spec. No fresh series or full sweep;
 one full sweep remains at step 2's end. Item 3.0 has not been reached.

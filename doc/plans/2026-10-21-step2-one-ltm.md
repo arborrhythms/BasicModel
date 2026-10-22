@@ -11,7 +11,9 @@ records that evidence. **Alec's cull decisions are §16:** 2a removes
 replacement. §17 authorizes the remaining shape-test port. The
 [where receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
 records frozen source `d4f316411`, 223 passes / seven existing skips and
-Claude's approval to publish the sole cull, completing 2a. Original code facts below describe
+Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
+(WikiOracle `baa2e7f`). **2b stops at §§18–19 for the reviewed representation
+and layout decisions; no implementation has begun.** Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
 
 
@@ -928,8 +930,10 @@ prerequisite and authorize its concrete test ports?
 `MemoryIndex` stores `(left code, right code) -> {(occurrence address,
 pair position)}` and serializes it through `adjacent_left`,
 `adjacent_right`, `adjacent_address` and `adjacent_position`. Re-witnessing
-replaces that address's pair witnesses; compaction removes dead addresses;
-codebook remapping updates code addresses. `reindex_meanings` does not
+replaces that address's pair witnesses; compaction removes dead addresses.
+*Corrected by Claude's review, §19: codebook remapping updates leaf
+postings only, not adjacency keys; the original claim here was wrong.*
+`reindex_meanings` does not
 reconstruct these observations.
 
 The data is consumed: `MereologicalCodes.centroid_forms` supplies it to
@@ -1029,3 +1033,147 @@ Alec's dispositions. The two R10 arrival observations remain in 2c. The
 the 5.5 context-wholes spec; it does not expand this cull or 2b. No gates
 are rerun, and the one full sweep remains at step 2's end. No learning
 claim and no transition to item 3.0.
+
+## 19. Claude's 2b preflight review — 2026-10-22; decisions still open
+
+[Claude's read-only review](../benchmarks/2026-10-22-item3-5-step2b-spec-review/claude-review.md)
+used review-input commit `d5fc19791`, with production and tests unchanged
+from published `0b030e3eb`. It confirms Q1–Q3's recommendations with the
+corrections below, verifies Q4's two proposed expected values and confirms
+Q5's policy conflict. **These are recommendations, not Alec's decisions.**
+There is still no 2b implementation or test execution.
+
+### Restore and reader corrections
+
+- The missing-postings case in `test_accessible_mind.py:381` is a third
+  live restore contract and must remain supported beside standalone wire
+  restore and complete-owner stale-cache rebuild.
+- The loader does not itself prevent retrieval from a stale wire cache.
+  Rebuild occurs at `configure_model_index`; "before owner-backed
+  retrieval" must preserve that calling convention. In 2b, LTM1 must load
+  before `load_semantic_extras` reads the moved structure, or that rebuild
+  must be explicitly deferred until both tables are available.
+- Add `MemoryIndex._meaning_leaf_terms` and the `read` closure inside
+  `configure_model_index` to §10 S6's tag-aware boundaries and gates. The
+  latter currently treats every `store.parts.refs` argument as a symbol.
+- `ClauseJournal.py:405–406` is another `refs` reader: it treats exported
+  entries 0 and 1 as relation operands. Its port must distinguish a
+  relation row's operands from the occurrence-role positions used by
+  forgetting. `test_live_parent_pins_its_child` retains its behavior, but
+  its `role_refs[0]` read must follow the new representation.
+
+**Recommendation for Q1:** keep the current validated wire view and the
+owner rebuild, with the restore ordering and additional tagged readers
+above. Do not add a new cache authority or silently accept malformed
+posting columns.
+
+### Adjacency correction and disposition
+
+§18 originally claimed that remapping updates adjacency keys. It does
+not: `MemoryIndex.remap_leaf_codes` remaps `_leaf_postings` only. The
+adjacency keys can therefore go stale if word rows are remapped. This is
+an existing code gap, found by inspection, not a failed 2b run. The full
+review is retained and §18 is corrected in place.
+
+**Recommendation for Q2:** keep the four adjacency columns in 2b as
+non-protecting witness data, preserving their current checkpoint and
+re-witnessing contract. They must not become a second protection graph.
+Give the remap gap a separately scoped follow-up with a failing-before
+regression and review; Alec decides its destination before it is moved
+out of this open-question list. It has not been repaired or silently
+declared a cache. An LTM1 replacement still needs its own pair-whole and
+position layout under the whole-entry-reference rule.
+
+### Mode disposition
+
+The review confirms live `unspecified` estimates and the independent
+three-mode API. It also identifies both directions of non-equivalence:
+the grammar's `AskLayer.meaning_mode` can produce an interrogative without
+an open site, while existing assertive rows have open referent slots.
+Record kind is not a substitute either. **Recommendation for Q3:** keep
+`grammatical_mode` as the existing three-valued column; no extra flag,
+default assertion or new word-based classifier.
+
+### Evidence: another swap and the relation-edge convention
+
+Q4's two expected-value ports are correct. The review also corrects two
+code facts in the earlier path list:
+
+- `append_idea` always constructs the default positive-polarity
+  `from_description` meaning. Although it uses the shared writer, it
+  cannot exercise the negative swap through its present API.
+- `ClauseRows.write_clause` has a second swap at `ClauseRow.py:468–472`.
+  It derives a pair from trust and reverses it for negative polarity.
+  The branch runs for an implicit pair and under the TruthSet assertion
+  context even if an explicit pair was supplied.
+
+For a completed relation the destination is the shared LTM1 `Part` edge,
+which has no polarity field. The existing tests in
+`test_lies_can_be_learned.py`, `test_clause_storage.py` and
+`test_relative_sentence_codebook_insertion.py` supply explicit negative
+counterevidence to that same edge and require both poles to remain. They
+pin the canonical relation-edge convention, not the implicit-swap branch;
+none is authorized to change. The LTM0 meaning, by contrast, retains its
+own polarity, and `Queries` accounts for stored/query polarity when read.
+
+**Recommendation for Alec:** authorize Q4's two parameter-tuple changes
+for the decided LTM0 implicit-pair rule. Keep the LTM1 canonical-edge
+convention in this round until a relation-polarity layout is specified.
+Decide the scope of the shared `write_clause` swap explicitly before
+editing it. Claude recommends leaving that site outside this removal for
+now. Codex notes that its loop also prepares pairs for LTM0 writes: the
+disposition must distinguish the destination and the assertion-context
+override, rather than assuming every iteration writes a relation edge.
+No swap site or test tuple has changed in this preflight.
+
+### Protection: the policy port needs a complete layout first
+
+Claude confirms that the old coarsening test cannot keep its semantic
+assertions under the decided rule. Its parent depends on the child twice
+(sidecar `role_refs[0]` and the raw `refs` column); porting just the latter
+would leave the old deletion policy live. With the proposed replacement,
+the capacity-four fixture's target is two: the protected parent and child
+remain, and the two independent rows with trust .7 and .8 are removed.
+
+**Recommended test disposition, subject to Alec:** change the old-policy
+assertions to child/parent/reference retention, zero coarsening and zero
+same-pass cascade, preserving both variants, capacity, weights and the
+content equality check. Also check that the two independent rows are
+gone and the target was reached, so protection is not a vacuous no-op.
+For the next-pass release case, set actual second-pass pressure (or an
+explicit epoch pass with `at_epoch`) and retain `min_interval=0`; expect
+the existing warning when protection prevents the first pass reaching
+its target. The exact snapshot port at `test_forgetting.py:126` is to
+remove `'refs'` from the key tuple, with an explicit new tagged-table
+immutability check in the replacement coverage. These test dispositions
+are proposed only; existing assertions remain untouched.
+
+**Three layout questions still require answers before that port:**
+
+1. Which tagged relation encodes role 0 of the fixture's LTM0 parent
+   pointing to its child? The stated `Part(OCC occurrence, SYM reading)`
+   row alone is not this occurrence-to-occurrence participant edge.
+   **Recommendation:** express it through the typed derivation's declared
+   participant position and an `OCC` child, with an explicit worked layout
+   in S2; do not invent an untyped role-edge convention in the code.
+2. What preserves an occurrence's reading and derivation rows while that
+   occurrence survives? The later reading row points to and protects the
+   earlier occurrence; the reverse dependency is not specified. Dropping
+   that reading row would coarsen a surviving occurrence without editing
+   its opaque row. **Recommendation:** have Claude complete S2/S7's
+   retention rule so a surviving occurrence keeps its readable structure,
+   with no semantic back-edge that breaks the DAG and no silent coarsening.
+   The exact lifetime/protection mechanism remains open for Alec.
+3. Is a pass the whole document-boundary call or each table's forgetting
+   function? Today `model_boundary` invokes `forget_parts` then `forget`.
+   **Recommendation:** one boundary call is one pass across both tables;
+   releasing a target must not make it collectible later in that same
+   call. Only the next boundary can use the release.
+
+The three field decisions, adjacency-gap destination, evidence scope,
+test authorizations and the completed protection layout remain with Alec.
+This is the required stop under the handoff's new-spec-question rule,
+not a permission request for the already completed 2a work. The next
+implementation must start from the published 2a source after these
+dispositions. No second sweep, no learning claim, and no item-3.0
+transition.

@@ -7,8 +7,11 @@ records the required restore, adjacency and mode questions, the implicit
 evidence expected-value port and the old coarsening-policy conflict.
 The [separate spec-review receipt](../2026-10-22-item3-5-step2b-spec-review/README.md)
 contains the review input and response. No production/test change or 2b
-gate; implementation stops for Claude and Alec. The two arrival notes
-stay in 2c; no learning claim and item 3.0 has not been reached.
+gate. Claude's review is retained in that receipt; §19 corrects the
+adjacency-remap claim and records the additional relation-polarity and
+reading-retention questions. Implementation stops for Alec's dispositions
+and the completed layouts. The two arrival notes stay in 2c; no learning
+claim and item 3.0 has not been reached.
 
 **Step 2a location cull, frozen source `d4f316411`, 2026-10-22:** the
 rename is published at BasicModel `804d8adcb` / WikiOracle `dbd9b52`.
