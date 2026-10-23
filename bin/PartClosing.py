@@ -96,6 +96,10 @@ class PartClosing:
     def _plan_one(self, value, as_argument):
         if id(value) in self._planned:
             record = self._planned[id(value)]
+            if record.get('alias') is not None:
+                record['symbol'] = self._plan_term(record['alias'], as_argument)
+                record['types'] = self._planned[id(record['alias'])]['types']
+                return record['symbol']
             if value.formal_name == 'lower' and len(value.children) == 2:
                 head = value.children[value.head_role - 1]
                 record['symbol'] = self._plan_term(head, as_argument)
@@ -107,6 +111,19 @@ class PartClosing:
                                and record['symbol'] is not None and not self._native(record['symbol'])
                                and self._point(record['symbol']) is None)
             return record['symbol']
+        if (value.operation == 'bind' and len(value.children) == 1
+                and value.binding is None and value.reference in (-1, 0)):
+            child = value.children[0]
+            if value.order == child.order and torch.equal(value.point, child.point):
+                # A dummy preserves the carried reference even when its
+                # working content is the lexical row rather than that bank row.
+                symbol = self._plan_term(child, as_argument)
+                held = self._planned[id(child)]
+                record = dict(value=value, symbol=symbol, edge=held['edge'], pair=held['pair'],
+                    types=held['types'], seat=False, alias=child)
+                self._planned[id(value)] = record
+                self._plan.append(record)
+                return symbol
         children = tuple(self._plan_term(child, value.operation in self._relations)
                          for child in value.children)
         reference = (self._plan_term(value.binding, True) if value.binding is not None else

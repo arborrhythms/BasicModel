@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_live_references.py::test_public_reading_fuses_the_reference_before_capture_and_write",
+    "-x",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T12:49:03.907046+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T12:49:08.191731+00:00"
+}

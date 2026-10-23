@@ -9,7 +9,7 @@
   structural family with a registered descriptor also supplies one checked
   thought operator at a completed boundary; it never executes while parsing or
   generating. Refined per owner notes:
-    - bind is a thought operation, once per open reference site.
+    - bind chooses an accessible identity during composition; thought also resolves open sites.
     - symbolize: NOT a parse op. It is EXPLICIT LEARNING - reading a trusted
       sentence that expresses a relation adds an entry to the CS Symbol table.
       (Mentioned here, never a rule.)

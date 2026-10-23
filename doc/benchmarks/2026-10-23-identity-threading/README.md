@@ -1,13 +1,13 @@
 # Identity threading — 2026-10-23
 
 The next source freeze on main runs its scoped gates in
-[`final/source-04`](final/source-04). Review and publication are pending.
+[`final/source-05`](final/source-05). Review and publication are pending.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–9. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–13. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -15,9 +15,7 @@ No such reversal is made.
 
 The published storage source remains the basis. Its derivation layout,
 readers, close-time minting and three-slot rows stay. The next storage
-round owns §71's LTM0 ideas/LTM1 binary chains and §72's shared eight STM
-chunks. The latest three open STM/layout questions in §72 are read and
-remain for that spec; they are not implemented here.
+round is moved to item 3.0 by the latest §72 amendment: LTM0 ideas, LTM1 binary chains, then shared STM chunks. Its no-word-bag and immutable-chain decisions are read but not implemented here. Step 2 continues with 2c on today's storage.
 
 MTM now keeps current values, mention readings and verb/role event
 histories. Compose bind enumerates frame-accessible and trial-local
@@ -36,9 +34,9 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-04/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-05/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-04/test-ports.patch)
+pre-implementation review. [`test-ports.patch`](final/source-05/test-ports.patch)
 is the exact complete test diff, including new certificates.
 
 ## Every existing-test port
@@ -60,6 +58,9 @@ All assertions not listed remain unchanged.
 | `test_math_chain_section14.py`, c/e | Before presentation admit x and what if absent and set their readings to order one via `reference_orders`, under reconstruction spec §13. No assertion, forced choice, budget or keep rule changes. The pending-premise and item-0 learning fixtures are unchanged. |
 | `test_item6_2_thinking.py`, open closing, four surfaces | The direct boundary fixture bypasses compose/ReferenceClose. Supply its kept anonymous token with `pool.open`, then its selected refinement with `pool.bind` after the existing equality append. All native-reference, source-address, raw-open, witness, question-kind and reuse assertions stay. Equality alone does not bind. |
 
+| `fixtures/when-readers-round4a0.json` | Add `MediumTermMemory.state` and `.restore` to the reader inventory with attribute `when`, as checkpoint readers. All inventory assertions stay. |
+| `test_live_references.py`, public binding/capture | Replace the lift reference variant with a declared S (`clause_form='S', head_role=1, order_delta=0`) and an explicit compose bind, forced only in this unit fixture. The held occurrence and alpha reading are order one; stage its real MTM value through a `SituationAddress` frame. The operand equality changes from exact `prior` to exact `maximum(entry.leaves[0], prior)`. Replace `entry.operation_refs[actions][-1, 0] == cid` with `entry.identity_actions[actions][-1, 1] == 1`; replace `clause.composition.children[0].reference == cid` with `clause.children[0].identity['handle'] == 1`. All other capture, reconstruction and gradient assertions stay. |
+
 ## New certificates and development corrections
 
 `test_identity_threading.py` covers the second VP reading the first VP's
@@ -69,7 +70,7 @@ outcomes; stream isolation; checkpoint/reclamation ownership; the actual
 global chooser's location menu, zero dummy and score-function credit;
 observed exclusions; a real journal/write/commit of two VPs with immutable
 occurrences; malformed checkpoint rejection; and unresolved-object
-propagation. `test_query_executors.py` adds the no-witness result for an
+propagation; a later bind retaining its earlier introduction under a wrapper; and an unchanged dummy preserving a carried OBJECT with a different bank value. `test_query_executors.py` adds the no-witness result for an
 entirely open name even when a row is held.
 
 Same-round fixture corrections are retained with their failures: the
@@ -81,10 +82,10 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-04`: the eight
+The required selections and runner are in `final/source-05`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
-arms. The distinct-file scope is 116 files. This is not step 2's full sweep.
+arms. The distinct-file scope is 121 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
 Initializations, journal states, failures and keep probes are retained.
 
 Both decomposition arms restore their original snapshots and original
@@ -96,7 +97,7 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Final outcomes will be written in `final/source-04/gate-summary.json`.
+Final outcomes will be written in `final/source-05/gate-summary.json`.
 No development pass or earlier frozen result substitutes for that source.
 
 ## Retained unsuccessful attempts
@@ -134,9 +135,15 @@ The dated spec sections give the diagnosis and fix for each attempt:
   The original freeze is retained in `withdrawn-freeze.bundle`, with
   prerequisite `9623fa959`.
 
-Large JSON captures are losslessly gzipped. `packed-captures.json` records
+- `final/source-04`, `731cb5791`: all 1,160 module cases completed; 13 failures retained. Six completed-root kinds, two forced relation cases, the time-reader inventory, the lost introduction, the stale lift-binding fixture, the eight-seat dummy wrapper and copied-owner attachment are diagnosed in spec §11. No other groups promoted.
+- `scoped-01`: 65 focused passes after the repairs. `scoped-02`: collection error from a mistyped selector. `scoped-03` and `scoped-04`: the ported fixture's held object order and declared S/overlay catalogue correspondence; fixed without further assertion edits. `scoped-05`: the public binding, inverse and gradient certificate passes.
+
+- `scoped-compiled-01` and `scoped-compiled-02`: the copied store still points at the original owner. The read-only close probe confirms its edge exists in the original Part table, not the copied one. `scoped-06` passes 33 identity/index/c/e cases after reattachment; no parity assertion changes.
+- `scoped-07`: the new wrapper fixture used an undeclared `null` face; correct it to the declared transparent `not` face without changing assertions. `scoped-08` passes both wrapper/introduction certificates. Event deduplication keys on the recorded operation, so a transparent wrapper cannot duplicate its S occurrence.
+
+Large JSON and tensor captures are losslessly gzipped. `packed-captures.json` records
 each original and compressed SHA-256; new captures write gzip directly
-when larger than 2 MiB. The source-02 freeze correction changes packaging
+when larger than 2 MiB; tensor files larger than 16 MiB have per-capture packing ledgers. `torch.load(gzip.open(path, "rb"), weights_only=False)` reads a packed tensor capture. No state is dropped. The source-02 freeze correction changes packaging
 only, not production or tests.
 
 ## Review and publication
@@ -144,5 +151,4 @@ only, not production or tests.
 Claude's actual review of the frozen source must follow the complete
 scoped results. Publication means the BasicModel main push, then the
 WikiOracle gitlink bump and main push. Neither has happened for this line.
-The next layout-and-removal spec remains Claude's, followed by 2c with the
-two R10 arrival notes and step 2's one full sweep.
+Next is 2c with the two R10 arrival notes and step 2's one full sweep. The layout-and-removal spec and shared STM chunks now belong to item 3.0.

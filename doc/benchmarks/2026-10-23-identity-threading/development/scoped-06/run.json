@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_identity_threading.py",
+    "test/test_reference_index.py",
+    "test/test_lexical_reference_orders.py",
+    "test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage",
+    "-x",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T12:56:22.210065+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T12:56:38.950570+00:00"
+}

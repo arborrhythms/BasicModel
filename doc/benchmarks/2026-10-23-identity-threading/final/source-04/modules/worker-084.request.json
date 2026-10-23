@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair20-right_pair20]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair21-right_pair21]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair22-right_pair22]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair23-right_pair23]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair24-right_pair24]",
+    "test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[..., 0] - pair[..., 1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[:, 0].sign()]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.mean(dim=-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.argmax(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(dim=2)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[0] >= pair[1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[torch.linalg.vector_norm(pair, dim=-1)]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-04/modules/worker-084.recycle.json"
+}

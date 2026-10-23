@@ -1,0 +1,11 @@
+ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py::test_ordinary_close_read_cue_and_open_question_reach_loop_through_real_lifecycle
+(no match in any of [<Module test_math_chain_section14.py>])
+
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 warning in 0.08s

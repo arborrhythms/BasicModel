@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_gain_preserves_evidence_identity_and_exempts_the_open_role[1.0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

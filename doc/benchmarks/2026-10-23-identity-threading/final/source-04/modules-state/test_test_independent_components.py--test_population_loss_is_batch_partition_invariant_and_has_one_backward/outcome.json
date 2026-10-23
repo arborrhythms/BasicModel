@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

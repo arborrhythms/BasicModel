@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp[part]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

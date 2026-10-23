@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

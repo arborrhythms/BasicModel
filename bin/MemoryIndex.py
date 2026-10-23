@@ -416,14 +416,16 @@ def configure_model_index(model, store):
     """Bind the existing CS and generate owners before a closing or reader call."""
     if store is None:
         return
-    if getattr(store, '_index_owner_bound', False):
-        if getattr(store, '_leaf_needs_owner_reindex', False):
-            store.reindex_meanings()
-        return
     from Queries import _existing_row, _basis
     registry = getattr(model, 'grammatical_thoughts', None) or getattr(getattr(model, 'symbolSpace', None), 'grammatical_thoughts', None)
     space = getattr(registry, 'space', None) or getattr(model, 'conceptualSpace', None)
     language = getattr(model, 'languageSpace', None)
+    attached = store.__dict__.get('_concept_owner')
+    if (getattr(store, '_index_owner_bound', False) and callable(attached)
+            and attached() is space):
+        if getattr(store, '_leaf_needs_owner_reindex', False):
+            store.reindex_meanings()
+        return
     if space is None or getattr(space, 'similarity_codebook', None) is None:
         return
     def code_row(reference):
@@ -477,7 +479,9 @@ def configure_model_index(model, store):
     if callbacks is None:
         callbacks = []
         object.__setattr__(book, '_row_remap_observers', callbacks)
-    callbacks.append(RowRemapObserver(store))
+    if not any(isinstance(callback, RowRemapObserver) and callback.store() is store
+               for callback in callbacks):
+        callbacks.append(RowRemapObserver(store))
     store._index_owner_bound = True
     if getattr(store, "_leaf_needs_owner_reindex", False):
         store.reindex_meanings()

@@ -9,6 +9,7 @@ import pytest
 import torch
 
 from arrival_capture import plain
+from pack_capture import save
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +22,7 @@ def capture_contract(request, monkeypatch):
         restore(torch.load(replay, weights_only=False))
     root = Path(os.environ['CONTRACT_CAPTURE']) / request.node.nodeid.replace('/', '_').replace('::', '--')
     root.mkdir(parents=True, exist_ok=False)
-    torch.save(dict(torch=torch.get_rng_state(), python=random.getstate(),
+    save(dict(torch=torch.get_rng_state(), python=random.getstate(),
                     numpy=np.random.get_state()), root/'initial-rng.pt')
     request.node._contract_capture = root
     records = request.node._contract_records = []
@@ -40,7 +41,7 @@ def capture_contract(request, monkeypatch):
     def close(resolver, *args, **kwargs):
         if all(resolver is not previous for previous in resolvers):
             resolvers.append(resolver)
-            torch.save(dict(parameters=resolver.components.owner.state_dict(),
+            save(dict(parameters=resolver.components.owner.state_dict(),
                             store=resolver.store.state_dict(), mtm_state=resolver.components.owner.mtm.state()),
                        root/f'initial-{len(resolvers)}.pt')
         result = preview(resolver, *args, **kwargs)
@@ -64,6 +65,21 @@ def capture_contract(request, monkeypatch):
         return value
     monkeypatch.setattr(ThoughtStream, 'integrate', thought)
 
+    from PartClosing import PartClosing
+    closing = PartClosing.close
+    def close_part(owner, clause, **kwargs):
+        result = closing(owner, clause, **kwargs)
+        if clause.relation is not None and (result is None or not owner.store.parts.contains(result)):
+            records.append(dict(call='missing-part-edge', result=result,
+                same_parts=owner.parts is owner.store.parts,
+                in_parts=False if result is None else owner.parts.contains(result),
+                plan=[dict(operation=entry['value'].operation, symbol=entry['symbol'],
+                    edge=entry['edge'], pair=entry['pair'], seat=entry['seat'],
+                    children=[owner._planned[id(child)]['symbol'] for child in entry['value'].children])
+                    for entry in owner._plan]))
+        return result
+    monkeypatch.setattr(PartClosing, 'close', close_part)
+
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
@@ -86,7 +102,7 @@ def pytest_runtest_makereport(item, call):
         if temporary is not None:
             shutil.copytree(temporary, root/'artifacts', dirs_exist_ok=False)
         for index, resolver in enumerate(item._contract_resolvers, 1):
-            torch.save(dict(parameters=resolver.components.owner.state_dict(),
+            save(dict(parameters=resolver.components.owner.state_dict(),
                 store=resolver.store.state_dict(), mtm=resolver.components.owner.mtm.entries,
                 mtm_state=resolver.components.owner.mtm.state(),
                 audit=resolver.last_audit), root/f'failure-{index}.pt')

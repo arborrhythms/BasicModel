@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper",
+    "-x",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T12:58:14.877160+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T12:58:17.499161+00:00"
+}

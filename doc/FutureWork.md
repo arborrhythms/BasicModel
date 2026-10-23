@@ -1648,3 +1648,15 @@ Alec (2026-10-22): the basis is important for kinds and for the Buddhist
 reading; it is noted in [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3) and in
 [Philosophy](Philosophy.md#identity-by-intersection-and-by-union-the-materialist-and-the-uncollapsed-models-alec-2026-10-20),
 and stays here as future work.
+
+## Episodic memory: several LTM0 entries per time (Alec, 2026-10-23)
+
+Alec, while deciding how a sentence's words are found after derivation
+removal (step-2 spec §72): "We might want to store multiple LTM0 per
+time, which would allow episodic memory; that can be a future work item."
+An LTM0 entry is one idea with its `.when`; several entries sharing a time
+would be an episode, the co-present ideas of one moment, which recall
+could bring back together into STM's chunks. Today each close writes its
+ideas with one `RowTime` stamp per close, so the stamp already groups a
+sentence's ideas; episodic memory would make that grouping a read
+(entries at a time) rather than an accident of the writer. Unscheduled.

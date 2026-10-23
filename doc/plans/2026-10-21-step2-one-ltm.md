@@ -3610,11 +3610,12 @@ fused vector, by definition; an idea is one).
    row in LTM1; the READING tag question is closed.
 4. **Sequencing is Claude's call.** Decided: the identity line first, as
    §36 ordered, because role evidence and readings now live in MTM and are
-   prerequisites for removing the derivation readers; then one
-   layout-and-removal round on §71 (LTM0 one slot, LTM1 two tagged
-   references with chaining, no sentence row, the Part-edge tree and its
-   readers removed), for which Claude writes the spec after the identity
-   line lands; then 2c and step 2's one sweep.
+   prerequisites for removing the derivation readers; then 2c and step
+   2's one sweep. *Amended (Alec, 2026-10-23): the layout-and-removal
+   round on §71 is item 3's, not step 2's
+   ([spec](2026-10-23-layout-and-removal.md)); it lands with placement
+   from the priming surface, which it needs, and STM's eight chunks
+   follow it there. 3.5 runs on today's storage until then.*
 
 **Aside (Alec, 2026-10-23): the parse-tree cache and STM1.** "I don't know
 what cache we are using for the sentence parse tree, but it might have a
@@ -3699,3 +3700,29 @@ decisions: the expectation predictor reads ideas and chain heads instead
 of three-slot rows; forgetting values ideas and chains by their own value
 with chains protecting what they reference; a promoted identity (2c) is a
 minted symbol whose occurrences are its LTM0 ideas.
+
+**Decided (Alec, 2026-10-23), the three opens above.**
+
+1. *STM eviction:* the least recently read chunk that is not an operand
+   still on the parse stack leaves; attention chooses what is read,
+   recency what stays.
+2. *No word bag.* The owned-detail bag of §33 (R2, R3) is withdrawn.
+   Alec: "Retrieval by word requires content match (semantic retrieval)
+   or an LTM1 with the bare word as an entry. Membership diffusion should
+   just be activation over the priming surface, then some selection of
+   nearest neighbors (we had some matrix method for this). We might want
+   to store multiple LTM0 per time, which would allow episodic memory;
+   that can be a future work item." So: placement is the online update
+   at the close from the registered priming surface (FutureWork,
+   "Placement from the registered priming surface"), not a recomputed
+   mean over stored memberships; priming's membership diffusion
+   (`Priming.diffuse` over `occurrence_memberships`) is replaced by
+   activation over the surface with nearest-neighbour selection in
+   conceptual space, the diffused co-occurrence of that entry (the matrix
+   method); retrieval by word is semantic, by content match over ideas,
+   or follows a chain row that references the bare word symbol; the leaf
+   index retires with the derivation. Episodic memory by several LTM0
+   entries per time is future work
+   ([FutureWork](../FutureWork.md#episodic-memory-several-ltm0-entries-per-time-alec-2026-10-23)).
+3. *Resolved chains are immutable;* thought writes the computed value to
+   MTM and, when kept, a new LTM0 idea as an inference row.

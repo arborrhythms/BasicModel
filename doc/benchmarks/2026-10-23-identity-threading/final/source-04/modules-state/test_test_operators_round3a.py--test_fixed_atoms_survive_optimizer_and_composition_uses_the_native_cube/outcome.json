@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

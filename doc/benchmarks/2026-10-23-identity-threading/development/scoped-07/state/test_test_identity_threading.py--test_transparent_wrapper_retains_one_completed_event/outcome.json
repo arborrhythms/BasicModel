@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+  "outcome": "failed",
+  "failure": "test/test_identity_threading.py:417: in test_transparent_wrapper_retains_one_completed_event\n    entry, _, _ = recorded_identity_reading(f, ('null',\ntest/test_identity_threading.py:225: in recorded_identity_reading\n    entry = f.program(tree)\n            ^^^^^^^^^^^^^^^\ntest/test_clause_acceptance.py:92: in program\n    root = visit(tree)\n           ^^^^^^^^^^^\ntest/test_clause_acceptance.py:89: in visit\n    local = next(i for i, rule in enumerate(catalog) if rule.method_name == name)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   StopIteration",
+  "records": []
+}

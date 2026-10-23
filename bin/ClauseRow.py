@@ -452,10 +452,10 @@ class ClauseRows:
         def incomplete(value):
             return pending(value) or any(incomplete(child) for child in value.children)
         def row_kind(value):
-            if open_slots(value.meaning) or (value.relation is not None
-                    and any(value.refs[role] in (-1, 0) for role in (0, 2))):
-                return 'question'
-            return kind if value is clause or value in clause.companions else 'unverified'
+            if value is clause or value in clause.companions:
+                return kind
+            declared = bindings(value.meaning).get('_open_references', ())
+            return 'question' if set(declared).intersection(open_slots(value.meaning)) else 'unverified'
         def retained_pair(value):
             term = closing._terms.get(id(value))
             return (value.relation is not None and term is not None

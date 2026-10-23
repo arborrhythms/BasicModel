@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

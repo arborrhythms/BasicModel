@@ -1,0 +1,201 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+    "test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+  ],
+  "completed": [
+    "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+    "test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+    "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+    "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+    "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+    "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics"
+  ],
+  "slow_selected": [
+    "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+    "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+    "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+    "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013098333030939102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.8054347089491785,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_chunk_views_keep_one_graph_across_part_and_bucket_widths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.24603058281354606,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 157.8709764580708,
+      "message": "test/test_compiled_word_chunk.py:428: in test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks\n    chunk_result = chunked.forward(chunk_input)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23921: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17172: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22473: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22042: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21150: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20401: in _commit_sentence\n    row = _append_observed_meaning(store, clause,\nbin/Models.py:173: in _append_observed_meaning\n    result = store.write_clause(clause, trust=trust, kind=kind, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:509: in write_clause\n    raise RuntimeError('a completed relation did not produce a Part edge')\nE   RuntimeError: a completed relation did not produce a Part edge",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 30.41183379199356,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.09571449994109571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.19325174996629357,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.364928249968216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05590337514877319,
+      "message": "",
+      "stdout": "Canonical fullgraph compile: lazy fused tensor word-loop lowering on cuda with fixed capacity and residual-part axes\r\n"
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.0003165418747813,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00040712510235607624,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_complete_forward_is_one_graph_across_runtime_lengths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 55.59920054208487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_mps_while_loop_backward_accepts_padded_captured_view",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.000216582790017128,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 783, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[10-14-16-128]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00010358286090195179,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 838, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_tensor_peer_mps_inductor_w16_w64_fullgraph_smoke[40-50-64-512]",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": null,
+      "duration": 0.00010124989785254002,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py', 838, 'Skipped: requires explicit slow MPS Inductor run')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_word_chunk.py::test_no_grad_fallback_retains_eager_stm_depth_semantics",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.1492047500796616,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

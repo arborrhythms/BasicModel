@@ -626,3 +626,98 @@ relation-operand check. The old annotation remains immutable provenance;
 it does not turn a concluded inference into a question. No assertion or
 fixture changes. The failed source and capture stay in `source-03`; the
 replacement source reruns all required groups without promoting results.
+
+## 11. Codex: scoped relation and catalogue audit — 2026-10-23
+
+While `731cb5791` completes its changed-module pass, the retained failures
+identify three corrections for the next source. No test assertion or
+existing chooser forcing will change:
+
+1. **Child question kind.** The root's writer-supplied kind must remain
+   authoritative. Before installation of canonical references, a completed
+   relative clause can have temporary nulls in its meaning; those are not
+   free variables. Assign a child the question kind only when an explicit
+   open-reference annotation still denotes an actual open slot. Completed
+   roots and unindexed numerical children keep their existing kinds.
+2. **Dummy eligibility.** The first dummy-zero assignment currently
+   overwrites a scorer's `-inf`, bypassing the existing forced relation
+   fixtures and repeatedly choosing bind. Preserve nonfinite exclusions
+   there, as the later post-priming assignment already does. Every eligible
+   dummy remains exactly zero; the fixed operations, seats and fixture
+   sizes stay unchanged. The unchanged no-duplicate-seat and unaligned
+   relation assertions remain gates.
+3. **Time-reader inventory.** Add `MediumTermMemory.state` and
+   `MediumTermMemory.restore` to the explicit fixture inventory as model-time
+   checkpoint readers. The inventory equality and all other assertions stay
+   verbatim; no timestamp is introduced on the forward path.
+4. **Introductions under later wrappers.** The interleaving capture has
+   two actual determinations followed by a bind to one of those tokens.
+   Recovering only the outer reference site loses the earlier introduction,
+   although the live menu correctly offered it. Retain those introductions
+   as temporary children of the kept clause and plan them before their uses.
+   They get today's occurrence rows; this neither stores an overlay nor
+   starts the layout round. No candidate is masked or silently replaced.
+5. **A dummy's unchanged argument.** In the retained eight-seat mixing
+   failure, dummy binds wrap a carried OBJECT whose working lexical value
+   differs from its bank row. Such a no-op must keep the carried reference,
+   rather than minting a second seat after comparing with the bank. Fold
+   only an unchanged bind (same point and order, no selected binding); real
+   transformations keep the ordinary argument admission path.
+6. **Public reference fixture.** `test_public_reading_fuses_the_reference_
+   before_capture_and_write` still adds a reference variant to `lift`.
+   Port the fixture to a declared compose bind and a staged held token.
+   The live operand is the joined description/current value; test that
+   value and the recorded identity choice, rather than the retired lift
+   reference variant. Keep its capture, closing and inverse checks live;
+   enumerate the exact assertion edits in the receipt.
+
+## 12. Codex: read-ahead into layout and STM — 2026-10-23
+
+Read `2026-10-23-layout-and-removal.md` and the final decisions at step-2
+§72. LTM0 will hold one-vector ideas; unresolved compositions will become
+binary tagged LTM1 chains, with no sentence row, stored derivation, or word
+bag. Placement moves to the close; word retrieval uses content or bare-word
+chain references. STM's shared eight chunks and least-recently-read
+non-operand eviction follow that round. These are successor contracts,
+not changes to this source. The identity overlay is temporary trial state;
+its names, values and events remain the MTM boundary those replacements
+will consume. This round retains the journal, three-slot occurrence rows,
+readers and close-time minting. The newly diagnosed lost-introduction fix
+uses that existing writer and does not introduce READING rows or chain tags.
+
+**Scoped evidence retained.** `source-04` completed all 1,160 selected
+changed-module cases, with 13 failures. The additional compiled parity
+failure is the same unchanged-bind wrapper losing its child's Part symbol;
+its full journal is retained. Development `scoped-01` passes 65 cases
+covering the relation roots, eight-seat cases, time catalogue, introduction
+recovery and the interleaving schedule. `scoped-02` is a collection error
+(mistyped selector), retained. `scoped-03` exposed a fixture setup error in
+the port: the held occurrence was left at order 0 and correctly absent
+from the object menu. Set that held object to order 1, matching its declared
+role; the assertions do not change for this correction.
+
+**Read-ahead amendment seen during this audit.** Claude has now recorded
+Alec's move of layout-and-removal and STM chunks to item 3.0 in step-2
+§72 and todo. The identity implementation is unchanged by that move; 2c
+follows it on today's storage. `scoped-04` further identified the port's
+ladder lift as a generic fold, not its intended S: declare that grammatical
+position in the unit fixture and rebuild its overlay catalogue. The same
+assertions pass in `scoped-05`, including the inverse and gradient checks.
+
+## 13. Codex: copied owner at the closing boundary — 2026-10-23
+
+`scoped-compiled-01` reaches the copied model and fails the unchanged Part
+edge check. This is distinct from the original wrapper failure, which is
+repaired: `copy.deepcopy(model)` copies both tables but leaves the store's
+weak `_concept_owner` and index closures pointing to the original space.
+`configure_model_index` then returns on its copied boolean alone. A direct
+owner probe confirms that the copy has its own parts and model, but its
+store's conceptual owner is the original. This is an ownership repair,
+not a fixture port: compare the attached owner with the current registry
+space before the fast return; on mismatch, reattach the index/read closures
+and clause owner. Retain one row-remap observer per store. A new unit
+certificate copies an already bound model/store, reattaches, and checks
+that writes and content reads belong only to the copy. The existing
+compiled parity assertions, snapshots and seeds stay unchanged. The
+read-only `scoped-compiled-02` close probe records the two store identities
+and planned edge to authenticate this diagnosis before changing source.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_nested_retention.py::test_external_live_root_pins_an_occurrence_through_origin_replacement",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

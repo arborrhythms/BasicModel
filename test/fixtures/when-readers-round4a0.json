@@ -157,6 +157,26 @@
       "now": "The oldest retained token tick selects capacity eviction; the tick comes from RowTime.stamp."
     },
     {
+      "file": "bin/MediumTermMemory.py",
+      "function": "MediumTermMemory.restore",
+      "attributes": [
+        "when"
+      ],
+      "role": "identity checkpoint model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+    },
+    {
+      "file": "bin/MediumTermMemory.py",
+      "function": "MediumTermMemory.state",
+      "attributes": [
+        "when"
+      ],
+      "role": "identity checkpoint model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+    },
+    {
       "file": "bin/ModelCandidateAttention.py",
       "function": "context",
       "role": "candidate support reader",

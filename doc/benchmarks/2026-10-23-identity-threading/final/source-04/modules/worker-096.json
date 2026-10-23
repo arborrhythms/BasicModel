@@ -1,0 +1,95 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_echoic_decoder.py::test_answer_record_has_no_derivation_fields",
+    "test/test_echoic_decoder.py::test_generate_unary_calls_generate_face",
+    "test/test_echoic_decoder.py::test_generate_chooser_belongs_to_reconstruction",
+    "test/test_echoic_decoder.py::test_sentence_cost_is_not_diluted_by_other_packed_sentences",
+    "test/test_echoic_decoder.py::test_output_spelling_uses_the_echoic_shortlist",
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]",
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]"
+  ],
+  "completed": [
+    "test/test_echoic_decoder.py::test_answer_record_has_no_derivation_fields",
+    "test/test_echoic_decoder.py::test_generate_unary_calls_generate_face",
+    "test/test_echoic_decoder.py::test_generate_chooser_belongs_to_reconstruction",
+    "test/test_echoic_decoder.py::test_sentence_cost_is_not_diluted_by_other_packed_sentences",
+    "test/test_echoic_decoder.py::test_output_spelling_uses_the_echoic_shortlist",
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]",
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]"
+  ],
+  "slow_selected": [
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_answer_record_has_no_derivation_fields",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010782089084386826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_generate_unary_calls_generate_face",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00043170806020498276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_generate_chooser_belongs_to_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00980420783162117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_sentence_cost_is_not_diluted_by_other_packed_sentences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007189998868852854,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_output_spelling_uses_the_echoic_shortlist",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024116691201925278,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015005749883130193,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 11.839268458075821,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

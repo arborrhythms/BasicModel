@@ -18,20 +18,19 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Item 3.5 line 2's identity threading is implemented on main,
-with the next scoped freeze before Claude's review after the retained
-inference-kind repair.
+with the next scoped freeze after the retained module failures and their
+owner, introduction, dummy and question-kind repairs.
 The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) lists
 every assertion port, fixture rewrite, failed attempt and withdrawn source.
-The [spec's §§5–9](doc/plans/2026-10-23-identity-threading.md) record the code
+The [spec's §§5–13](doc/plans/2026-10-23-identity-threading.md) record the code
 review, alignment with the future LTM/STM layout and documented repairs
 under step-2 §39. Published storage-only 2b remains BasicModel `39272e7a6`,
 WikiOracle `ade0399`; identity is not yet published.
 
-**Next is Claude's layout-and-removal spec** after identity lands. This
-line retains derivation, its readers, close-time minting and today's
-three-slot rows. LTM0 ideas, LTM1 binary chains and the shared eight STM
-chunks belong to the next spec, including §72's remaining questions.
-Then 2c carries the two R10 arrival notes and step 2's one full sweep.
+**Next is 2c** after identity lands, carrying the two R10 arrival notes,
+then step 2's one full sweep. The latest §72 decision moves the
+layout-and-removal spec and shared eight STM chunks to item 3.0. This
+line retains derivation, its readers, close-time minting and three-slot rows.
 All work stays on main. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
@@ -818,7 +817,9 @@ not by a passing identity lesson.
      VP replaces, mention joins; readings and role evidence in MTM). *Layout
      decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
-     sentence row; built in the layout-and-removal round after identity.
+     sentence row; **moved to item 3** (Alec, 2026-10-23) with STM's eight
+     shared chunks: [spec](doc/plans/2026-10-23-layout-and-removal.md).
+     Step 2 here ends with the identity line, 2c and the sweep.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.
@@ -969,6 +970,15 @@ not by a passing identity lesson.
      nouns, then mass nouns, then count nouns where the language has
      them. Until this lands, 3.5's order-1 stand-ins stay, and unit
      tests force parts of speech.
+   - **Layout and removal** (Alec, 2026-10-23: "the layout spec should be
+     done with 3.0"): LTM0 one slot (ideas), LTM1 two tagged references
+     that chain, no sentence row, the stored derivation and its readers
+     removed, `AnswerProgram` renamed `Reading`; then STM as eight shared
+     chunks. Lands with placement from the priming surface and the
+     geometric channel, which it needs; it also removes the per-forward
+     scans of the whole store (placement's context means, priming's
+     membership pairs). [Spec](doc/plans/2026-10-23-layout-and-removal.md);
+     decisions in [step-2 spec §§70–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
    - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
      of 3.0"; moved from FutureWork).
 

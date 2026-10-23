@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

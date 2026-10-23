@@ -181,9 +181,11 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     language = model.languageSpace
     rules = list(language._compose_binary_rules)
     op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
-    rules[op] = rules[op]._replace(reference_roles=('argin1',),
-        reference_modes=(('argin1', 'particular'),), order_delta=1)
+    rules[op] = rules[op]._replace(clause_form='S', head_role=1, order_delta=0)
     language._compose_binary_rules = tuple(rules)
+    from MTMOverlay import MTMOverlay
+    language.identity_overlay = MTMOverlay(rules, language._compose_unary_rules)
+    bind = next(i for i, r in enumerate(language._compose_unary_rules) if r.method_name == 'bind')
     layer = language._tree_layer(2)
     original = layer.forward
     routes = []
@@ -193,10 +195,15 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         binary = tuple(range(layer.r_reduce)) if reference is None else reference['binary_ops']
         unary = tuple(range(layer.r_apply)) if reference is None else reference['unary_ops']
         stop = (x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
-        # Force the grammar operation with the first (held-column) binding,
-        # whose global action is no longer its local operation number.
+        # Bind the first participant before the VP reads it. Once joined,
+        # its own held location is excluded by the ordinary identity menu.
         from operation_fixtures import selected_action
-        with selected_action(layer, torch.where(kwargs['depth'] >= 2, binary.index(op), stop)):
+        column = next(i for i, local in enumerate(unary)
+                      if local == bind and int(reference['unary_identity'][0, 0, i]) == 1)
+        target = (x.shape[1]-1)*len(binary) + column
+        selected = torch.where(kwargs['depth'] >= 2, binary.index(op),
+            torch.where(reference['unary_valid'][:, 0, column], target, stop))
+        with selected_action(layer, selected):
             result = original(x, **kwargs)
         routes.append(result[2])
         return result
@@ -209,8 +216,22 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     store = model.symbolSpace.ltm_store
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, model._concept_owner())
-    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior))
+    index = store.write_clause(Clause(ConceptualMeaning.from_description(prior), point=prior, order=1))
     cid = int(store.row_ids[index])
+    from Spaces import _concept_alloc_of
+    from ReferenceContext import SituationAddress
+    from MTMOverlay import MTMOverlay
+    owner = model._concept_owner()
+    owner.interpret.lookup_word(tuple(map(ord, 'alpha')), (), form='alpha')
+    for word in owner.word_concepts('alpha'):
+        _concept_alloc_of(owner).reference_orders[word] = 1
+    occurrence = store.occurrence_of(index)
+    owner.mtm.open(occurrence, kind=None, when=0, value=prior)
+    frame = SituationAddress(occurrence).read(store)
+    stage = MTMOverlay.stage
+    def held_identity(resolver, frames, like, *, journal, words):
+        return stage(resolver, [(frame,)] * len(frames), like, journal=journal, words=words)
+    monkeypatch.setattr(MTMOverlay, 'stage', staticmethod(held_identity))
 
     def held(active, like):
         B = active.shape[0]
@@ -236,12 +257,12 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         actions = entry.actions[:, 0] == 1
         assert int(actions.sum()) == len(entry.leaves)-1
         frame = entry.operation_values[actions][-1]
-        torch.testing.assert_close(frame[0], prior, rtol=0, atol=0)
+        torch.testing.assert_close(frame[0], torch.maximum(entry.leaves[0], prior), rtol=0, atol=0)
         # A fixed projection evaluated as a single word or a bank GEMM can
         # differ by float32 accumulation order; it retains the same direction.
         torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
-        assert entry.operation_refs[actions][-1, 0].item() == cid
-        assert clause.composition.children[0].reference == cid
+        assert entry.identity_actions[actions][-1, 1].item() == 1
+        assert clause.children[0].identity['handle'] == 1
         torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
         torch.testing.assert_close(
             model._sentence_fields[0][0].end_state[0], clause.point, rtol=0, atol=0)

@@ -770,7 +770,12 @@ class ReferenceClose(nn.Module):
         plan = dict(items=items, records=records, pending_names=pending_names,
                     decisions=[], departure=int(departure))
         handles = {}
-        for site in self.sites(clause, pending_names=pending_names):
+        sites = self.sites(clause, pending_names=pending_names)
+        # A later wrapper can reference a determination inside its own tree.
+        # Consume the kept journal in time order, before resolving its aliases.
+        sites.sort(key=lambda site: (site['node'].identity or {}).get('action')
+                   if (site['node'].identity or {}).get('action') is not None else -1)
+        for site in sites:
             node = site['node']
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)

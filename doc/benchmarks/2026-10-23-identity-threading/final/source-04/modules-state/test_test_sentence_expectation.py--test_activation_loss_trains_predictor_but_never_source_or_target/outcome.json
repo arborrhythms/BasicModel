@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_expectation.py::test_activation_loss_trains_predictor_but_never_source_or_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

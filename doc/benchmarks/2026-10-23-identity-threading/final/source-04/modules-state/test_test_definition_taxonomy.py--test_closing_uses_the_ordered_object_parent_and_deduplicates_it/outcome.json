@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_taxonomy.py::test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

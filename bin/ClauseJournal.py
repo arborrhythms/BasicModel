@@ -734,6 +734,50 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             **bands(root))
         return field
 
+    def retain_introductions(result):
+        if program.identity_actions is None:
+            return result
+        ordered, seen = [], set()
+        def postorder(node):
+            if id(node) in seen:
+                return
+            seen.add(id(node))
+            for child in node['children']:
+                postorder(child)
+            ordered.append(node)
+        for node in stack:
+            postorder(node)
+        owners, events = set(), set()
+        def collect(clause):
+            if clause.identity and (event := clause.identity.get('event')) is not None and event[1]:
+                events.add(clause.identity['action'])
+            request = clause.reference_request or {}
+            if clause.identity and request and request.get('compose_bind', 0) <= 0:
+                owners.add(clause.identity['handle'])
+            for child in (*clause.children, *clause.companions):
+                collect(child)
+        collect(result)
+        # The verb is a symbol, not an overlay handle.
+        required = {int(event[index]) for node in ordered
+                    if (event := node.get('identity_event')) is not None
+                    for index in (1, 2, 4) if int(event[index]) > 0}
+        extra = []
+        for node in ordered:
+            handle, request = node.get('identity_handle', 0), node.get('close_request', {})
+            if (handle in required and handle not in owners and request
+                    and request.get('compose_bind', 0) <= 0 and node['order'] == 1
+                    and id(composition(node)) in noun_terms):
+                ended = recover(node)
+                if ended.reference_request is not None:
+                    extra.append(ended)
+                    collect(ended)
+            event = node.get('identity_event')
+            if event is not None and event[1] and node['identity_action'] not in events:
+                ended = recover(node)
+                extra.append(ended)
+                collect(ended)
+        return replace(result, children=(*result.children, *extra)) if extra else result
+
     if len(stack) == 3:
         children, references = [], []
         roles = []
@@ -780,7 +824,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if operation == 'whole':
             operation = 'part'
             references = references[2], references[1], references[0]
-        return Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
+        return retain_introductions(Clause(meaning, relation=operation, refs=tuple(references), children=tuple(children),
                       **metadata(tuple(range(len(values)))),
-                      **bands(dict(leaves=tuple(range(len(values))))))
-    return recover(stack[0], top=True)
+                      **bands(dict(leaves=tuple(range(len(values)))))))
+    return retain_introductions(recover(stack[0], top=True))

@@ -223,8 +223,8 @@ def recorded_identity_reading(f, tree):
     from dataclasses import replace
     from ReferenceContext import result_order
     entry = f.program(tree)
-    orders = torch.tensor([1 if int(word) in (f.words['subject'][0], f.words['alias'][0]) else 0
-                           for word in entry.word_ids])
+    names = {f.words[name][0] for name in ('subject', 'alias') if name in f.words}
+    orders = torch.tensor([1 if int(word) in names else 0 for word in entry.word_ids])
     entry = replace(entry, leaf_orders=orders, close_references=True)
     overlay = MTMOverlay(f.binary, f.unary)
     words, columns = len(entry.leaves), len(entry.actions)
@@ -339,3 +339,90 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
     state = overlay.apply(state, choice(points[:, 0, 3], identity=3),
         torch.stack((torch.zeros(1, 2), records[:, 0, 3]), 1), column=torch.tensor(3), words=8)
     assert state[2][0, 0, 3] == 0
+
+
+def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch):
+    from ClauseJournal import finish_clause
+    from test_clause_acceptance import SentenceFixture
+    from test_medium_term_memory import snapshot, unchanged
+    f = SentenceFixture(monkeypatch)
+    entry, _, handle = recorded_identity_reading(f,
+        ('bind', ('sum', ('lower_unary', 'subject'), 'tail')))
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, ())
+    assert len(plan['items']) == 2
+    introduction, use = plan['items']
+    assert introduction['mode'] == 'mint'
+    assert introduction['node'].identity['handle'] == use['node'].identity['handle'] == handle
+    assert use['selected'] == introduction['selected'] == ('new', 0)
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped', sentence_index=0)
+    retained = snapshot(resolver)
+    resolver.commit(plan, row, written, document='wrapped', position=0, training=False)
+    first, second = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
+    assert f.cs.mtm.token_of(second) == first
+    assert f.cs.mtm.entries[first].occurrences == (first, second)
+    unchanged(resolver, retained)
+
+
+def test_dummy_bind_preserves_a_carried_object_with_different_working_content(monkeypatch):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from PartClosing import PartClosing
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    reference = f.noun('carrier')
+    value = torch.ones(8) * .25
+    leaf = Composition(value, reference=reference, order=0)
+    bound = Composition(value, children=(leaf,), operation='bind', head_role=1, order=0)
+    closing = PartClosing(f.cs, f.store)
+    assert not torch.equal(closing._point(reference), value)
+    assert closing._plan_term(bound, True) == reference
+    assert not any(record['seat'] for record in closing._plan)
+    assert closing._next == closing.alloc.next_id
+
+
+def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
+    import copy
+    from MemoryIndex import configure_model_index, RowRemapObserver
+    from test_clause_acceptance import SentenceFixture
+    from Spaces import _concept_alloc_of
+    f = SentenceFixture(monkeypatch)
+    f.noun('held')
+    configure_model_index(f.model, f.store)
+    owner, store, model = copy.deepcopy((f.cs, f.store, f.model))
+    configure_model_index(model, store)
+    assert store._concept_owner() is owner
+    assert store.parts is _concept_alloc_of(owner).parts and store.parts is not f.store.parts
+    assert owner._clause_store_ref() is store
+    symbol = f.words['held'][1]
+    row = owner._csw_row_of(symbol)
+    original = f.store._concept_point(symbol).clone()
+    with torch.no_grad():
+        owner.similarity_codebook.W[row].fill_(.25)
+    torch.testing.assert_close(store._concept_point(symbol), torch.full((8,), .25))
+    torch.testing.assert_close(f.store._concept_point(symbol), original)
+    configure_model_index(model, store)
+    observers = owner.similarity_codebook._row_remap_observers
+    assert sum(isinstance(observer, RowRemapObserver) and observer.store() is store
+               for observer in observers) == 1
+
+
+def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
+    from ClauseJournal import finish_clause
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    entry, _, _ = recorded_identity_reading(f, ('not',
+        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'target')))))
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, ())
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped-event', sentence_index=0)
+    resolver.commit(plan, row, written, document='wrapped-event', position=0, training=False)
+    events = {event.occurrence for token in f.cs.mtm.entries.values() for event in token.events}
+    assert events == {written[('occurrence', id(prepared))]}
+    assert len(f.store) == 3

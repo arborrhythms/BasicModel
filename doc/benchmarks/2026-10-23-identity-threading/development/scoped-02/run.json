@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_live_references.py",
+    "test/test_math_chain_section14.py::test_ordinary_close_read_cue_and_open_question_reach_loop_through_real_lifecycle",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "-x",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T12:47:04.905998+00:00",
+  "exit": 4,
+  "finished": "2026-10-23T12:47:05.649421+00:00"
+}

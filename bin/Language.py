@@ -6967,7 +6967,7 @@ class OperationSelectionLayer(nn.Module):
             dummy = reference_data.get('unary_bind_dummy')
             if dummy is not None:
                 fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None, None]
-                unary_scores = torch.where(fixed & reference_data['unary_valid'], 0., unary_scores)
+                unary_scores = torch.where(fixed & reference_data['unary_valid'] & torch.isfinite(unary_scores), 0., unary_scores)
         if self.stage_menu is not None:
             allowed = torch.tensor([name in self.stage_menu for name in self.argument_operation_names], device=x.device)
             binary_scores = binary_scores.masked_fill(~allowed[:self.r_reduce].index_select(0, bi)[None,None], -torch.inf)

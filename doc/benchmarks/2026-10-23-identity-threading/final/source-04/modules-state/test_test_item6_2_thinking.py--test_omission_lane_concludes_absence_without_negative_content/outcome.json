@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
