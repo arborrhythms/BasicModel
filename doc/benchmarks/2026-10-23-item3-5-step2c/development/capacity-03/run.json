@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+    "-p",
+    "capacity_probe",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T19:20:26.719187+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T19:24:10.180327+00:00"
+}

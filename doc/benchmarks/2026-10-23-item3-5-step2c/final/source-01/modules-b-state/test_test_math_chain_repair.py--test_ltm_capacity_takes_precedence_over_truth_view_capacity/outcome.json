@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

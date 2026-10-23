@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

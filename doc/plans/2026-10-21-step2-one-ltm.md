@@ -3871,3 +3871,83 @@ paired trial/keep. The new R10 follow-up checks the same-close alias and
 later self-arrival explicitly: the planned self-choice leaves the token
 pending, and a preview changes neither clocks, rows nor bank. The original
 reference-term cases continue to check zero cost and matching content.
+
+## 78. Kept-close access is not model-time equality — Codex, 2026-10-23
+
+The first frozen pass, `253bec194`, exposes the closing fixture's partial
+owner: `reading_fixtures.commit_reading` supplies a `SimpleNamespace` for
+trust and the LTM switch, then returns that namespace from `_concept_owner`.
+The new consolidation boundary needs the actual conceptual owner already
+held by `registry.space`. Port that fixture accessor to the real owner;
+keep its trust/switch setup and every assertion. This is a fixture port
+under §39, not a production bypass of consolidation.
+
+The timestamp-reader inventory also reports the new `ReferenceClose.commit`
+read of `entry.when`. Auditing it reveals a production defect: `RowTime`
+can use one model-present tick for several closes, so timestamp equality
+does not identify the entries referenced by this close. The retained
+`development/expiry-clock-01` diagnostic reproduces it: an introduction
+with only one occurrence remains after seventeen unrelated closes, with
+its access clock incorrectly refreshed to 18. Record actual references
+from the kept open/bind/refinement/event operations instead. The model-time
+stamp and the expiry close counter retain their separate meanings. This
+removes the extra timestamp reader, so the inventory fixture and assertion
+need no port. Carry the diagnostic's assertions into the regression file.
+
+These failures have no paired trial or keep: the fixtures supply fixed
+readings, the inventory scans source, and the expiry diagnostic commits
+fixed clauses. Their RNG, journal/memory captures and diagnoses are retained.
+The corrected source receives all scoped groups afresh; no source-01
+result is promoted. No explicit decision of Alec's is reversed.
+
+## 79. Capacity eviction within a kept close — Codex, 2026-10-23
+
+Frozen source `253bec194` completed its scoped pass: 1,650 passed, twelve
+existing skips, 24 failed. Twenty-two failures use §78's partial owner;
+one is the timestamp-reader inventory; the last is the ordinary
+multi-stream driver. The last capture has 95 sites and a full 64-entry
+pool when `_commit_events` reports a lost determined introduction.
+
+Before changing code, `development/capacity-01` restores the captured
+process RNG and adds a keep/eviction probe. The corpus generator owns a
+private `Random(None)` that the original generic capture did not save, so
+this is a reproduction of the failure class, not an exact presentation
+replay. Its inputs, both trial readings, resolver features/probabilities,
+R/E/A and keep decision are retained. Both streams tie at R =
+0.0108202128, A = 0, and keep greedy. Five introduction handles are no
+longer retained; the probe shows each was opened and then capacity-evicted
+in that same close. The fixed-operation `capacity-unit-01` reproduces the
+same error with four determined objects and a two-entry pool.
+
+A local set of mentions actually committed by this close now distinguishes
+an evicted introduction from a missing one. Events of an evicted token
+are omitted because its history ends with the token; events of retained
+tokens still publish. A determination that never closed still raises, as
+the existing loud-failure regression requires unchanged. No capacity is
+increased and no seat or token is reserved. The new unit checks retained
+histories, eviction, and exact unchanged rows/bank. The original driver
+assertions stay verbatim. Together with §78, actual mention/refinement and
+event references refresh the close counter; equal model timestamps do not.
+
+## 80. A surface-wrapped relation is still a relation — Codex, 2026-10-23
+
+The repaired helper/clock/capacity contracts give 150 passes in
+`foundation-06`. The driver reproduction `capacity-02` proceeds beyond the
+capacity error, then exposes a new standalone-site bug before a trial's
+cost is complete: a three-role equality wrapped by a surface operation has
+`relation='part'` and no single `.point`. Its outer head does not make it
+a standalone object. The capture retains that relation and its participants;
+`standalone-relation-01` reproduces the error directly.
+
+Restrict the new standalone exception to a non-relation with an actual
+point. This uses the kept parse/record, not a lexical test. Its internal
+participant determinations continue to supply their own sites. The new
+unit requires no extra root site and unchanged rows/bank; existing
+assertions remain verbatim. The failed preview never completed a cost or
+reached keep, so no keep decision exists for that sentence; preceding
+paired readings and keep decisions are in the diagnostic probe.
+
+The generic capture now also saves every private corpus-generator RNG.
+Final gates explicitly clear both process and generator replay controls.
+This improves reproducibility without changing a draw; the older capture's
+stated limitation remains in the receipt.

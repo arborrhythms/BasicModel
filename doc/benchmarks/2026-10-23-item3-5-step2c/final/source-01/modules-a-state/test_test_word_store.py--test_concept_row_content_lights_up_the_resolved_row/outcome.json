@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_concept_row_content_lights_up_the_resolved_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

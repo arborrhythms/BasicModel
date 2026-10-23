@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_integrity.py::test_two_pending_words_cannot_overbook_the_last_definition_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

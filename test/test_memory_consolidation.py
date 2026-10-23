@@ -268,3 +268,74 @@ def test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool(corrupti
         pool.restore(bad)
     assert pool.names == {key: pool.names[key]} and pool.closes == dict(saved['closes'])
     torch.testing.assert_close(pool.value_of(key), saved['entries'][0]['value'])
+
+
+def test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token():
+    resolver, store, atoms = fixture()
+    store._model_present = lambda: 7
+    pool = resolver.components.owner.mtm
+    first, _ = kept(resolver, mention(atoms[0]), position=0)
+    token = store.occurrence_of(first)
+    for position in range(1, 17):
+        kept(resolver, mention(atoms[1]), position=position)
+    assert token in pool.entries
+    kept(resolver, mention(atoms[1]), position=17)
+    assert token not in pool.entries
+    assert store.location(token) is not None
+
+
+def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(monkeypatch):
+    from ClauseJournal import finish_clause
+    from test_clause_acceptance import SentenceFixture
+    from test_identity_threading import recorded_identity_reading
+    f = SentenceFixture(monkeypatch)
+    f.cs.mtm = MediumTermMemory(capacity=2)
+    tree = ('sum',
+        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
+        ('lift', ('lower_unary', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
+    entry, _, _ = recorded_identity_reading(f, tree)
+    resolver = f.cs.components.reference_close
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    plan = resolver.preview(clause, ())
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = f.store.write_clause(prepared, written_rows=written, document_key='capacity-close', sentence_index=0)
+    before = snapshot(resolver)
+    resolver.commit(plan, row, written, document='capacity-close', position=0, training=False)
+    names = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
+    assert len(names) == 4 and len(f.cs.mtm.entries) == 2
+    assert all(f.cs.mtm.token_of(name) is None for name in names[:2])
+    assert all(f.cs.mtm.token_of(name) is not None for name in names[2:])
+    assert all(store_row is not None for store_row in map(f.store.location, names))
+    assert all(f.cs.mtm.entries[f.cs.mtm.token_of(name)].events for name in names[2:])
+    unchanged(resolver, before)
+
+
+def test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged():
+    resolver, store, atoms = fixture()
+    store._model_present = lambda: 7
+    pool = resolver.components.owner.mtm
+    first, _ = kept(resolver, mention(atoms[0]), position=0)
+    token = store.occurrence_of(first)
+    frame = SituationFrame.from_row(store.row(first))
+    for position in range(1, 17):
+        kept(resolver, mention(atoms[1]), position=position)
+    bound, _ = kept(resolver, mention(atoms[0], mode='bind'), (frame,), position=17)
+    assert pool.token_of(store.occurrence_of(bound)) == token
+    for position in range(18, 34):
+        kept(resolver, mention(atoms[1]), position=position)
+    assert token in pool.entries
+    kept(resolver, mention(atoms[1]), position=34)
+    assert token not in pool.entries and store.location(token) is not None
+
+
+def test_surface_wrapped_relation_does_not_add_a_standalone_object():
+    resolver, store, atoms = fixture()
+    relation = Composition(atoms[0], (Composition(atoms[1]), Composition(atoms[2])), operation='equal')
+    wrapped = Composition(atoms[0], (Composition(atoms[3]), relation), operation='surface', head_role=2, order=1)
+    clause = Clause(ConceptualMeaning(atoms[:3], torch.ones(3,dtype=torch.bool)),
+        point=None, order=1, relation='part', composition=wrapped)
+    before = snapshot(resolver)
+    plan = resolver.preview(clause, ())
+    assert plan['items'] == []
+    unchanged(resolver, before)

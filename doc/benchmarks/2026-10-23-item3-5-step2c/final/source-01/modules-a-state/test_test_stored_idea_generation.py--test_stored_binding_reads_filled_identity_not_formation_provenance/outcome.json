@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

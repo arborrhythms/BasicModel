@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammatical_query_vps.py::test_execution_is_derived_from_middle_vp_and_retains_the_proposition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

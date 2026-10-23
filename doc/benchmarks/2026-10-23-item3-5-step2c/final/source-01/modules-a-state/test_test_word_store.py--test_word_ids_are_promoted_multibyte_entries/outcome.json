@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

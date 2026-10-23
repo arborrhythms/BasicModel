@@ -101,7 +101,7 @@ def clause_participants(clause, rules=()):
         if (node is clause and not request.get('leaf')
                 and (request or node.order == 1)
                 and (node.composition is None or not node.composition.children
-                     or node.order == 1 and node.composition.head_role
+                     or node.relation is None and node.order == 1 and node.composition.head_role
                      and node.composition.operation not in ('lift', 'verb', 'equal', 'part', 'whole')
                      and not any(rule.method_name == node.composition.operation
                          and (getattr(rule, 'clause_form', None) in ('S', 'VP')

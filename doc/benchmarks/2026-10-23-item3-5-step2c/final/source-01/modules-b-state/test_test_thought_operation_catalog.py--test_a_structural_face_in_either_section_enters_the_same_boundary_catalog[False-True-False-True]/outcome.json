@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_a_structural_face_in_either_section_enters_the_same_boundary_catalog[False-True-False-True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

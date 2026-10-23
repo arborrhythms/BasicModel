@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_handles_perturbed_input",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_returns_nearest_percept_bytes",
+    "test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_inf_input_raises",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_nan_input_raises",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseNullSlotGuard::test_near_zero_input_returns_empty_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseEmptyCodebook::test_empty_codebook_returns_empty_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_2d_input_returns_list_of_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_3d_input_returns_nested_list"
+  ],
+  "completed": [
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_handles_perturbed_input",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_returns_nearest_percept_bytes",
+    "test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_inf_input_raises",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_nan_input_raises",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseNullSlotGuard::test_near_zero_input_returns_empty_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseEmptyCodebook::test_empty_codebook_returns_empty_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_2d_input_returns_list_of_bytes",
+    "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_3d_input_returns_nested_list"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_handles_perturbed_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000893500167876482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_returns_nearest_percept_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004396250005811453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021222042152658105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_inf_input_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00045383395627141,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_nan_input_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00029212492518126965,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseNullSlotGuard::test_near_zero_input_returns_empty_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003241251688450575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseEmptyCodebook::test_empty_codebook_returns_empty_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002755420282483101,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_2d_input_returns_list_of_bytes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000524875009432435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_3d_input_returns_nested_list",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003999159671366215,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

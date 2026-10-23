@@ -1,0 +1,15 @@
+{
+  "selectors": [
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-01/modules-b/worker-011.recycle.json"
+}

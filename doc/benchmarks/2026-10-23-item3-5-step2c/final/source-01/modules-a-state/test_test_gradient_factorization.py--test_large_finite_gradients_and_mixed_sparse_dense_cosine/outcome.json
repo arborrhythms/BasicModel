@@ -1,0 +1,6 @@
+{
+  "node": "test/test_gradient_factorization.py::test_large_finite_gradients_and_mixed_sparse_dense_cosine",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,416 @@
+{
+  "node": "test/test_reference_participants.py::test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          11
+        ],
+        "word_rows": [
+          11
+        ],
+        "activations": [
+          1.0
+        ],
+        "leaves": [
+          [
+            0.5283719301223755,
+            0.6056786179542542,
+            0.39475351572036743,
+            0.4481565058231354,
+            0.6040220856666565,
+            0.5144354701042175,
+            0.3831412196159363,
+            0.6012037992477417
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ]
+        ],
+        "targets": [
+          34
+        ],
+        "end_state": [
+          [
+            0.5283719301223755,
+            0.6056786179542542,
+            0.39475351572036743,
+            0.4481565058231354,
+            0.6040220856666565,
+            0.5144354701042175,
+            0.3831412196159363,
+            0.6012037992477417
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          12
+        ],
+        "word_ids": [
+          12
+        ],
+        "lexical_forms": [
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": [
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "symbol_when": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": true,
+        "operation_probabilities": null,
+        "leaf_orders": [
+          0
+        ],
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": null,
+            "refs": [
+              12,
+              -1,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": 12,
+            "word_id": 12,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [],
+        "individuals": {},
+        "arrivals": [],
+        "decisions": [],
+        "cost": 0.0
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "pronoun",
+            "content": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "leaves": [
+              0
+            ],
+            "anonymous": true,
+            "own_object": true,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ]
+          }
+        },
+        "arrivals": [
+          {
+            "site": [
+              "site",
+              0
+            ],
+            "site_occurrence": [
+              "site",
+              0
+            ],
+            "token": [
+              "new",
+              0
+            ],
+            "selected": null,
+            "candidates": [
+              [
+                "new",
+                0
+              ]
+            ],
+            "features": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "forward_identity": 12,
+            "candidate_occurrence": null,
+            "probabilities": [
+              0.5,
+              0.5
+            ]
+          }
+        ],
+        "decisions": [
+          {
+            "candidates": [
+              null
+            ],
+            "features": [],
+            "logits": [
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "greedy": 0,
+            "selected": 0,
+            "next": 0,
+            "departed": false,
+            "forward_identity": 12
+          },
+          {
+            "candidates": [
+              null,
+              [
+                "new",
+                0
+              ]
+            ],
+            "features": [
+              [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "logits": [
+              0.0,
+              0.0
+            ],
+            "probabilities": [
+              0.5,
+              0.5
+            ],
+            "greedy": 0,
+            "selected": 0,
+            "next": 1,
+            "departed": false,
+            "forward_identity": 12
+          }
+        ],
+        "cost": 2.0
+      }
+    }
+  ]
+}

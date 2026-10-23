@@ -1,0 +1,61 @@
+{
+  "failure": "Standalone-site recovery received a surface-wrapped three-role relation with point=None.",
+  "captured_root": {
+    "relation": "part",
+    "order": 1,
+    "request": null,
+    "meaning": {
+      "refs": [
+        null,
+        null,
+        null
+      ],
+      "open": [
+        [
+          "referent",
+          0
+        ],
+        [
+          "relation",
+          1
+        ],
+        [
+          "referent",
+          2
+        ]
+      ],
+      "bindings": {
+        "_equality": true
+      },
+      "mask": [
+        true,
+        true,
+        true
+      ]
+    },
+    "composition": 0
+  },
+  "captured_composition": {
+    "reference": -1,
+    "word_id": -1,
+    "operation": "surface_unary",
+    "formal_name": "surface_unary",
+    "head_role": 1,
+    "order": 1,
+    "leaves": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "children": [
+      21
+    ],
+    "binding": null
+  },
+  "diagnosis": "An outer head does not make a relation into a standalone object. Restrict the new standalone exception to a non-relation with a single point; internal participants remain.",
+  "keep": "The failing preview raised before a completed trial cost or keep. Earlier complete trials are retained by capacity-probe.",
+  "production_assertions_changed": false
+}

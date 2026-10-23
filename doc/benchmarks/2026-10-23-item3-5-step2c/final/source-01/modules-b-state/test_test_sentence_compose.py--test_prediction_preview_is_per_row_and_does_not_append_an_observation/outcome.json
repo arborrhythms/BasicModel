@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_compose.py::test_prediction_preview_is_per_row_and_does_not_append_an_observation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

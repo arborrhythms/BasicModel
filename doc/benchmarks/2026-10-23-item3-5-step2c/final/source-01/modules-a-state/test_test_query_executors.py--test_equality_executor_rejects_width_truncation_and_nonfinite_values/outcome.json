@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

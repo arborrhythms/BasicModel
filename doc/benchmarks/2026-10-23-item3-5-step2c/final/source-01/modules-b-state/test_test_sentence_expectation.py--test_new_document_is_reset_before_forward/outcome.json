@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_expectation.py::test_new_document_is_reset_before_forward",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

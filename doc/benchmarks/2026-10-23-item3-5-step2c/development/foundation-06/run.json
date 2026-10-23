@@ -1,0 +1,23 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_memory_consolidation.py",
+    "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly",
+    "test/test_selected_nested_meaning.py",
+    "test/test_expectation_defaults.py",
+    "test/test_item4_native.py",
+    "test/test_existence_metadata.py",
+    "test/test_selected_relation_meaning.py",
+    "test/test_joint_objectives.py",
+    "test/test_sentence_expectation.py",
+    "test/test_compiled_expectation_boundary.py",
+    "test/test_operators_round4a0.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T19:13:58.605820+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T19:17:29.861427+00:00"
+}

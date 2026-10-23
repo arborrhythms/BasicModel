@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_metadata.py::test_live_description_owns_values_but_fact_storage_detaches",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
+    "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation",
+    "test/test_sentence_retention.py::test_narrow_idea_retains_no_implicit_operand_reference",
+    "test/test_sentence_retention.py::test_invalid_prediction_does_not_publish_embedded_clauses"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-01/modules-b/worker-004.recycle.json"
+}

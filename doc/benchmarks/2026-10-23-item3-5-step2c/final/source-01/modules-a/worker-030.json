@@ -1,0 +1,117 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_item55_mechanisms.py::test_absences"
+  ],
+  "completed": [
+    "test/test_item55_mechanisms.py::test_clock_independence",
+    "test/test_item55_mechanisms.py::test_offset_independence",
+    "test/test_item55_mechanisms.py::test_stream_chain",
+    "test/test_item55_mechanisms.py::test_interleaving",
+    "test/test_item55_mechanisms.py::test_preposition_idempotence",
+    "test/test_item55_mechanisms.py::test_surface_inverses",
+    "test/test_item55_mechanisms.py::test_nested_wholes",
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+    "test/test_item55_mechanisms.py::test_absences"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {
+    "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact": "stage3"
+  },
+  "reports": [
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_clock_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.7474554998334497,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.122s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.125s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.123s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.122s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.108s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.109s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.108s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.111s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.121s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_offset_independence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.5666322910692543,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.122s)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.130s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_stream_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.4039582500699908,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.273s)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_interleaving",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.1031478750519454,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=0.219s)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_preposition_idempotence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013374374946579337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_surface_inverses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 5.77476462488994,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01277404185384512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_nested_wholes_from_stage3_artifact",
+      "phase": "setup",
+      "outcome": "skipped",
+      "certificate_phase": "stage3",
+      "duration": 0.0008533748332411051,
+      "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_item55_mechanisms.py', 490, 'Skipped: phase artifact absent: stage3 (no producing lesson registered)')",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item55_mechanisms.py::test_absences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06628937507048249,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

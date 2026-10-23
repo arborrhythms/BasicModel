@@ -1,0 +1,34 @@
+....FF                                                                   [100%]
+=================================== FAILURES ===================================
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward] _
+test/test_selected_relation_meaning.py:396: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed] _
+test/test_selected_relation_meaning.py:396: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm
+    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_selected_relation_meaning.py::test_native_addresses_do_not_become_semantic_operand_values
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]
+FAILED test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]
+2 failed, 4 passed, 2 warnings in 2.49s

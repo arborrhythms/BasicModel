@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_completed_forest_indexes_each_actual_slot_by_unfolding",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

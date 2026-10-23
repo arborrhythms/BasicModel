@@ -1,0 +1,35 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_surface_wrapped_relation_does_not_add_a_standalone_object ________
+doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_standalone_relation.py:16: in test_surface_wrapped_relation_does_not_add_a_standalone_object
+    plan = resolver.preview(clause, ())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+doc/benchmarks/2026-10-23-item3-5-step2c/development/identity_capture.py:64: in close
+    result = preview(resolver, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:792: in preview
+    pending_names = self.pending_names(clause, individuals, stream)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:766: in pending_names
+    names, _ = self._arrival_constituents(clause)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:875: in _arrival_constituents
+    for site in self.sites(clause)
+                ^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:708: in sites
+    content=clause.point, cue=head.point, predicate=torch.zeros_like(clause.point))
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: zeros_like(): argument 'input' (position 1) must be Tensor, not NoneType
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_reference_close.py:185
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py:185: PytestUnknownMarkWarning: Unknown pytest.mark.phase - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.phase('mtm_reidentification')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_standalone_relation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object
+1 failed, 2 warnings in 1.62s

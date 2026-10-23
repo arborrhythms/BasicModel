@@ -1,0 +1,30 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history ___
+doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_capacity_close.py:23: in test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history
+    resolver.commit(plan, row, written, document='capacity-close', position=0, training=False)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:1248: in commit
+    self._commit_events(plan, written, when=when)
+bin/ReferenceClose.py:1348: in _commit_events
+    raise RuntimeError('a kept identity event lost its determined introduction')
+E   RuntimeError: a kept identity event lost its determined introduction
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_reference_close.py:185
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py:185: PytestUnknownMarkWarning: Unknown pytest.mark.phase - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.phase('mtm_reidentification')
+
+doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_capacity_close.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_capacity_close.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history
+1 failed, 3 warnings in 1.62s

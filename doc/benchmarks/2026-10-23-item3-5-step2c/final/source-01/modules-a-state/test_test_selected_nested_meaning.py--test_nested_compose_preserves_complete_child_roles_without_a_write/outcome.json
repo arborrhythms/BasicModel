@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_nested_meaning.py::test_nested_compose_preserves_complete_child_roles_without_a_write",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,114 @@
+{
+  "source": "253bec19402213ba60ff8d052cb78b6bc2f6a9aa",
+  "counts": {
+    "passed": 1650,
+    "skipped": 12,
+    "failed": 24
+  },
+  "failures": [
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[forward]",
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:138: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[batch_eval]",
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:138: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_nested_observation_writers_retain_children_without_certifying_them[packed]",
+      "message": "test/test_selected_nested_meaning.py:55: in test_nested_observation_writers_retain_children_without_certifying_them\n    store = _write_selected_observation(language, registry, entry, path)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:138: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_selected_nested_meaning.py::test_10_packed_pending_and_eager_ends_write_identical_rows",
+      "message": "test/test_selected_nested_meaning.py:72: in test_10_packed_pending_and_eager_ends_write_identical_rows\n    stores = [_write_selected_observation(language, registry, entry, path)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_selected_nested_meaning.py:138: in _write_selected_observation\n    commit_reading(language, registry, entry, store, owner=host)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_expectation_defaults.py::test_packed_ltm_ignores_masked_slots_even_with_retained_storage",
+      "message": "test/test_expectation_defaults.py:295: in test_packed_ltm_ignores_masked_slots_even_with_retained_storage\n    commit_reading(f.language, f.registry, entry, store, discourse=discourse,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[forward]",
+      "message": "test/test_selected_relation_meaning.py:396: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+      "message": "test/test_selected_relation_meaning.py:396: in test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n    commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+      "message": "test/test_operators_round4a0.py:210: in test_when_reader_inventory_covers_current_attribute_and_dynamic_readers\n    assert actual == {(row['file'], row['function']) for row in fixture['readers']}\nE   AssertionError: assert {('bin/Attent...ymbols'), ...} == {('bin/Attent...ymbols'), ...}\nE     \nE     Extra items in the left set:\nE     ('bin/ReferenceClose.py', 'ReferenceClose.commit')\nE     Use -v to get more diff"
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+      "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+      "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+      "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+      "message": "test/test_existence_metadata.py:33: in test_actual_observation_writers_keep_roles_without_asserting_world_facts\n    commit_reading(f.language, f.registry, entry, store, trust=.95, owner=model)\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_sentence_expectation.py::test_streaming_and_packed_boundary_use_same_full_roles[True]",
+      "message": "test/test_sentence_expectation.py:126: in test_streaming_and_packed_boundary_use_same_full_roles\n    _, _, cost = commit_reading(f.language, f.registry, entry, packed._ltm_store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'"
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+      "message": "test/test_math_chain_repair.py:226: in test_ordinary_driver_two_three_eight_stream_groups_after_single_write\n    assert present(model, split='train', after_batch=after)['sentences'] == len(texts)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\nbin/Models.py:13593: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13749: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14125: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8802: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10178: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8487: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23932: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17178: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22484: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22053: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21161: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20413: in _commit_sentence\n    resolver.commit(reference_plan, row, written_clauses[b],\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:1248: in commit\n    self._commit_events(plan, written, when=when)\nbin/ReferenceClose.py:1348: in _commit_events\n    raise RuntimeError('a kept identity event lost its determined introduction')\nE   RuntimeError: a kept identity event lost its determined introduction"
+    }
+  ],
+  "diagnoses": {
+    "partial_owner": "22 cases share reading_fixtures.commit_reading returning a partial SimpleNamespace from _concept_owner; use the real registry.space. No assertion port.",
+    "reader_inventory": "The new entry.when equality reader is wrong for several closes per model tick. Remove that reader in favor of actual references; inventory unchanged. Retained expiry-clock-01 reproduces the production defect.",
+    "event_capacity": "The original failing driver has 95 sites and a full 64-entry pool. Capacity-01 probes both trials before any repair and proves written introductions were evicted in the same close. Capacity-unit-01 supplies a deterministic boundary reproduction. Preserve loud rejection for a never-closed introduction."
+  },
+  "keep_probe": "../../development/capacity-01/capacity-probe/close-008.json.gz",
+  "replay_limit": "Process RNG restored; the original private corpus-generator RNG was not captured. Capacity-01 retains its actual fresh presentation and reproduces the class; it is not an exact presentation replay.",
+  "source_results_promoted": false
+}

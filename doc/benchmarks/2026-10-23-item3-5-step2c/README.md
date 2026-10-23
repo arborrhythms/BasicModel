@@ -7,7 +7,7 @@ Item 3.0 has not been reached. This is mechanism evidence, not a learning
 claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)
-§§73–77 records the code review, decisions and each development repair under
+§§73–80 records the code review, decisions and each development repair under
 §39. The published base is BasicModel `148953f9b` (identity source
 `65ab7fbe9`, Claude LAND in identity §34), WikiOracle `175c101`.
 [Publication record](publication-identity.json). The required identity
@@ -28,6 +28,10 @@ receipt sentence was added; no further identity gates ran.
   access; age greater than sixteen closes expires it after other stream
   accesses also expire. The cursor's document-end teardown removes that
   document's pool entries, names and histories. LTM rows remain.
+  Refreshes follow the actual committed mentions, refinements and events;
+  several closes can share a model timestamp without refreshing unrelated
+  tokens. A token evicted within its own close loses its event history;
+  a determined introduction that never closed still fails loudly.
 - Today's embedded addresses encode constituent ordinals, not original
   sentence positions. The writer retains the actual close's source pair
   in the consolidation sidecar, without changing row addresses or values.
@@ -36,7 +40,8 @@ receipt sentence was added; no further identity gates ran.
 - The existing definitions cache is tested after DEF forgetting and
   restoration; it rebuilds from the Part revision. No second cache exists.
 - A standalone order-1 composite gets a site through its declared head.
-  Completed S/VP and relation nodes are excluded from that exception.
+  Completed S/VP and relation nodes, including surface-wrapped relations,
+  are excluded from that exception.
 - The two R10 notes are checked explicitly. A same-close alias and a later
   pending self-arrival keep the same anonymous token; a self-choice has no
   refinement to apply. Existing settled-site/no-merge rules and the
@@ -71,8 +76,14 @@ seat reservation, menu masking, fixture resizing or MTM-read detach.
 4. New event fixture corrections: supply an unseated native word and its
    DEF edge, including the object's declared type, instead of the lookup
    path that seats a word. Every assertion in the new case stays verbatim.
+5. `reading_fixtures.commit_reading` returns the actual `registry.space`
+   from `_concept_owner`, retaining its separate trust/LTM-switch namespace.
+   Its users in the selected-nested, selected-relation, expectation-default,
+   item4-native, existence-metadata, joint-objective, sentence-expectation
+   and compiled-expectation fixtures keep every assertion. No timestamp
+   inventory port is needed after the production refresh repair.
 
-No existing test is retired. `final/source-01/test-ports.patch` and
+No existing test is retired. `final/source-02/test-ports.patch` and
 `assertion-audit.json` give the exact changes, including all added tests.
 
 ## Retained development runs
@@ -89,10 +100,26 @@ one. None of these runs substitutes for frozen-source gates.
 | foundation-03 | 192 | 4 | 15 | Nine relative handles used as row indices; four promoted identity display splits; two local bank-helper ports. |
 | foundation-04 | 206 | 4 | 1 | Unnecessary global native-token lookup crossed the frame-access boundary. |
 | foundation-05 | 30 | 0 | 0 | Targeted repaired contracts, R10 notes and malformed metadata. |
+| expiry-clock-01 | 0 | 0 | 1 | Several closes share one model tick; the original refresh rule kept an unmentioned token alive. |
+| capacity-01 | 0 | 0 | 1 | Keep probe: both trials tie in R + A and keep greedy; actual same-close capacity evictions precede the event error. |
+| capacity-unit-01 | 0 | 0 | 1 | Four determined objects in a two-entry pool reproduce the event error through the real close. |
+| foundation-06 | 150 | 0 | 0 | Corrected owner fixtures, expiry, capacity, and the unchanged missing-introduction rejection. |
+| capacity-02 | 0 | 0 | 1 | Driver advances past capacity; standalone recovery mistakes a surface-wrapped relation for an object. |
+| standalone-relation-01 | 0 | 0 | 1 | Direct reproduction of the surface-wrapped relation error. |
+| foundation-07 | 36 | 0 | 0 | Standalone and participant contracts, expiry, capacity, and loud rejection. |
+| capacity-03 | 1 | 0 | 0 | Original driver assertions pass for 1/2/3/8 streams; all paired closes and private generator states retained. |
 
 ## Frozen evidence and review
 
-`final/source-01` holds the source audit and selections: the prior scoped
+`final/source-01` retains the first frozen source `253bec194`: 1,650 passed,
+twelve existing skips, 24 failed. Its [diagnosis](final/source-01/diagnosis.json)
+accounts for all failures: 22 partial-owner fixtures, the timestamp reader,
+and the multi-stream capacity case. The capacity probe restores the process
+RNG, but the original private corpus-generator RNG was not saved. Its new
+presentation and both trials are retained; it reproduces the failure class
+and is not claimed as an exact presentation replay.
+
+`final/source-02` holds the corrected source audit and selections: the prior scoped
 groups, both decomposition arms at their original snapshots/seeds, and
 new/direct changed-module files. Gates are run once by source. Every
 failure is retained and diagnosed before source changes. No full sweep

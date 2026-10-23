@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

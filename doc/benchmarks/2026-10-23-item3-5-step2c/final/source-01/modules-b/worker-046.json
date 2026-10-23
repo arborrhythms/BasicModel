@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair13-right_pair13]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair14-right_pair14]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair15-right_pair15]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair16-right_pair16]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair17-right_pair17]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair18-right_pair18]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair19-right_pair19]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair20-right_pair20]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair21-right_pair21]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair22-right_pair22]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair23-right_pair23]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair24-right_pair24]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair0-right_pair0]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair1-right_pair1]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair2-right_pair2]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair3-right_pair3]"
+  ],
+  "completed": [
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair13-right_pair13]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair14-right_pair14]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair15-right_pair15]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair16-right_pair16]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair17-right_pair17]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair18-right_pair18]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair19-right_pair19]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair20-right_pair20]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair21-right_pair21]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair22-right_pair22]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair23-right_pair23]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair24-right_pair24]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair0-right_pair0]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair1-right_pair1]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair2-right_pair2]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair3-right_pair3]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair13-right_pair13]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000911167124286294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair14-right_pair14]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00029283412732183933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair15-right_pair15]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002562908921390772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair16-right_pair16]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002635421697050333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair17-right_pair17]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022804178297519684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair18-right_pair18]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023208302445709705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair19-right_pair19]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002501250710338354,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair20-right_pair20]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002507080789655447,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair21-right_pair21]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002545828465372324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair22-right_pair22]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002462498378008604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair23-right_pair23]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030925008468329906,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair24-right_pair24]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002643750049173832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair0-right_pair0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003609168343245983,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair1-right_pair1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026712496764957905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair2-right_pair2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002594578545540571,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair3-right_pair3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027058389969170094,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

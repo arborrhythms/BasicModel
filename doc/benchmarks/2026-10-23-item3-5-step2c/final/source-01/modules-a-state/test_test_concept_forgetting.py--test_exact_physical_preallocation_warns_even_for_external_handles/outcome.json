@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+    "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+    "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+    "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice"
+  ],
+  "completed": [
+    "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+    "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+    "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+    "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+    "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+    "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+    "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+    "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+    "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+    "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+    "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+    "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+    "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+    "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020504207350313663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015134999994188547,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016087503172457218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011849161237478256,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001318331342190504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0060096250381320715,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_zero_budget_loads_and_trains_the_ordinary_vp_without_attention",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 15.501944874878973,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 1 (\u0394=4.537s)\r\nbatch = 2 (\u0394=5.169s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1641546671744436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_document_batches_keep_every_sentence_and_do_not_mix_document_context",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016993330791592598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 71.06008241605014,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=4.919s)\r\nbatch = 2 (\u0394=6.079s)\r\nbatch = 3 (\u0394=5.106s)\r\nbatch = 4 (\u0394=6.024s)\r\nbatch = 5 (\u0394=6.150s)\r\nbatch = 6 (\u0394=4.427s)\r\nbatch = 7 (\u0394=6.734s)\r\nbatch = 8 (\u0394=6.833s)\r\nbatch = 9 (\u0394=6.258s)\r\nbatch = 10 (\u0394=6.252s)\r\nbatch = 11 (\u0394=6.254s)\r\n"
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009049160871654749,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032991706393659115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_text_target_preserves_the_live_batch_attention_and_source",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.318959916010499,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002609998919069767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001779578160494566,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011702582938596606,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

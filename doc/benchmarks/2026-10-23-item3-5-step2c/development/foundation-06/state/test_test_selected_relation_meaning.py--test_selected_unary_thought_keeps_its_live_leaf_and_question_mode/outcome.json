@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_selected_unary_thought_keeps_its_live_leaf_and_question_mode",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

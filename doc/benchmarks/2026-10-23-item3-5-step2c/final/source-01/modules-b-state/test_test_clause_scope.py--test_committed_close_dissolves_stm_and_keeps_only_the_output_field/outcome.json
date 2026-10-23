@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_scope.py::test_committed_close_dissolves_stm_and_keeps_only_the_output_field",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

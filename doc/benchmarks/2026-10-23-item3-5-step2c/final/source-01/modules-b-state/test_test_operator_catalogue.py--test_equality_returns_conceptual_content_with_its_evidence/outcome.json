@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_equality_returns_conceptual_content_with_its_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

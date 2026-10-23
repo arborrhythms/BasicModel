@@ -1,0 +1,6 @@
+{
+  "node": "test/test_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

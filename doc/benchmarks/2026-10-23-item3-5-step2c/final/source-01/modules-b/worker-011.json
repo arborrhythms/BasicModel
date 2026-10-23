@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "completed": [
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002571416785940528,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006464999169111252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.586276832967997,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005077910609543324,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01824833289720118,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010012832935899496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009134160354733467,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010687208967283368,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002901668194681406,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

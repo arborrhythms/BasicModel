@@ -1,0 +1,134 @@
+FFFFFFFFFF.                                                              [100%]
+=================================== FAILURES ===================================
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True] _
+test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store
+    case(row_gain,document_gain,omitted=omitted)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+_ test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5] _
+test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store
+    case(row_gain,document_gain,relation=True)
+test/test_item4_native.py:60: in case
+    commit_reading(fixture.language, fixture.registry, entry, fixture.store,
+test/reading_fixtures.py:279: in commit_reading
+    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],
+bin/Models.py:20422: in _commit_sentence
+    owner.mtm.close(store, stream=b)
+    ^^^^^^^^^
+E   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]
+FAILED test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]
+FAILED test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]
+10 failed, 1 passed, 2 warnings in 4.71s

@@ -1,0 +1,979 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_observation_boundary_uses_selected_relation_before_prediction_and_ltm[packed]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          3,
+          5
+        ],
+        "word_rows": [
+          7,
+          9
+        ],
+        "activations": [
+          0.25,
+          0.75
+        ],
+        "leaves": [
+          [
+            0.09373984485864639,
+            0.10326524823904037,
+            0.11676505208015442,
+            0.14181101322174072,
+            0.11918250471353531,
+            0.10749468952417374,
+            0.10106392949819565,
+            0.15766514837741852
+          ],
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            0,
+            -1
+          ]
+        ],
+        "targets": [
+          0,
+          -1
+        ],
+        "end_state": [
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          13,
+          15
+        ],
+        "word_ids": null,
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": null,
+        "symbol_when": null,
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.09373984485864639,
+              0.10326524823904037,
+              0.11676505208015442,
+              0.14181101322174072,
+              0.11918250471353531,
+              0.10749468952417374,
+              0.10106392949819565,
+              0.15766514837741852
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            13,
+            15
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": null,
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "part",
+            "refs": [
+              13,
+              "ClausePredicate(name='part')",
+              15
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": -1,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "part",
+            "formal_name": "part",
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 15,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    },
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          3,
+          5
+        ],
+        "word_rows": [
+          7,
+          9
+        ],
+        "activations": [
+          0.25,
+          0.75
+        ],
+        "leaves": [
+          [
+            0.09373984485864639,
+            0.10326524823904037,
+            0.11676505208015442,
+            0.14181101322174072,
+            0.11918250471353531,
+            0.10749468952417374,
+            0.10106392949819565,
+            0.15766514837741852
+          ],
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            0,
+            -1
+          ]
+        ],
+        "targets": [
+          0,
+          -1
+        ],
+        "end_state": [
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          13,
+          15
+        ],
+        "word_ids": null,
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": null,
+        "symbol_when": null,
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.09373984485864639,
+              0.10326524823904037,
+              0.11676505208015442,
+              0.14181101322174072,
+              0.11918250471353531,
+              0.10749468952417374,
+              0.10106392949819565,
+              0.15766514837741852
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            13,
+            15
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": null,
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "part",
+            "refs": [
+              13,
+              "ClausePredicate(name='part')",
+              15
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": -1,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "part",
+            "formal_name": "part",
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 15,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    },
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          3,
+          5
+        ],
+        "word_rows": [
+          7,
+          9
+        ],
+        "activations": [
+          0.25,
+          0.75
+        ],
+        "leaves": [
+          [
+            0.09373984485864639,
+            0.10326524823904037,
+            0.11676505208015442,
+            0.14181101322174072,
+            0.11918250471353531,
+            0.10749468952417374,
+            0.10106392949819565,
+            0.15766514837741852
+          ],
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            0,
+            -1
+          ]
+        ],
+        "targets": [
+          0,
+          -1
+        ],
+        "end_state": [
+          [
+            0.3128897547721863,
+            0.3732888698577881,
+            0.47486549615859985,
+            0.3819648027420044,
+            0.4935123324394226,
+            0.3430231809616089,
+            0.3873513340950012,
+            0.3088803291320801
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          13,
+          15
+        ],
+        "word_ids": null,
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": null,
+        "symbol_when": null,
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.09373984485864639,
+              0.10326524823904037,
+              0.11676505208015442,
+              0.14181101322174072,
+              0.11918250471353531,
+              0.10749468952417374,
+              0.10106392949819565,
+              0.15766514837741852
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ],
+            [
+              0.3128897547721863,
+              0.3732888698577881,
+              0.47486549615859985,
+              0.3819648027420044,
+              0.4935123324394226,
+              0.3430231809616089,
+              0.3873513340950012,
+              0.3088803291320801
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            13,
+            15
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": null,
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "part",
+            "refs": [
+              13,
+              "ClausePredicate(name='part')",
+              15
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": -1,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "part",
+            "formal_name": "part",
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 15,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    }
+  ]
+}

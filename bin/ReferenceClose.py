@@ -698,6 +698,7 @@ class ReferenceClose(nn.Module):
                 visit(child)
         visit(clause)
         if (clause is not None and clause.order == 1 and clause.reference_request is None
+                and clause.relation is None and clause.point is not None
                 and id(clause) in participants and clause.composition is not None
                 and clause.composition.children):
             term = clause.composition
@@ -1137,6 +1138,7 @@ class ReferenceClose(nn.Module):
         when = int(encoder().decode_index(stamp(self.store)))
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
+        closed_mentions, refinements = set(), []
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
@@ -1164,6 +1166,7 @@ class ReferenceClose(nn.Module):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
                              when=when, value=node.point, reading=kind if reading is None else reading,
                              pending=bool(item.get('anonymous')))
+                    closed_mentions.add(occurrence)
                 else:
                     uses.append((reference, occurrence, kind, node.point, kind if reading is None else reading))
             elif isinstance(reference, int) and reference in alloc.individuals:
@@ -1172,6 +1175,7 @@ class ReferenceClose(nn.Module):
                 if token is None:
                     token = mtm.open(occurrence, kind=reference, when=when, reading=kind if reading is None else reading,
                              native=reference, value=torch.maximum(point(self.components.owner, reference), node.point))
+                    closed_mentions.add(occurrence)
                 else:
                     uses.append((token, occurrence, kind, node.point, kind if reading is None else reading))
                 native_tokens[reference] = token
@@ -1237,6 +1241,8 @@ class ReferenceClose(nn.Module):
                     mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when,
                              value=self.store.point_of_row(selected[-1]))
             item['reference'] = selected if selected is not None else token
+            if selected is not None:
+                refinements.append(selected)
             audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
                 reference=item['reference'], selected=item['selected'], candidates=item['candidates'],
                 missing_reason=('no_selected_candidate' if selected is None else
@@ -1245,9 +1251,13 @@ class ReferenceClose(nn.Module):
         # this close's uses to the owner of their chosen occurrence afterwards.
         for reference, occurrence, kind, value, reading in uses:
             mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
-        self._commit_events(plan, written, when=when)
+            closed_mentions.add(occurrence)
+        events = self._commit_events(plan, written, when=when, closed_mentions=closed_mentions)
+        # Several kept closes can share one model-present tick. Actual
+        # mention/refinement/event references, not equal timestamps, refresh
+        # the pool's independent kept-close access counter.
         mtm.close(self.store, stream=plan.get('stream'),
-            references=tuple(key for key, entry in mtm.entries.items() if entry.when == when),
+            references=(*closed_mentions, *refinements, *events),
             sources=self.components.owner.__dict__.get('_consolidation_sources'))
         from MemoryConsolidation import consolidate
         consolidate(self.components.owner, self.store)
@@ -1255,19 +1265,21 @@ class ReferenceClose(nn.Module):
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)
 
-    def _commit_events(self, plan, written, *, when):
+    def _commit_events(self, plan, written, *, when, closed_mentions=()):
         """Read the kept role correspondence, never infer roles from a value."""
         from ClauseRow import ClausePredicate
         if plan.get('prepared_root') is None:
-            return
+            return set()
         mtm = self.components.owner.mtm
-        identities = {}
+        identities, introduced, referenced = {}, set(), set()
         def occurrence_of(node):
             return written.get(('occurrence', id(node)), written.get('root_occurrence')
                                if node is plan['prepared_root'] else None)
         for item in plan['items']:
             node = item['written_node']
             occurrence = occurrence_of(node)
+            if node.identity is not None and occurrence in closed_mentions:
+                introduced.add(node.identity['handle'])
             token = mtm.token_of(occurrence)
             if token is None:
                 continue
@@ -1302,6 +1314,7 @@ class ReferenceClose(nn.Module):
                     pending.extend(reversed(term.children))
             if type(verb) is int and verb not in (-1, 0):
                 mtm.event(token, event, verb=self._event_symbol(verb), role=item['role'], when=when)
+                referenced.add(token)
         pending, nodes, seen = [plan['prepared_root']], [], set()
         while pending:
             node = pending.pop()
@@ -1344,14 +1357,19 @@ class ReferenceClose(nn.Module):
                     reference = int(address) if tag == 1 else ('ltm', self.store.address_domain, int(address))
                     token = mtm.token_of(reference) if tag in (1, 2) else None
                 if token is None:
-                    if int(record['origins'][handle-1, 0]) == 3:
+                    # Capacity can retire an earlier mention during this
+                    # same close. Its event history ends with its token.
+                    # A determination that never closed is still an error.
+                    if int(record['origins'][handle-1, 0]) == 3 and handle not in introduced:
                         raise RuntimeError('a kept identity event lost its determined introduction')
                     continue
                 mtm.event(token, event, verb=int(verb), role=role, when=when)
+                referenced.add(token)
                 if role == 0 and changed:
                     updated[token] = record['values'][handle-1]
         for token, value in updated.items():
             mtm.update(token, value, when=when)
+        return referenced
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state

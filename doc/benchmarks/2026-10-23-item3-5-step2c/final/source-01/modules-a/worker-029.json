@@ -1,0 +1,137 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
+  ],
+  "completed": [
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.019315207842737436,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009760582819581032,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.0093492919113487,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.06724420795217156,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.00928116706199944,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.009742541937157512,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.010205791098996997,
+      "message": "test/test_item4_native.py:93: in test_expected_cat_and_omission_survive_native_answer_and_store\n    case(row_gain,document_gain,omitted=omitted)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.012527708197012544,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.012029708828777075,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.01172158308327198,
+      "message": "test/test_item4_native.py:98: in test_three_role_relation_uses_symbol_confidence_through_native_close_and_store\n    case(row_gain,document_gain,relation=True)\ntest/test_item4_native.py:60: in case\n    commit_reading(fixture.language, fixture.registry, entry, fixture.store,\ntest/reading_fixtures.py:279: in commit_reading\n    BasicModel._commit_sentence(owner, state, sid, active, [view], [pending],\nbin/Models.py:20422: in _commit_sentence\n    owner.mtm.close(store, stream=b)\n    ^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'mtm'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4823743330780417,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

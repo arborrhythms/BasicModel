@@ -44,6 +44,20 @@ def capture_contract(request, monkeypatch):
     save(dict(torch=torch.get_rng_state(), python=random.getstate(),
                     numpy=np.random.get_state()), root/'initial-rng.pt')
     request.node._contract_capture = root
+    # Corpus generators own private RNGs. Retain them as well as the process
+    # RNG so a failing driver can reproduce its actual presentation.
+    from exact import MathProblemGenerator
+    generator_init, generator_count = MathProblemGenerator.__init__, 0
+    def generator(generator, *args, **kwargs):
+        nonlocal generator_count
+        generator_init(generator, *args, **kwargs)
+        name = f'generator-{generator_count}.pt'
+        generator_count += 1
+        replay = os.environ.get('IDENTITY_REPLAY_GENERATORS')
+        if replay:
+            generator.rng.setstate(torch.load(Path(replay)/name, weights_only=False))
+        save(generator.rng.getstate(), root/name)
+    monkeypatch.setattr(MathProblemGenerator, '__init__', generator)
     records = request.node._contract_records = []
     resolvers = request.node._contract_resolvers = []
     import ClauseJournal

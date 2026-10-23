@@ -1,0 +1,10 @@
+[
+  {
+    "original": "failure-1.pt",
+    "compressed": "failure-1.pt.gz",
+    "bytes": 19006411,
+    "gzip_bytes": 412617,
+    "sha256": "9dd48d0dd5ca254911e8c478cd5f4a52e746721474b4bc8b16dcf9bc5d5b1e22",
+    "gzip_sha256": "f20f0861fefd997d0ded63044842fed95cd7a95461b1118e9494f446bce09a02"
+  }
+]

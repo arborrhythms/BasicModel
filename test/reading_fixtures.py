@@ -220,7 +220,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         language.program_meaning = MethodType(LanguageSpace.program_meaning, language)
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
         _incoming_trust_multiplier=lambda: trust)
-    owner._concept_owner = lambda: owner.conceptualSpace
+    owner._concept_owner = lambda: registry.space
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
     if discourse is not None:
         discourse._ltm_store = store
