@@ -12,6 +12,13 @@ the three retired artifacts from their producing lessons. Their retired
 files are never loader inputs. The dated code review at the end of the
 [5.5 plan](../../plans/2026-10-17-item5-5-start.md) records the adjustments.
 
+**Current:** final fixture source **1e78fb6d3**, production/lesson source
+**3b34b3f38**. Scoped checks pass (212 passed, eight existing skips), as
+does the exact sweep-failure replay. The full sweep remains a retained
+failed run. The original NP lower lesson fails its occurrence gate and
+stops the learning continuation. This line is unpublished for review
+through Alec; step 2 was already published as recorded above.
+
 ## Protocol and order
 
 1. Stage3, original producer `test/constituent_order.py`: seed 20261010,
@@ -59,7 +66,8 @@ The measurement wrapper retains source manifests, input artifact hashes,
 initial state, each batch's RNG, both trials' credit/reading records,
 the most recent pre-batch state and any failed state. Output folders are
 unique and ignored while the source stays clean; their receipts are
-archived before review. No lesson result or phase artifact is claimed yet.
+archived before review. The initial preparation claimed no lesson result or phase artifact;
+the source-specific results follow below.
 Claude reviews through Alec before line 3 is published. Item 3.0 has not
 been reached; layout/removal/STM work stays there.
 
@@ -212,7 +220,7 @@ shared attribute, the new lower fixture selects its declared formal face,
 and the obsolete empty-occupation driver prerequisite is removed. Every
 other existing assertion stays verbatim. No test is retired.
 
-## One line-3 default sweep; fixture repair pending scoped gates
+## One line-3 default sweep; fixture repaired by scoped gates
 
 [Source-05 sweep](source-05/sweep/summary.json): all 6,378 cases complete
 in 526.34 seconds. **6,053 passed, one failed, 323 skipped, one non-strict
@@ -233,3 +241,31 @@ keep law, objectives and learning drivers stay unchanged. No test is
 retired, no seed is pinned, and the failed sweep remains failed. The
 related compose/fork/exploration tests join the scoped gate set. There
 will be no second full sweep.
+
+## Final scoped repair evidence
+
+Frozen **1e78fb6d305188b44b2f6c52049380f22cbcc7a3** completes the expanded
+18-file set: **212 passed, eight existing prerequisite skips, zero
+failures** ([log](source-06/gates/run.log)). The exact failing initial
+RNG also passes ([replay](source-06/departure-replay/run.log)); its probe
+retains both trial readings, costs and the now-binary departures. All
+existing assertions in that fixture are byte-for-byte unchanged by AST
+comparison. Production and all lesson producers match `3b34b3f38`; the
+fixed-budget lesson evidence retains that earlier source identity and is
+not rerun for this test-only correction. No second default sweep.
+
+[Complete assertion ledger](assertion-ledger.json) and [source patch](source.patch)
+cover every production/test change from the published step-2 source.
+Lossless capture packaging records original and compressed hashes in each
+source's `packed-states.json`. Every failed run, rejected restore, failed
+learning gate and terminated tracing diagnostic remains in this receipt.
+
+Concurrent planning edits appeared after the line-3 sweep: todo's new
+two-iteration note and `2026-10-23-verb-and-modal.md`. They are preserved
+unchanged and excluded from these commits. Alec is being asked whether
+that sequence supersedes the current per-line review hand-off. No line-3
+publication or unreviewed line-4/5 implementation has occurred.
+
+Final documentation check: [657 passed](final-docs/run.log). No production
+or test source changed after the final frozen fixture repair. The receipt,
+status and todo Current updates are documentation only.

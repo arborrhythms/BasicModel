@@ -17,16 +17,18 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2 is complete: Claude LAND `fcaff2d19` through
-Alec (step-2 §88), step 2's one full sweep retained, and test-only scoped
-repairs frozen at `9f5500870` pass. The [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)
-records every failure and port. Next is **line 3, stage 4e and the NP
-continuation**: regenerate stage3, np_definite and np_description from
-their producing lessons at the original budgets/seeds; adjective,
-definite-adjective, final evaluation, then copular identity. The determiner
-menu has one action per operator and recency is store order. Review stays
-through Alec. Layout/removal and the shared eight STM chunks stay item 3.0.
-All work stays on main. Item 3.0 has not been reached.
+**Current:** Step 2 is published at BasicModel `3624f6204`, WikiOracle
+`c9b19d4`. Line 3's production/lesson source is `3b34b3f38`; final fixture
+repair `1e78fb6d3` passes 212 scoped cases with eight existing skips and
+the captured sweep-failure replay. The [receipt](doc/benchmarks/2026-10-23-item3-5-stage4e-np/README.md)
+retains its single failed sweep and every port. Regenerated stage3 reads
+in source order 8/8 but fails the original CE bars. The original NP lower
+lesson fails the occurrence gate (0/1) after six presentations/four paired
+updates; the remaining lesson chain through copular identity is carried
+to item 0 for review. No later artifact is passed. Review remains through
+Alec; line 3 is unpublished. The concurrent iteration note is preserved
+pending direction. Layout/removal and STM chunks stay item 3.0, which
+has not been reached. All work stays on main.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -1506,6 +1508,17 @@ not by a passing identity lesson.
    learning campaign. The original failed native run is not
    regraded or extended. The mechanism and controlled carrier certificates
    do not satisfy these learning gates ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
+
+   **Line 3 carry, 2026-10-23:** the regenerated stage3 source `3b34b3f38`
+   passes source order 8/8 but not its original CE/decoder learning bars.
+   The original NP lower lesson fails the occurrence gate (0/1), with
+   bracket 1/1, after six presentations/four paired updates. Carry the
+   remaining lower → definite → description → adjective → definite-adjective
+   → final evaluation → copular identity chain here with the existing
+   budgets, gates and artifact prerequisites. Do not extend the failed run
+   or promote its lower checkpoint. No later lesson ran. The [receipt](doc/benchmarks/2026-10-23-item3-5-stage4e-np/README.md)
+   preserves both readings, costs and reachable target menus; mediated
+   review is pending and no learning claim is made.
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
    stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate

@@ -1,0 +1,16 @@
+{
+  "source": "1e78fb6d305188b44b2f6c52049380f22cbcc7a3",
+  "command": [
+    ".venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_doc_links.py",
+    "--tb=short"
+  ],
+  "exit": 0,
+  "passed": 657,
+  "elapsed_seconds": 7.11,
+  "source_unchanged": true,
+  "finished": "2026-10-23T23:20:42.491587+00:00"
+}

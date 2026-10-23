@@ -1,0 +1,6 @@
+{
+  "node": "test/test_constituent_lesson.py::test_declared_forms_keep_distinct_targets_when_the_implementation_is_shared",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_curriculum.py::test_lesson_cross_entropy_teaches_named_support_without_a_choice_derivative",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

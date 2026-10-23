@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2c.py::test_interpret_both_directions_preserve_form_presence_and_both_lanes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

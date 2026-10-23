@@ -1,5 +1,19 @@
 # Step 1b: current gates and carry ledger
 
+**Line 3 evidence ready, 2026-10-23:** production/lesson source `3b34b3f38`,
+fixture repair `1e78fb6d3`; 212 scoped passes, eight existing skips and
+one passing captured replay. The single line-3 sweep is retained with its
+one fixture failure; there is no second sweep. Stage3 reads in source
+order 8/8 but misses the original CE bars. The original NP lower lesson
+fails its occurrence gate (0/1) after six presentations/four paired
+updates, stopping the continuation. Remaining lessons and copular identity
+are carried to item 0 for review; no later artifact is promoted. The
+[receipt](../2026-10-23-item3-5-stage4e-np/README.md) retains all runs and
+exact ports. Step 2 is published at BasicModel `3624f6204`, WikiOracle
+`c9b19d4`. Line 3 remains unpublished for mediated review. The concurrent
+two-iteration planning edit is preserved pending Alec's direction.
+Item 3.0 has not been reached.
+
 **Step 2 complete, 2026-10-23:** Claude LAND `fcaff2d19` through Alec
 (step-2 §88). Its one default sweep completed 6,375 cases: 6,034 passed,
 17 failed, 323 skipped and one non-strict XPASS. All failures are retained

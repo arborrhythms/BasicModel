@@ -1,0 +1,6 @@
+{
+  "node": "test/test_constituent_lesson.py::test_constituent_target_uses_all_native_reference_variants_not_the_rule_id_as_an_action",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
