@@ -1,3 +1,4 @@
+import pytest
 import torch
 from ReferenceContext import ReferenceBank, resolve_operand
 
@@ -60,7 +61,8 @@ def test_grammar_order_resolution_survives_the_numerical_journal():
     assert field.refs[0] == 7
 
 
-def test_existing_kind_point_is_resolved_before_the_operator():
+@pytest.mark.parametrize('identity_state', [None, ()], ids=['ordinary', 'identity'])
+def test_existing_kind_point_is_resolved_before_the_operator(identity_state):
     from types import SimpleNamespace
     from ReferenceContext import prepare_operands
     value = torch.tensor([[[1., 0., 0., 0.]]])
@@ -76,9 +78,39 @@ def test_existing_kind_point_is_resolved_before_the_operator():
     result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
                               torch.tensor([[0]]), orders=torch.tensor([[2]]),
                               rules=(), unary_rules=(rule,), bank=bank, live=None,
-                              active=torch.tensor([[True]]))
+                              active=torch.tensor([[True]]), identity_state=identity_state)
     torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
     assert result['unary_refs'][0, 0, 0, 0] == 7
+    assert result['unary_ops'] == (0,)
+
+
+@pytest.mark.parametrize('order, literal, mode, expected', [
+    (0, False, None, 7), (2, False, None, 7),
+    (1, False, None, 1), (1, False, 'bind', 1),
+    (0, True, None, 1), (2, True, None, 1),
+    (2, True, 'generic', 7),
+])
+def test_identity_operand_keeps_order_one_and_implicit_literals(order, literal, mode, expected):
+    from types import SimpleNamespace
+    from ReferenceContext import prepare_operands, ReferenceTypes
+    value = torch.tensor([[[1., 0., 0., 0.]]])
+    typed = torch.tensor([.2, .3, .4, .5])
+    types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([order]),
+                           torch.tensor([[[7]]]), typed.reshape(1, 1, 1, 4))
+    bank = ReferenceBank(torch.empty(1, 0, dtype=torch.long), value[:, :0],
+        torch.empty(1, 0, dtype=torch.bool), torch.empty(1, 0, dtype=torch.bool),
+        value[:, 0], torch.tensor([False]), types=types, interpreter=object(),
+        close_references=True, literal_ids=torch.tensor([1]) if literal else None)
+    rule = SimpleNamespace(clause_form='S', reference_roles=() if mode is None else ('argin1',),
+                           reference_modes=() if mode is None else (('argin1', mode),))
+    result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
+        torch.tensor([[0]]), orders=torch.tensor([[order]]), rules=(), unary_rules=(rule,),
+        bank=bank, live=None, active=torch.tensor([[True]]), identity_state=())
+    torch.testing.assert_close(result['unary'][0, 0, 0],
+                               typed if expected == 7 else value[0, 0], rtol=0, atol=0)
+    assert result['unary_refs'][0, 0, 0, 0] == expected
+    assert result['unary_ops'] == (0,)
+    assert result['unary_choices'].eq(-1).all()
 
 
 def test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind():
@@ -263,6 +295,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
         assert entry.identity_actions[actions][-1, 1].item() == 1
         assert clause.children[0].identity['handle'] == 1
+        assert tuple(entry.identity_origins[0, :2].tolist()) == (2, occurrence[-1])
         torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
         torch.testing.assert_close(
             model._sentence_fields[0][0].end_state[0], clause.point, rtol=0, atol=0)

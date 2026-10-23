@@ -1146,10 +1146,13 @@ not step 2's deferred full sweep. No previous source supplies evidence.
   sentences and update them at events, which is identity threading;
   event segmentation theory (Zacks et al. 2007) puts the update at the
   event boundary, which is the close.
-- *LTM0 and LTM1 as episodic and semantic memory.* Tulving (1972):
-  episodic memory holds dated occurrences, semantic memory holds concepts
-  and their relations. LTM0 ideas with `.when` are episodic; the concept
-  index with LTM1's edges is semantic. Complementary learning systems
+- *Episodic and semantic memory as the two parts of every entry.*
+  Tulving (1972): episodic memory holds dated occurrences, semantic
+  memory holds concepts and their relations. Alec (2026-10-23): episodic
+  memory is the percept part of STM and LTM, semantic memory the concept
+  part; every entry is `[form | meaning]`, and `.when` belongs to the
+  percept part. The concept index with LTM1's edges is the semantic
+  store proper. Complementary learning systems
   (McClelland, McNaughton and O'Reilly 1995) make consolidation a slow
   extraction of structure from replayed episodes; promotion by recurrence,
   three distinct sentences, is that extraction, and the minted concept's
@@ -1430,3 +1433,103 @@ assertion (§17's same-round setup exception). No existing fixture changes.
 `stream-boundary-02` passes the unchanged real 1/2/3/8-stream driver from
 the retained initial RNG. These are diagnostics; source-11 freezes the
 repair and reruns all requested scoped gates on its own hash.
+
+## 29. Codex: source-11 scoped gates complete — 2026-10-23
+
+Frozen `bf44bbc47804899e470d4150f261496631b28a64` completes all 1,623
+selected cases across 132 files: 1,611 passed, twelve existing skips and
+zero failures, with no compile-cache retry. The receipt's source audit,
+assertion ledger, exact port patch and per-group results all name that
+source. Both decomposition arms preserve their original snapshots/seeds
+and all surviving parameters. The unchanged pending-premise certificate
+records forward 0 bound / 16 open, reverse 0 / 32, with no wrong binding.
+G1–G3, c/e, the unforced presentation, optimizer-gradient log and the real
+1/2/3/8-stream driver pass. Earlier failures and their pre-change probes
+remain retained. No earlier source result substitutes for these gates.
+
+The skips are nine absent phase artifacts and three opt-in slow MPS runs;
+none is a pass or learning evidence. This is the scoped identity pass,
+not step 2's full sweep. The production source, tests and measurement
+fixtures have not changed after freeze. Claude now reviews the frozen
+source and receipt before publication. Item 3.0 has not been reached.
+
+## 30. Codex: landing review and typed operands — 2026-10-23
+
+Claude's actual read-only review of frozen `bf44bbc47` returns **DO NOT
+LAND** despite the complete green scoped pass. The identity branch of
+`ReferenceContext.prepare_operands.propose` returned before the existing
+`resolve_order` lookup. That accidentally changed non-order-one operand
+values, although capture still resolved their references. Decision §1.3
+removes reference variants, not typed-concept lookup. Restore that lookup
+for orders other than one, preserve implicit literal operands, and retain
+exactly one option. Order one remains the raw operand until explicit bind.
+This restores the decided contract and reverses no §1 choice.
+
+The existing kind-point certificate is parametrized with and without the
+identity state. Its point and reference assertions stay; add an exact
+single-option assertion. Seven new cases cover implicit orders zero/two,
+order one, literals and an explicitly requested generic type. The public
+binding/capture fixture gains the origin assertion Claude requested:
+`entry.identity_origins[0, :2] == (2, occurrence[-1])`; its existing
+assertions stay. `typed-operand-01` passes all sixteen cases. No test is
+retired. Source-12 reruns every scoped group; nothing is promoted from 11.
+
+Claude's nonblocking decomposition note is also closed: the measurement
+adapter obtains old action names from the original grammar, checks the
+binary catalogue unchanged, and maps surviving unary rows by name in
+`apply_anchor`, `tool_embedding` and `what_projection`. The name ledger
+independently authenticates the row map before bitwise parameter checks.
+Original snapshots, seeds, budgets and all certificate assertions stay.
+
+Two explicitly nonblocking event-history notes remain follow-ups: a
+re-close at an event occurrence can drop its history through `forget`;
+an unfactored leaf verb may lack the point `_participants` requires.
+Record both in FutureWork for the event/recall contract; no speculative
+re-close policy or new verb representation is imposed in this repair.
+
+The incoming layout draft has changed again since §27: Alec now locates
+time in the percept part of the paired vector and retires the separate
+columns in that future round. Its percept/concept and model-time wording
+is preserved unchanged in the layout spec and Philosophy. It remains
+item 3's design, not an identity-line storage change. Today's columns,
+derivation readers and close-time minting stay.
+
+## 30. Claude's review of source-11 and the repair in progress — 2026-10-23
+
+Reviewed: frozen `bf44bbc47` (1,611 passed, twelve existing skips, no
+failures, 132 files), the receipt, §§6–29, the delegated review's DO NOT
+LAND, and the uncommitted repair in the working tree.
+
+**The delegated finding is real, and the repair is right.** At the
+frozen source, `ReferenceContext.prepare_operands` returned an operand
+unchanged whenever the identity overlay was supplied, so a kind or
+generic operand composed from the word's own leaf value instead of its
+existing typed concept; every production call takes that branch. The
+working-tree repair resolves the typed concept for every order but 1,
+keeps the literal exemption, and leaves order 1 to bind, which is §1.3 as
+decided. The kind-point test is now parametrized over the overlay, and a
+seven-case test pins the operand rule. The `identity_origins` check the
+review asked for is added. Freeze that as source-12, run the same scoped
+groups once, review, publish.
+
+**The line otherwise matches §1.** MTM holds current values, names with
+readings, and verb-and-role event histories, with a native individual
+keyed by its occurrence and the bank never written; `expose_form` and
+`absorb_form` are gone. Bind is a compose rule (`bind_argout1 =
+bind.forward(bind_argin1)`), one menu entry per accessible location plus
+the zero dummy, credited through the derivative and the score function;
+determiners keep their folds and lose their variants in the menu
+construction, not in the grammar text. VP results replace, descriptions
+join, only the kept close publishes. Definitions reject a word as another
+word's object and the N1 case is removed. No fixture port weakens a
+contract; the decomposition arms keep their snapshots and seeds. Every
+failed source is retained.
+
+**Carried, not blocking.** `MediumTermMemory.token_of` falls back to an
+occurrence that is some subject's event, and `forget` then drops that
+event from every history; it cannot fire inside one close, since opens
+and binds precede `_commit_events`, but a re-close at an event occurrence
+would lose history silently. Guard it in source-12 if cheap, else in 2c.
+The decomposition expansion maps three parameter arrays by position,
+relying on bind being the last compose rule; a name-based assertion
+closes that in a later round.

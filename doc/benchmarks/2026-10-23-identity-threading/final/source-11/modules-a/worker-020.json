@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
+    "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[train]",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+    "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+    "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+    "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+    "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers",
+    "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+    "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+    "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+    "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+    "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason"
+  ],
+  "completed": [
+    "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
+    "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[train]",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+    "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+    "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+    "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+    "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers",
+    "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+    "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+    "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+    "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+    "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014170582871884108,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025592499878257513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[train]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002437792019918561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00238820887170732,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025970840360969305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002446332946419716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004845667164772749,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028177089989185333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027197501622140408,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002668041968718171,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002508958103135228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026979579124599695,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023783331271260977,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03588162502273917,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009510916890576482,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

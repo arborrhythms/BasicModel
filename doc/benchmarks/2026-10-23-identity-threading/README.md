@@ -1,17 +1,16 @@
 # Identity threading — 2026-10-23
 
-Source-11 is prepared after the growing-stream guard repair. Source-10
-`d55544d98` completed 1,608 passes, twelve prerequisite skips and one
-retained stream-index failure. The failure is reproduced and keep-probed
-before changes. Both reader guards and the unchanged real driver now pass
-development checks. The next frozen scoped pass, Claude's LAND review and
-publication remain; no earlier result is promoted.
-This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
+Claude's actual read-only review of source-11 `bf44bbc47` is **DO NOT
+LAND**: the live identity path skipped existing typed-concept lookup.
+Its 1,611 passes and twelve skips remain retained; they are not promoted.
+Source-12 restores the lookup with a single option and reruns every scoped
+group before another landing review. Publication has not happened. This
+is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–28. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–30. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -70,7 +69,8 @@ All assertions not listed remain unchanged.
 | `test_math_chain_section14.py`, c/e | Before presentation admit x and what if absent and set their readings to order one via `reference_orders`, under reconstruction spec §13. No assertion, forced choice, budget or keep rule changes. The pending-premise and item-0 learning fixtures are unchanged. |
 | `test_item6_2_thinking.py`, open closing, four surfaces | The direct boundary fixture bypasses compose/ReferenceClose. Supply its kept anonymous token with `pool.open`, then its selected refinement with `pool.bind` after the existing equality append. All native-reference, source-address, raw-open, witness, question-kind and reuse assertions stay. Equality alone does not bind. |
 | `fixtures/when-readers-round4a0.json` | Add `MediumTermMemory.state` and `.restore` to the reader inventory with attribute `when`, as checkpoint readers. All inventory assertions stay. |
-| `test_live_references.py`, public binding/capture | Replace the lift reference variant with a declared S (`clause_form='S', head_role=1, order_delta=0`) and an explicit compose bind, forced only in this unit fixture. The held occurrence and alpha reading are order one; stage its real MTM value through a `SituationAddress` frame. The operand equality changes from exact `prior` to exact `maximum(entry.leaves[0], prior)`. Replace `entry.operation_refs[actions][-1, 0] == cid` with `entry.identity_actions[actions][-1, 1] == 1`; replace `clause.composition.children[0].reference == cid` with `clause.children[0].identity['handle'] == 1`. All other capture, reconstruction and gradient assertions stay. |
+| `test_live_references.py`, kind point | Parametrize the existing test over absent/present identity state. Keep the point and reference assertions; add `result['unary_ops'] == (0,)`. |
+| `test_live_references.py`, public binding/capture | Replace the lift reference variant with a declared S (`clause_form='S', head_role=1, order_delta=0`) and an explicit compose bind, forced only in this unit fixture. The held occurrence and alpha reading are order one; stage its real MTM value through a `SituationAddress` frame. The operand equality changes from exact `prior` to exact `maximum(entry.leaves[0], prior)`. Replace `entry.operation_refs[actions][-1, 0] == cid` with `entry.identity_actions[actions][-1, 1] == 1`; replace `clause.composition.children[0].reference == cid` with `clause.children[0].identity['handle'] == 1`. Add `tuple(entry.identity_origins[0, :2].tolist()) == (2, occurrence[-1])`. All other capture, reconstruction and gradient assertions stay. |
 | `test_thought_operation_catalog.py`, live router structural context | Change only the unary test stub from `value + 1.0` to `1.0 - value`, so every selected application stays in the identity cube. Both assertions that the unary and binary faces receive the identical owner context remain verbatim. |
 | `test_math_chain_repair.py`, pending relation, both orders | Retain the appended arrival index, then explicitly `mtm.open` the pending occurrence and `mtm.bind` its selected native symbol after both rows exist. All assertions remain verbatim: no open/forward slot, native symbol 1, unchanged occurrence address, document, position and raw meaning/roles. This supplies the kept bind that the storage-only fixture bypasses; equality never selects it. |
 | `decomposition_certificate.py` and `forced_decomposition_grammar.py` | Port the existing mint/reference/open fixture choices to determination and compose bind; declare the fixture's noun readings via `reference_orders` (x/y/what for one successor, plus z for two; constants retain their original readings). Preserve the preferred source references and the question-only open `what`, with no closure forcing. Read MTM mention labels and normalize its token handles at this fixture seam. Retire the stale unused `store.refs` read, keeping its +6 occurrence rank. Correct unary action indexing for the top operand at depth two, and tolerate an actually open preferred source. Guard these fixture NP actions with the bare pushed-word producing-action column, preserving the original scope. Attach trailing markers by transpose then surface, whose declared marker position preserves the bound noun head, instead of using verb. All certificate assertions, original snapshots/seeds, budgets, objective and live keep remain unchanged. The exact fixture diff is in the final test-port patch. |
@@ -258,7 +258,7 @@ It retains LTM0's time column; the earlier in-band draft is superseded
 
 ### Source-11 stream-boundary repair
 
-- `final/source-10`, `d55544d98`: 1,608 passed, twelve prerequisite skips,
+- `final/source-10`, `d55544d98`: 1,608 passed, twelve existing skips,
   one production failure; every requested case completes. Both pending
   orders pass unchanged (forward 0 bound / 16 open, reverse 0 / 32), as do
   c/e and both decomposition arms. Their original snapshots/seeds and
@@ -280,3 +280,67 @@ excluded from not-yet-created streams while unscoped rows retain their
 availability; pool, rows and bank stay unchanged. No pre-existing fixture
 or assertion changes, and no test retires. The next frozen source owns all
 its gate evidence independently.
+
+Skip classification: the twelve existing skips on source-10 comprise nine
+absent phase artifacts and three opt-in slow MPS/Inductor cases. Earlier
+uses of “prerequisite skips” in this receipt include those three platform
+cases; none is counted as a pass. The source-11 summary lists each reason.
+
+## Completed source-11 gates
+
+Frozen source: `bf44bbc47804899e470d4150f261496631b28a64`.
+The [source-specific summary](final/source-11/gate-summary.json) verifies
+all requested selections complete on this unchanged source, with no
+compile-cache retry. The [source audit](final/source-11/source-audit.json)
+contains 873 file hashes. No full sweep or extra fresh series is claimed.
+
+| Group | Passed | Skipped |
+| --- | ---: | ---: |
+| Regression files, including both new stream guards | 87 | 0 |
+| Native eight-file set | 123 | 7 |
+| Changed-module files, first partition | 707 | 5 |
+| Changed-module files, second partition | 690 | 0 |
+| Original decomposition, zero gain | 2 | 0 |
+| Original decomposition, enabled gain | 2 | 0 |
+
+The pending-premise certificate is unchanged: forward 0 bound / 16 open;
+reverse 0 / 32; no closure forcing, zero attention budget and no wrong
+binding. This is no claim that cold-start parsing has learned to close
+those references. G1–G3 and c/e remain unchanged and pass. The unchanged
+unforced presentation, optimizer-gradient log and 1/2/3/8-stream driver
+also pass on this source.
+
+The [decomposition ledger](final/source-11/decomposition-snapshots.json)
+verifies both original snapshots and seeds (4199722147 and 2428440506),
+with every surviving parameter bitwise equal. Four snapshot copies are
+losslessly packed with original-byte hashes. All failures from prior
+sources, their captures and pre-change keep probes remain retained.
+
+The twelve skips are nine absent phase artifacts (copular identity,
+pending-premise learning, MTM re-identification, fineweb and stage3) and
+three opt-in slow MPS/Inductor cases. Each exact skip reason is in the
+summary; none is counted as a pass. No learning claim or GPU execution
+claim follows from the skipped cases.
+
+## Source-12 repair after Claude's landing review
+
+[Claude's complete source-11 review](final/source-11/claude-review.md)
+returns DO NOT LAND for one blocker: non-order-one operands bypassed
+`resolve_order` in the identity path. The repair restores that lookup
+without reference alternatives, preserves order-one values and implicit
+literals, and changes neither keep nor objective. The unchanged kind
+assertions now run on both paths; seven new cases check the exceptions.
+`development/typed-operand-01` passes sixteen tests. No existing assertion
+is weakened and no test retires.
+
+The public capture fixture adds the held occurrence's exact origin check.
+Source-12's decomposition adapter also maps unary parameter rows by names
+from the original grammar, independently of parameter equality checks,
+and verifies the binary catalogue unchanged. The original snapshots and
+seeds stay. No gate result is inherited from source-11.
+
+Claude's two nonblocking history notes are carried to FutureWork: event
+re-close ownership and role evidence for unfactored leaf verbs. They are
+not claimed resolved by this source. The incoming future layout now puts
+time in the percept portion of the paired vector; this supersedes §27's
+read-ahead draft, remains item 3's work, and changes no current storage.

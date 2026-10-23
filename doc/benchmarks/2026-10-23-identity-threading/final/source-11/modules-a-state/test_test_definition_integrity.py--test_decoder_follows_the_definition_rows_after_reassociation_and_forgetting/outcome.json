@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_integrity.py::test_decoder_follows_the_definition_rows_after_reassociation_and_forgetting",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

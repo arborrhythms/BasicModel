@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_sparsity.py::test_multi_row_sums_each_concept_independently",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

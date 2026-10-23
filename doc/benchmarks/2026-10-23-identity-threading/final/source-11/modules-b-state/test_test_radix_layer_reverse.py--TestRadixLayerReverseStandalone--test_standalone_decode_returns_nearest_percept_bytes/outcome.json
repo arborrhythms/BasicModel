@@ -1,0 +1,6 @@
+{
+  "node": "test/test_radix_layer_reverse.py::TestRadixLayerReverseStandalone::test_standalone_decode_returns_nearest_percept_bytes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

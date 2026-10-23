@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_observer.py::test_observer_counts_detached_compose_calls",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata"
+  ],
+  "completed": [
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0054597919806838036,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': True}\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

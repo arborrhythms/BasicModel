@@ -1663,3 +1663,15 @@ sentence's ideas; episodic memory would make that grouping a read
 same day:* recall by `.when` alone is item 3's, in the
 [layout-and-removal spec](plans/2026-10-23-layout-and-removal.md); this
 entry is its record.
+
+## Identity event histories: review follow-ups (2026-10-23)
+
+The identity line's [source-11 review](benchmarks/2026-10-23-identity-threading/final/source-11/claude-review.md)
+records two nonblocking boundaries for the event/recall contract. Re-closing
+at an occurrence already used as an event can reach `MediumTermMemory.forget`
+through `open`/`bind` and remove that history. Decide and certify event
+ownership on re-close before expanding that path. A captured event without
+`factored_refs` may carry a leaf word as its verb; `_participants` omits it
+when `point()` is unavailable. Specify the verb reference and role-evidence
+read for that case. Neither affects the retained G1–G3 shapes. No new
+re-identification policy or stored representation is implied.

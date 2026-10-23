@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_rows.py::test_25_two_objects_require_a_selection_and_synonyms_have_a_reverse_index",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -343,6 +343,14 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         if identity_state is not None and order is not None:
             # Determination supplies an object, never a reference alternative.
             # Explicit bind is the sole compose operation that chooses one.
+            # Other orders still read their existing typed concept before
+            # composition. A literal implicit operand keeps its own point.
+            typed_value, typed_ids = resolve_order(value, ids, order, getattr(bank, 'types', None))
+            typed = order != 1
+            if mode is None and bank.literal_ids is not None:
+                typed = typed & ~torch.isin(ids, bank.literal_ids)
+            value = torch.where(typed[..., None], typed_value, value)
+            ids = torch.where(typed, typed_ids, ids)
             return [(value, ids, scope.bitwise_and(1) != 0, valid)]
         if order is None:
             if interpreter is not None and bank.associations is not None and bank.associations.numel():

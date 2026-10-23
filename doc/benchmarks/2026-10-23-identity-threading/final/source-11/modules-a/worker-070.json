@@ -1,0 +1,126 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+    "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+    "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+    "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+    "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+  ],
+  "completed": [
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+    "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+    "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+    "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+    "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+    "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+    "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012529458152130246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006933333119377494,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00700191711075604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006837582914158702,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_no_standalone_language_codec_or_second_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005063330754637718,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010264625074341893,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01698108296841383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007711292011663318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03420233400538564,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_review.py::test_policy_selects_nested_what_part_and_receives_actual_episode_credit[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.038596666883677244,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

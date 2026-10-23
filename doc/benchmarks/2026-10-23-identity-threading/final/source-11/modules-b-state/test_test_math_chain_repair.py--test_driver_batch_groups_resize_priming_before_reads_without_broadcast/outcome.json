@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

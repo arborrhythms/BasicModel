@@ -1,13 +1,12 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading continued, 2026-10-23:** source-11 is prepared after
-source-10 `d55544d98` completes 1,608 passes, twelve skips and one retained
-stream-index failure. Its pre-change capture/keep probe and both reader
-guards are in [spec §28](../../plans/2026-10-23-identity-threading.md) and
-the [receipt](../2026-10-23-identity-threading/README.md). Development checks
-pass; new frozen-source gates and Claude's LAND review precede publication.
-No earlier evidence is promoted. Layout/STM changes stay item 3.0; 2c follows
-identity. Item 3.0 is not reached; no learning claim.
+**Identity threading review repair, 2026-10-23:** Claude returns
+DO NOT LAND on `bf44bbc47` for the live path's skipped typed-concept
+lookup. Its green scoped results remain retained. Source-12 restores the
+lookup and single-option contract, then reruns all scoped gates before
+review and publication. The [receipt](../2026-10-23-identity-threading/README.md)
+records every port and failed source. No full sweep or learning claim.
+Layout/STM changes stay item 3.0; 2c follows identity. Item 3.0 is not reached.
 
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
 WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,

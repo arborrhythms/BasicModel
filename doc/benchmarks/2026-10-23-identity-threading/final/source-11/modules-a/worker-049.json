@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+    "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+    "test/test_compose_review.py::test_zero_temperature_explore_joins_detached_state_at_its_departure",
+    "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+    "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+    "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+    "test/test_compose_review.py::test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order",
+    "test/test_compose_review.py::test_fork_cannot_resume_on_another_rows_read_of_its_saved_word",
+    "test/test_compose_review.py::test_separate_closing_fork_waits_for_the_closing_visit",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]"
+  ],
+  "completed": [
+    "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+    "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+    "test/test_compose_review.py::test_zero_temperature_explore_joins_detached_state_at_its_departure",
+    "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+    "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+    "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+    "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+    "test/test_compose_review.py::test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order",
+    "test/test_compose_review.py::test_fork_cannot_resume_on_another_rows_read_of_its_saved_word",
+    "test/test_compose_review.py::test_separate_closing_fork_waits_for_the_closing_visit",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+    "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014092874946072698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002139708027243614,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_zero_temperature_explore_joins_detached_state_at_its_departure",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006846667034551501,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0050891670398414135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018762517720460892,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014674989506602287,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[nan]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012958399020135403,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011802089866250753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03663933416828513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018420815467834473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_fork_cannot_resume_on_another_rows_read_of_its_saved_word",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013858405873179436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_separate_closing_fork_waits_for_the_closing_visit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012462493032217026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[1.0-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000143042067065835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013466598466038704,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[3.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001275420654565096,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

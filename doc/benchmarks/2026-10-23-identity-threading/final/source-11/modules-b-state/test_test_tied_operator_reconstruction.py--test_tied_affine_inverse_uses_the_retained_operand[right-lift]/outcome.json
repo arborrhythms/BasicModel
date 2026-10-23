@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_operator_reconstruction.py::test_tied_affine_inverse_uses_the_retained_operand[right-lift]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

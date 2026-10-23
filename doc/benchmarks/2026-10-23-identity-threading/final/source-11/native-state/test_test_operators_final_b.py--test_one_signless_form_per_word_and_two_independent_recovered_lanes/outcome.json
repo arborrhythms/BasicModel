@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

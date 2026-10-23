@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_lookup_gauge.py::test_pole_lookup_relabeling_invariance",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

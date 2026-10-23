@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_shared_change_features_seed_only_the_unexplained_remainder",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -17,13 +17,12 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is implemented on main.
-Source-11 is prepared after source-10 `d55544d98` completed 1,608 passes,
-twelve skips and one retained stream-index failure. [Spec §28](doc/plans/2026-10-23-identity-threading.md)
-records its capture, keep probe and repair; the [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
-lists every port and failed run. New frozen gates and Claude's landing
-review precede publication. Published storage-only 2b remains BasicModel
-`39272e7a6`, WikiOracle `ade0399`.
+**Current:** Item 3.5 line 2's identity threading remains on main,
+unpublished. Claude's source-11 review returns DO NOT LAND for the skipped
+typed-concept lookup. Source-12 repairs it and reruns the scoped gates
+before review. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
+retains all earlier results and exact ports. Published storage-only 2b
+remains BasicModel `39272e7a6`, WikiOracle `ade0399`.
 
 **Next is 2c** after identity lands, carrying the two R10 arrival notes,
 then step 2's one full sweep. The latest §72 decision moves the
@@ -977,6 +976,18 @@ not by a passing identity lesson.
      scans of the whole store (placement's context means, priming's
      membership pairs). [Spec](doc/plans/2026-10-23-layout-and-removal.md);
      decisions in [step-2 spec §§70–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
+     *Decided later the same day (Alec; in the spec):* every mental event
+     has a perceptual and a conceptual part; episodic memory is the
+     percept part of STM and LTM, semantic memory the concept part;
+     `.when` belongs to the percept part, so `LTM0.when` and `LTM1.when`
+     retire into the band and recall by time is a cue with only the
+     percept `.when` filled; an order-0 concept is an event with `.where`
+     and `.when`, higher orders abstract them; a sentence's percept part
+     is its surface (the form block's fold over its words, the retained
+     wording), stamped at the sentence level only; STM rows have the
+     LTM0 form; STM is eight shared chunks with least-recently-read
+     eviction off the stack; the object supplies its own Q basis for
+     transitive verbs (step 4).
    - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
      of 3.0"; moved from FutureWork).
 

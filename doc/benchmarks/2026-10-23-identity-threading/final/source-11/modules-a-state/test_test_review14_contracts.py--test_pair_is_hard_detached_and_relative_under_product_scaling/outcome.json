@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

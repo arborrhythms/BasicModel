@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

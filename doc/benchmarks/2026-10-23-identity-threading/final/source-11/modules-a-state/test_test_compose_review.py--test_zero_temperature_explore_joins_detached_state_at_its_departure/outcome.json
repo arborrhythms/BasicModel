@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_review.py::test_zero_temperature_explore_joins_detached_state_at_its_departure",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

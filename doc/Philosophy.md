@@ -1794,9 +1794,12 @@ episodic buffer, with Ericsson and Kintsch's long-term working memory as
 recall by cue. MTM is Kahneman, Treisman and Gibbs's object file, a
 temporary record keyed by continuity and updated as the object changes,
 distinct from its type; in discourse it is Heim's file card and Kamp's
-discourse referent. LTM0's dated ideas and the concept index with LTM1's
-edges are Tulving's episodic and semantic memory, with promotion by
-recurrence as consolidation. In Dharmakīrti's terms, an LTM0 idea is the
+discourse referent. Tulving's episodic and semantic memory are the two
+parts of every entry (Alec, 2026-10-23): the percept part, located by
+its `.where` and `.when`, is episodic, and the concept part is semantic;
+the concept index with LTM1's edges is the semantic store proper, with
+promotion by recurrence as consolidation. Every mental event has both
+parts, which is why a thought and a perception share one form. In Dharmakīrti's terms, an LTM0 idea is the
 unique particular, grasped directly and ultimately real; a concept is the
 universal, constructed by exclusion and conventionally real; an identity
 is a continuum of moments whose unity is imputed; binding is the

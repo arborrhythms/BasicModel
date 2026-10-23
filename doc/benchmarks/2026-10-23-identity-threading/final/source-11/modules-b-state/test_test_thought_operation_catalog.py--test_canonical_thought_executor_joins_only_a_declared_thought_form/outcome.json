@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_canonical_thought_executor_joins_only_a_declared_thought_form",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

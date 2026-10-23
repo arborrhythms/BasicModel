@@ -1,0 +1,150 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+    "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+    "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+    "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+    "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+    "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+    "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+    "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write"
+  ],
+  "completed": [
+    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+    "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+    "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+    "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+    "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+    "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+    "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+    "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+    "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+    "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write"
+  ],
+  "slow_selected": [
+    "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012611540965735912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.032911333022639155,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_unfold_reads_the_readers_priming_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006055000703781843,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004372874973341823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026753339916467667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004702918231487274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019387505017220974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012780959019437432,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006590165896341205,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027670804411172867,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_ltm_capacity_takes_precedence_over_truth_view_capacity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1592415408231318,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 36.032307458110154,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\nbatch = 0 (\u0394=1.641s)\r\nbatch = 2 (\u0394=1.478s)\r\nbatch = 4 (\u0394=1.584s)\r\nbatch = 6 (\u0394=1.758s)\r\nbatch = 8 (\u0394=1.627s)\r\nbatch = 10 (\u0394=1.783s)\r\nbatch = 12 (\u0394=1.841s)\r\nbatch = 14 (\u0394=1.899s)\r\nbatch = 16 (\u0394=1.925s)\r\nbatch = 18 (\u0394=1.932s)\r\nbatch = 0 (\u0394=2.040s)\r\nbatch = 3 (\u0394=2.197s)\r\nbatch = 6 (\u0394=2.009s)\r\nbatch = 9 (\u0394=2.056s)\r\nbatch = 12 (\u0394=2.181s)\r\nbatch = 15 (\u0394=2.247s)\r\nbatch = 0 (\u0394=4.093s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

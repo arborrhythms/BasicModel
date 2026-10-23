@@ -151,12 +151,41 @@ row is `[form | meaning]`, the symbol's muxed form block first. The
 symbol band's `.when` is the sentence's position in its source document
 (`relative_positions`, `source_at`), not the clock; the clock is
 `RowTime`, model time on a 4-dim ladder, kept as LTM0's `when` column:
-"a column, never an operand of composition". So the stamp is appended,
-as Alec says, not written into a band: an STM row is the concept vector
-with the current `RowTime` appended as its `when`, the same two parts as
-an LTM0 row (`slots[cap, D]` beside `when[cap, 4]`), and the column
-stays. A concept pulled from the index has no time and is stamped with
-the current `RowTime` on entry, and a recalled entry keeps its own stamp,
+"a column, never an operand of composition".
+
+**Decided (Alec, 2026-10-23): every mental event has a perceptual and a
+conceptual part; episodic memory is the percept part of STM and LTM,
+semantic memory the concept part; `.when` is not a field of LTM but
+belongs to the percept.** "A concept is one opaque code that has
+generalised over where and when" is not to be assumed: an order-0
+concept is an event and has both; higher orders abstract them (nouns
+probably drop `.when`, not necessarily). The paired row `[form |
+meaning]` is this split: the form block is the entry's percept, located
+by its `.where` and `.when` bands, and the meaning block its concept. So
+an LTM0 entry, an STM row and a concept row have one form, and `.when`
+lives in the percept part of each. Alec asked where a sentence's
+perceptual content comes from, beyond its `.when`: from its surface.
+Composition acts on the full paired vector, so a fused idea's form block
+is the fold over its words' forms, lossy, which is what the free decoder
+reconstructs from ("reconstruct from the vector; it will not be exact"),
+with its `.where` and `.when` bands; and the source wording is retained
+beside the row (`_texts`) as the first forgetting stage, the exact
+surface while it lasts. A read sentence's percept part is therefore
+what was said, where and when; its concept part what it meant. A
+concept pulled from the index
+gets a percept part stamped now, the mental event of thinking it; a
+recalled entry keeps the percept part it was stored with; an
+expectation's estimate has a percept part stamped ahead. The separate
+`RowTime` column folds into that band: `LTM0.when` and `LTM1.when`
+retire, forgetting's age and recency read the percept `.when`, and
+recall by time is a cue with only the percept `.when` filled and the
+concept part blank. Claude's reading to confirm: the percept `.when`
+of a read sentence is the mental time of reading, `RowTime`'s tick, not
+the sentence's position in its document, which the stream's context
+whole and the address keep (5.5). Sentence-level stamping (above)
+stands: inner chain rows and mentions carry no percept part of their
+own time; the sentence's does.
+A recalled entry keeps its own stamp,
 the time it happened, while its place in STM is governed by recency
 (Claude's reading of the recalled case). So STM, LTM0 and the sentence
 entry share one form, and the close keeps the stamp on the sentence

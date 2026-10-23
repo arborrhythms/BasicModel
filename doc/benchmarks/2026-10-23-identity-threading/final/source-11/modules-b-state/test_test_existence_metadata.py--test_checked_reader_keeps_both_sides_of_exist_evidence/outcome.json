@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_metadata.py::test_checked_reader_keeps_both_sides_of_exist_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

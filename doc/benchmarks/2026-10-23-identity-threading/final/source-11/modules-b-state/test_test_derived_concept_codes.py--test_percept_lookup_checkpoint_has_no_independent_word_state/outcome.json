@@ -1,0 +1,6 @@
+{
+  "node": "test/test_derived_concept_codes.py::test_percept_lookup_checkpoint_has_no_independent_word_state",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

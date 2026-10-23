@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-11/modules-b/worker-042.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-11/modules-b/worker-042.json"
+  ],
+  "pid": 76581,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 437798184,
+  "elapsed_seconds": 4.296811749925837,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-11/modules-b/worker-042.log"
+}

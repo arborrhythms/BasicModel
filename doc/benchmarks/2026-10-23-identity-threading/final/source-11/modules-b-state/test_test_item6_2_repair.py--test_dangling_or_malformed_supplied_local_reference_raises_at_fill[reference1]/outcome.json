@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_repair.py::test_dangling_or_malformed_supplied_local_reference_raises_at_fill[reference1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

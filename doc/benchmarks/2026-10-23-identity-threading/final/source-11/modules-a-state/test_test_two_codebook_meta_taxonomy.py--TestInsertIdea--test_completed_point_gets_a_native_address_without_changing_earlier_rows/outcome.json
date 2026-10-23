@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_completed_point_gets_a_native_address_without_changing_earlier_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

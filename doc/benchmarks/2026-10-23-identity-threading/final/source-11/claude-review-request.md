@@ -1,4 +1,4 @@
-Review the frozen identity-threading source SOURCE_TO_FILL, against Alec's decisions in doc/plans/2026-10-23-identity-threading.md §1 and its documented review/repairs §§5–28. Work read-only. Do not edit files, run tools other than Read/Grep/Glob, delegate, publish, or change decisions.
+Review the frozen identity-threading source bf44bbc47804899e470d4150f261496631b28a64, against Alec's decisions in doc/plans/2026-10-23-identity-threading.md §1 and its documented review/repairs §§5–29. Work read-only. Do not edit files, run tools other than Read/Grep/Glob, delegate, publish, or change decisions.
 
 The user explicitly requested your review before publication. Latest step-2 §72 moves layout-and-removal and shared STM chunks to item 3.0. This round must retain today's derivation/readers, close-time minting and three-slot rows. The new layout spec is context, not an implementation requirement here. Step 2 continues with 2c after this line.
 
@@ -17,7 +17,7 @@ The source-07 c/e failure was captured and keep-probed before any change. Read i
 
 A concurrent accepted §2 clarification requires MTM never to write a bind's content into a concept. Source-08 was deliberately interrupted to implement it; its partial results are explicitly not promoted. In this frozen source, ReferenceClose commit and resolved no longer call IdentityRows.expose_form; expose_form and absorb_form are removed. Mention loss, answer supervision and score-function credit are unchanged. The fixture helper now explicitly mints its already-known cue region instead of exercising that retired learning path; all its assertions are unchanged. Four new certificates check that both kept training and later supervised mention loss cannot allocate or modify a concept region, with and without an existing region, while the latter loss still carries gradients. Audit all remaining live writes and the known-native-individual current-value path against this requirement. Promotion/rebuilding stays in 2c. The incoming grounding/Philosophy edits were preserved, not treated as a new layout task.
 
-Inspect final/source-11/assertion-audit.json alongside the full exact test-ports.patch and the receipt's per-test disposition table. This review follows the one complete scoped pass on the frozen hash. Do not rerun gates, use past draws as new evidence, or claim a full sweep. The twelve prerequisite skips, if retained, must remain explicitly labeled and are not learning passes.
+Inspect final/source-11/assertion-audit.json alongside the full exact test-ports.patch and the receipt's per-test disposition table. This review follows the one complete scoped pass on the frozen hash. Do not rerun gates, use past draws as new evidence, or claim a full sweep. The twelve existing skips, if retained, must remain explicitly labeled and are not learning passes.
 
 Concurrent Architecture/FutureWork/layout-spec edits add time-only recall and final-sentence-only stamping to item 3. They are preserved documentation, not identity-line implementation requirements; this source retains today's row stamping and its journal-ordered identity events. Verify that boundary, without asking this line to implement item 3 early.
 
@@ -65,3 +65,14 @@ rows and bank. The real 1/2/3/8-stream driver is unchanged. The new unit's
 missing zero cost field is a documented setup fix with every assertion
 preserved. The source-11 scoped run must stand alone; no source-10 pass
 is promoted. Review this guard together with the entire identity line.
+
+Check the precise skip ledger: source-10's twelve skips are nine absent
+phase artifacts and three opt-in slow MPS/Inductor tests. No GPU execution
+is claimed for those skipped cases; no skip is a learning pass. The new
+source's summary must list its own skips explicitly.
+
+The final summary is complete and green on this source: 1,611 passed,
+twelve existing skips, zero failures, all 1,623 selected cases complete,
+132 distinct files, and no compile-cache retry. No production/test or
+measurement-fixture change followed the freeze. The README and spec §29
+now record those verified results. Review for LAND; do not rerun gates.
