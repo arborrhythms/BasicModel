@@ -12,11 +12,12 @@ replacement. §17 authorizes the remaining shape-test port. The
 [where receipt](../benchmarks/2026-10-22-item3-5-step2a-where/README.md)
 records frozen source `d4f316411`, 223 passes / seven existing skips and
 Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
-(WikiOracle `baa2e7f`). **2b's design is decided in §§20–23. The additional
-assertion ports and occupation read were authorized in §27. §30 removes
-sentence derivations from LTM and supersedes that layout. §31 restates it;
-the dated code review and P4/P6/P7 re-audit are §32, for Claude and Alec.
-P1, P2, P3 and P5 stand. No implementation has begun.**
+(WikiOracle `baa2e7f`). **§§33–36 answer the restatement review and decide
+the sequence: storage changes now, identity threading next, derivation
+removal after it. Claude's incoming four documents were committed unchanged
+at `cc6407f3b`. §37 records one remaining assertion-port conflict: P5's
+corruption replacement requires `ref_kinds`, which §36 defers. The exact
+proposed replacement awaits Claude and Alec. No implementation has begun.**
 Main includes the published documentation handoff at `c39ef9f3a`; all work
 now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
@@ -2461,3 +2462,60 @@ word bag as owned detail (§33), the end of close-time minting, the
 derivation readers removed, a version-checked load, and P2, P4, P6 and
 P7 restated for that layout. Then 2c, and step 2's one full sweep at its
 end.
+
+## 37. P5 after the identity-first split — Codex, 2026-10-22; for Claude and Alec
+
+**Input and scope.** Main `cc6407f3b` commits Claude's spec, bind plan,
+Architecture and todo edits unchanged. `1db6e011d` retains the preceding
+§32 static-review artifacts. Production, tests and configuration still
+match published 2a `0b030e3eb`. §36's storage-only scope is accepted;
+identity threading, tags, READING, derivation removal and close-time
+minting are not reopened here.
+
+**One port no longer has its required column.** §36 authorizes P5 but
+defers `ref_kinds`. The [amended P5](../benchmarks/2026-10-22-item3-5-step2b-port-preflight/amended-port-proposal.md#p5-full-owner-checkpoint-checks)
+explicitly replaces only the corruption subcase of
+`test_native_progress_and_trained_artifact_evaluation_path`
+(`test/test_learning_readiness.py:188–195`) with two malformed
+`ref_kinds` cases, both expecting `ValueError` matching `ref_kinds`.
+Today's LTM1 has no such column. Keeping the original subcase would read
+the `posting_codes` checkpoint key that this round removes. Retiring the
+subcase or testing a different column changes the authorized assertion.
+This is a static authorization conflict; no test or production failure
+has occurred.
+
+**Recommendation for Alec: port that subcase to today's LTM1 pair
+validation.** The [exact proposed patch](../benchmarks/2026-10-22-item3-5-step2b/storage-preflight/proposed-p5-existing-pair.patch)
+is retained but not applied. It uses a fresh copy of the same full-model
+checkpoint for each case, through the same `load_model` call and readiness
+threshold:
+
+| Case | Checkpoint mutation | Exact expected exception |
+| --- | --- | --- |
+| Invalid occupied argument | In the exported allocator's `part_store`, set the second `refs` argument of an occupied row to zero. | `ValueError`, matching `Part arguments must be positive native symbol handles`. |
+| Invalid pair shape | Replace that store's `refs` with its first column, shape `(capacity, 1)`. | `ValueError`, matching `two symbol references`. |
+
+These are LTM1's existing `refs`, not the unused LTM0 column being retired.
+`LTM1._index` already rejects the first mutation. Its load hook already
+rejects the second before `super()._load_from_state_dict`; no new column
+or validation mechanism is proposed. The checkpoint path is
+`structural_extras.conceptual_spaces[*].allocator.part_store`, written by
+`Models._collect_structural_extras` and restored by
+`Models._restore_allocator_extras`.
+
+Every earlier assertion in the learning-readiness case remains verbatim.
+No test is retired. P5's separate `test_part_read` no-saved-postings check,
+rebuild after owner restore and non-persistent `leaf_complete` are still
+implementable as authorized. The malformed-tag checks return with the
+tagged layout in the removal round; that later layout still needs its
+own port and source evidence.
+
+**Decision needed:** may the two existing-pair cases above replace P5's
+two deferred-tag cases for this storage round? Recommended: yes, retaining
+full-model corruption rejection while keeping §36's scope.
+
+The [preflight record](../benchmarks/2026-10-22-item3-5-step2b/storage-preflight/README.md)
+contains the unapplied patch and source audit. Per the handoff's rule
+against assertion changes beyond the authorized ports, stop for Claude's
+review and Alec's decision. No implementation, source freeze, gate,
+publication or WikiOracle bump. Item 3.0 has not been reached.

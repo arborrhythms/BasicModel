@@ -1,5 +1,17 @@
 # Step 1b: current gates and carry ledger
 
+**Storage-only 2b preflight, 2026-10-22:** §§33–36 settle the sequence:
+storage changes, then identity threading, then derivation removal.
+Claude's four incoming documents are committed unchanged at `cc6407f3b`;
+the prior §32 review artifacts are retained at `1db6e011d`. One port
+conflicts with this split: P5 requires malformed `ref_kinds`, which §36
+defers. [Spec §37](../../plans/2026-10-21-step2-one-ltm.md#37-p5-after-the-identity-first-split--codex-2026-10-22-for-claude-and-alec)
+proposes two existing LTM1 pair-corruption checks, with an
+[exact unapplied patch and source audit](../2026-10-22-item3-5-step2b/storage-preflight/README.md).
+Stop for Claude and Alec under the assertion-change rule. No code or test
+change, failure, source freeze, gate, publication or WikiOracle bump;
+production still matches published 2a. Item 3.0 has not been reached.
+
 **Step 2b restatement review, 2026-10-22:** Alec's §30 decision removes
 sentence derivations from LTM, superseding the layout behind the prior
 §28 stop. [Spec §32](../../plans/2026-10-21-step2-one-ltm.md#32-codexs-review-of-31-against-the-code--2026-10-22-stopped-for-claude-and-alec)

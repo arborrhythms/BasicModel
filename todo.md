@@ -26,27 +26,22 @@ frozen source `d4f316411` passed 223 cases with seven existing skips;
 Claude approved publication. `where` is off the LTM0 row and frame;
 `.when` and percept location stay, with both storage-test ports authorized.
 The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-retains every report and capture. **2b is stopped at the restated design review.**
-The repository handoff is published at `c39ef9f3a`, including both preflight
-commits and Claude's unchanged seven-file commit; no documentation-only
-WikiOracle bump. All work now stays on main. Claude's six subsequent
-documents are committed unchanged at `00bc915a9`. **Alec's §30 decision
-removes sentence derivations from LTM; §28's question lapses as posed.**
-Claude's §31 restatement has been reviewed against the code in
-[spec §32](doc/plans/2026-10-21-step2-one-ltm.md#32-codexs-review-of-31-against-the-code--2026-10-22-stopped-for-claude-and-alec).
-The [static review record](doc/benchmarks/2026-10-22-item3-5-step2b/restated-review/README.md)
-retains the source audit and exact P4/P6/P7 proposals, including held
-semantic checks. P1/P2/P3/P5 stand; the new choices and ports await Claude
-and Alec. No implementation, freeze or gate before that decision. The
-earlier sealed [2b review](doc/benchmarks/2026-10-22-item3-5-step2b/README.md)
-is historical and remains unchanged.
-The [port receipt](doc/benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
-retains both Claude reviews and the corrected proposals: stored mode, tagged
-layout/restore, typed fixtures and the end of argument minting. No 2b code
-or test has changed and no gate has run. Metadata authentication stays
-while sidecar content needs it. 2c retains the two R10 arrival notes; the recall-history location
-note belongs to the 5.5 context-wholes spec. No fresh series or full sweep;
-one full sweep remains at step 2's end. Item 3.0 has not been reached.
+retains every report and capture. **2b follows the identity-first sequence
+in step-2 §§33–36:** the scoped storage changes now, identity threading
+specified by Claude next, then derivation removal. Claude's incoming spec,
+bind plan, Architecture and todo edits were committed unchanged at
+`cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
+All work stays on main. **One P5 port needs a decision:** its authorized
+corruption cases require `ref_kinds`, which §36 defers. [Spec §37](doc/plans/2026-10-21-step2-one-ltm.md#37-p5-after-the-identity-first-split--codex-2026-10-22-for-claude-and-alec)
+recommends equivalent checks of today's LTM1 pair validation, with the
+[exact unapplied patch](doc/benchmarks/2026-10-22-item3-5-step2b/storage-preflight/README.md).
+Stop for Claude and Alec under the assertion-change rule. No 2b production
+or test edit, failure, source freeze or gate; source still equals published
+2a. The earlier sealed reviews remain historical and unchanged. Metadata
+authentication stays while sidecar content needs it. 2c retains the two R10
+arrival notes; the recall-history location note belongs to the 5.5
+context-wholes spec. One full sweep remains at step 2's end. Item 3.0 has
+not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
