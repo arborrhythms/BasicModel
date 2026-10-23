@@ -1,5 +1,18 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2b restatement review, 2026-10-22:** Alec's §30 decision removes
+sentence derivations from LTM, superseding the layout behind the prior
+§28 stop. [Spec §32](../../plans/2026-10-21-step2-one-ltm.md#32-codexs-review-of-31-against-the-code--2026-10-22-stopped-for-claude-and-alec)
+reviews Claude's §31 against main `e0d474090` plus the incoming §§29–31.
+The [static record](../2026-10-22-item3-5-step2b/restated-review/README.md)
+contains exact proposed P4/P6/P7 ports and the checks held for decisions.
+P1/P2/P3/P5 stand. Production, tests and configuration still equal
+published 2a `0b030e3eb`; no implementation, freeze, test/gate run,
+publication or WikiOracle bump. Stop for Claude's answer and Alec's
+decisions; all work stays on main. The earlier sealed reviews remain
+historical. The two R10 notes stay in 2c, the full sweep at step 2's end,
+and item 3.0 has not been reached.
+
 **Step 2b layout stop, 2026-10-22:** §27 and Alec's handoff authorize
 P1–P7 and the occurrence-only occupation read; those choices stand.
 Claude's six incoming documentation edits are committed unchanged on main

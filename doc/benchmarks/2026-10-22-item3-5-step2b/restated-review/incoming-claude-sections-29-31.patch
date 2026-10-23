@@ -1,0 +1,162 @@
+diff --git a/doc/plans/2026-10-21-step2-one-ltm.md b/doc/plans/2026-10-21-step2-one-ltm.md
+index 74bf92e4b..b7e0c3c41 100644
+--- a/doc/plans/2026-10-21-step2-one-ltm.md
++++ b/doc/plans/2026-10-21-step2-one-ltm.md
+@@ -1781,3 +1781,157 @@ spec choice. The two frozen commits and their per-commit scoped gates
+ remain pending; no earlier evidence is promoted. P1–P7 are authorized,
+ not awaiting approval again. The two arrival notes remain in 2c, with
+ step 2's one full sweep at its end. Item 3.0 has not been reached.
++
++## 29. Claude's review of §28 — 2026-10-22
++
++**The gap is real, and it is my layout's.** §20's worked example gives an
++occurrence's reading row and an ordinary derivation the same tag pattern,
++and §10 S2 called the reading "the same relation as 'Felix is a cat'".
++Today `role_refs[0]` on the occurrence's side is the one-way pointer that
++names the root; once it moves into LTM1, nothing persistent says which
++`(OCC, SYM)` row is the reading, and a reading and a relation with equal
++arguments coalesce under `LTM1.find`. Codex was right to stop, and the
++delegated review's corrections (no true recursion; today's protection
++narrows the coarsening example) are right too.
++
++**`READING` as the third `ref_kinds` value is the right fix.** It is a
++property of how argument 0 is referenced, not a new relation type, so the
++one-relation design stands. It needs no column, keeps LTM0 at the decided
++row, survives forgetting and restore, and separates the coalescing keys.
++It also makes §21's staged rule exact: a READING argument is not a
++protecting reference (the occurrence owns its reading), while the reading
++protects its SYM root and the root's derivation.
++
++**One correction: re-witnessing replaces the reading; it must not fail.**
++§28 says writing a conflicting reading "fails before mutation". But a
++perceived sentence's address comes from its source text
++(`Occurrence._address_for_write`: document, position, source content key),
++so the same sentence read again in a later epoch reaches the same address,
++and `append_meaning` overwrites its slots and its meaning, root included:
++the last reading wins today. As the grammar learns, a re-read's parse
++changes, and the proposed rule would turn every such re-read into a loud
++failure. So: on re-witness, the new reading row replaces the old one,
++matching the overwritten content; the old reading is retired, and its root
++is released for the next pass. Two readings for one occurrence in a single
++write or a single load remain a loud failure, as corruption.
++
++**Decision for Alec:** approve `READING` with that correction. Every other
++§28 consequence stands: the reading's exclusion from definitions, three-
++value validation in P5, P4/P7 reads through READING, and the listed new
++coverage, to which add one case: a re-read with a different parse replaces
++the reading and leaves exactly one.
++
++## 30. Alec: "Sentence derivation should not be in LTM" — 2026-10-22
++
++Asked to approve §28/§29's `READING` tag, Alec answered: "Sentence
++derivation should not be in LTM." This withdraws the premise of §10 S2's
++layouts, §20's worked layout and §§28–29: there are no derivation edges in
++LTM1 to tell a reading apart from. The derivation stays in working memory,
++the open sentence's journal, and ends with it. The `READING` question
++lapses; 2b stays stopped until the layout is restated.
++
++Readers of the stored derivation today, which the restated layout must
++replace or retire:
++
++- `PartRead.occurrence_roots` and `occurrence_memberships`, which feed
++  the order-0 placement (`MereologicalCodes.occurrence_terms`) and priming
++  diffusion (`Priming.diffuse`): which words a stored sentence contains.
++- `PartRead.expression_components`, read by thought queries
++  (`Queries._with_components`) and answer matching (`BindingAnswers`): a
++  stored sentence's components and head references.
++- `ReferenceClose.accessible`, which finds bind candidates inside earlier
++  sentences by walking their derivations, and
++  `ReferenceParticipants.nonparticipants`, which classifies retained pairs.
++- §21/§23's staged forgetting, which drops structure before the sentence.
++
++Claude's reading, for Alec to confirm: LTM keeps whole occurrences, both
++sentences and their noun-phrase mentions, as LTM0 entries; each mention's
++reading, the word or symbol it reads to; each mention's membership in its
++sentence, `Part(OCC mention, OCC sentence)` ("a word is part of its
++sentence"); and the relations a sentence asserts, such as equalities and
++definitions. A sentence's internal structure, who did what to whom, is
++recovered when needed by inverting its stored concept, item 3's invertible
++path, not read from stored edges.
++
++**Decided (Alec, 2026-10-22).** "If we need the original sentence, just
++reconstruct from the vector. It will not be exact." No derivation is
++stored, and nothing replaces it: a stored sentence's structure is
++recovered, when needed, by reconstructing from its vector through the
++existing reverse path, inexactly.
++
++## 31. 2b restated without stored derivations — Claude, 2026-10-22; for Codex's review
++
++§30 removes the derivation from LTM. This section restates what 2b stores
++and where each reader of the old derivation now reads. It replaces §10
++S2's layouts, §20's worked layout and §§28–29. Decided items that do not
++depend on the derivation stand: the class names, `where` gone, tagged
++references, the evidence rule, mode not stored, saved postings removed,
++adjacency removed, and P1, P2, P3 and P5.
++
++**What LTM stores.**
++
++- **LTM0**, the occurrences, as today: sentences, and noun-phrase mentions
++  as their own rows, each an opaque concept. A mention is already
++  addressed under its sentence (`ClauseRows.write_clause` writes it with
++  document key `('embedded', document, position)` of that sentence), so
++  "this mention is part of that sentence" is read from addresses and needs
++  no edge.
++- **LTM1, three kinds of row**, with tagged references:
++  1. *Word membership*, `Part(SYM word, OCC sentence)`, one row per
++     distinct word of the sentence, written at its close from the
++     journal's leaves: a bag, with no order and no operation. It replaces
++     the derivation walk (`PartRead.occurrence_memberships` through
++     `word_rows`) as the source for placement
++     (`MereologicalCodes.occurrence_terms`), priming diffusion
++     (`Priming.diffuse`) and the leaf-index rebuild at load. This is the
++     "a word is part of its sentence" edge the architecture already names.
++  2. *Mention reading*, the word or symbol a mention reads to: for names,
++     kinds, pending names, the arrival's name match and
++     `_derivation_symbol`'s kind for an unpooled occurrence.
++  3. *Asserted relations*: what a sentence asserts, such as an equality,
++     a part or a definition, as today's relation closes write them.
++
++**The discriminator question survives in one place.** A mention's reading
++and an asserted relation about that mention can share a tag pattern: "x is
++three" relates x's mention to three, and x's reading relates the same
++mention to the word x. Recommended: `READING` as a third `ref_kinds` value
++on argument 0 of a mention's reading, as §28 proposed, now needed only for
++mention readings. One reading per mention; a re-read replaces it (§29). A
++READING argument is not a protecting reference. Alternative: keep each
++mention's word in its row's sidecar binding, where the pending name lives
++today (`_forward_references`, indexed by `ClauseRows._forward_addresses`),
++and store no reading row at all.
++
++**Where each old reader now reads.**
++
++- *Placement, priming and the leaf index* read word membership.
++- *Thought queries and answer matching* (`Queries._with_components`,
++  `BindingAnswers`) read mention readings and asserted relations first;
++  anything finer about a stored sentence is reconstructed from its vector,
++  inexactly. Tests that assert exact stored components need ports.
++- *Bind candidates inside an earlier sentence*
++  (`ReferenceClose.accessible`) are that sentence's mention rows, found by
++  address. Mention rows are written only for participant positions, so
++  `ReferenceParticipants.nonparticipants` and the pair classification it
++  uses (`PartRead.argument_reader`) retire with the stored pairs.
++  §27's occupation read through the reading row goes with them.
++- *Close-time minting* (§11.1) ends as decided, more simply: there are no
++  derivation arguments to mint.
++
++**Forgetting, restated.** §21/§23's staged rule had a sentence's
++structure dropped before the sentence. Now a sentence's stored structure
++is its word memberships. Recommended: they are its first stage, dropped
++before the sentence, leaving the vector as its gist; its mentions are
++occurrences in their own right, forgotten by their own value while
++nothing protects them. A sentence never protects its mentions, since no
++edge points from it to them. One boundary call is one pass, as decided.
++
++**Ports to re-audit.** P1, P2, P3 and P5 stand. P4, P6 and P7 assumed
++derivation rows and reading roots; Codex re-audits them against this
++layout and lists each changed assertion for Alec. The two arrival notes
++stay in 2c; step 2's one sweep stays at its end.
++
++**For Codex's review, then Alec:** the word-membership row as the durable
++source; `READING` versus keeping the word in the sidecar binding; the
++query fallback to reconstruction; the restated forgetting stages; and any
++reader of the stored derivation this list misses.
