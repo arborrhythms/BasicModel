@@ -17,34 +17,25 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 1 and R10 are published. R10 landed at
-`e243d7bdf` (WikiOracle `2ffda78`), with its unchanged assertions, 111
-passes and four existing skips; the earlier failure stays retained.
-**Line 2, step 2a is published:** rename at `804d8adcb` (WikiOracle
-`dbd9b52`), sole cull at `0b030e3eb` (WikiOracle `baa2e7f`). The cull's
-frozen source `d4f316411` passed 223 cases with seven existing skips;
-Claude approved publication. `where` is off the LTM0 row and frame;
-`.when` and percept location stay, with both storage-test ports authorized.
-The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-retains every report and capture. **2b follows the identity-first sequence
-in step-2 §§33–36:** the scoped storage changes now, identity threading
-specified by Claude next, then derivation removal. Claude's incoming spec,
-bind plan, Architecture and todo edits were committed unchanged at
-`cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **Storage-only 2b is frozen at `6a36b7cee`; all scoped gates pass (1,144 passes, nine existing skips), and Claude returns LAND (§67).**
-The narrow N1 production repair stays; the added echoic-decoder cases need
-only operands inside the existing domain, with every assertion preserved.
-Their failed run and passing captured-state diagnosis are retained. The
-[current receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
-lists every port, declaration, failure and withdrawn source.
-Publication of main and the WikiOracle bump follows. The storage round removes
-persisted postings, adjacency, mode and unused refs; retains every
-completed S; and stages forgetting before deletion. Identity threading
-requires Claude's next spec and a code review of §§34–35. Metadata
-authentication stays while sidecar content needs it. 2c retains the two R10
-arrival notes; the recall-history location note belongs to the 5.5
-context-wholes spec. One full sweep remains at step 2's end. Item 3.0 has
-not been reached.
+**Current:** Item 3.5 line 2's storage-only 2b is published at
+BasicModel `39272e7a6`, WikiOracle `ade0399`. Frozen source `6a36b7cee`
+passes all 92 scoped files: 1,144 passes, nine existing prerequisite
+skips. Claude's actual review returns LAND (§67). The
+[receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
+lists every assertion port, fixture change, retirement, failed run and
+withdrawn source. All work stays on main.
+
+**Next is the identity line**, before derivation removal, as step-2 §36
+decides. The requested [code review of §§34–35](doc/plans/2026-10-21-step2-one-ltm.md#68-codex-identity-3435-against-the-landed-storage-source--2026-10-22)
+is written as §68 with recommendations for Claude's spec. Identity
+implementation has not started and awaits that spec. The current landing
+removes persisted postings, adjacency, stored mode and unused refs,
+retains every completed S and stages forgetting; derivation, its readers,
+close-time minting and MTM values stay unchanged. Metadata authentication
+stays while sidecar content needs it. Derivation removal follows identity,
+then 2c with the two R10 arrival notes and step 2's one full sweep.
+The recall-history location note belongs to the 5.5 context-wholes spec.
+Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -722,10 +713,11 @@ not by a passing identity lesson.
    gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
-   seven existing skips and Claude's approval. The storage-only 2b round
-   follows §36 and is frozen at `6a36b7cee`: 1,144 scoped passes, nine
-   existing skips, Claude verdict LAND; publication follows ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
-   §§39–67 retain every fix, port and review. Tags, mention readings and the
+   seven existing skips and Claude's approval. Storage-only 2b is Done at
+   `39272e7a6` (WikiOracle `ade0399`), reviewed source `6a36b7cee`:
+   1,144 scoped passes, nine existing skips, Claude verdict LAND ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
+   §§39–67 retain every fix, port and review; §68 reviews the next identity
+   line against the landed code. Tags, mention readings and the
    occurrence-only occupation ports await the derivation-removal round;
    identity threading and its spec come first. No step-2 completion is
    claimed. All subsequent work stays on main.
@@ -818,8 +810,8 @@ not by a passing identity lesson.
      as round 2a's first commit ([step 2 spec](doc/plans/2026-10-21-step2-one-ltm.md)).
      *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](doc/plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
      no sentence derivation in LTM (§30), MTM stores working content
-     (§35), identity first. Rounds: **2b** the storage changes that do not
-     depend on the derivation; then **the identity line** (Claude specs it
+     (§35), identity first. Storage-only **2b** is Done at `39272e7a6`;
+     next **the identity line** (Claude specs it
      first): MTM values, a sentence as an occurrence of its subject's
      identity, substitution and role evidence through identities, the
      subject resolved at determination; then **derivation removal**;
@@ -1506,6 +1498,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 step 2b — storage-only round:** landing `39272e7a6` (WikiOracle `ade0399`), reviewed source `6a36b7cee`; 1,144 scoped passes, nine existing skips, Claude LAND, every failure and port retained ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)). Identity, derivation removal and 2c remain open.
 
 - **Item 3.5 R10 — named token content before the close:** landing `e243d7bdf` (WikiOracle `2ffda78`), reviewed source `23a41540f`; exact authorized fixture correction, 111 scoped passes and four existing prerequisite skips, Claude verdict publish ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
 

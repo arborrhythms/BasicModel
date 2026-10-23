@@ -3261,3 +3261,168 @@ current clause/query mode. Derivation, its readers, close-time minting
 and MTM working values remain for the decided later rounds. Identity
 threading needs Claude's spec and the requested §§34–35 code review
 next. No learning claim; item 3.0 has not been reached.
+
+## 68. Codex: identity §§34–35 against the landed storage source — 2026-10-22
+
+**Scope.** This is the requested code review for Claude's identity spec,
+after storage-only 2b was published at BasicModel `39272e7a6` and
+WikiOracle `ade0399`, with reviewed source `6a36b7cee`. It implements nothing. §36 settles identity before
+derivation removal; §35 settles one current working value per identity.
+The earlier pointer-only/no-working-vector rule is superseded for the
+identity line. The questions below concern its concrete contract.
+
+**What the code actually does.** `MediumTermMemory.Token` currently has
+only occurrences, kind, count and when. Its two dictionaries map token
+keys to records and occurrence addresses to token keys; they are not a
+surface-name dictionary. `ReferenceClose.token_value` clones the
+introduction's retained point, optionally includes the kind, and takes a
+coordinatewise maximum over uses. This is a historical union, with an
+existing detach, not the latest state or a differentiable recurrent
+value. Moreover, `individuals` uses this path specifically for anonymous
+introductions; ordinary groups have their own occurrence/native baseline.
+The spec must name every consumer that moves to current value, rather
+than only replacing `token_value`. `_derivation_symbol` currently takes
+a stored `sym` root before consulting the token kind; changing the kind
+alone does not redirect every read to an identity's current value.
+
+`ReferenceClose.preview` runs over an already composed clause. Its
+`('new', n)` records let a later site in that preview read an earlier
+site's content (R10); they do not let a later VP read a previous VP's
+updated state during composition. `commit` attaches the planned noun
+sites and arrival refinements, after `write_clause`. It does not in
+general attach every closed S to its subject's token. 2b now supplies an
+LTM0 address for every completed S, but its existing role 0 can still
+name the derivation fold. Neither fact supplies identity threading by
+itself. For a completed relative, `write_clause` still returns the Part
+handle and puts that handle in `written_rows[id(clause)]`; the new LTM0
+occurrence is a separate row. The identity spec must expose that event
+address without conflating it with the retained relation's handle. `ReferenceClose._participants/prediction/expected_roles` still
+read Part arguments and access counts. `ThoughtBinding.integrate` still
+uses component kind/operand congruence as well as witnessed equality edges.
+
+**1. Define “name” as a mention, not a global spelling key.**
+Recommendation: retain the introducing occurrence as the token key and
+map resolved mention handles to it. A lexical name may denote different
+objects in different contexts; two uses of the same form or kind must
+not automatically alias. Keep pending-name metadata distinct from a
+settled mention mapping. Specify how provisional handles at determination
+become the exact durable occurrence addresses at kept close, including
+two identical mentions in one sentence and separate batch streams.
+
+The final storage review also identifies a dual-role row: a bound word
+used as another word's object has no emitting surface under the preserved
+terminal rule, so the second word has no emitting terminal through that
+row. Recommendation: specify ownership and separate the form handle from
+the identified object explicitly; do not broaden decoder terminals as an
+incidental effect of identity threading. The storage landing leaves this
+case unchanged beyond the reviewed narrow repair.
+
+**2. Give the trial an explicit read/write sequence.** Recommendation:
+each trial starts from the same MTM snapshot and owns an overlay. At the
+grammatical determination, the existing resolver menu chooses an
+antecedent or dummy; a first mention initializes its own value from its
+NP. Resolve the subject before applying the VP, read that identity's
+current value, then publish that VP's result to the trial overlay before
+a subsequent clause can read it. At keep, commit only the kept overlay
+and its occurrence history once. A discarded trial, preview, preparation,
+failed close must not leak bindings, values, recency or counts. Specify
+whether provisioning contributes an independent identity context or a
+temporary overlay; it must not accidentally replace the caller's context. Reuse the current dummy/tie, exclusion and chooser
+credit contracts. No new forcing, lexical noun test or ID-to-NP rule is
+needed. The spec must identify the actual determination event for a
+participant leaf, as well as a determiner result, using the existing
+positions, occupations and order stamps.
+
+**3. Separate current state, kind and history.** Recommendation: a VP
+update replaces the current state; it does not union it with all history.
+Keep kind as introduction/refinement metadata and LTM0 as immutable event
+history. The spec must define whether an ordinary compatible mention adds
+descriptive information to current state, and how an arrival sets or
+refines it without replaying old VPs. Preserve the settled-join rule:
+a later assertion cannot move an already joined site or overwrite the
+old antecedent's identity. Adding event occurrences must not accidentally
+disable the singleton guard on an unresolved introduction, or relax that
+guard for genuinely joined mentions. Distinguish event-history membership
+from a second independently joined noun use when specifying that guard.
+
+A bound native minted individual currently gets no MTM entry at all.
+Its future mutable state must not be a bank-row mutation. Recommendation:
+specify an occurrence-keyed working entry for that case, preserving the
+native identity as a reference. Confirm how this amends the current
+no-entry exception while keeping kind, native concept and current state
+distinct.
+
+**4. Define event ownership and role evidence explicitly.**
+Recommendation: make each closed S reference its subject identity and
+record the corresponding event address in that identity's history.
+An object participant remains a reference to its own identity; it must
+not become another subject-state update. State the durable evidence that
+identifies the verb and participant role after derivation removal.
+A token plus an unlabelled fused event point does not by itself replace
+`_participants`' subject/predicate/object distinctions. Specify the
+counting unit (distinct events, with existing re-witness behavior) and the
+G3 expectation query before claiming role evidence follows automatically
+from token history. Keep these semantic relations separate from a saved
+parse or an exact word sequence. The current writer gives all completed
+members of one close the same `RowTime` stamp; define event order inside
+that close from the kept operation/occurrence sequence, so the later VP
+and the temporal-difference teacher do not depend on a new timestamp.
+
+**5. Preserve witnessed equality and compositional substitution.**
+Recommendation: resolve operand references through tokens, but retain
+positive equality evidence and its source occurrences in the proof.
+Token aliases alone are not evidence of a new equality. The spec must
+explain how the two decomposition arms compare expressions containing
+the same bound variable after component/operand reads disappear; whole
+token equality alone does not implement congruence of compound
+expressions. Run the original decomposition snapshots/seeds and G3 on
+the identity source while the existing derivation readers still exist.
+Only the later removal round removes those readers; no premature exact
+component assertion port is implied by this review.
+
+**6. Preserve the meaning of each scored reference choice.**
+Recommendation: capture the referent value that the mention actually saw
+at determination. The already-landed `reconstruction.reference` term
+charges the uncovered share of that mention's own content at weight 0.1;
+a later VP update must not retroactively change that earlier comparison.
+Keep first mentions free and same-close aliases covered, and state how
+arrival/thought exclusions carry forward. The selected bind still receives
+sentence or episode R + A score-function credit, with no reintroduced
+local `choice_cost` objective. The identity spec should name the scored
+snapshot and commit correspondence, as the existing preview/prepare/commit
+contract does.
+
+**7. State tensor ownership, gradient and lifetime boundaries.**
+Recommendation: stage the bounded identity values and handles into
+trial-local tensor state at the host boundary; pass that state through
+the compiled operation path, without Python pool reads inside its body.
+The spec must distinguish the current detached history read from a
+pathwise VP value read, and say where a graph ends between kept
+sentences. Do not add a detach simply to make the overlay convenient or
+quiet an ownership error. Bind's discrete choice retains score-function
+credit; changing a continuous consumer or loss needs an explicit
+contract, not an incidental new training path.
+
+Today the pool is a plain object attached to ConceptualSpace; the
+resolver checkpoint extra is version-only and ordinary Space resets do
+not serialize or reconstruct its entries. LTM0 row reclamation already
+calls `mtm.forget`; preserve that existing ownership hook unless Alec
+changes its lifetime contract. Specify checkpoint/load,
+document/stream isolation, row reclamation and capacity eviction for
+values and mappings together. The decided 16-close/document expiry and
+promotion policy is still 2c's work. Do not silently implement that
+policy early, or let temporary truth provisioning erase the caller's
+identity overlay.
+
+**Recommended identity certificates.** Keep all existing binding, G3 and
+decomposition semantics, and add a fixed-operation within-sentence
+two-clause case where the second VP demonstrably receives the first VP's
+result via the subject identity; a change-of-state case that keeps the
+latest place rather than their union; two aliases reading one updated
+value; both-trial isolation with opposite keep outcomes; stream and
+provisioning isolation; event/mention count and joined-site protection;
+and immutable historical LTM0 rows after later value changes. Use
+mechanism fixtures with no learned-grammar or learning claim.
+
+Claude's spec should answer these questions and name the implementation
+seams before identity coding begins. Item 3.0 has not been reached.

@@ -1,0 +1,39 @@
+{
+  "published_at": "2026-10-22T23:56:24-07:00",
+  "source": "6a36b7ceeb5a5da9ae6019f62c59c16d27f7f1ce",
+  "basicmodel": {
+    "branch": "main",
+    "landing": "39272e7a627b33c2d37d37eba259e6ba8acd481b",
+    "pushed": true
+  },
+  "wikioracle": {
+    "branch": "main",
+    "landing": "ade0399c468f8bd1974bfd75992eb952d087343d",
+    "basicmodel_gitlink": "39272e7a627b33c2d37d37eba259e6ba8acd481b",
+    "pushed": true
+  },
+  "review": {
+    "verdict": "LAND",
+    "report": "claude-review.md",
+    "run": "claude-review-run.json"
+  },
+  "gates": {
+    "summary": "gate-summary.json",
+    "passed": 1144,
+    "skipped": 9,
+    "completed": 1153,
+    "failed": 0,
+    "files": 92,
+    "fresh_series": false,
+    "full_sweep": false
+  },
+  "source_and_tests_unchanged_after_freeze": true,
+  "next": {
+    "step": "identity specification",
+    "code_review_section": 68,
+    "implementation_started": false,
+    "documentation_only_follow_up": true,
+    "wikioracle_bump_for_documentation_only": false
+  },
+  "item_3_0_reached": false
+}

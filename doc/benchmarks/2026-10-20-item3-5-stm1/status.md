@@ -1,5 +1,16 @@
 # Step 1b: current gates and carry ledger
 
+**Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
+WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,
+nine existing prerequisite skips and Claude LAND. The
+[publication receipt](../2026-10-22-item3-5-step2b/final/decoder-domain/publication.json)
+records both pushes. Step-2 §68 now reviews identity §§34–35 against that
+landing, with recommendations and the dual-role row note carried from
+Claude's review. Identity implementation awaits Claude's spec. Derivation
+removal and 2c follow, with one full sweep at step 2's end. BasicModel's
+identity-review follow-up is documentation only, with no WikiOracle bump.
+Item 3.0 has not been reached.
+
 **Storage-only 2b reviewed, 2026-10-22:** frozen `6a36b7cee` passes all
 scoped gates: 1,144 passes and nine existing prerequisite skips. Claude's
 [actual read-only review](../2026-10-22-item3-5-step2b/final/decoder-domain/claude-review.md)

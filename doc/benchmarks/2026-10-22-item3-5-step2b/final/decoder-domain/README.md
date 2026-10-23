@@ -202,8 +202,10 @@ therefore has no emitting terminal through that row. Ownership of this
 dual-role row needs an explicit identity contract; storage-only 2b makes
 no additional decoder change for it.
 
-Publication is the push of BasicModel main and the WikiOracle main
-gitlink bump. The publication record will name both landed commits.
-Then write the requested §§34–35 code review; Claude's identity spec
-precedes implementation. No learning claim is made. Item 3.0 has not
-been reached.
+**Published:** BasicModel main `39272e7a6`, WikiOracle main `ade0399`.
+The [publication record](publication.json) gives both complete hashes and
+the reviewed source. The WikiOracle gitlink points to the code and review
+landing. The requested §§34–35 code review was then written as step-2
+§68 in a documentation-only follow-up; it needs no WikiOracle bump.
+Claude's identity spec precedes implementation. No learning claim is
+made. Item 3.0 has not been reached.
