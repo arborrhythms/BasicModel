@@ -1,0 +1,19 @@
+E                                                                        [100%]
+==================================== ERRORS ====================================
+____ ERROR at setup of test_identity_admission_uses_the_resolved_stm_order _____
+file /Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_identity_admission.py, line 5
+  def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, eager_reading):
+E       fixture 'eager_reading' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, capture_arrival, capture_contract, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, hydra_restore_singletons, hydra_sweep_runner, hydra_task_runner, monkeypatch, observe_arrival_keep, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, spy_agency, subtests, testrun_uid, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory, worker_id
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_identity_admission.py:5
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_identity_admission.py::test_identity_admission_uses_the_resolved_stm_order
+1 warning, 1 error in 1.52s

@@ -167,3 +167,14 @@ def test_retained_argument_classification_uses_only_its_own_occupations(monkeypa
     word = f.words['m'][0]
     assert not is_marker(word, set())
     assert operation((word, head)) is None
+
+
+def test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate():
+    from ReferenceParticipants import participant_terms
+    predicate = Composition(None, word_id=101)
+    participant = Composition(None, word_id=102)
+    phrase = Composition(None, (predicate, participant), operation='verb', head_role=1)
+    root = Composition(None, (phrase,), operation='bind', head_role=1)
+    eligible, _ = participant_terms(((root, False),))
+    assert id(participant) in eligible
+    assert id(predicate) not in eligible

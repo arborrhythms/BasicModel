@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair2.py::test_rebuilt_reference_bank_is_detached_at_the_fork",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

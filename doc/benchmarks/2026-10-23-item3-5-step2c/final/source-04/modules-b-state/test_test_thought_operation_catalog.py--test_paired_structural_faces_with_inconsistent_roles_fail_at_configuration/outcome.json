@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_paired_structural_faces_with_inconsistent_roles_fail_at_configuration",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

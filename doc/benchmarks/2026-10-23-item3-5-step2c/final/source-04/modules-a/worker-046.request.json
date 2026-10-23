@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-resolved]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-resolved]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-True]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-True]",
+    "test/test_identity_threading.py::test_two_relative_determinations_keep_distinct_objects",
+    "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-04/modules-a/worker-046.recycle.json"
+}

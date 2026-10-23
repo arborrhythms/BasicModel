@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "math_probe",
+    "-p",
+    "lexical_probe",
+    "test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T20:25:04.021141+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T20:25:40.595383+00:00"
+}

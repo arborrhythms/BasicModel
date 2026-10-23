@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_criterion_gates_learning.py::test_registration_does_not_depend_on_testimony_trust[-0.7]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

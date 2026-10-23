@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "word_store_probe",
+    "test/test_word_store.py::test_reverse_chooser_picks_fold_op_by_roundtrip",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T20:29:28.862235+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T20:29:35.619044+00:00"
+}

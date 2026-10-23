@@ -1,0 +1,6 @@
+{
+  "node": "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

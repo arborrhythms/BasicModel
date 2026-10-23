@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

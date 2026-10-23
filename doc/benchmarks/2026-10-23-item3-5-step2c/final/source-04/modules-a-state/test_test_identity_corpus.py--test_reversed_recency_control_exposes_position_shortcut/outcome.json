@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

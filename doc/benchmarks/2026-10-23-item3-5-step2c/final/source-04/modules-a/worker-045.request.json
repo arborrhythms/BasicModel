@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-True]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-True]",
+    "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[False]",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[True]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[0]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[2]",
+    "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[0]",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[2]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[False]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[True]",
+    "test/test_identity_threading.py::test_pending_checkpoint_migration_and_validation_are_atomic"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-04/modules-a/worker-045.recycle.json"
+}

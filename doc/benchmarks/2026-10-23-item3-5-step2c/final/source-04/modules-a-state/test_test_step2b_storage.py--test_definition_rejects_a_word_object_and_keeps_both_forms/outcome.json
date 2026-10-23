@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_definition_rejects_a_word_object_and_keeps_both_forms",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

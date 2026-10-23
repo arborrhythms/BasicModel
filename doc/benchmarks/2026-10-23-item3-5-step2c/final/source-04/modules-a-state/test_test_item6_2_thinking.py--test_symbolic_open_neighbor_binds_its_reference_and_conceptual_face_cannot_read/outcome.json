@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

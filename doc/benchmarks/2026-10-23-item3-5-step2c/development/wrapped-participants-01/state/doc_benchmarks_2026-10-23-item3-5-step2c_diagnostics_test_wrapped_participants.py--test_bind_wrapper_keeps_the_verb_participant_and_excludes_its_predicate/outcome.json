@@ -1,0 +1,6 @@
+{
+  "node": "doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_wrapped_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate",
+  "outcome": "failed",
+  "failure": "doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_wrapped_participants.py:12: in test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate\n    assert id(participant) in eligible\nE   assert 4504562112 in {4504563312: Composition(children=(Composition(children=(Composition(children=(), reference=-1, operation=None, head_r...Composition(children=(), reference=-1, operation=None, head_role=0, order=0, leaves=(), word_id=101, formal_name=None)}\nE    +  where 4504562112 = id(Composition(children=(), reference=-1, operation=None, head_role=0, order=0, leaves=(), word_id=102, formal_name=None))",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_references_and_content_keys_survive_compaction_and_checkpoint",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

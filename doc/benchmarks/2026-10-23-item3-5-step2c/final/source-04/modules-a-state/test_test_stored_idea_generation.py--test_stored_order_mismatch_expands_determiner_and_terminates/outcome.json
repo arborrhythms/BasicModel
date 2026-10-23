@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

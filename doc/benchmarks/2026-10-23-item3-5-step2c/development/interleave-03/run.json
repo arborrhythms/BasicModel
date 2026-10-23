@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "-p",
+    "interleave_probe",
+    "-p",
+    "admission_probe",
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T20:29:28.862550+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T20:29:35.502274+00:00"
+}

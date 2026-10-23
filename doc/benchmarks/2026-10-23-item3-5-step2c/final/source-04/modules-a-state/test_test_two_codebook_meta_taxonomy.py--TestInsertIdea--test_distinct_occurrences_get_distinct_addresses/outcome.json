@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_codebook_meta_taxonomy.py::TestInsertIdea::test_distinct_occurrences_get_distinct_addresses",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

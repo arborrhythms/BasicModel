@@ -1,0 +1,15 @@
+E                                                                        [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_native_worked_document_trains_unforced_without_numeric_oracles _
+doc/benchmarks/2026-10-23-item3-5-step2c/development/lexical_probe.py:12: in observe_lexical
+    from Interpret import Interpret
+E   ImportError: cannot import name 'Interpret' from 'Interpret' (/Users/arogers/github/WikiOracle/basicmodel/bin/Interpret.py)
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test/test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles
+1 warning, 1 error in 1.65s

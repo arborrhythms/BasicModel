@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_interpretation.py::test_grammar_resolution_distinguishes_particular_and_kind",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

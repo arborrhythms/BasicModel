@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,143 @@
+diff --git a/bin/Language.py b/bin/Language.py
+index aa31d0f1b..8f26c3f6d 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -12657,8 +12657,10 @@ class LanguageSpace(nn.Module):
+                 objects = set(associated) - owner._word_definition_ids()
+                 refs[leaf] = -1 if objects else int(concept_ids[leaf])
+             else:
+-                refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
+-                              -1 if cid is None else cid)
++                # Unavailable interpretations keep their source until one
++                # exists; ambiguity stays open in both trial and admission.
++                refs[leaf] = ((-1 if associated else int(concept_ids[leaf]))
++                              if cid is None else cid)
+             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
+         return refs, orders
+ 
+diff --git a/bin/Models.py b/bin/Models.py
+index 228a49073..9ef7f17b7 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -21714,7 +21714,7 @@ class BasicModel(BaseModel):
+                         else torch.full_like(current_stm[1], -1))
+             clause_state = scope.push(current_cs_lang[17], commit.reshape(B), word_ids)
+             identity_state = language.identity_overlay.push(current_cs_lang[26:31], commit.reshape(B),
+-                resolved[0][:, 0], word=word_ids, order=word_order, index=index.clamp(0, width-1),
++                resolved[0][:, 0], word=word_ids, order=resolved[2][:, 0], index=index.clamp(0, width-1),
+                 words=width, resolved=object_gate)
+             closing_events = current_cs_lang[18]
+             # Only this word's three choices and its bounded closing can
+diff --git a/bin/ReferenceParticipants.py b/bin/ReferenceParticipants.py
+index a91374623..5d61a2cda 100644
+--- a/bin/ReferenceParticipants.py
++++ b/bin/ReferenceParticipants.py
+@@ -45,10 +45,10 @@ def participant_terms(roots, rules=()):
+             positions = {i: True for i in range(len(children))}
+         elif name == 'lift' and len(children) == 2:
+             positions = {i: i+1 != head for i in range(len(children))}
+-        elif noun and head and not clause:
+-            positions = {head-1: True}
+         elif name == 'verb' and len(children) == 2:
+             positions = {i: i+1 != head for i in range(len(children))}
++        elif noun and head and not clause:
++            positions = {head-1: True}
+         elif head:
+             positions = {head-1: noun}
+         else:
+diff --git a/test/test_reference_participants.py b/test/test_reference_participants.py
+index 75edcd2da..d46ded7f4 100644
+--- a/test/test_reference_participants.py
++++ b/test/test_reference_participants.py
+@@ -167,3 +167,14 @@ def test_retained_argument_classification_uses_only_its_own_occupations(monkeypa
+     word = f.words['m'][0]
+     assert not is_marker(word, set())
+     assert operation((word, head)) is None
++
++
++def test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate():
++    from ReferenceParticipants import participant_terms
++    predicate = Composition(None, word_id=101)
++    participant = Composition(None, word_id=102)
++    phrase = Composition(None, (predicate, participant), operation='verb', head_role=1)
++    root = Composition(None, (phrase,), operation='bind', head_role=1)
++    eligible, _ = participant_terms(((root, False),))
++    assert id(participant) in eligible
++    assert id(predicate) not in eligible
+diff --git a/test/test_sentence_journal.py b/test/test_sentence_journal.py
+index befd7c033..20cc5855b 100644
+--- a/test/test_sentence_journal.py
++++ b/test/test_sentence_journal.py
+@@ -235,3 +235,72 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
+     assert entry.identity_leaves.tolist() == [2, 3]
+     assert entry.concept_ids.tolist() == [101, 102]
+     assert model.symbolSpace._word_reference_orders.tolist() == [[0, 2]]
++
++
++def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, eager_reading):
++    from Models import FunctionalPeerSTM
++    from MTMOverlay import MTMOverlay
++    from test_compiled_word_chunk import _tiny_canonical_model
++    from What import What
++    model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
++        concept_rows=128, input_width=16, batch_size=1, chooser_depth=1,
++        training_overrides={'reconstructionPlacement': 'eager'},
++        architecture_overrides={'answerSynthesis': False})
++    model._tensor_peer_while_eager = True
++    model._chart_compose_per_word = lambda: None
++    resolve, push = FunctionalPeerSTM.resolve_top_reference, MTMOverlay.push
++    expected, observed = [], []
++    def resolved(*args, **kwargs):
++        result = resolve(*args, **kwargs)
++        expected.append(result[2][:, 0].clone())
++        return result
++    def opening(state, active, value, **kwargs):
++        if active.any():
++            torch.testing.assert_close(kwargs['order'][active], expected[-1][active], rtol=0, atol=0)
++            observed.append(True)
++        return push(state, active, value, **kwargs)
++    monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(resolved))
++    monkeypatch.setattr(MTMOverlay, 'push', staticmethod(opening))
++    try:
++        raw = model.inputSpace.prepInput(['a b'])
++        model.runBatch(train=False, batchSize=1, split='validation',
++            batch_override=(raw, torch.empty(1, 0)), questions=(What.present(0, split='validation'),))
++        assert observed
++    finally:
++        model.End()
++
++
++def test_unresolved_typed_admission_keeps_the_scored_source_reference():
++    from Language import LanguageSpace
++    rule = SimpleNamespace(method_name='kind', head_role=1, determiner_mode='kind',
++        reference_roles=('argin1',), reference_modes=(), order_delta=0)
++    language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
++    owner = SimpleNamespace(resolve_word_concept=lambda *a, **k: None,
++        word_surface_for_row=lambda row: 'pending-form', word_concepts=lambda surface: (101,),
++        _concept_source_order=lambda identity: 0,
++        definitions=SimpleNamespace(word=lambda **kwargs: 101),
++        interpret=SimpleNamespace(forward=lambda *a, **k: None))
++    arguments = (owner, torch.tensor([10]), torch.tensor([101]),
++                 torch.tensor([[0, -1, 0], [2, 0, 0]]))
++    results = [LanguageSpace.resolve_lexical_references(language, *arguments,
++        leaf_orders=torch.tensor([0]), admit=admit) for admit in (False, True)]
++    assert results[0][0].tolist() == results[1][0].tolist() == [101]
++    assert results[0][1].tolist() == results[1][1].tolist() == [2]
++
++
++def test_ambiguous_typed_reading_is_open_in_preview_and_admission():
++    from Language import LanguageSpace
++    rule = SimpleNamespace(method_name='kind', head_role=1, determiner_mode='kind',
++        reference_roles=('argin1',), reference_modes=(), order_delta=0)
++    language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
++    owner = SimpleNamespace(resolve_word_concept=lambda *a, **k: None,
++        word_surface_for_row=lambda row: 'pending-form', word_concepts=lambda surface: (201, 202),
++        _concept_source_order=lambda identity: 2,
++        definitions=SimpleNamespace(word=lambda **kwargs: 101),
++        interpret=SimpleNamespace(forward=lambda *a, **k: None))
++    arguments = (owner, torch.tensor([10]), torch.tensor([101]),
++                 torch.tensor([[0, -1, 0], [2, 0, 0]]))
++    results = [LanguageSpace.resolve_lexical_references(language, *arguments,
++        leaf_orders=torch.tensor([0]), admit=admit) for admit in (False, True)]
++    assert results[0][0].tolist() == results[1][0].tolist() == [-1]
++    assert results[0][1].tolist() == results[1][1].tolist() == [2]

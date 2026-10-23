@@ -1,0 +1,25 @@
+{
+  "source": "15f09411a6c009f18edbbac7b255ab6ce1d0a3a1",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_decomposition.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-04/decomposition-zero"
+  ],
+  "started": "2026-10-23T20:11:26.278046+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T20:13:36.081119+00:00"
+}

@@ -12657,8 +12657,10 @@ class LanguageSpace(nn.Module):
                 objects = set(associated) - owner._word_definition_ids()
                 refs[leaf] = -1 if objects else int(concept_ids[leaf])
             else:
-                refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
-                              -1 if cid is None else cid)
+                # Unavailable interpretations keep their source until one
+                # exists; ambiguity stays open in both trial and admission.
+                refs[leaf] = ((-1 if associated else int(concept_ids[leaf]))
+                              if cid is None else cid)
             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
         return refs, orders
 

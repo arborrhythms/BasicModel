@@ -1,0 +1,337 @@
+{
+  "node": "test/test_word_interpretation.py::test_selected_generic_grammar_ends_the_interpreted_kinds",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          3,
+          5
+        ],
+        "word_rows": [
+          15,
+          16
+        ],
+        "activations": [
+          0.25,
+          0.75
+        ],
+        "leaves": [
+          [
+            0.5720489025115967,
+            0.5465325117111206,
+            0.4345811605453491,
+            0.44475987553596497,
+            0.5191479325294495,
+            0.6062226891517639,
+            0.3624039590358734,
+            0.6227512955665588
+          ],
+          [
+            0.5621476173400879,
+            0.5377840995788574,
+            0.5506910681724548,
+            0.5256749987602234,
+            0.44026321172714233,
+            0.5659651160240173,
+            0.5725572109222412,
+            0.3088085353374481
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            0,
+            -1
+          ]
+        ],
+        "targets": [
+          0,
+          -1
+        ],
+        "end_state": [
+          [
+            0.5621476173400879,
+            0.5377840995788574,
+            0.5506910681724548,
+            0.5256749987602234,
+            0.44026321172714233,
+            0.5659651160240173,
+            0.5725572109222412,
+            0.3088085353374481
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          19,
+          21
+        ],
+        "word_ids": null,
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": [
+          23,
+          25
+        ],
+        "reference_orders": [
+          2,
+          2
+        ],
+        "symbol_where": null,
+        "symbol_when": null,
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.5720489025115967,
+              0.5465325117111206,
+              0.4345811605453491,
+              0.44475987553596497,
+              0.5191479325294495,
+              0.6062226891517639,
+              0.3624039590358734,
+              0.6227512955665588
+            ],
+            [
+              0.5621476173400879,
+              0.5377840995788574,
+              0.5506910681724548,
+              0.5256749987602234,
+              0.44026321172714233,
+              0.5659651160240173,
+              0.5725572109222412,
+              0.3088085353374481
+            ],
+            [
+              0.5621476173400879,
+              0.5377840995788574,
+              0.5506910681724548,
+              0.5256749987602234,
+              0.44026321172714233,
+              0.5659651160240173,
+              0.5725572109222412,
+              0.3088085353374481
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            23,
+            25
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": null,
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "part",
+            "refs": [
+              23,
+              "ClausePredicate(name='part')",
+              25
+            ],
+            "order": 2,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": 17,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "part",
+            "formal_name": "part",
+            "head_role": 0,
+            "order": 2,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 23,
+            "word_id": 17,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 2,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 25,
+            "word_id": 18,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 2,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    }
+  ]
+}

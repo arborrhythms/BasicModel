@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_sentence_journal.py",
+    "test/test_reference_participants.py",
+    "test/test_live_references.py",
+    "test/test_identity_threading.py",
+    "test/test_memory_consolidation.py",
+    "test/test_word_interpretation.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T20:29:27.696871+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T20:30:05.108606+00:00"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

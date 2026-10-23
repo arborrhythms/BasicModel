@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_operator_reconstruction.py::test_declared_identity_unary_is_available_on_opaque_concepts[null]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

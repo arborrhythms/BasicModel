@@ -7,7 +7,7 @@ Item 3.0 has not been reached. This is mechanism evidence, not a learning
 claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)
-§§73–82 records the code review, decisions and each development repair under
+§§73–86 records the code review, decisions and each development repair under
 §39. The published base is BasicModel `148953f9b` (identity source
 `65ab7fbe9`, Claude LAND in identity §34), WikiOracle `175c101`.
 [Publication record](publication-identity.json). The required identity
@@ -54,8 +54,12 @@ receipt sentence was added; no further identity gates ran.
   word with one DEF resolves to that object for role evidence. An ambiguous
   unavailable lexical reading supplies no invented role evidence.
 
-Capture keeps the actual provisional leaf stamp that entered composition,
-before reference resolution; inventory stamps cannot erase an introduction.
+Identity admission consumes the resolved STM order. Capture preserves a genuine
+provisional leaf stamp; neither the earlier word order nor its inventory
+stamp can replace the reading's order. Bind preserves the incoming grammatical
+context. Typed-reference fallback agrees between preview and admission,
+including unavailable and ambiguous readings, so closing preserves the
+structure that was scored.
 The derivation, its stored readers, close-time minting, three-slot rows, chooser,
 objective and keep rule stay. The new LTM0/LTM1 layout, meaning/form kernel
 change and shared STM chunks remain item 3. No new forcing, answer targets,
@@ -86,7 +90,7 @@ seat reservation, menu masking, fixture resizing or MTM-read detach.
    and compiled-expectation fixtures keep every assertion. No timestamp
    inventory port is needed after the production refresh repair.
 
-No existing test is retired. `final/source-04/test-ports.patch` and
+No existing test is retired. `final/source-05/test-ports.patch` and
 `assertion-audit.json` give the exact changes, including all added tests.
 
 ## Retained development runs
@@ -96,7 +100,7 @@ semantic captures, run log and failures. Fixed-operation unit failures
 have no paired trial or keep; capture diagnoses say so rather than invent
 one. None of these runs substitutes for frozen-source gates.
 
-| Run | Passed | Skipped | Failed | Diagnosis |
+| Run | Passed | Skipped | Failed/errors | Diagnosis |
 | --- | ---: | ---: | ---: | --- |
 | foundation-01 | 60 | 0 | 9 | Embedded addresses miscounted as source sentences; overbroad arrival/root guards; new event fixture seated its word. |
 | foundation-02 | 66 | 0 | 3 | Two legitimate promotion bank writes need the scoped helper port; new DEF fixture lacked its object type. |
@@ -117,6 +121,22 @@ one. None of these runs substitutes for frozen-source gates.
 | capture-stamp-01 | 0 | 0 | 1 | Deterministic capture regression, before repair. |
 | interleave-02 | 1 | 0 | 0 | Exact original draw passes after preserving the carried stamp; no existing assertion change. |
 | capture-stamp-02 | 100 | 0 | 0 | Journal, identity, live-reference and consolidation contracts. |
+| expectation-01 | 0 | 0 | 1 | Exact replay and keep probe of the missing introduction under a bind/VP wrapper. |
+| wrapped-participants-01 | 0 | 0 | 1 | Fixed wrapper tree loses the verb participant and includes the predicate. |
+| word-store-01 | 0 | 0 | 1 | Exact replay of the same missing-introduction class; no completed cost/keep. |
+| admission-01 | 0 | 0 | 1 | Live probe: overlay receives order 1 while resolved STM receives order 0. |
+| admission-unit-01 | 0 | 0 | 1 | Diagnostic setup: missing existing eager fixture import; all assertions retained. |
+| admission-unit-02 | 0 | 0 | 1 | Production-path order comparison fails before repair. |
+| math-01 | 0 | 0 | 1 | Exact replay and both-trial probe: tied keep, then typed admission changes structure. |
+| math-02 | 0 | 0 | 1 | Diagnostic setup: wrong class import, corrected without changing an assertion. |
+| math-03 / math-04 | 0 | 0 | 2 | Lexical probes retain the unavailable typed-source discrepancy. |
+| unresolved-admission-01 | 0 | 0 | 1 | Missing typed reading changes its source to -1 only at admission. |
+| unresolved-admission-02 | 0 | 0 | 2 | Missing and ambiguous typed cases disagree across the boundary. |
+| boundary-01 | 0 | 0 | 1 | Command setup: nonexistent file selector; no tests collected. |
+| boundary-02 | 132 | 0 | 2 | Broad branch reordering wrongly offers the marker in both punctuation cases. |
+| expectation-02 / math-05 | 2 | 0 | 0 | Original failing captures pass after order and typed-fallback repairs. |
+| boundary-03 | 134 | 0 | 0 | Narrow transparent-bind repair plus all focused boundary assertions. |
+| word-store-02 / interleave-03 | 2 | 0 | 0 | Original captured draws pass on the final development source. |
 
 ## Frozen evidence and review
 
@@ -138,7 +158,13 @@ one failure. Its [diagnosis](final/source-03/diagnosis.json) and exact replay
 show the lost provisional stamp. The new deterministic regression failed
 before repair. No result from this source is promoted.
 
-`final/source-04` holds the final source audit and selections: the prior scoped
+`final/source-04` retains `15f09411a`: 1,678 passed, twelve existing skips,
+three failures. Its [diagnosis](final/source-04/diagnosis.json) includes exact
+captured replays, admission/order probes and both completed trials where a
+keep exists. The capture-only diagnosis is explicitly qualified in §84.
+No result from this source is promoted.
+
+`final/source-05` holds the final source audit and selections: the prior scoped
 groups, both decomposition arms at their original snapshots/seeds, and
 new/direct changed-module files. Gates are run once by source. Every
 failure is retained and diagnosed before source changes. No full sweep

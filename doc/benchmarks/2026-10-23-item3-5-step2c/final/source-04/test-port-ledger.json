@@ -1,0 +1,48 @@
+{
+  "source": "15f09411a6c009f18edbbac7b255ab6ce1d0a3a1",
+  "base": "148953f9b4f83bf98ae65f8293e73b559d2a3929",
+  "existing_python_assert_changes": [],
+  "tensor_comparison_ports": [
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "unchanged",
+      "before": "exact comparison of every snapshot tensor, including the entire bank",
+      "after": "same exact comparison; when promoted_rows is explicitly supplied, exclude only those bank rows"
+    },
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "keep",
+      "before": "unchanged(resolver, retained)",
+      "after": "unchanged_after_consolidation(resolver, retained, seated)",
+      "guard": "new_rows <= promoted; all previous bank rows and existing LTM/Part snapshot tensors remain exact"
+    },
+    {
+      "file": "test/test_reference_review10.py",
+      "function": "test_later_ball_mention_preserves_the_boxs_key_members_and_count.close",
+      "cases": 2,
+      "before": "unchanged(resolver, before)",
+      "after": "unchanged_after_consolidation(resolver, before, seated)",
+      "semantic_assertions": "unchanged"
+    }
+  ],
+  "fixture_ports": [
+    {
+      "file": "test/reading_fixtures.py",
+      "function": "commit_reading",
+      "before": "_concept_owner returns the trust/LTM-switch SimpleNamespace",
+      "after": "_concept_owner returns registry.space; the separate trust/LTM-switch namespace remains",
+      "assertions": "unchanged"
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_event_without_factored_refs_uses_the_captured_verb_reading",
+      "scope": "new test setup",
+      "change": "Supply an unseated native word and a correctly typed DEF object instead of a lookup that seats the word.",
+      "assertions": "unchanged through the setup corrections"
+    }
+  ],
+  "retired_tests": [],
+  "exact_patch": "test-ports.patch",
+  "new_assertions": "assertion-audit.json",
+  "new_regression": "test_sentence_journal.test_program_keeps_the_identity_leaf_stamp_before_reference_resolution; copied verbatim from the pre-repair failed diagnostic"
+}

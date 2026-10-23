@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

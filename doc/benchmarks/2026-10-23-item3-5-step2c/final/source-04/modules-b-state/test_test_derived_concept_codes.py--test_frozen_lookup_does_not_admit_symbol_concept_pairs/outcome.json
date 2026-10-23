@@ -1,0 +1,6 @@
+{
+  "node": "test/test_derived_concept_codes.py::test_frozen_lookup_does_not_admit_symbol_concept_pairs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

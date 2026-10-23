@@ -21714,7 +21714,7 @@ class BasicModel(BaseModel):
                         else torch.full_like(current_stm[1], -1))
             clause_state = scope.push(current_cs_lang[17], commit.reshape(B), word_ids)
             identity_state = language.identity_overlay.push(current_cs_lang[26:31], commit.reshape(B),
-                resolved[0][:, 0], word=word_ids, order=word_order, index=index.clamp(0, width-1),
+                resolved[0][:, 0], word=word_ids, order=resolved[2][:, 0], index=index.clamp(0, width-1),
                 words=width, resolved=object_gate)
             closing_events = current_cs_lang[18]
             # Only this word's three choices and its bounded closing can

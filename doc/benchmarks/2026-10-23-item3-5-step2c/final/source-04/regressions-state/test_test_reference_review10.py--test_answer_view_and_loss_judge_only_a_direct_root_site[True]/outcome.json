@@ -1,0 +1,282 @@
+{
+  "node": "test/test_reference_review10.py::test_answer_view_and_loss_judge_only_a_direct_root_site[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "mint",
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": null,
+            "leaves": [
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [],
+        "cost": 0.0
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=2, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": [
+              "ltm",
+              "address-v1",
+              3457749535485181639
+            ],
+            "candidates": [
+              [
+                "ltm",
+                "address-v1",
+                3457749535485181639
+              ]
+            ],
+            "features": [
+              [
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": [
+              0.2689414322376251,
+              0.7310585975646973
+            ],
+            "leaves": [
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('ltm', 'address-v1', 3457749535485181639)": {
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ],
+            "token": [
+              "ltm",
+              "address-v1",
+              3457749535485181639
+            ],
+            "occurrences": [
+              3457749535485181639
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null,
+              [
+                "ltm",
+                "address-v1",
+                3457749535485181639
+              ]
+            ],
+            "features": [
+              [
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+              ]
+            ],
+            "logits": [
+              0.0,
+              1.0
+            ],
+            "probabilities": [
+              0.2689414322376251,
+              0.7310585975646973
+            ],
+            "greedy": 1,
+            "selected": 1,
+            "next": 0,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": 0.0
+      }
+    }
+  ]
+}

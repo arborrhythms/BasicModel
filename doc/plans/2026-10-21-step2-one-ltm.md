@@ -4003,3 +4003,109 @@ changes. `interleave-02` passes the original test on its captured draw, and
 consolidation cases. All failures and probes remain. The corrected frozen
 source receives the scoped groups anew; source-03 results are not promoted.
 No explicit decision of Alec's is reversed.
+
+## 83. A wrapper keeps the verb's declared argument — Codex, 2026-10-23
+
+Source `15f09411a` reaches a missing-introduction failure in the existing
+expectation-toggle test. `expectation-01` restores both its process and
+private-generator RNGs; all nine captured programs are identical. The
+probe keeps the first two completed pairs (R = 0.3691566288 and
+0.3830434680, A = 0, both ties keeping greedy). The later exploit preview
+fails before its cost or keep exists. All sites and identity handles are
+retained; no unobserved keep is inferred.
+
+The leaf stamp is now correct. The failure is in `participant_terms`: an
+enclosing bind passes noun context to a VP, and the generic noun/head arm
+runs before the verb's declared argument arm. It follows the predicate
+head and excludes the object which the live overlay made accessible.
+`wrapped-participants-01` reproduces both expectations with a fixed tree: a
+bind over a verb must retain the declared object and exclude its predicate.
+
+Move the existing verb-position arm before the generic noun/head arm.
+The operation's declared participant position takes precedence over the
+wrapper context, just as lift's already does. This neither changes the
+selected grammar nor supplies an identity; it preserves the introduction
+that an actual selected bind requires. The root-position redesign remains
+FutureWork, and the missing-introduction rejection stays. No old assertion
+is changed, no test retires and no explicit decision of Alec's is reversed.
+The deterministic regression's assertions will remain verbatim in the
+participant file. The next frozen source owns all scoped groups anew.
+
+## 84. The overlay consumes the resolved reading's order — Codex, 2026-10-23
+
+The complete source-04 pass has 1,678 passes, twelve existing skips and
+three failures. The word-store reverse chooser reproduces §83's missing
+introduction in `word-store-01`; every captured program is identical and
+the first exploit preview fails before cost/keep. The expectation replay
+`admission-01` then checks the actual live admission boundary. This
+qualifies §82's capture-only diagnosis: the origin was not sufficient
+evidence that the resolved reading had order 1. All twelve recorded
+admissions passed the preceding word's order 1 to the overlay while
+`FunctionalPeerSTM.resolve_top_reference` had given Language order 0.
+
+Pass that resolved STM order to `MTMOverlay.push`. Both now consume the
+same reading and value. A word reading genuinely still at order 1 keeps
+its provisional origin, and §82's capture preserves that stamp. The
+grammar, its choices, the valid-object menu and keep law are unchanged;
+this removes an erroneously created provisional identity, not a menu
+restriction. The §83 participant-position repair still applies to a real
+order-1 VP under a wrapper and to the shared retained-chain traversal.
+
+`admission-unit-01` initially failed setup because the diagnostic outside
+`test/` did not import its existing eager fixture. Import it explicitly,
+with every assertion unchanged. `admission-unit-02` then fails the actual
+order comparison (1 versus 0). Its regression runs the production
+admission path and compares active orders without choosing a parse or
+installing a seed. No existing test changes.
+
+## 85. Typed reference fallback agrees at preview and admission — Codex, 2026-10-23
+
+Source-04's third failure is the ordinary math smoke test, in admission's
+unchanged structure check. `math-01` restores both RNG sources and all
+captured programs exactly. The failing close ties at R = 0.4697101414,
+A = 0 and keeps greedy; both trials, the departure and all prior keeps
+are retained. Preview keeps two source addresses (14, 27) for an
+unavailable order-2 interpretation, whereas admission replaces them with
+-1 and adds a child. The numerical reading did not choose that change.
+
+`math-03`/`math-04` record the lexical boundary: those words have only
+order-0 readings and no order-2 candidate. No typed concept was admitted.
+(The first lexical probe, `math-02`, had a wrong class import; its setup
+error is retained and the import correction changes no assertion.) Keep
+the source fallback in both phases when no typed reading exists; when
+there are multiple typed readings and no selected one, stay open in
+both phases. This also fixes the inverse inconsistency in ambiguity,
+where preview alone previously supplied the source. The two direct
+regressions fail before repair in `unresolved-admission-02`; their
+assertions are carried verbatim into the journal file. No mint rule,
+reader layout, objective, answer target or keep rule changes.
+
+A development command `boundary-01` named a nonexistent test file and
+collected no tests; its command/log is retained. Use the actual
+`test_word_interpretation.py` file in the corrected command. These setup
+corrections fall under the same-round exception, and no existing
+assertion is altered. All corrected source evidence belongs to a new
+frozen hash, with no promoted result.
+
+## 86. Binding is transparent to participant context — Codex, 2026-10-23
+
+`boundary-02` passes 132 cases but fails both existing punctuation cases.
+Their kept nominal context deliberately follows the head of a headed
+phrase, excluding the other argument. Moving every verb arm before that
+context, as proposed in §83, is too broad. The captures retain the wrongly
+offered marker; the assertions remain unchanged. These fixed-menu unit
+calls have no paired cost/keep.
+
+Withdraw that branch reordering. The narrower defect is bind's propagation
+of noun context: bind is scope-transparent (`BindLayer.scope_transparent`),
+not a determination. It passes its incoming context to its child. A VP
+under a root bind therefore retains its declared participant; a phrase
+already in a nominal position retains that position's head semantics.
+The new wrapped-VP regression and the existing punctuation expectations
+can both hold without changing either. No new grammatical rule, lexical
+classification, fixture size, assertion port or root-position policy.
+
+The order-boundary and typed-reference repairs remain. Captured-state
+`expectation-02` and `math-05` pass their original assertions after those
+repairs. The later focused run and final hash must include this narrower
+participant rule; earlier passes are development evidence only.

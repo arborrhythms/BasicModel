@@ -39,8 +39,12 @@ def participant_terms(roots, rules=()):
             eligible[id(term)] = term
         if not children:
             continue
-        if lower or name == 'bind':
+        if lower:
             positions = {(head or len(children))-1: True}
+        elif name == 'bind':
+            # Binding is scope-transparent; it does not redetermine a VP
+            # as a noun phrase and replace its declared participant roles.
+            positions = {(head or len(children))-1: noun}
         elif name in ('equal', 'part', 'whole'):
             positions = {i: True for i in range(len(children))}
         elif name == 'lift' and len(children) == 2:

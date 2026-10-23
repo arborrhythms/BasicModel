@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-True]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-True]",
+    "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[False]",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[True]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[0]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[2]",
+    "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[0]",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[2]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[False]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[True]",
+    "test/test_identity_threading.py::test_pending_checkpoint_migration_and_validation_are_atomic"
+  ],
+  "completed": [
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-True]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-True]",
+    "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[False]",
+    "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[True]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[0]",
+    "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[2]",
+    "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[0]",
+    "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[2]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[False]",
+    "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[True]",
+    "test/test_identity_threading.py::test_pending_checkpoint_migration_and_validation_are_atomic"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03862204193137586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[sum-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015630792127922177,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014875290915369987,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[lower-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016654458129778504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007154458900913596,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008182500023394823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008630829397588968,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009187458083033562,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_compose_bind_pending_child_keeps_the_direct_question_role[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007300041150301695,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01242899987846613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018162584165111184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010055375052616,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_resolved_compose_bind_keeps_the_parent_relation_closed[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009483665926381946,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034907921217381954,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0036170831881463528,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_pending_checkpoint_migration_and_validation_are_atomic",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000382457859814167,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

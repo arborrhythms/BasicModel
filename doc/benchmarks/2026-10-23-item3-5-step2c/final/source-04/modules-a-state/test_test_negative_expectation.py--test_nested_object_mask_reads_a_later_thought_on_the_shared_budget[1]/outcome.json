@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_nested_object_mask_reads_a_later_thought_on_the_shared_budget[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

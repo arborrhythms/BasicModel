@@ -1,0 +1,170 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+    "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+    "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+    "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word"
+  ],
+  "completed": [
+    "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+    "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+    "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+    "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+    "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+    "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+    "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+    "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+    "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+    "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+    "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+    "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_part_closing.py::test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01661054091528058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_word_composition_is_not_a_definition_without_an_object_argument",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006784083088859916,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011079250136390328,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_complete_derivation_capacity_failure_has_no_prefix",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009355125017464161,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_nested_terminal_mint_keeps_its_word_and_admitted_occupation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008326542098075151,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007385500008240342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0070021250285208225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_unseated_native_argument_does_not_acquire_the_working_value_at_close",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007250000024214387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007772624958306551,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00941862491890788,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012029542122036219,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00722858402878046,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008252167142927647,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00759558379650116,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

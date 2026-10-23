@@ -1,0 +1,562 @@
+[
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 0,
+    "active": [
+      true
+    ],
+    "handle": [
+      1
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 2,
+    "active": [
+      true
+    ],
+    "handle": [
+      3
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 4,
+    "active": [
+      true
+    ],
+    "handle": [
+      5
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 5,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 0,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 2,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 4,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 5,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 6,
+    "active": [
+      true
+    ],
+    "handle": [
+      15
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 8,
+    "active": [
+      true
+    ],
+    "handle": [
+      17
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 10,
+    "active": [
+      true
+    ],
+    "handle": [
+      19
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 10,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 6,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 8,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 10,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 10,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 0,
+    "active": [
+      true
+    ],
+    "handle": [
+      1
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 2,
+    "active": [
+      true
+    ],
+    "handle": [
+      3
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      1
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      true
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 4,
+    "active": [
+      true
+    ],
+    "handle": [
+      5
+    ]
+  },
+  {
+    "call": "resolve",
+    "before": [
+      0
+    ],
+    "after": [
+      0
+    ],
+    "object_order": [
+      0
+    ],
+    "gate": [
+      false
+    ]
+  },
+  {
+    "call": "push",
+    "order": [
+      1
+    ],
+    "index": 5,
+    "active": [
+      false
+    ],
+    "handle": [
+      0
+    ]
+  }
+]

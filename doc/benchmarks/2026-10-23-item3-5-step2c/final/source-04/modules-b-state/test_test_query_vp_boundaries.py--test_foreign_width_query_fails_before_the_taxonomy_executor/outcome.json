@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

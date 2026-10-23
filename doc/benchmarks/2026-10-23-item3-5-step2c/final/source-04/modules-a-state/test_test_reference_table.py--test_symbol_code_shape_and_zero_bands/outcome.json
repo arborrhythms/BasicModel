@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_table.py::test_symbol_code_shape_and_zero_bands",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

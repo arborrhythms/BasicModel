@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

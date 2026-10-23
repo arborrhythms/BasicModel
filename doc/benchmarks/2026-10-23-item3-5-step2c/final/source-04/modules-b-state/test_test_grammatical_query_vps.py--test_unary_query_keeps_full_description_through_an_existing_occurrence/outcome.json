@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammatical_query_vps.py::test_unary_query_keeps_full_description_through_an_existing_occurrence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
