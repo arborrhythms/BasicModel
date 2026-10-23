@@ -2911,3 +2911,24 @@ assertions require. Restore the original applied-operation assertion;
 every assertion is now verbatim. No operation choice is forced. Both
 failed attempts remain retained. The other three §55 ports passed their
 development follow-up.
+
+## 57. Codex: native end-state handle on the frozen draw — 2026-10-22
+
+Frozen `bfa9c94ee` completed all 683 scoped cases: 674 passed, eight
+existing prerequisite skips, one failure. The regression and eight-file
+groups passed. The native end-state fixture selected a relative Part
+reading, then treated its returned handle as an LTM0-only address. The
+captured-state replay confirms handle `19`, common location `('sym', 19)`,
+no LTM0 index for that symbol, and five retained LTM0 occurrences. This is
+the existing relative return contract explicitly kept by §36, not a
+failure to retain the sentence.
+
+Port the fixture's lookup from `index_of_row` to the common `location`
+reader. Keep its non-null assertion. Compare the exact ending roles to
+the Part row's read for a Part handle, or directly to `store.slots[row]`
+for an occurrence, with the same zero tolerances. All trace-cleanup,
+closed-slot and no-program assertions stay. No production, grammar,
+forcing, seed, budget or objective change. The full failed frozen run and
+its replay remain under `final/`; the corrected source's complete scoped
+gates will be under `final/landing/`. Nothing is promoted from the failed
+hash and no full sweep is added.

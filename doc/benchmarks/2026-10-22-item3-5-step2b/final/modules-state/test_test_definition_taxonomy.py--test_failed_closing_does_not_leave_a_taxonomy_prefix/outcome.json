@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_taxonomy.py::test_failed_closing_does_not_leave_a_taxonomy_prefix",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

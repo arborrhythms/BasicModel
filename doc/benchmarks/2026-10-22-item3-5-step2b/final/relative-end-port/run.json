@@ -1,0 +1,20 @@
+{
+  "source": "bfa9c94ee57218184273cc0aae9099f37b98449a",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "1200",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/relative-end-port/tests"
+  ],
+  "replay": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/modules-state/test_test_sentence_end_state.py--test_one_native_sentence_owns_only_its_end_state_after_the_boundary/initial-rng.pt",
+  "exit": 0
+}

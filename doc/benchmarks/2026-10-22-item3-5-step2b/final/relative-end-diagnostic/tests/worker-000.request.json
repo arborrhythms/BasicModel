@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/relative-end-diagnostic/tests/worker-000.recycle.json"
+}

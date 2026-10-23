@@ -1,5 +1,11 @@
 # Step 2b: storage changes before identity threading
 
+**Final-source receipt:** [landing/README.md](landing/README.md). The first
+frozen source `bfa9c94ee` below had one failure in 683 cases; its full
+evidence is retained here. Spec §57 ports that fixture's relative-handle
+lookup. The final source reruns every requested scoped gate; this attempt
+is not promoted or relabelled as passing.
+
 2026-10-22. Work is on `main`, starting at `bb0045d7a2b7a7e5be584066ca1ee283fa899d75`
 (Claude's §38 edit, committed unchanged). Published 2a is
 `0b030e3ebdeca87f9ebf80739237437c3c75ea8f`. Step-2 §§36 and 39–41 govern;

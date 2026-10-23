@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereological.py::test_codebook_substring_poset_and_projection",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
