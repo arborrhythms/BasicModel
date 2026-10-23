@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_mereological.py::test_where_poset_is_the_part_spec_incl_cross_boundary",
+    "test/test_mereological.py::test_join_from_bottom_dominates_its_parts",
+    "test/test_mereological.py::test_projection_repairs_every_edge_incl_cross_boundary",
+    "test/test_mereological.py::test_projection_is_minimal_and_bounded",
+    "test/test_mereological.py::test_codebook_substring_poset_and_projection",
+    "test/test_mereological.py::test_analyzer_is_the_complement_mirror"
+  ],
+  "completed": [
+    "test/test_mereological.py::test_where_poset_is_the_part_spec_incl_cross_boundary",
+    "test/test_mereological.py::test_join_from_bottom_dominates_its_parts",
+    "test/test_mereological.py::test_projection_repairs_every_edge_incl_cross_boundary",
+    "test/test_mereological.py::test_projection_is_minimal_and_bounded",
+    "test/test_mereological.py::test_codebook_substring_poset_and_projection",
+    "test/test_mereological.py::test_analyzer_is_the_complement_mirror"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_mereological.py::test_where_poset_is_the_part_spec_incl_cross_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001016249880194664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereological.py::test_join_from_bottom_dominates_its_parts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012715421617031097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereological.py::test_projection_repairs_every_edge_incl_cross_boundary",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000922124832868576,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereological.py::test_projection_is_minimal_and_bounded",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007439169567078352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereological.py::test_codebook_substring_poset_and_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007860420737415552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_mereological.py::test_analyzer_is_the_complement_mirror",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010192920453846455,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

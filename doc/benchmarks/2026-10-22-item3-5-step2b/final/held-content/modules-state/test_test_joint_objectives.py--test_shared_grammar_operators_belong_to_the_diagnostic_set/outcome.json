@@ -1,0 +1,6 @@
+{
+  "node": "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

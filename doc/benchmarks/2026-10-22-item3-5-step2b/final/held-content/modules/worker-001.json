@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+    "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+    "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade"
+  ],
+  "completed": [
+    "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+    "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+    "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+    "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+    "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+    "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+    "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+    "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+    "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+    "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+    "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+    "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+    "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+    "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004082499071955681,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018518329598009586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_relation_has_no_kind_column_or_catch_all",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.854200132191181e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_relation_rows_never_enter_luminosity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01693124999292195,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010766694322228432,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_compound_idea_stores_only_fused_point_without_factored_target",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002860541921108961,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028022080659866333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0036877088714390993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0037400000728666782,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_equality_is_one_singleton_membership_and_never_merges_native_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0029092920012772083,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002506792079657316,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0021767080761492252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_negation_contributes_negative_evidence_without_erasing_positive",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027039158158004284,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0044576250948011875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005510840564966202,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005420001689344645,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

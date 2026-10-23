@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[disjunction-left_pair20-right_pair20]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

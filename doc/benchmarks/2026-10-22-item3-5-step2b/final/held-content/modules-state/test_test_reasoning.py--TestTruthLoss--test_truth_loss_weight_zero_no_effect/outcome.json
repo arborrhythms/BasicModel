@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

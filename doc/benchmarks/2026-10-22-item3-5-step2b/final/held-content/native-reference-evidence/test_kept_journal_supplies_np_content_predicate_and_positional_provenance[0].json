@@ -1,0 +1,104 @@
+{
+  "node": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+  "outcome": "passed",
+  "failure": "None",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 7873483260437102423,
+          "reference": [
+            "ltm",
+            "address-v1",
+            7873483260437102423
+          ],
+          "operation": "mint",
+          "candidates": [],
+          "missing_reason": null
+        }
+      ],
+      "mtm": {
+        "('ltm', 'address-v1', 7873483260437102423)": {
+          "occurrences": [
+            [
+              "ltm",
+              "address-v1",
+              7873483260437102423
+            ]
+          ],
+          "kind": 16,
+          "count": 1,
+          "when": 6
+        }
+      },
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            7873483260437102423
+          ],
+          "refs": [
+            [
+              "sym",
+              16
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3925709220694569444
+          ],
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

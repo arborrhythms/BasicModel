@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

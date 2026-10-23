@@ -1,13 +1,13 @@
 # Step 1b: current gates and carry ledger
 
-**Storage-only 2b review repair, 2026-10-22:** source `3c5cc2a1d`
-completed 675 cases with eight existing skips, but Claude returned HOLD:
-live question mode must survive the boundary, direct-writer module coverage
-must expand, and numeric end-state refs must not flatten typed addresses.
-§59 records the repairs under §39. The [HOLD and its source evidence](../2026-10-22-item3-5-step2b/final/landing/claude-review.md)
-stay retained. A new freeze, all expanded scoped gates and Claude's review
-are required before publication. Identity threading follows publication
-and its next spec; item 3.0 has not been reached.
+**Storage-only 2b word-form repair, 2026-10-22:** §64 fixes the native
+word-form ownership defect exposed by `1f53af50c`'s failed rung-zero audit.
+That draw and its successful repaired replay are retained. The
+[current receipt](../2026-10-22-item3-5-step2b/final/word-form/README.md)
+prepares the new freeze and complete regression, eight-file and expanded
+module gates. No result is promoted; Claude reviews the new evidence
+before publication. Identity threading still requires its next spec.
+Item 3.0 has not been reached.
 
 **Storage-only 2b continuation, 2026-10-22:** §§39–41 supersede the stop
 below. The §40 port is applied; §42 records the three review notes and

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

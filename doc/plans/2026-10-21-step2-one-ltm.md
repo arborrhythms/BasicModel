@@ -3098,3 +3098,38 @@ by reconstruction §17 and §39. Preserve the failed run, then rerun both
 cases before freezing. The frozen `9c3899f2f` gates meanwhile completed
 with 1,023 passes and nine existing prerequisite skips; its §62 probe
 still disqualifies that source from publication.
+
+## 64. Codex: a word keeps its own bank form — 2026-10-22
+
+The `1f53af50c` frozen gates complete with 1,024 passes, nine existing
+skips and one production failure: the joint-objective test's second
+presentation trips the rung-zero identity audit. The first draw and two
+unchanged-source captured-RNG replays are retained. A selected object's
+word is `2`, but the bank row reached through that word decodes as `plus`.
+The word `2` has itself become a referent of `plus`; the bank's spelling
+reader follows that second definition and substitutes its form. This is
+an ownership defect, not an allowed reconstruction error or a test port.
+
+Under §39, `word_surface_for_row` now reads a word's own admitted
+one-form description first. For a non-word object it continues to follow
+its unique definition through `Interpret.lexical_form`. No association,
+conceptual reading, choice, identity audit, or existing assertion changes.
+The native word row and the object it names therefore reconstruct the
+same word, even if that word is also another word's referent. The retained
+failing initial RNG passes all three presentations with this repair; that
+replay is diagnosis only and does not pin any gate initialization.
+
+The new regression explicitly admits two words and their objects, defines
+one word as the other's referent, and checks the first word's bytes and
+native form both at its own row and its object's row, with both definition
+links retained. Its first setup used the surface-snapshot helper and
+assumed that `12` had been admitted as a single word; that helper does not
+promise this. Development-15 and -16 retain the resulting setup failure.
+The setup now uses the existing explicit word-admission fixture. Every
+assertion remains verbatim; development-17 passes. This is the
+same-round fixture exception, not a new forcing or a resized fixture.
+
+Withdraw `1f53af50c`; retain its complete gate summary and captures. The
+next freeze reruns all three scoped groups and adds the form/definition,
+word-store, derived-code and reconstruction-bank files for this reader.
+There is no fresh series or full sweep. No earlier result is promoted.

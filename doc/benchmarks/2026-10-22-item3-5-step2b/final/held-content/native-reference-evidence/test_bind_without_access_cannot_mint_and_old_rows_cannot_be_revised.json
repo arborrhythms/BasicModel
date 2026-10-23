@@ -1,0 +1,267 @@
+{
+  "node": "test/test_reference_close.py::test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+  "outcome": "passed",
+  "failure": "None",
+  "reads": [
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 1614321865599755792,
+          "reference": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "operation": "mint",
+          "candidates": [],
+          "missing_reason": null
+        }
+      ],
+      "mtm": {
+        "('ltm', 'address-v1', 1614321865599755792)": {
+          "occurrences": [
+            [
+              "ltm",
+              "address-v1",
+              1614321865599755792
+            ]
+          ],
+          "kind": 2,
+          "count": 1,
+          "when": 3
+        }
+      },
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -4667331872043823676
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    },
+    {
+      "call": "accessible",
+      "frames": [],
+      "records": {}
+    },
+    {
+      "call": "individuals",
+      "inputs": {},
+      "output": {}
+    },
+    {
+      "call": "commit",
+      "audit": [
+        {
+          "leaves": [
+            1
+          ],
+          "occurrence": 8725664765839810377,
+          "reference": null,
+          "operation": "pronoun",
+          "candidates": [],
+          "missing_reason": "no_accessible_individual"
+        }
+      ],
+      "mtm": {
+        "('ltm', 'address-v1', 1614321865599755792)": {
+          "occurrences": [
+            [
+              "ltm",
+              "address-v1",
+              1614321865599755792
+            ]
+          ],
+          "kind": 2,
+          "count": 1,
+          "when": 3
+        }
+      },
+      "rows": [
+        {
+          "index": 0,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            1614321865599755792
+          ],
+          "refs": [
+            [
+              "sym",
+              2
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 1,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            -4667331872043823676
+          ],
+          "refs": [
+            [
+              "sym",
+              3
+            ],
+            null,
+            null
+          ],
+          "point": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 2,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            8725664765839810377
+          ],
+          "refs": [
+            null,
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        {
+          "index": 3,
+          "occurrence": [
+            "ltm",
+            "address-v1",
+            3812300363716444904
+          ],
+          "refs": [
+            null,
+            null,
+            null
+          ],
+          "point": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ]
+    }
+  ]
+}

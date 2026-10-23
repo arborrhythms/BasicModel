@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-16/tests/worker-000.recycle.json"
+}

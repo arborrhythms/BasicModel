@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_full_store_can_rewitness_both_existing_prediction_pair_addresses",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

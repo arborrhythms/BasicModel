@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+  "outcome": "failed",
+  "failure": "test/test_step2b_storage.py:19: in test_word_bank_form_survives_use_as_another_words_object\n    obj = owner.definitions.objects(word)[0]\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:101: in objects\n    return self._objects.get(int(word), ())\n                             ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+  "records": []
+}

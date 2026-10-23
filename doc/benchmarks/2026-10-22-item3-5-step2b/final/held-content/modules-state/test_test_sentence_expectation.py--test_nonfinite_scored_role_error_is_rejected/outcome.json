@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_expectation.py::test_nonfinite_scored_role_error_is_rejected",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

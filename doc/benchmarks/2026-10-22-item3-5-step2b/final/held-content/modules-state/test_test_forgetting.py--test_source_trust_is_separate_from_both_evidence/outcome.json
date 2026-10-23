@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_source_trust_is_separate_from_both_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

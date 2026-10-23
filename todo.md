@@ -31,13 +31,13 @@ in step-2 §§33–36:** the scoped storage changes now, identity threading
 specified by Claude next, then derivation removal. Claude's incoming spec,
 bind plan, Architecture and todo edits were committed unchanged at
 `cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **Storage-only 2b is repairing Claude's HOLD on
-`3c5cc2a1d`** (675 passes, eight existing skips). §59 preserves live question
-mode, expands writer coverage and restores occurrence end states' empty
-numeric refs. The [review and frozen receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/landing/README.md)
-retain that source, every failed run and the three retired adjacency tests.
-New scoped evidence and a fresh review are required before publication.
-The storage round removes
+All work stays on main. **Storage-only 2b is being refrozen after §64.**
+The retained `1f53af50c` run has 1,024 passes, nine existing skips and a
+rung-zero identity failure. The captured replay now passes with the word's
+own bank form preserved. §§59–64 include Claude's HOLD repairs and the
+held-content guard. The [current receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/word-form/README.md)
+lists every port and retains all withdrawn freezes and failed runs.
+Claude's review precedes publication. The storage round removes
 persisted postings, adjacency, mode and unused refs; retains every
 completed S; and stages forgetting before deletion. Identity threading
 requires Claude's next spec and a code review of §§34–35. Metadata
@@ -722,12 +722,13 @@ not by a passing identity lesson.
    gate ([receipt](doc/benchmarks/2026-10-21-item3-5-r10-final/README.md)).
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
-   seven existing skips and Claude's approval. 2b's design is decided in
-   §§20–23, and the documentation handoff is published on main at
-   `c39ef9f3a`. The additional ports and occurrence-only occupation in
-   [§26](doc/plans/2026-10-21-step2-one-ltm.md#26-follow-up-review-two-decisions-for-alec--2026-10-22)
-   await Alec after both Claude reviews. No 2b source/test change or gate;
-   no step-2 completion is claimed. All subsequent work stays on main.
+   seven existing skips and Claude's approval. The storage-only 2b round
+   follows §36 and is frozen at `1f53af50c`, with scoped gates running and
+   Claude's review before publication ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/held-content/README.md)).
+   §§39–63 retain every fix and port. Tags, mention readings and the
+   occurrence-only occupation ports await the derivation-removal round;
+   identity threading and its spec come first. No step-2 completion is
+   claimed. All subsequent work stays on main.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),

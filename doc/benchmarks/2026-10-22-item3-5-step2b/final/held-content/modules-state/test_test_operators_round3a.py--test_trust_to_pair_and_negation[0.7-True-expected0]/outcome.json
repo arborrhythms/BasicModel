@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-True-expected0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

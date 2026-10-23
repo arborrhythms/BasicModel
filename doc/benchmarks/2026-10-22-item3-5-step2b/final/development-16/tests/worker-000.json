@@ -1,0 +1,27 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object"
+  ],
+  "completed": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.411917916033417,
+      "message": "test/test_step2b_storage.py:19: in test_word_bank_form_survives_use_as_another_words_object\n    obj = owner.definitions.objects(word)[0]\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Definitions.py:101: in objects\n    return self._objects.get(int(word), ())\n                             ^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

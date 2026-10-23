@@ -1,0 +1,6 @@
+{
+  "node": "test/test_replacement_kernel_contracts.py::test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees[0.8-0.1-TRUE]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

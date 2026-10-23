@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_out_of_range_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

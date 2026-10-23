@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

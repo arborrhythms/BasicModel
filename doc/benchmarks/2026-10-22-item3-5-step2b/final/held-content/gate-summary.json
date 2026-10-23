@@ -1,0 +1,73 @@
+{
+  "source": "1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171",
+  "groups": {
+    "regressions": {
+      "source": "1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171",
+      "exit": 0,
+      "reason": "passed",
+      "counts": {
+        "passed": 85
+      },
+      "selected": 85,
+      "completed": 85,
+      "elapsed_seconds": 84.7877459579613,
+      "report": "regressions/result.json",
+      "report_sha256": "7350c7d6293b047a1dfcd879981bd45257f8f0513c6d5b679a73939dd1fbc128"
+    },
+    "native": {
+      "source": "1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171",
+      "exit": 0,
+      "reason": "passed",
+      "counts": {
+        "passed": 123,
+        "skipped": 7
+      },
+      "selected": 130,
+      "completed": 130,
+      "elapsed_seconds": 254.7181449169293,
+      "report": "native/result.json",
+      "report_sha256": "5c0e522c69d3d77b076012ddfe3a5ed3c32c21173863e6ef0359ecfca5a45e22"
+    },
+    "modules": {
+      "source": "1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171",
+      "exit": 1,
+      "reason": "test_failure",
+      "counts": {
+        "passed": 816,
+        "skipped": 2,
+        "failed": 1
+      },
+      "selected": 819,
+      "completed": 819,
+      "elapsed_seconds": 643.7542869579047,
+      "report": "modules/result.json",
+      "report_sha256": "d7d4677b85fd37f88dc08bfcd0b05adf95cc2219cdb613c4a542922722a616bc"
+    }
+  },
+  "counts": {
+    "passed": 1024,
+    "skipped": 9,
+    "failed": 1
+  },
+  "all_requested_gates_pass": false,
+  "pending_premise": [
+    {
+      "certificate": "native-reports/test_forced_ordinary_pending_premise_in_both_orders[False]/certificate.json",
+      "reverse": false,
+      "bound": 0,
+      "open": 8,
+      "closure_forced": false,
+      "attention_budget": 0
+    },
+    {
+      "certificate": "native-reports/test_forced_ordinary_pending_premise_in_both_orders[True]/certificate.json",
+      "reverse": true,
+      "bound": 0,
+      "open": 16,
+      "closure_forced": false,
+      "attention_budget": 0
+    }
+  ],
+  "full_sweep": false,
+  "fresh_series": false
+}

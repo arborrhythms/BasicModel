@@ -8,6 +8,26 @@ from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
+def test_word_bank_form_survives_use_as_another_words_object():
+    from test_definition_rows import model as definition_model, admit
+    model = definition_model()
+    try:
+        owner = model._concept_owner()
+        identity = model.perceptualSpace.percept_store.identity
+        word, obj = admit(model, '12')
+        other, _ = admit(model, 'plus')
+        owner.interpret.define(other, word)
+        assert owner.definitions.words(word) == (other,)
+        for symbol in (word, obj):
+            row = owner._csw_row_of(symbol)
+            assert owner.word_surface_for_row(row) == b'12'
+            assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'
+        assert owner.definitions.words(obj) == (word,)
+    finally:
+        model.End()
+        model.symbolSpace.soft_reset()
+
+
 @pytest.mark.parametrize('relative', (False, True))
 @pytest.mark.parametrize('parsed', (False, True))
 def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, parsed):

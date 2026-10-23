@@ -6,7 +6,17 @@ receipt](../review-repair/README.md) records the implementation and all
 previous attempts; [Claude's HOLD](../landing/claude-review.md) remains
 retained. No earlier result is promoted to this source.
 
-## Final repair
+## Withdrawn source and retained failure
+
+The frozen `1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171` completed 1,024 passes,
+nine existing skips and one production failure. The joint-objective test
+raised the rung-zero identity audit on its second presentation. Its first
+draw and a captured-RNG replay are retained in `modules-state` and
+`rung0-replay`; the replay reproduces the mismatch. This source is withdrawn
+and will not be presented for publication. The failed expectation is kept
+verbatim. Diagnosis and any repair proceed under §39 on a new source.
+
+## Held-content repair
 
 B1's held-description reader now follows only a valid thought signature.
 An ordinary LTM description adds no expectation holes; the filled current

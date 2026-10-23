@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

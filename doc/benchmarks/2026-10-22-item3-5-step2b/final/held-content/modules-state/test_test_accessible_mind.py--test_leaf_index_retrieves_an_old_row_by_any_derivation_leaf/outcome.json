@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

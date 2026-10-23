@@ -1,0 +1,14 @@
+{
+  "source": "1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T05:27:39.449736+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T05:27:58.289367+00:00"
+}

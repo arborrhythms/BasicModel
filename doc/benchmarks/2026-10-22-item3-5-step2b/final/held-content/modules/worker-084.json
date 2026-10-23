@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair20-right_pair20]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair21-right_pair21]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair22-right_pair22]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair23-right_pair23]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair24-right_pair24]",
+    "test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[..., 0] - pair[..., 1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[:, 0].sign()]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.mean(dim=-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.argmax(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(dim=2)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[0] >= pair[1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[torch.linalg.vector_norm(pair, dim=-1)]"
+  ],
+  "completed": [
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair20-right_pair20]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair21-right_pair21]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair22-right_pair22]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair23-right_pair23]",
+    "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair24-right_pair24]",
+    "test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[..., 0] - pair[..., 1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[:, 0].sign()]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.mean(dim=-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.argmax(-1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(1)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(dim=2)]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[0] >= pair[1]]",
+    "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[torch.linalg.vector_norm(pair, dim=-1)]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair20-right_pair20]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007677089888602495,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair21-right_pair21]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025108293630182743,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair22-right_pair22]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002527497708797455,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair23-right_pair23]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024758302606642246,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_inverse_recovers_each_lane_after_signless_identity[sum-left_pair24-right_pair24]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002199159935116768,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.2683112910017371,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[..., 0] - pair[..., 1]]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018974998965859413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[:, 0].sign()]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014458317309617996,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(-1)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001685421448200941,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.mean(dim=-1)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002037500962615013,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.argmax(-1)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001503338571637869,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(1)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001319169532507658,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair.sum(dim=2)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001519171055406332,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[0] >= pair[1]]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014599994756281376,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[torch.linalg.vector_norm(pair, dim=-1)]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001459158957004547,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
