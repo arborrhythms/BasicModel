@@ -1,0 +1,37 @@
+{
+  "entries": [
+    {
+      "key": [
+        "ltm",
+        "address-v1",
+        3457749535485181639
+      ],
+      "native": 1,
+      "symbol": null,
+      "occurrences": [
+        [
+          "ltm",
+          "address-v1",
+          3457749535485181639
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -2450525585685690625
+        ]
+      ]
+    }
+  ],
+  "audit": [
+    {
+      "leaves": [
+        1
+      ],
+      "occurrence": -2450525585685690625,
+      "reference": 1,
+      "operation": "mint",
+      "candidates": [],
+      "missing_reason": null
+    }
+  ]
+}

@@ -12787,7 +12787,8 @@ class ConceptualSpace(Space):
             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
         from MediumTermMemory import MediumTermMemory
         self.mtm = MediumTermMemory(int(TheXMLConfig.space(
-            section, "mtmCapacity", default=64)))
+            section, "mtmCapacity", default=64)), horizon=int(TheXMLConfig.space(
+            section, "mtmHorizon", default=16)))
         # CSLang is the ConceptualSpace-owned language transaction lane.  It
         # is an ownership name for the existing STM, not a second registered
         # module: LanguageSpace owns grammar/tree choice, while this CS-owned
@@ -18665,6 +18666,8 @@ class ConceptualSpace(Space):
             "version": 2,
             "role": "conceptual_structure",
             "mtm": self.mtm.state(),
+            "recurring_readings": dict(self.__dict__.get("_recurring_readings", {})),
+            "consolidation_sources": dict(self.__dict__.get("_consolidation_sources", {})),
         }
         fold_support = getattr(self, "_concept_fold_support", None)
         if isinstance(fold_support, dict) and fold_support:
@@ -18688,6 +18691,18 @@ class ConceptualSpace(Space):
             return
 
         self.mtm.restore(extras.get('mtm'), device=self.similarity_codebook.W.device)
+        recurring = extras.get('recurring_readings', {})
+        if not isinstance(recurring, dict) or any(type(key) is not int or key <= 0 or
+                type(value) is not int or value <= 0 for key, value in recurring.items()):
+            raise ValueError('invalid recurring-reading checkpoint')
+        self._recurring_readings = dict(recurring)
+        sources = extras.get('consolidation_sources', {})
+        if not isinstance(sources, dict) or any(not isinstance(key, tuple) or len(key) != 3
+                or key[0] != 'ltm' or not isinstance(value, tuple) or len(value) != 2
+                or not isinstance(value[0], bytes) or len(value[0]) != 32
+                or type(value[1]) is not int or value[1] < 0 for key, value in sources.items()):
+            raise ValueError('invalid consolidation source checkpoint')
+        self._consolidation_sources = dict(sources)
 
         reference_state = extras.get("percept_readout_references")
         if reference_state is not None:

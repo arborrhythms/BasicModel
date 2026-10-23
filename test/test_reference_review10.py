@@ -9,7 +9,7 @@ from ClauseRow import Clause, Composition, ClausePredicate, predicate_point
 from Meaning import ConceptualMeaning
 from ReferenceContext import SituationFrame
 from ThoughtReferences import open_slots, with_slots
-from test_medium_term_memory import keep, mention, snapshot, unchanged
+from test_medium_term_memory import keep, mention, snapshot, unchanged, seats, unchanged_after_consolidation
 from test_reference_arrivals import equality, named, world
 from test_reference_choices import noun
 
@@ -32,9 +32,9 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         written = {}
         row = store.write_clause(prepared, document_key='box-ball', sentence_index=position,
                                  written_rows=written)
-        before = snapshot(resolver)
+        before, seated = snapshot(resolver), seats(resolver)
         resolver.commit(plan, row, written, document='box-ball', position=position, training=False)
-        unchanged(resolver, before)
+        unchanged_after_consolidation(resolver, before, seated)
         frames.append(replace(SituationFrame.from_row(store.row(row)),
             activations=written.get(('activations', id(prepared)), ()),
             symbol_ids=written.get(('symbols', id(prepared)), ())))

@@ -1675,3 +1675,15 @@ ownership on re-close before expanding that path. A captured event without
 when `point()` is unavailable. Specify the verb reference and role-evidence
 read for that case. Neither affects the retained G1–G3 shapes. No new
 re-identification policy or stored representation is implied.
+
+
+**2c follow-up (2026-10-23, awaiting review).** The
+[2c receipt](benchmarks/2026-10-23-item3-5-step2c/README.md) certifies both
+event-history boundaries above: mention detachment preserves events owned
+by retained tokens, while actual row reclamation removes them; a captured
+unseated lexical verb uses its unique DEF reading for role evidence. No
+re-identification rule is added. The standalone order-1 composite portion
+of the root-position follow-up is implemented through its declared head;
+the root predicate/marker ambiguity remains here. Identity's live value
+now belongs to MTM (identity §34); the promotion fold uses the historical
+mention union, leaving the intersection-versus-union design question open.

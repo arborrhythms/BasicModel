@@ -1,0 +1,550 @@
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index c36faf187..e382bef3c 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -490,7 +490,7 @@ class ClauseRows:
+         closing.preflight()
+         from RowTime import stamp
+         closing.when = stamp(self)
+-        rows = {}
++        rows, occurrence_rows = {}, {}
+         estimate_index = None
+         if estimate is not None:
+             estimate_index = self.append_estimate(estimate,
+@@ -564,6 +564,7 @@ class ClauseRows:
+                 self.when[row].copy_(closing.when)
+             if origin is not None:
+                 self.set_origin(row, origin, text=text if asserted else None)
++            occurrence_rows[id(value)] = row
+             rows[id(value)] = ('sym', symbol) if retained_pair(value) else row
+             if written_rows is not None:
+                 # The returned handle can be a Part. Identity histories name
+@@ -587,6 +588,14 @@ class ClauseRows:
+                  (value.reference_request or {}).get('role', 0))
+                 for value in nodes if value.order == 1
+                 for symbol in (written_rows.get(('symbol', id(value))),))
++        # Embedded address keys encode a constituent ordinal, not the source
++        # sentence. Consolidation keeps the close's real source coordinates
++        # beside its cache; today's address format and rows stay unchanged.
++        source_row = occurrence_rows[id(clause)]
++        source = (bytes(self.document_keys[source_row].tolist()), int(self.sentence_index[source_row]))
++        provenance = owner().__dict__.setdefault('_consolidation_sources', {})
++        for location in occurrence_rows.values():
++            provenance[self.occurrence_of(location)] = source
+         if authority is not None:
+             authority['rows'].append(result)
+         return result
+diff --git a/bin/MediumTermMemory.py b/bin/MediumTermMemory.py
+index 7bbbd2d8a..9f77d2668 100644
+--- a/bin/MediumTermMemory.py
++++ b/bin/MediumTermMemory.py
+@@ -28,6 +28,7 @@ class Token:
+     events: tuple = ()
+     native: int | None = None
+     pending: bool = False
++    symbol: int | None = None
+ 
+ 
+ class MediumTermMemory:
+@@ -38,10 +39,14 @@ class MediumTermMemory:
+     Mention membership, used by the settled-join guard, excludes events.
+     """
+ 
+-    def __init__(self, capacity=64):
++    def __init__(self, capacity=64, horizon=16):
+         if capacity < 1:
+             raise ValueError('mtmCapacity must be positive')
++        if type(horizon) is not int or horizon < 1:
++            raise ValueError('mtmHorizon must be positive')
+         self.capacity = int(capacity)
++        self.horizon = horizon
++        self.closes, self.accesses, self.documents = {}, {}, {}
+         self.entries = {}
+         self.names = {}
+ 
+@@ -57,7 +62,7 @@ class MediumTermMemory:
+         if name is not None:
+             return name.token
+         if isinstance(occurrence, int):
+-            candidates = [key for key, entry in self.entries.items() if entry.native == occurrence]
++            candidates = [key for key, entry in self.entries.items() if occurrence in (entry.native, entry.symbol)]
+             return candidates[0] if len(candidates) == 1 else None
+         return next((key for key, entry in self.entries.items()
+                      if any(event.occurrence == occurrence and event.role == 0
+@@ -77,7 +82,7 @@ class MediumTermMemory:
+         if type(pending) is not bool or (pending and kind is not None):
+             raise ValueError('a pending identity has no resolved kind')
+         if self.token_of(occurrence) != occurrence:
+-            self.forget(occurrence)
++            self._detach(occurrence)
+         if occurrence in self.entries:
+             entry = self.entries[occurrence]
+             self.entries[occurrence] = replace(entry, count=entry.count + 1,
+@@ -97,7 +102,7 @@ class MediumTermMemory:
+             # Losing track does not resurrect an evicted introduction.
+             return self.open(occurrence, kind=kind, when=when, value=value, reading=reading)
+         if self.token_of(occurrence) != token:
+-            self.forget(occurrence)
++            self._detach(occurrence)
+         entry = self.entries[token]
+         uses = entry.occurrences
+         if occurrence not in uses:
+@@ -133,17 +138,22 @@ class MediumTermMemory:
+             events = (*previous, event)
+         self.entries[key] = replace(entry, events=events, when=when)
+ 
+-    def forget(self, occurrence):
++    def _detach(self, occurrence):
++        """Detach a mention; an event with this address has its own owner."""
+         name = self.names.pop(occurrence, None)
+         if name is not None:
+             token, entry = name.token, self.entries[name.token]
+             if token == occurrence:
+                 del self.entries[token]
++                self.accesses.pop(token, None)
++                self.documents.pop(token, None)
+                 for address in entry.occurrences:
+                     self.names.pop(address, None)
+             else:
+                 self.entries[token] = replace(entry, occurrences=tuple(
+                     address for address in entry.occurrences if address != occurrence))
++    def forget(self, occurrence):
++        self._detach(occurrence)
+         # One event can witness a subject and an object in different identities.
+         for token, entry in tuple(self.entries.items()):
+             events = tuple(event for event in entry.events if event.occurrence != occurrence)
+@@ -169,14 +179,51 @@ class MediumTermMemory:
+                            for other in antecedent.events)))
+         for occurrence in previous.occurrences:
+             self.names[occurrence] = replace(self.names[occurrence], token=target)
++        self.documents.pop(source, None)
++        for stream, clock in self.accesses.pop(source, {}).items():
++            retained = self.accesses.setdefault(target, {})
++            retained[stream] = max(clock, retained.get(stream, 0))
+         del self.entries[source]
+         return target
+ 
++    def close(self, store, *, stream=None, references=(), sources=None):
++        """Advance once after a kept sentence; staging and reads never call this."""
++        clock = self.closes.get(stream, 0) + 1
++        self.closes[stream] = clock
++        for key in self.entries:
++            if key not in self.documents:
++                row = store.location(key)
++                if isinstance(row, int):
++                    self.documents[key] = (sources[key][0] if sources and key in sources
++                                           else bytes(store.document_keys[row].tolist()))
++            # Legacy checkpoints and explicitly supplied pool fixtures begin
++            # aging at their first kept close; no fabricated past age.
++            self.accesses.setdefault(key, {stream: clock})
++        for reference in references:
++            key = self.token_of(reference)
++            if key is not None:
++                self.accesses.setdefault(key, {})[stream] = clock
++        for key, accesses in tuple(self.accesses.items()):
++            if stream in accesses and clock - accesses[stream] > self.horizon:
++                del accesses[stream]
++                if not accesses:
++                    self.forget(key)
++
++    def end_document(self, document):
++        """A document boundary retires the pool, never the retained rows."""
++        from Occurrence import document_digest
++        digest = document_digest(document)
++        for key in tuple(self.entries):
++            if self.documents.get(key) == digest:
++                self.forget(key)
++
+     def state(self):
+         """Checkpoint only committed values; export owns every tensor copy."""
+-        return dict(version=2, entries=tuple(dict(key=key, occurrences=entry.occurrences,
++        return dict(version=3, closes=tuple(self.closes.items()),
++            accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
++            documents=tuple(self.documents.items()), entries=tuple(dict(key=key, occurrences=entry.occurrences,
+             kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
+-            native=entry.native, pending=entry.pending, events=tuple((event.occurrence, event.verb, event.role, event.when)
++            native=entry.native, pending=entry.pending, symbol=entry.symbol, events=tuple((event.occurrence, event.verb, event.role, event.when)
+                                              for event in entry.events))
+             for key, entry in self.entries.items()),
+             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
+@@ -185,8 +232,9 @@ class MediumTermMemory:
+         """Validate a complete pool before replacing its current context."""
+         if state is None:
+             self.entries, self.names = {}, {}
++            self.closes, self.accesses, self.documents = {}, {}, {}
+             return
+-        if not isinstance(state, dict) or state.get('version') not in (1, 2):
++        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3):
+             raise ValueError('unsupported identity checkpoint')
+         def address(value):
+             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
+@@ -224,7 +272,9 @@ class MediumTermMemory:
+                     for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
+                 raise ValueError('invalid identity checkpoint event')
+             entries[key] = Token(uses, record['kind'], record['count'], record['when'], value,
+-                                 events, record['native'], pending)
++                                 events, record['native'], pending, record.get('symbol'))
++            if not symbol(record.get('symbol')):
++                raise ValueError('invalid identity checkpoint promoted symbol')
+         for mention, token, reading in state['names']:
+             if (not address(mention) or not address(token) or not symbol(reading) or
+                     mention in names or token not in entries or mention not in entries[token].occurrences):
+@@ -233,4 +283,21 @@ class MediumTermMemory:
+         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
+                 for entry in entries.values())):
+             raise ValueError('identity checkpoint exceeds capacity or omits a name')
++        clocks, accesses, documents = {}, {}, {}
++        if state['version'] >= 3:
++            try:
++                clocks = dict(state['closes'])
++                accesses = {key: dict(value) for key, value in state['accesses']}
++                documents = dict(state['documents'])
++            except (KeyError, TypeError, ValueError) as error:
++                raise ValueError('invalid identity checkpoint expiry metadata') from error
++            if (any((stream is not None and (type(stream) is not int or stream < 0)) or
++                    type(clock) is not int or clock < 0 for stream, clock in clocks.items())
++                    or any(key not in entries or not value or any(stream not in clocks or
++                        type(clock) is not int or not 0 <= clock <= clocks[stream]
++                        for stream, clock in value.items()) for key, value in accesses.items())
++                    or any(key not in entries or not isinstance(value, bytes) or len(value) != 32
++                           for key, value in documents.items())):
++                raise ValueError('invalid identity checkpoint expiry metadata')
+         self.entries, self.names = entries, names
++        self.closes, self.accesses, self.documents = clocks, accesses, documents
+diff --git a/bin/Models.py b/bin/Models.py
+index 1f108c4dc..d32c4aecd 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -6974,7 +6974,7 @@ class BasicModel(BaseModel):
+         from MediumTermMemory import MediumTermMemory
+         identity_owner = self._concept_owner()
+         caller_pool = identity_owner.mtm
+-        identity_owner.mtm = MediumTermMemory(caller_pool.capacity)
++        identity_owner.mtm = MediumTermMemory(caller_pool.capacity, horizon=caller_pool.horizon)
+         try:
+             with sequence:
+                 for source_index, (text, trust) in enumerate(zip(texts, trusts)):
+@@ -13242,6 +13242,12 @@ class BasicModel(BaseModel):
+             if torch.is_tensor(depth) and depth.numel():
+                 stm._max_depth_host = int(depth.max().item())
+         if any(getattr(self, '_thought_document_ends', ())):
++            from Occurrence import source_at
++            sources = getattr(self, '_sentence_sources', ())
++            for stream, ended in enumerate(self._thought_document_ends):
++                if ended:
++                    slot = max(0, len(sources[stream])-1) if stream < len(sources) else 0
++                    self._concept_owner().mtm.end_document(source_at(self, stream, slot)[0])
+             self._forget_document_boundary = True
+             self._forget_all_streams_closed = all(self._thought_document_ends)
+             self._forget_training = bool(getattr(self, '_sentence_training', False))
+@@ -20410,6 +20416,11 @@ class BasicModel(BaseModel):
+                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
+                         self._concept_owner().components.commit(row, view['meanings'][b],
+                             None if comparison is None else comparison.estimate)
++                    else:
++                        from MemoryConsolidation import consolidate
++                        owner = self._concept_owner()
++                        owner.mtm.close(store, stream=b)
++                        consolidate(owner, store)
+                 if row is not None and row != -1 and retain:
+                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'],
+                         symbols=written_clauses[b].get(('symbols', id(clause)), ()),
+diff --git a/bin/ReferenceClose.py b/bin/ReferenceClose.py
+index 833e492d8..5f1d6c9ee 100644
+--- a/bin/ReferenceClose.py
++++ b/bin/ReferenceClose.py
+@@ -70,12 +70,20 @@ class ReferenceClose(nn.Module):
+         rows = {}
+         for token, entry in owner.mtm.entries.items():
+             for event in entry.events:
+-                value = point(owner, event.verb)
++                value = point(owner, self._event_symbol(event.verb))
+                 if value is not None:
+                     rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(
+                         (event.occurrence, event.role, token))
+         return {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
+ 
++    def _event_symbol(self, reference):
++        """A captured lexical verb reads its declared object, never a word alias."""
++        from IdentityRows import point
++        if point(self.components.owner, reference) is not None:
++            return reference
++        objects = self.components.owner.definitions.objects(reference)
++        return objects[0] if len(objects) == 1 else reference
++
+     def _derivation_symbol(self, reference):
+         """Read a token's retained kind/fold without making it an individual."""
+         if reference is None:
+@@ -86,9 +94,13 @@ class ReferenceClose(nn.Module):
+             return reference[1]
+         location = self.store.location(reference) if self.store is not None else None
+         if isinstance(location, int):
++            mtm = self.components.owner.mtm
++            token = mtm.token_of(self.store.occurrence_of(location))
++            if token is not None and mtm.entries[token].symbol is not None and not mtm.entries[token].pending:
++                return mtm.entries[token].symbol
+             value = self.store.raw_meaning_of(location).role_refs[0]
+             if value is not None and value[0] == 'sym':
+-                return value[1]
++                return self.components.owner.__dict__.get('_recurring_readings', {}).get(value[1], value[1])
+             mtm = self.components.owner.mtm
+             token = mtm.token_of(self.store.occurrence_of(location))
+             if token is not None:
+@@ -231,6 +243,9 @@ class ReferenceClose(nn.Module):
+                             'state' in alloc.symbol_types.get(whole, ())) else whole
+                         break
+                 records.pop(identity, None)
++                token = mtm.token_of(occurrence)
++                if token is not None and mtm.entries[token].native is None and mtm.entries[token].symbol == identity:
++                    identity = token
+                 records[int(occurrence[-1])] = index, dict(role=role, position=(position, index),
+                     identity=(mtm.token_of(occurrence) or occurrence) if identity is None else identity,
+                     predicate=predicate)
+@@ -682,6 +697,17 @@ class ReferenceClose(nn.Module):
+             for child in (*node.children, *node.companions):
+                 visit(child)
+         visit(clause)
++        if (clause is not None and clause.order == 1 and clause.reference_request is None
++                and id(clause) in participants and clause.composition is not None
++                and clause.composition.children):
++            term = clause.composition
++            head = term
++            while head.children and head.head_role:
++                head = head.children[head.head_role-1]
++            request = dict(mode='bind', determined=True, role=0, leaves=term.leaves,
++                content=clause.point, cue=head.point, predicate=torch.zeros_like(clause.point))
++            result.append(dict(node=replace(clause, reference_request=request),
++                source_node=clause, parent=None, site_role=None))
+         # A lexical concept cache does not replace a familiar word's token
+         # choice. Re-mentions of accessible pending names still call bind at
+         # the closing boundary, before their derivation is admitted.
+@@ -713,7 +739,7 @@ class ReferenceClose(nn.Module):
+                 if isinstance(reference, tuple) and reference[:1] == ('clause',):
+                     parents.setdefault(id(parent.children[reference[1]]), []).append((parent, role))
+         for site in result:
+-            node = site['node']
++            node = site.get('source_node', site['node'])
+             positions = ([(site['parent'], site['site_role'])] if site['parent'] is not None
+                          else list(parents.get(id(node), ())))
+             roots = [0] if node is clause else []
+@@ -726,7 +752,7 @@ class ReferenceClose(nn.Module):
+             roots.extend(role for parent, role in positions if parent is clause)
+             site['root_roles'] = tuple(sorted(set(roots)))
+             site['asserted'] = tuple(parent.meaning.roles[2-role] for parent, role in positions
+-                if role in (0, 2) and node.reference_request.get('forward_identity') is not None
++                if role in (0, 2) and site['node'].reference_request.get('forward_identity') is not None
+                 and (parent.relation == 'equal' or bindings(parent.meaning).get('_equality')))
+         # Scoring and admission must enumerate the same sites. Introductions
+         # precede their uses even when a later wrapper is the reading's root.
+@@ -766,7 +792,7 @@ class ReferenceClose(nn.Module):
+         pending_names = self.pending_names(clause, individuals, stream)
+         items, cost = [], self.policy.new_zeros(())
+         plan = dict(items=items, records=records, pending_names=pending_names,
+-                    decisions=[], departure=int(departure))
++                    decisions=[], departure=int(departure), stream=stream)
+         handles = {}
+         for site in self.sites(clause, pending_names=pending_names):
+             node = site['node']
+@@ -1015,7 +1041,7 @@ class ReferenceClose(nn.Module):
+                 anonymous.add(selected)
+             if node.composition is not None:
+                 terms[id(node.composition)] = updated
+-            replacements[id(node)] = replace(node, meaning=meaning, composition=updated,
++            replacements[id(item.get('source_node', node))] = replace(node, meaning=meaning, composition=updated,
+                 refs=(-1 if native is None or unresolved or
+                       (named and not isinstance(reference, int)) else native, -1, -1))
+             if item.get('parent') is not None:
+@@ -1094,7 +1120,7 @@ class ReferenceClose(nn.Module):
+         plan['arrival_written'] = {key: result if node is previous_root else node
+                                    for key, node in arrivals.items()}
+         for item in plan['items']:
+-            node = rebuilt[id(item['node'])]
++            node = rebuilt[id(item.get('source_node', item['node']))]
+             item['written_node'] = result if node is previous_root else node
+         plan['prepared_root'] = result
+         return result
+@@ -1220,6 +1246,11 @@ class ReferenceClose(nn.Module):
+         for reference, occurrence, kind, value, reading in uses:
+             mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
+         self._commit_events(plan, written, when=when)
++        mtm.close(self.store, stream=plan.get('stream'),
++            references=tuple(key for key, entry in mtm.entries.items() if entry.when == when),
++            sources=self.components.owner.__dict__.get('_consolidation_sources'))
++        from MemoryConsolidation import consolidate
++        consolidate(self.components.owner, self.store)
+         while len(mentions) > self.components.source_capacity:
+             mentions.popitem(last=False)
+         self.last_audit = tuple(audit)
+@@ -1270,7 +1301,7 @@ class ReferenceClose(nn.Module):
+                         break
+                     pending.extend(reversed(term.children))
+             if type(verb) is int and verb not in (-1, 0):
+-                mtm.event(token, event, verb=verb, role=item['role'], when=when)
++                mtm.event(token, event, verb=self._event_symbol(verb), role=item['role'], when=when)
+         pending, nodes, seen = [plan['prepared_root']], [], set()
+         while pending:
+             node = pending.pop()
+@@ -1293,6 +1324,17 @@ class ReferenceClose(nn.Module):
+                 predicate = node.factored_refs[1]
+                 if isinstance(predicate, ClausePredicate):
+                     verb = predicate.identity
++            else:
++                # Use the actual carried reading when the capture's predicate
++                # names a lexical word without its own conceptual seat.
++                terms = [node.composition] if node.composition is not None else []
++                while terms:
++                    term = terms.pop()
++                    if not term.children and term.word_id == verb and term.reference > 0:
++                        verb = term.reference
++                        break
++                    terms.extend(reversed(term.children))
++            verb = self._event_symbol(int(verb))
+             for handle, role in ((subject, 0), (obj, 2)):
+                 if not handle:
+                     continue
+diff --git a/bin/ReferenceParticipants.py b/bin/ReferenceParticipants.py
+index e17d80bd0..ef5407e30 100644
+--- a/bin/ReferenceParticipants.py
++++ b/bin/ReferenceParticipants.py
+@@ -100,7 +100,12 @@ def clause_participants(clause, rules=()):
+         request = node.reference_request or {}
+         if (node is clause and not request.get('leaf')
+                 and (request or node.order == 1)
+-                and (node.composition is None or not node.composition.children)):
++                and (node.composition is None or not node.composition.children
++                     or node.order == 1 and node.composition.head_role
++                     and node.composition.operation not in ('lift', 'verb', 'equal', 'part', 'whole')
++                     and not any(rule.method_name == node.composition.operation
++                         and (getattr(rule, 'clause_form', None) in ('S', 'VP')
++                              or getattr(rule, 'relation_kind', None) is not None) for rule in rules))):
+             positions.add(id(node))
+             extra, read = participant_terms(((node.composition, True),), rules)
+             eligible.update(extra); inspected.update(read)
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 8b26fa7bf..ff708674c 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -12787,7 +12787,8 @@ class ConceptualSpace(Space):
+             batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+         from MediumTermMemory import MediumTermMemory
+         self.mtm = MediumTermMemory(int(TheXMLConfig.space(
+-            section, "mtmCapacity", default=64)))
++            section, "mtmCapacity", default=64)), horizon=int(TheXMLConfig.space(
++            section, "mtmHorizon", default=16)))
+         # CSLang is the ConceptualSpace-owned language transaction lane.  It
+         # is an ownership name for the existing STM, not a second registered
+         # module: LanguageSpace owns grammar/tree choice, while this CS-owned
+@@ -18665,6 +18666,8 @@ class ConceptualSpace(Space):
+             "version": 2,
+             "role": "conceptual_structure",
+             "mtm": self.mtm.state(),
++            "recurring_readings": dict(self.__dict__.get("_recurring_readings", {})),
++            "consolidation_sources": dict(self.__dict__.get("_consolidation_sources", {})),
+         }
+         fold_support = getattr(self, "_concept_fold_support", None)
+         if isinstance(fold_support, dict) and fold_support:
+@@ -18688,6 +18691,18 @@ class ConceptualSpace(Space):
+             return
+ 
+         self.mtm.restore(extras.get('mtm'), device=self.similarity_codebook.W.device)
++        recurring = extras.get('recurring_readings', {})
++        if not isinstance(recurring, dict) or any(type(key) is not int or key <= 0 or
++                type(value) is not int or value <= 0 for key, value in recurring.items()):
++            raise ValueError('invalid recurring-reading checkpoint')
++        self._recurring_readings = dict(recurring)
++        sources = extras.get('consolidation_sources', {})
++        if not isinstance(sources, dict) or any(not isinstance(key, tuple) or len(key) != 3
++                or key[0] != 'ltm' or not isinstance(value, tuple) or len(value) != 2
++                or not isinstance(value[0], bytes) or len(value[0]) != 32
++                or type(value[1]) is not int or value[1] < 0 for key, value in sources.items()):
++            raise ValueError('invalid consolidation source checkpoint')
++        self._consolidation_sources = dict(sources)
+ 
+         reference_state = extras.get("percept_readout_references")
+         if reference_state is not None:
+diff --git a/data/model.xsd b/data/model.xsd
+index 738d76350..fe1796db0 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -1190,6 +1190,7 @@
+       <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+       <!-- Host-only medium-term token identity pool. Default 64. -->
+       <xs:element name="mtmCapacity" type="xs:positiveInteger" minOccurs="0"/>
++      <xs:element name="mtmHorizon" type="xs:positiveInteger" minOccurs="0"/>
+       <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
+            concept definition may use for free (genus + differentia = 2);
+            the rank-ordered L0 penalty shrinks only the surplus past this.
+diff --git a/test/test_medium_term_memory.py b/test/test_medium_term_memory.py
+index be150416a..4103f0286 100644
+--- a/test/test_medium_term_memory.py
++++ b/test/test_medium_term_memory.py
+@@ -18,12 +18,31 @@ def snapshot(resolver):
+             resolver.components.owner.similarity_codebook.W.detach().clone())
+ 
+ 
+-def unchanged(resolver, before):
++def unchanged(resolver, before, *, promoted_rows=()):
+     after = snapshot(resolver)
+-    for actual, expected in zip(after, before):
++    for index, (actual, expected) in enumerate(zip(after, before)):
++        if index == len(before)-1 and promoted_rows:
++            keep = torch.ones(actual.shape[0], dtype=torch.bool, device=actual.device)
++            keep[list(promoted_rows)] = False
++            actual, expected = actual[keep], expected[keep]
+         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+ 
+ 
++def seats(resolver):
++    from Spaces import _concept_alloc_of
++    return set(_concept_alloc_of(resolver.components.owner).layer()._tensor_row_keys)
++
++
++def unchanged_after_consolidation(resolver, before, seated):
++    owner = resolver.components.owner
++    new_rows = seats(resolver) - seated
++    promoted = {owner._csw_row_of(entry.symbol) for entry in owner.mtm.entries.values()
++                if entry.symbol is not None}
++    promoted.update(owner._csw_row_of(symbol) for symbol in owner.__dict__.get('_recurring_readings', {}).values())
++    assert new_rows <= promoted
++    unchanged(resolver, before, promoted_rows=new_rows)
++
++
+ def mention(point, *, mode='mint', reference=-1):
+     # A supplied, identity-preserving lower retains the admitted kind.
+     term = Composition(point, (Composition(point*0), Composition(point, reference=reference)),
+@@ -45,8 +64,9 @@ def keep(resolver, clause, frames=(), *, position=0):
+         sentence_index=position, written_rows=written)
+     assert resolver.components.owner.mtm.entries == before
+     retained = snapshot(resolver)
++    seated = seats(resolver)
+     resolver.commit(plan, row, written, document='mtm', position=position, training=False)
+-    unchanged(resolver, retained)
++    unchanged_after_consolidation(resolver, retained, seated)
+     return row, plan
+ 
+ 
+diff --git a/test/test_reference_review10.py b/test/test_reference_review10.py
+index b0065ba32..079b58dcb 100644
+--- a/test/test_reference_review10.py
++++ b/test/test_reference_review10.py
+@@ -9,7 +9,7 @@ from ClauseRow import Clause, Composition, ClausePredicate, predicate_point
+ from Meaning import ConceptualMeaning
+ from ReferenceContext import SituationFrame
+ from ThoughtReferences import open_slots, with_slots
+-from test_medium_term_memory import keep, mention, snapshot, unchanged
++from test_medium_term_memory import keep, mention, snapshot, unchanged, seats, unchanged_after_consolidation
+ from test_reference_arrivals import equality, named, world
+ from test_reference_choices import noun
+ 
+@@ -32,9 +32,9 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
+         written = {}
+         row = store.write_clause(prepared, document_key='box-ball', sentence_index=position,
+                                  written_rows=written)
+-        before = snapshot(resolver)
++        before, seated = snapshot(resolver), seats(resolver)
+         resolver.commit(plan, row, written, document='box-ball', position=position, training=False)
+-        unchanged(resolver, before)
++        unchanged_after_consolidation(resolver, before, seated)
+         frames.append(replace(SituationFrame.from_row(store.row(row)),
+             activations=written.get(('activations', id(prepared)), ()),
+             symbol_ids=written.get(('symbols', id(prepared)), ())))

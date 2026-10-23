@@ -100,7 +100,12 @@ def clause_participants(clause, rules=()):
         request = node.reference_request or {}
         if (node is clause and not request.get('leaf')
                 and (request or node.order == 1)
-                and (node.composition is None or not node.composition.children)):
+                and (node.composition is None or not node.composition.children
+                     or node.order == 1 and node.composition.head_role
+                     and node.composition.operation not in ('lift', 'verb', 'equal', 'part', 'whole')
+                     and not any(rule.method_name == node.composition.operation
+                         and (getattr(rule, 'clause_form', None) in ('S', 'VP')
+                              or getattr(rule, 'relation_kind', None) is not None) for rule in rules))):
             positions.add(id(node))
             extra, read = participant_terms(((node.composition, True),), rules)
             eligible.update(extra); inspected.update(read)

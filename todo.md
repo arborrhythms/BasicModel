@@ -17,18 +17,16 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is reviewed LAND through
-Alec at `65ab7fbe9` (identity spec §34): 1,627 scoped passes and twelve
-existing skips, no failures. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
-retains all evidence and the declared legacy alias bypass. Publication of
-main and the WikiOracle bump are authorized without further gates.
-
-**Next is 2c** on today's storage: recurrence across three documents,
-sixteen-close/document-end MTM expiry, promotion at three sentences,
-the definitions cache, the standalone-composite fix, and the two arrival
-and two event-history notes. Review through Alec precedes publication;
-step 2's one full sweep follows. Layout/removal and shared eight STM
-chunks stay in item 3.0. All work stays on main. Item 3.0 is not reached.
+**Current:** Item 3.5 line 2's identity threading is published on BasicModel
+`148953f9b` and WikiOracle `175c101`, reviewed source `65ab7fbe9` (Claude
+LAND through Alec, identity spec §34). **2c is implemented for its frozen
+scoped pass** on today's storage: document recurrence, token promotion,
+MTM expiry, the definitions cache, the standalone composite, and the
+arrival/event-history follow-ups. Its [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md)
+retains every failed development run and port. Review goes through Alec
+before publication; step 2's one full sweep follows. The layout/removal
+round and shared eight STM chunks stay in item 3.0. All work stays on main.
+Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 

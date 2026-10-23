@@ -6974,7 +6974,7 @@ class BasicModel(BaseModel):
         from MediumTermMemory import MediumTermMemory
         identity_owner = self._concept_owner()
         caller_pool = identity_owner.mtm
-        identity_owner.mtm = MediumTermMemory(caller_pool.capacity)
+        identity_owner.mtm = MediumTermMemory(caller_pool.capacity, horizon=caller_pool.horizon)
         try:
             with sequence:
                 for source_index, (text, trust) in enumerate(zip(texts, trusts)):
@@ -13242,6 +13242,12 @@ class BasicModel(BaseModel):
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
         if any(getattr(self, '_thought_document_ends', ())):
+            from Occurrence import source_at
+            sources = getattr(self, '_sentence_sources', ())
+            for stream, ended in enumerate(self._thought_document_ends):
+                if ended:
+                    slot = max(0, len(sources[stream])-1) if stream < len(sources) else 0
+                    self._concept_owner().mtm.end_document(source_at(self, stream, slot)[0])
             self._forget_document_boundary = True
             self._forget_all_streams_closed = all(self._thought_document_ends)
             self._forget_training = bool(getattr(self, '_sentence_training', False))
@@ -20410,6 +20416,11 @@ class BasicModel(BaseModel):
                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
                         self._concept_owner().components.commit(row, view['meanings'][b],
                             None if comparison is None else comparison.estimate)
+                    else:
+                        from MemoryConsolidation import consolidate
+                        owner = self._concept_owner()
+                        owner.mtm.close(store, stream=b)
+                        consolidate(owner, store)
                 if row is not None and row != -1 and retain:
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'],
                         symbols=written_clauses[b].get(('symbols', id(clause)), ()),

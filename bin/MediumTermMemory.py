@@ -28,6 +28,7 @@ class Token:
     events: tuple = ()
     native: int | None = None
     pending: bool = False
+    symbol: int | None = None
 
 
 class MediumTermMemory:
@@ -38,10 +39,14 @@ class MediumTermMemory:
     Mention membership, used by the settled-join guard, excludes events.
     """
 
-    def __init__(self, capacity=64):
+    def __init__(self, capacity=64, horizon=16):
         if capacity < 1:
             raise ValueError('mtmCapacity must be positive')
+        if type(horizon) is not int or horizon < 1:
+            raise ValueError('mtmHorizon must be positive')
         self.capacity = int(capacity)
+        self.horizon = horizon
+        self.closes, self.accesses, self.documents = {}, {}, {}
         self.entries = {}
         self.names = {}
 
@@ -57,7 +62,7 @@ class MediumTermMemory:
         if name is not None:
             return name.token
         if isinstance(occurrence, int):
-            candidates = [key for key, entry in self.entries.items() if entry.native == occurrence]
+            candidates = [key for key, entry in self.entries.items() if occurrence in (entry.native, entry.symbol)]
             return candidates[0] if len(candidates) == 1 else None
         return next((key for key, entry in self.entries.items()
                      if any(event.occurrence == occurrence and event.role == 0
@@ -77,7 +82,7 @@ class MediumTermMemory:
         if type(pending) is not bool or (pending and kind is not None):
             raise ValueError('a pending identity has no resolved kind')
         if self.token_of(occurrence) != occurrence:
-            self.forget(occurrence)
+            self._detach(occurrence)
         if occurrence in self.entries:
             entry = self.entries[occurrence]
             self.entries[occurrence] = replace(entry, count=entry.count + 1,
@@ -97,7 +102,7 @@ class MediumTermMemory:
             # Losing track does not resurrect an evicted introduction.
             return self.open(occurrence, kind=kind, when=when, value=value, reading=reading)
         if self.token_of(occurrence) != token:
-            self.forget(occurrence)
+            self._detach(occurrence)
         entry = self.entries[token]
         uses = entry.occurrences
         if occurrence not in uses:
@@ -133,17 +138,22 @@ class MediumTermMemory:
             events = (*previous, event)
         self.entries[key] = replace(entry, events=events, when=when)
 
-    def forget(self, occurrence):
+    def _detach(self, occurrence):
+        """Detach a mention; an event with this address has its own owner."""
         name = self.names.pop(occurrence, None)
         if name is not None:
             token, entry = name.token, self.entries[name.token]
             if token == occurrence:
                 del self.entries[token]
+                self.accesses.pop(token, None)
+                self.documents.pop(token, None)
                 for address in entry.occurrences:
                     self.names.pop(address, None)
             else:
                 self.entries[token] = replace(entry, occurrences=tuple(
                     address for address in entry.occurrences if address != occurrence))
+    def forget(self, occurrence):
+        self._detach(occurrence)
         # One event can witness a subject and an object in different identities.
         for token, entry in tuple(self.entries.items()):
             events = tuple(event for event in entry.events if event.occurrence != occurrence)
@@ -169,14 +179,51 @@ class MediumTermMemory:
                            for other in antecedent.events)))
         for occurrence in previous.occurrences:
             self.names[occurrence] = replace(self.names[occurrence], token=target)
+        self.documents.pop(source, None)
+        for stream, clock in self.accesses.pop(source, {}).items():
+            retained = self.accesses.setdefault(target, {})
+            retained[stream] = max(clock, retained.get(stream, 0))
         del self.entries[source]
         return target
 
+    def close(self, store, *, stream=None, references=(), sources=None):
+        """Advance once after a kept sentence; staging and reads never call this."""
+        clock = self.closes.get(stream, 0) + 1
+        self.closes[stream] = clock
+        for key in self.entries:
+            if key not in self.documents:
+                row = store.location(key)
+                if isinstance(row, int):
+                    self.documents[key] = (sources[key][0] if sources and key in sources
+                                           else bytes(store.document_keys[row].tolist()))
+            # Legacy checkpoints and explicitly supplied pool fixtures begin
+            # aging at their first kept close; no fabricated past age.
+            self.accesses.setdefault(key, {stream: clock})
+        for reference in references:
+            key = self.token_of(reference)
+            if key is not None:
+                self.accesses.setdefault(key, {})[stream] = clock
+        for key, accesses in tuple(self.accesses.items()):
+            if stream in accesses and clock - accesses[stream] > self.horizon:
+                del accesses[stream]
+                if not accesses:
+                    self.forget(key)
+
+    def end_document(self, document):
+        """A document boundary retires the pool, never the retained rows."""
+        from Occurrence import document_digest
+        digest = document_digest(document)
+        for key in tuple(self.entries):
+            if self.documents.get(key) == digest:
+                self.forget(key)
+
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
-        return dict(version=2, entries=tuple(dict(key=key, occurrences=entry.occurrences,
+        return dict(version=3, closes=tuple(self.closes.items()),
+            accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
+            documents=tuple(self.documents.items()), entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
-            native=entry.native, pending=entry.pending, events=tuple((event.occurrence, event.verb, event.role, event.when)
+            native=entry.native, pending=entry.pending, symbol=entry.symbol, events=tuple((event.occurrence, event.verb, event.role, event.when)
                                              for event in entry.events))
             for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
@@ -185,8 +232,9 @@ class MediumTermMemory:
         """Validate a complete pool before replacing its current context."""
         if state is None:
             self.entries, self.names = {}, {}
+            self.closes, self.accesses, self.documents = {}, {}, {}
             return
-        if not isinstance(state, dict) or state.get('version') not in (1, 2):
+        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3):
             raise ValueError('unsupported identity checkpoint')
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
@@ -224,7 +272,9 @@ class MediumTermMemory:
                     for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
                 raise ValueError('invalid identity checkpoint event')
             entries[key] = Token(uses, record['kind'], record['count'], record['when'], value,
-                                 events, record['native'], pending)
+                                 events, record['native'], pending, record.get('symbol'))
+            if not symbol(record.get('symbol')):
+                raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
             if (not address(mention) or not address(token) or not symbol(reading) or
                     mention in names or token not in entries or mention not in entries[token].occurrences):
@@ -233,4 +283,21 @@ class MediumTermMemory:
         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
                 for entry in entries.values())):
             raise ValueError('identity checkpoint exceeds capacity or omits a name')
+        clocks, accesses, documents = {}, {}, {}
+        if state['version'] >= 3:
+            try:
+                clocks = dict(state['closes'])
+                accesses = {key: dict(value) for key, value in state['accesses']}
+                documents = dict(state['documents'])
+            except (KeyError, TypeError, ValueError) as error:
+                raise ValueError('invalid identity checkpoint expiry metadata') from error
+            if (any((stream is not None and (type(stream) is not int or stream < 0)) or
+                    type(clock) is not int or clock < 0 for stream, clock in clocks.items())
+                    or any(key not in entries or not value or any(stream not in clocks or
+                        type(clock) is not int or not 0 <= clock <= clocks[stream]
+                        for stream, clock in value.items()) for key, value in accesses.items())
+                    or any(key not in entries or not isinstance(value, bytes) or len(value) != 32
+                           for key, value in documents.items())):
+                raise ValueError('invalid identity checkpoint expiry metadata')
         self.entries, self.names = entries, names
+        self.closes, self.accesses, self.documents = clocks, accesses, documents

@@ -490,7 +490,7 @@ class ClauseRows:
         closing.preflight()
         from RowTime import stamp
         closing.when = stamp(self)
-        rows = {}
+        rows, occurrence_rows = {}, {}
         estimate_index = None
         if estimate is not None:
             estimate_index = self.append_estimate(estimate,
@@ -564,6 +564,7 @@ class ClauseRows:
                 self.when[row].copy_(closing.when)
             if origin is not None:
                 self.set_origin(row, origin, text=text if asserted else None)
+            occurrence_rows[id(value)] = row
             rows[id(value)] = ('sym', symbol) if retained_pair(value) else row
             if written_rows is not None:
                 # The returned handle can be a Part. Identity histories name
@@ -587,6 +588,14 @@ class ClauseRows:
                  (value.reference_request or {}).get('role', 0))
                 for value in nodes if value.order == 1
                 for symbol in (written_rows.get(('symbol', id(value))),))
+        # Embedded address keys encode a constituent ordinal, not the source
+        # sentence. Consolidation keeps the close's real source coordinates
+        # beside its cache; today's address format and rows stay unchanged.
+        source_row = occurrence_rows[id(clause)]
+        source = (bytes(self.document_keys[source_row].tolist()), int(self.sentence_index[source_row]))
+        provenance = owner().__dict__.setdefault('_consolidation_sources', {})
+        for location in occurrence_rows.values():
+            provenance[self.occurrence_of(location)] = source
         if authority is not None:
             authority['rows'].append(result)
         return result

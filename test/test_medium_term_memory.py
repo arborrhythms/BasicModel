@@ -18,10 +18,29 @@ def snapshot(resolver):
             resolver.components.owner.similarity_codebook.W.detach().clone())
 
 
-def unchanged(resolver, before):
+def unchanged(resolver, before, *, promoted_rows=()):
     after = snapshot(resolver)
-    for actual, expected in zip(after, before):
+    for index, (actual, expected) in enumerate(zip(after, before)):
+        if index == len(before)-1 and promoted_rows:
+            keep = torch.ones(actual.shape[0], dtype=torch.bool, device=actual.device)
+            keep[list(promoted_rows)] = False
+            actual, expected = actual[keep], expected[keep]
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+
+def seats(resolver):
+    from Spaces import _concept_alloc_of
+    return set(_concept_alloc_of(resolver.components.owner).layer()._tensor_row_keys)
+
+
+def unchanged_after_consolidation(resolver, before, seated):
+    owner = resolver.components.owner
+    new_rows = seats(resolver) - seated
+    promoted = {owner._csw_row_of(entry.symbol) for entry in owner.mtm.entries.values()
+                if entry.symbol is not None}
+    promoted.update(owner._csw_row_of(symbol) for symbol in owner.__dict__.get('_recurring_readings', {}).values())
+    assert new_rows <= promoted
+    unchanged(resolver, before, promoted_rows=new_rows)
 
 
 def mention(point, *, mode='mint', reference=-1):
@@ -45,8 +64,9 @@ def keep(resolver, clause, frames=(), *, position=0):
         sentence_index=position, written_rows=written)
     assert resolver.components.owner.mtm.entries == before
     retained = snapshot(resolver)
+    seated = seats(resolver)
     resolver.commit(plan, row, written, document='mtm', position=position, training=False)
-    unchanged(resolver, retained)
+    unchanged_after_consolidation(resolver, retained, seated)
     return row, plan
 
 

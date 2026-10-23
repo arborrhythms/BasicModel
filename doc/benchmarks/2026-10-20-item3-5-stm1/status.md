@@ -1,5 +1,12 @@
 # Step 1b: current gates and carry ledger
 
+**Identity published; 2c frozen pass next, 2026-10-23:** BasicModel
+`148953f9b`, WikiOracle `175c101`, reviewed source `65ab7fbe9`; no further
+identity gates. The [2c receipt](../2026-10-23-item3-5-step2c/README.md)
+records implementation on today's storage and every development failure
+and port. Review through Alec precedes publication and step 2's full
+sweep. Item 3.0 has not been reached.
+
 **Identity threading reviewed LAND through Alec, 2026-10-23:** frozen
 `65ab7fbe9` passes all scoped groups: 1,627 passed, twelve existing skips,
 zero failures; all 1,639 selected cases complete. Both decomposition arms,

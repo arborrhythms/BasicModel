@@ -3726,3 +3726,148 @@ minted symbol whose occurrences are its LTM0 ideas.
    ([FutureWork](../FutureWork.md#episodic-memory-several-ltm0-entries-per-time-alec-2026-10-23)).
 3. *Resolved chains are immutable;* thought writes the computed value to
    MTM and, when kept, a new LTM0 idea as an inference row.
+
+## 73. 2c on the landed identity source — Codex, 2026-10-23
+
+Identity source `65ab7fbe9` has Claude's mediated LAND (§34 of its spec),
+published on BasicModel main `148953f9b` and WikiOracle `175c101`. Its receipt
+now states the legacy `pending_order` bypass. No further identity gates ran.
+This round follows §§11–12 and §39 on today's storage. Item 3 retains the
+layout/removal work, including the derivation, its readers and close-time
+minting. The newer meaning/form and STM decisions have been read; none is
+silently brought forward.
+
+Code review and implementation decisions:
+
+- Recurrence reads the retained occurrence's existing `role_refs[0]`, not
+  a value hash or a re-read count. Three distinct document digests make a
+  reading eligible. An already seated non-word concept needs no duplicate;
+  an unseated reading gets a concept containing the union fold of its
+  retained occurrence values. A rebuildable scan supplies the evidence;
+  only the reading-to-promoted-symbol association persists. No old row or
+  derivation edge changes.
+- A token's three distinct source sentences are counted from its mention
+  occurrences, not `count`, not the number of names, and not repeated
+  closes. Its promoted concept contains the union fold of those immutable
+  mention rows, rather than its latest mutable VP state. This preserves the
+  existing union convention; choosing intersection remains FutureWork.
+  The entry keeps its key, kind, names, uses and current value and gains
+  `symbol`. An already native individual needs no second concept. Promotion
+  is a kept-close operation with the ordinary loud capacity preflight.
+- MTM gets per-stream kept-close clocks. A reference refreshes that stream's
+  access; an entry expires after sixteen intervening closes (age > 16),
+  only when no other stream retains an unexpired access. Document-end
+  teardown removes entries of that document, including names and histories,
+  without touching LTM. Neither staging nor preview advances these clocks.
+  Clock/access metadata and promoted symbols checkpoint with the pool.
+- The existing `DefinitionIndex` already invalidates by the Part store's
+  revision and rebuilds from retained DEF edges. Certify that cache across
+  forgetting and restoration; do not introduce a second definitions owner.
+- The standalone order-1 composite exception reads its declared head and
+  gets a provisional bind site. It does not classify a word from its
+  definition or introduce a grammar rule. Root predicate/marker ambiguity
+  stays FutureWork.
+- R10's arrival notes: resolve an alias to its introducing site during
+  planning and deduplicate by that site. Do not plan a later arrival for
+  an already joined site. Commit attaches uses after refinement as before;
+  both paths must agree on the same pending singleton. Arrival credit and
+  exclusion from reference reconstruction are unchanged.
+- Event ownership: re-closing a mention detaches its name membership,
+  without erasing an event owned by another retained token. Actual row
+  reclamation still removes its events. For an event lacking factored
+  refs, resolve its recorded lexical verb through its retained reading
+  before the role-evidence lookup; do not discard an available word's
+  evidence just because it lacks a conceptual seat.
+
+One frozen source receives the prior scoped groups plus every changed
+module's tests. Each failed run, fix and port is retained. Review remains
+through Alec; publication and step 2's full sweep wait for that review.
+
+## 74. 2c source coordinates and the first development capture — Codex, 2026-10-23
+
+`foundation-01` retains 60 passes and nine failures with initial/failure
+states. Its diagnostic reads those captures: three mention rows in two
+source sentences had distinct embedded `(document, index)` pairs. Today's
+writer hashes `('embedded', document_digest, sentence)` and numbers the
+constituents. Those columns cannot count real source sentences or
+cross-document recurrence. The writer now records the close's original
+source pair for each written occurrence in the consolidation sidecar.
+That metadata checkpoints and is pruned when a row disappears; no address,
+row or old edge changes. Legacy rows without that source evidence acquire
+it on a new kept observation, rather than inventing a document by treating
+an embedded digest as one. The pool's document expiry uses the same source.
+
+The other failures are two overextensions and one new-fixture setup error:
+
+- Excluding every pending token with several mentions would prevent a valid
+  unpooled arrival from assigning its first kind. Revert that new guard;
+  the existing no-merge guard stays. The R10 notes are certified as the
+  existing split between a planned choice and the settled-site commit
+  guard, not permission to change binding or the objective. No existing
+  count or content assertion changes for this note.
+- A completed S stamped order 1 is still a sentence, not a second
+  standalone object. The new root exception excludes declared S/VP and
+  relation operations. The existing participant-count assertion stays.
+- The new missing-seat event fixture had used a lookup path that seats its
+  word. Supply an actual unseated native word plus its DEF edge instead;
+  its assertions stay verbatim under the same-round setup exception.
+
+All nine are deterministic close/unit calls; no paired trial or keep exists
+at those failure sites. No old assertion has changed and no test retires.
+
+## 75. Promotion's bank check and event fixture — Codex, 2026-10-23
+
+`foundation-02`: 66 passed, three failed. The captures now show the correct
+three source sentences in the two old arrival cases. Both fail only in
+`test_medium_term_memory.keep`'s shared full-bank comparison: the newly
+required promotion writes its previously unused row. Port that helper to
+exclude only newly seated rows, with an added check that each belongs to
+a token promotion or recurring reading. Every pre-existing bank seat and
+all occurrence/Part tensors keep the exact comparison. Every antecedent,
+kind, count, content and match assertion in the arrival cases stays. No
+fixture is enlarged and no test retires.
+
+The new unseated-word fixture had declared the word type but omitted the
+object type required for its edge to be a DEF. Supply the object type;
+all its assertions stay. The capture records the previously skipped word
+handle. This is a setup correction, not a new lexical-site rule. Also keep
+an anonymous promoted token pending: a minted fold is not an arrival and
+must not supply a derivation kind before refinement.
+
+## 76. Relative handles and promoted identity continuity — Codex, 2026-10-23
+
+`foundation-03`: 192 passed, four existing prerequisite skips, fifteen
+failures, all retained. Nine writers exposed a new provenance bug: a
+completed relative's public handle is `('sym', edge)`, while its companion
+occurrence has an integer row index. Keep a local occurrence-row map and
+record source coordinates through it; do not index a tensor by the public
+Part handle. The rows and existing assertions stay unchanged.
+
+Four partition failures show a promoted token's fourth mention displayed
+under its new concept symbol while its earlier mentions stayed under the
+introducing address. The capture has one pool entry and the correct bind.
+Make promotion an alias to that same token: `token_of(symbol)` recognizes
+it, and an occurrence activation of that promoted symbol keeps its token
+key. A native individual's existing display semantics stay unchanged.
+The four identity/partition assertions stay verbatim.
+
+The final two failures are the same legitimate third-sentence promotion
+bank write in the box/ball fixture's local close helper. Apply the same
+explicit new-promotion-row comparison as §75. The box key, members, count,
+antecedent, exclusion and content assertions remain verbatim. Shared helper
+`unchanged_after_consolidation` checks that every new seat is a promotion
+and that every other bank coordinate and every LTM tensor stays exact.
+No paired trial exists in these fixed-operation unit failures.
+
+## 77. Preserve frame access at promotion — Codex, 2026-10-23
+
+`foundation-04`: 206 passed, four existing skips, one failed. Its captured
+native-individual case has two occurrence addresses joined through a newly
+added global `token_of(native)` fallback, despite no accessible frame.
+Remove that fallback. The occurrence activation already carries promotion
+through the accessible token, so the global lookup is unnecessary. Native
+stream separation and its assertion remain unchanged. This unit has no
+paired trial/keep. The new R10 follow-up checks the same-close alias and
+later self-arrival explicitly: the planned self-choice leaves the token
+pending, and a preview changes neither clocks, rows nor bank. The original
+reference-term cases continue to check zero cost and matching content.

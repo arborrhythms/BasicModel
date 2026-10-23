@@ -1,0 +1,134 @@
+.........F...............FFF..F.FF.....F.........................F...    [100%]
+=================================== FAILURES ===================================
+_______ test_event_without_factored_refs_uses_the_captured_verb_reading ________
+test/test_memory_consolidation.py:208: in test_event_without_factored_refs_uses_the_captured_verb_reading
+    assert f.cs._csw_row_of(word) is None
+E   assert 16 is None
+E    +  where 16 = _csw_row_of(19)
+E    +    where _csw_row_of = ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n)._csw_row_of
+E    +      where ConceptualSpace(\n  (subspace): SubSpace()\n  (_owned_bases): ModuleDict(\n    (event): Tensor()\n    (what): Tensor()\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\n    (conjunctive): SparseLayer()\n    (features): SparseLayer()\n  )\n) = <test_clause_acceptance.SentenceFixture object at 0x1213a7d70>.cs
+_________ test_arrival_bind_refines_and_reads_three_through_the_token __________
+test/test_reference_arrivals.py:95: in test_arrival_bind_refines_and_reads_three_through_the_token
+    arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:49: in keep
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.9446158409118652 at index (256, 0)
+E   Greatest relative difference: 17.055709838867188 at index (256, 0)
+______ test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before] ______
+test/test_reference_arrivals.py:135: in test_kept_wrong_equality_neither_binds_nor_reopens_a_token
+    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+test/test_medium_term_memory.py:49: in keep
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.9446158409118652 at index (256, 0)
+E   Greatest relative difference: 17.055709838867188 at index (256, 0)
+______ test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after] _______
+test/test_reference_arrivals.py:135: in test_kept_wrong_equality_neither_binds_nor_reopens_a_token
+    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+test/test_medium_term_memory.py:49: in keep
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.9446158409118652 at index (256, 0)
+E   Greatest relative difference: 17.055709838867188 at index (256, 0)
+_____________ test_bound_use_does_not_assign_a_kind_before_arrival _____________
+test/test_reference_arrivals.py:188: in test_bound_use_does_not_assign_a_kind_before_arrival
+    assert sum(item['token'] == token for item in refined['arrivals']) == 1
+E   assert 0 == 1
+E    +  where 0 = sum(<generator object test_bound_use_does_not_assign_a_kind_before_arrival.<locals>.<genexpr> at 0x1500d4380>)
+___________ test_named_trial_plans_only_refine_the_kept_close[False] ___________
+test/test_reference_arrivals.py:236: in test_named_trial_plans_only_refine_the_kept_close
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.7941156625747681 at index (256, 0)
+E   Greatest relative difference: 3.8570966720581055 at index (256, 0)
+___________ test_named_trial_plans_only_refine_the_kept_close[True] ____________
+test/test_reference_arrivals.py:236: in test_named_trial_plans_only_refine_the_kept_close
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.7941156625747681 at index (256, 0)
+E   Greatest relative difference: 3.8570966720581055 at index (256, 0)
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:output_graph.py:2942 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:guards.py:4769 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_________ test_cached_word_mention_still_binds_to_its_accessible_token _________
+test/test_reference_arrivals.py:322: in test_cached_word_mention_still_binds_to_its_accessible_token
+    keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+test/test_medium_term_memory.py:49: in keep
+    unchanged(resolver, retained)
+test/test_medium_term_memory.py:24: in unchanged
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+E   AssertionError: Tensor-likes are not equal!
+E   
+E   Mismatched elements: 12 / 6144 (0.2%)
+E   Greatest absolute difference: 0.7941156625747681 at index (256, 0)
+E   Greatest relative difference: 3.8570966720581055 at index (256, 0)
+_ test_journal_and_close_use_the_reading_order_and_argument_position[1-participant] _
+test/test_reference_participants.py:140: in test_journal_and_close_use_the_reading_order_and_argument_position
+    assert len(plan['items']) == expected
+E   AssertionError: assert 2 == 1
+E    +  where 2 = len([{'node': Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(),...red_refs=(('clause', 0), 14, -1), order=1, evidence=(0.0, 0.0), minted=False), 'parent': None, 'site_role': None, ...}])
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_memory_consolidation.py::test_event_without_factored_refs_uses_the_captured_verb_reading
+FAILED test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token
+FAILED test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]
+FAILED test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]
+FAILED test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival
+FAILED test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]
+FAILED test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]
+FAILED test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token
+FAILED test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]
+9 failed, 60 passed, 2 warnings in 54.09s

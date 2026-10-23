@@ -70,11 +70,19 @@ class ReferenceClose(nn.Module):
         rows = {}
         for token, entry in owner.mtm.entries.items():
             for event in entry.events:
-                value = point(owner, event.verb)
+                value = point(owner, self._event_symbol(event.verb))
                 if value is not None:
                     rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(
                         (event.occurrence, event.role, token))
         return {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
+
+    def _event_symbol(self, reference):
+        """A captured lexical verb reads its declared object, never a word alias."""
+        from IdentityRows import point
+        if point(self.components.owner, reference) is not None:
+            return reference
+        objects = self.components.owner.definitions.objects(reference)
+        return objects[0] if len(objects) == 1 else reference
 
     def _derivation_symbol(self, reference):
         """Read a token's retained kind/fold without making it an individual."""
@@ -86,9 +94,13 @@ class ReferenceClose(nn.Module):
             return reference[1]
         location = self.store.location(reference) if self.store is not None else None
         if isinstance(location, int):
+            mtm = self.components.owner.mtm
+            token = mtm.token_of(self.store.occurrence_of(location))
+            if token is not None and mtm.entries[token].symbol is not None and not mtm.entries[token].pending:
+                return mtm.entries[token].symbol
             value = self.store.raw_meaning_of(location).role_refs[0]
             if value is not None and value[0] == 'sym':
-                return value[1]
+                return self.components.owner.__dict__.get('_recurring_readings', {}).get(value[1], value[1])
             mtm = self.components.owner.mtm
             token = mtm.token_of(self.store.occurrence_of(location))
             if token is not None:
@@ -231,6 +243,9 @@ class ReferenceClose(nn.Module):
                             'state' in alloc.symbol_types.get(whole, ())) else whole
                         break
                 records.pop(identity, None)
+                token = mtm.token_of(occurrence)
+                if token is not None and mtm.entries[token].native is None and mtm.entries[token].symbol == identity:
+                    identity = token
                 records[int(occurrence[-1])] = index, dict(role=role, position=(position, index),
                     identity=(mtm.token_of(occurrence) or occurrence) if identity is None else identity,
                     predicate=predicate)
@@ -682,6 +697,17 @@ class ReferenceClose(nn.Module):
             for child in (*node.children, *node.companions):
                 visit(child)
         visit(clause)
+        if (clause is not None and clause.order == 1 and clause.reference_request is None
+                and id(clause) in participants and clause.composition is not None
+                and clause.composition.children):
+            term = clause.composition
+            head = term
+            while head.children and head.head_role:
+                head = head.children[head.head_role-1]
+            request = dict(mode='bind', determined=True, role=0, leaves=term.leaves,
+                content=clause.point, cue=head.point, predicate=torch.zeros_like(clause.point))
+            result.append(dict(node=replace(clause, reference_request=request),
+                source_node=clause, parent=None, site_role=None))
         # A lexical concept cache does not replace a familiar word's token
         # choice. Re-mentions of accessible pending names still call bind at
         # the closing boundary, before their derivation is admitted.
@@ -713,7 +739,7 @@ class ReferenceClose(nn.Module):
                 if isinstance(reference, tuple) and reference[:1] == ('clause',):
                     parents.setdefault(id(parent.children[reference[1]]), []).append((parent, role))
         for site in result:
-            node = site['node']
+            node = site.get('source_node', site['node'])
             positions = ([(site['parent'], site['site_role'])] if site['parent'] is not None
                          else list(parents.get(id(node), ())))
             roots = [0] if node is clause else []
@@ -726,7 +752,7 @@ class ReferenceClose(nn.Module):
             roots.extend(role for parent, role in positions if parent is clause)
             site['root_roles'] = tuple(sorted(set(roots)))
             site['asserted'] = tuple(parent.meaning.roles[2-role] for parent, role in positions
-                if role in (0, 2) and node.reference_request.get('forward_identity') is not None
+                if role in (0, 2) and site['node'].reference_request.get('forward_identity') is not None
                 and (parent.relation == 'equal' or bindings(parent.meaning).get('_equality')))
         # Scoring and admission must enumerate the same sites. Introductions
         # precede their uses even when a later wrapper is the reading's root.
@@ -766,7 +792,7 @@ class ReferenceClose(nn.Module):
         pending_names = self.pending_names(clause, individuals, stream)
         items, cost = [], self.policy.new_zeros(())
         plan = dict(items=items, records=records, pending_names=pending_names,
-                    decisions=[], departure=int(departure))
+                    decisions=[], departure=int(departure), stream=stream)
         handles = {}
         for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
@@ -1015,7 +1041,7 @@ class ReferenceClose(nn.Module):
                 anonymous.add(selected)
             if node.composition is not None:
                 terms[id(node.composition)] = updated
-            replacements[id(node)] = replace(node, meaning=meaning, composition=updated,
+            replacements[id(item.get('source_node', node))] = replace(node, meaning=meaning, composition=updated,
                 refs=(-1 if native is None or unresolved or
                       (named and not isinstance(reference, int)) else native, -1, -1))
             if item.get('parent') is not None:
@@ -1094,7 +1120,7 @@ class ReferenceClose(nn.Module):
         plan['arrival_written'] = {key: result if node is previous_root else node
                                    for key, node in arrivals.items()}
         for item in plan['items']:
-            node = rebuilt[id(item['node'])]
+            node = rebuilt[id(item.get('source_node', item['node']))]
             item['written_node'] = result if node is previous_root else node
         plan['prepared_root'] = result
         return result
@@ -1220,6 +1246,11 @@ class ReferenceClose(nn.Module):
         for reference, occurrence, kind, value, reading in uses:
             mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
         self._commit_events(plan, written, when=when)
+        mtm.close(self.store, stream=plan.get('stream'),
+            references=tuple(key for key, entry in mtm.entries.items() if entry.when == when),
+            sources=self.components.owner.__dict__.get('_consolidation_sources'))
+        from MemoryConsolidation import consolidate
+        consolidate(self.components.owner, self.store)
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)
@@ -1270,7 +1301,7 @@ class ReferenceClose(nn.Module):
                         break
                     pending.extend(reversed(term.children))
             if type(verb) is int and verb not in (-1, 0):
-                mtm.event(token, event, verb=verb, role=item['role'], when=when)
+                mtm.event(token, event, verb=self._event_symbol(verb), role=item['role'], when=when)
         pending, nodes, seen = [plan['prepared_root']], [], set()
         while pending:
             node = pending.pop()
@@ -1293,6 +1324,17 @@ class ReferenceClose(nn.Module):
                 predicate = node.factored_refs[1]
                 if isinstance(predicate, ClausePredicate):
                     verb = predicate.identity
+            else:
+                # Use the actual carried reading when the capture's predicate
+                # names a lexical word without its own conceptual seat.
+                terms = [node.composition] if node.composition is not None else []
+                while terms:
+                    term = terms.pop()
+                    if not term.children and term.word_id == verb and term.reference > 0:
+                        verb = term.reference
+                        break
+                    terms.extend(reversed(term.children))
+            verb = self._event_symbol(int(verb))
             for handle, role in ((subject, 0), (obj, 2)):
                 if not handle:
                     continue

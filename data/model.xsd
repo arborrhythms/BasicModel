@@ -1190,6 +1190,7 @@
       <xs:element name="stmCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Host-only medium-term token identity pool. Default 64. -->
       <xs:element name="mtmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="mtmHorizon" type="xs:positiveInteger" minOccurs="0"/>
       <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
            concept definition may use for free (genus + differentia = 2);
            the rank-ordered L0 penalty shrinks only the surplus past this.

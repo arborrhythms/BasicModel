@@ -1,0 +1,135 @@
+{
+  "base": "148953f9b4f83bf98ae65f8293e73b559d2a3929",
+  "note": "Exact Python assert statements; test-ports.patch also owns tensor/raises checks and fixture edits.",
+  "changes": [
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "seats",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "unchanged_after_consolidation",
+      "before": null,
+      "after": [
+        "assert new_rows <= promoted"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "kept",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "native",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_definition_cache_rebuilds_after_forgetting_and_restore",
+      "before": null,
+      "after": [
+        "assert index.objects(word) == () and index.words(obj) == ()",
+        "assert index.objects(word) == (obj,) and index.words(obj) == (word,)",
+        "assert rebuilt.row(word, obj) == edge and rebuilt.description(word) == index.description(word)"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_event_without_factored_refs_uses_the_captured_verb_reading",
+      "before": null,
+      "after": [
+        "assert f.cs._csw_row_of(word) is None",
+        "assert events and events[-1].verb == verb",
+        "assert resolver._participants()"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows",
+      "before": null,
+      "after": [
+        "assert token in pool.entries",
+        "assert token in pool.entries",
+        "assert token not in pool.entries and pool.token_of(token) is None",
+        "assert token in pool.entries",
+        "assert token not in pool.entries and (not pool.names)"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool",
+      "before": null,
+      "after": [
+        "assert pool.names == {key: pool.names[key]} and pool.closes == dict(saved['closes'])"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_many_mentions_in_one_sentence_do_not_promote",
+      "before": null,
+      "after": [
+        "assert pool.entries[token].symbol is None"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_pending_alias_and_later_self_arrival_leave_the_same_token_pending",
+      "before": null,
+      "after": [
+        "assert plan['items'][1]['reference'] == token",
+        "assert len(plan['arrivals']) == 1 and plan['arrivals'][0]['reference'] == token",
+        "assert resolver.components.owner.mtm.entries[token].pending",
+        "assert later['items'][0]['selected'] == token",
+        "assert len(later['arrivals']) == 1 and later['arrivals'][0]['selected'] == token",
+        "assert resolver.components.owner.mtm.closes == clocks"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_reading_recurrence_counts_distinct_documents_not_reobservations",
+      "before": null,
+      "after": [
+        "assert symbol != reading",
+        "assert owner._recurring_readings[reading] == symbol",
+        "assert reading not in owner._recurring_readings"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_reclosing_a_mention_does_not_erase_another_tokens_event",
+      "before": null,
+      "after": [
+        "assert pool.entries[a].events == events",
+        "assert not pool.entries[a].events"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_standalone_order_one_composite_gets_a_site_through_its_head",
+      "before": null,
+      "after": [
+        "assert len(plan['items']) == 1 and plan['items'][0]['own_object']",
+        "assert token == store.occurrence_of(row)"
+      ]
+    },
+    {
+      "file": "test/test_memory_consolidation.py",
+      "function": "test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state",
+      "before": null,
+      "after": [
+        "assert pool.entries[token].symbol is None",
+        "assert pool.entries[token].symbol is None",
+        "assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))",
+        "assert entry.kind == kind and entry.symbol is not None and (entry.count == 4)",
+        "assert resolver._derivation_symbol(token) == entry.symbol",
+        "assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names",
+        "assert restored.closes == pool.closes and restored.accesses == pool.accesses"
+      ]
+    }
+  ]
+}

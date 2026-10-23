@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_memory_consolidation.py",
+    "test/test_medium_term_memory.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_reconstruction.py",
+    "test/test_reference_participants.py",
+    "test/test_bind_thought.py",
+    "test/test_identity_threading.py",
+    "test/test_reference_close.py",
+    "test/test_reference_review10.py",
+    "test/test_reference_arrival_review.py",
+    "test/test_reference_choices.py",
+    "test/test_reference_mentions.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T18:45:28.974632+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T18:46:29.763806+00:00"
+}

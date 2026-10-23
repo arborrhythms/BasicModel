@@ -1,0 +1,73 @@
+{
+  "pool": [
+    {
+      "key": [
+        "ltm",
+        "address-v1",
+        6722543677319378513
+      ],
+      "occurrences": [
+        [
+          "ltm",
+          "address-v1",
+          6722543677319378513
+        ],
+        [
+          "ltm",
+          "address-v1",
+          -4641033302401945218
+        ],
+        [
+          "ltm",
+          "address-v1",
+          7737524838193717520
+        ]
+      ],
+      "symbol": 4
+    }
+  ],
+  "rows": [
+    [
+      6722543677319378513,
+      "ae8620d55d21cfa55304f5c706b78e280ded802054e5a4df9155a0fa706c7884",
+      0
+    ],
+    [
+      -4641033302401945218,
+      "1ef78d38f891c13e8c97068e2acc92c06e5d6cff1d6b44b425a8d2302ec83bbe",
+      0
+    ],
+    [
+      7737524838193717520,
+      "1ef78d38f891c13e8c97068e2acc92c06e5d6cff1d6b44b425a8d2302ec83bbe",
+      1
+    ],
+    [
+      -463046294018231568,
+      "ae8620d55d21cfa55304f5c706b78e280ded802054e5a4df9155a0fa706c7884",
+      1
+    ]
+  ],
+  "previews": {
+    "test_test_reference_arrivals.py--test_bound_use_does_not_assign_a_kind_before_arrival": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ]
+    ],
+    "test_test_reference_participants.py--test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]": [
+      [
+        2,
+        0
+      ]
+    ]
+  }
+}

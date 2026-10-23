@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_memory_consolidation.py",
+    "test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value",
+    "test/test_reference_close.py::test_same_kind_fourth_close_preserves_mints_and_revises_ambiguous_binding",
+    "test/test_reference_review10.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T18:50:13.690421+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T18:50:18.181643+00:00"
+}

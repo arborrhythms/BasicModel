@@ -1,0 +1,30 @@
+........................................................................ [ 34%]
+...............................................F........................ [ 68%]
+......................ssss.........................................      [100%]
+=================================== FAILURES ===================================
+___ test_frame_access_does_not_leak_a_native_individuals_other_stream_value ____
+test/test_identity_threading.py:147: in test_frame_access_does_not_leak_a_native_individuals_other_stream_value
+    assert first != second and pool.token_of(first) != pool.token_of(second)
+E   AssertionError: assert (('ltm', 'address-v1', 3457749535485181639) != ('ltm', 'address-v1', -2450525585685690625) and ('ltm', 'address-v1', 3457749535485181639) != ('ltm', 'address-v1', 3457749535485181639))
+E    +  where ('ltm', 'address-v1', 3457749535485181639) = token_of(('ltm', 'address-v1', 3457749535485181639))
+E    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x14b22c6b0>.token_of
+E    +  and   ('ltm', 'address-v1', 3457749535485181639) = token_of(('ltm', 'address-v1', -2450525585685690625))
+E    +    where token_of = <MediumTermMemory.MediumTermMemory object at 0x14b22c6b0>.token_of
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reference_mentions.py::test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_mentions.py:42: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(all_correct) == 0.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value
+1 failed, 206 passed, 4 skipped, 3 warnings in 58.50s
