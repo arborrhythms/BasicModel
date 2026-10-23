@@ -815,7 +815,13 @@ not by a passing identity lesson.
      first): MTM values, a sentence as an occurrence of its subject's
      identity, substitution and role evidence through identities, the
      subject resolved at determination; then **derivation removal**;
-     then 2c and step 2's one sweep.
+     then 2c and step 2's one sweep. *Identity line specified
+     2026-10-23:* [identity threading](doc/plans/2026-10-23-identity-threading.md)
+     (bind as a compose-grammar operator listed per accessible location;
+     VP replaces, mention joins; readings and role evidence in MTM). *Layout
+     decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
+     LTM0 one slot (ideas), LTM1 two tagged references that chain, no
+     sentence row; built in the layout-and-removal round after identity.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.

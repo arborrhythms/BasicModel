@@ -1032,6 +1032,19 @@ diagonal per modal in a shared basis, built as §14.1 builds the verb.
 Necessity as the dual stays Claude's recommendation. The section moves to
 its own spec when step 5 starts (last bullet).
 
+**Transitive verbs (Alec, 2026-10-23; direction for step 4's spec).** "If
+we have 'plus 2', we have a transitive verb. If 'two' is already a
+concept, we can apply the object to the verb ... perhaps they are the Q
+matrix for which we currently have 24 groups. The plus operation is a
+diagonal as usual for the VP." So the verb supplies the diagonal and the
+object conditions the basis: the VP acts on the subject as
+`Q(object) · diag(verb) · Q(object)ᵀ`, the NP-conditional basis above,
+with the shared bases now indexed by the object rather than only by a
+learned verb group. **Decided (Alec, 2026-10-23): "The object supplies its
+own Q basis."** For a numeral object the object
+is a count, not a basis: "plus 2" is the successor applied twice, resolved
+by thought as chained successor sentences, never by one application.
+
 ## 11. References
 
 Bybee, J., Perkins, R., & Pagliuca, W. (1994). *The Evolution of Grammar.*

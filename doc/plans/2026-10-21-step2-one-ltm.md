@@ -3426,3 +3426,250 @@ mechanism fixtures with no learned-grammar or learning claim.
 
 Claude's spec should answer these questions and name the implementation
 seams before identity coding begins. Item 3.0 has not been reached.
+
+## 69. Claude's end-of-round review of storage-only 2b — 2026-10-23
+
+Reviewed: §§42–68, the final receipt under
+`benchmarks/2026-10-22-item3-5-step2b/final/`, the delegated HOLD and LAND
+reviews, the assertion ledger, and the frozen source `6a36b7cee` at the
+points that matter. Published at BasicModel `39272e7a6` and WikiOracle
+`ade0399`.
+
+**Verdict: the landing stands.** 92 selected files, 1,144 passes, nine
+existing prerequisite skips, no failures, bound to the frozen hash; 55
+changed checks, three retired tests (all adjacency-only), four new tests,
+every one listed with before and after text; seven frozen sources, each
+failed one retained with its receipt and never promoted. §39 worked as
+intended: every fix is a dated section, and the two HOLDs were repaired
+rather than argued.
+
+**Checked against the code.** `accept_fact` refuses a stored question by
+its record kind. No consumer of `LTM0.MODES` remains, and the live parse
+keeps its mode where it is needed (`closing_question`, the sentence end
+state, the held-description reader). The occurrence keeps its polarity
+and only a trust-derived edge pair is reversed for a negative meaning.
+The `word_surface_for_row` repair is narrow: a word with an object spells
+nothing, as ordinary bound words already did; only the dual-role row
+changes. The forgetting pass stops after its first structural advance,
+with `forget_pending` carrying the pressure to the next boundary.
+
+**Carried notes, none a stop.**
+
+1. *The stage barrier.* §42's "one structural advance per pass" is
+   stricter than §21's "one stage per occurrence per pass", and §49 ported
+   an exact six-row certificate to a range for it. Acceptable as
+   documented; low water now takes more boundary calls. Step 2's sweep
+   should report how many.
+2. *Latent failures outside gate scope.* Several tests were already
+   failing on published sources (§45's stale counts since inline
+   lowering, §46's reader-side binding since §10.4, §66's out-of-domain
+   operands). Each was ported with a diagnosis; the one sweep at step 2's
+   end is where the rest surface, as decided.
+3. *The dual-role word* (a word that is another word's object has no
+   emitting terminal through that row) goes to the identity spec, as §68
+   says.
+
+**§68 is accepted as the brief for the identity spec**, which Claude
+writes next. It answers each of the seven points and names the seams:
+mention-keyed names, not spelling keys; a trial overlay with the read and
+write sequence at determination; current state separate from kind and
+immutable history; events referencing their subject identity with the
+verb and roles recorded durably; equality substitution that keeps
+witnessed equalities and compound congruence while the derivation readers
+still exist; the referent value scored at determination; and tensor,
+gradient and lifetime boundaries. The certificates §68 proposes are the
+spec's gates.
+
+## 70. Discussion (Alec, 2026-10-23): where a sentence lives; two places that chain
+
+Alec, on the identity spec's "events as the sentence row's three slots":
+"The sentence row being three-slot is a solution, but in that case where
+do we store that row? LTM3 was what we used to use, and perhaps turning
+that into a two-place pointer into LTM0 was a mistake. We might be able
+to allow three places in LTM1, which would accommodate clauses and
+chaining, and remove any need for a 'sentence row' as separate from the
+two LTM structures." Then: "Actually, three places are not necessary as
+long as the LTM1 can chain: so the second entry points to another LTM1
+relation. That might be even better."
+
+**Where things stand.** The two-truths amendment of 2026-10-19 decided
+three positions (argument, kind, argument) in LTM1 and one concept per
+LTM0 row; 2026-10-21 narrowed LTM1 to two references; the code has
+three-slot LTM0 rows and two-reference LTM1 rows, neither as decided.
+
+**Two places that chain.** An LTM1 row holds two tagged references and
+the lanes; either reference may be another LTM1 row, which is LTM2 by
+argument, as decided. The storage then mirrors the grammar's binary
+compositions: "Felix runs" is `(OCC Felix, SYM runs)`; "Felix chases Tom"
+is `(OCC Felix, REL r)` with `r = (SYM chases, OCC Tom)`, VP = VP NP; "he
+said she said X" is `(OCC he, REL (SYM said, REL (OCC she, REL (SYM said,
+REL X))))`. No kind slot: the row's kind is read from what it references.
+No separate sentence row: the top relation row is the sentence.
+
+**What this stores, and what §30 removed.** These rows are the sentence's
+semantic composition over bound mentions and verbs, predication and
+verb-object application. They are not the parse: no surface, marker,
+determiner or order operation is a row, and no operation name is stored.
+§33's "asserted relations: never a lift or verb pair kept only to connect
+operands" is amended to this: the predication and the verb-object
+application are the asserted relations.
+
+**Open, for Alec.**
+
+1. *Does a row carry a vector?* With the one-entry reading (concept, lanes
+   and time as the LTM0 stratum; references as the LTM1 stratum; one
+   handle), the top relation row has the sentence's fused vector, so
+   reconstruction from the vector and the gist on forgetting still work,
+   and 2b's occurrence-beside-its-edge collapses into one entry. Without
+   it, a sentence is its references and lanes only.
+2. *One handle namespace.* Occurrences are addressed by 64-bit keys,
+   relation handles are allocator concept ids; one entry needs one key or
+   both.
+3. *Sequencing.* This is the derivation-removal round's layout. The
+   identity line's events then are the top relation rows; building it on
+   today's three-slot rows first means migrating twice.
+
+## 71. Decided (Alec, 2026-10-23): ideas in LTM0, binary chains in LTM1, no sentence row
+
+Alec (his "STM0/STM1" read as LTM0/LTM1): "The change from 10-19 to 10-21
+was good but incomplete. Since VPs are defined on NP subjects, some
+sentences will reduce to 'ideas', which means (in this context) an
+absolute truth. Absolute truths are understood directly in the sense that
+they do not require references or computation; they are a single vector
+in conceptual space, and not necessary in any codebook. So there is only
+one slot for an LTM0. LTM1 contains two references, and for simplicity we
+do not store a typed relation (these are used for temporal chaining,
+ifThen, type and part operations). However, they must now handle the
+three-slot clause chains that we are moving out of LTM0 that are not able
+to compress into one vector. In order to do that, and still remain a
+binary relation, they are able to contain both LTM0 and (recursive) LTM1
+relations. These two structures should replace any notion of a sentence
+row, since sentences should turn into LTM0 (if they can) or an LTM1 chain
+(if they can't). So 'Felix runs' and 'Felix chases Tom' are both LTM0 (as
+long as all words are existing concepts). 'She said X' is either LTM0 or
+LTM1 (depending on if X is an existing concept). Given an English syntax
+where V O become a V, we need two more LTM1: (He) ((said) (she said x))."
+
+**The layout.**
+
+- **LTM0: one slot.** An entry is one vector in conceptual space, an
+  absolute truth understood directly, with its lanes, access count,
+  surprise and `.when`; no symbol is required. A sentence whose words are
+  all existing concepts compresses to one: the VP applied to its subject.
+- **LTM1: two tagged references, no stored type.** Each may be an LTM0
+  entry (OCC), an existing concept or word (SYM), or another LTM1 row
+  (REL), recursively; a row referencing a row is LTM2, derived. The lanes
+  and `.when` stay. The relation's use (temporal chaining, if-then, kind,
+  part, predication) is not a column.
+- **No sentence row.** A sentence is an LTM0 idea if it compresses, else
+  an LTM1 chain whose top row is the sentence. V O becomes a V: "he said
+  she said x" with x unknown is `(OCC he, REL (SYM said, REL (OCC she, REL
+  (SYM said, OCC x))))`, two rows more than "she said x".
+
+**Superseded by this:** 2b's rule that every completed S gets an LTM0
+occurrence beside its edge (§33 R1); the identity spec's events as "the
+sentence row's three slots"; §33's narrow list of asserted relations; the
+READING question of §28 as posed; §70's open point 1 (a chain has no
+fused vector, by definition; an idea is one).
+
+**Open after this, for Alec (§72 when answered):**
+
+1. *Role evidence once a sentence compresses.* Bind's `expected_roles`
+   and `prediction`, and G3's elision, read who filled which role of which
+   verb. In a compressed idea that is inside the vector. Candidates: read
+   it from the verb's group structure (the object supplies Q, the verb the
+   diagonal, step 4), from MTM's event history while it lasts, or only
+   from uncompressed chains.
+2. *Telling untyped relations apart.* Recommended: the relation word is
+   itself a referenced symbol, as a verb is (`(S1, REL (SYM if-then, S2))`),
+   and kind and part are read from the arguments' orders.
+3. *A mention's reading.* Where the word a mention reads to is kept: an
+   LTM1 row `(OCC mention, SYM word)`, or MTM only. With the copula a
+   referenced symbol, "x is three" is `(OCC x, REL (SYM is, SYM three))`,
+   so a reading row is no longer confusable with an equality.
+4. *Sequencing.* This is the removal round's layout; the identity line's
+   events are then LTM0 ideas written as occurrences of their subject's
+   identity, and chains for what cannot compress.
+
+## 72. Decided (Alec, 2026-10-23): the four open points of §71
+
+1. **Role evidence comes from MTM while it lasts.** An uncompressed chain's
+   identities are brought back into MTM by recalling that memory: `query()`
+   brings at least a reference to the chain's head into STM. Alec's
+   refinement (2026-10-23), recorded for the thought design: STM is eight
+   chunks, each over a small number of ideas (as LTM0 holds them) and
+   relations (as LTM1 holds them), so a recalled chain sits in STM by
+   its head reference while its identities live in MTM. A chunk is not
+   one row: it is a small working set of both kinds.
+2. **If-then, whole-part and type-token need no stored type.** The first
+   has temporal references, the second spatial, the third symbols; the
+   referenced entries' tags and situations (`.when`, `.where`, symbol)
+   tell them apart. §71's point 2 recommendation is withdrawn; no
+   relation word need be referenced for the kind of the relation.
+3. **A mention's reading is kept in MTM as a name/value pair.** No reading
+   row in LTM1; the READING tag question is closed.
+4. **Sequencing is Claude's call.** Decided: the identity line first, as
+   §36 ordered, because role evidence and readings now live in MTM and are
+   prerequisites for removing the derivation readers; then one
+   layout-and-removal round on §71 (LTM0 one slot, LTM1 two tagged
+   references with chaining, no sentence row, the Part-edge tree and its
+   readers removed), for which Claude writes the spec after the identity
+   line lands; then 2c and step 2's one sweep.
+
+**Aside (Alec, 2026-10-23): the parse-tree cache and STM1.** "I don't know
+what cache we are using for the sentence parse tree, but it might have a
+good integration with STM1." The cache is the per-sentence operation
+journal: `AnswerProgram` (`bin/Understanding.py`) holds the kept reading's
+`actions`, `leaves`, `concept_ids` and `word_ids`, the selected
+`reference_ids`, and, only while the reading is open, `operation_values`
+(each action's two operands and result) and `operation_refs`, gathered at
+the close from the language layer's journal columns; `ClauseJournal.
+finish_clause` turns it into the clause tree, and nothing of it is stored
+beside a row. Claude's reading of the fit: each journal action is a binary
+composition with two operands and a result, which is exactly an STM1
+chunk's content, relations over ideas. The journal would then be STM1's
+live form; a recalled LTM1 chain loads into the same structure; and at the
+close, what compresses becomes an LTM0 idea and what does not becomes
+LTM1 rows that are the journal's own compositions over bound mentions,
+with the parse-only operations dropped. For the layout-and-removal spec.
+
+**STM: what is open (Claude, 2026-10-23, at Alec's question).** Correction
+first: each kept reading is a sentence; `AnswerProgram` is that reading's
+record and is misnamed (14 files use it). Rename it `Reading` in the
+layout-and-removal round. Today: `<stmCapacity>` 8 is the depth of the
+parse stack in the language layer; the conceptual working slots are the
+open sentence's three roles; the recent rows are an index of addresses
+(`SituationAddress`, `memory.retrieved_frames`) read by bind; and the
+reading's journal holds every reduce's operands and result. Under Alec's
+refinement, STM is eight chunks, each over a few ideas and relations. The
+opens, with Claude's recommendations, for the layout-and-removal spec:
+
+1. *One structure or three.* The parse stack, the eight-slot working
+   memory and the recent-rows index are three things today. Recommended:
+   one, the eight chunks; a chunk is a constituent as it is built (its
+   idea vector, its composition's two references, its bound identity, its
+   order stamp and `.where`/`.when`), and the stack is the chunks in
+   reduce order; the journal is their history.
+2. *Compression during the parse.* Recommended: at every reduce, as
+   composition already produces a value, a chunk whose operands are both
+   existing concepts compresses to its idea and keeps no references;
+   otherwise it keeps its two references and is written as an LTM1 row at
+   the close. "V O becomes a V" is this rule applied inside the sentence.
+3. *Capacity.* Eight chunks is a Miller limit. When a sentence needs more
+   (deep clauses), recommended: the completed clause chunk is written to
+   LTM1 early and held by its head reference, which is what a recalled
+   chain looks like; no spill structure beyond LTM1.
+4. *Recall and recent rows.* `query()` loads a chain's head reference
+   into a chunk and its identities into MTM; recent rows are chunks that
+   outlive their sentence until replaced. Open for Alec: whether the eight
+   are shared between the open sentence's constituents and recalled or
+   recent memory (one working set, Miller's), or kept as separate budgets.
+5. *Trials.* Each trial owns its chunks, as the fork owns the stack
+   today (`SentenceFork`); the kept trial's chunks are what the close
+   writes.
+6. *Thought.* The thought loop's serial slot (one three-role meaning
+   today) becomes a chunk; descend and return navigate a chain's
+   references. Belongs with the thought design, after this round.
+7. *Gradient.* Chunks are the compiled loop's differentiable state; a
+   recalled chain's ideas are detached reads, except identity values,
+   which the identity line makes pathwise within a sentence.
