@@ -1,0 +1,54 @@
+diff --git a/bin/ReferenceClose.py b/bin/ReferenceClose.py
+index 764d461bf..cda0f4311 100644
+--- a/bin/ReferenceClose.py
++++ b/bin/ReferenceClose.py
+@@ -734,6 +734,10 @@ class ReferenceClose(nn.Module):
+             site['asserted'] = tuple(parent.meaning.roles[2-role] for parent, role in positions
+                 if role in (0, 2) and node.reference_request.get('forward_identity') is not None
+                 and (parent.relation == 'equal' or bindings(parent.meaning).get('_equality')))
++        # Scoring and admission must enumerate the same sites. Introductions
++        # precede their uses even when a later wrapper is the reading's root.
++        result.sort(key=lambda site: (site['node'].identity or {}).get('action')
++                    if (site['node'].identity or {}).get('action') is not None else -1)
+         return result
+ 
+     def pending_names(self, clause, individuals, stream):
+@@ -770,12 +774,7 @@ class ReferenceClose(nn.Module):
+         plan = dict(items=items, records=records, pending_names=pending_names,
+                     decisions=[], departure=int(departure))
+         handles = {}
+-        sites = self.sites(clause, pending_names=pending_names)
+-        # A later wrapper can reference a determination inside its own tree.
+-        # Consume the kept journal in time order, before resolving its aliases.
+-        sites.sort(key=lambda site: (site['node'].identity or {}).get('action')
+-                   if (site['node'].identity or {}).get('action') is not None else -1)
+-        for site in sites:
++        for site in self.sites(clause, pending_names=pending_names):
+             node = site['node']
+             request = node.reference_request
+             mode, role = request['mode'], request.get('role', 0)
+diff --git a/test/test_identity_threading.py b/test/test_identity_threading.py
+index 38f1b622c..2dd86918d 100644
+--- a/test/test_identity_threading.py
++++ b/test/test_identity_threading.py
+@@ -341,7 +341,8 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
+     assert state[2][0, 0, 3] == 0
+ 
+ 
+-def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch):
++@pytest.mark.parametrize('readmit', (False, True))
++def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit):
+     from ClauseJournal import finish_clause
+     from test_clause_acceptance import SentenceFixture
+     from test_medium_term_memory import snapshot, unchanged
+@@ -356,6 +357,10 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch)
+     assert introduction['mode'] == 'mint'
+     assert introduction['node'].identity['handle'] == use['node'].identity['handle'] == handle
+     assert use['selected'] == introduction['selected'] == ('new', 0)
++    if readmit:
++        clause = finish_clause(f.language, entry, registry=f.registry)
++        sites = resolver.sites(clause, pending_names=plan['pending_names'])
++        plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
+     prepared = resolver.prepare(clause, plan)
+     written = {}
+     row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped', sentence_index=0)

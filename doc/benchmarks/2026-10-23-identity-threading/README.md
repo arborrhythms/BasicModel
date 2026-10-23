@@ -1,13 +1,13 @@
 # Identity threading — 2026-10-23
 
 The next source freeze on main runs its scoped gates in
-[`final/source-05`](final/source-05). Review and publication are pending.
+[`final/source-06`](final/source-06). Review and publication are pending.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–13. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–14. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -34,9 +34,9 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-05/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-06/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-05/test-ports.patch)
+pre-implementation review. [`test-ports.patch`](final/source-06/test-ports.patch)
 is the exact complete test diff, including new certificates.
 
 ## Every existing-test port
@@ -82,7 +82,7 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-05`: the eight
+The required selections and runner are in `final/source-06`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
 arms. The distinct-file scope is 121 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
@@ -97,8 +97,8 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Final outcomes will be written in `final/source-05/gate-summary.json`.
-No development pass or earlier frozen result substitutes for that source.
+Final outcomes will be written in `final/source-06/gate-summary.json`.
+No development pass or earlier frozen result substitutes for that source. The long module group and the other groups may run in separate processes on that same unchanged hash; each selection runs once.
 
 ## Retained unsuccessful attempts
 
@@ -140,6 +140,10 @@ The dated spec sections give the diagnosis and fix for each attempt:
 
 - `scoped-compiled-01` and `scoped-compiled-02`: the copied store still points at the original owner. The read-only close probe confirms its edge exists in the original Part table, not the copied one. `scoped-06` passes 33 identity/index/c/e cases after reattachment; no parity assertion changes.
 - `scoped-07`: the new wrapper fixture used an undeclared `null` face; correct it to the declared transparent `not` face without changing assertions. `scoped-08` passes both wrapper/introduction certificates. Event deduplication keys on the recorded operation, so a transparent wrapper cannot duplicate its S occurrence.
+
+- `final/source-05`, `4763623e6`: 85 regression passes; native 122 passes, seven existing skips and one recursive-alias failure. Both pending-premise orders and c/e pass unchanged. Spec §14 diagnoses preview/admission site ordering from the retained journal and plan. No result is promoted.
+- `site-order-01`: 22 focused passes after all callers share chronological `sites()` order. The new wrapped-introduction regression now also repeats production's admission zip before commit; no existing assertion changes.
+- `scoped-compiled-03`: the original compiled parity certificate passes after the copied-owner repair, with every parity assertion unchanged.
 
 Large JSON and tensor captures are losslessly gzipped. `packed-captures.json` records
 each original and compressed SHA-256; new captures write gzip directly

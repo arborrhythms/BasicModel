@@ -734,6 +734,10 @@ class ReferenceClose(nn.Module):
             site['asserted'] = tuple(parent.meaning.roles[2-role] for parent, role in positions
                 if role in (0, 2) and node.reference_request.get('forward_identity') is not None
                 and (parent.relation == 'equal' or bindings(parent.meaning).get('_equality')))
+        # Scoring and admission must enumerate the same sites. Introductions
+        # precede their uses even when a later wrapper is the reading's root.
+        result.sort(key=lambda site: (site['node'].identity or {}).get('action')
+                    if (site['node'].identity or {}).get('action') is not None else -1)
         return result
 
     def pending_names(self, clause, individuals, stream):
@@ -770,12 +774,7 @@ class ReferenceClose(nn.Module):
         plan = dict(items=items, records=records, pending_names=pending_names,
                     decisions=[], departure=int(departure))
         handles = {}
-        sites = self.sites(clause, pending_names=pending_names)
-        # A later wrapper can reference a determination inside its own tree.
-        # Consume the kept journal in time order, before resolving its aliases.
-        sites.sort(key=lambda site: (site['node'].identity or {}).get('action')
-                   if (site['node'].identity or {}).get('action') is not None else -1)
-        for site in sites:
+        for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
             request = node.reference_request
             mode, role = request['mode'], request.get('role', 0)

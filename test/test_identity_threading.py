@@ -341,7 +341,8 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
     assert state[2][0, 0, 3] == 0
 
 
-def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch):
+@pytest.mark.parametrize('readmit', (False, True))
+def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit):
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
@@ -356,6 +357,10 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch)
     assert introduction['mode'] == 'mint'
     assert introduction['node'].identity['handle'] == use['node'].identity['handle'] == handle
     assert use['selected'] == introduction['selected'] == ('new', 0)
+    if readmit:
+        clause = finish_clause(f.language, entry, registry=f.registry)
+        sites = resolver.sites(clause, pending_names=plan['pending_names'])
+        plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
     prepared = resolver.prepare(clause, plan)
     written = {}
     row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped', sentence_index=0)

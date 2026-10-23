@@ -721,3 +721,30 @@ that writes and content reads belong only to the copy. The existing
 compiled parity assertions, snapshots and seeds stay unchanged. The
 read-only `scoped-compiled-02` close probe records the two store identities
 and planned edge to authenticate this diagnosis before changing source.
+
+## 14. Codex: one site order for scoring and admission — 2026-10-23
+
+Frozen `4763623e6` passes the 85 regression cases. The native set completes
+130 cases with 122 passes, seven existing prerequisite skips and one
+failure in the live initial binding-distribution test; both pending-premise
+orders and c/e pass unchanged. No gate is promoted to the next source.
+
+The retained failing journal has 32 actions, two nested determinations and
+a final bind to the second token. It is not an excessive-depth parse. The
+preview now orders introductions before uses, but `_commit_sentence`
+reattaches the scored items by zipping them with `sites()`'s original root-
+first order. The first own-object decision is therefore attached to the
+root, and its later use to an ancestor inside that root: `prepare` correctly
+exposes this as a recursive alias. Put the chronological ordering in
+`sites()` itself so preview, admission, answer views and every other caller
+share one order. No reranking, choice or assertion changes. Extend the
+wrapped-introduction certificate to finish the admitted journal again and
+reattach decisions through the same zip as production before preparing and
+committing it. The full failed journal, plans, initial state and exception
+remain under `final/source-05`; the source stays frozen.
+
+The focused `site-order-01` check passes 22 cases, including the unchanged
+live initial binding-distribution test and both admission paths. The
+original compiled parity case also passes in `scoped-compiled-03` after
+§13's ownership repair. These are diagnosis checks; source-06 runs every
+required scoped gate again on its own frozen hash.
