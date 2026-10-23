@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 import torch
+from part_fixtures import part_references, assert_part_references
 
 from ClauseRow import Clause, Composition, ClausePredicate, predicate_point
 from Meaning import ConceptualMeaning
@@ -90,7 +91,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     pending, _ = keep(resolver, named(a[0], words['x']))
     token = store.occurrence_of(pending)
     frame = SituationFrame.from_row(store.row(pending))
-    raw, refs = store.slots.clone(), store.refs.clone()
+    raw, refs = store.slots.clone(), part_references(store)
     arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
     entry = resolver.components.owner.mtm.entries[token]
     assert entry.kind == words['three'] and entry.count == 3
@@ -110,7 +111,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     terms, _, incomplete = expression_components(store, (token,), max_records=8, work=QueryWorkBudget(8))
     assert not incomplete and terms[token]['head_reference'] == ('sym', words['three'])
     torch.testing.assert_close(store.slots[:pending+1], raw[:pending+1], rtol=0, atol=0)
-    torch.testing.assert_close(store.refs[:pending+1], refs[:pending+1], rtol=0, atol=0)
+    assert_part_references(store, refs)
 
 
 @pytest.mark.parametrize('when', ('before', 'after'))

@@ -40,7 +40,7 @@ def test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claim
     assert store.relations().tolist() == [target[1]]
     store._validate_expectation_links()
     # Re-reading the same thought address refreshes its one retained estimate.
-    assert len(store) == 2
+    assert len(store) == 3
     for index in (1,):
         assert store.expectation_pair(index)['observation_occurrence'] == store.occurrence_of(target)
 
@@ -59,8 +59,9 @@ def test_narrow_idea_retains_no_implicit_operand_reference():
     store, _ = clause_store()
     first = store.write_clause(idea_clause())
     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
-    assert store.refs[second].tolist() == [-1, -1, -1]
-    assert store.meaning_of(second).role_refs == (None, None, None)
+    assert not hasattr(store, 'refs')
+    assert store.meaning_of(second).role_refs == store.meaning_of(first).role_refs
+    assert store.occurrence_of(first) not in store.meaning_of(second).role_refs
 
 
 def test_invalid_prediction_does_not_publish_embedded_clauses():

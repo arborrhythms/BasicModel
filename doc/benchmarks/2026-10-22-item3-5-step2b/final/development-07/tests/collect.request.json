@@ -1,0 +1,17 @@
+{
+  "selectors": [
+    "test/test_clause_closing.py",
+    "test/test_clause_scope.py",
+    "test/test_clause_grammar.py",
+    "test/test_sentence_journal.py",
+    "test/test_sentence_references.py",
+    "test/test_part_expectation.py",
+    "test/test_reference_index.py",
+    "test/test_independent_components.py",
+    "test/test_ltm0_location.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

@@ -1,0 +1,170 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+    "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+    "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+    "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+    "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+  ],
+  "completed": [
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+    "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+    "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+    "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+    "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+    "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+    "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+    "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+    "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011162583017721772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[pronoun]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006700207944959402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_bound_use_reads_as_its_introduction_without_rewriting_rows[elision]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006562167080119252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010574250016361475,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009672542102634907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token[mint]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009884292026981711,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_native_individual_mint_and_bind_make_no_pool_entry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005216832971200347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_same_close_new_alias_appends_once_to_the_introduction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005117708118632436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_revision_merges_are_computed_without_merging_pool_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012000208953395486,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005079291993752122,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_trials_leave_pool_untouched_and_only_the_kept_close_writes[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.27986662508919835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_row_reclamation_drops_a_use_and_then_its_introductions_entry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006346791982650757,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 18.246025499887764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 29.43269137502648,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

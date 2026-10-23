@@ -95,4 +95,4 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     row = store.write_clause(clause)
     inner = store.parts.find(*entry.concept_ids[:2].tolist())
     assert store.parts.refs[row[1], 0] == inner
-    assert len(store) == 0 and store.parts.contains(inner)
+    assert len(store) == 2 and store.parts.contains(inner)

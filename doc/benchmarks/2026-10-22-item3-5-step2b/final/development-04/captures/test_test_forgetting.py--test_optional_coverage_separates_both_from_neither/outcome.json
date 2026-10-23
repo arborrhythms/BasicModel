@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

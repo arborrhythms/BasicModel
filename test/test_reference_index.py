@@ -27,7 +27,7 @@ def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
     assert store.rows_for_code(99) == ()
 
 
-def test_only_the_inverted_index_is_owned_or_checkpointed():
+def test_inverted_index_is_derived_after_checkpoint_restore():
     store = LTM0(4, capacity=8)
     store.configure_leaf_index(read=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))
     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
@@ -39,6 +39,8 @@ def test_only_the_inverted_index_is_owned_or_checkpointed():
     restored = LTM0(4, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+    restored.configure_leaf_index(read=store._index_read)
+    restored.reindex_meanings()
     assert restored.rows_for_code(2) == (a,)
     assert restored.rows_for_code(3) == (b,)
 

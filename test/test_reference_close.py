@@ -10,6 +10,7 @@ from Layers import LTM0
 from Meaning import ConceptualMeaning
 from ReferenceClose import ReferenceClose
 from ReferenceContext import SituationFrame
+from part_fixtures import part_references, assert_part_references
 
 
 def fixture():
@@ -76,11 +77,11 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
 def current_identities(resolver, frames):
     """Observe the working partition without editing a row or a bank code."""
     store, bank = resolver.store, resolver.components.owner.similarity_codebook
-    before = store.refs.clone(), store.slots.clone(), bank.W.detach().clone()
+    before = store.parts.refs.clone(), store.slots.clone(), bank.W.detach().clone()
     result = {address: identity
               for identity, item in resolver.individuals(resolver.accessible(frames)).items()
               for address in item['occurrences']}
-    for actual, expected in zip((store.refs, store.slots, bank.W), before):
+    for actual, expected in zip((store.parts.refs, store.slots, bank.W), before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
     return result
 
@@ -191,12 +192,12 @@ def test_reidentification_revises_the_earlier_ambiguous_binding(kind):
 def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
     resolver, store, atoms = fixture()
     frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (), document='a', sentence=0)
-    before = store.refs.clone()
+    before = part_references(store)
     _, missing, plan = close(resolver, torch.zeros(12), atoms[6], 'pronoun', (), document='b', sentence=0)
     assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 0
     assert tuple(resolver.components.owner.mtm.entries) == (store.occurrence_of(store.index_of_row(address)),)
-    assert int(store.refs[store.index_of_row(missing), 0]) == -1
-    torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])
+    assert not hasattr(store, 'refs')
+    assert_part_references(store, before)
     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'
 
 
@@ -210,11 +211,11 @@ def test_empty_close_has_no_policy_gradient_or_store_side_effect():
     written = {}
     row = store.write_clause(kept, document_key='field', sentence_index=0, written_rows=written)
     metadata = dict(store._semantic_rows)
-    required, refs = store.metadata_required.clone(), store.refs.clone()
+    required, refs = store.metadata_required.clone(), store.parts.refs.clone()
     resolver.commit(plan, row, written, document='field', position=0, training=True)
     assert store._semantic_rows == metadata and resolver.last_audit == ()
     torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)
-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
+    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
     assert not resolver.components.individual_ids and not resolver._participants()
 
 
@@ -418,5 +419,5 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     restored = LTM0(8, capacity=64)
     restored.load_state_dict(f.store.state_dict())
     restored.load_semantic_extras(f.store.semantic_extras())
-    torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)
+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     torch.testing.assert_close(restored.slots, f.store.slots, rtol=0, atol=0)

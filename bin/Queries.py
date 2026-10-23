@@ -1017,8 +1017,6 @@ class ThoughtLTMCapability:
             if int(meaning.role_mask.sum()) != 1:
                 continue
             ref = meaning.role_refs[0]
-            if ref is None and int(row['refs'][0]) > 0:
-                ref = ('sym', int(row['refs'][0]))
             if ref == reference and (best is None or max(row['evidence']) > max(best['evidence'])):
                 best = row
         if best is None:

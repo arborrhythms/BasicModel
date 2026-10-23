@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
+  "outcome": "failed",
+  "failure": "test/test_truth_text.py:52: in test_supplied_trust_preserves_both_possible_grammatical_fields\n    assert store.ideas().tolist() == [0]\nE   assert [0, 1] == [0]\nE     \nE     Left contains one more item: 1\nE     Use -v to get more diff",
+  "records": []
+}

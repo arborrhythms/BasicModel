@@ -44,7 +44,10 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
             store.write_clause(field)
         assert len(rows) == 1
         row = rows[0]
-        assert store.row(row)['refs'].numel() == (3 if field.relation is None else 2)
+        if field.relation is None:
+            assert 'refs' not in store.row(row)
+        else:
+            assert store.row(row)['refs'].numel() == 2
         assert store.row(row)['trust'] == pytest.approx(.8)
-    assert store.ideas().tolist() == [0]
+    assert store.ideas().tolist() == [0, 1]
     assert store.relations().tolist() == [store.parts.find(1, 2)]

@@ -283,17 +283,12 @@ class ClauseRows:
     def _native_reference_indexes(self):
         """Derived identity-to-occurrence caches, invalidated by row edits."""
         count = len(self)
-        token = (count, id(self.row_ids), self.row_ids._version,
-                 id(self.refs), self.refs._version)
+        token = (count, id(self.row_ids), self.row_ids._version)
         if self.__dict__.get('_native_reference_token') != token:
             rows, predicates = {}, {}
             for row, identity in enumerate(self.row_ids[:count].tolist()):
                 if identity not in (-1, 0):
                     rows.setdefault(identity, row)
-            for row, references in enumerate(self.refs[:count].tolist()):
-                for slot, identity in enumerate(references):
-                    if (1 << 61) <= identity < (1 << 62):
-                        predicates.setdefault(identity, (row, slot))
             object.__setattr__(self, '_native_row_index', rows)
             object.__setattr__(self, '_native_predicate_index', predicates)
             object.__setattr__(self, '_native_reference_token', token)
@@ -369,8 +364,9 @@ class ClauseRows:
         """Close concepts into LTM0 and the derivation's argument pairs into LTM1.
 
         Wide working identities are never stored on occurrence rows. A completed
-        relative field returns its native Part symbol; an absolute or still-open
-        field returns its occurrence row. Both have the common row/read interface.
+        relative field keeps its occurrence beside its native Part symbol and
+        returns the symbol; an absolute or still-open field returns its occurrence.
+        Both have the common row/read interface.
         """
         import math
         from PartClosing import PartClosing
@@ -414,7 +410,7 @@ class ClauseRows:
             for companion in value.companions:
                 visit(companion)
         visit(clause)
-        pairs, addresses, prepared, required = {}, {}, set(), 0
+        pairs, edge_pairs, addresses, prepared, required = {}, {}, {}, set(), 0
         prediction = None if expectation is None else expectation.estimate
         surprise = -1. if prediction is None else expectation.surprise_for(clause.meaning)
         sources = () if expectation is None else tuple(expectation.source_occurrences)
@@ -465,19 +461,19 @@ class ClauseRows:
         for position, value in enumerate(nodes):
             asserted = value is clause or value in clause.companions
             pair = tuple(map(float, value.evidence if evidence is None or not asserted else evidence))
-            if asserted and (authority is not None or (trust is not None and evidence is None)):
+            from_trust = asserted and (authority is not None or (trust is not None and evidence is None))
+            if from_trust:
                 signed = max(-1., min(1., float(trust)))
                 pair = (max(signed, 0.), max(-signed, 0.))
-                if not value.meaning.polarity:
-                    pair = pair[::-1]
             if len(pair) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in pair):
                 raise ValueError('clause evidence requires two finite poles in [0, 1]')
             pairs[id(value)] = pair
+            # Occurrences retain polarity as a field; the Part edge has
+            # no polarity column and needs canonical evidence poles.
+            edge_pairs[id(value)] = pair[::-1] if from_trust and not value.meaning.polarity else pair
             if not incomplete(value):
                 closing.prepare(value)
                 prepared.add(id(value))
-            if retained_pair(value):
-                continue
             from Occurrence import native_content_key
             kwargs = ({} if value is clause and context is not None else
                 dict(document_key=('direct', kind) if context is None else
@@ -502,15 +498,13 @@ class ClauseRows:
             asserted = value is clause or value in clause.companions
             pair = pairs[id(value)]
             if id(value) in prepared:
-                symbol = closing.close(value, pair=pair, when=closing.when,
+                symbol = closing.close(value, pair=edge_pairs[id(value)], when=closing.when,
                                        surprise=surprise if asserted else -1.)
             else:
                 symbol = None
             if retained_pair(value):
                 if symbol is None or not self.parts.contains(symbol):
                     raise RuntimeError('a completed relation did not produce a Part edge')
-                rows[id(value)] = ('sym', symbol)
-                continue
             retain_open = pending(value) or (value.relation is not None and incomplete(value))
             if retain_open:
                 # An open question is retained at the existing occurrence
@@ -549,6 +543,7 @@ class ClauseRows:
             if value is clause:
                 retained.update(observation_marks)
             stored = with_slots(replace(stored, mode=value.meaning.mode,
+                polarity=value.meaning.polarity,
                 sentence_kind=stored.sentence_kind if retain_open else 'idea',
                 bindings=retained), open_slots(stored), pair=pair)
             before_count = len(self)
@@ -560,7 +555,7 @@ class ClauseRows:
                 self.when[row].copy_(closing.when)
             if origin is not None:
                 self.set_origin(row, origin, text=text if asserted else None)
-            rows[id(value)] = row
+            rows[id(value)] = ('sym', symbol) if retained_pair(value) else row
         result = rows[id(clause)]
         if estimate_index is not None:
             self.link_estimate_observation(estimate_index, result)

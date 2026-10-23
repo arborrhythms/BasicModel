@@ -31,12 +31,15 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     for leaf, child in zip(unknown, relation.children):
         assert child.relation is None
         torch.testing.assert_close(child.point, entry.leaves[leaf])
-    assert len(f.store) == len(unknown)
+    assert len(f.store) == len(unknown) + 1 + int(nested)
     assert (f.store.parts.refs[f.store.relations()] > 0).all()
-    assert not f.store.trust[:len(f.store)].any()
+    assert not f.store.trust[:len(unknown)].any()
     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
-    for index in f.store.ideas().tolist():
+    for index in range(len(unknown)):
         assert f.store.row(index)['kind'] == 'unverified'
+    sentence = f.store.row(len(f.store) - 1)
+    assert sentence['kind'] == 'observation'
+    assert sentence['evidence'] == pytest.approx((.7, 0.))
 
 
 def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
@@ -51,7 +54,7 @@ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
         symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause, trust=.6)
-    assert len(f.store) == 2 and isinstance(row, tuple)
+    assert len(f.store) == 3 and isinstance(row, tuple)
     for symbol, point in zip(f.store.row(row)['refs'].tolist(), leaves[[0, 2]]):
         torch.testing.assert_close(f.store._concept_point(symbol), point)
     torch.testing.assert_close(f.store.slots[:2, 0], leaves[[0, 2]])

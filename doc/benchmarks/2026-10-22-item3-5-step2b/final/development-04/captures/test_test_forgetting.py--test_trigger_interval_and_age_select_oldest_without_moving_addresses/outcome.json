@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_trigger_interval_and_age_select_oldest_without_moving_addresses",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

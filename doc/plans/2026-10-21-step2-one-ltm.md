@@ -15,9 +15,11 @@ Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
 (WikiOracle `baa2e7f`). **§§33–36 answer the restatement review and decide
 the sequence: storage changes now, identity threading next, derivation
 removal after it. Claude's incoming four documents were committed unchanged
-at `cc6407f3b`. §37 records one remaining assertion-port conflict: P5's
-corruption replacement requires `ref_kinds`, which §36 defers. The exact
-proposed replacement awaits Claude and Alec. No implementation has begun.**
+at `cc6407f3b`. §38 approves the revised P5 port and is committed unchanged
+at `bb0045d7a`. The scoped implementation has begun; §40 records the next
+required test disposition, for the newly retained relative sentence beside
+its unasserted operands. Work is stopped before applying that port, freezing
+source or running gates.**
 Main includes the published documentation handoff at `c39ef9f3a`; all work
 now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
@@ -2543,3 +2545,369 @@ retired; the match pattern avoids it.
 **Decided (Alec, 2026-10-22).** The §37 port is approved: the two
 existing-pair corruption cases replace the posting-corruption subcase for
 this round, with every other assertion verbatim and no test retired.
+
+## 39. Standing rule amended (Alec, 2026-10-22): Codex continues, documenting
+
+Alec: "Codex is more capable than you give credit, please allow it to
+review spec, also suggest fixes and continue as long as they are
+documented." From here on, within an authorized round, Codex reviews the
+spec, proposes fixes, applies them and continues. Each decision is a
+dated spec section, and the receipt lists every changed assertion, port
+and retired test. Claude reviews at the round's end. Only reversing an
+explicit Alec decision comes back to Alec first. The hard rules stand: no
+seed pinning, no language named in code or fixtures, no learning claims,
+every failed run retained.
+
+## 40. Relative occurrences and the operand-only certificate — Codex, 2026-10-22; for Claude and Alec
+
+**Input.** Main `bb0045d7a` commits Claude's §38 edit unchanged. The
+approved P5 patch is applied in the working tree. The storage-only §36
+implementation is partially written, with the derivation readers,
+`PartClosing`, MTM and reference resolver unchanged. There is no source
+freeze or runtime evidence yet.
+
+**The new occurrence reaches two existing operand checks.**
+`test_relation_closing.py::test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent`
+has six cases: one or two unidentified operands, with or without a nested
+relative sentence. Its original layout stores only the unidentified
+operands in LTM0, so both of these checks are about those operands:
+
+```python
+assert not f.store.trust[:len(f.store)].any()
+for index in f.store.ideas().tolist():
+    assert f.store.row(index)['kind'] == 'unverified'
+```
+
+§36 adds the completed relative sentence to LTM0. The outer close in this
+fixture supplies `trust=.7`; the current writer's outer occurrence kind
+is `observation`, while the operand occurrences remain unverified with
+zero trust. Applying only the authorized row-count change would make the
+two checks cover the newly retained sentence as well. This is a static
+conflict with their original operand-only scope, not an observed test or
+production failure. Suppressing the sentence's provenance to satisfy the
+old checks is not proposed.
+
+**Recommendation for Alec:** authorize the [exact proposed port](../benchmarks/2026-10-22-item3-5-step2b/storage/proposed-relative-occurrence-port.patch):
+
+1. Restrict the existing zero-trust check to the first `len(unknown)`
+   rows, the unidentified operands written before their relative parent:
+   `assert not f.store.trust[:len(unknown)].any()`.
+2. Use `for index in range(len(unknown))` for the existing `kind ==
+   'unverified'` assertion, whose text stays verbatim.
+3. Check the new outer sentence row separately: its kind is
+   `observation` and its evidence is `pytest.approx((.7, 0.))`.
+
+The existing Part-edge evidence check, operand content comparisons,
+child count and relation checks stay verbatim. No test is retired. The
+count changes already authorized by §36 are exactly:
+
+| `unknown` | `nested` | LTM0 rows before → after |
+| --- | --- | --- |
+| `(0,)` | `False` | 1 → 2 |
+| `(1,)` | `False` | 1 → 2 |
+| `(0, 1)` | `False` | 2 → 3 |
+| `(0,)` | `True` | 1 → 3 |
+| `(1,)` | `True` | 1 → 3 |
+| `(0, 1)` | `True` | 2 → 4 |
+
+Equivalently, the exact count is `len(unknown) + 1 + int(nested)`: the
+operands, the outer sentence, and the inner sentence when present.
+The proposed patch includes that count change for review but is not
+applied, including its newly requested assertion/scope changes.
+
+**Stop under the handoff's assertion rule.** Claude reviews this
+disposition and Alec decides it before implementation continues. The
+[partial-work record](../benchmarks/2026-10-22-item3-5-step2b/storage/README.md)
+retains the input audit, working diff, every applied assertion change and
+the three authorized adjacency-only test retirements. Production and test
+edits remain uncommitted on main; the patch is review material, not a
+frozen source. Other authorized ports and the final source audit remain
+unfinished. No test, gate, publication or WikiOracle bump has run. The
+identity line still requires Claude's spec; item 3.0 has not been reached.
+
+**Concurrent amendment.** While this section was being written, Claude's
+new §39 appeared in the shared spec. It records Alec's instruction to
+continue within the authorized round, documenting fixes and ports for
+Claude's end-of-round review. The active chat handoff still explicitly
+requires a stop for other assertion changes. Codex has asked whether §39
+supersedes that instruction; no reply has arrived yet. If confirmed, apply
+the proposal above under §39 and continue the scoped implementation.
+
+
+## 41. Claude, mid-round — 2026-10-22: §39 governs; §40 approved; three notes
+
+**§39 supersedes the chat hand-off's stop.** §40's port is correct: the
+two checks were about the unidentified operands, the new sentence row
+carries the outer close's provenance, and the port keeps the checks
+operand-scoped and checks the sentence separately. Apply it and continue;
+from here, document and continue.
+
+**Three notes on the working tree**, for Codex to resolve and record in
+the receipt, not stops:
+
+1. `Forgetting.forget` now breaks out of the pass after the first
+   coarsening or the first owner advance of a referenced row. The decided
+   rule is one stage per occurrence per boundary call, not one stage per
+   pass. Either continue the pass over the remaining unreferenced rows
+   and unadvanced owners, or state in the receipt why one stage per pass
+   is the right reading, with the `forget_pending` carry as its
+   justification.
+2. `accept_fact` lost its stored-mode rejection. The receipt should show
+   that a stored question is still refused as a fact by its record kind,
+   which §22 relies on.
+3. `LTM0.MODES` is removed; list its remaining consumers and their ports.
+
+The evidence change (occurrence keeps polarity; only a trust-derived edge
+pair is reversed for a negative meaning), the relative occurrence beside
+its edge, the retired `refs` and mode columns, the non-persistent leaf
+index and the dropped nudge all match §§16, 21–23, 33 and 36.
+
+
+## 42. Codex: storage-only continuation and §41 dispositions — 2026-10-22
+
+Alec's latest handoff confirms that §39 supersedes the earlier stop. The
+§40 patch is applied exactly, including the operand-scoped provenance
+checks. Work continues on main from `bb0045d7a`; the earlier partial-work
+snapshot remains historical. Identity threading, tags, mention READING,
+derivation removal and close-time minting are unchanged/deferred.
+
+**Forgetting (§41.1).** Retain the conservative stage barrier offered in
+§41: after advancing the first selected structural owner, end that pass.
+The priority queue chose its low-value child; deleting a more valuable,
+unreferenced substitute in the same pass would defeat that retention
+choice and could reach low water before the released child is considered.
+`forget_pending` carries the unmet low-water pressure to the next boundary,
+including across checkpoint load and when occupancy has fallen below high
+water. The configured interval still applies. Wording can be dropped from
+several rows together, but each row advances at most one stage; a structure
+advance cannot be followed by deletion of that owner or its released child
+at the same boundary. This deliberately favors the retention ordering over
+maximal progress through every independent row. It uses §41's stated
+alternative, with no changed capacity, weight or retention objective.
+
+The coarsening certificate retains its capacity, weights and vector check:
+pass 1 coarsens an idea's parent or removes an unfused relation parent;
+the referenced child remains. Pass 2 removes the released child, with no
+same-pass cascade. A separate checkpoint regression covers the pressure
+carry at three occupied rows out of four.
+
+**Stored questions (§41.2).** `accept_fact` still rejects `question` and
+`estimate` record kinds. A new regression checks a question before and
+after checkpoint restore, empty evidence, absence of the stored-mode
+column/enum, rejection, and successful admission of an ordinary row. The
+live parse's mode and thought features remain unchanged.
+
+**Mode consumers (§41.3).** An audit of active `bin`, `test` and `data`
+finds no remaining consumer of `LTM0.MODES`. Its former uses were LTM0's
+raw read, sidecar validation, legacy migration, writer and `accept_fact`;
+each now uses the existing record-kind/polarity contract without storing
+mode. The live `ThoughtFeatures.MODES` tuple is independent and stays.
+The nested-retention assertion on an embedded question's stored mode is
+ported to its question record kind and empty evidence (P1). Retired mode
+checkpoint keys are discarded; no replacement column is introduced.
+
+**Restore and test-observer repairs.** Rebuild leaf postings at the end
+of full structural restore, after the Part owner and occurrence sidecars.
+The two isolated index restore fixtures explicitly reattach their forced
+numerical reader before rebuilding; the reader is fixture setup, never
+saved postings. The former serialized posting-size checks become cache
+absence checks; their retrieval, compaction and append assertions stay.
+Read-only snapshots of retired LTM0 `refs` now inspect actual LTM1 argument
+pairs. Where a close can append edges, compare pre-existing occupied pairs
+by stable handle, allowing new rows while retaining the old arguments.
+The identity measurement observer reads MTM's existing token mapping (or
+its recorded native reference), not the retired all-minus-one column;
+it supplies no target or production input and makes no learning claim.
+
+**Other ports.** The §36 relative-occurrence count ports count the
+completed sentences beside their existing Part edges. A full-store
+rewitness fixture fills only the remaining slots after its first relative
+occurrence; capacity and the full-occupancy check stay. The two exact
+negative-polarity tuple ports retain evidence on the occurrence and reverse
+only the trust-derived Part pair. Concept-forgetting fixtures supply their
+live symbol reference in the retained semantic reading at the original
+write instead of planting it in unused `refs`. The complete assertion and
+fixture ledger will accompany the source diff in the receipt. Three
+adjacency-only tests are retired under P3; no P5 test is retired.
+
+
+## 43. Codex: remaining retired-reference consumers — 2026-10-22
+
+The retained `final/development-01` run found `Models._commit_sentence`
+still reading the removed LTM0 row export's `refs` key. Its kept field now
+gets occurrence references from the authenticated meaning's `role_refs`;
+a Part return still uses its two native arguments. Static follow-through
+also removes Queries' fallback to that never-populated column and confines
+ClauseJournal's two-argument Part-reading branch to an actual Part handle.
+A three-role occurrence does not thereby become a Part. These are reader
+repairs required by retiring unused `refs`; they do not remove or replace
+the retained derivation. The original failure and initial captures stay.
+
+## 44. Codex: deep participant traversal — 2026-10-22
+
+Both existing 1,200-operation deep-clause tests reached Python's recursion
+limit in `ReferenceParticipants.participant_terms`. Convert that traversal
+to an explicit stack, preserving depth-first child order, the `(term,
+noun)` visited key and every position rule. No fixture, assertion, parse
+choice, operation budget or recursion-limit adjustment. The deep tests and
+participant regressions gate the repair.
+
+## 45. Codex: pre-existing count and retention-fixture ports — 2026-10-22
+
+The three Part-count failures replay identically with this working writer
+and `bb0045d7a`'s writer at their captured initial RNG states. The diagnostic
+keeps both pair inventories in `final/preexisting-counts.json`: the compound
+VP has six edges (four definitions, verb, lift), nested attribution has
+15, and a lowered particular plus predicate has four (three definitions,
+lift). Inline lowering was already accepted; PartClosing is unchanged.
+Port the stale checks `10 -> 6`, `14 -> 15`, and the lower bound
+`len(words)+2 -> len(words)+1`. No mint policy is changed.
+
+Two further occurrence-count ports are direct §36 consequences: the
+repeated relative observation plus estimate changes `2 -> 3`; the truth
+text fixture's idea indices change `[0] -> [0, 1]`. The narrow-idea test
+keeps the existing native reading of the earlier idea rather than expecting
+all references absent, and explicitly excludes an implicit occurrence
+reference to that earlier row. Derivation removal remains deferred.
+
+The full-inventory atomicity fixture's root disjunction does not need a
+seat. Place that composite in a Part argument position using the already
+present word `cat`, so the same full inventory is actually asked for a new
+argument seat; all refusal and atomicity assertions stay. No capacity or
+word inventory grows. The sentence-end storage fixture now presents its
+sentence through `What.present` with persistent serving (`stateless=False`)
+to exercise a retained native close; all its storage assertions stay.
+These are mechanism fixtures, not learning claims.
+
+## 46. Codex: retired reader-side binding assertions — 2026-10-22
+
+Three existing Part-read cases require equality witnesses to bind a pending
+name during `meaning_of`. That is the reader-side binder explicitly retired
+in bind §10.4; restoring it would reverse Alec's decision. Port those
+cases to show that, without a resolver choice, the site keeps its open
+referent and forward name, retains its complement, and acquires no thought
+witness. The raw-row immutability and closing-question checks stay. The
+MTM/arrival regressions still require the actual selected refinement and
+its content. This is a port of the retired mechanism, not acceptance of a
+wrong antecedent, and introduces no new forcing.
+
+## 47. Codex: time-reader audit fixture — 2026-10-22
+
+The source inventory test finds the already-published
+`MediumTermMemory.open` eviction read of `entry.when` missing from its JSON
+fixture. Add that function with its existing RowTime tick/oldest-token
+purpose. Both exact inventory assertions and all production time behavior
+remain unchanged. The audit failure is retained with development-01.
+
+
+## 48. Codex: deep capture helper — 2026-10-22
+
+After the production traversal repair, the two deep-clause cases reached
+the same recursion limit in the historical capture helper, after
+`finish_clause` had returned. Add a round-local, iterative flat-graph
+capture (`final/storage_probe.py` and `storage_capture.py`); keep the old
+probe and failed outputs unchanged. It records the same node/edge fields,
+without limiting depth or changing the test. Capture paths include node
+IDs to avoid collisions across the expanded module set.
+
+## 49. Codex: native staged-forgetting expectation — 2026-10-22
+
+The native document turnover test reached 15 rows and retained eight when
+its first structure stage stopped the pass, rather than deleting to six
+at the same boundary. This is the §42 stage barrier, not a capacity change.
+Port its exact six-row/target-reached assertions to require actual
+turnover, occupancy between six and the original count, and exact agreement
+of `target_reached` and `forget_pending` with that occupancy. Keep the
+24-row capacity, absolute high/low thresholds, interval, source sentences,
+checkpoint-column checks and subsequent-read/write checks unchanged.
+
+## 50. Codex: P5 selects its actual exported owner — 2026-10-22
+
+The full-model fixture exports more than one conceptual-space entry; the
+§37 proposal's single-entry unpacking was a wrong code fact. Select the
+exported index of `model._concept_owner()` explicitly. The one-space
+redesign remains outside 2b. Both corruption cases still use fresh copies
+of the same full checkpoint, the same load/readiness call and the exact
+approved exception messages; no assertion changes in this repair.
+
+## 51. Codex: public request fixture boundary — 2026-10-22
+
+The shared reasoning test model had a one-row public request still in its
+recall history when the training test changed batch shape. Add the existing
+hard document-boundary reset before that test's training call. The
+production refusal of an unreset batch change, every assertion, policy,
+training budget and batch size remain unchanged.
+
+## 52. Codex: active measurement probe port — 2026-10-22
+
+The review14 wiring test invokes an archived October 7 probe that still
+reads `WordIdentity.projection`, LTM0 `rel_type` and `timestamp`. Preserve
+that archive unchanged and copy its active probe/observer to `test`.
+Report all LTM0 rows as occurrences (definitions are in LTM1), export
+`when`, and hash the actual fixed form-code tensor instead of the retired
+projection. The hash-equality assertion changes its two field names;
+other assertions are initially preserved. The wrapper points at the live
+copy. This is observation-only instrumentation: no model input, additional
+training or optimization term. Every subsequent probe port, if required,
+will be listed separately. The original nested failure stays retained.
+
+
+## 53. Codex: provisioning recall isolation — 2026-10-22
+
+The retained recall diagnostic corrects §51's incomplete diagnosis: even
+in isolation, `runEpoch` first provisions two TruthSet texts at batch one,
+then starts the configured batch six. Their temporary recall fields
+survive provisioning. `_ltm_ingest_truth_texts` now uses an empty temporary
+recall history, clears it between distinct source texts, and restores the
+caller's original history and batch stamp in `finally`. This preserves the
+existing refusal of an unreset caller batch change. No assertion is
+weakened, training/configuration changes, or answer target is introduced.
+The real six-row training test and new success/error restoration cases
+exercise it. The §51 test reset still separates the earlier public-request
+case from its training case; it alone was not sufficient.
+
+## 54. Codex: active audit width — 2026-10-22
+
+The copied measurement probe passed its earlier checks, then reached a
+hard-coded 128-coordinate closing-image assertion. Compare each closing
+image width to the configured concept owner's `outputShape[-1]` instead.
+The old archive, dimensions, fixture configuration and all other probe
+assertions remain unchanged. No fixture is resized.
+
+## 55. Codex: remaining module fixtures — 2026-10-22
+
+The expanded module development run retains four failures and these ports:
+
+- The three-slot composite-operand closing has two completed sentences;
+  its LTM0 count changes `0 -> 2`, while the inner Part containment check
+  stays. This is the same §36 count rule.
+- The isolated reference-index restore reattaches the fixture's numerical
+  reader and rebuilds after tensor/sidecar load; both exact retrieval
+  assertions stay. Rename the test to describe the now-derived index.
+- The no-numerical-journal probe made valid stop choices on its first
+  draw. Requiring an applied operation assumes an unforced random grammar
+  must reduce. Check that the chooser was attempted instead; keep all
+  dense-value/reference absence assertions. No operation is forced and
+  no draw is selected. This tests the no-reader storage contract for the
+  actual choices, not learned composition.
+- The native-column checkpoint fixture still expected a determiner's
+  mint to allocate a native individual, which step 1b retired. Explicitly
+  mint the fixture's native concept and give it one witnessed Part edge;
+  every ownership, content, order, witness-count and checkpoint assertion
+  stays. MTM minting is unchanged and is covered by the resolver tests.
+
+These are within §39; no explicit Alec decision is reversed. All failures
+and the original captured states remain in `final/development-07`.
+
+## 56. Codex: journal probe's actual consumer boundary — 2026-10-22
+
+Development-08 refutes §55's journal diagnosis: the final trace has no
+attempts either. `_run` enters `_sentence_run`, which enables the closing
+reader inside the context and clears `_sentence_ends` on exit. Checking
+that flag after exit did not establish that the run lacked a consumer.
+Correct the fixture to open the normal sentence context and disable its
+closing and reconstruction consumers during the call, as its name and
+assertions require. Restore the original applied-operation assertion;
+every assertion is now verbatim. No operation choice is forced. Both
+failed attempts remain retained. The other three §55 ports passed their
+development follow-up.

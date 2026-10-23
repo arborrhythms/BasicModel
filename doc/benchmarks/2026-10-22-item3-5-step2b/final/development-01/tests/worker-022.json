@@ -1,0 +1,115 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "completed": [
+    "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+    "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+    "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+    "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+    "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+    "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+    "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027464579325169325,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006691659800708294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_meaning_width_zero_disables_bootstrap_without_changing_form",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 9.335627374937758,
+      "message": "test/test_operators_final.py:61: in test_meaning_width_zero_disables_bootstrap_without_changing_form\n    model.forward(model.inputSpace.prepInput(['hello world', 'loving there']))\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8235: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23860: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17136: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22412: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:21982: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21101: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20395: in _commit_sentence\n    refs = tuple(retained['refs'].tolist())\n                 ^^^^^^^^^^^^^^^^\nE   KeyError: 'refs'",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008560421410948038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_mints_distinct_occurrence_and_universal_stays_high",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01660229219123721,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_definition_sentence_joins_identities_beside_the_interpret_definition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007737417006865144,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007718750275671482,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009051874978467822,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022683292627334595,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

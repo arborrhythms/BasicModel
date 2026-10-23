@@ -8,6 +8,8 @@ import torch
 
 from ConceptForgetting import reclaim_concepts, warn_capacity
 from Layers import LTM0
+from Meaning import ConceptualMeaning
+from dataclasses import replace
 from test_concept_capacity_policy import _cs
 
 
@@ -49,8 +51,8 @@ def test_live_reference_preserves_weak_candidate_and_keeps_a_representative():
     weak, _ = concept(cs, magnitude=.1)
     strong, _ = concept(cs, magnitude=.9)
     store = LTM0(8, capacity=4)
-    store.append_idea(torch.ones(8), sentence_index=0)
-    store.refs[0, 0] = weak
+    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
+        role_refs=(('sym', weak), None, None)), sentence_index=0)
     report = reclaim_concepts(cs, store)
     assert report['retired'] == (strong,)
     assert cs._csw_row_of(weak) is not None
@@ -81,8 +83,8 @@ def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_refe
     cs.similarity_codebook.W[rows[1], 1] = .05  # A different direction, not an exact duplicate.
     cs.add_part(defined, 42)
     store = cs._closed_clause_store()
-    stored = store.append_idea(torch.ones(8), sentence_index=0)
-    store.refs[stored, 0] = referenced
+    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
+        role_refs=(('sym', referenced), None, None)), sentence_index=0)
     cs._concept_allocator.parts.add(posted, referenced)
     layer.add_edge(rows[6], rows[5], 0.)  # Zero coefficients still have sparse placement.
     layer.features.add_edge(rows[7], 0, 0.)

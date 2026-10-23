@@ -88,7 +88,7 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     assert store.parts.refs[row[1]].tolist() == [first, second]
     assert first in cs.taxonomy_children(second)
     assert store.write_clause(source) == row
-    assert len(store) == 0
+    assert len(store) == 1
 
 
 def test_failed_closing_does_not_leave_a_taxonomy_prefix():

@@ -130,7 +130,7 @@ def forced_prefix_certificate():
         model,_,data=_fresh_model('data/XOR_grammar.xml')
         try:
             derived=model._concept_owner().similarity_codebook.mereology
-            assert derived.context_width == 128 and derived.symbol_centroid
+            assert derived.context_width == 128
             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
             batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
             inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]

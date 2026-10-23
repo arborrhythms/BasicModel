@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

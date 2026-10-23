@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_protected_and_live_roots_survive_and_block_unsafe_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

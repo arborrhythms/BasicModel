@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -18,7 +18,7 @@ def test_reading_an_idea_returns_its_one_occupied_slot():
     assert meaning.role_mask.tolist() == [True, False, False]
     torch.testing.assert_close(meaning.roles[0], ended.point, rtol=0, atol=0)
     assert not meaning.roles[1:].any()
-    assert store.refs[row].tolist() == [-1, -1, -1]
+    assert not hasattr(store, 'refs')
     assert store.row(row)['evidence'] == (.75, .25)
 
 
@@ -26,7 +26,7 @@ def test_part_stores_native_addresses_and_reads_current_concept_content():
     store, points = clause_store()
     row = store.write_clause(part_clause())
     assert store.row(row)['refs'].tolist() == [1, 2]
-    assert not len(store)
+    assert len(store) == 1
     owner = store._concept_owner()
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)
@@ -46,7 +46,7 @@ def test_no_clause_derivation_or_factored_target_is_checkpointed():
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(extras))
     torch.testing.assert_close(restored.slots, store.slots, rtol=0, atol=0)
-    torch.testing.assert_close(restored.refs, store.refs, rtol=0, atol=0)
+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     assert restored.meaning_of(row).role_mask.tolist() == [True, False, False]
 
 
@@ -182,10 +182,13 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
     model._install_unit_span_fn()
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
+    model.stateless = False
+    from What import What
     try:
         inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
         model.runBatch(train=False, batchSize=1, split='runtime',
-                       batch_override=(inputs, torch.zeros(1, 1, 0)))
+                       batch_override=(inputs, torch.zeros(1, 1, 0)),
+                       questions=(What.present(0, split='runtime'),))
         ended = model._sentence_fields[0][0]
         store = model.symbolSpace.ltm_store
         row = store.index_of_row(ended.row_id)

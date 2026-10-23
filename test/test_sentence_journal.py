@@ -10,7 +10,12 @@ def test_no_numerical_frames_without_a_sentence_closing_reader(tmp_path):
     from test_reverse_traversal import _traversal_model, _run
     model = _traversal_model(tmp_path)
     try:
-        _run(model, ['1 plus 2', '3 plus 4'])
+        # Disable the consumer during the run. _run's normal boundary
+        # enables it inside the context and clears it on exit.
+        with model._sentence_run():
+            model._sentence_ends = False
+            model._sentence_reconstruction = False
+            _run(model, ['1 plus 2', '3 plus 4'])
         trace = model._reconstruction_stack()
         assert not getattr(model, '_sentence_ends', False)
         assert trace._choice_mask.any(), 'the probe must perform an operation'

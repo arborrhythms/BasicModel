@@ -37,3 +37,13 @@ def part(store, left, right, *, evidence=(1., 0.), types=()):
     """Supply native arguments explicitly; their identity is never inferred."""
     a, b = (symbol(store, point, types=types) for point in (left, right))
     return store.append_relation(a, b, truth_plus=evidence[0], truth_minus=evidence[1])
+
+
+def part_references(store):
+    """Snapshot occupied Part arguments by stable handle, excluding new rows."""
+    return {row: store.parts.refs[row].clone() for row in store.parts.indices().tolist()}
+
+
+def assert_part_references(store, before):
+    for row, references in before.items():
+        torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)

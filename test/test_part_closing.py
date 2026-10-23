@@ -10,7 +10,7 @@ def test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes(monkeypat
     before = len(f.cs._concept_allocator.parts)
     location = f.store.write_clause(clause, evidence=(.7, .2))
     assert location[0] == 'sym'
-    assert len(f.store) == 0
+    assert len(f.store) == 1
     assert len(f.store.parts) == before + 1
     row = f.store.row(location)
     assert row['refs'].tolist() == [f.noun('a'), f.noun('b')]
@@ -39,7 +39,7 @@ def test_absolute_close_keeps_only_the_concept_and_derivation_pairs(monkeypatch)
     assert not f.store.slots[row, 1:].any()
     root = f.store.raw_meaning_of(row).role_refs[0]
     assert root[0] == 'sym' and f.store.parts.contains(root[1])
-    assert f.store.refs[row].eq(-1).all()
+    assert not hasattr(f.store, 'refs')
     assert len(f.store.parts) == before + 2
     assert not any(key.startswith('_individual') for key, _ in f.store.meaning_of(row).bindings)
 

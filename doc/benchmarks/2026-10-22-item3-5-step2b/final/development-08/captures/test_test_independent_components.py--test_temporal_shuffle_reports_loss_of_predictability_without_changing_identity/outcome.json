@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

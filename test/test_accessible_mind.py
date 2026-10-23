@@ -6,7 +6,7 @@ import torch
 
 from Layers import LTM0
 from Meaning import ConceptualMeaning
-from index_fixtures import append_indexed, one_hot_unfold
+from index_fixtures import append_indexed, one_hot_unfold, restore_index
 
 
 def _meaning(a=0, b=1, *, width=8, scope=()):
@@ -40,12 +40,12 @@ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
     torch.save(store.state_dict(), checkpoint)
     checkpoint.seek(0)
     state = torch.load(checkpoint, weights_only=True)
-    column = state["posting_codes"]
-    assert column.numel() == 384
-    assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
+    assert not any(key.startswith("posting_") for key in state)
+    assert "leaf_complete" not in state
     restored = LTM0(8, capacity=256)
     restored.load_state_dict(state)
     restored.load_semantic_extras(store.semantic_extras())
+    restore_index(store, restored)
     row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
     assert restored.leaf_terms(127, 0) == (3, 17)
     assert restored.leaf_terms(row, 0) == (9,)
@@ -83,6 +83,7 @@ def test_index_checkpoint_compaction_and_codebook_remap():
     restored = LTM0(8, capacity=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(store.semantic_extras())
+    restore_index(store, restored)
     assert restored.rows_for_code(17) == (0, 1)
     assert restored.clear_origin(store.ORIGIN_USER) == 1
     assert restored.occurrence_of(0) == reference

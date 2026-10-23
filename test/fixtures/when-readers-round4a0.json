@@ -47,6 +47,16 @@
       "now": "Reads the common row model-time band; no identity operator consumes it."
     },
     {
+      "file": "bin/LTM1.py",
+      "function": "LTM1.add",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
       "file": "bin/Language.py",
       "function": "SymbolSpace._publish_symbol_snapshot",
       "attributes": [
@@ -61,6 +71,36 @@
       "function": "SymbolSubSpace.forwardSymbols",
       "attributes": [
         "nWhen"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.append_meaning",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.reset",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.row",
+      "attributes": [
+        "when"
       ],
       "role": "carrier",
       "previous_absolute_time": false,
@@ -107,34 +147,14 @@
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
     },
     {
-      "file": "bin/Layers.py",
-      "function": "LTM0.append_meaning",
+      "file": "bin/MediumTermMemory.py",
+      "function": "MediumTermMemory.open",
       "attributes": [
         "when"
       ],
-      "role": "carrier",
+      "role": "retention priority",
       "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.reset",
-      "attributes": [
-        "when"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.row",
-      "attributes": [
-        "when"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+      "now": "The oldest retained token tick selects capacity eviction; the tick comes from RowTime.stamp."
     },
     {
       "file": "bin/ModelCandidateAttention.py",
@@ -222,16 +242,6 @@
     {
       "file": "bin/PartClosing.py",
       "function": "PartClosing._commit",
-      "attributes": [
-        "when"
-      ],
-      "role": "retained model-time provenance",
-      "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
-    },
-    {
-      "file": "bin/LTM1.py",
-      "function": "LTM1.add",
       "attributes": [
         "when"
       ],

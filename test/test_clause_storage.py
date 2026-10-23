@@ -17,9 +17,8 @@ from Meaning import ConceptualMeaning
 
 def test_end_row_has_shared_references_and_field_coordinates():
     store = LTM0(4, capacity=8)
-    assert store.refs.shape == (8, 3)
-    assert store.refs.dtype == torch.int64
-    assert bool((store.refs == -1).all())
+    assert not hasattr(store, 'refs')
+    assert 'refs' not in store.state_dict()
     assert store.when.shape == (8, 4)
 
 
@@ -92,7 +91,7 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     assert not bool(store.slots[row, 1:].any())
     torch.testing.assert_close(store.meaning_of(row).roles[0], clause.point)
     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]
-    assert store.refs[row].tolist() == [-1, -1, -1]
+    assert not hasattr(store, 'refs')
     from Spaces import WhenEncoding
     from Occurrence import document_digest
     assert int(store.sentence_index[row]) == 0
@@ -111,7 +110,7 @@ def test_recursive_absolute_clauses_each_write_one_idea():
         assert store.write_clause(outer, trust=.7) == 2
     assert store.ideas().tolist() == [0, 1, 2]
     assert store.trust[:3].tolist() == pytest.approx([0., 0., .7])
-    assert bool((store.refs[:3, 2] == -1).all())
+    assert not hasattr(store, 'refs')
 
 
 def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it():
@@ -126,7 +125,7 @@ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_
     assert store.row(child_row)['evidence'] == (0.,0.)
     assert store.row(row)['refs'].tolist() == [4,child_row[1]]
     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row
-    assert len(store) == 0 and len(store.parts) == 2
+    assert len(store) == 2 and len(store.parts) == 2
     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
     store.parts.truth_plus[row[1]] = 0
     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
@@ -138,7 +137,7 @@ def test_second_order_implication_names_two_part_symbols():
     outer = Clause(left.meaning, relation='implies',
         refs=(('clause',0),4,('clause',1)), children=(left,right))
     row = store.write_clause(outer, evidence=(.9,0.))
-    assert len(store) == 0 and len(store.parts) == 3
+    assert len(store) == 3 and len(store.parts) == 3
     first, second = store.relation_operands(row)
     assert first['refs'].tolist() == [1,2] and second['refs'].tolist() == [1,4]
     assert first['evidence'] == second['evidence'] == (0.,0.)
@@ -198,7 +197,7 @@ def test_clause_end_state_and_evidence_checkpoint_roundtrip():
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     torch.testing.assert_close(restored.meaning_of(row).roles[0], clause.point)
     assert restored.row(row)['evidence'] == pytest.approx((.6, 0.))
-    torch.testing.assert_close(restored.refs, store.refs)
+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
 
 
 def test_retired_relation_columns_are_rejected_without_dropping_rows():
@@ -259,13 +258,13 @@ def test_observation_writer_accepts_a_completed_field_without_a_program():
     from Models import _append_observed_meaning
     store,_=clause_store();field=part_clause()
     row=_append_observed_meaning(store,field)
-    assert len(store)==0 and store.row(row)['refs'].tolist()==[1,2]
+    assert len(store)==1 and store.row(row)['refs'].tolist()==[1,2]
 
 
 def test_full_store_can_update_an_existing_relation():
     store,points=clause_store()
     row=store.write_clause(part_clause(),evidence=(.2,0.))
-    for position in range(store.capacity):
+    for position in range(store.capacity - len(store)):
         store.append_idea(points[1],sentence_index=position)
     assert store.write_clause(part_clause(),evidence=(.8,0.))==row
     assert len(store)==store.capacity and len(store.parts)==1

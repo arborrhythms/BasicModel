@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed",
+  "outcome": "failed",
+  "failure": "test/test_reference_index.py:42: in test_only_the_inverted_index_is_owned_or_checkpointed\n    assert restored.rows_for_code(2) == (a,)\nE   assert () == (0,)\nE     \nE     Right contains one more item: 0\nE     Use -v to get more diff",
+  "records": []
+}

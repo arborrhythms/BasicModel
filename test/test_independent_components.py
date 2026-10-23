@@ -350,9 +350,11 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
             meaning_pairs=derived.meaning_pairs, pole_stride=derived.reserved_pairs)
         from ClauseRow import attach_clause_index
         attach_clause_index(model, owner._closed_clause_store(), owner)
-        from test_reference_close import close
-        close(columns.reference_close, code[0], torch.zeros_like(code[0]), 'mint', (),
-              document='native-columns', sentence=0)
+        # This is a native-column checkpoint fixture. A determiner's mint
+        # opens an MTM token; native concepts are minted explicitly here.
+        from IdentityRows import mint
+        identity = mint(owner, code[0])
+        owner._closed_clause_store().parts.add(identity, event, truth_plus=1.)
         identity, = columns.individual_ids
         assert _concept_alloc_of(owner).order_of(identity) == 1
         assert owner._csw_row_of(identity) != event_row

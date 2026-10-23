@@ -22,10 +22,8 @@ def test_postings_rebuild_from_part_without_inverting_the_narrowed_point(monkeyp
     f.store.slots[row, 0].copy_(original)
     state = f.store.state_dict()
     extras = f.store.semantic_extras()
-    # A stale serialized cache is rebuilt from the retained source.
-    state['posting_codes'] = torch.full_like(state['posting_codes'], 999)
-    # Keep its sorted/unique wire contract while changing every term.
-    state['posting_codes'] += torch.arange(len(state['posting_codes']))
+    # Retrieval postings are regenerated after the complete owner loads.
+    assert not any(key.startswith('posting_') for key in state)
     f.store.load_state_dict(state)
     f.store.load_semantic_extras(extras)
     configure_model_index(f.model, f.store)
@@ -42,7 +40,7 @@ def test_part_membership_terminates_on_cycles_and_retains_reachable_leaves():
     assert set(leaves(parts, 10)) == {2, 3}
 
 
-def test_closing_excludes_its_own_witness_without_restricting_copular_reads():
+def test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice():
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from ThoughtReferences import bindings, open_slots, question, with_slots
@@ -64,18 +62,17 @@ def test_closing_excludes_its_own_witness_without_restricting_copular_reads():
     closing = closing_question(raw, clause, store=store, written_rows={id(clause): source})
     assert closing is not None and open_slots(closing) == (('referent', 0),)
     assert closing.role_refs == raw.role_refs
-    # Ordinary interpretation still reads the witnessed copular complement.
-    assert store.meaning_of(source).role_refs[0] == ('sym', answer)
-    # The same observed complement can resolve a different occurrence.
+    # Equality evidence alone cannot replace the resolver's choice.
+    assert store.meaning_of(source).role_refs[0] is None
     resolved = store.meaning_of(earlier)
-    assert not open_slots(resolved)
-    assert resolved.role_refs[0] == ('sym', answer)
-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)
+    assert open_slots(resolved) == (('referent', 0),)
+    assert resolved.role_refs[0] is None
+    assert not bindings(resolved).get('_thought_witnesses')
     assert store.raw_meaning_of(source).role_refs == raw.role_refs
 
 
 @pytest.mark.parametrize('relative', (False, True))
-def test_forward_name_accepts_a_witnessed_occurrence_complement(relative):
+def test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement(relative):
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from ThoughtReferences import bindings, open_slots, question, with_slots
@@ -99,10 +96,10 @@ def test_forward_name_accepts_a_witnessed_occurrence_complement(relative):
                                   kind='question', evidence=(0., 0.), sentence_index=2)
     raw = store.raw_meaning_of(pending)
     resolved = store.meaning_of(pending)
-    assert not open_slots(resolved)
-    assert not bindings(resolved).get('_forward_references')
-    assert resolved.role_refs[0] == reference
-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)
+    assert open_slots(resolved) == (('referent', 0),)
+    assert bindings(resolved)['_forward_references'] == ((0, name),)
+    assert resolved.role_refs[0] is None and resolved.role_refs[2] == reference
+    assert not bindings(resolved).get('_thought_witnesses')
     assert store.raw_meaning_of(pending).role_refs == raw.role_refs
 
 

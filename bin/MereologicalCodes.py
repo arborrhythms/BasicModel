@@ -29,9 +29,7 @@ class MereologicalCodes(nn.Module):
             raise ValueError('the meaning complement holds complete pole pairs')
         self.meaning_pairs = self.context_width // 2
         self.meaning_ones = min(self.meaning_pairs, 6 if self.meaning_pairs > 64 else 3)
-        self.symbol_centroid = bool(TheXMLConfig.space('ConceptualSpace', 'symbolCentroid', True))
         self._context = None
-        self._adjacency_context = None
         self._centroid_cache = None
 
     @torch.no_grad()
@@ -44,16 +42,11 @@ class MereologicalCodes(nn.Module):
             return {}
         rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
         words = {row: raw for row in rows if (raw := self.owner.word_surface_for_row(row)) in identity.words}
-        store = self.owner._closed_clause_store()
-        adjacency = self._adjacency_context
-        if adjacency is None:
-            adjacency = (None, {}) if store is None else (store._adjacency_revision, store._adjacent_postings)
-        revision = (identity.revision, tuple(words.items()), adjacency[0], self.symbol_centroid)
+        revision = (identity.revision, tuple(words.items()))
         if self._centroid_cache is None or revision != self._centroid_cache[0]:
             forms = {row: identity.form(raw) for row, raw in words.items()}
             parts = {row: identity.part_atoms(raw) for row, raw in words.items()}
-            placed, report = place(forms, parts, adjacency[1],
-                                   enabled=self.symbol_centroid)
+            placed, report = place(forms, parts)
             self._centroid_cache = revision, placed, report
         return self._centroid_cache[1]
 
@@ -92,10 +85,6 @@ class MereologicalCodes(nn.Module):
         # Both walk paths use the same pre-forward durable context; the
         # current closing becomes available on the next forward only.
         store = self.owner._closed_clause_store()
-        # Lexical parts may grow during staging; a closing's new adjacency
-        # affects the next reading, just like its occurrence meaning.
-        self._adjacency_context = ((None, {}) if store is None else
-            (store._adjacency_revision, {key: frozenset(rows) for key, rows in store._adjacent_postings.items()}))
         self._contexts = {b: self.occurrence_terms(b) for b in range(max(1, 0 if store is None else store.stream.shape[1]))}
         self._context = self._contexts[0]
         self._unseen_context = self.occurrence_terms(len(self._contexts))

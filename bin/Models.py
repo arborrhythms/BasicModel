@@ -4428,6 +4428,10 @@ class BaseModel(Mereology, nn.Module):
             getattr(self, "symbolSpace", None), "_finish_ltm_restore", None)
         if callable(finish):
             finish()
+        # Postings are derived state. Both the Part table and authenticated
+        # occurrence sidecars must be restored before their leaves are read.
+        from MemoryIndex import configure_model_index
+        configure_model_index(self, getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None))
 
     @staticmethod
     def _widen_what_projection_checkpoint_state(state, model_state):
@@ -4998,23 +5002,21 @@ class BaseModel(Mereology, nn.Module):
         # the new columns at zero, exactly like a fresh head.
         self._widen_what_projection_checkpoint_state(state, model_state)
 
-        # Only global inverted postings have variable-length checkpoint columns.
+        # Retired occurrence columns and index caches are not restore inputs.
         from Layers import LTM0
         index_owners = [name for name, module in self.named_modules(remove_duplicate=False)
                         if isinstance(module, LTM0)]
-        variable_leaf_columns = {name + '.' + column for name in index_owners
-            for column in ('posting_codes', 'posting_roles', 'posting_rows',
-                           'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')}
         retired_leaf_columns = {name + '.' + column for name in index_owners
-                                for column in ('leaf_codes', 'leaf_offsets')}
+            for column in ('leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream',
+                           'posting_codes', 'posting_roles', 'posting_rows',
+                           'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position',
+                           'refs', 'grammatical_mode')}
         stream_columns = {name + '.stream' for name in index_owners}
         mismatches = [
             (k, list(state[k].shape), list(model_state[k].shape))
             for k in state if k in model_state
             and state[k].shape != model_state[k].shape
             and k not in component_metadata
-            and not (k in variable_leaf_columns and state[k].ndim == 1
-                     and state[k].dtype == model_state[k].dtype)
             and not (k in stream_columns and state[k].ndim == 2
                      and state[k].shape[0] == model_state[k].shape[0]
                      and state[k].dtype == model_state[k].dtype)
@@ -6952,22 +6954,38 @@ class BasicModel(BaseModel):
         interaction = self._what_memory()
         if interaction is not None and texts:
             interaction.Reset(hard=True)
-        with sequence:
-            for source_index, (text, trust) in enumerate(zip(texts, trusts)):
-                with store.clause_assertions(trust=trust, origin=origin, text=text) as rows:
-                    with torch.no_grad(), self._runtime_batch([text], document_keys=[('ingestion', source_key, source_index)]):
-                        from What import What
-                        inp = self.inputSpace.prepInput(list(self.data.train_input))
-                        self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
-                            batch_override=(inp, torch.empty(1, 0, device=inp.device)), source_rows=[0],
-                            questions=(What.present(0, split='runtime'),))
-                    if not rows:
-                        raise ValueError('TruthSet input did not produce a selected grammatical closing')
-                    per_text_rows.append(tuple(rows))
-                for cs in (list(getattr(self, 'conceptualSpaces', []) or [])
-                           or [getattr(self, 'conceptualSpace', None)]):
-                    if cs is not None and hasattr(cs, 'Reset'):
-                        cs.Reset(hard=True)
+        # Provisioning is a separate one-row presentation. Its temporary
+        # recall fields must not survive into the caller's batch (or erase
+        # an already live caller history), including when ingestion fails.
+        absent = object()
+        recalled = {name: self.__dict__.get(name, absent) for name in
+                    ('_what_recall_sentence_history', '_what_recall_batch_size')}
+        self._what_recall_sentence_history = {}
+        self._what_recall_batch_size = None
+        try:
+            with sequence:
+                for source_index, (text, trust) in enumerate(zip(texts, trusts)):
+                    with store.clause_assertions(trust=trust, origin=origin, text=text) as rows:
+                        with torch.no_grad(), self._runtime_batch([text], document_keys=[('ingestion', source_key, source_index)]):
+                            from What import What
+                            inp = self.inputSpace.prepInput(list(self.data.train_input))
+                            self.runBatch(train=False, batchNum=0, batchSize=1, split='runtime',
+                                batch_override=(inp, torch.empty(1, 0, device=inp.device)), source_rows=[0],
+                                questions=(What.present(0, split='runtime'),))
+                        if not rows:
+                            raise ValueError('TruthSet input did not produce a selected grammatical closing')
+                        per_text_rows.append(tuple(rows))
+                    for cs in (list(getattr(self, 'conceptualSpaces', []) or [])
+                               or [getattr(self, 'conceptualSpace', None)]):
+                        if cs is not None and hasattr(cs, 'Reset'):
+                            cs.Reset(hard=True)
+                    self._clear_recall_history()
+        finally:
+            for name, value in recalled.items():
+                if value is absent:
+                    self.__dict__.pop(name, None)
+                else:
+                    self.__dict__[name] = value
         return per_text_rows
 
     def infer(self, text, max_length=None, mode='IR', *, document_key=None):
@@ -20364,8 +20382,6 @@ class BasicModel(BaseModel):
                         expectation=comparison, stream=b, written_rows=written_clauses[b])
                 if row is not None and row != -1:
                     row_ids[b] = int(store.row(row)['row_id'])
-                    if isinstance(row, int):
-                        store.witness_adjacency(row, identified_codes)
                     if getattr(self, '_component_reading', False):
                         resolver.commit(reference_plan, row, written_clauses[b],
                             document=document, position=position,
@@ -20392,9 +20408,11 @@ class BasicModel(BaseModel):
             if index is not None:
                 retained = store.row(index)
                 meaning = retained['meaning']
-                refs = tuple(retained['refs'].tolist())
-                if len(refs) == 2:
-                    refs = (refs[0], -1, refs[1])
+                if isinstance(index, tuple):
+                    left, right = retained['refs'].tolist()
+                    refs = (left, -1, right)
+                else:
+                    refs = tuple(-1 if ref is None else ref[-1] for ref in meaning.role_refs)
             else:
                 meaning = (clause.meaning if clause.relation is not None else
                            replace(ConceptualMeaning.from_description(clause.point),

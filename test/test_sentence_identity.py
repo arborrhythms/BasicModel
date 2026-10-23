@@ -36,7 +36,7 @@ def test_referenced_phrase_is_minted_as_a_part_argument(monkeypatch):
     assert f.cs._csw_row_of(reference) is not None
     assert f.store.parts.refs[reference].tolist() == [f.noun('chases'), f.noun('mouse')]
     torch.testing.assert_close(f.store._concept_point(reference), clause.children[0].point)
-    assert len(f.store) == 1  # the narrowed constituent occurrence also survives
+    assert len(f.store) == 2  # the constituent and completed sentence both survive
 
 
 def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
@@ -78,7 +78,7 @@ def test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically(monkeypa
     from ClauseRow import attach_clause_index
     attach_clause_index(model, f.store, f.cs)
     try:
-        entry = f.program(('disjunction', ('part', 'cat', 'animal'), 'sleeps'))
+        entry = f.program(('part', ('disjunction', ('part', 'cat', 'animal'), 'sleeps'), 'cat'))
         layer = _concept_alloc_of(f.cs).layer(0)
         caps = f.cs._order_caps()
         # Occupy the remaining physical seats in the mechanism fixture;

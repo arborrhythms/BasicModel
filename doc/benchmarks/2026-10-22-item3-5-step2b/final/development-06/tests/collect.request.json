@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_math_chain_section14.py",
+    "test/test_reference_mentions.py",
+    "test/test_bind_thought.py",
+    "test/test_identity_cube.py",
+    "test/test_part_store.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

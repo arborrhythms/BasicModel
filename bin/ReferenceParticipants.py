@@ -19,9 +19,11 @@ def participant_terms(roots, rules=()):
     catalogue = {rule.method_name: rule for rule in rules}
     eligible, inspected, seen = {}, {}, set()
 
-    def visit(term, noun=False):
+    pending = list(reversed(tuple(roots)))
+    while pending:
+        term, noun = pending.pop()
         if term is None or (id(term), noun) in seen:
-            return
+            continue
         seen.add((id(term), noun))
         inspected[id(term)] = term
         rule = catalogue.get(term.operation)
@@ -36,32 +38,26 @@ def participant_terms(roots, rules=()):
         if noun or lower:
             eligible[id(term)] = term
         if not children:
-            return
+            continue
         if lower:
-            visit(children[(head or len(children))-1], True)
+            pending.append((children[(head or len(children))-1], True))
         elif name in ('equal', 'part', 'whole'):
-            for child in children:
-                visit(child, True)
+            pending.extend((child, True) for child in reversed(children))
         elif name == 'lift' and len(children) == 2:
-            for role, child in enumerate(children, 1):
-                visit(child, role != head)
+            pending.extend((child, role != head) for role, child in reversed(tuple(enumerate(children, 1))))
         elif noun and head and not clause:
             # A headed attachment inside an NP retains that noun. In
             # particular verb(noun, punctuation) does not introduce a noun
             # for the punctuation, or turn the noun into a predicate.
-            visit(children[head-1], True)
+            pending.append((children[head-1], True))
         elif name == 'verb' and len(children) == 2:
-            for role, child in enumerate(children, 1):
+            for role, child in reversed(tuple(enumerate(children, 1))):
                 if role != head:
-                    visit(child, True)
+                    pending.append((child, True))
         elif head:
-            visit(children[head-1], noun)
+            pending.append((children[head-1], noun))
         else:
-            for child in children:
-                visit(child, noun)
-
-    for term, noun in roots:
-        visit(term, noun)
+            pending.extend((child, noun) for child in reversed(children))
     return eligible, inspected
 
 

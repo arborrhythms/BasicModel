@@ -1,7 +1,6 @@
 """Host-side retention of addressed LTM rows at a closed document boundary."""
 from dataclasses import dataclass, fields, is_dataclass
 import copy
-import heapq
 import math
 import warnings
 
@@ -125,6 +124,16 @@ def forget_parts(parts, config, *, retained=()):
     ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i, row in enumerate(rows)}
     proofs = part_supports(parts)
     protected = {int(ref[1]) for ref in retained if ref[:1] == ('sym',) and parts.contains(ref[1])}
+    # A referenced edge is released only on the next boundary pass, even
+    # when its last parent is selected below. Closure protects every level.
+    protected.update(int(child) for row in rows for child in parts.refs[row].tolist()
+                     if parts.contains(child))
+    pending = list(protected)
+    while pending:
+        for child in parts.refs[pending.pop()].tolist():
+            if parts.contains(child) and child not in protected:
+                protected.add(child)
+                pending.append(child)
     alive = set(rows)
     def value(row):
         utility = 1. if float(parts.surprise[row]) < 0 else float(parts.surprise[row])
@@ -163,7 +172,6 @@ def retention_values(store, config, *, alive=None, supports=None):
     # Intrinsic both is heterogeneous content, not two disagreeing sources.
     signs = (positive.gt(0) & negative.eq(0)).long() - (negative.gt(0) & positive.eq(0)).long()
     points = F.normalize(store.slots[:n, 0], dim=-1)
-    refs = store.refs[:n]
     orders = store.order[:n]
     scopes = _scope_keys(store)
     scope_ids = {key: i for i, key in enumerate(dict.fromkeys(scopes))}
@@ -208,9 +216,6 @@ def _references(store, row, context, rows):
             if ref[2] not in rows:
                 raise ValueError('forgetting found an unavailable semantic occurrence')
             result.add(rows[ref[2]])
-    for ref in store.refs[row].tolist():
-        if ref in rows:
-            result.add(rows[ref])
     return result
 
 
@@ -249,7 +254,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     if (not config.enabled or stateless or open_sentence or torch.compiler.is_compiling()
             or not (document_boundary or epoch_boundary)):
         return None
-    pressure = n >= math.ceil(config.high_water * store.capacity)
+    pressure = bool(store.forget_pending) or n >= math.ceil(config.high_water * store.capacity)
     if not pressure and not (epoch_boundary and config.at_epoch):
         return None
     if int(store.forget_passes) and int(store.forget_sentences - store.forget_last_sentence) < config.min_interval:
@@ -281,101 +286,63 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     supports = {}
     terms = retention_values(store, config, supports=supports)
     order = sorted(range(n), key=lambda i: (float(terms['value'][i]), -float(terms['age'][i]), keys[i]))
-    alive, advanced, changed, coarsened = set(range(n)), set(), set(), set()
-    refs = store.refs[:n].clone()
+    alive, advanced, coarsened = set(range(n)), set(), set()
     store._ensure_texts(n)
     texts = list(store._texts[:n])
-    dropped_text = cascade = 0
+    dropped_text = 0
     cutoff = None
+    # Freeze incoming references for the entire pass. Dropping a parent's
+    # detail cannot make its child eligible at this same boundary.
+    parents = {i: set() for i in range(n)}
+    for parent, children in dependencies.items():
+        for child in children:
+            parents[child].add(parent)
+    referenced = {row for row, incoming in parents.items() if incoming}
     if len(protected) <= target:
-        # A row takes at most one detail stage per pass. Text removal frees
-        # sidecar memory, not seats; later passes may coarsen or delete it.
         for row in order:
             if row not in protected and texts[row] is not None:
                 texts[row] = None
                 advanced.add(row)
-                changed.add(row)
                 dropped_text += 1
 
-        def deletion(row):
-            removed, edits = {row}, {}
-            while True:
-                previous = set(removed)
-                for parent in alive - removed:
-                    lost = dependencies[parent] & removed
-                    if not lost:
-                        continue
-                    context = copy.deepcopy(contexts[keys[parent]])
-                    roles = list(context.get('role_refs', (None, None, None)))
-                    new_refs = refs[parent].clone()
-                    coarse = set()
-                    for role in range(3):
-                        child = indexes.get(int(refs[parent, role]))
-                        ref = roles[role]
-                        if ref is not None and ref[:2] == ('ltm', store.address_domain):
-                            child = indexes[ref[2]]
-                        if child in lost and int(store.role_mask[child].sum()) == 1 and bool(store.role_mask[parent, role]):
-                            roles[role], new_refs[role] = None, -1
-                            coarse.add(child)
-                    context['role_refs'] = tuple(roles)
-                    remaining = {indexes[ref[2]] for ref in store._context_occurrence_references(context)
-                                 if ref[:2] == ('ltm', store.address_domain)}
-                    if lost - coarse or remaining & lost:
-                        removed.add(parent)
-                    else:
-                        edits[parent] = context, new_refs
-                if removed & (protected | advanced):
-                    return None
-                if removed == previous:
-                    break
-            edits = {i: value for i, value in edits.items() if i not in removed}
-            if set(edits) & (protected | advanced):
-                return None
-            return removed, edits
+        def advance(row, visiting):
+            if row not in alive or row in protected or row in advanced or row in visiting:
+                return False
+            if row in referenced:
+                # Honor the selected child's value by advancing its owners,
+                # then stop this pass; do not substitute costlier deletions.
+                return any(advance(parent, visiting | {row})
+                           for parent in sorted(parents[row], key=order.index))
+            context = contexts[keys[row]]
+            references = context.get('role_refs', (None, None, None))
+            children = dependencies[row]
+            if any(ref is not None for ref in references) and all(
+                    int(store.role_mask[child].sum()) == 1 for child in children):
+                coarse = dict(context, role_refs=(None, None, None))
+                remaining = _references(store, row, coarse, indexes)
+                if remaining:
+                    # A semantic binding still needs its target. Clearing
+                    # structural detail must not silently erase that binding.
+                    return False
+                contexts[keys[row]] = coarse
+                coarsened.add(row)
+                advanced.add(row)
+            else:
+                # A bare row is its final stage. An unfused relation cannot
+                # keep a child's three-role value as a gist in one argument.
+                alive.remove(row)
+            return True
 
-        subordinate = set().union(*dependencies.values()) if dependencies else set()
-        stages = ([i for i in order if i in subordinate and int(store.record_kind[i]) == store.KINDS.index('unverified')], order)
-        for candidates in stages:
-            queue = [(float(terms['value'][i]), -float(terms['age'][i]), keys[i], i) for i in candidates]
-            heapq.heapify(queue)
-            while queue:
-                if len(alive) <= target:
+        for row in order:
+            if len(alive) <= target:
+                break
+            if row not in alive or row in protected or row in advanced:
+                continue
+            stage = row in referenced
+            if advance(row, set()):
+                cutoff = float(terms['value'][row])
+                if stage or row in coarsened:
                     break
-                value, age, key, row = heapq.heappop(queue)
-                if row not in alive or row in protected or row in advanced:
-                    continue
-                if row in supports and not any(proof <= alive - coarsened for proof in supports[row]):
-                    corrected = float(terms['value'][row]) + config.utility_weight * (1. - float(terms['utility'][row]))
-                    if corrected > value:
-                        heapq.heappush(queue, (corrected, age, key, row))
-                        continue
-                result = deletion(row)
-                if result is None:
-                    continue
-                removed, edits = result
-                # If deducibility made a row expendable, retain a complete
-                # proof in the surviving set for the remainder of this pass.
-                witnesses = set()
-                for item in removed:
-                    choices = [proof for proof in supports.get(item, ()) if proof <= alive - coarsened]
-                    if choices:
-                        available = next((proof for proof in choices if not proof & removed), None)
-                        if available is None:
-                            break
-                        witnesses.update(available)
-                else:
-                    alive -= removed
-                    protected.update(witnesses)
-                    cascade += len(removed) - 1
-                    cutoff = value
-                    for parent, (context, reference) in edits.items():
-                        contexts[keys[parent]], refs[parent] = context, reference
-                        dependencies[parent] -= removed
-                        changed.add(parent)
-                        coarsened.add(parent)
-                        advanced.add(parent)
-                    continue
-                # A selected group would remove its own derivation.
 
     keep = sorted(alive)
     kept_keys = {keys[i] for i in keep}
@@ -387,7 +354,6 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     by_origin = {origin: sum(int(store.origin[i]) == origin for i in removed) for origin in (0, 1, 2)}
     store._semantic_rows = contexts
     store._expectation_rows = expectations
-    store.refs[:n].copy_(refs)
     store._texts[:n] = texts
     store.compact_rows(keep)
     for row in range(len(store)):
@@ -403,11 +369,12 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
         terms_for_row, complete = store._meaning_leaf_terms(meaning, order=int(store.order[row]))
         store._append_leaf_terms(row, terms_for_row, complete)
     store.forget_passes.add_(1)
+    store.forget_pending.fill_(len(store) > target)
     store.forget_last_sentence.copy_(store.forget_sentences)
     store.forget_cutoff.fill_(0. if cutoff is None else cutoff)
     report = dict(before=n, after=len(store), target=target, cutoff=cutoff, deleted_by_origin=by_origin,
-                  cascade=cascade, wording=dropped_text, coarsened=len(coarsened),
-                  protected=len(protected), target_reached=len(store) <= target)
+                  cascade=0, wording=dropped_text, coarsened=len(coarsened),
+                  protected=len(protected | referenced), target_reached=len(store) <= target)
     store.last_forgetting_report = report
     from util import TheMessage
     TheMessage(f'[LTM forgetting] {report}')
@@ -457,7 +424,19 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
     if config.enabled and getattr(model, '_open_sentence_slot', None) is None and (document_boundary or epoch_boundary):
         audit_roots = {ref for value in store._expectation_rows.values()
                       for ref in store._expectation_references(value) if ref[0] == 'sym'}
-        store.last_part_forgetting_report = forget_parts(store.parts, config, retained=roots | audit_roots)
+        def symbols(value):
+            if isinstance(value, dict):
+                return set().union(*(symbols(item) for item in value.values())) if value else set()
+            if isinstance(value, (tuple, list)):
+                if len(value) == 2 and value[0] == 'sym' and type(value[1]) is int:
+                    return {tuple(value)}
+                return set().union(*(symbols(item) for item in value)) if value else set()
+            return set()
+        # Snapshot all owned structure before either stratum advances. The
+        # second half of this boundary cannot release Part rows for the first.
+        structure = symbols(store._semantic_rows)
+        store.last_part_forgetting_report = forget_parts(store.parts, config,
+            retained=roots | audit_roots | structure)
     result = forget(store, config, document_boundary=document_boundary,
         epoch_boundary=epoch_boundary, open_sentence=getattr(model, '_open_sentence_slot', None) is not None,
         retained_occurrences=roots)

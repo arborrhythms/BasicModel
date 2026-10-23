@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

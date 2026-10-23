@@ -167,7 +167,7 @@ class TruthGroundedReasoner:
                 if fact is None or not row["metadata_complete"]:
                     incomplete.append(row["occurrence"])
                     continue
-                if fact.mode != "assertive" or fact.roles.shape != requested.roles.shape:
+                if fact.roles.shape != requested.roles.shape:
                     continue
                 if not torch.equal(fact.role_mask.cpu(), requested.role_mask.cpu()):
                     continue

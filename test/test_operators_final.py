@@ -6,45 +6,8 @@ import pytest
 import torch
 
 
-def test_centroid_moves_without_losing_identity_and_caps_containment():
-    from SymbolCentroid import place
-    forms = {0: torch.tensor([1., 0., 0.]), 1: torch.tensor([1., 1., 0.]),
-             2: torch.tensor([0., 0., 1.]), 3: torch.tensor([1., 0., 0.])}
-    parts = {0: {'a'}, 1: {'a', 'b'}, 2: {'c'}, 3: {'a'}}
-    pairs = {(0, 2): {(11, 0), (12, 0)}, (1, 3): {(13, 0)}}
-    codes, audit = place(forms, parts, pairs)
-    assert audit['before']['violating_pairs'] > 0
-    assert audit['after']['violating_pairs'] == audit['below_lower'] == 0
-    assert audit['identity_recovered'] and 0 < audit['share_moved'] < 1
-    assert audit['cosine_after'] < 1
-    assert torch.equal(codes[0], codes[3])
-    assert not any(value.requires_grad for value in codes.values())
-    off, audit = place(forms, parts, pairs, enabled=False)
-    assert audit['moved'] == 0
-    for row in forms:
-        torch.testing.assert_close(off[row], forms[row], rtol=0, atol=0)
 
 
-def test_adjacent_wholes_rewitness_compact_and_checkpoint():
-    from Layers import LTM0
-    from Meaning import ConceptualMeaning
-    store = LTM0(4, capacity=4)
-    value = ConceptualMeaning.from_description(torch.ones(4))
-    discarded = store.append_meaning(value, document_key='gone')
-    store.origin[discarded] = store.ORIGIN_USER
-    row = store.append_meaning(value, document_key='kept')
-    for _ in range(400):
-        store.witness_adjacency(row, [2, 3, 2])
-    address = int(store.address_keys[row])
-    assert store._adjacent_postings == {(2, 3): {(address, 0)}, (3, 2): {(address, 1)}}
-    store.witness_adjacency(discarded, [7, 8])
-    store.clear_origin(store.ORIGIN_USER)
-    assert store.index_of_row(address) == 0 and (7, 8) not in store._adjacent_postings
-    loaded = LTM0(4, capacity=4)
-    loaded.load_state_dict(store.state_dict())
-    assert loaded._adjacent_postings == store._adjacent_postings
-    store.witness_adjacency(0, [2, 4])
-    assert store._adjacent_postings == {(2, 4): {(address, 0)}}
 
 
 def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
@@ -155,7 +118,7 @@ def test_definition_sentence_joins_identities_beside_the_interpret_definition(mo
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
     first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
-    assert len(f.store) == 0 and first[0] == 'sym'
+    assert len(f.store) == 1 and first[0] == 'sym'
     row = f.store.row(first)
     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
     assert row['readings'] == ('equality',)

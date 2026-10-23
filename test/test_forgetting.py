@@ -123,7 +123,7 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
     with pytest.warns(RuntimeWarning, match='low water'):
         report = forget(store, config(), document_boundary=True, retained_occurrences=roots)
     assert not report['target_reached'] and len(store) == 8
-    for key in ('slots', 'refs', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):
+    for key in ('slots', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):
         torch.testing.assert_close(before[key], store.state_dict()[key])
 
 
@@ -136,27 +136,33 @@ def linked_store(*, child_is_relation=False):
     roles = torch.tensor([[1., 0., 0., 0.], [0., 1., 0., 0.], [1., 0., 0., 0.]])
     parent = store.append_meaning(ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),
         role_refs=(ref, ('sym', 27), None)), trust=.9, stream=0, sentence_index=1)
-    store.refs[parent, 0] = int(store.address_keys[child])
     append(store, 2, trust=.7)
     append(store, 3, trust=.8)
     return store, ref, store.occurrence_of(parent)
 
 
-def test_idea_coarsens_parent_and_relation_cascades():
+def test_idea_coarsens_parent_and_releases_its_child_next_pass():
     for relation in (False, True):
         store, child, parent = linked_store(child_is_relation=relation)
         root = store.meaning_of(1)
         cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
-        report = forget(store, cfg, document_boundary=True)
-        assert store.index_of_row(child[2]) is None
+        with pytest.warns(RuntimeWarning, match='low water'):
+            report = forget(store, cfg, document_boundary=True)
+        assert store.index_of_row(child[2]) is not None
+        assert report['cascade'] == 0 and bool(store.forget_pending)
         if relation:
-            assert store.index_of_row(parent[2]) is None and report['cascade'] == 1
+            assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0
         else:
             index = store.index_of_row(parent[2])
-            assert index is not None and store.refs[index, 0] == -1
+            assert index is not None and not hasattr(store, 'refs')
             assert store.meaning_of(index).role_refs[0] is None
             torch.testing.assert_close(store.meaning_of(index).roles, root.roles)
             assert report['coarsened'] == 1
+        report = forget(store, cfg, document_boundary=True)
+        assert store.index_of_row(child[2]) is None
+        assert report['cascade'] == 0 and report['target_reached']
+        if not relation:
+            torch.testing.assert_close(store.meaning_of(store.index_of_row(parent[2])).roles, root.roles)
 
 
 def test_live_parent_pins_its_child():
@@ -346,8 +352,10 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         document('first', ['cat', 'dog', 'bird', 'horse'] * 2)
         report = store.last_forgetting_report
         assert int(store.forget_passes) == 1
-        assert report['before'] >= 8 and report['after'] == len(store) == 6
-        assert report['target_reached']
+        assert report['before'] >= 8 and report['after'] == len(store)
+        assert 6 <= len(store) < report['before']
+        assert report['target_reached'] == (len(store) == 6)
+        assert bool(store.forget_pending) == (len(store) > 6)
         messages = capsys.readouterr().out
         assert f'[LTM forgetting] {report}' in messages
         print(f'[LTM forgetting] {report}')

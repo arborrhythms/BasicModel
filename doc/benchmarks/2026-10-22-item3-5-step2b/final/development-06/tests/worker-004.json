@@ -1,0 +1,148 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows",
+    "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[False]",
+    "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[True]",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_has_no_update_when_episode_r_plus_a_ties",
+    "test/test_bind_thought.py::test_bind_resolver_and_form_learn_only_from_episode_advantage",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "completed": [
+    "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+    "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows",
+    "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[False]",
+    "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[True]",
+    "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+    "test/test_bind_thought.py::test_bind_has_no_update_when_episode_r_plus_a_ties",
+    "test/test_bind_thought.py::test_bind_resolver_and_form_learn_only_from_episode_advantage",
+    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+    "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_bind_thought.py::test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02823649998754263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_participant_cache_rebuilds_from_retained_identity_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021638625068590045,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015152666950598359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015475749969482422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012437624856829643,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_bind_has_no_update_when_episode_r_plus_a_ties",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03616966586560011,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_bind_resolver_and_form_learn_only_from_episode_advantage",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04224504204466939,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01312629203312099,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01382345799356699,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_pending_name_stays_the_word_after_an_object_is_admitted",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012522166827693582,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015251083066686988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014947792049497366,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

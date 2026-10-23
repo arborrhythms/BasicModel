@@ -53,7 +53,8 @@ def test_origin_replacement_retains_reachable_content_without_fact_authority():
     assert kept["kind"] == "unverified" and kept["trust"] == 0
     assert kept["text"] == "reported content"
     assert kept["meaning"].scope == (("quote", "inner"),)
-    assert store.meaning_of(_index(store, inner_ref)).mode == "interrogative"
+    assert store.row(_index(store, inner_ref))["kind"] == "question"
+    assert store.row(_index(store, inner_ref))["evidence"] == (0., 0.)
     assert store.clear_origin(store.ORIGIN_USER) == 0
 
 

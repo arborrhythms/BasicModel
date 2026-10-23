@@ -1,0 +1,50 @@
+--- doc/benchmarks/2026-10-07-operators-final/observer_probe.py
++++ test/observer_probe.py
+@@ -60,7 +60,7 @@
+         assert identity['collisions'] == identity['reconstruction_errors'] == 0
+         assert identity['rung0']['errors'] == 0
+         assert identity['containment_violations'] == 0
+-    assert run_audit['start']['identity']['projection_sha256'] == run_audit['end']['identity']['projection_sha256']
++    assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']
+     assert all(phase in run_audit['centroid'] for phase in ('start','end'))
+     (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
+     operators_gate_observer.save_ownership(model)
+@@ -74,7 +74,8 @@
+     assert not any(step['walks'] for step in steps)
+     assert 'attention_score_function_steps' not in run_audit
+     assert len([r for r in run_audit['sentence_trials'] if r['training']]) == 1
+-    assert all(v==128 for v in run_audit['closing_image']['concept_widths'].values())
++    assert all(v==model._concept_owner().outputShape[-1]
++               for v in run_audit['closing_image']['concept_widths'].values())
+     assert all(v>=0 for v in run_audit['closing_image']['image_max'].values())
+     assert run_audit['end']['codes'][0]['centroid']['identity_recovered']
+     assert 'reconstruction.attention_score_function' not in model._sentence_cost_registry._terms
+--- doc/benchmarks/2026-10-07-operators-final/operators_run_audit.py
++++ test/operators_run_audit.py
+@@ -23,14 +23,14 @@
+ def storage_snapshot(model):
+     store=model.symbolSpace.ltm_store
+     n=len(store)
+-    sentences=(store.rel_type[:n] != store.REL_DEF).nonzero().flatten()
++    sentences=torch.arange(n, device=store.address_keys.device)
+     return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),
+-        definition_rows=int((store.rel_type[:n] == store.REL_DEF).sum()),
++        definition_rows=0,
+         addresses=store.address_keys[sentences].detach().cpu().tolist(),
+         sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
+         content_keys=[store.content_key(int(row)).hex() for row in sentences],
+         witness_counts=store.witness_count[sentences].detach().cpu().tolist(),
+-        timestamps=store.timestamp[sentences].detach().cpu().tolist(),
++        when=store.when[sentences].detach().cpu().tolist(),
+         all_witness_counts=store.witness_count[:n].detach().cpu().tolist())
+ 
+ 
+@@ -88,7 +88,7 @@
+                              minimum_linear_weight_norm=float(linear_weights.norm()))
+     identity = getattr(getattr(model.perceptualSpace, 'percept_store', None), 'identity', None)
+     identity_audit = None if identity is None else dict(**identity.audit(),
+-        projection_sha256=hashlib.sha256(identity.projection.cpu().numpy().tobytes()).hexdigest(),
++        form_codes_sha256=hashlib.sha256(identity.store._basis.fixed_row_codes.cpu().numpy().tobytes()).hexdigest(),
+         rung0=getattr(model, '_last_rung0_identity_audit', None))
+     return dict(storage=storage_snapshot(model), roots=metrics(root),root_inputs=inputs,codes=books,
+                 unit_root_xor_interaction=interaction,interaction_order=order,

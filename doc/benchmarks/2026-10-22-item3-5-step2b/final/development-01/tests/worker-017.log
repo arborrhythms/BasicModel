@@ -1,0 +1,27 @@
+..FFF....                                                                [100%]
+=================================== FAILURES ===================================
+___ test_closing_excludes_its_own_witness_without_restricting_copular_reads ____
+test/test_part_read.py:66: in test_closing_excludes_its_own_witness_without_restricting_copular_reads
+    assert store.meaning_of(source).role_refs[0] == ('sym', answer)
+E   AssertionError: assert None == ('sym', 3)
+______ test_forward_name_accepts_a_witnessed_occurrence_complement[False] ______
+test/test_part_read.py:100: in test_forward_name_accepts_a_witnessed_occurrence_complement
+    assert not open_slots(resolved)
+E   AssertionError: assert not (('referent', 0),)
+E    +  where (('referent', 0),) = <function open_slots at 0x12a7649a0>(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 2), ('ltm', 'address-v1', -314054541207486...1),)), ('_open_references', (('referent', 0),)), ('_source_evidence', (0.0, 0.0))), scope=(), sentence_kind='relation'))
+______ test_forward_name_accepts_a_witnessed_occurrence_complement[True] _______
+test/test_part_read.py:100: in test_forward_name_accepts_a_witnessed_occurrence_complement
+    assert not open_slots(resolved)
+E   AssertionError: assert not (('referent', 0),)
+E    +  where (('referent', 0),) = <function open_slots at 0x12a7649a0>(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 2), ('sym', 4)), bindings=(('_equality', T...1),)), ('_open_references', (('referent', 0),)), ('_source_evidence', (0.0, 0.0))), scope=(), sentence_kind='relation'))
+=============================== warnings summary ===============================
+test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads
+FAILED test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement[False]
+FAILED test/test_part_read.py::test_forward_name_accepts_a_witnessed_occurrence_complement[True]
+3 failed, 6 passed, 1 warning in 1.70s

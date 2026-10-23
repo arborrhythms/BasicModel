@@ -54,7 +54,7 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
     _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())
     store = _write_selected_observation(language, registry, entry, path)
     # The two native pairs retain ignorance independently in the common owner.
-    assert len(store) == 0
+    assert len(store) == 2
     child_id = store.parts.find(*entry.concept_ids[:2].tolist())
     parent_id = store.parts.find(int(entry.concept_ids[2]), child_id)
     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
@@ -75,10 +75,12 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
         def address(cid):
             row = store.index_of_row(cid)
             return ('concept', cid) if row is None else ('clause', row)
-        return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]
+        return [tuple(None if ref is None else address(ref[1]) if ref[0] == 'sym'
+                      else ('clause', store.location(ref))
+                      for ref in store.raw_meaning_of(row).role_refs) for row in range(len(store))]
     for store in stores[1:]:
         assert addresses(store) == addresses(stores[0])
-        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
+        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'when'):
             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
         for name in ('refs', 'truth_plus', 'truth_minus', 'surprise', 'when'):
             torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)

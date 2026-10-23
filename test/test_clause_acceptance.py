@@ -110,8 +110,8 @@ def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
     clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
     row = f.store.write_clause(clause, trust=.7)
     assert len(f.store) == 3 and f.store.ideas().tolist() == [0, 1, 2]
-    assert f.store.refs[row].tolist() == [-1, -1, -1]
-    assert len(f.store.parts) == 10  # four definitions, four operations, two named mints
+    assert not hasattr(f.store, 'refs')
+    assert len(f.store.parts) == 6  # four definitions, verb and lift; lowers are inline
     # The factored target belongs to the open reading; only the fused point
     # survives. Its numeric operands are the actual compound NP/VP fields.
     assert clause.subject_word_id == f.words['cat'][0]
@@ -126,7 +126,7 @@ def test_04_absolute_clauses_close_bottom_up_with_their_part_edges(monkeypatch):
     clause = f.clause(('lift', 'he', ('verb', 'said', middle)))
     row = f.store.write_clause(clause, trust=.8)
     assert row == 2 and f.store.ideas().tolist() == [0, 1, 2]
-    assert len(f.store.parts) == 14  # seven lexical definitions and seven operations
+    assert len(f.store.parts) == 15  # seven definitions, seven operations, one argument definition
     torch.testing.assert_close(f.store.meaning_of(0).roles[0], clause.children[0].children[0].point)
     assert not hasattr(f.store, 'clause_derivation')
 
@@ -140,7 +140,7 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
     outer = f.store.row(row)
     verb = int(outer['refs'][1])
     assert f.store.parts.refs[verb, 1] == child
-    assert not len(f.store)
+    assert len(f.store) == 2
     assert f.store.row(('sym', child))['evidence'] == (0., 0.)
     assert outer['evidence'] == pytest.approx((.6, 0.))
 
@@ -169,7 +169,7 @@ def test_03_particular_subject_ends_an_idea(monkeypatch, predicate):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))
     assert f.store.ideas().tolist() == [0, row]
-    assert len(f.store.parts) >= len(f.words) + 2
+    assert len(f.store.parts) >= len(f.words) + 1
 
 
 def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
@@ -182,13 +182,13 @@ def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
     assert left['evidence'] == right['evidence'] == (0., 0.)
     assert f.store.row(row)['readings'] == ('conditional',)
     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
-    assert not len(f.store)
+    assert len(f.store) == 3
 
 
 def test_implication_closes_bare_np_arguments_as_idea_clauses(monkeypatch):
     f = SentenceFixture(monkeypatch)
     row = f.store.write_clause(f.clause(('implies', 'rain', 'wet')))
-    assert f.store.ideas().tolist() == [0, 1]
+    assert f.store.ideas().tolist() == [0, 1, 2]
     assert f.store.row(row)['refs'].tolist() == [f.noun('rain'), f.noun('wet')]
 
 
@@ -198,7 +198,7 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
     count = len(f.store.parts)
     first = f.store.write_clause(clause, trust=.7, evidence=(.7, 0.))
     a, b = f.noun('morning-star'), f.noun('evening-star')
-    assert len(f.store.parts) == count + 1 and not len(f.store)
+    assert len(f.store.parts) == count + 1 and len(f.store) == 1
     assert f.store.row(first)['refs'].tolist() == [a, b]
     assert 'equality' in f.store.row(first)['readings']
     assert f.store.parts.find(b, a) is None

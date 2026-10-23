@@ -1,0 +1,18 @@
+..F                                                                      [100%]
+=================================== FAILURES ===================================
+________ test_supplied_trust_preserves_both_possible_grammatical_fields ________
+test/test_truth_text.py:52: in test_supplied_trust_preserves_both_possible_grammatical_fields
+    assert store.ideas().tolist() == [0]
+E   assert [0, 1] == [0]
+E     
+E     Left contains one more item: 1
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields
+1 failed, 2 passed, 1 warning in 1.65s

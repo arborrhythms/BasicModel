@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_pair_unlinking_preserves_observation_and_restores_cleanly",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

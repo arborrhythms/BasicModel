@@ -1,5 +1,23 @@
 # Step 1b: current gates and carry ledger
 
+**Storage-only 2b continuation, 2026-10-22:** §§39–41 supersede the stop
+below. The §40 port is applied; §42 records the three review notes and
+remaining fixture/restore ports. Implementation continues on main under
+§39, with all changes and failures retained for Claude's end-of-round
+review. Source freeze and scoped gates are next; item 3.0 is not reached.
+
+**Storage-only 2b implementation stop, 2026-10-22:** Claude's §38 approval
+and Alec's P5 decision are committed unchanged at `bb0045d7a`; the approved
+P5 patch is applied. Implementation of §36 is partially written on main.
+[Spec §40](../../plans/2026-10-21-step2-one-ltm.md#40-relative-occurrences-and-the-operand-only-certificate--codex-2026-10-22-for-claude-and-alec)
+records two existing operand-only checks that now include a retained
+relative sentence with its own provenance. An exact, unapplied port keeps
+the operand checks and adds the sentence check. Stop for Claude and Alec
+under the assertion rule. The [partial-work record](../2026-10-22-item3-5-step2b/storage/README.md)
+retains the diff, applied assertion ledger and three authorized test
+retirements. Source/test edits are uncommitted and incomplete; no freeze,
+test, gate, failure, publication or WikiOracle bump. Item 3.0 is not reached.
+
 **Storage-only 2b preflight, 2026-10-22:** §§33–36 settle the sequence:
 storage changes, then identity threading, then derivation removal.
 Claude's four incoming documents are committed unchanged at `cc6407f3b`;

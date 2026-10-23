@@ -102,11 +102,11 @@ def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
     second, address2, _ = close(resolver,a[0],a[6],'bind',(first,),document='fold',sentence=1)
     # Read only the surviving occurrence, as after forgetting. Its working
     # interpretation must leave the original native code intact.
-    original = store.slots.clone(), store.refs.clone()
+    original = store.slots.clone(), store.parts.refs.clone()
     resolver.individuals(resolver.accessible((second,)))
     torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])
     torch.testing.assert_close(store.slots,original[0],rtol=0,atol=0)
-    torch.testing.assert_close(store.refs,original[1],rtol=0,atol=0)
+    torch.testing.assert_close(store.parts.refs,original[1],rtol=0,atol=0)
 
 
 def test_form_region_is_a_concept_and_known_exposure_changes_containment():

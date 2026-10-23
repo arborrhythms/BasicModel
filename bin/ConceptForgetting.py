@@ -63,7 +63,6 @@ def protected_concepts(owner, store, retained=()):
             if isinstance(ref, tuple) and ref[0] == 'sym':
                 protected.add(int(ref[1]))
     if store is not None:
-        protected.update(_integers(store.refs[:len(store)].tolist()))
         protected.update(_integers(store._semantic_rows))
     interpretation = owner.__dict__.get('_interpret_operator')
     if interpretation is not None:

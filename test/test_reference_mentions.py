@@ -71,7 +71,7 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
     resolver.commit(plan, row, written, document='pending', position=0, training=False)
     original = store.meaning_of(row)
     assert resolver._mentions[store.occurrence_of(row)]
-    rows, refs = store.slots.clone(), store.refs.clone()
+    rows, refs = store.slots.clone(), store.parts.refs.clone()
     # A subsequent known binding refers to this same occurrence and role.
     pending = question(replace(original, role_refs=(None, None, None)),
                        (('referent', 0),))
@@ -91,7 +91,7 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
     resolver.resolved(row, 0, ('sym', correct), errors)
     assert errors._terms['expectation.reference_mentions']['count'] == 1
     torch.testing.assert_close(store.slots, rows, rtol=0, atol=0)
-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
+    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
 
 
 def test_mention_training_record_is_not_a_thought_chooser_feature():

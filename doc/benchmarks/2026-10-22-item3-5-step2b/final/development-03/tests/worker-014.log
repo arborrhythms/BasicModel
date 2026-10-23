@@ -1,0 +1,20 @@
+...........F                                                             [100%]
+=================================== FAILURES ===================================
+__________ test_native_progress_and_trained_artifact_evaluation_path ___________
+test/test_learning_readiness.py:193: in test_native_progress_and_trained_artifact_evaluation_path
+    parts, = [entry['allocator']['part_store']
+    ^^^^^^
+E   ValueError: too many values to unpack (expected 1)
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.522s)
+[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8308/test_native_progress_and_train0/small-native.ckpt
+[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8308/test_native_progress_and_train0/small-native.ckpt
+batch = 0 (warm-up)
+batch = 0 (Δ=0.528s)
+batch = 0 (Δ=0.508s)
+batch = 0 (Δ=0.519s)
+=========================== short test summary info ============================
+FAILED test/test_learning_readiness.py::test_native_progress_and_trained_artifact_evaluation_path
+1 failed, 11 passed in 11.79s

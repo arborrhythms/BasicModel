@@ -1,0 +1,21 @@
+--- a/test/test_relation_closing.py
++++ b/test/test_relation_closing.py
+@@ -31,12 +31,15 @@
+     for leaf, child in zip(unknown, relation.children):
+         assert child.relation is None
+         torch.testing.assert_close(child.point, entry.leaves[leaf])
+-    assert len(f.store) == len(unknown)
++    assert len(f.store) == len(unknown) + 1 + int(nested)
+     assert (f.store.parts.refs[f.store.relations()] > 0).all()
+-    assert not f.store.trust[:len(f.store)].any()
++    assert not f.store.trust[:len(unknown)].any()
+     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+-    for index in f.store.ideas().tolist():
++    for index in range(len(unknown)):
+         assert f.store.row(index)['kind'] == 'unverified'
++    sentence = f.store.row(len(f.store) - 1)
++    assert sentence['kind'] == 'observation'
++    assert sentence['evidence'] == pytest.approx((.7, 0.))
+ 
+ 
+ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

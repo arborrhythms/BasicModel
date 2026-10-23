@@ -1,0 +1,33 @@
+{
+  "selectors": [
+    "test/test_step2b_storage.py",
+    "test/test_clause_storage.py",
+    "test/test_clause_acceptance.py",
+    "test/test_sentence_end_state.py",
+    "test/test_sentence_identity.py",
+    "test/test_selected_nested_meaning.py",
+    "test/test_sentence_retention.py",
+    "test/test_relation_closing.py",
+    "test/test_definition_taxonomy.py",
+    "test/test_truth_text.py",
+    "test/test_forgetting.py",
+    "test/test_concept_forgetting.py",
+    "test/test_accessible_mind.py",
+    "test/test_part_read.py",
+    "test/test_nested_retention.py",
+    "test/test_operators_round3a.py",
+    "test/test_operators_round4a0.py",
+    "test/test_operators_final.py",
+    "test/test_operators_final_b.py",
+    "test/test_review14_contracts.py",
+    "test/test_medium_term_memory.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_close.py",
+    "test/test_reference_occurrence_views.py",
+    "test/test_identity_rows.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

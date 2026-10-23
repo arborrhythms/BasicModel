@@ -1,0 +1,479 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+  ],
+  "completed": [
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+    "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+    "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+    "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+    "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+    "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+    "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+    "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+    "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+    "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+    "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+    "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-000.json"
+      ],
+      "pid": 3983,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435897664,
+      "elapsed_seconds": 3.65967704099603,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+        "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+        "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+      ],
+      "completed": [
+        "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+        "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+        "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0026489580050110817,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0173892080783844,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0036808329168707132,
+          "message": "",
+          "stdout": "[LTM forgetting] {'before': 4, 'after': 3, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': False}\r\n[LTM forgetting] {'before': 3, 'after': 2, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+        },
+        {
+          "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012858398258686066,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0001383339986205101,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-001.json"
+      ],
+      "pid": 4000,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 861177440,
+      "elapsed_seconds": 8.293804500019178,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows"
+      ],
+      "completed": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.3268627498764545,
+          "message": "",
+          "stdout": "[BasicModel] No checkpoint at /Users/arogers/github/WikiOracle/basicmodel/output/MM_query_reasoning.ckpt, starting fresh\r\n"
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0013615419156849384,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00042550009675323963,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 4.096710459096357,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nrunEpoch(train): hit max_batches=1 cap; cursor exiting early (1 batches processed, ds.all_done=True).\r\nTraining throughput: 1 batches in 3.392s; word units 100.0% of 30 words (letters-only 100.0% of 30).\r\n"
+        },
+        {
+          "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": "fineweb",
+          "duration": 0.0007757500279694796,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reasoning_cde_model.py', 47, 'Skipped: phase artifact absent: fineweb (no producing lesson registered)')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-002.json"
+      ],
+      "pid": 4016,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1556778584,
+      "elapsed_seconds": 40.40840591606684,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "completed": [
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.016872333828359842,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0024754588957875967,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0020492500625550747,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001789832953363657,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010787500068545341,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 30.327898249961436,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0004853750579059124,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00041033304296433926,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 5.677821499994025,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007970541948452592,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010084169916808605,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015384170692414045,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.000929499976336956,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007236250676214695,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 3600.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests",
+  "elapsed_seconds": 57.05623029102571,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {
+    "fineweb": [
+      {
+        "nodeid": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+        "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reasoning_cde_model.py', 47, 'Skipped: phase artifact absent: fineweb (no producing lesson registered)')"
+      }
+    ]
+  },
+  "peak_aggregate_memory_bytes": 1556778584,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/collect.json"
+    ],
+    "pid": 3968,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 498156768,
+    "elapsed_seconds": 3.7068434171378613,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-05/tests/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+        "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+        "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+        "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_gates_on",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows",
+        "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+        "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+        "test/test_review14_contracts.py::test_retired_room_pass_cannot_move_native_wholes",
+        "test/test_review14_contracts.py::test_pair_is_hard_detached_and_relative_under_product_scaling",
+        "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
+        "test/test_review14_contracts.py::test_sentence_path_has_no_native_prototype_or_evidence_gradient",
+        "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_remains_finite",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch",
+        "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
+        "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.0]",
+        "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[0.5]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_training_step_uses_the_normal_policy_configuration",
+        "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {
+        "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows": "fineweb"
+      },
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {
+    "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_truthset_provisions_source_rows": "fineweb"
+  }
+}

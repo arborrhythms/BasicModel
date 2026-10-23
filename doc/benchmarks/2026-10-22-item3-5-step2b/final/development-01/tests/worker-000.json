@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water"
+  ],
+  "completed": [
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004765250021591783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018738165963441133,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00400366703979671,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 3, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': False}\r\n[LTM forgetting] {'before': 3, 'after': 2, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

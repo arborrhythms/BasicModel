@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_read.py::test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+  "outcome": "failed",
+  "failure": "test/test_part_read.py:66: in test_closing_excludes_its_own_witness_without_restricting_copular_reads\n    assert store.meaning_of(source).role_refs[0] == ('sym', answer)\nE   AssertionError: assert None == ('sym', 3)",
+  "records": []
+}

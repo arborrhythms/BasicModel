@@ -194,7 +194,12 @@ def native_observer(model):
         for (sid, b), records in getattr(model, '_reference_close_audit', {}).items():
             for record in records:
                 index = store.index_of_row(record['occurrence'])
-                reference = None if index is None else int(store.refs[index, 0])
+                reference = None
+                if index is not None:
+                    occurrence = store.occurrence_of(index)
+                    reference = model.conceptualSpace.mtm.token_of(occurrence) or record['reference']
+                    if isinstance(reference, tuple):
+                        reference = reference[-1]
                 for leaf in record['leaves']:
                     word = source_leaves.get((sid, b, leaf))
                     if word is None or sid not in captured or b >= len(captured[sid]):

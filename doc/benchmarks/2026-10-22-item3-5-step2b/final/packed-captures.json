@@ -1,0 +1,50 @@
+[
+  {
+    "original": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/failure-1.pt",
+    "compressed": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/failure-1.pt.gz",
+    "original_bytes": 377367873,
+    "original_sha256": "9d756ec5be287224f167cee50ad7308f554055e27c30ddf8338ce7e4b06692e3",
+    "compressed_bytes": 375479,
+    "compressed_sha256": "c52ebe9f57cd5e713db8f9c2a6da9841603c5fe1d0953dee9e4eebd7c47746df"
+  },
+  {
+    "original": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/failure-2.pt",
+    "compressed": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/failure-2.pt.gz",
+    "original_bytes": 377367873,
+    "original_sha256": "34ce9a5ff9317cc14711267e64cae40c2f702915b5f6365689c27d6fe2c43371",
+    "compressed_bytes": 375878,
+    "compressed_sha256": "4c9c013dcd84cab863db22ff5f42a194a36f85f8dd83a5f33a04bad29b48349b"
+  },
+  {
+    "original": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt",
+    "compressed": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt.gz",
+    "original_bytes": 376843521,
+    "original_sha256": "ecc38b18dfa528d645292f4c981e0aa6eda0f12c36177fd94191c979a9dd8706",
+    "compressed_bytes": 374127,
+    "compressed_sha256": "f19cbdd2102d6a8cea97f28fc0716678465d1efabe375038d6ff566bc5e3abe9"
+  },
+  {
+    "original": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt",
+    "compressed": "development-03/captures/test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt.gz",
+    "original_bytes": 377367873,
+    "original_sha256": "d82b8b79dc106055894835118c133d1c56fa5529426099030bbe83409d746182",
+    "compressed_bytes": 375434,
+    "compressed_sha256": "af5a6315fb0201d2f9bcdf7cebb8cd23882e491af40c4322a39ad6336a8ad1c3"
+  },
+  {
+    "original": "development-04/captures/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt",
+    "compressed": "development-04/captures/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt.gz",
+    "original_bytes": 376843521,
+    "original_sha256": "3e63c1d8d401f0df992a2a31607186c02c177cfa9669583c281707ae2173ded6",
+    "compressed_bytes": 374143,
+    "compressed_sha256": "e518552d0ef22ec415406e84248e408be43b4ce40e978c104eb3a17b39c0d463"
+  },
+  {
+    "original": "development-04/captures/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt",
+    "compressed": "development-04/captures/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt.gz",
+    "original_bytes": 377367873,
+    "original_sha256": "c38bc1adef2b3b497b8f552eb4b2fbe5223daeaffd98cfa0c9cf07a5ee448d4c",
+    "compressed_bytes": 375461,
+    "compressed_sha256": "5cdaba6c573518fbddbf5462970d7947cde0510efda74b99d1157cb67e64189b"
+  }
+]

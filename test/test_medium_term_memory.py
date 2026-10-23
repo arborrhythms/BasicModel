@@ -8,11 +8,12 @@ from Meaning import ConceptualMeaning
 from MediumTermMemory import MediumTermMemory
 from ReferenceContext import SituationFrame
 from test_reference_close import close, fixture
+from part_fixtures import part_references, assert_part_references
 
 
 def snapshot(resolver):
     store = resolver.store
-    return (store.refs.clone(), store.slots.clone(), store.when.clone(),
+    return (part_references(store), store.slots.clone(), store.when.clone(),
             {k: v.clone() for k, v in store.parts.state_dict().items()},
             resolver.components.owner.similarity_codebook.W.detach().clone())
 
@@ -56,7 +57,7 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
     pool = resolver.components.owner.mtm
     introduction = store.occurrence_of(store.index_of_row(address))
     original = pool.entries[introduction]
-    before = store.refs.clone(), store.slots.clone()
+    before = part_references(store), store.slots.clone()
     use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)
     occurrence = store.occurrence_of(use)
     assert plan['items'][0]['reference'] == introduction
@@ -65,8 +66,8 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
     assert entry.occurrences == (introduction, occurrence) and entry.count == 2
     assert entry.kind == store.raw_meaning_of(store.index_of_row(address)).role_refs[0][1]
     assert entry.when > original.when
-    for current, old in zip((store.refs, store.slots), before):
-        torch.testing.assert_close(current[:use], old[:use], rtol=0, atol=0)
+    assert_part_references(store, before[0])
+    torch.testing.assert_close(store.slots[:use], before[1][:use], rtol=0, atol=0)
     frame = SituationFrame.from_row(store.row(use))
     # Both the direct row and activation read use the retained token.
     for held in (frame, replace(first, activations=((occurrence, None, 0),))):
@@ -93,7 +94,8 @@ def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
     retained_rows = len(store)
     # Admission may write new rows; eviction at commit must not touch them.
     third, _, plan = close(resolver, a[2], a[6], 'mint', (), document='lru', sentence=3)
-    for current, before in zip((store.refs, store.slots, store.when), old[:3]):
+    assert_part_references(store, old[0])
+    for current, before in zip((store.slots, store.when), old[1:3]):
         torch.testing.assert_close(current[:retained_rows], before[:retained_rows], rtol=0, atol=0)
     assert tokens[0] in pool.entries and tokens[1] not in pool.entries
     assert pool.token_of(tokens[1]) is None

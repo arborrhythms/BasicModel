@@ -149,7 +149,7 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
         REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
         PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
+    result=run_guarded([sys.executable,'-m','pytest','-q',str(root/'test/observer_probe.py')],
         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
 
@@ -167,12 +167,6 @@ def test_zero_parent_relative_search_with_large_valid_codes_stays_finite():
     assert not left.requires_grad and not right.requires_grad
 
 
-def test_absent_adjacent_wholes_leave_the_lower_form():
-    from SymbolCentroid import place
-    lower = {0: torch.tensor([1., 0., 1.])}
-    placed, report = place(lower, {0: {'a', 'b'}}, {})
-    torch.testing.assert_close(placed[0], lower[0])
-    assert report['moved'] == 0 and report['identity_recovered']
 
 
 @pytest.mark.parametrize('advantage', [-.5, 0., .5])

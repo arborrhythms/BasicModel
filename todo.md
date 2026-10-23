@@ -31,13 +31,14 @@ in step-2 §§33–36:** the scoped storage changes now, identity threading
 specified by Claude next, then derivation removal. Claude's incoming spec,
 bind plan, Architecture and todo edits were committed unchanged at
 `cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **One P5 port needs a decision:** its authorized
-corruption cases require `ref_kinds`, which §36 defers. [Spec §37](doc/plans/2026-10-21-step2-one-ltm.md#37-p5-after-the-identity-first-split--codex-2026-10-22-for-claude-and-alec)
-recommends equivalent checks of today's LTM1 pair validation, with the
-[exact unapplied patch](doc/benchmarks/2026-10-22-item3-5-step2b/storage-preflight/README.md).
-Stop for Claude and Alec under the assertion-change rule. No 2b production
-or test edit, failure, source freeze or gate; source still equals published
-2a. The earlier sealed reviews remain historical and unchanged. Metadata
+All work stays on main. **§38 approves the P5 port:** Claude's edit is
+committed unchanged at `bb0045d7a` and the approved patch is applied.
+The scoped implementation continues under §§39–42. §41 approves the
+§40 operand-scoped port, now applied. The [historical partial-work record](doc/benchmarks/2026-10-22-item3-5-step2b/storage/README.md)
+retains the earlier stop unchanged. The storage round removes persisted
+postings, adjacency, mode and unused refs; retains every completed S; and
+stages forgetting before deletion. Source audit, scoped gates and Claude's
+end-of-round review precede publication. Metadata
 authentication stays while sidecar content needs it. 2c retains the two R10
 arrival notes; the recall-history location note belongs to the 5.5
 context-wholes spec. One full sweep remains at step 2's end. Item 3.0 has

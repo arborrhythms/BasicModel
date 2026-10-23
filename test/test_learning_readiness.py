@@ -186,10 +186,19 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
         assert loaded._fineweb_training_progress['sentences'] == 3
     finally:
         loaded.End()
-    broken = torch.load(path, map_location='cpu', weights_only=False)
-    key = next(k for k in broken['state_dict'] if k.endswith('.posting_codes'))
-    broken['state_dict'][key] = broken['state_dict'][key].reshape(1, -1)
-    corrupt = tmp_path/'invalid-index.ckpt'
-    torch.save(broken, corrupt)
-    with pytest.raises(ValueError, match='posting_codes'):
-        load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)
+    owner_index = next(i for i, space in enumerate(model.conceptualSpaces)
+                       if space is model._concept_owner())
+    for damage, message in (
+            ('value', 'Part arguments must be positive native symbol handles'),
+            ('shape', 'two symbol references')):
+        broken = torch.load(path, map_location='cpu', weights_only=False)
+        parts = broken['structural_extras']['conceptual_spaces'][owner_index]['allocator']['part_store']
+        if damage == 'value':
+            row = int((parts['refs'][:, 0] > 0).nonzero()[0, 0])
+            parts['refs'][row, 1] = 0
+        else:
+            parts['refs'] = parts['refs'][:, :1].clone()
+        corrupt = tmp_path/f'invalid-part-{damage}.ckpt'
+        torch.save(broken, corrupt)
+        with pytest.raises(ValueError, match=message):
+            load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)

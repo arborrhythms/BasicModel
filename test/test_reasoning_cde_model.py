@@ -64,6 +64,7 @@ class TestReasoningCDEModel(unittest.TestCase):
     @pytest.mark.slow
     @pytest.mark.usefixtures("eager_reading")
     def test_training_step_uses_the_normal_policy_configuration(self):
+        self.m.dispatch_per_row_reset([True])
         opt = self.m.getOptimizer(lr=0.01)
         self.m.runEpoch(optimizer=opt, batchSize=6, split='train',
                         max_batches=1)

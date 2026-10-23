@@ -347,7 +347,7 @@ class OccurrenceRows:
             ('address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index', 'witness_count')}
         prior_content = state.get(prefix + 'sentence_content_keys')
         row_ids = state[prefix + 'row_ids'].clone()
-        refs = state[prefix + 'refs'].clone()
+        refs = state.get(prefix + 'refs')
         mapping, native = {}, {}
         old_to_new = {}
         for row, old in enumerate(old_ids.tolist()):
@@ -363,16 +363,14 @@ class OccurrenceRows:
             mapping[('ltm', namespace, int(old))] = ('ltm', ADDRESS_DOMAIN, key)
             old_to_new[int(old)] = key
             previous = int(row_ids[row])
-            if previous not in (-1, 0) and previous != int(refs[row, 0]):
+            if previous not in (-1, 0) and (refs is None or previous != int(refs[row, 0])):
                 native[previous] = key
             row_ids[row] = key
         self._legacy_reference_map, self._legacy_id_map = mapping, old_to_new
         self._legacy_namespace = namespace
         self._legacy_native_map = native
         self._legacy_fingerprints = state[prefix + 'semantic_fingerprint'].clone()
-        for old, new in native.items():
-            refs[state[prefix + 'refs'] == old] = new
-        state[prefix + 'refs'], state[prefix + 'row_ids'] = refs, row_ids
+        state[prefix + 'row_ids'] = row_ids
         from Spaces import WhenEncoding
         encoder = getattr(self, '_address_encoding', None)
         if encoder is None:

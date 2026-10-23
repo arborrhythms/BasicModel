@@ -1,0 +1,24 @@
+.F.F.                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims _
+test/test_sentence_retention.py:43: in test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims
+    assert len(store) == 2
+E   assert 3 == 2
+E    +  where 3 = len(LTM0())
+____________ test_narrow_idea_retains_no_implicit_operand_reference ____________
+test/test_sentence_retention.py:63: in test_narrow_idea_retains_no_implicit_operand_reference
+    assert store.meaning_of(second).role_refs == (None, None, None)
+E   AssertionError: assert (('sym', 1), None, None) == (None, None, None)
+E     
+E     At index 0 diff: ('sym', 1) != None
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims
+FAILED test/test_sentence_retention.py::test_narrow_idea_retains_no_implicit_operand_reference
+2 failed, 3 passed, 1 warning in 1.68s

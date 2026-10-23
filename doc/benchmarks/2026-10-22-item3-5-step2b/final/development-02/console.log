@@ -1,0 +1,4 @@
+[collect] 31 selectors; limit 900s, 8.0 GiB
+[collect] exit 4; 1.7s; peak 0.17 GiB
+Result: collection_exit, exit 4; 0/0 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-02/tests/result.json

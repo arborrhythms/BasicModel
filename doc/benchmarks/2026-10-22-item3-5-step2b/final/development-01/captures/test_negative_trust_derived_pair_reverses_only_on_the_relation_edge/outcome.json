@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

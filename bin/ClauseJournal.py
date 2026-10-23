@@ -399,7 +399,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if not node['children'] and not node['has_point'] and store is not None:
             index = store.location(node['ref'])
             retained = None if index is None else store.meaning_of(index)
-            if retained is not None and int(retained.role_mask.sum()) == 3:
+            if (isinstance(index, tuple) and retained is not None
+                    and int(retained.role_mask.sum()) == 3):
                 row = store.row(index)
                 relation = 'implies' if 'conditional' in row.get('readings', ()) else 'part'
                 refs = row['refs'].tolist()

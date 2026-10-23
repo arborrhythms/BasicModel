@@ -95,12 +95,11 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
                              role_refs=(store.occurrence_of(source), None, None))
     target = store.append_meaning(child, kind='observation', document_key='reference')
-    store.refs[target, 0] = store.address_keys[source]
     reference = store.occurrence_of(source)
     assert store.clear_origin(store.ORIGIN_USER) == 1
     assert store._index_occurrences[reference] == 0
     assert store.meaning_of(1).role_refs[0] == reference
-    assert int(store.refs[1, 0]) == int(store.address_keys[0])
+    assert not hasattr(store, 'refs')
     restored = LTM0(4, 8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
@@ -130,6 +129,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
     state['_next_occurrence'] = torch.tensor(2)
     state['_occurrence_namespace'] = torch.tensor(list(bytes.fromhex(namespace)), dtype=torch.uint8)
     state['row_ids'][:2] = torch.tensor([2**62, 2**62 + 1])
+    state['refs'] = torch.full((store.capacity, 3), -1, dtype=torch.long)
     state['refs'][target, 0] = 2**62
     state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
     state['stream'][0,0] = state['stream'][1,1] = True
@@ -138,7 +138,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
     restored.load_semantic_extras(extras)
     reference = restored.occurrence_of(0)
     assert restored.meaning_of(1).role_refs[0] == reference
-    assert int(restored.refs[1, 0]) == reference[2]
+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     assert restored.stream[:2].tolist() == [[True, False], [False, True]]
     assert restored.remap_legacy_references({'history': (old_ref,)}) == {'history': (reference,)}
     from Spaces import WhenEncoding

@@ -1,0 +1,376 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+[
+  {
+    "case": "test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "writer": "working",
+    "occurrences": 3,
+    "parts": 6,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        22,
+        21
+      ],
+      [
+        19,
+        22
+      ],
+      [
+        16,
+        24
+      ]
+    ],
+    "words": {
+      "the": [
+        12,
+        13
+      ],
+      "cat": [
+        15,
+        16
+      ],
+      "chased": [
+        18,
+        19
+      ],
+      "mouse": [
+        21,
+        22
+      ]
+    }
+  },
+  {
+    "case": "test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "writer": "pre_2b_writer",
+    "occurrences": 3,
+    "parts": 6,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        22,
+        21
+      ],
+      [
+        19,
+        22
+      ],
+      [
+        16,
+        24
+      ]
+    ],
+    "words": {
+      "the": [
+        12,
+        13
+      ],
+      "cat": [
+        15,
+        16
+      ],
+      "chased": [
+        18,
+        19
+      ],
+      "mouse": [
+        21,
+        22
+      ]
+    }
+  },
+  {
+    "case": "test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "writer": "working",
+    "occurrences": 3,
+    "parts": 15,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        22,
+        21
+      ],
+      [
+        25,
+        24
+      ],
+      [
+        28,
+        27
+      ],
+      [
+        31,
+        30
+      ],
+      [
+        28,
+        31
+      ],
+      [
+        25,
+        33
+      ],
+      [
+        22,
+        34
+      ],
+      [
+        16,
+        35
+      ],
+      [
+        19,
+        36
+      ],
+      [
+        16,
+        37
+      ],
+      [
+        13,
+        38
+      ],
+      [
+        33,
+        30
+      ]
+    ],
+    "words": {
+      "he": [
+        12,
+        13
+      ],
+      "said": [
+        15,
+        16
+      ],
+      "she": [
+        18,
+        19
+      ],
+      "it": [
+        21,
+        22
+      ],
+      "is": [
+        24,
+        25
+      ],
+      "so": [
+        27,
+        28
+      ],
+      "beautiful": [
+        30,
+        31
+      ]
+    }
+  },
+  {
+    "case": "test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "writer": "pre_2b_writer",
+    "occurrences": 3,
+    "parts": 15,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        22,
+        21
+      ],
+      [
+        25,
+        24
+      ],
+      [
+        28,
+        27
+      ],
+      [
+        31,
+        30
+      ],
+      [
+        28,
+        31
+      ],
+      [
+        25,
+        33
+      ],
+      [
+        22,
+        34
+      ],
+      [
+        16,
+        35
+      ],
+      [
+        19,
+        36
+      ],
+      [
+        16,
+        37
+      ],
+      [
+        13,
+        38
+      ],
+      [
+        33,
+        30
+      ]
+    ],
+    "words": {
+      "he": [
+        12,
+        13
+      ],
+      "said": [
+        15,
+        16
+      ],
+      "she": [
+        18,
+        19
+      ],
+      "it": [
+        21,
+        22
+      ],
+      "is": [
+        24,
+        25
+      ],
+      "so": [
+        27,
+        28
+      ],
+      "beautiful": [
+        30,
+        31
+      ]
+    }
+  },
+  {
+    "case": "test_03_particular_subject_ends_an_idea[black]",
+    "writer": "working",
+    "occurrences": 2,
+    "parts": 4,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "words": {
+      "the": [
+        12,
+        13
+      ],
+      "cat": [
+        15,
+        16
+      ],
+      "black": [
+        18,
+        19
+      ]
+    }
+  },
+  {
+    "case": "test_03_particular_subject_ends_an_idea[black]",
+    "writer": "pre_2b_writer",
+    "occurrences": 2,
+    "parts": 4,
+    "pairs": [
+      [
+        13,
+        12
+      ],
+      [
+        16,
+        15
+      ],
+      [
+        19,
+        18
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "words": {
+      "the": [
+        12,
+        13
+      ],
+      "cat": [
+        15,
+        16
+      ],
+      "black": [
+        18,
+        19
+      ]
+    }
+  }
+]

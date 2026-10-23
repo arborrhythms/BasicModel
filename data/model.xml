@@ -501,7 +501,6 @@
   <ConceptualSpace>
     <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
     <meaningWidth>128</meaningWidth>
-    <symbolCentroid>true</symbolCentroid>
     <membershipPriming>true</membershipPriming>
     <primingMaxBoost>2.0</primingMaxBoost>
     <readerBlockNormalization>true</readerBlockNormalization>

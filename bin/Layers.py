@@ -8740,7 +8740,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     ORIGIN_USER = 2
 
     KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference")
-    MODES = ("unspecified", "assertive", "interrogative")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
         super().__init__(nDim, nDim)
@@ -8760,7 +8759,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence'):
             self.register_buffer(name, torch.tensor(0, dtype=torch.long))
         self.register_buffer('forget_cutoff', torch.tensor(0.))
-        self.register_buffer('refs', torch.full((capacity, 3), -1, dtype=torch.long))
+        self.register_buffer('forget_pending', torch.tensor(False))
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('when', torch.zeros(capacity, 4))
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
@@ -8780,7 +8779,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # flag prevents a tensor-only restore from forgetting required scope.
         self.register_buffer('role_mask', torch.zeros(capacity, 3, dtype=torch.bool))
         self.register_buffer('record_kind', torch.zeros(capacity, dtype=torch.long))
-        self.register_buffer('grammatical_mode', torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('polarity', torch.ones(capacity, dtype=torch.bool))
         self.register_buffer('address_keys', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('document_keys', torch.zeros(capacity, 32, dtype=torch.uint8))
@@ -9135,7 +9133,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             return None
         return ConceptualMeaning(
             self.slots[i].detach(), self.role_mask[i],
-            mode=self.MODES[int(self.grammatical_mode[i])],
             polarity=bool(self.polarity[i]),
             sentence_kind=(None if self.KINDS[int(self.record_kind[i])] == 'estimate' else
                            'idea' if int(self.role_mask[i].sum()) == 1 else 'relation'),
@@ -9234,8 +9231,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 with torch.no_grad():
                     self.compact_leaf_rows(keep)
                     for name, value in self._buffers.items():
-                        if (name not in ('posting_codes', 'posting_roles', 'posting_rows') and value is not None
-                                and value.ndim and value.shape[0] == self.capacity):
+                        if value is not None and value.ndim and value.shape[0] == self.capacity:
                             value[:len(keep)] = value[keep]
                     self.count.fill_(len(keep))
                     self.rebuild_leaf_postings()
@@ -9259,7 +9255,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             stored_context = dict(context)
             meaning = ConceptualMeaning(
                 self.slots[i].detach(), self.role_mask[i],
-                mode=self.MODES[int(self.grammatical_mode[i])],
                 polarity=bool(self.polarity[i]), **stored_context)
             incoming[identifier] = {key: meaning.metadata()[key]
                                     for key in ("role_refs", "bindings", "scope")}
@@ -9308,15 +9303,10 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._expectation_rows = expectation_rows
         for identifier in migrated:
             self._update_semantic_fingerprint(rows[identifier])
-        if getattr(self, "_leaf_index_missing", False):
-            for row in range(len(self)):
-                meaning = self.meaning_of(row)
-                if meaning is not None:
-                    terms, complete = self._meaning_leaf_terms(meaning, order=int(self.order[row]))
-                    self._append_leaf_terms(row, terms, complete)
-            self._leaf_index_missing = False
-            self._leaf_needs_owner_reindex = True
         self.rebuild_leaf_postings()
+        # The Part table and concept owner may still be restoring. Their
+        # binding hook regenerates all terms after the complete load.
+        self._leaf_needs_owner_reindex = True
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -9331,11 +9321,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             state_dict.setdefault(prefix + 'source_trust', legacy_trust)
         # Input position belongs to percepts, not retained occurrences.
         state_dict.pop(prefix + 'where', None)
+        state_dict.pop(prefix + 'grammatical_mode', None)
         self._resize_checkpoint_rows(state_dict, prefix)
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
         state_dict.setdefault(prefix + 'source_trust', torch.zeros_like(self.source_trust))
-        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
             state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
         # Checkpoint schema migration only: the removed clock has no live reader.
         state_dict.pop(prefix + 'timestamp', None)
@@ -9353,32 +9344,30 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                           UserWarning, stacklevel=2)
             state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
         state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
-        for name in ('refs', 'row_ids', 'when', 'truth_schema'):
+        for name in ('row_ids', 'when', 'truth_schema'):
             state_dict.setdefault(prefix + name, getattr(self, name).clone())
 
         semantic_keys = (
-            'record_kind', 'grammatical_mode', 'role_mask', 'polarity',
+            'record_kind', 'role_mask', 'polarity',
             'metadata_required', 'semantic_fingerprint')
         present = [prefix + name in state_dict for name in semantic_keys]
         if any(present) and not all(present):
             error_msgs.append(f"{prefix}incomplete semantic checkpoint; cannot recover evidence scope")
             return
-        # Legacy conversation records had no grammatical mode or evidence kind.
+        # Legacy conversation records had no evidence kind.
         # Only the explicitly accepted TruthSet origins establish fact status.
         if prefix + "record_kind" not in state_dict:
             slots = state_dict.get(prefix + "slots", self.slots)
             count = int(state_dict.get(prefix + "count", self.count))
             origins = state_dict.get(prefix + "origin", self.origin).to(slots.device)
             kinds = torch.full(self.record_kind.shape, self.KINDS.index("unverified"), dtype=torch.long, device=slots.device)
-            modes = torch.full(self.grammatical_mode.shape, self.MODES.index("unspecified"), dtype=torch.long, device=slots.device)
             accepted = ((origins == self.ORIGIN_PROVISIONED) | (origins == self.ORIGIN_USER))
             kinds[:count] = torch.where(accepted[:count], self.KINDS.index("fact"), self.KINDS.index("unverified"))
-            modes[:count] = torch.where(accepted[:count], self.MODES.index("assertive"), self.MODES.index("unspecified"))
             mask = torch.zeros(self.role_mask.shape, dtype=torch.bool, device=slots.device)
             mask[:count] = slots[:count].ne(0).any(-1)
             mask[:count, 0] = True
             migrations = {
-                "record_kind": kinds, "grammatical_mode": modes, "role_mask": mask,
+                "record_kind": kinds, "role_mask": mask,
                 "polarity": torch.ones_like(self.polarity),
                 "metadata_required": torch.zeros_like(self.metadata_required),
                 "semantic_fingerprint": torch.zeros_like(self.semantic_fingerprint),
@@ -9388,6 +9377,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             for name, value in migrations.items():
                 state_dict[prefix + name] = value
         self._migrate_address_tensors(state_dict, prefix)
+        state_dict.pop(prefix + 'refs', None)
         from RowTime import migrate
         migrate(self, state_dict, prefix)
         self._semantic_rows = {}
@@ -9404,12 +9394,9 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
-        if self.MODES[int(self.grammatical_mode[i])] == "interrogative":
-            raise ValueError("an interrogative question cannot be accepted as a fact")
         if self.KINDS[int(self.record_kind[i])] in ("question", "estimate"):
             raise ValueError("a question or estimate cannot certify its own referent")
         self.record_kind[i] = self.KINDS.index("fact")
-        self.grammatical_mode[i] = self.MODES.index("assertive")
 
     def bind_constituents(self, meaning, *, reserve=0, stream=-1, parent_address=None):
         """Bind a pure compose tree through this existing occurrence owner.
@@ -9502,8 +9489,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         if evidence is None:
             signed = max(-1., min(1., float(trust)))
             evidence = (max(signed, 0.), max(-signed, 0.))
-            if not meaning.polarity:
-                evidence = evidence[::-1]
         else:
             evidence = tuple(map(float, evidence))
         if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
@@ -9535,7 +9520,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.surprise[n] = surprise
         self.origin[n] = self.ORIGIN_CONVERSATION
         self.record_kind[n] = self.KINDS.index(kind)
-        self.grammatical_mode[n] = self.MODES.index(meaning.mode)
         self.polarity[n] = meaning.polarity
         self.address_keys[n] = identifier
         self.row_ids[n] = identifier
@@ -9847,7 +9831,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             'order': int(self.order[i]),
             'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
             'corners': self.corners(i),
-            'refs': self.refs[i].clone(),
             'row_id': int(self.row_ids[i]),
             'when': self.when[i].clone(),
             'surprise': float(self.surprise[i].item()),
@@ -10041,12 +10024,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 if child is None:
                     raise ValueError("retained expectation occurrence is unavailable")
                 pending.append(child)
-            # Cached idea operands and relation slots name the same shared
-            # rows. Retention follows those addresses, without a syntax tree.
-            for reference in self.refs[index].tolist():
-                child = self.index_of_row(reference) if reference not in (-1, 0) else None
-                if child is not None:
-                    pending.append(child)
 
         # This includes all closure members (including context-only roots), so
         # validation cannot accidentally erase an invalid survivor's evidence.
@@ -10088,12 +10065,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         texts = [self._texts[i] for i in rows]
         self.compact_leaf_rows(keep)
         columns = ('slots', 'surprise', 'origin', 'role_mask', 'record_kind',
-                   'grammatical_mode', 'polarity', 'address_keys', 'document_keys',
+                   'polarity', 'address_keys', 'document_keys',
                    'sentence_content_keys', 'sentence_index', 'witness_count',
                    'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
-                   'source_trust', 'refs', 'row_ids', 'when', 'order', 'stream',
+                   'source_trust', 'row_ids', 'when', 'order', 'stream',
                    'leaf_complete')
-        minus_one = {'surprise', 'address_keys', 'sentence_index', 'refs', 'row_ids', 'order'}
+        minus_one = {'surprise', 'address_keys', 'sentence_index', 'row_ids', 'order'}
         for name in columns:
             values = getattr(self, name)
             values[:size] = values[keep]
@@ -10104,7 +10081,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._texts = texts + [None] * (len(self._texts) - size)
         self.count.fill_(size)
         self.rebuild_leaf_postings()
-        self.retain_adjacency()
         self._validate_expectation_links()
         rebuild = getattr(self, '_rebuild_taxonomy', None)
         if rebuild is not None:
@@ -10121,7 +10097,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._texts = []
         self.role_mask.zero_()
         self.record_kind.zero_()
-        self.grammatical_mode.zero_()
         self.polarity.fill_(True)
         self.address_keys.fill_(-1)
         self.document_keys.zero_()
@@ -10133,18 +10108,15 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._semantic_rows = {}
         self._expectation_rows = {}
         self.source_trust.zero_()
-        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
+        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
             getattr(self, name).zero_()
         self.c_plus.zero_()
         self.c_minus.zero_()
-        self.refs.fill_(-1)
         self.row_ids.fill_(-1)
         self.order.fill_(-1)
         self.when.zero_()
         self.leaf_complete.zero_()
         self._leaf_postings, self._index_occurrences = {}, AddressIndex()
-        self._adjacent_postings = {}
-        self._adjacency_revision += 1
         # Re-reading the same source after reset recomputes the same address. A held reference
         # cannot silently bind to a later fact at the same physical row.
 

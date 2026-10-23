@@ -1131,7 +1131,6 @@
   <xs:complexType name="conceptualSpaceType">
     <xs:all>
       <xs:element name="meaningWidth" type="xs:nonNegativeInteger" minOccurs="0"/>
-      <xs:element name="symbolCentroid" type="xs:boolean" minOccurs="0"/>
       <xs:element name="membershipPriming" type="xs:boolean" minOccurs="0"/>
       <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="readerBlockNormalization" type="xs:boolean" minOccurs="0"/>

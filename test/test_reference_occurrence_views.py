@@ -13,7 +13,7 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
     address = f.identities[target]
     assert address == f.store.occurrence_of(target)
     assert not f.cs.components.individual_ids
-    before = f.store.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()
+    before = f.store.parts.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()
     records = f.resolver.accessible(f.frames)
     candidates = f.resolver.individuals(records)
     assert address in candidates and f.identities[distractor] in candidates
@@ -23,5 +23,5 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
     assert context['identity'] == address and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]
     result = execute(f, site(f, f.atoms[kind]*0, predicate=f.atoms[4]))
     assert result.value.role_refs[0] == address
-    for actual, expected in zip((f.store.refs, f.store.slots, f.cs.similarity_codebook.W), before):
+    for actual, expected in zip((f.store.parts.refs, f.store.slots, f.cs.similarity_codebook.W), before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)

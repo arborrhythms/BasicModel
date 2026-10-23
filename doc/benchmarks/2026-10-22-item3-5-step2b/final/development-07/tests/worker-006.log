@@ -1,0 +1,12 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_only_the_inverted_index_is_owned_or_checkpointed _____________
+test/test_reference_index.py:42: in test_only_the_inverted_index_is_owned_or_checkpointed
+    assert restored.rows_for_code(2) == (a,)
+E   assert () == (0,)
+E     
+E     Right contains one more item: 0
+E     Use -v to get more diff
+=========================== short test summary info ============================
+FAILED test/test_reference_index.py::test_only_the_inverted_index_is_owned_or_checkpointed
+1 failed, 2 passed in 1.63s

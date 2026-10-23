@@ -1,7 +1,7 @@
 """Grammar-derived, inverted retrieval index over completed LTM fields.
 
-Only code-to-row postings persist. No forward list of a sentence's words,
-leaves, operations, or activation is retained with a row.
+Postings are derived in memory from the retained fields after their owner
+loads. No forward word list or saved posting table is a second authority.
 """
 from __future__ import annotations
 
@@ -35,17 +35,9 @@ class LeafCodeIndex:
     """The row writer owns one derived inverted index, without forward lists."""
 
     def _init_leaf_index(self):
-        self.register_buffer('leaf_complete', torch.zeros(self.capacity, 3, dtype=torch.bool))
-        # These columns serialize global postings, never per-row sequences.
-        for name in ('posting_codes', 'posting_roles', 'posting_rows'):
-            self.register_buffer(name, torch.empty(0, dtype=torch.long))
+        self.register_buffer('leaf_complete', torch.zeros(self.capacity, 3, dtype=torch.bool),
+                             persistent=False)
         self._leaf_postings = {}
-        # A pair is a whole. These are inverted pair postings, not a stored
-        # forward program or a second copy of each sentence's word sequence.
-        self._adjacent_postings = {}
-        self._adjacency_revision = 0
-        for name in ('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position'):
-            self.register_buffer(name, torch.empty(0, dtype=torch.long))
         self._index_occurrences = AddressIndex()
         self._index_code_row = None
         self._index_read = None
@@ -126,116 +118,20 @@ class LeafCodeIndex:
         return tuple(sorted(set(itertools.chain.from_iterable(
             self._leaf_postings.get((code, r), ()) for r in range(3)))))
 
-    def _save_to_state_dict(self, destination, prefix, keep_vars):
-        super()._save_to_state_dict(destination, prefix, keep_vars)
-        records = [(code, role, row) for (code, role), rows in sorted(self._leaf_postings.items())
-                   for row in rows]
-        for i, name in enumerate(('posting_codes', 'posting_roles', 'posting_rows')):
-            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in records])
-        pairs = sorted((left, right, address, position)
-                       for (left, right), witnesses in self._adjacent_postings.items()
-                       for address, position in witnesses)
-        for i, name in enumerate(('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')):
-            destination[prefix + name] = self.address_keys.new_tensor([record[i] for record in pairs])
-
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
-        legacy = any(prefix + name in state_dict for name in ('leaf_codes', 'leaf_offsets'))
-        if legacy:
-            import warnings
-            warnings.warn('Dropping per-sentence leaf lists; retrieval terms require grammar unfolding (§11.1).',
-                          UserWarning, stacklevel=2)
-            for name in ('leaf_codes', 'leaf_offsets'):
-                state_dict.pop(prefix + name, None)
-        names = ('posting_codes', 'posting_roles', 'posting_rows')
-        present = [prefix + name in state_dict for name in names]
-        if any(present) and not all(present):
-            error_msgs.append(prefix + 'incomplete inverted retrieval index')
-            return
-        self._leaf_index_missing = not all(present) or legacy
-        # Postings are a cache, never a second authority for membership.
-        # Rebuild from references/Part after the complete owner has loaded.
+        # Old checkpoints may carry these retired caches. Their values have
+        # no authority: only the complete owner's retained fields rebuild.
+        for name in ('posting_codes', 'posting_roles', 'posting_rows',
+                     'leaf_codes', 'leaf_offsets', 'leaf_complete', 'index_stream',
+                     'adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position'):
+            state_dict.pop(prefix + name, None)
+        self._leaf_postings = {}
+        self.leaf_complete.zero_()
         self._leaf_needs_owner_reindex = True
-        for name in names:
-            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
-            if value.ndim != 1 or value.dtype != torch.long:
-                error_msgs.append(prefix + 'invalid inverted retrieval column ' + name)
-                return
-            setattr(self, name, self.address_keys.new_empty(value.shape))
-        adjacent_names = ('adjacent_left', 'adjacent_right', 'adjacent_address', 'adjacent_position')
-        adjacent_present = [prefix + name in state_dict for name in adjacent_names]
-        if any(adjacent_present) and not all(adjacent_present):
-            error_msgs.append(prefix + 'incomplete adjacent whole index')
-            return
-        for name in adjacent_names:
-            value = state_dict.setdefault(prefix + name, self.address_keys.new_empty(0))
-            if value.ndim != 1 or value.dtype != torch.long:
-                error_msgs.append(prefix + 'invalid adjacent whole column ' + name)
-                return
-            setattr(self, name, self.address_keys.new_empty(value.shape))
-        state_dict.setdefault(prefix + 'leaf_complete', torch.zeros_like(self.leaf_complete))
-        # Retired write-position ownership is not part of shared truth.
-        state_dict.pop(prefix + 'index_stream', None)
-        if legacy:
-            state_dict[prefix + 'leaf_complete'] = torch.zeros_like(self.leaf_complete)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
-        if len({getattr(self, name).numel() for name in names}) != 1:
-            error_msgs.append(prefix + 'inverted retrieval columns have different lengths')
-            return
-        self._leaf_postings = {}
-        for code, role, row in zip(*(getattr(self, name).tolist() for name in names)):
-            if code < 0 or role not in (0, 1, 2) or not 0 <= row < len(self):
-                error_msgs.append(prefix + 'invalid inverted retrieval posting')
-                return
-            rows = self._leaf_postings.setdefault((code, role), [])
-            if rows and rows[-1] >= row:
-                error_msgs.append(prefix + 'inverted retrieval postings must be unique and sorted')
-                return
-            rows.append(row)
-        for name in names:
-            setattr(self, name, self.address_keys.new_empty(0))
         self.rebuild_leaf_postings()
-        if len({getattr(self, name).numel() for name in adjacent_names}) != 1:
-            error_msgs.append(prefix + 'adjacent whole columns have different lengths')
-            return
-        self._adjacent_postings = {}
-        for left, right, address, position in zip(*(getattr(self, name).tolist() for name in adjacent_names)):
-            if min(left, right, position) < 0 or address not in self._index_occurrences:
-                error_msgs.append(prefix + 'invalid adjacent whole posting')
-                return
-            self._adjacent_postings.setdefault((left, right), set()).add((address, position))
-        self._adjacency_revision += 1
-        for name in adjacent_names:
-            setattr(self, name, self.address_keys.new_empty(0))
-
-    @torch.no_grad()
-    def witness_adjacency(self, row, codes):
-        """Re-witness the committed reading's pairs at one durable address."""
-        address = int(self.address_keys[int(row)])
-        codes = tuple(map(int, codes))
-        if any(code < 0 for code in codes):
-            raise ValueError('adjacent wholes require identified words')
-        incoming = {(left, right, position) for position, (left, right) in
-                    enumerate(zip(codes, codes[1:]))}
-        previous = {(left, right, position) for (left, right), witnesses in self._adjacent_postings.items()
-                    for key, position in witnesses if key == address}
-        if incoming == previous:
-            return
-        for left, right, position in previous - incoming:
-            witnesses = self._adjacent_postings[left, right]
-            witnesses.remove((address, position))
-            if not witnesses:
-                del self._adjacent_postings[left, right]
-        for left, right, position in incoming - previous:
-            self._adjacent_postings.setdefault((left, right), set()).add((address, position))
-        self._adjacency_revision += 1
-
-    def retain_adjacency(self):
-        alive = self._index_occurrences
-        self._adjacent_postings = {pair: retained for pair, witnesses in self._adjacent_postings.items()
-                                  if (retained := {(key, pos) for key, pos in witnesses if key in alive})}
-        self._adjacency_revision += 1
 
     @torch.no_grad()
     def _append_leaf_terms(self, row, terms, complete, stream=-1):
