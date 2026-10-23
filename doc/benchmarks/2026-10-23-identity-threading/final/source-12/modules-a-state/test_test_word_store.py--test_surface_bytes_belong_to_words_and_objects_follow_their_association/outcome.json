@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_surface_bytes_belong_to_words_and_objects_follow_their_association",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

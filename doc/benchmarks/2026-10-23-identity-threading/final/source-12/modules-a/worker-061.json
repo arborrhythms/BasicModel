@@ -1,0 +1,194 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+    "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+    "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference3]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference4]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference5]",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[True]",
+    "test/test_stored_idea_generation.py::test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons",
+    "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+    "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores"
+  ],
+  "completed": [
+    "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+    "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+    "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference3]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference4]",
+    "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference5]",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]",
+    "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[True]",
+    "test/test_stored_idea_generation.py::test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons",
+    "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+    "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores"
+  ],
+  "slow_selected": [
+    "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0037033329717814922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005237080622464418,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002274041995406151,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.862731667002663,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 4.57487183297053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010267081670463085,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00035458384081721306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033825007267296314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002988330088555813,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003607911057770252,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00035358406603336334,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008705419022589922,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.8698146669194102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005258747842162848,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000311124837026,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005143329035490751,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

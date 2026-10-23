@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T17:32:11.118543+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T17:32:16.712010+00:00"
+}

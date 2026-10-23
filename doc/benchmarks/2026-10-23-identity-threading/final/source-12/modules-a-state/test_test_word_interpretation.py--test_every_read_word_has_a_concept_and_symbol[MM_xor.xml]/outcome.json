@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_interpretation.py::test_every_read_word_has_a_concept_and_symbol[MM_xor.xml]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,297 @@
+{
+  "node": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]",
+  "outcome": "failed",
+  "failure": "test/test_live_references.py:156: in test_identity_journal_keeps_the_implicit_typed_reference_and_point\n    assert clause.factored_refs[slot] == 7\nE   assert 1 == 7",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          0,
+          2
+        ],
+        "word_rows": [
+          0,
+          2
+        ],
+        "activations": [
+          1.0,
+          1.0
+        ],
+        "leaves": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            0,
+            -1
+          ]
+        ],
+        "targets": [
+          0,
+          1,
+          1
+        ],
+        "end_state": [
+          [
+            0.10000000149011612,
+            0.15000000596046448,
+            0.699999988079071,
+            0.25
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          1,
+          3
+        ],
+        "word_ids": null,
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": [
+          -1,
+          -1
+        ],
+        "symbol_where": null,
+        "symbol_when": null,
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.20000000298023224,
+              0.30000001192092896,
+              0.4000000059604645,
+              0.5
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.10000000149011612,
+              0.15000000596046448,
+              0.699999988079071,
+              0.25
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            7,
+            3
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": [
+          2,
+          0
+        ],
+        "leaf_evidence": null,
+        "identity_origins": [],
+        "identity_actions": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "identity_values": [],
+        "identity_leaves": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": null,
+            "refs": [
+              7,
+              3,
+              -1
+            ],
+            "order": 2,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                false
+              ]
+            },
+            "subject_word_id": -1,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "lift",
+            "formal_name": "lift",
+            "head_role": 0,
+            "order": 2,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 1,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 2,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 3,
+            "word_id": -1,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    }
+  ]
+}

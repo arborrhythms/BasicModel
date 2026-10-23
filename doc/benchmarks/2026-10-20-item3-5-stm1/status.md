@@ -1,12 +1,12 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading review repair, 2026-10-23:** Claude returns
-DO NOT LAND on `bf44bbc47` for the live path's skipped typed-concept
-lookup. Its green scoped results remain retained. Source-12 restores the
-lookup and single-option contract, then reruns all scoped gates before
-review and publication. The [receipt](../2026-10-23-identity-threading/README.md)
-records every port and failed source. No full sweep or learning claim.
-Layout/STM changes stay item 3.0; 2c follows identity. Item 3.0 is not reached.
+**Identity threading capture repair, 2026-10-23:** source-12
+`9ccc4911c` passed its scoped gates, but its review requires carrying the
+implicit typed operand reference through the journal. Source-13 repairs
+that correspondence and owns a new scoped pass. The [receipt](../2026-10-23-identity-threading/README.md)
+retains every review and failure. Alec mediates the next Claude review;
+publication waits. No full sweep or learning claim. Layout/STM changes
+stay item 3.0; 2c follows identity. Item 3.0 is not reached.
 
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
 WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,

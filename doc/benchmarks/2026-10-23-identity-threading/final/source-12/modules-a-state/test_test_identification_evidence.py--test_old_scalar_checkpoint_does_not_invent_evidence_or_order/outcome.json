@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

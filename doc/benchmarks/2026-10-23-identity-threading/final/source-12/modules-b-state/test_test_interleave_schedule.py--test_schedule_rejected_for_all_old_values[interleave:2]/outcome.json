@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

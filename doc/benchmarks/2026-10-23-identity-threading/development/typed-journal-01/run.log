@@ -1,0 +1,50 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+__ test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0] __
+test/test_live_references.py:156: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.factored_refs[slot] == 7
+E   assert 1 == 7
+__ test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2] __
+test/test_live_references.py:156: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.factored_refs[slot] == 7
+E   assert 1 == 7
+__ test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+__ test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+_ test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+_ test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-2] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+_ test_identity_journal_keeps_the_implicit_typed_reference_and_point[equal-0] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+_ test_identity_journal_keeps_the_implicit_typed_reference_and_point[equal-2] __
+test/test_live_references.py:155: in test_identity_journal_keeps_the_implicit_typed_reference_and_point
+    assert clause.refs[slot] == 7
+E   assert 1 == 7
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-2]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[equal-0]
+FAILED test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[equal-2]
+8 failed, 1 warning in 4.00s

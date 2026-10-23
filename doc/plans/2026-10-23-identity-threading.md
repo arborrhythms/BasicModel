@@ -1533,3 +1533,66 @@ would lose history silently. Guard it in source-12 if cheap, else in 2c.
 The decomposition expansion maps three parameter arrays by position,
 relying on bind being the last compose rule; a name-based assertion
 closes that in a later round.
+
+## 31. Codex: source-12 scoped gates complete — 2026-10-23
+
+Frozen `9ccc4911c5a6792cbe97de8e80de373b03cb41ce` passes all requested
+scoped groups: 1,619 passed, twelve existing skips, zero failures; all
+1,631 selected cases complete across 132 distinct files. There is no
+compile-cache retry. The source audit covers 880 files; source, tests and
+measurement fixtures are unchanged after freeze. Both decomposition arms
+retain their original snapshots/seeds, independently checked action names
+and bitwise surviving parameters. The unchanged pending certificate has
+forward 0 bound / 16 open, reverse 0 / 32, and no wrong binding. G1–G3,
+c/e, ordinary presentation, gradient logging and multi-stream driving
+pass. Every earlier failed source and its probes remain retained.
+
+The twelve skips are nine absent phase artifacts and three opt-in slow
+MPS/Inductor cases; none supplies a learning or GPU-execution claim. This
+is the scoped identity pass, not step 2's full sweep. Claude's actual
+landing review of this source and its receipt precedes publication.
+
+## 32. Codex: capture the typed operand reference — 2026-10-23
+
+Claude's actual source-12 review returns DO NOT LAND: the restored typed
+value reaches composition, but identity programs skip the journal branch
+that carries an implicit operand's typed reference. Explicit kind/generic
+requests already resolve at capture; implicit S subjects and part/whole/
+equal operands do not. For an S subject, the main reference is already
+updated from `operand_refs`, but its factored reference and composition
+leaf remain raw. A relation's reference also remains raw.
+
+`typed-journal-01` retains eight deterministic failures, covering orders
+zero/two and lift/part/whole/equal. The fixture passes the actual
+`prepare_operands` result into an identity program and `finish_clause`.
+Its raw reference is 1 and the selected typed reference is 7. These unit
+cases contain no exploit/explore trials or keep, so no keep probe exists.
+
+Under step-2 §39, share the journal's existing head/reference lookup, then
+let an identity program adopt a different native reference only for a
+known requested order other than one, excluding kind/generic modes. Exit
+that operand's legacy branch immediately: no open, mint or formation
+choices are revived. The numerical value stays the exact compose result.
+The eight new certificates check main and factored references, the
+composition leaf reference and the typed point. Every existing assertion
+stays; no test is retired. This restores correspondence and reverses no
+§1 decision. Source-13 owns a new complete scoped pass.
+
+Two review notes are recorded precisely. The identity path's implicit
+literal exemption keeps both raw point and reference; the old ordinary
+path exempted only reference binding after typed lookup. This is an
+explicit identity-path choice accepted in the source-12 review, not an
+exact restoration of the ordinary path as §30 could imply. The
+decomposition adapter also directly checks that the current unary names
+minus bind equal the original unary sequence. No snapshot, seed, budget
+or numerical row map changes. The event-history notes remain FutureWork.
+
+Alec's latest instruction changes the review hand-off: finish and supply
+the frozen source and receipt to Alec, who mediates with Claude. No direct
+Claude review is requested for source-13, and publication waits for that
+mediated review. This does not remove the review requirement.
+
+`typed-journal-02` passes all 78 live-reference, sentence-journal and
+identity-threading cases after the repair, including the eight unchanged
+new assertions that failed before it. This is development evidence only;
+the frozen source owns every required scoped group anew.

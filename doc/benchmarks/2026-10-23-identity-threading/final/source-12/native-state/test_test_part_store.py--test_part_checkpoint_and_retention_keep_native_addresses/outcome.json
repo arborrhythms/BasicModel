@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_store.py::test_part_checkpoint_and_retention_keep_native_addresses",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

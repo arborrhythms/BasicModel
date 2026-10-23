@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_work_boundaries.py::test_candidate_native_reads_obey_budget_before_payload_access",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

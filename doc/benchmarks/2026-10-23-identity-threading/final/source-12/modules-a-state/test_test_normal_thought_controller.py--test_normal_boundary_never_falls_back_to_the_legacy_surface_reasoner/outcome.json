@@ -1,0 +1,6 @@
+{
+  "node": "test/test_normal_thought_controller.py::test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

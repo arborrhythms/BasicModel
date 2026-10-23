@@ -1,16 +1,17 @@
 # Identity threading — 2026-10-23
 
-Claude's actual read-only review of source-11 `bf44bbc47` is **DO NOT
-LAND**: the live identity path skipped existing typed-concept lookup.
-Its 1,611 passes and twelve skips remain retained; they are not promoted.
-Source-12 restores the lookup with a single option and reruns every scoped
-group before another landing review. Publication has not happened. This
-is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
+Source-12 `9ccc4911c` completed all scoped gates (1,619 passed, twelve
+skips), but its retained review is **DO NOT LAND**: implicit non-order-one
+operands composed with the typed value while capture retained a raw
+reference. Source-13 repairs that correspondence and reruns the scoped
+groups. The completed source and receipt go to Alec for mediated review;
+publication waits. No earlier evidence is promoted and no learning claim
+is made. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–30. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–32. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -44,10 +45,10 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-11/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-12/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-11/test-ports.patch)
-is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-11/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
+pre-implementation review. [`test-ports.patch`](final/source-12/test-ports.patch)
+is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-12/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
 
 ## Every existing-test port
 
@@ -344,3 +345,66 @@ re-close ownership and role evidence for unfactored leaf verbs. They are
 not claimed resolved by this source. The incoming future layout now puts
 time in the percept portion of the paired vector; this supersedes §27's
 read-ahead draft, remains item 3's work, and changes no current storage.
+
+## Completed source-12 gates
+
+Frozen source: `9ccc4911c5a6792cbe97de8e80de373b03cb41ce`.
+The [source-specific summary](final/source-12/gate-summary.json) confirms
+all 1,631 selected cases complete, 1,619 passed and twelve skipped, with
+zero failures and no compile-cache retry. Its audit holds 880 source,
+configuration, test and measurement-file hashes. No source or measurement
+file changed after freeze. No full sweep or extra fresh series ran.
+
+| Group | Passed | Skipped |
+| --- | ---: | ---: |
+| Regression files | 87 | 0 |
+| Native eight-file set | 123 | 7 |
+| Changed-module files, first partition | 707 | 5 |
+| Changed-module files, second partition | 698 | 0 |
+| Original decomposition, zero gain | 2 | 0 |
+| Original decomposition, enabled gain | 2 | 0 |
+
+The [snapshot ledger](final/source-12/decomposition-snapshots.json) verifies
+both original seeds and snapshots, the independent action-name map and
+every surviving parameter in both arms. The four snapshot copies are
+losslessly packed with original/compressed byte hashes. The unchanged
+pending certificate records forward 0 bound / 16 open and reverse 0 / 32,
+no wrong binding, no closure forcing and zero attention budget. G1–G3,
+c/e, the unforced presentation, optimizer-gradient log and multi-stream
+driver all pass. The added live-reference cases pass on this frozen hash.
+
+Nine skips require absent phase artifacts; three are opt-in slow
+MPS/Inductor cases. Their exact reasons are in the summary. No skipped
+case counts as a pass or a learning result; no GPU execution is claimed.
+Claude reviews this source before publication of main and the WikiOracle
+bump. No additional gate or sweep is scheduled after that review.
+
+## Source-13 capture-reference repair and mediated review
+
+The [source-12 review](final/source-12/claude-review.md) is retained in full.
+Its necessary repair is in `ClauseJournal`: identity programs retain the
+different native reference already used by a known, non-order-one
+implicit operand, then bypass all legacy formation/open/mint handling.
+Kind/generic and order-one contracts remain unchanged.
+
+`development/typed-journal-01` retains all eight pre-repair failures at
+orders zero/two for lift/part/whole/equal. The new fixture feeds the actual
+prepared operands into `finish_clause`; its assertions require reference
+7 in the main, factored and composition views and the exact typed point.
+No trial or keep exists in these deterministic unit calls. No existing
+assertion changes and no test retires. The decomposition measurement adds
+the direct unary-sequence check requested by review, without changing
+snapshots, seeds or the numerical map.
+
+The literal exemption is declared accurately: identity programs retain a
+literal's raw value and reference; the ordinary legacy path excluded it
+from binding only after typed lookup. The source-12 review accepts that
+identity-path choice; it is not claimed as identical legacy behavior.
+
+Alec now mediates the review with Claude. Source-13 is prepared for that
+handoff; no direct review or publication follows its scoped gates.
+
+`development/typed-journal-02`: 78 passed across live references, sentence
+journal and identity threading after the repair. The eight pre-repair
+failures keep all their assertions. No development result substitutes for
+the source-13 gates.

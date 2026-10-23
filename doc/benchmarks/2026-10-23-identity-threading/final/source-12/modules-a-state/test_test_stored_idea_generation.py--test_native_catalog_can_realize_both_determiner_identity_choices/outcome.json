@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

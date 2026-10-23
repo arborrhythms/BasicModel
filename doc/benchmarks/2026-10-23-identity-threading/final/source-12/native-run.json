@@ -1,0 +1,32 @@
+{
+  "source": "9ccc4911c5a6792cbe97de8e80de373b03cb41ce",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_section14.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_bind_thought.py",
+    "test/test_identity_rows.py",
+    "test/test_identity_cube.py",
+    "test/test_part_store.py",
+    "test/test_operators_final_b.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-12/native"
+  ],
+  "started": "2026-10-23T17:08:53.664243+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T17:12:54.133462+00:00"
+}

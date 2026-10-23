@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_event_chart_excludes_address_bands_and_preserves_evidence_poles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

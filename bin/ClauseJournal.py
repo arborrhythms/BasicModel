@@ -117,7 +117,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             operand['value'] = actual
             if program.operation_relations is not None:
                 operand['has_point'] = not bool(program.operation_relations[action, role])
-            if program.operation_refs is not None and program.identity_actions is None:
+            if program.operation_refs is not None:
                 selected = operand
                 while selected['children']:
                     headed = getattr(selected['rule'], 'head_role', 0)
@@ -132,6 +132,13 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 binding = (binding_order is not None and binding_order >= 0
                            and binding_mode not in ('kind', 'generic'))
                 chosen_antecedent = (native(reference) and reference != selected['ref'])
+                if program.identity_actions is not None:
+                    # Implicit non-individual operands already used their
+                    # typed concept in compose. Keep that reference beside
+                    # the journal's point without reviving formation choices.
+                    if binding and binding_order != 1 and chosen_antecedent:
+                        selected['ref'] = reference
+                    continue
                 if (getattr(program, 'close_references', False) and binding_order == 1
                         and binding and not chosen_antecedent):
                     # An enclosing operation cannot re-bind a deferred

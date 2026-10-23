@@ -1,0 +1,6 @@
+{
+  "node": "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionPriority-true]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

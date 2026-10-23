@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_later_binding_cannot_fill_from_an_absent_role",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

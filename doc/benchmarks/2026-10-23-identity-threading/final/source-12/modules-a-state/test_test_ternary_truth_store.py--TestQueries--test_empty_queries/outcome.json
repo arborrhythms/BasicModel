@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

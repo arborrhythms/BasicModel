@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

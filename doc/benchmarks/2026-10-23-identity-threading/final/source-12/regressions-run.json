@@ -1,0 +1,32 @@
+{
+  "source": "9ccc4911c5a6792cbe97de8e80de373b03cb41ce",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_medium_term_memory.py",
+    "test/test_reference_arrivals.py",
+    "test/test_reference_arrival_review.py",
+    "test/test_reference_choices.py",
+    "test/test_part_closing.py",
+    "test/test_reference_occurrence_views.py",
+    "test/test_reference_review10.py",
+    "test/test_reference_participants.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-12/regressions"
+  ],
+  "started": "2026-10-23T17:07:11.885970+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T17:08:53.500115+00:00"
+}

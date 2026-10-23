@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

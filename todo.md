@@ -17,12 +17,12 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading remains on main,
-unpublished. Claude's source-11 review returns DO NOT LAND for the skipped
-typed-concept lookup. Source-12 repairs it and reruns the scoped gates
-before review. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
-retains all earlier results and exact ports. Published storage-only 2b
-remains BasicModel `39272e7a6`, WikiOracle `ade0399`.
+**Current:** Item 3.5 line 2's identity threading is finishing the
+source-12 review's typed-reference correspondence repair on main. Its
+new frozen source will own all scoped gates, then go to Alec for mediated
+Claude review before publication. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
+retains every prior source, review, failure and exact port. Published
+storage-only 2b remains BasicModel `39272e7a6`, WikiOracle `ade0399`.
 
 **Next is 2c** after identity lands, carrying the two R10 arrival notes,
 then step 2's one full sweep. The latest §72 decision moves the

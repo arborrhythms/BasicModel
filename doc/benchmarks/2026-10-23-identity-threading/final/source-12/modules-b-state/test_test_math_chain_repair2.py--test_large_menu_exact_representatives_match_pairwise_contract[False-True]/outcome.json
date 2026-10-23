@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair2.py::test_large_menu_exact_representatives_match_pairwise_contract[False-True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

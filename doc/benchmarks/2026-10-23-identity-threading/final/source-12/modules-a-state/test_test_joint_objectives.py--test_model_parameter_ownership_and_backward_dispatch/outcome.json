@@ -1,0 +1,6 @@
+{
+  "node": "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

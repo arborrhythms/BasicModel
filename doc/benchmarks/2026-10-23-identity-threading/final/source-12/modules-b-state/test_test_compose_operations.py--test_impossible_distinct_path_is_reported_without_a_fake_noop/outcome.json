@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_operations.py::test_impossible_distinct_path_is_reported_without_a_fake_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

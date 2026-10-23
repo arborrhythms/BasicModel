@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
