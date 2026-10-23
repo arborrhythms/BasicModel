@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_model_what_present_wraps_established_forward_byte_identically",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

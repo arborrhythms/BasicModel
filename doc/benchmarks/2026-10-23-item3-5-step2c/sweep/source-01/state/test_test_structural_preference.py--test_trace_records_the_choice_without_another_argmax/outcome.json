@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_trace_records_the_choice_without_another_argmax",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

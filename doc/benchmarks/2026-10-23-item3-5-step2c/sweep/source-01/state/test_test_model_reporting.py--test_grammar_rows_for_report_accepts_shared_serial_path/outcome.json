@@ -1,0 +1,6 @@
+{
+  "node": "test/test_model_reporting.py::test_grammar_rows_for_report_accepts_shared_serial_path",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

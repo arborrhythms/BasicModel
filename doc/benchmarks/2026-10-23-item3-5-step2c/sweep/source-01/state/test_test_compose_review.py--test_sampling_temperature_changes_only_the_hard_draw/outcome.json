@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_review.py::test_sampling_temperature_changes_only_the_hard_draw",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

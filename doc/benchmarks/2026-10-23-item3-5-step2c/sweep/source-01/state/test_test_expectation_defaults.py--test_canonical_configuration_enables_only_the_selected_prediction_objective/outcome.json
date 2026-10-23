@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_defaults.py::test_canonical_configuration_enables_only_the_selected_prediction_objective",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptual_chunking.py::test_perceptual_space_exposes_synthesis_mode_attribute",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

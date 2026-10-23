@@ -1,0 +1,6 @@
+{
+  "node": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_signal_router_rule_ids_match_grammar",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_single_position_gap_splits",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

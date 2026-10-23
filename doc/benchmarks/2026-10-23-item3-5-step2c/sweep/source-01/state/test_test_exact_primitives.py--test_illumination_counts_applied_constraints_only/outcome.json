@@ -1,0 +1,6 @@
+{
+  "node": "test/test_exact_primitives.py::test_illumination_counts_applied_constraints_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

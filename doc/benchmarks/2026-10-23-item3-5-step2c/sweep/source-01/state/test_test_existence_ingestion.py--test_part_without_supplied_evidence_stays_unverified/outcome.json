@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_ingestion.py::test_part_without_supplied_evidence_stays_unverified",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

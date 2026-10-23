@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_ideas_routing.py::TestTrustStamp::test_default_one",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

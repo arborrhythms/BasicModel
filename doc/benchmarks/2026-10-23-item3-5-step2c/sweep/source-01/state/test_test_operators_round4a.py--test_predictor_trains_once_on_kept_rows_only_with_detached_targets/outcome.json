@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a.py::test_predictor_trains_once_on_kept_rows_only_with_detached_targets",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

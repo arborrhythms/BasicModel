@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_tiling_ladder_nests_units_in_space_bounded_wholes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

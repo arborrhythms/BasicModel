@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_bracket.py::test_ladder_shape_and_rungs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_grammar_loader.py::test_order_expansion_preserves_non_rule_lists_and_expands_only_rule_bodies",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

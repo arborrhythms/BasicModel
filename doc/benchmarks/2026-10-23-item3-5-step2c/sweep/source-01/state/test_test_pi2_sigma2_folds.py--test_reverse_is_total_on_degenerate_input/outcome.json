@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pi2_sigma2_folds.py::test_reverse_is_total_on_degenerate_input",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

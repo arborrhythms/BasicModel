@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_bracket.py::test_instant_decodes_time_and_zero_extent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

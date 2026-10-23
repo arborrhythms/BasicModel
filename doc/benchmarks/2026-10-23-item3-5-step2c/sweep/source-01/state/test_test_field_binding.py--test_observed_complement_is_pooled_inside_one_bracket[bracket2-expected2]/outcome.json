@@ -1,0 +1,6 @@
+{
+  "node": "test/test_field_binding.py::test_observed_complement_is_pooled_inside_one_bracket[bracket2-expected2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

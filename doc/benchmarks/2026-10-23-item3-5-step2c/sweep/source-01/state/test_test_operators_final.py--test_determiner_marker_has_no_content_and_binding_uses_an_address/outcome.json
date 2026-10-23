@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final.py::test_determiner_marker_has_no_content_and_binding_uses_an_address",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

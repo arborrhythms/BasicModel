@@ -1,0 +1,6 @@
+{
+  "node": "test/test_no_rebuild_optimizer.py::test_optimizer_identity_preserved_across_stage_oov",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

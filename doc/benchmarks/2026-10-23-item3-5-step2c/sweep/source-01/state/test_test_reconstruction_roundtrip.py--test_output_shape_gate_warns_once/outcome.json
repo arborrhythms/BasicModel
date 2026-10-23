@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

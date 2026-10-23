@@ -1,0 +1,6 @@
+{
+  "node": "test/test_contractive_linear.py::test_stable_clamp_bounds_d_after_ascent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

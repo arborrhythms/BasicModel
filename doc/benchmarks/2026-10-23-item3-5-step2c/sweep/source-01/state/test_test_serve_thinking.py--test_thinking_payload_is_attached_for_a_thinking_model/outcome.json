@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serve_thinking.py::test_thinking_payload_is_attached_for_a_thinking_model",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

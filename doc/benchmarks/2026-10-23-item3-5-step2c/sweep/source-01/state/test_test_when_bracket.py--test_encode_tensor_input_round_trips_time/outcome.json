@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_bracket.py::test_encode_tensor_input_round_trips_time",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

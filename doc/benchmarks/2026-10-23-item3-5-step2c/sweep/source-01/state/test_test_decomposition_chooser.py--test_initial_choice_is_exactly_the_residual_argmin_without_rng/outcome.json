@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decomposition_chooser.py::test_initial_choice_is_exactly_the_residual_argmin_without_rng",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

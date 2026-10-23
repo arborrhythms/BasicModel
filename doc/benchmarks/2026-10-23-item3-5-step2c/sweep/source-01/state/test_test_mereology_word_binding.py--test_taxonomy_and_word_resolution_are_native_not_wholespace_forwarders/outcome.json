@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology_word_binding.py::test_taxonomy_and_word_resolution_are_native_not_wholespace_forwarders",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

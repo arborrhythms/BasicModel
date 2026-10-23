@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestForwardLookupPath::test_partial_match_composes_prefix_plus_residual",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

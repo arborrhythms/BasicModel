@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_encoding_v2.py::test_batched_tensor_encode_decode",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_state_dict_keys_present",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

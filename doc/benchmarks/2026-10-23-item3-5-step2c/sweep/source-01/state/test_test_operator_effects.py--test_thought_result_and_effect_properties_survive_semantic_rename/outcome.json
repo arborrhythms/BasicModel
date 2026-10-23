@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_effects.py::test_thought_result_and_effect_properties_survive_semantic_rename",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

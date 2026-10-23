@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primitive_properties.py::test_property_reverse_distributes_only_to_its_primitive_members",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

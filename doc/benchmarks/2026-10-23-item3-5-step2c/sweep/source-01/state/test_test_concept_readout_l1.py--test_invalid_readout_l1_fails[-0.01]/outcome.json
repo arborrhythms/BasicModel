@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_readout_l1.py::test_invalid_readout_l1_fails[-0.01]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

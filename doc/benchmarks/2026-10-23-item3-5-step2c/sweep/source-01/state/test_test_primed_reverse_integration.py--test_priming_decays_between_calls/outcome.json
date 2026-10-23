@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_integration.py::test_priming_decays_between_calls",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

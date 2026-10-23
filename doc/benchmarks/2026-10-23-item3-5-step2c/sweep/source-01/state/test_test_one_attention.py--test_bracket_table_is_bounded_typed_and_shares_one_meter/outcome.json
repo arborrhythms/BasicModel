@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_bracket_table_is_bounded_typed_and_shares_one_meter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

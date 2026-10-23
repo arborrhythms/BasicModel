@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_state_shapes.py::test_attention_gist_is_invariant_to_other_batch_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

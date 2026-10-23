@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_prediction_trials.py::test_sentence_prediction_trials_backpropagate_independently",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestDataScaling::test_xor_data_ranges",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

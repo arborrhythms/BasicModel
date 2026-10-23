@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_entire_gain_is_detached_but_local_error_trains_predictor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

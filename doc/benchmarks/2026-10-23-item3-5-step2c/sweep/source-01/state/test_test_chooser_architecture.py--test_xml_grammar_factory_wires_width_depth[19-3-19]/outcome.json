@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chooser_architecture.py::test_xml_grammar_factory_wires_width_depth[19-3-19]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

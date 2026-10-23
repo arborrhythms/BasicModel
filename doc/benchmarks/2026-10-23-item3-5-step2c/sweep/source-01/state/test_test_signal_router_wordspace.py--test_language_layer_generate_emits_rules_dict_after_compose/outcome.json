@@ -1,0 +1,6 @@
+{
+  "node": "test/test_signal_router_wordspace.py::test_language_layer_generate_emits_rules_dict_after_compose",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

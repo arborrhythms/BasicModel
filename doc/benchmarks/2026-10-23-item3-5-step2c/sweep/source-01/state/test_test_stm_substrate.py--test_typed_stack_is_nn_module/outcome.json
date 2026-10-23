@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_substrate.py::test_typed_stack_is_nn_module",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

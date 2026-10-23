@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_integration.py::test_hard_mask_excludes_primed_off_category_ref",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_empty_and_digit_letter_boundaries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

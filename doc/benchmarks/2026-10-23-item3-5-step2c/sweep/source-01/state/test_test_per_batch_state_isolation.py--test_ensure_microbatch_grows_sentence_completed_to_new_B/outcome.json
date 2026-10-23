@@ -1,0 +1,6 @@
+{
+  "node": "test/test_per_batch_state_isolation.py::test_ensure_microbatch_grows_sentence_completed_to_new_B",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

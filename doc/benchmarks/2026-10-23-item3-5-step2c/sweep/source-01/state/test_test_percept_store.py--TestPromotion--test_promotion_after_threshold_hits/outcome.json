@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestPromotion::test_promotion_after_threshold_hits",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

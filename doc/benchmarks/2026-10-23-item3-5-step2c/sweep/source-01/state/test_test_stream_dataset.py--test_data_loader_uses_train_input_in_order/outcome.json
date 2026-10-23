@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_data_loader_uses_train_input_in_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

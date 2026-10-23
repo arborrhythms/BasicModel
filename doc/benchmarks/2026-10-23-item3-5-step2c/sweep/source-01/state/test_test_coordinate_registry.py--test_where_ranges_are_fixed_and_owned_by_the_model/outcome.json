@@ -1,0 +1,6 @@
+{
+  "node": "test/test_coordinate_registry.py::test_where_ranges_are_fixed_and_owned_by_the_model",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

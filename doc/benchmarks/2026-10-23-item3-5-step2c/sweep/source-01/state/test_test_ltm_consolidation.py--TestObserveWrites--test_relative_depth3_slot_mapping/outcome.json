@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestObserveWrites::test_relative_depth3_slot_mapping",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

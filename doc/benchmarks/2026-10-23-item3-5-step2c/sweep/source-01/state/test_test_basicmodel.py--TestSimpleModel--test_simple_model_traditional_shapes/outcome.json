@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSimpleModel::test_simple_model_traditional_shapes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

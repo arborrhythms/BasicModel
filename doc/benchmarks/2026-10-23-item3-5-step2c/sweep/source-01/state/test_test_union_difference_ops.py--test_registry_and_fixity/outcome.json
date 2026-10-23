@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_registry_and_fixity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

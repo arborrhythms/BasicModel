@@ -1,0 +1,6 @@
+{
+  "node": "test/test_row_local_concept_optimizer.py::test_bfloat16_moment_storage_uses_fp32_math_close_to_sparse_adam[cpu]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

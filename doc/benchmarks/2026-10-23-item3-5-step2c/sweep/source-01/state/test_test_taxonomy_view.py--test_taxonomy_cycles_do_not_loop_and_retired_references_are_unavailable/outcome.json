@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_view.py::test_taxonomy_cycles_do_not_loop_and_retired_references_are_unavailable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_erase_or_replace_recorded_scope[replace-a scoped assertion]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

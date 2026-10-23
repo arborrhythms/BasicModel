@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_union_holds_one_present_part_across_orders",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

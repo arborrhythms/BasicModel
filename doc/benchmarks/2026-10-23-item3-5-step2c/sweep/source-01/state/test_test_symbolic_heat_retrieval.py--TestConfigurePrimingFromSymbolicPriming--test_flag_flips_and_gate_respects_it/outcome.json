@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_flag_flips_and_gate_respects_it",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

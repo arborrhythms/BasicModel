@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_interpret_word_accumulates_word_parts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

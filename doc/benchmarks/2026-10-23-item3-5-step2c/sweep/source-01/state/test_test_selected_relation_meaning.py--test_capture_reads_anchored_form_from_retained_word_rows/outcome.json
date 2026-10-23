@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_capture_reads_anchored_form_from_retained_word_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_factorization.py::TestSigmaSPiSRetired::test_no_pi_S_on_symbolic_space",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

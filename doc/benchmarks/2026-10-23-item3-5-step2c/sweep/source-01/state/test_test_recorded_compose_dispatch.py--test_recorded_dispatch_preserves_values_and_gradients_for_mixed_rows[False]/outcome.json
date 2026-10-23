@@ -1,0 +1,6 @@
+{
+  "node": "test/test_recorded_compose_dispatch.py::test_recorded_dispatch_preserves_values_and_gradients_for_mixed_rows[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

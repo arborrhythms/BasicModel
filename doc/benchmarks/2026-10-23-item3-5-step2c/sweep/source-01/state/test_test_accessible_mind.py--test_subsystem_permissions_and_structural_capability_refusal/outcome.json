@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_subsystem_permissions_and_structural_capability_refusal",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

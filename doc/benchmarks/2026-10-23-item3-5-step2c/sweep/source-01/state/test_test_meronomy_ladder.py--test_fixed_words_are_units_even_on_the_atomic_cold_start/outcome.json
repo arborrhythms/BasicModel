@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_fixed_words_are_units_even_on_the_atomic_cold_start",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_inadmissible_lower_against_lower_order_noun",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_dominates_each_truth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

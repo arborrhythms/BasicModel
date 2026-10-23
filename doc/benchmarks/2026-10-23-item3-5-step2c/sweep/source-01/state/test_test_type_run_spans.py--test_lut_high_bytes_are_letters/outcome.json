@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_lut_high_bytes_are_letters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

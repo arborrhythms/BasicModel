@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_underlap_vector_is_elementwise_min_of_wholes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

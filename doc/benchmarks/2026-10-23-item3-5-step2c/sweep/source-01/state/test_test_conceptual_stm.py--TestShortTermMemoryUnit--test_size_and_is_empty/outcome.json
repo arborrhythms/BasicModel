@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_size_and_is_empty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

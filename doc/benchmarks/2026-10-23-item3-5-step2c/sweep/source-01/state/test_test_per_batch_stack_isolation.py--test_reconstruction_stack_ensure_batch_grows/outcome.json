@@ -1,0 +1,6 @@
+{
+  "node": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_ensure_batch_grows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

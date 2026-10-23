@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_truncates_tail_when_not_divisible",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

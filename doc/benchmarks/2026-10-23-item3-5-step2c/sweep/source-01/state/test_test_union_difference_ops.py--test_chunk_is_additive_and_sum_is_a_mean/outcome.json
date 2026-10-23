@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_chunk_is_additive_and_sum_is_a_mean",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

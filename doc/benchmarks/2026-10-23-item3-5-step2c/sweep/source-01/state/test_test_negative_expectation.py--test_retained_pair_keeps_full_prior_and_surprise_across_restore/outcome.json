@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_retained_pair_keeps_full_prior_and_surprise_across_restore",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

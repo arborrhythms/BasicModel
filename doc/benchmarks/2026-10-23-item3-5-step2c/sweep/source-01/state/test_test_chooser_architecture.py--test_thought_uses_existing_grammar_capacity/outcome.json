@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chooser_architecture.py::test_thought_uses_existing_grammar_capacity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

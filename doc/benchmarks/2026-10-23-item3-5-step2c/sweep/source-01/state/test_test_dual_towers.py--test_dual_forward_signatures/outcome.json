@@ -1,0 +1,6 @@
+{
+  "node": "test/test_dual_towers.py::test_dual_forward_signatures",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

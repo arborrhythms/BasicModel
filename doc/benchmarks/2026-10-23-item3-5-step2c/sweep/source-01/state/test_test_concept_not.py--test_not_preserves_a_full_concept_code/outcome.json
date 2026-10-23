@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

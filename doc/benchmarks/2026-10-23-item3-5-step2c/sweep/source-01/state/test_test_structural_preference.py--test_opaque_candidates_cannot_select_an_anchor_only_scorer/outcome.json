@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_opaque_candidates_cannot_select_an_anchor_only_scorer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

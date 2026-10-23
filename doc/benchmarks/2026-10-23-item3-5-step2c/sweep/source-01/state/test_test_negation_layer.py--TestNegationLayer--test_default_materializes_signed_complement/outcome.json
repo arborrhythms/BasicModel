@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negation_layer.py::TestNegationLayer::test_default_materializes_signed_complement",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

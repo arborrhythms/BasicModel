@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_read.py::test_property_diagnostic_releases_its_graph_at_tick_end",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_prior_stm_symbol_peer.py::test_ss_is_prior_tick_and_never_sees_a_later_push",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

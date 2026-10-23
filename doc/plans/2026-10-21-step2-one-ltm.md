@@ -4202,3 +4202,65 @@ changed and no test retired.
 runs on this hash before publication; failures are repaired and documented
 under §39, with every run retained, and the landing then publishes main
 and bumps WikiOracle.
+
+## 89. Step-2 sweep diagnoses and scoped repairs — Codex, 2026-10-23
+
+The single default sweep ran on the reviewed production/test source
+`fcaff2d19`, with only §88 committed above it (`7abd37b04`). All 6,375
+selected cases completed: 6,034 passed, 17 failed, 323 skipped and one
+non-strict XPASS. The source audit matched before and after. Full worker
+logs and initial states are retained in
+[sweep/source-01](../benchmarks/2026-10-23-item3-5-step2c/sweep/source-01).
+The 323 skips retain the default suite's slow, device and phase-artifact
+boundaries; this does not claim those learning prerequisites. There will
+be no second full sweep.
+
+**Decisions under §39, without changing production.**
+
+1. Two capacity tests call `ConceptualSpace.new_concept` on a partial
+   namespace. Give those owners the real `_concept_capacity_window`
+   method, which the capacity warning now calls. The monotonic handles,
+   activation order, atomic failure and uncapped legacy-handle assertions
+   stay verbatim. The readout checkpoint fixture likewise gains the real
+   empty MTM and its existing parameter device as the restore device;
+   all round-trip assertions stay.
+2. Five catalogue tests still exclude compose-time bind. Check the
+   accepted single unary `BindLayer`, or the one unary forward bind rule
+   with head flow 1 and no inverse, as appropriate. Keep the thought
+   signature and check its forward rule ID against that same rule. No new
+   operator, menu exclusion or forcing is introduced in production.
+3. The occupation test already compares every word's counts exactly
+   with the kept programs. Its additional requirement that a close must
+   also mint some non-word occupation is no longer invariant: this
+   capture closes entirely with the six existing word identities. Keep
+   the nonempty-count check and the exact word/annotation/frozen-state
+   checks; remove only the compulsory extra-symbol condition.
+4. The packed-close observer mistakes the returned relation handle for
+   an LTM0 index. Read the root occurrence from the writer's existing
+   `written_rows['root_occurrence']` instead. Every semantic assertion
+   stays. The taxonomy entry test now expects the one completed-S
+   occurrence beside its asserted edge and checks its inference kind;
+   taxonomy truth, domain and edge evidence stay verbatim.
+5. The captured compose/MM failure was replayed twice before any source
+   edit, with both probes retained. It is a forced-action fixture defect,
+   not a missed native departure. The reservoir saved STOP (107) for
+   three rows whose other legal action was bind (9); the fixture ignored
+   the excluded action and forced STOP again. The fork joined all four
+   rows and took only the product departure in the fourth. Only greedy
+   R/A exists: explore fails before scoring, so no completed keep is
+   invented. The fixture will keep its binary product/sum comparison and
+   take the next legal option when its saved departure is a unary/STOP
+   decision. Its forced walk also clears the other walk selectors. Every
+   reader-update, content and credit assertion stays verbatim.
+6. Five subprocess-test failures are measurement setup failures: their
+   child replaces `PYTHONPATH` while inheriting `PYTEST_PLUGINS`, so it
+   cannot import `sweep_capture`. Both unchanged harness files pass in a
+   clean scoped environment (36 passed, three existing slow skips).
+   Change neither the runner nor their assertions.
+
+The receipt will list the exact old/new assertion text, fixture changes
+and scoped results on the repair hash. No test is retired. The original
+failed sweep and both failed departure replays remain evidence; passing
+scoped repairs will not relabel that sweep as green. §88 authorizes
+publication after these repairs. Layout/removal/STM chunks and all
+learning claims remain outside this landing.

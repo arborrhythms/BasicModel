@@ -1,0 +1,6 @@
+{
+  "node": "test/test_smoothing_regularizer.py::test_penalty_scales_linearly_with_lambda",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

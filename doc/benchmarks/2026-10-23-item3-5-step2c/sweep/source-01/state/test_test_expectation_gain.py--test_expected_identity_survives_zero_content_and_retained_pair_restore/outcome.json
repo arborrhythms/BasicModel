@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_expected_identity_survives_zero_content_and_retained_pair_restore",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_macos_uses_compressed_footprint_instead_of_resident_size",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

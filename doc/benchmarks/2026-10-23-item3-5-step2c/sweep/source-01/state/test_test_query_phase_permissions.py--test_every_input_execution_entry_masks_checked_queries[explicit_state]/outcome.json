@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_every_input_execution_entry_masks_checked_queries[explicit_state]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

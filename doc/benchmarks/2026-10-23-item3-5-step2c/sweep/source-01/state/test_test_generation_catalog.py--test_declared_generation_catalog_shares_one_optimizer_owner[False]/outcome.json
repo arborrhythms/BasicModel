@@ -1,0 +1,6 @@
+{
+  "node": "test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

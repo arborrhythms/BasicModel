@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestGetSpaceParam::test_space_overrides_architecture",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

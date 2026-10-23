@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_episode_memory.py::test_context_exposes_open_question_and_latest_output",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

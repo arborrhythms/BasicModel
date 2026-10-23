@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_range_encoding.py::test_decode_zero_phasor_is_finite",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_invertibility.py::TestInvertibleLinearLayer::test_contract_naive",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

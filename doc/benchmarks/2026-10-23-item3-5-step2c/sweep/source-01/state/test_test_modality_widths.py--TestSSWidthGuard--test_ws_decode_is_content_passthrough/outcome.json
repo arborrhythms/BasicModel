@@ -1,0 +1,6 @@
+{
+  "node": "test/test_modality_widths.py::TestSSWidthGuard::test_ws_decode_is_content_passthrough",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

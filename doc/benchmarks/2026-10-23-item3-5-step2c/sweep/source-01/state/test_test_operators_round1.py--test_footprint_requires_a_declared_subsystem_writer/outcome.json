@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round1.py::test_footprint_requires_a_declared_subsystem_writer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item4_review.py::test_omission_surprise_and_non_marks_agree_at_both_native_writers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

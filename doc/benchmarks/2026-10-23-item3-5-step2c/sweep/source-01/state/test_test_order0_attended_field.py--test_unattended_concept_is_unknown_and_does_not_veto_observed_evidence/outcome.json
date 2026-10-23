@@ -1,0 +1,6 @@
+{
+  "node": "test/test_order0_attended_field.py::test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

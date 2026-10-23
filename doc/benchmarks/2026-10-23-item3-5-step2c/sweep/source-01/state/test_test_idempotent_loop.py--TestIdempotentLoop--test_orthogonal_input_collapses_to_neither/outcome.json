@@ -1,0 +1,6 @@
+{
+  "node": "test/test_idempotent_loop.py::TestIdempotentLoop::test_orthogonal_input_collapses_to_neither",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

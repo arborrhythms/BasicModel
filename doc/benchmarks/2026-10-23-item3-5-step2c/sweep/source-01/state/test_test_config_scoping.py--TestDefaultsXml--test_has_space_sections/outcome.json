@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestDefaultsXml::test_has_space_sections",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

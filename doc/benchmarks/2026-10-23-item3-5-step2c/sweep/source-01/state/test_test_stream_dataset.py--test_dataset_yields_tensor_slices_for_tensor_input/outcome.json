@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_dataset_yields_tensor_slices_for_tensor_input",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

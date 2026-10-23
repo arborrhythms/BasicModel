@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sigmapi.py::TestSigmaLayerForward::test_gradient_flows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

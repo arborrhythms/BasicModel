@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_sidecar.py::test_source_update_cannot_certify_missing_semantic_context",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

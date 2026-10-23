@@ -1,0 +1,6 @@
+{
+  "node": "test/test_input_byte_addresses.py::test_promoted_percepts_keep_their_original_byte_addresses[MM_math]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

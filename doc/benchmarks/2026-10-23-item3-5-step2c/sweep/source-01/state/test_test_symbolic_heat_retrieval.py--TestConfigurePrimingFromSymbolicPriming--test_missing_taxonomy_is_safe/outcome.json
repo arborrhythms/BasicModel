@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestConfigurePrimingFromSymbolicPriming::test_missing_taxonomy_is_safe",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

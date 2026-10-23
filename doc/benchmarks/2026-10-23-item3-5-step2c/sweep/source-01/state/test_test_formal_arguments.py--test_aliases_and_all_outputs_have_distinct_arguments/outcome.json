@@ -1,0 +1,6 @@
+{
+  "node": "test/test_formal_arguments.py::test_aliases_and_all_outputs_have_distinct_arguments",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

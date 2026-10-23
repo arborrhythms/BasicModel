@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_promotion.py::test_provisional_parts_receive_gradient_through_use_gate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

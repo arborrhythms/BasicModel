@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_codebook_reads.py::test_standalone_default_remains_all_active",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

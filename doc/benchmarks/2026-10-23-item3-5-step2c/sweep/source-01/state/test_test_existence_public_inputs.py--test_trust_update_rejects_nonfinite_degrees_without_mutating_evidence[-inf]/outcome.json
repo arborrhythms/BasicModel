@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_public_inputs.py::test_trust_update_rejects_nonfinite_degrees_without_mutating_evidence[-inf]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

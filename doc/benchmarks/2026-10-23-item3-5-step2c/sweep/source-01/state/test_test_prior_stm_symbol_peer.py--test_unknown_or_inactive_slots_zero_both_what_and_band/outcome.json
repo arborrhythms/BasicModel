@@ -1,0 +1,6 @@
+{
+  "node": "test/test_prior_stm_symbol_peer.py::test_unknown_or_inactive_slots_zero_both_what_and_band",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

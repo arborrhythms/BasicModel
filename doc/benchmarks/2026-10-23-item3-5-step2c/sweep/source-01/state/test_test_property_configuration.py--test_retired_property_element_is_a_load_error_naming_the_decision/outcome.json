@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_configuration.py::test_retired_property_element_is_a_load_error_naming_the_decision",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-08-math-chain-repair-2/decomposition-first-query-diagnostic/README.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

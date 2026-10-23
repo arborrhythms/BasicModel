@@ -1,0 +1,6 @@
+{
+  "node": "test/test_while_loop_gradients.py::test_bare_while_loop_still_shows_the_defect_or_is_fixed_upstream",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

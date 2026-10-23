@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestParthoodAlgebra::test_zero_is_universal_part",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

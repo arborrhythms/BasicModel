@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestByteFallback::test_byte_fallback_increments_hit_counter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

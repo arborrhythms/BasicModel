@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_context_values_carry_absolute_where",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

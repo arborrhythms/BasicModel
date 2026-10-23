@@ -1,0 +1,6 @@
+{
+  "node": "test/test_rule_gate_isolates_side_effects.py::test_maybe_blend_event_noop_when_gate_false",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

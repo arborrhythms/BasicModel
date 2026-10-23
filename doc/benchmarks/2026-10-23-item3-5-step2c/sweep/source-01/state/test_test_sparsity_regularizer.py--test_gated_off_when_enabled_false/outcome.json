@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparsity_regularizer.py::test_gated_off_when_enabled_false",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

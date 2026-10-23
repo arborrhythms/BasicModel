@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology_raise.py::test_conceptualspace_owns_run_structure_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

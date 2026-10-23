@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_prune_drops_everything_when_other_whole_linked",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestGrammar::test_arity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

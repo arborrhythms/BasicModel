@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

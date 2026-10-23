@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_concept_e2e.py::test_getparameters_includes_csw_after_population",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

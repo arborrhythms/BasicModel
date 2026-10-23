@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_ltm_pressure_is_monotonic_until_parity_and_reset_clears_slots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

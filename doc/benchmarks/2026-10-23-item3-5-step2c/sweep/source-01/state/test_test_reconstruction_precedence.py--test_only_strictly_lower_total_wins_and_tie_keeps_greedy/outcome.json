@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_precedence.py::test_only_strictly_lower_total_wins_and_tie_keeps_greedy",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

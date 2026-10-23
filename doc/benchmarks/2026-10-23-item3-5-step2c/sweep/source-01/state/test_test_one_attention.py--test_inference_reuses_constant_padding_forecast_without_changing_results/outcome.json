@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_inference_reuses_constant_padding_forecast_without_changing_results",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

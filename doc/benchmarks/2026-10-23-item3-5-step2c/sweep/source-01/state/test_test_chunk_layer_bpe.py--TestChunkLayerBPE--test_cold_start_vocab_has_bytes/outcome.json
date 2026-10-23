@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_cold_start_vocab_has_bytes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

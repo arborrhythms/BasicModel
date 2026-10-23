@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_synthesize_reconstruct_exact",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

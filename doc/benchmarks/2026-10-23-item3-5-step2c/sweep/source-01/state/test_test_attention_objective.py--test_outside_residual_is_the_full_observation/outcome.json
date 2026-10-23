@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_objective.py::test_outside_residual_is_the_full_observation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

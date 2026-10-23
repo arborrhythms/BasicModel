@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mental_model.py::TestBasicModelForwardReverse::test_subspace_words_clearable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

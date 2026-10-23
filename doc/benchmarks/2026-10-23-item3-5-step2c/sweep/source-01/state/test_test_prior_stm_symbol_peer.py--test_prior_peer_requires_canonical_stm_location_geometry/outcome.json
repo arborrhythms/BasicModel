@@ -1,0 +1,6 @@
+{
+  "node": "test/test_prior_stm_symbol_peer.py::test_prior_peer_requires_canonical_stm_location_geometry",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

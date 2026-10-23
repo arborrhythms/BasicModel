@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_priming_energy.py::test_zero_spread_is_pure_decay_bump",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

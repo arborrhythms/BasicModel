@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_symbolic_space_reverse_dispatches_to_declared_operator",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

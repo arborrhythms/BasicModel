@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_in_unit_ball",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

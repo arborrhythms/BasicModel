@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_cs_lane_pipeline_orders_three_stages_and_latches_feedback_by_index",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stage_3_parser_cleanup.py::test_retired_xml_knobs_raise_on_load[chartTau]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

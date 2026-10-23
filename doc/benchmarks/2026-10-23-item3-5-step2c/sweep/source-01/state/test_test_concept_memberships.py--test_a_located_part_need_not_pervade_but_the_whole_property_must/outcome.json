@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_memberships.py::test_a_located_part_need_not_pervade_but_the_whole_property_must",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decomposition_chooser.py::test_absent_target_is_counted_and_has_no_training_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

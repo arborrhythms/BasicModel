@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_invalid_context_rejected_not_silently_broadcast_or_ignored",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

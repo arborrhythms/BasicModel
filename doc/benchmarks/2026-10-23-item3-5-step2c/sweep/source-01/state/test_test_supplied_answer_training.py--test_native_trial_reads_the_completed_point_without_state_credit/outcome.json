@@ -1,0 +1,6 @@
+{
+  "node": "test/test_supplied_answer_training.py::test_native_trial_reads_the_completed_point_without_state_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

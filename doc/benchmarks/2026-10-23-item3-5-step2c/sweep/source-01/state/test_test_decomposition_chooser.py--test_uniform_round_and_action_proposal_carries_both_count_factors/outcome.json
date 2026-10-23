@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decomposition_chooser.py::test_uniform_round_and_action_proposal_carries_both_count_factors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

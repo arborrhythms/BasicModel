@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_load_keeps_user_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

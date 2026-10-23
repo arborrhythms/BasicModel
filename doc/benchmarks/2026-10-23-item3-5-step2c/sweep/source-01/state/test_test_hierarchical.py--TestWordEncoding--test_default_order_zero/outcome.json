@@ -1,0 +1,6 @@
+{
+  "node": "test/test_hierarchical.py::TestWordEncoding::test_default_order_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

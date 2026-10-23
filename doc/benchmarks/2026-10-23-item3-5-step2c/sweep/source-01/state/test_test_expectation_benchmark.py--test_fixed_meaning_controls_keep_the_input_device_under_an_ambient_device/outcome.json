@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_benchmark.py::test_fixed_meaning_controls_keep_the_input_device_under_an_ambient_device",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

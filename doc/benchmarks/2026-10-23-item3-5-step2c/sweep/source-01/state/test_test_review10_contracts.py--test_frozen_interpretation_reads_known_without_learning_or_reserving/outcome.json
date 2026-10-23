@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review10_contracts.py::test_frozen_interpretation_reads_known_without_learning_or_reserving",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

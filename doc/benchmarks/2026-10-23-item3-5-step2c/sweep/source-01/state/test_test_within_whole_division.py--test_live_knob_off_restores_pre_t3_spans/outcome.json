@@ -1,0 +1,6 @@
+{
+  "node": "test/test_within_whole_division.py::test_live_knob_off_restores_pre_t3_spans",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

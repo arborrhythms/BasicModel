@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pole_aligned_score.py::TestPoleAlignedShape::test_returns_score_per_codebook_entry",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

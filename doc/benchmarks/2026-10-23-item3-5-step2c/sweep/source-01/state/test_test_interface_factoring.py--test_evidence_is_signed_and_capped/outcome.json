@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_evidence_is_signed_and_capped",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

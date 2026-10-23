@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_concept_e2e.py::test_symbolic_phase_unwritten_definitions_are_neither",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_primer_steers_pick_to_hot_typed_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

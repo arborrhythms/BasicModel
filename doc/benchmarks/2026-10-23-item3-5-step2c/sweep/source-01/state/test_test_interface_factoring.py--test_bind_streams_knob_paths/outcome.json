@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_bind_streams_knob_paths",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

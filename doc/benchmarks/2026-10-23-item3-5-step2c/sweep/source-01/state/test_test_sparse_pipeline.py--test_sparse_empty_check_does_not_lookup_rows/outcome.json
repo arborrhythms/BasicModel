@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_sparse_empty_check_does_not_lookup_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_thinking_training.py::test_iterations_one_is_byte_identical_to_a_plain_batch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

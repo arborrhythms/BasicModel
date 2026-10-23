@@ -1,0 +1,6 @@
+{
+  "node": "test/test_field_binding.py::test_native_learning_updates_one_definition_for_both_modes[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

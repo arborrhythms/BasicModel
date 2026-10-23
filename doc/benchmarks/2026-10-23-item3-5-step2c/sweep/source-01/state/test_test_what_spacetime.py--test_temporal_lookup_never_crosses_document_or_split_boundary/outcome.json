@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_temporal_lookup_never_crosses_document_or_split_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

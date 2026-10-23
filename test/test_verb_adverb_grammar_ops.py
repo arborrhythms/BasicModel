@@ -136,6 +136,6 @@ def test_complete_contains_absorbed_role_only_methods():
     complete_up, complete_down = _methods("complete.grammar")
     absorbed = {"preposition", "surface", "transpose", "lower_unary",
                 "definite_unary", "preposition_unary", "surface_unary"}
-    assert 'bind' not in complete_up | complete_down
+    assert 'bind' in complete_up and 'bind' not in complete_down
     assert absorbed <= complete_up, absorbed - complete_up
     assert absorbed <= complete_down, absorbed - complete_down

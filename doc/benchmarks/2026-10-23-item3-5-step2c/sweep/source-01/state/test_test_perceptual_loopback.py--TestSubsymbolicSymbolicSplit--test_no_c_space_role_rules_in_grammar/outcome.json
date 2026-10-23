@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_no_c_space_role_rules_in_grammar",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

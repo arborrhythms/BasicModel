@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_encoding_recovery.py::test_allocate_monotonic",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

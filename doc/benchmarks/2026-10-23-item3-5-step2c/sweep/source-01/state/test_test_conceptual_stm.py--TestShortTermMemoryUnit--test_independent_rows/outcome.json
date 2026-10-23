@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_independent_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

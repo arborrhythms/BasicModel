@@ -48,23 +48,26 @@ class TestPrepositionGrammarRules(unittest.TestCase):
 
 
 class TestBindGrammarRules(unittest.TestCase):
-    """Binding is a unary thought operation with no compose/generate rule."""
+    """Binding has one unary compose face, a thought face and no inverse."""
 
     def test_bind_rule_present(self):
         g = _load_complete()
         names = {r.semantic_id for r in g.thought_operations}
         self.assertIn("bind", names)
 
-    def test_bind_has_no_chart_rule_ids(self):
+    def test_bind_has_one_forward_chart_rule_and_no_inverse(self):
         g = _load_complete()
         up = [r for r in g.rules_upward if r.method_name == "bind"]
         dn = [r for r in g.rules_downward if r.method_name == "bind"]
-        self.assertFalse(up)
+        self.assertEqual(len(up), 1)
+        self.assertEqual(up[0].arity, 1)
+        self.assertEqual(up[0].head_role, 1)
         self.assertFalse(dn)
         op = next(op for op in g.thought_operations if op.semantic_id == 'bind')
         self.assertEqual(op.operand_roles, ('argin1',))
         self.assertEqual(op.result_role, 'argout1')
-        self.assertFalse(op.forward_rule_ids or op.reverse_rule_ids)
+        self.assertEqual(op.forward_rule_ids, (g.rules_upward.index(up[0]),))
+        self.assertFalse(op.reverse_rule_ids)
 
 
 class TestPrepositionSignalRouterBinding(unittest.TestCase):

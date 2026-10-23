@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_training_boundary_materializes_on_owner_and_preserves_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

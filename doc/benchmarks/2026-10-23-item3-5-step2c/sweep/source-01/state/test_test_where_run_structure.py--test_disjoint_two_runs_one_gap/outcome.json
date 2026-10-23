@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_disjoint_two_runs_one_gap",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_in_unit_interval",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_intent_priming.py::test_vq_selection_biased_monotonically_by_boost",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

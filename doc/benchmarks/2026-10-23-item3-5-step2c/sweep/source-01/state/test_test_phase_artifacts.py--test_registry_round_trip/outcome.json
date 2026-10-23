@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase_artifacts.py::test_registry_round_trip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

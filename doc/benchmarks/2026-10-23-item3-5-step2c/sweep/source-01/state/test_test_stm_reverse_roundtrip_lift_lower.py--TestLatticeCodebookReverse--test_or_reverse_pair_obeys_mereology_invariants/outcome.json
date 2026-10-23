@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestLatticeCodebookReverse::test_or_reverse_pair_obeys_mereology_invariants",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_concepts_from_percepts.py::test_pre_readout_checkpoint_initializes_only_new_modules_with_strict_loading",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

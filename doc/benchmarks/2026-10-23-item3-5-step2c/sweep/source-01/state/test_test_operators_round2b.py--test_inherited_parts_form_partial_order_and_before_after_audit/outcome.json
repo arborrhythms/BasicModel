@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2b.py::test_inherited_parts_form_partial_order_and_before_after_audit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

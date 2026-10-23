@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubspaceActivation::test_set_get_activation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

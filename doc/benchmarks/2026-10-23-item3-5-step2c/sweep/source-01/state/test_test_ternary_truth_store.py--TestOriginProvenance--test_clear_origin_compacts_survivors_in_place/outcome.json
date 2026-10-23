@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

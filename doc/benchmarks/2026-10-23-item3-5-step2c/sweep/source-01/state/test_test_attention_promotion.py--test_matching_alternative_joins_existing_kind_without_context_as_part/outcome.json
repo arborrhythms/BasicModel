@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_promotion.py::test_matching_alternative_joins_existing_kind_without_context_as_part",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

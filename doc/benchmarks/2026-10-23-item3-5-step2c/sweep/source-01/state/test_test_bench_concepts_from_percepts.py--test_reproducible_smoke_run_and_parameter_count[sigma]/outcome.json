@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bench_concepts_from_percepts.py::test_reproducible_smoke_run_and_parameter_count[sigma]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

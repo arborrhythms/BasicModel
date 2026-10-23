@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_recommender.py::TestLiftLowerRecommender::test_lift_reverse_uses_recommender_with_basis",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

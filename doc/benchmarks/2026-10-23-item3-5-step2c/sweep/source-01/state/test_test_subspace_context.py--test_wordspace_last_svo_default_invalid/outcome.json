@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_context.py::test_wordspace_last_svo_default_invalid",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

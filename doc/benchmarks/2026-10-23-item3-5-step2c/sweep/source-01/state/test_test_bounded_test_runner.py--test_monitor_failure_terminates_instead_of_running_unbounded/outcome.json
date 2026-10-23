@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_monitor_failure_terminates_instead_of_running_unbounded",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

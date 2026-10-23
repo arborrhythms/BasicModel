@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_tiling.py::test_char_class_letter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

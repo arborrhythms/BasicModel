@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestCandidateUnionIncludesContentNearest::test_cold_nearest_in_union_no_typed_filter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

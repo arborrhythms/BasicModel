@@ -1,0 +1,6 @@
+{
+  "node": "test/test_util_device.py::TestCudaSanityChecks::test_auto_device_cpu_override_skips_cuda_sanity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

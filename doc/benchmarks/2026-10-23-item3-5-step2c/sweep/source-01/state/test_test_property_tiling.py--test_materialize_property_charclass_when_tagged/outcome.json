@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_tiling.py::test_materialize_property_charclass_when_tagged",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_bracket.py::test_forward_stamps_present_instant",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

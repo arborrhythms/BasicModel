@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compact_concept_codebook_state.py::test_codebook_compact_contract_preserves_w_active_mask_and_checkpoint",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

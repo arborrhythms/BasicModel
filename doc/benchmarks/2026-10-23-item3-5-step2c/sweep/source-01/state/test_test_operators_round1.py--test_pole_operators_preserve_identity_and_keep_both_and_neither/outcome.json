@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round1.py::test_pole_operators_preserve_identity_and_keep_both_and_neither",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_predicate_storage.py::test_compact_predicates_preserve_boundary_learning_evidence[absent]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestHashMapCache::test_hash_map_unknown_keys_return_none",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

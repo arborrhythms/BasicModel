@@ -1,0 +1,6 @@
+{
+  "node": "test/test_walk_trials.py::test_output_without_a_legal_alternative_never_switches",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

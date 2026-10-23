@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_output.py::test_reconstruction_without_owned_evidence_cannot_read_the_latest_field",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

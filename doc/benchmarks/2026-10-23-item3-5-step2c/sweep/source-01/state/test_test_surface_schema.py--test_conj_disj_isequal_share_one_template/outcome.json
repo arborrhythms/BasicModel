@@ -1,0 +1,6 @@
+{
+  "node": "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

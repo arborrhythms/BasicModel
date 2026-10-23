@@ -1,0 +1,6 @@
+{
+  "node": "test/test_codebook_update_law.py::test_install_word_side_and_no_table",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

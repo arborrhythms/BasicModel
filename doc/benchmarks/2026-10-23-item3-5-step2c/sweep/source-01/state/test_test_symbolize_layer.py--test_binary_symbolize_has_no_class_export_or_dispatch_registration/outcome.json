@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolize_layer.py::test_binary_symbolize_has_no_class_export_or_dispatch_registration",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

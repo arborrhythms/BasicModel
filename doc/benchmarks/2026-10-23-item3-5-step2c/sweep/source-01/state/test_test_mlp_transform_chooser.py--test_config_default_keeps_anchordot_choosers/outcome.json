@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_config_default_keeps_anchordot_choosers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

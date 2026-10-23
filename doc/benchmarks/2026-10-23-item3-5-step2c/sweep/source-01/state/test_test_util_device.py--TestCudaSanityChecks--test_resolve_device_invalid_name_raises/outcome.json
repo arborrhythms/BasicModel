@@ -1,0 +1,6 @@
+{
+  "node": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_invalid_name_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

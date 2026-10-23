@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_mode_conceptual.py::test_conceptual_serial_mode_matches_non_serial",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

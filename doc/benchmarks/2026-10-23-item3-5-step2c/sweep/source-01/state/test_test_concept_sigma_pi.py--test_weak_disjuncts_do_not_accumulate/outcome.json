@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_weak_disjuncts_do_not_accumulate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

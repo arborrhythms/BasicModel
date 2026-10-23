@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_layer_butterfly.py::TestPiLayerButterfly::test_constructs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

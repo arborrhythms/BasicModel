@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_query_compose.py::test_thought_capable_rule_dispatches_the_same_pure_compose_face[equal]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

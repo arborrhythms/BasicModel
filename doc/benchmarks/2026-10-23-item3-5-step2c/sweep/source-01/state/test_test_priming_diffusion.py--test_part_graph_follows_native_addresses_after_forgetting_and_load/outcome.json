@@ -1,0 +1,6 @@
+{
+  "node": "test/test_priming_diffusion.py::test_part_graph_follows_native_addresses_after_forgetting_and_load",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

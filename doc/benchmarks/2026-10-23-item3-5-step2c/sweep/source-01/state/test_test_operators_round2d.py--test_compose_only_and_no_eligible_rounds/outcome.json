@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2d.py::test_compose_only_and_no_eligible_rounds",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

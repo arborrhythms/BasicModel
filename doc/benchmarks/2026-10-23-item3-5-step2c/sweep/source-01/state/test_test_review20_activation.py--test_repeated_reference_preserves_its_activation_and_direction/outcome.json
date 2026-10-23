@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review20_activation.py::test_repeated_reference_preserves_its_activation_and_direction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

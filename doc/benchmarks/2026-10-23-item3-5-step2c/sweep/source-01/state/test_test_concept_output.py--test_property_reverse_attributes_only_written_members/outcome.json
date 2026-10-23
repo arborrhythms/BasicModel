@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_output.py::test_property_reverse_attributes_only_written_members",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

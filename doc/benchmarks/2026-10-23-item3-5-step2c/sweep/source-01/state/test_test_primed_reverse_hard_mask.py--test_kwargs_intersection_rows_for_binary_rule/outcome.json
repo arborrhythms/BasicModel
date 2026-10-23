@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_hard_mask.py::test_kwargs_intersection_rows_for_binary_rule",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

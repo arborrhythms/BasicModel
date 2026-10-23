@@ -1,0 +1,6 @@
+{
+  "node": "test/test_readback_log_probability.py::test_wrong_winner_keeps_leaf_gradient_with_detached_competitor_codes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

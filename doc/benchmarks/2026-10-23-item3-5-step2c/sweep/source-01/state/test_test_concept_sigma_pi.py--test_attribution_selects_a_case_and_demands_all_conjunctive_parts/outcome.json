@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_attribution_selects_a_case_and_demands_all_conjunctive_parts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

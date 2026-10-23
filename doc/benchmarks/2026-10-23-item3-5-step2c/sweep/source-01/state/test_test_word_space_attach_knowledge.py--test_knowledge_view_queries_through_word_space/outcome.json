@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_space_attach_knowledge.py::test_knowledge_view_queries_through_word_space",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

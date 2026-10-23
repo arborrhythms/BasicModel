@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_attribution.py::test_descent_without_a_field_chooses_one_case",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

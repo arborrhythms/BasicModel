@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_ltm_capacity_evicts_only_balanced_prefixes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

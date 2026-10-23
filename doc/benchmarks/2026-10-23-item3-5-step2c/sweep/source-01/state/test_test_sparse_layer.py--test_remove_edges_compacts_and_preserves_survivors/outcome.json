@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_remove_edges_compacts_and_preserves_survivors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

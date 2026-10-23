@@ -1,0 +1,6 @@
+{
+  "node": "test/test_readback_operand_unaries.py::test_saved_roots_follow_operand_unaries[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

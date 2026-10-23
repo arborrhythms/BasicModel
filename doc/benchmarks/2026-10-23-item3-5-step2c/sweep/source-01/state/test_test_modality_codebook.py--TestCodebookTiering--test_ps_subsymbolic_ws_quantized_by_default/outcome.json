@@ -1,0 +1,6 @@
+{
+  "node": "test/test_modality_codebook.py::TestCodebookTiering::test_ps_subsymbolic_ws_quantized_by_default",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

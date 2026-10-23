@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestSymbolicPrimingOffIsNoop::test_off_no_op_even_for_valid_ref",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

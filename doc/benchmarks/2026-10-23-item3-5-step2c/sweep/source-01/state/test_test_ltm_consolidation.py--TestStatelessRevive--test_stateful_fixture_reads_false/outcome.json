@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestStatelessRevive::test_stateful_fixture_reads_false",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

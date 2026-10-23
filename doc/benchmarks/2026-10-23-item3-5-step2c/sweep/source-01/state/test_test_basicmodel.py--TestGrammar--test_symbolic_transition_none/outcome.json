@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestGrammar::test_symbolic_transition_none",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_conceptual_attention_union_uses_presence_chart",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

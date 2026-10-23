@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_memberships.py::test_unrelated_memberships_stay_exactly_zero_at_every_scope",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

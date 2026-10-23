@@ -1,0 +1,6 @@
+{
+  "node": "test/test_frozen_concepts.py::test_mint_frozen_idempotent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

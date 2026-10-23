@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::test_inputspace_has_lex_batch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

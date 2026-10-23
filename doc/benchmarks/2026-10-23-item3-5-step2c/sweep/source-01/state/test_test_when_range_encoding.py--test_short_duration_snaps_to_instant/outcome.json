@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_range_encoding.py::test_short_duration_snaps_to_instant",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

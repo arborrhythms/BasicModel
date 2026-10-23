@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_training.py::test_training_step_runs_for_each_question_family[reconstruct]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_space_attach_knowledge.py::test_symbolic_space_inherits_attach_knowledge",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

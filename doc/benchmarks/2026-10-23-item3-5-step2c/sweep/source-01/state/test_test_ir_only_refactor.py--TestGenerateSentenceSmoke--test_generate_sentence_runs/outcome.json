@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_only_refactor.py::TestGenerateSentenceSmoke::test_generate_sentence_runs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

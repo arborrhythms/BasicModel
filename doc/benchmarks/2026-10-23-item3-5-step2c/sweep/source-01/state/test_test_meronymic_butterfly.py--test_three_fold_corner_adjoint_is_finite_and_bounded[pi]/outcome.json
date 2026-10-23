@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronymic_butterfly.py::test_three_fold_corner_adjoint_is_finite_and_bounded[pi]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

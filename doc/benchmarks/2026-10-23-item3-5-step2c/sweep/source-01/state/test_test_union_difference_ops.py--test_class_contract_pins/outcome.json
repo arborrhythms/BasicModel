@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_class_contract_pins",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

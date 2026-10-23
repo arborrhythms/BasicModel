@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_executor_sorts_unsorted_inputs_and_accepts_equal_cloned_stream_ids",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

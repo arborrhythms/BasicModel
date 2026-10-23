@@ -1,0 +1,6 @@
+{
+  "node": "test/test_row_local_concept_optimizer.py::test_get_optimizer_routes_only_sparse_shared_cs_parameter_row_locally",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_store_codebook_is_permanent_parameter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

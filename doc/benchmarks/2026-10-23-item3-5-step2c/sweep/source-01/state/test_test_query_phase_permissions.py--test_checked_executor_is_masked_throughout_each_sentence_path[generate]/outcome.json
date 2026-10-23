@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_checked_executor_is_masked_throughout_each_sentence_path[generate]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

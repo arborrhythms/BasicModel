@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relevance_bases.py::test_priority_never_distorts_activations",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

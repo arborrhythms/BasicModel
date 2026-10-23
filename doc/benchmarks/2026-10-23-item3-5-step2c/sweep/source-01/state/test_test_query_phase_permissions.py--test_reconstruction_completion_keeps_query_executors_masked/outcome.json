@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_reconstruction_completion_keeps_query_executors_masked",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

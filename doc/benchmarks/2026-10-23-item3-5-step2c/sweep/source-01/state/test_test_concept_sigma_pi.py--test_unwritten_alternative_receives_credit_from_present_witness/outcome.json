@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_unwritten_alternative_receives_credit_from_present_witness",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

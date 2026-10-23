@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_prime_does_not_touch_other_entries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

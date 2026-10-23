@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2.py::test_field_pair_survives_bracket_split[5-pair2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

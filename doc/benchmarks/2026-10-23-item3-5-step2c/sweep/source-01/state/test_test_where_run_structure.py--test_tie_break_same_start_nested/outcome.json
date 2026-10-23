@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_tie_break_same_start_nested",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

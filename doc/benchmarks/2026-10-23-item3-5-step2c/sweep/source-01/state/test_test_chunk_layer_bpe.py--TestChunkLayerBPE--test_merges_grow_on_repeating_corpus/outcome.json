@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_merges_grow_on_repeating_corpus",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

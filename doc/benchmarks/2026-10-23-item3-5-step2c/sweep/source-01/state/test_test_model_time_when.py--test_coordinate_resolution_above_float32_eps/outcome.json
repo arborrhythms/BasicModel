@@ -1,0 +1,6 @@
+{
+  "node": "test/test_model_time_when.py::test_coordinate_resolution_above_float32_eps",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

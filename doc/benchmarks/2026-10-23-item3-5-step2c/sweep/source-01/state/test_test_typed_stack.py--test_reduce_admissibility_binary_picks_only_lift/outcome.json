@@ -1,0 +1,6 @@
+{
+  "node": "test/test_typed_stack.py::test_reduce_admissibility_binary_picks_only_lift",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

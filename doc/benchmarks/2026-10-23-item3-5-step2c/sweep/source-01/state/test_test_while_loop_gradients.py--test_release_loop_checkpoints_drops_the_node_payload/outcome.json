@@ -1,0 +1,6 @@
+{
+  "node": "test/test_while_loop_gradients.py::test_release_loop_checkpoints_drops_the_node_payload",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

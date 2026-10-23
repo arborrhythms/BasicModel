@@ -1,0 +1,6 @@
+{
+  "node": "test/test_refine_raise.py::test_extent_containment_does_not_fill_gaps_between_part_witnesses[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

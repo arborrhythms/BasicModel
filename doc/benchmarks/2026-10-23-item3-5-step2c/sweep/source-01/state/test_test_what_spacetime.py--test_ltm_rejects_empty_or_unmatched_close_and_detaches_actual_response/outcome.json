@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_ltm_rejects_empty_or_unmatched_close_and_detaches_actual_response",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

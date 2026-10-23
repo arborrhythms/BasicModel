@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_fast_pool_uses_cpu_minus_four_workers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_vector_is_y_minus_x",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

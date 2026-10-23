@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

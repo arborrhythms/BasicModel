@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_words_drops_separators",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_subspace_exposes_required_stack_modalities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

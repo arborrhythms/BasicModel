@@ -234,7 +234,11 @@ def test_native_field_lifecycle_clears_only_reset_rows_then_releases_graph():
 
 
 def _checkpoint_space():
+    from MediumTermMemory import MediumTermMemory
+    from types import SimpleNamespace
     cs = _space()
+    cs.mtm = MediumTermMemory()
+    cs.similarity_codebook = SimpleNamespace(W=cs.concepts_from_percepts.coefficients)
     cs.legacy = nn.Linear(2, 2)
     cs.concept_source_readout = SigmaConceptsFromPercepts(9, 1)
     cs.layers = nn.ModuleList([cs.legacy, cs.concepts_from_percepts,

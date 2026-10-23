@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_xor.xml]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

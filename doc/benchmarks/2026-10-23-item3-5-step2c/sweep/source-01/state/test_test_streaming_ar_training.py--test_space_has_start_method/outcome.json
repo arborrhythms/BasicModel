@@ -1,0 +1,6 @@
+{
+  "node": "test/test_streaming_ar_training.py::test_space_has_start_method",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

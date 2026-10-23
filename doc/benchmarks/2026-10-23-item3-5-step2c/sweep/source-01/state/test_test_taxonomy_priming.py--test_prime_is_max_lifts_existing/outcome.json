@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_prime_is_max_lifts_existing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

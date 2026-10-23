@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_order_typing.py::test_lhs_order_captured",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

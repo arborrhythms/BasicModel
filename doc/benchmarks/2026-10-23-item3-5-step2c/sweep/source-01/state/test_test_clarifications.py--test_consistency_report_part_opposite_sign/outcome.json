@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clarifications.py::test_consistency_report_part_opposite_sign",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

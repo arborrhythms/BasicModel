@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primitive_properties.py::test_old_acquired_predicate_migrates_into_primitive_parameters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

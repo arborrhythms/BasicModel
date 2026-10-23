@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pilayer_log_domain_finite.py::test_forward_nan_input_propagates_not_swallowed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

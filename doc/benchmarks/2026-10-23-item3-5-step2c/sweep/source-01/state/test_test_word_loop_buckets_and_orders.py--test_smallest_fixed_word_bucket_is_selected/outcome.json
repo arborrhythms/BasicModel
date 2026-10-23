@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_loop_buckets_and_orders.py::test_smallest_fixed_word_bucket_is_selected",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

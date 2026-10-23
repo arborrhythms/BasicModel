@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolize_layer.py::test_quantization_is_removed_from_declared_thought_capabilities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

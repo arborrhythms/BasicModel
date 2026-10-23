@@ -1,0 +1,6 @@
+{
+  "node": "test/test_levelled_thought_history.py::test_active_history_cannot_be_trimmed_or_silently_reinterpreted_as_parity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

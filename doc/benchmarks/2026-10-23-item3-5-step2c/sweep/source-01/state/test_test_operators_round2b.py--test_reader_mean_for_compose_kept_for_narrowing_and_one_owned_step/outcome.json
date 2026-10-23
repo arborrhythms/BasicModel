@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2b.py::test_reader_mean_for_compose_kept_for_narrowing_and_one_owned_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

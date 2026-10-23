@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_example_words_split_on_space",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

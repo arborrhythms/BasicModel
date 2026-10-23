@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_trial_keep_and_credit_use_same_r_plus_a_judge",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

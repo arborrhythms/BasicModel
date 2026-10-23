@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_fold_binding.py::test_aligned_binder_uses_all_six_sources_without_location_mixing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

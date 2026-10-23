@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_ps_storage_is_separate_from_ws_codebook",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

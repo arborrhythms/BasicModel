@@ -1,0 +1,6 @@
+{
+  "node": "test/test_per_row_hard_reset.py::test_runEpoch_dispatches_per_row_reset_per_batch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_mask_logits_preserves_relative_admissible_weights",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

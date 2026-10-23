@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_attention.py::test_coverage_mask_excludes_consumed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

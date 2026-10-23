@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_mode_integration.py::test_eos_triggers_reset_cascade",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

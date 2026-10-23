@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_hard_mask.py::test_attach_binds_view_for_propagation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

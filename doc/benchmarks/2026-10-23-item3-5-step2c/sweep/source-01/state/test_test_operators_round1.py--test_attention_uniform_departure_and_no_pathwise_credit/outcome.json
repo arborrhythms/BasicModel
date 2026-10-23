@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round1.py::test_attention_uniform_departure_and_no_pathwise_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

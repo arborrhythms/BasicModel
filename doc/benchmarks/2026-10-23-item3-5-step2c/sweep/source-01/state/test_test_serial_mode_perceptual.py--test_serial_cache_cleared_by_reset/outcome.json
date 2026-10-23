@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_mode_perceptual.py::test_serial_cache_cleared_by_reset",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

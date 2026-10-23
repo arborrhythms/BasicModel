@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_subspace_activation_stored",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

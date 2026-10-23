@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_effects.py::test_round_rejects_undeclared_and_second_writes_before_committing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

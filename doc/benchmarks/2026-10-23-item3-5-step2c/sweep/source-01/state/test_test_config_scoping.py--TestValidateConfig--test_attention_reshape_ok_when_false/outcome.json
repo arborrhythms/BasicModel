@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestValidateConfig::test_attention_reshape_ok_when_false",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

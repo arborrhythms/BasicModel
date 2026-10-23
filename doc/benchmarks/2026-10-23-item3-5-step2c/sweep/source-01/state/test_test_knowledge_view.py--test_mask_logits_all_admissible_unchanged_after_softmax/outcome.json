@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_mask_logits_all_admissible_unchanged_after_softmax",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

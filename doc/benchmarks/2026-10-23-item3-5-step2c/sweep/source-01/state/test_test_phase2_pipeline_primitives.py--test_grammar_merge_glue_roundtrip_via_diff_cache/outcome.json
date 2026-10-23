@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_roundtrip_via_diff_cache",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

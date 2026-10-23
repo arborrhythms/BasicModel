@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_luminosity_codes.py::test_trust_scales_contribution",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

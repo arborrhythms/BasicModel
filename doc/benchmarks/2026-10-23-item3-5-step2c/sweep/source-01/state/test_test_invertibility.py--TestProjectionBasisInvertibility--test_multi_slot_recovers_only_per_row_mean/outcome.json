@@ -1,0 +1,6 @@
+{
+  "node": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_multi_slot_recovers_only_per_row_mean",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

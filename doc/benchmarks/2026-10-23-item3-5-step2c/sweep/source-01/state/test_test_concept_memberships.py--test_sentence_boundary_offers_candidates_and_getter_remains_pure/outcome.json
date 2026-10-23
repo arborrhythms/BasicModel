@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_memberships.py::test_sentence_boundary_offers_candidates_and_getter_remains_pure",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

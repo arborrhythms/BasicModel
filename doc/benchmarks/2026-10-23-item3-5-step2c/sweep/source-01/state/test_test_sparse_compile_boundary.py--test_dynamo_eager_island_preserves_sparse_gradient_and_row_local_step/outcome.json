@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_compile_boundary.py::test_dynamo_eager_island_preserves_sparse_gradient_and_row_local_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -41,6 +41,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
                         attention_round=torch.full_like(chosen,-1),compose_round=chosen)
         draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
         draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
+        draw['candidate_round']=torch.full_like(draw['round'],-1)
+        draw['bind_round']=torch.full_like(draw['round'],-1)
         return draw
     def attend(module,keys,legal,space,**kwargs):
         available=legal.flatten(1)
@@ -68,7 +70,20 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         if walk=='compose' and kwargs.get('masked_action') is not None:
             op=torch.where(kwargs['masked_action']>=0,binary.index(product),op)
         from operation_fixtures import selected_action
-        with selected_action(module, torch.where(depth>1,op,stop)):
+        from unittest.mock import patch
+        action=torch.where(depth>1,op,stop)
+        def choose(logits,**options):
+            mask=options.get('masked_action')
+            selected=action
+            if mask is not None:
+                # Bind makes STOP eligible at depth one. Honor that saved
+                # departure with the next legal action, instead of forcing
+                # the excluded STOP for a second time.
+                remaining=logits.masked_fill(torch.arange(logits.shape[1],device=logits.device)[None]==mask[:,None],-torch.inf)
+                selected=torch.where((mask>=0)&(depth<=1),remaining.argmax(-1),selected)
+            with selected_action(module,selected):
+                return module.select_logits(logits,**options)
+        with patch.object(module,'select_logits',choose):
             return original_forward(module,x,**kwargs)
     monkeypatch.setattr(SentenceCredit,'departure',depart)
     monkeypatch.setattr(OperationSelectionLayer,'attend',attend)

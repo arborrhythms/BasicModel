@@ -98,9 +98,11 @@ def _grammar_model():
 
 
 def test_one_operation_layer_owns_both_arities():
+    from Language import BindLayer
     model = _grammar_model()
     shared = model.symbolSpace.languageLayer.operation_layer
     assert model._stm_reducer() is shared
-    assert shared.r_reduce > 0 and shared.r_apply == 0
+    assert shared.r_reduce > 0 and shared.r_apply == 1
+    assert isinstance(shared.unary_ops[0].gl, BindLayer)
     assert 5 in shared.attention_operations
     assert not hasattr(model.symbolSpace.languageLayer, '_unary_layers')

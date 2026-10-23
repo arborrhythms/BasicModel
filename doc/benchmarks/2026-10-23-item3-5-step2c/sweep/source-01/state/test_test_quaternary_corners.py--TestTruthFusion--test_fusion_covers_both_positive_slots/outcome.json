@@ -1,0 +1,6 @@
+{
+  "node": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_covers_both_positive_slots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

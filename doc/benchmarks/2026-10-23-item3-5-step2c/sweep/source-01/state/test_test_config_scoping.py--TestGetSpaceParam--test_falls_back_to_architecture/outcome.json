@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestGetSpaceParam::test_falls_back_to_architecture",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_context.py::test_error_count_not_bumped_while_compiling",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

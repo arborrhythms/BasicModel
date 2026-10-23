@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_mutations_validate_as_a_batch_before_any_commit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

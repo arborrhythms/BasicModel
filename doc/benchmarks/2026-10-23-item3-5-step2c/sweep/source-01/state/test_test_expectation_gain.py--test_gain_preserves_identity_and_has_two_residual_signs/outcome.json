@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_gain_preserves_identity_and_has_two_residual_signs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

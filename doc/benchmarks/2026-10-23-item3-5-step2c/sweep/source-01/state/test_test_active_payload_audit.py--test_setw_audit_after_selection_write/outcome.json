@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_payload_audit.py::test_setw_audit_after_selection_write",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

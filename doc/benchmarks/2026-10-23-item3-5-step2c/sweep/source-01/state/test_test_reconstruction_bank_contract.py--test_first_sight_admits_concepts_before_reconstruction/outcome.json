@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_bank_contract.py::test_first_sight_admits_concepts_before_reconstruction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

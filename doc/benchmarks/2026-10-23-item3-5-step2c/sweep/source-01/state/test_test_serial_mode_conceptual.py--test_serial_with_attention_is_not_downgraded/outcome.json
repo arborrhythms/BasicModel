@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_mode_conceptual.py::test_serial_with_attention_is_not_downgraded",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

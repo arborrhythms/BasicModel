@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_promotion.py::test_registered_pool_checkpoint_has_one_sidecar_restore",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

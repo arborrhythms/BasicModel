@@ -1,0 +1,6 @@
+{
+  "node": "test/test_coordinate_registry.py::test_content_only_encode_decode_preserves_all_coordinates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

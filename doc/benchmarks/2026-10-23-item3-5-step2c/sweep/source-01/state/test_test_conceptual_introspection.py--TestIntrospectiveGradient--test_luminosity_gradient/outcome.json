@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_introspection.py::TestIntrospectiveGradient::test_luminosity_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

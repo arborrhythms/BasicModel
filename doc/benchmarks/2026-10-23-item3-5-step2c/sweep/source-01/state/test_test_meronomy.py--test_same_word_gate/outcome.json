@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_same_word_gate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

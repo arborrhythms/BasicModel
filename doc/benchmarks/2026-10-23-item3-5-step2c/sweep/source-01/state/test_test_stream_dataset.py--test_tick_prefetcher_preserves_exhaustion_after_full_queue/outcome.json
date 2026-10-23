@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_tick_prefetcher_preserves_exhaustion_after_full_queue",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_priming_adds_code_disjoint_rows_without_write_position_contiguity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

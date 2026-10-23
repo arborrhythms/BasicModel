@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_rule",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

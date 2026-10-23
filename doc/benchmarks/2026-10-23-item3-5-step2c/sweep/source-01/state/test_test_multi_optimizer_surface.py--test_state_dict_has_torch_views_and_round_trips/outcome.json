@@ -1,0 +1,6 @@
+{
+  "node": "test/test_multi_optimizer_surface.py::test_state_dict_has_torch_views_and_round_trips",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

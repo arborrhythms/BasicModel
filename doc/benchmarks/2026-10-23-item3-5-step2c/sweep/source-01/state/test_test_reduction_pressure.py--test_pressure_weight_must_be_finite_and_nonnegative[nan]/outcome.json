@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reduction_pressure.py::test_pressure_weight_must_be_finite_and_nonnegative[nan]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

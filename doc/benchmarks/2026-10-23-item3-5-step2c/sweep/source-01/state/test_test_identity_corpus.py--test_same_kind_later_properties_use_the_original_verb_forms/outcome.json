@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

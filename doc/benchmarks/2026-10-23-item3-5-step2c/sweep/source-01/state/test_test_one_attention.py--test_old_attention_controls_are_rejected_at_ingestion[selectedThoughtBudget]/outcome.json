@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_old_attention_controls_are_rejected_at_ingestion[selectedThoughtBudget]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

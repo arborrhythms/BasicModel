@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_propagate_zero_depth_is_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

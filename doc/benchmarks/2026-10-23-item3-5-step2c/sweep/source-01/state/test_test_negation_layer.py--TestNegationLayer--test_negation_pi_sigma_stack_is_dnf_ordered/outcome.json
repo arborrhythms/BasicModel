@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negation_layer.py::TestNegationLayer::test_negation_pi_sigma_stack_is_dnf_ordered",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

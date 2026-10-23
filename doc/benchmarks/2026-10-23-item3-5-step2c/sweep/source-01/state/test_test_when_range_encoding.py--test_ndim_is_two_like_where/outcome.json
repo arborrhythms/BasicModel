@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_range_encoding.py::test_ndim_is_two_like_where",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

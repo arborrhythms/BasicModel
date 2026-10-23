@@ -248,9 +248,11 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
     append = Models._append_observed_meaning
 
     def capture(target, clause, **kwargs):
+        written_rows = kwargs.setdefault('written_rows', {})
         row = append(target, clause, **kwargs)
         if target is store:
-            written.append(int(store.row_ids[row]))
+            occurrence = store.location(written_rows['root_occurrence'])
+            written.append(int(store.row_ids[occurrence]))
         return row
 
     monkeypatch.setattr(Models, '_append_observed_meaning', capture)

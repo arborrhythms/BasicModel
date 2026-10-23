@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_unreduce_calls_layer_reverse_and_writes_children",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

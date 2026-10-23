@@ -1,0 +1,6 @@
+{
+  "node": "test/test_embed.py::TestStreamingSBOWTrainer::test_vocab_counts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

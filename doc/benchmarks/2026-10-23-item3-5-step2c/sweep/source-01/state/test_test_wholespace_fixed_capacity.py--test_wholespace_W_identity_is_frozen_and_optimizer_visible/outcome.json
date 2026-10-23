@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wholespace_fixed_capacity.py::test_wholespace_W_identity_is_frozen_and_optimizer_visible",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

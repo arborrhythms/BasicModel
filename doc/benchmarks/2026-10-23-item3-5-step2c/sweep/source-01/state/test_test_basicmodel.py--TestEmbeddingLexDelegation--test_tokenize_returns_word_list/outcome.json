@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_returns_word_list",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

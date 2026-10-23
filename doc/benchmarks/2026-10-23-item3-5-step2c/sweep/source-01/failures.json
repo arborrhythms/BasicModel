@@ -1,0 +1,172 @@
+[
+  {
+    "worker": "worker-001.json",
+    "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.0005286249797791243,
+    "message": "test/test_aligned_capacity_checkpoint_growth.py:517: in test_concept_id_capacity_failure_is_atomic_and_activates_before_mint\n    assert [ConceptualSpace.new_concept(owner) for _ in range(3)] == [1, 2, 3]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:14394: in new_concept\n    return ConceptualSpace._new_concepts(\nbin/Spaces.py:14337: in _new_concepts\n    warn_capacity(self)\nbin/ConceptForgetting.py:15: in warn_capacity\n    _, reserved, limit = owner._concept_capacity_window(0)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_capacity_window'",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-001.json",
+    "nodeid": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.0003623331431299448,
+    "message": "test/test_aligned_capacity_checkpoint_growth.py:535: in test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows\n    assert [ConceptualSpace.new_concept(owner) for _ in range(n + 2)] == [\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:14394: in new_concept\n    return ConceptualSpace._new_concepts(\nbin/Spaces.py:14337: in _new_concepts\n    warn_capacity(self)\nbin/ConceptForgetting.py:15: in warn_capacity\n    _, reserved, limit = owner._concept_capacity_window(0)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_capacity_window'",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-004.json",
+    "nodeid": "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.030994500033557415,
+    "message": "test/test_bounded_stm_fold.py:61: in test_compose_single_reduction_space_role\n    assert layer.r_apply == 0  # not belongs to the field, not unary grammar\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 1 == 0\nE    +  where 1 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_apply",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-004.json",
+    "nodeid": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 45.01893495791592,
+    "message": "test/test_bounded_test_runner.py:459: in test_termination_persists_failure_and_cleans_child\n    assert (tmp_path / \"active.pid\").exists()\nE   AssertionError: assert False\nE    +  where False = exists()\nE    +    where exists = (PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9244/test_termination_persists_fail0') / 'active.pid').exists",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-021.json",
+    "nodeid": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.5487013331148773,
+    "message": "test/test_expectation_defaults.py:260: in test_expectation_off_keeps_every_packed_closing_in_ltm\n    model.runBatch(train=False, batchSize=1, split=\"runtime\",\nbin/Models.py:13603: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13759: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14135: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8802: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10178: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8487: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23942: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17188: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22494: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22063: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21171: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20417: in _commit_sentence\n    row = _append_observed_meaning(store, clause,\ntest/test_expectation_defaults.py:253: in capture\n    written.append(int(store.row_ids[row]))\n                       ^^^^^^^^^^^^^^^^^^\nE   IndexError: too many indices for tensor of dimension 1",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-033.json",
+    "nodeid": "test/test_live_concepts_from_percepts.py::test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.0005078751128166914,
+    "message": "test/test_live_concepts_from_percepts.py:266: in test_conceptual_checkpoint_metadata_and_tensor_state_roundtrip_together\n    target.load_vocab_extras(source.vocab_extras())\n                             ^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:18668: in vocab_extras\n    \"mtm\": self.mtm.state(),\n           ^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'ConceptualSpace' object has no attribute 'mtm'",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-042.json",
+    "nodeid": "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.4187039171811193,
+    "message": "test/test_operators_round2c.py:86: in test_zero_meaning_departures_and_one_reader_step\n    model.runEpoch(optimizer=optimizer,batchSize=4,split='train')\nbin/Models.py:15661: in runEpoch\n    result, _ = self.runBatch(\nbin/Models.py:13603: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13759: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14135: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8802: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10178: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8487: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23942: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17188: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22494: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22063: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21043: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:150: in sentence_pair\n    cost_b, state_b = score(explore, True)\n                      ^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20947: in score\n    raise RuntimeError('compose fork did not take its saved departure')\nE   RuntimeError: compose fork did not take its saved departure",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-045.json",
+    "nodeid": "test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 5.7934699999168515,
+    "message": "test/test_parts_of_speech.py:134: in test_kept_readings_alone_supply_occupation_counts\n    assert parts.counts and set(parts.counts) - set(expected.counts)\nE   AssertionError: assert ({12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...} and ({12, 13, 14, 15, 16, 17} - {12, 13, 14, 15, 16, 17}))\nE    +  where {12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...} = PartsOfSpeech().counts\nE    +  and   {12, 13, 14, 15, 16, 17} = set({12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...})\nE    +    where {12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...} = PartsOfSpeech().counts\nE    +  and   {12, 13, 14, 15, 16, 17} = set({12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...})\nE    +    where {12: Counter({'adverb_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), 13: Cou...': 1}), 15: Counter({'and_argin1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1, 'definite_argin1': 1}), ...} = PartsOfSpeech().counts",
+    "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+  },
+  {
+    "worker": "worker-045.json",
+    "nodeid": "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.00411474984139204,
+    "message": "test/test_parts_of_speech.py:173: in test_word_flow_follows_the_catalogue_and_ends_at_a_clause\n    assert 'bind' not in rules  # Bind is a thought operation, with no compose face.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert 'bind' not in {'divide': RuleDef(space_role='CS', canonical='F -> divide.forward(F)', arity=1, method_name='divide', lhs='F', rhs_sy...m', 'poles'), footprint_writes=(), determiner_mode=None, substrate=False, mandatory=False, semantic_operand=None), ...}",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-068.json",
+    "nodeid": "test/test_taxonomy_entry.py::test_normal_entry_does_not_verify_generated_vectors_as_taxonomy",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.013459666864946485,
+    "message": "test/test_taxonomy_entry.py:67: in test_normal_entry_does_not_verify_generated_vectors_as_taxonomy\n    assert not len(cs._ltm_store) and cs._ltm_store.parts.contains(edge)\nE   assert (not 1)\nE    +  where 1 = len(LTM0())\nE    +    where LTM0() = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...t): SigmaConceptsFromPercepts(\\n    (sigma): SigmaLayer(\\n      (layer): LinearLayer()\\n    )\\n  )\\n  (_ltm_store): LTM0()\\n)._ltm_store",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-069.json",
+    "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.21131154196336865,
+    "message": ".venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 223, in _main\nE         config = _prepareconfig(new_args, plugins, prog=prog)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 410, in _prepareconfig\nE         config: Config = pluginmanager.hook.pytest_cmdline_parse(\nE                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py\", line 512, in __call__\nE         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 120, in _hookexec\nE         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 167, in _multicall\nE         raise exception\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 139, in _multicall\nE         teardown.throw(exception)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py\", line 124, in pytest_cmdline_parse\nE         config = yield\nE                  ^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 121, in _multicall\nE         res = hook_impl.function(*args)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1232, in pytest_cmdline_parse\nE         self.parse(args)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1586, in parse\nE         self.pluginmanager.consider_env()\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 874, in consider_env\nE         self._import_plugin_specs(os.environ.get(\"PYTEST_PLUGINS\"))\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 885, in _import_plugin_specs\nE         self.import_plugin(import_spec)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 920, in import_plugin\nE         raise ImportError(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 913, in import_plugin\nE         mod = importlib.import_module(importspec)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py\", line 90, in import_module\nE         return _bootstrap._gcd_import(name[level:], package, level)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\nE       File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\nE       File \"<frozen importlib._bootstrap>\", line 1324, in _find_and_load_unlocked\nE     ImportError: Error importing plugin \"sweep_capture\": No module named 'sweep_capture'\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\\nImportError: Error importing plugin \"sweep_capture\": No module named \\'sweep_capture\\'\\n').returncode",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-069.json",
+    "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.2073035421781242,
+    "message": ".venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 223, in _main\nE         config = _prepareconfig(new_args, plugins, prog=prog)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 410, in _prepareconfig\nE         config: Config = pluginmanager.hook.pytest_cmdline_parse(\nE                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py\", line 512, in __call__\nE         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 120, in _hookexec\nE         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 167, in _multicall\nE         raise exception\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 139, in _multicall\nE         teardown.throw(exception)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py\", line 124, in pytest_cmdline_parse\nE         config = yield\nE                  ^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 121, in _multicall\nE         res = hook_impl.function(*args)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1232, in pytest_cmdline_parse\nE         self.parse(args)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1586, in parse\nE         self.pluginmanager.consider_env()\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 874, in consider_env\nE         self._import_plugin_specs(os.environ.get(\"PYTEST_PLUGINS\"))\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 885, in _import_plugin_specs\nE         self.import_plugin(import_spec)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 920, in import_plugin\nE         raise ImportError(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 913, in import_plugin\nE         mod = importlib.import_module(importspec)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py\", line 90, in import_module\nE         return _bootstrap._gcd_import(name[level:], package, level)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\nE       File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\nE       File \"<frozen importlib._bootstrap>\", line 1324, in _find_and_load_unlocked\nE     ImportError: Error importing plugin \"sweep_capture\": No module named 'sweep_capture'\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\\nImportError: Error importing plugin \"sweep_capture\": No module named \\'sweep_capture\\'\\n').returncode",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-069.json",
+    "nodeid": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.20744649996049702,
+    "message": ".venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 223, in _main\nE         config = _prepareconfig(new_args, plugins, prog=prog)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 410, in _prepareconfig\nE         config: Config = pluginmanager.hook.pytest_cmdline_parse(\nE                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py\", line 512, in __call__\nE         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 120, in _hookexec\nE         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 167, in _multicall\nE         raise exception\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 139, in _multicall\nE         teardown.throw(exception)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py\", line 124, in pytest_cmdline_parse\nE         config = yield\nE                  ^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 121, in _multicall\nE         res = hook_impl.function(*args)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1232, in pytest_cmdline_parse\nE         self.parse(args)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1586, in parse\nE         self.pluginmanager.consider_env()\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 874, in consider_env\nE         self._import_plugin_specs(os.environ.get(\"PYTEST_PLUGINS\"))\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 885, in _import_plugin_specs\nE         self.import_plugin(import_spec)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 920, in import_plugin\nE         raise ImportError(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 913, in import_plugin\nE         mod = importlib.import_module(importspec)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py\", line 90, in import_module\nE         return _bootstrap._gcd_import(name[level:], package, level)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\nE       File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\nE       File \"<frozen importlib._bootstrap>\", line 1324, in _find_and_load_unlocked\nE     ImportError: Error importing plugin \"sweep_capture\": No module named 'sweep_capture'\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\\nImportError: Error importing plugin \"sweep_capture\": No module named \\'sweep_capture\\'\\n').returncode",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-069.json",
+    "nodeid": "test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.21245137508958578,
+    "message": ".venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 223, in _main\nE         config = _prepareconfig(new_args, plugins, prog=prog)\nE                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 410, in _prepareconfig\nE         config: Config = pluginmanager.hook.pytest_cmdline_parse(\nE                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py\", line 512, in __call__\nE         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py\", line 120, in _hookexec\nE         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 167, in _multicall\nE         raise exception\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 139, in _multicall\nE         teardown.throw(exception)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py\", line 124, in pytest_cmdline_parse\nE         config = yield\nE                  ^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py\", line 121, in _multicall\nE         res = hook_impl.function(*args)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1232, in pytest_cmdline_parse\nE         self.parse(args)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 1586, in parse\nE         self.pluginmanager.consider_env()\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 874, in consider_env\nE         self._import_plugin_specs(os.environ.get(\"PYTEST_PLUGINS\"))\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 885, in _import_plugin_specs\nE         self.import_plugin(import_spec)\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 920, in import_plugin\nE         raise ImportError(\nE       File \"/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py\", line 913, in import_plugin\nE         mod = importlib.import_module(importspec)\nE               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py\", line 90, in import_module\nE         return _bootstrap._gcd_import(name[level:], package, level)\nE                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\nE       File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\nE       File \"<frozen importlib._bootstrap>\", line 1324, in _find_and_load_unlocked\nE     ImportError: Error importing plugin \"sweep_capture\": No module named 'sweep_capture'\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\\nImportError: Error importing plugin \"sweep_capture\": No module named \\'sweep_capture\\'\\n').returncode",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-075.json",
+    "nodeid": "test/test_verb_adverb_grammar_ops.py::test_complete_contains_absorbed_role_only_methods",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.003984458977356553,
+    "message": "test/test_verb_adverb_grammar_ops.py:139: in test_complete_contains_absorbed_role_only_methods\n    assert 'bind' not in complete_up | complete_down\nE   AssertionError: assert 'bind' not in ({'adverb', 'and', 'ask', 'bind', 'compound', 'conjunction', ...} | {'adverb', 'ask', 'compound', 'conjunction', 'definite_unary', 'disjunction', ...})",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-076.json",
+    "nodeid": "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_has_no_chart_rule_ids",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.003582458943128586,
+    "message": "test/test_when_grammar_rules.py:62: in test_bind_has_no_chart_rule_ids\n    self.assertFalse(up)\nE   AssertionError: [RuleDef(space_role='CS', canonical='bind_argout1 -> bind.forward(bind_argin1)', arity=1, method_name='bind', lhs='bind_argout1', rhs_symbols=('bind_argin1',), width_min=0, width_max=0, query=False, thought_family=None, thought_permutation=None, reference_roles=(), reference_modes=(), clause_form=None, head_role=1, surface_name='bind', predicate_identity='bind', operand_kinds=('symbol',), effect_writes=('serial', 'percept', 'budget'), relation_kind=None, scope_transparent=True, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False, effect_reads=('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget', 'expectation', 'ltm'), field_eligible=False, order_delta=0, case_head_role=0, footprint_reads=('form', 'meaning', 'poles'), footprint_writes=('form', 'meaning'), determiner_mode=None, substrate=False, mandatory=False, semantic_operand=None)] is not false",
+    "stdout": ""
+  },
+  {
+    "worker": "worker-079.json",
+    "nodeid": "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.03712620818987489,
+    "message": "test/test_word_loop_buckets_and_orders.py:104: in test_one_operation_layer_owns_both_arities\n    assert shared.r_reduce > 0 and shared.r_apply == 0\nE   assert (9 > 0 and 1 == 0)\nE    +  where 9 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_reduce\nE    +  and   1 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_apply",
+    "stdout": ""
+  }
+]

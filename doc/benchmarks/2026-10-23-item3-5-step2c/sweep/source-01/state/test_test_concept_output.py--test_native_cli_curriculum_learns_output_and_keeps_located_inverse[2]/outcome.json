@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_output.py::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

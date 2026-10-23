@@ -1,0 +1,6 @@
+{
+  "node": "test/test_testpoint.py::TestEmbeddingProbes::test_vector_norms_nonzero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

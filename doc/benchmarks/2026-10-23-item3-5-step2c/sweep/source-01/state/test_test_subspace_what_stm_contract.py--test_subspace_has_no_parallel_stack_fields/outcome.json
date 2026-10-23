@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_subspace_has_no_parallel_stack_fields",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

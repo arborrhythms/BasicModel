@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reduction_pressure.py::test_deadline_masks_unary_and_stop_in_the_credit_distribution",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relative_error.py::test_repeated_contributions_share_one_target_baseline",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

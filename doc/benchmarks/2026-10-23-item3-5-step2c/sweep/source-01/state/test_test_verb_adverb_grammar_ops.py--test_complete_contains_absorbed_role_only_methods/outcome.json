@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_adverb_grammar_ops.py::test_complete_contains_absorbed_role_only_methods",
+  "outcome": "failed",
+  "failure": "test/test_verb_adverb_grammar_ops.py:139: in test_complete_contains_absorbed_role_only_methods\n    assert 'bind' not in complete_up | complete_down\nE   AssertionError: assert 'bind' not in ({'adverb', 'and', 'ask', 'bind', 'compound', 'conjunction', ...} | {'adverb', 'ask', 'compound', 'conjunction', 'definite_unary', 'disjunction', ...})",
+  "records": []
+}

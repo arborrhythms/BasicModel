@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_multivector_codebook_keeps_quantized_head",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

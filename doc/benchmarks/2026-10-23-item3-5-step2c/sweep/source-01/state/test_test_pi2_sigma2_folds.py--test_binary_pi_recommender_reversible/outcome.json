@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pi2_sigma2_folds.py::test_binary_pi_recommender_reversible",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

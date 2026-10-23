@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_input_priming_reads_live_word_extent_without_changing_prior",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

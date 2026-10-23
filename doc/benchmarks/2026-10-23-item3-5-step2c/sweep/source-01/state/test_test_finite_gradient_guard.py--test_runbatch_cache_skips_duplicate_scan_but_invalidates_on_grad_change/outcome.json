@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_runbatch_cache_skips_duplicate_scan_but_invalidates_on_grad_change",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

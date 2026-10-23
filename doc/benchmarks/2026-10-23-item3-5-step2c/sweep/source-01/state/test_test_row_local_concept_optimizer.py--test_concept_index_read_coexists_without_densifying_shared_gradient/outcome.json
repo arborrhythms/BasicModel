@@ -1,0 +1,6 @@
+{
+  "node": "test/test_row_local_concept_optimizer.py::test_concept_index_read_coexists_without_densifying_shared_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

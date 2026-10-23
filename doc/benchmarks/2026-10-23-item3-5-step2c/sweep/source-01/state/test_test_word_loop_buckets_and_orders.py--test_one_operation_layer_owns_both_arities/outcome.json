@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+  "outcome": "failed",
+  "failure": "test/test_word_loop_buckets_and_orders.py:104: in test_one_operation_layer_owns_both_arities\n    assert shared.r_reduce > 0 and shared.r_apply == 0\nE   assert (9 > 0 and 1 == 0)\nE    +  where 9 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_reduce\nE    +  and   1 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_apply",
+  "records": []
+}

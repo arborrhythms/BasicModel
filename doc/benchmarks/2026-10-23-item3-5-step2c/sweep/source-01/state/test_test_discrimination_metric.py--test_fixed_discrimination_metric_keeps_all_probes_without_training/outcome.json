@@ -1,0 +1,6 @@
+{
+  "node": "test/test_discrimination_metric.py::test_fixed_discrimination_metric_keeps_all_probes_without_training",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_binding_operators.py::test_free_discarding_operator_still_searches_both_bank_operands",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

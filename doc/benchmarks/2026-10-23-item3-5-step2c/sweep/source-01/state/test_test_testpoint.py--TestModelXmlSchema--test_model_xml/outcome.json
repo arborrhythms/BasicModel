@@ -1,0 +1,6 @@
+{
+  "node": "test/test_testpoint.py::TestModelXmlSchema::test_model_xml",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

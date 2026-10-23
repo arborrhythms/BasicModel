@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_empty_layer_returns_zeros",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

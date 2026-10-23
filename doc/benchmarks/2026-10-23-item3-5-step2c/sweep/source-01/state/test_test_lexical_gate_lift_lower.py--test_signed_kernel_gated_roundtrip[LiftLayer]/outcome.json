@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexical_gate_lift_lower.py::test_signed_kernel_gated_roundtrip[LiftLayer]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

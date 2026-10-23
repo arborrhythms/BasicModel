@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestProvisioning::test_provisioning_is_lazy_not_at_construction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

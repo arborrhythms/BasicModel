@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_method_explicit_BK",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

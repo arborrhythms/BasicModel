@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_unit_ball.py::TestRpScores::test_rp_score_sort_matches_projective_distance_sort",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

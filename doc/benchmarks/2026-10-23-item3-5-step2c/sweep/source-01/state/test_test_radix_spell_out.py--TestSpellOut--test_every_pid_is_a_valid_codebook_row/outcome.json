@@ -1,0 +1,6 @@
+{
+  "node": "test/test_radix_spell_out.py::TestSpellOut::test_every_pid_is_a_valid_codebook_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

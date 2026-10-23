@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_nontaxonomic_cue_does_not_enter_concept_order_reader[reference2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

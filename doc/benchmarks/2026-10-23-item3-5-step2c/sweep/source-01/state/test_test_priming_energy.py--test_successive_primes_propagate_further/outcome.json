@@ -1,0 +1,6 @@
+{
+  "node": "test/test_priming_energy.py::test_successive_primes_propagate_further",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

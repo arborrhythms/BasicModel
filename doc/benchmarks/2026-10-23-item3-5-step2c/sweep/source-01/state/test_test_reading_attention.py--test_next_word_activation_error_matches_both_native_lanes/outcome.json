@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_attention.py::test_next_word_activation_error_matches_both_native_lanes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_counterevidence_joins_the_negative_pole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

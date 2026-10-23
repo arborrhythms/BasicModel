@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_thought_equal_fit_uses_the_same_mlp_and_keeps_live_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

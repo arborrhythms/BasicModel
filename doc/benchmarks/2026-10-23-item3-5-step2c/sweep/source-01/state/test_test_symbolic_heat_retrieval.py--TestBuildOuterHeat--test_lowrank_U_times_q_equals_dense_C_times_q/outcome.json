@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_lowrank_U_times_q_equals_dense_C_times_q",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

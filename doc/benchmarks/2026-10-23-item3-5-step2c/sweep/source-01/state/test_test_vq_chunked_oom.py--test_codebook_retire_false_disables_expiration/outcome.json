@@ -1,0 +1,6 @@
+{
+  "node": "test/test_vq_chunked_oom.py::test_codebook_retire_false_disables_expiration",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

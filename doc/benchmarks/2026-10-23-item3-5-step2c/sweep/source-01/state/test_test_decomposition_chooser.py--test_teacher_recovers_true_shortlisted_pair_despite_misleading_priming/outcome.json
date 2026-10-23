@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

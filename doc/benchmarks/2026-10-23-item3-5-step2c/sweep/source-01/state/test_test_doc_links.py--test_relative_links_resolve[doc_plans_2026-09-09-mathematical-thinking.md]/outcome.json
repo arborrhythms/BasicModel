@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-09-mathematical-thinking.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

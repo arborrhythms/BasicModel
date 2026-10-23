@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_alternatives_normalize_each_update_before_discovery",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

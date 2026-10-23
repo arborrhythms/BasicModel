@@ -1,0 +1,6 @@
+{
+  "node": "test/test_dual_towers.py::test_null_percept_key_survives_on_partspace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

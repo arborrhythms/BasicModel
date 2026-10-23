@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_materializes_user_and_provisioned_rows_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_walk_trials.py::test_output_pair_costs_complete_paths_and_keeps_greedy_ties",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

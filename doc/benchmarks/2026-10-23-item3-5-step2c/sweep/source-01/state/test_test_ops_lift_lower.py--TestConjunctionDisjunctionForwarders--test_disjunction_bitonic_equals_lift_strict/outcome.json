@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_disjunction_bitonic_equals_lift_strict",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

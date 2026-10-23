@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compound_cases.py::test_compound_inverse_search_is_bounded_by_the_supplied_primed_symbols",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

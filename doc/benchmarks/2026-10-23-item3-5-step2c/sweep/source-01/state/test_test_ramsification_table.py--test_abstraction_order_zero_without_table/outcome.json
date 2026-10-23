@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ramsification_table.py::test_abstraction_order_zero_without_table",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

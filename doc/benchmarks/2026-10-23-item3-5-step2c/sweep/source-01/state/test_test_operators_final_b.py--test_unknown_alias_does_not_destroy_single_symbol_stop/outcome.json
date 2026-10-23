@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final_b.py::test_unknown_alias_does_not_destroy_single_symbol_stop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

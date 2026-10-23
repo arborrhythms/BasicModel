@@ -1,0 +1,6 @@
+{
+  "node": "test/test_registration_drift.py::test_predication_pressure_sculpts_the_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

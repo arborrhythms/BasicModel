@@ -1,0 +1,6 @@
+{
+  "node": "test/test_typed_definition.py::test_typed_definition_minimal_whole_drops_looser_ancestor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

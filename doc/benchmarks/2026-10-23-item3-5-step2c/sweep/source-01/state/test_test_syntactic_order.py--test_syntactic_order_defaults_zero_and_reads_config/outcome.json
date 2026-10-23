@@ -1,0 +1,6 @@
+{
+  "node": "test/test_syntactic_order.py::test_syntactic_order_defaults_zero_and_reads_config",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

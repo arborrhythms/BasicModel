@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review10_contracts.py::test_small_frozen_evaluator_keeps_definition_rows_and_reservations",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

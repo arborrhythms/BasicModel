@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestErgodicMnistReport::test_forward_layer_weight_accessible",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

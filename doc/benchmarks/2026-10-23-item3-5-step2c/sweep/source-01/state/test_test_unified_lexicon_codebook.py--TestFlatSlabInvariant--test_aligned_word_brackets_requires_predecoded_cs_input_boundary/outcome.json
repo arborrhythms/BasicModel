@@ -1,0 +1,6 @@
+{
+  "node": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_requires_predecoded_cs_input_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

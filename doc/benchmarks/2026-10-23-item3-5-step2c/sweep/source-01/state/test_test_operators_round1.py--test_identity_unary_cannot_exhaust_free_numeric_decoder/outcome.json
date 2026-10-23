@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round1.py::test_identity_unary_cannot_exhaust_free_numeric_decoder",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

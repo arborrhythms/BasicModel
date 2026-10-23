@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_fold_path_preserves_route_order_and_noop_gaps",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

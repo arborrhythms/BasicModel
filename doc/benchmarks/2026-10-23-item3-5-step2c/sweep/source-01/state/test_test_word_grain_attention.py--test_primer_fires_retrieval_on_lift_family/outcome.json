@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_grain_attention.py::test_primer_fires_retrieval_on_lift_family",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

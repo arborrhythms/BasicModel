@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_tied_input_reconstruction_must_finish_before_opening_query_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

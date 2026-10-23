@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_prime_is_max_not_replace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

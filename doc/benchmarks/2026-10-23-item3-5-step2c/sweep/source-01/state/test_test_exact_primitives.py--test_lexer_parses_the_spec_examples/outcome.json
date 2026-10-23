@@ -1,0 +1,6 @@
+{
+  "node": "test/test_exact_primitives.py::test_lexer_parses_the_spec_examples",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

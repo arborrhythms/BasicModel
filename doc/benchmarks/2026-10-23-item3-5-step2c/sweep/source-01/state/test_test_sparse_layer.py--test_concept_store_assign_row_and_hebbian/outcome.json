@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_concept_store_assign_row_and_hebbian",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

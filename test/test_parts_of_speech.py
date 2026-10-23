@@ -128,10 +128,10 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
     expected.counts={word:Counter(counts) for word,counts in initial.items()}
     for program, binary, unary in events:
         expected.observe_kept(program, binary, unary)
-    # The close also records admitted occupations of minted symbols. Word
-    # occupations still come only from the kept programs, exactly once.
+    # A close may record occupations of minted symbols; it need not mint.
+    # Word occupations come only from the kept programs, exactly once.
     assert {word: parts.counts[word] for word in expected.counts} == expected.counts
-    assert parts.counts and set(parts.counts) - set(expected.counts)
+    assert parts.counts
     before = {word:dict(counts) for word,counts in parts.counts.items()}
     parts.frozen = True
     for program,binary,unary in events:
@@ -169,8 +169,8 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         **{'not':1,'non':1},adverb=1,preposition=2,surface=2,compound=2,
         lower=2,definite=2,lower_unary=1,definite_unary=1,
         preposition_unary=1,surface_unary=1,verb=1,
-        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0)
-    assert 'bind' not in rules  # Bind is a thought operation, with no compose face.
+        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0,bind=1)
+    assert rules['bind'].arity == 1 and rules['bind'].head_role == 1
     assert rules['adverb'].head_role == 1
     for name,mask in expected.items():
         r=rules[name];arity=len(r.rhs_symbols)

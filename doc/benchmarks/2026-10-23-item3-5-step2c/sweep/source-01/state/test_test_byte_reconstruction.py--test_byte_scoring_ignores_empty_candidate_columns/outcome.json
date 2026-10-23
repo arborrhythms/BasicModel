@@ -1,0 +1,6 @@
+{
+  "node": "test/test_byte_reconstruction.py::test_byte_scoring_ignores_empty_candidate_columns",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

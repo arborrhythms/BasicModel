@@ -1,0 +1,6 @@
+{
+  "node": "test/test_role_collapsed_grammar.py::test_perceptualspace_has_everything_start",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

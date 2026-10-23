@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_memberships.py::test_parameter_getter_does_not_offer_new_parts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

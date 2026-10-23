@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestPeaceful::test_uneven_luminosity_lowers_peace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

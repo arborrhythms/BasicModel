@@ -1,0 +1,6 @@
+{
+  "node": "test/test_data_no_byte_loss.py::test_reset_cursor_restarts_from_beginning",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

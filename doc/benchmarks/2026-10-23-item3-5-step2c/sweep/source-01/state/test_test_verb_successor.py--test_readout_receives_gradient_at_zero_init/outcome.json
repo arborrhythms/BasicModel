@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_successor.py::test_readout_receives_gradient_at_zero_init",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

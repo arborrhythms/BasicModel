@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_discovered_and_end_definitions_keep_learned_exponent_scale",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

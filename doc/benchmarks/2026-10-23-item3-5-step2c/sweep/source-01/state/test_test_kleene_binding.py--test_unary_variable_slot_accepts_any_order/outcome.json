@@ -1,0 +1,6 @@
+{
+  "node": "test/test_kleene_binding.py::test_unary_variable_slot_accepts_any_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

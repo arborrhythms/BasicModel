@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_combined.py::test_short_priming_tensor_pads_to_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

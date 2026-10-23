@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_thought_only_operators_have_no_structural_noop_faces",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

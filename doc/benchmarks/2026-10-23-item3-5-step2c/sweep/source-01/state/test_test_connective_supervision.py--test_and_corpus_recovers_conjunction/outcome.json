@@ -1,0 +1,6 @@
+{
+  "node": "test/test_connective_supervision.py::test_and_corpus_recovers_conjunction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

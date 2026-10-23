@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_grow_preserves_trained_values",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

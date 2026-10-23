@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_true_preserves_valid_percepts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

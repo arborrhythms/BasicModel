@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_ingestion.py::test_explicit_fact_admission_preserves_full_description_and_source",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

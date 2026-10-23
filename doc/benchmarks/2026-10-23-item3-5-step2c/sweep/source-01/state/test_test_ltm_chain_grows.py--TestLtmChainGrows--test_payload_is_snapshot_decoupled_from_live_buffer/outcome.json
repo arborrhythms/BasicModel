@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmChainGrows::test_payload_is_snapshot_decoupled_from_live_buffer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

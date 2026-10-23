@@ -1,0 +1,6 @@
+{
+  "node": "test/test_training_device.py::test_quick_suite_retains_its_cpu_default",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

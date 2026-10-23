@@ -1,0 +1,6 @@
+{
+  "node": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringLiveON::test_off_baseline_picks_larger_norm_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

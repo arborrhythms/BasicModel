@@ -1,0 +1,6 @@
+{
+  "node": "test/test_partspace_dynamic_capacity.py::test_checkpoint_restores_fixed_owner_and_optimizer_by_name",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

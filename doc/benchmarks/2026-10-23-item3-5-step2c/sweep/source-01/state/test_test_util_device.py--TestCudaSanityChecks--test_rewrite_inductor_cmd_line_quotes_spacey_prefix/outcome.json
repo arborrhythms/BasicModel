@@ -1,0 +1,6 @@
+{
+  "node": "test/test_util_device.py::TestCudaSanityChecks::test_rewrite_inductor_cmd_line_quotes_spacey_prefix",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

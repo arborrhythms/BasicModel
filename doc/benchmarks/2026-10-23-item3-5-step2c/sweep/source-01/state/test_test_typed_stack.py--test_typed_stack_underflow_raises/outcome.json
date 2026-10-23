@@ -1,0 +1,6 @@
+{
+  "node": "test/test_typed_stack.py::test_typed_stack_underflow_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

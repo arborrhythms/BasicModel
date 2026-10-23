@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_verify_relation_writes_both_registered_poles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

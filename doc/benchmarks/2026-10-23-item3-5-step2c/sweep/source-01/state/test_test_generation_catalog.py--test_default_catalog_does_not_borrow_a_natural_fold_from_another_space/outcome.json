@@ -1,0 +1,6 @@
+{
+  "node": "test/test_generation_catalog.py::test_default_catalog_does_not_borrow_a_natural_fold_from_another_space",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

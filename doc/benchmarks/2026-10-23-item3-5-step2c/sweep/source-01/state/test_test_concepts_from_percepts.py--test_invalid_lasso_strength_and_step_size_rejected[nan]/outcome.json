@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_invalid_lasso_strength_and_step_size_rejected[nan]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

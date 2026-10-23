@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_layer_butterfly.py::TestButterflyRoundtrip::test_roundtrip_n2",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

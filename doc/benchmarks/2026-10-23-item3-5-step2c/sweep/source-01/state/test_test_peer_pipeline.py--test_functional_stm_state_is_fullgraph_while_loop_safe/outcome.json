@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_functional_stm_state_is_fullgraph_while_loop_safe",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

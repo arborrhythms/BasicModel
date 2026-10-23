@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_weekly_snapshot_copies_sources_and_shares_only_the_runtime",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

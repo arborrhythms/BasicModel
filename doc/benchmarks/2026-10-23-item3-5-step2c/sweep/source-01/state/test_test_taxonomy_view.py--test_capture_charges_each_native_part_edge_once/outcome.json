@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_view.py::test_capture_charges_each_native_part_edge_once",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

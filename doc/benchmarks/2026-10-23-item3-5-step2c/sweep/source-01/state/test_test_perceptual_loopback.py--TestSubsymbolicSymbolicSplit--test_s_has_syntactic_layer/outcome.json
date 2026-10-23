@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptual_loopback.py::TestSubsymbolicSymbolicSplit::test_s_has_syntactic_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_decoupling.py::TestWhereDecoupling::test_where_is_not_a_codebook_row_key",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

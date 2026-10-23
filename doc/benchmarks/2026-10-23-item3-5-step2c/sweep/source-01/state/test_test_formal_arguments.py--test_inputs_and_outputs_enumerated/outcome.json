@@ -1,0 +1,6 @@
+{
+  "node": "test/test_formal_arguments.py::test_inputs_and_outputs_enumerated",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

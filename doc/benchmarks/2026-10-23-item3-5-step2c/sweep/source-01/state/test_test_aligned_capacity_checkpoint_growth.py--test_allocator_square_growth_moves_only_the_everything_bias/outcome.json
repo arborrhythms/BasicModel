@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_square_growth_moves_only_the_everything_bias",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

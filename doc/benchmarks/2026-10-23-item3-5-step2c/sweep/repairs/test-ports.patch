@@ -1,0 +1,210 @@
+diff --git a/test/test_aligned_capacity_checkpoint_growth.py b/test/test_aligned_capacity_checkpoint_growth.py
+index 0af401ba4..a5db9931f 100644
+--- a/test/test_aligned_capacity_checkpoint_growth.py
++++ b/test/test_aligned_capacity_checkpoint_growth.py
+@@ -514,6 +514,7 @@ def test_concept_id_capacity_failure_is_atomic_and_activates_before_mint():
+         _model=types.SimpleNamespace(
+             _ensure_aligned_active_rows=lambda required: calls.append(required)),
+     )
++    owner._concept_capacity_window = types.MethodType(ConceptualSpace._concept_capacity_window, owner)
+     assert [ConceptualSpace.new_concept(owner) for _ in range(3)] == [1, 2, 3]
+     assert calls == [2, 3, 4]
+     before = allocator.next_id
+@@ -532,6 +533,8 @@ def test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows():
+         _concept_allocator=allocator,
+     )
+ 
++    owner._concept_capacity_window = types.MethodType(ConceptualSpace._concept_capacity_window, owner)
++
+     assert [ConceptualSpace.new_concept(owner) for _ in range(n + 2)] == [
+         1, 2, 3, 4, 5, 6]
+     assert allocator.next_id == n + 3
+diff --git a/test/test_bounded_stm_fold.py b/test/test_bounded_stm_fold.py
+index 8381dd2d9..468853e05 100644
+--- a/test/test_bounded_stm_fold.py
++++ b/test/test_bounded_stm_fold.py
+@@ -58,7 +58,8 @@ def test_compose_single_reduction_space_role():
+     layer = m.symbolSpace.languageLayer.operation_layer
+     assert layer is m._stm_reducer()
+     assert layer.r_reduce >= 8
+-    assert layer.r_apply == 0  # not belongs to the field, not unary grammar
++    assert layer.r_apply == 1  # bind composes; not remains a field operation
++    assert isinstance(layer.unary_ops[0].gl, Language.BindLayer)
+     assert 5 in layer.attention_operations
+ 
+ 
+diff --git a/test/test_expectation_defaults.py b/test/test_expectation_defaults.py
+index 361023a15..9136018f6 100644
+--- a/test/test_expectation_defaults.py
++++ b/test/test_expectation_defaults.py
+@@ -248,9 +248,11 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
+     append = Models._append_observed_meaning
+ 
+     def capture(target, clause, **kwargs):
++        written_rows = kwargs.setdefault('written_rows', {})
+         row = append(target, clause, **kwargs)
+         if target is store:
+-            written.append(int(store.row_ids[row]))
++            occurrence = store.location(written_rows['root_occurrence'])
++            written.append(int(store.row_ids[occurrence]))
+         return row
+ 
+     monkeypatch.setattr(Models, '_append_observed_meaning', capture)
+diff --git a/test/test_live_concepts_from_percepts.py b/test/test_live_concepts_from_percepts.py
+index bc766f4f6..2f4f64def 100644
+--- a/test/test_live_concepts_from_percepts.py
++++ b/test/test_live_concepts_from_percepts.py
+@@ -234,7 +234,11 @@ def test_native_field_lifecycle_clears_only_reset_rows_then_releases_graph():
+ 
+ 
+ def _checkpoint_space():
++    from MediumTermMemory import MediumTermMemory
++    from types import SimpleNamespace
+     cs = _space()
++    cs.mtm = MediumTermMemory()
++    cs.similarity_codebook = SimpleNamespace(W=cs.concepts_from_percepts.coefficients)
+     cs.legacy = nn.Linear(2, 2)
+     cs.concept_source_readout = SigmaConceptsFromPercepts(9, 1)
+     cs.layers = nn.ModuleList([cs.legacy, cs.concepts_from_percepts,
+diff --git a/test/test_operators_round2c.py b/test/test_operators_round2c.py
+index a2a9e977a..71cf7c1d4 100644
+--- a/test/test_operators_round2c.py
++++ b/test/test_operators_round2c.py
+@@ -41,6 +41,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
+                         attention_round=torch.full_like(chosen,-1),compose_round=chosen)
+         draw['walk']=torch.full_like(draw['round'],0 if walk=='narrowing' else 1)
+         draw['walk_rounds']=(narrowing.alternatives if walk=='narrowing' else compose).sum(-1)
++        draw['candidate_round']=torch.full_like(draw['round'],-1)
++        draw['bind_round']=torch.full_like(draw['round'],-1)
+         return draw
+     def attend(module,keys,legal,space,**kwargs):
+         available=legal.flatten(1)
+@@ -68,7 +70,20 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
+         if walk=='compose' and kwargs.get('masked_action') is not None:
+             op=torch.where(kwargs['masked_action']>=0,binary.index(product),op)
+         from operation_fixtures import selected_action
+-        with selected_action(module, torch.where(depth>1,op,stop)):
++        from unittest.mock import patch
++        action=torch.where(depth>1,op,stop)
++        def choose(logits,**options):
++            mask=options.get('masked_action')
++            selected=action
++            if mask is not None:
++                # Bind makes STOP eligible at depth one. Honor that saved
++                # departure with the next legal action, instead of forcing
++                # the excluded STOP for a second time.
++                remaining=logits.masked_fill(torch.arange(logits.shape[1],device=logits.device)[None]==mask[:,None],-torch.inf)
++                selected=torch.where((mask>=0)&(depth<=1),remaining.argmax(-1),selected)
++            with selected_action(module,selected):
++                return module.select_logits(logits,**options)
++        with patch.object(module,'select_logits',choose):
+             return original_forward(module,x,**kwargs)
+     monkeypatch.setattr(SentenceCredit,'departure',depart)
+     monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+diff --git a/test/test_parts_of_speech.py b/test/test_parts_of_speech.py
+index dd0f9caac..269b2285e 100644
+--- a/test/test_parts_of_speech.py
++++ b/test/test_parts_of_speech.py
+@@ -128,10 +128,10 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
+     expected.counts={word:Counter(counts) for word,counts in initial.items()}
+     for program, binary, unary in events:
+         expected.observe_kept(program, binary, unary)
+-    # The close also records admitted occupations of minted symbols. Word
+-    # occupations still come only from the kept programs, exactly once.
++    # A close may record occupations of minted symbols; it need not mint.
++    # Word occupations come only from the kept programs, exactly once.
+     assert {word: parts.counts[word] for word in expected.counts} == expected.counts
+-    assert parts.counts and set(parts.counts) - set(expected.counts)
++    assert parts.counts
+     before = {word:dict(counts) for word,counts in parts.counts.items()}
+     parts.frozen = True
+     for program,binary,unary in events:
+@@ -169,8 +169,8 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
+         **{'not':1,'non':1},adverb=1,preposition=2,surface=2,compound=2,
+         lower=2,definite=2,lower_unary=1,definite_unary=1,
+         preposition_unary=1,surface_unary=1,verb=1,
+-        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0)
+-    assert 'bind' not in rules  # Bind is a thought operation, with no compose face.
++        lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0,bind=1)
++    assert rules['bind'].arity == 1 and rules['bind'].head_role == 1
+     assert rules['adverb'].head_role == 1
+     for name,mask in expected.items():
+         r=rules[name];arity=len(r.rhs_symbols)
+diff --git a/test/test_taxonomy_entry.py b/test/test_taxonomy_entry.py
+index 925504ca7..611bbb732 100644
+--- a/test/test_taxonomy_entry.py
++++ b/test/test_taxonomy_entry.py
+@@ -64,7 +64,8 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
+     assert result.posture == TRUE
+     assert result.result.domain == "conceptual-taxonomy"
+     edge = cs._ltm_store.parts.find(a[1], b[1])
+-    assert not len(cs._ltm_store) and cs._ltm_store.parts.contains(edge)
++    assert len(cs._ltm_store) == 1 and cs._ltm_store.parts.contains(edge)
++    assert cs._ltm_store.row(0)['kind'] == 'inference'
+     assert cs._ltm_store.parts.truth_plus[edge] == 1
+     with pytest.raises((ValueError, TypeError), match='reference|concept'):
+         reasoner.model.reason_about(
+diff --git a/test/test_verb_adverb_grammar_ops.py b/test/test_verb_adverb_grammar_ops.py
+index a066aa56a..0be01330c 100644
+--- a/test/test_verb_adverb_grammar_ops.py
++++ b/test/test_verb_adverb_grammar_ops.py
+@@ -136,6 +136,6 @@ def test_complete_contains_absorbed_role_only_methods():
+     complete_up, complete_down = _methods("complete.grammar")
+     absorbed = {"preposition", "surface", "transpose", "lower_unary",
+                 "definite_unary", "preposition_unary", "surface_unary"}
+-    assert 'bind' not in complete_up | complete_down
++    assert 'bind' in complete_up and 'bind' not in complete_down
+     assert absorbed <= complete_up, absorbed - complete_up
+     assert absorbed <= complete_down, absorbed - complete_down
+diff --git a/test/test_when_grammar_rules.py b/test/test_when_grammar_rules.py
+index 96d1fbe48..42839a2fa 100644
+--- a/test/test_when_grammar_rules.py
++++ b/test/test_when_grammar_rules.py
+@@ -48,23 +48,26 @@ class TestPrepositionGrammarRules(unittest.TestCase):
+ 
+ 
+ class TestBindGrammarRules(unittest.TestCase):
+-    """Binding is a unary thought operation with no compose/generate rule."""
++    """Binding has one unary compose face, a thought face and no inverse."""
+ 
+     def test_bind_rule_present(self):
+         g = _load_complete()
+         names = {r.semantic_id for r in g.thought_operations}
+         self.assertIn("bind", names)
+ 
+-    def test_bind_has_no_chart_rule_ids(self):
++    def test_bind_has_one_forward_chart_rule_and_no_inverse(self):
+         g = _load_complete()
+         up = [r for r in g.rules_upward if r.method_name == "bind"]
+         dn = [r for r in g.rules_downward if r.method_name == "bind"]
+-        self.assertFalse(up)
++        self.assertEqual(len(up), 1)
++        self.assertEqual(up[0].arity, 1)
++        self.assertEqual(up[0].head_role, 1)
+         self.assertFalse(dn)
+         op = next(op for op in g.thought_operations if op.semantic_id == 'bind')
+         self.assertEqual(op.operand_roles, ('argin1',))
+         self.assertEqual(op.result_role, 'argout1')
+-        self.assertFalse(op.forward_rule_ids or op.reverse_rule_ids)
++        self.assertEqual(op.forward_rule_ids, (g.rules_upward.index(up[0]),))
++        self.assertFalse(op.reverse_rule_ids)
+ 
+ 
+ class TestPrepositionSignalRouterBinding(unittest.TestCase):
+diff --git a/test/test_word_loop_buckets_and_orders.py b/test/test_word_loop_buckets_and_orders.py
+index e30dd3417..1a69987a2 100644
+--- a/test/test_word_loop_buckets_and_orders.py
++++ b/test/test_word_loop_buckets_and_orders.py
+@@ -98,9 +98,11 @@ def _grammar_model():
+ 
+ 
+ def test_one_operation_layer_owns_both_arities():
++    from Language import BindLayer
+     model = _grammar_model()
+     shared = model.symbolSpace.languageLayer.operation_layer
+     assert model._stm_reducer() is shared
+-    assert shared.r_reduce > 0 and shared.r_apply == 0
++    assert shared.r_reduce > 0 and shared.r_apply == 1
++    assert isinstance(shared.unary_ops[0].gl, BindLayer)
+     assert 5 in shared.attention_operations
+     assert not hasattr(model.symbolSpace.languageLayer, '_unary_layers')

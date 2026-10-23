@@ -1,0 +1,6 @@
+{
+  "node": "test/test_util_device.py::TestCudaSanityChecks::test_compile_returns_original_model_if_all_backends_fail",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

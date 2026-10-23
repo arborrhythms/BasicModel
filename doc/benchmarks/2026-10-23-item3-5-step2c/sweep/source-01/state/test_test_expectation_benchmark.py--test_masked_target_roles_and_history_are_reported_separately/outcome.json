@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_benchmark.py::test_masked_target_roles_and_history_are_reported_separately",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

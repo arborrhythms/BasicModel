@@ -1,0 +1,6 @@
+{
+  "node": "test/test_order0_attended_field.py::test_inventory_outlives_the_eight_attended_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereology::test_equal_three_region_partition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

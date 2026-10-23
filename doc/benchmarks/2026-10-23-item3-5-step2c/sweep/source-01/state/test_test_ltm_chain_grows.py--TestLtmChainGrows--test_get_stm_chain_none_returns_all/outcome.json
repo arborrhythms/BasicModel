@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmChainGrows::test_get_stm_chain_none_returns_all",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_positive_int_taxonomy.py::TestNativeAddresses::test_idea_address_resolves_to_its_native_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

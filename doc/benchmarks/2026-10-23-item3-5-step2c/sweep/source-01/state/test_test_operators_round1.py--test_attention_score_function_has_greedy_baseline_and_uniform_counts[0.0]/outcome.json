@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round1.py::test_attention_score_function_has_greedy_baseline_and_uniform_counts[0.0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

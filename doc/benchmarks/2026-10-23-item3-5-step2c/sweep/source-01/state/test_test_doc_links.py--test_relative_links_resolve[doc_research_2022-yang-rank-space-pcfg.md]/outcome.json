@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/research/2022-yang-rank-space-pcfg.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bivector_retirement_state.py::test_symbolic_nwhat_equals_ndim",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

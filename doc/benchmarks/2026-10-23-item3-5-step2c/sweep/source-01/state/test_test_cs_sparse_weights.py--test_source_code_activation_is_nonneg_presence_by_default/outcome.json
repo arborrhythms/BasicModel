@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_sparse_weights.py::test_source_code_activation_is_nonneg_presence_by_default",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

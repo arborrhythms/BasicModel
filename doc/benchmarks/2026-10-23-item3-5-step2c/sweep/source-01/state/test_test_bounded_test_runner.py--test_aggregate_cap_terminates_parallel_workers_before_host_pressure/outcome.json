@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_aggregate_cap_terminates_parallel_workers_before_host_pressure",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

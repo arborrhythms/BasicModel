@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_lookup_gauge.py::test_token_lookup_distinguishes_negation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

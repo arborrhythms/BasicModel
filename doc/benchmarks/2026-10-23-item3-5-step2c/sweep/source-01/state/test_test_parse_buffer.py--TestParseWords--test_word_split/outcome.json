@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parse_buffer.py::TestParseWords::test_word_split",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

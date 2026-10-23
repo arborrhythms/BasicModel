@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_reentrancy.py::TestConceptualIsBookkeepingCarrier::test_cs_has_no_active_residual_cache",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

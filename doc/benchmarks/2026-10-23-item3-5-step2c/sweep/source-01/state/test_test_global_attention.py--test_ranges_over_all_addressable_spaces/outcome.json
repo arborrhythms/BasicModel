@@ -1,0 +1,6 @@
+{
+  "node": "test/test_global_attention.py::test_ranges_over_all_addressable_spaces",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

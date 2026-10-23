@@ -1,0 +1,6 @@
+{
+  "node": "test/test_impenetrable.py::TestOverlapPenalty::test_overlap_matched_trust_zero_loss",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

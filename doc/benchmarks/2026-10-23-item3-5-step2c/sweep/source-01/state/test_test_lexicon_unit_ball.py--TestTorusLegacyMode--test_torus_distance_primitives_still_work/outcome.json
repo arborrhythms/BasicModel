@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_torus_distance_primitives_still_work",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

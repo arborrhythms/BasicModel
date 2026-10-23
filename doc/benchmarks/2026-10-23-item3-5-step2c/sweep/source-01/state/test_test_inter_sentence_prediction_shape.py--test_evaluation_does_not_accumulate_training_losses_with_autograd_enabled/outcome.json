@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inter_sentence_prediction_shape.py::test_evaluation_does_not_accumulate_training_losses_with_autograd_enabled",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
+  "outcome": "failed",
+  "failure": "test/test_parts_of_speech.py:173: in test_word_flow_follows_the_catalogue_and_ends_at_a_clause\n    assert 'bind' not in rules  # Bind is a thought operation, with no compose face.\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: assert 'bind' not in {'divide': RuleDef(space_role='CS', canonical='F -> divide.forward(F)', arity=1, method_name='divide', lhs='F', rhs_sy...m', 'poles'), footprint_writes=(), determiner_mode=None, substrate=False, mandatory=False, semantic_operand=None), ...}",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_codebook_update_law.py::test_mask_flip_flips_the_partition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

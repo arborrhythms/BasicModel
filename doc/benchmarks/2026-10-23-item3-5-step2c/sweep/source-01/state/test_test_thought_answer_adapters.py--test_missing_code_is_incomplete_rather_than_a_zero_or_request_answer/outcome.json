@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_answer_adapters.py::test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

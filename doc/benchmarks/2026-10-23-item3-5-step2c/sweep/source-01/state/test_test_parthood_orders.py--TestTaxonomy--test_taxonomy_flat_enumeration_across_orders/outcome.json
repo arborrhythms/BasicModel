@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_flat_enumeration_across_orders",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

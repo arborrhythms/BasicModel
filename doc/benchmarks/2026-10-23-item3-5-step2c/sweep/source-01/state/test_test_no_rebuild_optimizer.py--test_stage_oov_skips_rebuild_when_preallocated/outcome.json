@@ -1,0 +1,6 @@
+{
+  "node": "test/test_no_rebuild_optimizer.py::test_stage_oov_skips_rebuild_when_preallocated",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

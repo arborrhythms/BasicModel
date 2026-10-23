@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_laws.py::test_eval_chart_bijection",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

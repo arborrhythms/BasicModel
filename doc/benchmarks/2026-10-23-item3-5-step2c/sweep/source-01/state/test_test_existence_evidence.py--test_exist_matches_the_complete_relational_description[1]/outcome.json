@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_evidence.py::test_exist_matches_the_complete_relational_description[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

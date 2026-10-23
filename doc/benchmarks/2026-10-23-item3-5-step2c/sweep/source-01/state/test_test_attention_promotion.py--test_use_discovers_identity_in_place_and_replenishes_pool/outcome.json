@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_promotion.py::test_use_discovers_identity_in_place_and_replenishes_pool",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

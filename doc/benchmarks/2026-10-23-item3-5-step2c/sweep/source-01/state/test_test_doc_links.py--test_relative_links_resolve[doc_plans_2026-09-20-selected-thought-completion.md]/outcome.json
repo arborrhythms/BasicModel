@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-09-20-selected-thought-completion.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

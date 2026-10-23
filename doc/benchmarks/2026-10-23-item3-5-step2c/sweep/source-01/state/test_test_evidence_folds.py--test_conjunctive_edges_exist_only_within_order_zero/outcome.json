@@ -1,0 +1,6 @@
+{
+  "node": "test/test_evidence_folds.py::test_conjunctive_edges_exist_only_within_order_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

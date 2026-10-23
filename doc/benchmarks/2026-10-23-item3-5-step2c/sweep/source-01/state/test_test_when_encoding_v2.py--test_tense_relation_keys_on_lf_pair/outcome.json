@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_encoding_v2.py::test_tense_relation_keys_on_lf_pair",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

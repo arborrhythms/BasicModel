@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestInverse::test_lower_and_inverse_via_W_matches_intersectionReverse",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

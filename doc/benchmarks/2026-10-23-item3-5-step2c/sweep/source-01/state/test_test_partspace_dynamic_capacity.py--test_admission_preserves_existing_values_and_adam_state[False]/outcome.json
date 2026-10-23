@@ -1,0 +1,6 @@
+{
+  "node": "test/test_partspace_dynamic_capacity.py::test_admission_preserves_existing_values_and_adam_state[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_native_ids.py::test_missing_object_identity_cannot_fall_back_to_a_different_word_referent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

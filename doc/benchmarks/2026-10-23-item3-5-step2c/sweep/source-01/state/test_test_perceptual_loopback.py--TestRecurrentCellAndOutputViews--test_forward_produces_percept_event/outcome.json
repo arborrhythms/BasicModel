@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptual_loopback.py::TestRecurrentCellAndOutputViews::test_forward_produces_percept_event",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

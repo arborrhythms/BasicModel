@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubSpaceActiveEncoding::test_activation_stored_and_retrievable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

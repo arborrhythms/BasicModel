@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_partial_overlap",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_whole_property_codebook.py::test_property_region_is_low_frequency",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

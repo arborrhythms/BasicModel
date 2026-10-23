@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_admissibility_mask_all_false_when_nothing_fits",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

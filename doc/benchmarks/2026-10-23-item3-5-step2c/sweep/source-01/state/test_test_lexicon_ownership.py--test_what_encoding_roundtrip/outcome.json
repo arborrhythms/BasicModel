@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::test_what_encoding_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

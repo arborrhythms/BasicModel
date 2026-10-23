@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_exclusion_is_reachable_signed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

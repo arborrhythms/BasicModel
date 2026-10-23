@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_integration.py::test_sentence_boundary_clears_priming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

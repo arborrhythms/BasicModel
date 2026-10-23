@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexical_gate_lift_lower.py::test_gate_flows_through_meronymic_adapter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

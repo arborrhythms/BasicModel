@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_narrowing_selection_has_no_percept_stage_scorer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

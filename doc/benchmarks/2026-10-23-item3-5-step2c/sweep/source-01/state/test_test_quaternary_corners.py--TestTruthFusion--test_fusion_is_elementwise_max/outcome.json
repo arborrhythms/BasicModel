@@ -1,0 +1,6 @@
+{
+  "node": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_is_elementwise_max",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

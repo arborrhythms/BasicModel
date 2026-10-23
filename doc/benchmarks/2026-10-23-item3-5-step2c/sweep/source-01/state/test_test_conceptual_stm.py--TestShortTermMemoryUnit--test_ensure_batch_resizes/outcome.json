@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_ensure_batch_resizes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

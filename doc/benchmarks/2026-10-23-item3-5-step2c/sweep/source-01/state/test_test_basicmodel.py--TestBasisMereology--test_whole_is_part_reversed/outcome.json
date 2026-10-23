@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereology::test_whole_is_part_reversed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

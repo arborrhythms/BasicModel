@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_pending_checkpoint_migration_and_validation_are_atomic",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

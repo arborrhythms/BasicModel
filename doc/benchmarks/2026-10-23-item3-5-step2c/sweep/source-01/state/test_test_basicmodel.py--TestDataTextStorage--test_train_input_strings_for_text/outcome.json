@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestDataTextStorage::test_train_input_strings_for_text",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

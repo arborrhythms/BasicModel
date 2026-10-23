@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_contiguous_siblings_merge_to_one_run",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

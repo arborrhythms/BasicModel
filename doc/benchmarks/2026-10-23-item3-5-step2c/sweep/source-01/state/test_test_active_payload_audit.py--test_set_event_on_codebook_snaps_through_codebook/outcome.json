@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_payload_audit.py::test_set_event_on_codebook_snaps_through_codebook",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

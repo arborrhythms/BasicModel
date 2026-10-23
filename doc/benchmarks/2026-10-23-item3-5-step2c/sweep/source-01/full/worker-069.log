@@ -1,0 +1,303 @@
+.............................................FFFF.....ssssss............ [ 56%]
+........................................................                 [100%]
+=================================== FAILURES ===================================
+_ test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped] _
+test/test_test_modes.py:49: in test_slow_mode_controls_collection_before_expensive_fixture_setup
+    assert result.returncode == 0, result.stdout + result.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ModuleNotFoundError: No module named 'sweep_capture'
+E     
+E     The above exception was the direct cause of the following exception:
+E     
+E     Traceback (most recent call last):
+E       File "<frozen runpy>", line 198, in _run_module_as_main
+E       File "<frozen runpy>", line 88, in _run_code
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pytest/__main__.py", line 9, in <module>
+E         raise SystemExit(_console_main())
+E                          ^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+E         code = _main(prog=_get_prog_name(sys.argv))
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 223, in _main
+E         config = _prepareconfig(new_args, plugins, prog=prog)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 410, in _prepareconfig
+E         config: Config = pluginmanager.hook.pytest_cmdline_parse(
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+E         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+E         raise exception
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+E         teardown.throw(exception)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+E         config = yield
+E                  ^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+E         res = hook_impl.function(*args)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1232, in pytest_cmdline_parse
+E         self.parse(args)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1586, in parse
+E         self.pluginmanager.consider_env()
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 874, in consider_env
+E         self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 885, in _import_plugin_specs
+E         self.import_plugin(import_spec)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 920, in import_plugin
+E         raise ImportError(
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ImportError: Error importing plugin "sweep_capture": No module named 'sweep_capture'
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\nImportError: Error importing plugin "sweep_capture": No module named \'sweep_capture\'\n').returncode
+_ test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped] _
+test/test_test_modes.py:49: in test_slow_mode_controls_collection_before_expensive_fixture_setup
+    assert result.returncode == 0, result.stdout + result.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ModuleNotFoundError: No module named 'sweep_capture'
+E     
+E     The above exception was the direct cause of the following exception:
+E     
+E     Traceback (most recent call last):
+E       File "<frozen runpy>", line 198, in _run_module_as_main
+E       File "<frozen runpy>", line 88, in _run_code
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pytest/__main__.py", line 9, in <module>
+E         raise SystemExit(_console_main())
+E                          ^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+E         code = _main(prog=_get_prog_name(sys.argv))
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 223, in _main
+E         config = _prepareconfig(new_args, plugins, prog=prog)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 410, in _prepareconfig
+E         config: Config = pluginmanager.hook.pytest_cmdline_parse(
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+E         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+E         raise exception
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+E         teardown.throw(exception)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+E         config = yield
+E                  ^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+E         res = hook_impl.function(*args)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1232, in pytest_cmdline_parse
+E         self.parse(args)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1586, in parse
+E         self.pluginmanager.consider_env()
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 874, in consider_env
+E         self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 885, in _import_plugin_specs
+E         self.import_plugin(import_spec)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 920, in import_plugin
+E         raise ImportError(
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ImportError: Error importing plugin "sweep_capture": No module named 'sweep_capture'
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\nImportError: Error importing plugin "sweep_capture": No module named \'sweep_capture\'\n').returncode
+_ test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed] _
+test/test_test_modes.py:49: in test_slow_mode_controls_collection_before_expensive_fixture_setup
+    assert result.returncode == 0, result.stdout + result.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ModuleNotFoundError: No module named 'sweep_capture'
+E     
+E     The above exception was the direct cause of the following exception:
+E     
+E     Traceback (most recent call last):
+E       File "<frozen runpy>", line 198, in _run_module_as_main
+E       File "<frozen runpy>", line 88, in _run_code
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pytest/__main__.py", line 9, in <module>
+E         raise SystemExit(_console_main())
+E                          ^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+E         code = _main(prog=_get_prog_name(sys.argv))
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 223, in _main
+E         config = _prepareconfig(new_args, plugins, prog=prog)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 410, in _prepareconfig
+E         config: Config = pluginmanager.hook.pytest_cmdline_parse(
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+E         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+E         raise exception
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+E         teardown.throw(exception)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+E         config = yield
+E                  ^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+E         res = hook_impl.function(*args)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1232, in pytest_cmdline_parse
+E         self.parse(args)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1586, in parse
+E         self.pluginmanager.consider_env()
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 874, in consider_env
+E         self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 885, in _import_plugin_specs
+E         self.import_plugin(import_spec)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 920, in import_plugin
+E         raise ImportError(
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ImportError: Error importing plugin "sweep_capture": No module named 'sweep_capture'
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\nImportError: Error importing plugin "sweep_capture": No module named \'sweep_capture\'\n').returncode
+___________ test_slow_selection_includes_historical_and_mps_switches ___________
+test/test_test_modes.py:75: in test_slow_selection_includes_historical_and_mps_switches
+    assert result.returncode == 0, result.stdout + result.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ModuleNotFoundError: No module named 'sweep_capture'
+E     
+E     The above exception was the direct cause of the following exception:
+E     
+E     Traceback (most recent call last):
+E       File "<frozen runpy>", line 198, in _run_module_as_main
+E       File "<frozen runpy>", line 88, in _run_code
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pytest/__main__.py", line 9, in <module>
+E         raise SystemExit(_console_main())
+E                          ^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+E         code = _main(prog=_get_prog_name(sys.argv))
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 223, in _main
+E         config = _prepareconfig(new_args, plugins, prog=prog)
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 410, in _prepareconfig
+E         config: Config = pluginmanager.hook.pytest_cmdline_parse(
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+E         return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+E         return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+E         raise exception
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 139, in _multicall
+E         teardown.throw(exception)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/helpconfig.py", line 124, in pytest_cmdline_parse
+E         config = yield
+E                  ^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+E         res = hook_impl.function(*args)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1232, in pytest_cmdline_parse
+E         self.parse(args)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1586, in parse
+E         self.pluginmanager.consider_env()
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 874, in consider_env
+E         self._import_plugin_specs(os.environ.get("PYTEST_PLUGINS"))
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 885, in _import_plugin_specs
+E         self.import_plugin(import_spec)
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 920, in import_plugin
+E         raise ImportError(
+E       File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 913, in import_plugin
+E         mod = importlib.import_module(importspec)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/importlib/__init__.py", line 90, in import_module
+E         return _bootstrap._gcd_import(name[level:], package, level)
+E                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+E       File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+E       File "<frozen importlib._bootstrap>", line 1324, in _find_and_load_unlocked
+E     ImportError: Error importing plugin "sweep_capture": No module named 'sweep_capture'
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python', '-m', 'pytest', '-p', 'slow_tes... in _find_and_load_unlocked\nImportError: Error importing plugin "sweep_capture": No module named \'sweep_capture\'\n').returncode
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_taxonomy_view.py::test_direct_taxonomic_links_change_partof_with_canonical_direction
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[None-1 passed, 1 skipped]
+FAILED test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]
+FAILED test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[1-2 passed]
+FAILED test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches
+4 failed, 118 passed, 6 skipped, 2 warnings in 3.86s

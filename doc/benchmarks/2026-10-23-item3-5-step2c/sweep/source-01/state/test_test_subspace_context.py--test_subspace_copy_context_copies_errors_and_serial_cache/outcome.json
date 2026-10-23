@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_context.py::test_subspace_copy_context_copies_errors_and_serial_cache",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

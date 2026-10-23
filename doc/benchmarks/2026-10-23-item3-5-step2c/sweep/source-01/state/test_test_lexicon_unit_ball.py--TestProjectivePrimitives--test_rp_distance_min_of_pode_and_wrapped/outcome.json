@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_unit_ball.py::TestProjectivePrimitives::test_rp_distance_min_of_pode_and_wrapped",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

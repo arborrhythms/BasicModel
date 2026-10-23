@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wholespace_property_migration.py::test_aligned_model_accepts_unequal_inventory_capacities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

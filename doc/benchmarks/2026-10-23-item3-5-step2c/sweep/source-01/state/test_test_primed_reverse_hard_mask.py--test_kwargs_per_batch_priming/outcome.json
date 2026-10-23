@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_hard_mask.py::test_kwargs_per_batch_priming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_masked_nan_padding_is_neutral_in_value_and_gradient[GatedConceptsFromPercepts]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

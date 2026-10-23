@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clarifications.py::test_assess_contested_vs_silent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

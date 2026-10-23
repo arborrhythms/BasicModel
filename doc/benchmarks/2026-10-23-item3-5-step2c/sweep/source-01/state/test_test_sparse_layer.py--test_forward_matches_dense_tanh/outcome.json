@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_forward_matches_dense_tanh",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

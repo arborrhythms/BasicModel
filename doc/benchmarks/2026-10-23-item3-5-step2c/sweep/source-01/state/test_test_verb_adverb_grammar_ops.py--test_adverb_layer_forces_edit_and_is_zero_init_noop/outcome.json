@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_adverb_grammar_ops.py::test_adverb_layer_forces_edit_and_is_zero_init_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

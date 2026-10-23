@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_signed_checkpoint_migrates_poles_and_optimizer_first_moments",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

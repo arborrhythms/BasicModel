@@ -1,0 +1,6 @@
+{
+  "node": "test/test_formal_arguments.py::test_deterministic_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_history_boundaries.py::test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

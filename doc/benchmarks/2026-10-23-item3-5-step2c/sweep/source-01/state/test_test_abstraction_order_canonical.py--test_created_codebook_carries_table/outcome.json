@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_created_codebook_carries_table",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

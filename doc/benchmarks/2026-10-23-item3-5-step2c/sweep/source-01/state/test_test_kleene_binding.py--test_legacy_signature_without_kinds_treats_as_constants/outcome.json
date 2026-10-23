@@ -1,0 +1,6 @@
+{
+  "node": "test/test_kleene_binding.py::test_legacy_signature_without_kinds_treats_as_constants",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_history_boundaries.py::test_typed_result_checkpoint_rehydrates_nested_meaning_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestGrammar::test_configure_multi_lhs_keys",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

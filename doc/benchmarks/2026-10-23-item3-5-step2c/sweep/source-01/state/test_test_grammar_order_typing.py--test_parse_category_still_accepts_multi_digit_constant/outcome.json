@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

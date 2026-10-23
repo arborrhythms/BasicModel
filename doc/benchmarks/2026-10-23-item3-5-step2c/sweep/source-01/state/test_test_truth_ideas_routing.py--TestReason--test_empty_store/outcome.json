@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_ideas_routing.py::TestReason::test_empty_store",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

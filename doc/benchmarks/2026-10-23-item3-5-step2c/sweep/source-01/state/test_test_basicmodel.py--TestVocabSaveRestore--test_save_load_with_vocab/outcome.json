@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestVocabSaveRestore::test_save_load_with_vocab",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

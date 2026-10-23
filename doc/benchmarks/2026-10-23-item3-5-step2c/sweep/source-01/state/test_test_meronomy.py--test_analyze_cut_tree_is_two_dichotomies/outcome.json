@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_analyze_cut_tree_is_two_dichotomies",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_two_references_suffice_and_eight_can_add_parallel_detail[GatedConceptsFromPercepts]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestPersistence::test_vocab_extras_dump_and_load_preserves_state",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

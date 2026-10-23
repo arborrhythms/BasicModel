@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_concept_id_capacity_failure_is_atomic_and_activates_before_mint",
+  "outcome": "failed",
+  "failure": "test/test_aligned_capacity_checkpoint_growth.py:517: in test_concept_id_capacity_failure_is_atomic_and_activates_before_mint\n    assert [ConceptualSpace.new_concept(owner) for _ in range(3)] == [1, 2, 3]\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:14394: in new_concept\n    return ConceptualSpace._new_concepts(\nbin/Spaces.py:14337: in _new_concepts\n    warn_capacity(self)\nbin/ConceptForgetting.py:15: in warn_capacity\n    _, reserved, limit = owner._concept_capacity_window(0)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_capacity_window'",
+  "records": []
+}

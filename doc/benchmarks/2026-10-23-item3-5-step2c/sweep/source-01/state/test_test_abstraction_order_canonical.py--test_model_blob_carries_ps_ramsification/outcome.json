@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_model_blob_carries_ps_ramsification",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

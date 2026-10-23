@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_assert_relation_sym_weight_lands_on_edge",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

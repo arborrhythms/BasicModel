@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_memberships.py::test_raw_analysis_layout_clips_regions_to_observed_input",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

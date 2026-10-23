@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_scope.py::test_reconstruction_scope_follows_live_reading_and_grammar[meronomy-meronomy-True-understanding]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

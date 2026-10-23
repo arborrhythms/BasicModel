@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

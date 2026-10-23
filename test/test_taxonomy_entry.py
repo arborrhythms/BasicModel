@@ -64,7 +64,8 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     assert result.posture == TRUE
     assert result.result.domain == "conceptual-taxonomy"
     edge = cs._ltm_store.parts.find(a[1], b[1])
-    assert not len(cs._ltm_store) and cs._ltm_store.parts.contains(edge)
+    assert len(cs._ltm_store) == 1 and cs._ltm_store.parts.contains(edge)
+    assert cs._ltm_store.row(0)['kind'] == 'inference'
     assert cs._ltm_store.parts.truth_plus[edge] == 1
     with pytest.raises((ValueError, TypeError), match='reference|concept'):
         reasoner.model.reason_about(

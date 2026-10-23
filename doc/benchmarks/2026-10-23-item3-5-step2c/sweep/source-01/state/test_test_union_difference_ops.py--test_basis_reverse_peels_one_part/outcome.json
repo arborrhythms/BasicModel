@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_basis_reverse_peels_one_part",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

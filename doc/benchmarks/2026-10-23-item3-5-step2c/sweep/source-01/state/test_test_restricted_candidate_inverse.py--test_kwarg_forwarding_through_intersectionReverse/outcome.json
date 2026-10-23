@@ -1,0 +1,6 @@
+{
+  "node": "test/test_restricted_candidate_inverse.py::test_kwarg_forwarding_through_intersectionReverse",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-02-item6-9-ownership/native-stage1/BasicModel_answers_tied_benchmark-ownership/summary.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

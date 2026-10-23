@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestRadixTrie::test_single_insert_and_exact_lookup",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

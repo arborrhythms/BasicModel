@@ -1,0 +1,6 @@
+{
+  "node": "test/test_multi_optimizer_surface.py::test_add_param_group_goes_to_the_dense_child_and_flattens",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

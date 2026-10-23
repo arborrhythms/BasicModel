@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_layer.py::test_concept_store_embed_pair_and_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

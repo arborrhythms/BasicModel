@@ -1,0 +1,6 @@
+{
+  "node": "test/test_role_collapsed_grammar.py::test_every_relation_rule_has_no_query_attribute",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

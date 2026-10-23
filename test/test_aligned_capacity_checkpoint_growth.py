@@ -514,6 +514,7 @@ def test_concept_id_capacity_failure_is_atomic_and_activates_before_mint():
         _model=types.SimpleNamespace(
             _ensure_aligned_active_rows=lambda required: calls.append(required)),
     )
+    owner._concept_capacity_window = types.MethodType(ConceptualSpace._concept_capacity_window, owner)
     assert [ConceptualSpace.new_concept(owner) for _ in range(3)] == [1, 2, 3]
     assert calls == [2, 3, 4]
     before = allocator.next_id
@@ -531,6 +532,8 @@ def test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows():
         _concept_binding="mixing",
         _concept_allocator=allocator,
     )
+
+    owner._concept_capacity_window = types.MethodType(ConceptualSpace._concept_capacity_window, owner)
 
     assert [ConceptualSpace.new_concept(owner) for _ in range(n + 2)] == [
         1, 2, 3, 4, 5, 6]

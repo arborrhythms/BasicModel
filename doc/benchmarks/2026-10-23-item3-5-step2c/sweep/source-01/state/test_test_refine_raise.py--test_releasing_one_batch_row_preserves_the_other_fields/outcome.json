@@ -1,0 +1,6 @@
+{
+  "node": "test/test_refine_raise.py::test_releasing_one_batch_row_preserves_the_other_fields",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

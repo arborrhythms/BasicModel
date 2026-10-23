@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestInvertibleLinearLayer::test_forward_reverse_square",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_within_whole_division.py::test_live_seeded_bytes_alone_do_not_divide_words",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

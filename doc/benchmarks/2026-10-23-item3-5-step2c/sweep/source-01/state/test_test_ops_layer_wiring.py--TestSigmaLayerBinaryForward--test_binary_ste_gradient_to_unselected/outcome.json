@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_layer_wiring.py::TestSigmaLayerBinaryForward::test_binary_ste_gradient_to_unselected",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

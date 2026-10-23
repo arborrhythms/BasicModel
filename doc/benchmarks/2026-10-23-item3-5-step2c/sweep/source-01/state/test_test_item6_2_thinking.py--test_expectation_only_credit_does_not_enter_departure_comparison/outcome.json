@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_peel_recovers_multiset_signed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

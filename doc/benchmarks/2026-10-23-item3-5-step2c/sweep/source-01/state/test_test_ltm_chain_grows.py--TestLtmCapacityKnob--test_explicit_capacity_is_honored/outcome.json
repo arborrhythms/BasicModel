@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_explicit_capacity_is_honored",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

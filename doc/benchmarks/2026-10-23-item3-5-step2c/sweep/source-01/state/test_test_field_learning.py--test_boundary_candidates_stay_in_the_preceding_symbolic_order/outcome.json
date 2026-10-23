@@ -1,0 +1,6 @@
+{
+  "node": "test/test_field_learning.py::test_boundary_candidates_stay_in_the_preceding_symbolic_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

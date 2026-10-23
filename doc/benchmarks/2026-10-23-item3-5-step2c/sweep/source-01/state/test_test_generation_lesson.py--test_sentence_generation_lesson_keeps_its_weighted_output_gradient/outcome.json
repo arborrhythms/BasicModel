@@ -1,0 +1,6 @@
+{
+  "node": "test/test_generation_lesson.py::test_sentence_generation_lesson_keeps_its_weighted_output_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

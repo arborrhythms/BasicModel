@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_bracket_candidates_are_grammar_declared_field_operations_without_generate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_prime_drops_out_of_range",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

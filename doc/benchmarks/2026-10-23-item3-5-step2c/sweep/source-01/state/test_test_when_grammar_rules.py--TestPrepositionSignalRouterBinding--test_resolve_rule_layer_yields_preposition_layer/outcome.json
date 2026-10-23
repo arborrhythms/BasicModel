@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_resolve_rule_layer_yields_preposition_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

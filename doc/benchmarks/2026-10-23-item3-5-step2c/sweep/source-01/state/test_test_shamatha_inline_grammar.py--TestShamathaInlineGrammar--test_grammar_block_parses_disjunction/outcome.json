@@ -1,0 +1,6 @@
+{
+  "node": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_grammar_block_parses_disjunction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

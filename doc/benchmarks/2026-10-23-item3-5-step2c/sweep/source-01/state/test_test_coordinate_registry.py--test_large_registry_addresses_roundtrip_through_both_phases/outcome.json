@@ -1,0 +1,6 @@
+{
+  "node": "test/test_coordinate_registry.py::test_large_registry_addresses_roundtrip_through_both_phases",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

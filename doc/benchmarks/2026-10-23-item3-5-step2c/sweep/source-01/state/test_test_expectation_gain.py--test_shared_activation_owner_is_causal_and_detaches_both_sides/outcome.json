@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_shared_activation_owner_is_causal_and_detaches_both_sides",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

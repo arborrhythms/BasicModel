@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_sphere_uses_cosine",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

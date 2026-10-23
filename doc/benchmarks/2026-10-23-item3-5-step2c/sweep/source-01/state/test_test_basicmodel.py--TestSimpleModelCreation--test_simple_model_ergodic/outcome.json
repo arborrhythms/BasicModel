@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSimpleModelCreation::test_simple_model_ergodic",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

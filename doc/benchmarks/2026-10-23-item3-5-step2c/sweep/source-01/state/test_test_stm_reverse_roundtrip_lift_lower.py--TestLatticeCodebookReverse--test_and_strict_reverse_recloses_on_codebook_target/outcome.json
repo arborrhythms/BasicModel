@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestLatticeCodebookReverse::test_and_strict_reverse_recloses_on_codebook_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

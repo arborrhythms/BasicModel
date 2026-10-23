@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clarifications.py::test_suggest_clarifications_template",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

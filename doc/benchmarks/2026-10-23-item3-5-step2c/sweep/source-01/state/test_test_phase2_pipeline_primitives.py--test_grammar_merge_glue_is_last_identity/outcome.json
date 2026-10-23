@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase2_pipeline_primitives.py::test_grammar_merge_glue_is_last_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

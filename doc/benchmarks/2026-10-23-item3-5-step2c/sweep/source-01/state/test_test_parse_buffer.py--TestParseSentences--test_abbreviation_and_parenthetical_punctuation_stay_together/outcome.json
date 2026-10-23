@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parse_buffer.py::TestParseSentences::test_abbreviation_and_parenthetical_punctuation_stay_together",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

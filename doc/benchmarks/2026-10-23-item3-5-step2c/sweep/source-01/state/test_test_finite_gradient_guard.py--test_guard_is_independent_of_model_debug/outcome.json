@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_guard_is_independent_of_model_debug",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

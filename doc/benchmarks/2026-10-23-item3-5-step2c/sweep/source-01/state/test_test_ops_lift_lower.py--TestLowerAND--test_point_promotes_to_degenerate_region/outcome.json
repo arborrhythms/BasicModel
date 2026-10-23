@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestLowerAND::test_point_promotes_to_degenerate_region",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

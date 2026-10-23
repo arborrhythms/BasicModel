@@ -1,0 +1,6 @@
+{
+  "node": "test/test_dimensional_governance.py::test_converted_grammars_load_role_collapsed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

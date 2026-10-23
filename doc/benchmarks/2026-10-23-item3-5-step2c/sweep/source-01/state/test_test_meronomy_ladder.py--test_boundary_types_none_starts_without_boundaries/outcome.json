@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_boundary_types_none_starts_without_boundaries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

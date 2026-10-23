@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_empty_selection_empties_view",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_contextual_concept_codebook.py::test_parameter_preserves_frozen_capacity_and_state_dict_storage",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
