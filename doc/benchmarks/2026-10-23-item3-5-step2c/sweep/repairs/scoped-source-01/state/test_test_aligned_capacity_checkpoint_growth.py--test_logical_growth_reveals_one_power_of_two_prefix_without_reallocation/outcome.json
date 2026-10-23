@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_logical_growth_reveals_one_power_of_two_prefix_without_reallocation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

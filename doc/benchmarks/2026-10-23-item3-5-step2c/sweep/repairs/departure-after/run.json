@@ -1,0 +1,17 @@
+{
+  "source": "9f550087004bdbe21bbe113ca0e50395e261db56",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+    "--tb=short"
+  ],
+  "replay": "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+  "plugins": "sweep_capture,arrival_capture,identity_keep_probe,departure_probe",
+  "started": "2026-10-23T21:56:38.687166+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T21:56:45.685030+00:00",
+  "source_unchanged": true
+}

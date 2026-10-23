@@ -1,0 +1,23 @@
+{
+  "source": "9f550087004bdbe21bbe113ca0e50395e261db56",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_aligned_capacity_checkpoint_growth.py",
+    "test/test_bounded_stm_fold.py",
+    "test/test_expectation_defaults.py",
+    "test/test_live_concepts_from_percepts.py",
+    "test/test_operators_round2c.py",
+    "test/test_parts_of_speech.py",
+    "test/test_taxonomy_entry.py",
+    "test/test_verb_adverb_grammar_ops.py",
+    "test/test_when_grammar_rules.py",
+    "test/test_word_loop_buckets_and_orders.py",
+    "--tb=short"
+  ],
+  "replay": null,
+  "plugins": "sweep_capture,arrival_capture,identity_keep_probe",
+  "started": "2026-10-23T21:56:38.687251+00:00"
+}

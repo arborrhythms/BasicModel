@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_loaded_adam_moments_prefix_copy_and_zero_new_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

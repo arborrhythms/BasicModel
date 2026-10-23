@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_grammar_rules.py::TestPrepositionSignalRouterBinding::test_auto_wiring_contract_holds",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

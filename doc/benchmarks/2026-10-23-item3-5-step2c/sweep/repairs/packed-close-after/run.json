@@ -1,0 +1,17 @@
+{
+  "source": "9f550087004bdbe21bbe113ca0e50395e261db56",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+    "--tb=short"
+  ],
+  "replay": "test/test_expectation_defaults.py::test_expectation_off_keeps_every_packed_closing_in_ltm",
+  "plugins": "sweep_capture,arrival_capture,identity_keep_probe",
+  "started": "2026-10-23T21:56:38.687165+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T21:56:45.626714+00:00",
+  "source_unchanged": true
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

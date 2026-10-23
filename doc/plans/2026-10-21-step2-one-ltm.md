@@ -4264,3 +4264,24 @@ failed sweep and both failed departure replays remain evidence; passing
 scoped repairs will not relabel that sweep as green. §88 authorizes
 publication after these repairs. Layout/removal/STM chunks and all
 learning claims remain outside this landing.
+
+## 90. Sweep repair frozen and scoped gates complete — Codex, 2026-10-23
+
+Frozen `9f5500870` contains §89's test-only ports; production/configuration
+is unchanged from Claude's reviewed `fcaff2d19`. All ten changed files
+pass (82 passed, four existing skips). The original compose/MM and packed
+close captures both replay successfully with the original assertions;
+the compose probe now records both R/A trials, all saved departures taken
+and the strict keep decisions. Both unchanged subprocess harness files
+pass on this hash with a clean environment (36 passed, three existing
+slow skips). The 909-file source audit matches across every scoped run.
+There is no second full sweep, new skip, test retirement or learning claim.
+
+The [sweep receipt](../benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)
+lists every changed assertion, the one test rename and each fixture port.
+It retains the failed full sweep, both pre-edit failed departure probes,
+all passing scoped runs and the complete captures. §88's LAND and Alec's
+hand-off authorize publication after these repairs: publish main and the
+WikiOracle bump, then begin stage 4e and the NP continuation at the
+original producing lessons/budgets/seeds. Layout/removal/STM chunks stay
+item 3. Item 3.0 has not been reached.

@@ -17,17 +17,16 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is published on BasicModel
-`148953f9b` and WikiOracle `175c101`, reviewed source `65ab7fbe9` (Claude
-LAND through Alec, identity spec §34). **2c awaits review on frozen
-`fcaff2d19`: 1,685 scoped passes, twelve existing skips, zero failures.**
-It implements document recurrence, token promotion, MTM expiry, the
-definitions cache, the standalone composite and the arrival/event-history
-follow-ups on today's storage. Its [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md)
-retains every failed source, development run and port. Review goes through
-Alec before publication; step 2's one full sweep follows. The layout/removal
-round and shared eight STM chunks stay in item 3.0. All work stays on main.
-Item 3.0 has not been reached.
+**Current:** Item 3.5 line 2 is complete: Claude LAND `fcaff2d19` through
+Alec (step-2 §88), step 2's one full sweep retained, and test-only scoped
+repairs frozen at `9f5500870` pass. The [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)
+records every failure and port. Next is **line 3, stage 4e and the NP
+continuation**: regenerate stage3, np_definite and np_description from
+their producing lessons at the original budgets/seeds; adjective,
+definite-adjective, final evaluation, then copular identity. The determiner
+menu has one action per operator and recency is store order. Review stays
+through Alec. Layout/removal and the shared eight STM chunks stay item 3.0.
+All work stays on main. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -805,9 +804,9 @@ not by a passing identity lesson.
      (§35), identity first. Storage-only **2b** is Done at `39272e7a6`;
      **identity threading** is Done at landing `148953f9b` (reviewed source `65ab7fbe9`)
      ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md));
-     **2c** on today's storage awaits review at `fcaff2d19`
-     ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md));
-     publication and step 2's one full sweep follow.
+     **2c and step 2's one full sweep** are Done: reviewed `fcaff2d19`,
+     test-only sweep repair `9f5500870`
+     ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)).
      *Layout
      decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
@@ -1527,6 +1526,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 step 2c and step-2 sweep:** reviewed source `fcaff2d19`, frozen sweep repair `9f5500870`; Claude LAND through Alec, one retained full sweep and passing scoped repairs, no production change after review ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)).
 
 - **Item 3.5 step 2 identity threading:** landing `148953f9b` (WikiOracle `175c101`), reviewed source `65ab7fbe9`, Claude LAND through Alec; 1,627 scoped passes and twelve existing skips ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)).
 

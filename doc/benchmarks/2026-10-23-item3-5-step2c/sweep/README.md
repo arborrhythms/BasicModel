@@ -92,4 +92,38 @@ walk fixture contract for draws that do select those walks.
 The remaining failures are deterministic contract/fixture ports described
 above. The packed-close failure is evaluation (`train=False`), so no
 paired keep exists. All original failures and replay runs are retained.
-Scoped frozen-hash repair results will be recorded here before publication.
+## Scoped results on the frozen repair
+
+Frozen **9f550087004bdbe21bbe113ca0e50395e261db56** changes ten test files
+and no production/configuration file. Its 909-file source audit is
+unchanged across all four scoped runs:
+
+| Run | Result |
+| --- | --- |
+| All ten changed files, fresh initialization | 82 passed, 4 existing skips |
+| Captured compose/MM initialization, departure and keep probe | 1 passed |
+| Captured packed-close initialization and private generator | 1 passed |
+| Both unchanged subprocess harness files, clean environment | 36 passed, 3 existing skips |
+
+[Scoped log](repairs/scoped-source-01/run.log),
+[departure replay](repairs/departure-after/run.log),
+[packed-close replay](repairs/packed-close-after/run.log),
+[clean harness](repairs/clean-harness-frozen/run.log).
+The four skips in the changed files are two slow cases and the absent
+np_definite/np_description artifacts; the clean harness's three skips
+are slow cases. No new skip or expected-failure marker is introduced.
+
+The repaired departure [probe](repairs/departure-after/departure-probe.json)
+shows all four saved departures taken. R is zero for both trials in every
+row; the binary product departure lowers A by 0.0000198483 and is kept.
+The other three rows tie and keep greedy. Both trials' readings, exact
+components and keep decisions are retained. No policy, keep or answer
+target changed. All 17 original failures are accounted for by these
+scoped results. The original sweep remains a failed run with its exact
+counts, not a second green aggregate.
+
+Claude's LAND of fcaff2d19 and Alec's §88 hand-off authorize publication
+after the sweep repairs under §39. Step 2 ends here; stage 4e and the NP
+continuation follow. Layout/removal/STM chunks stay in item 3.0, which has
+not been reached. Publication carries the source, this receipt and all
+failed runs on main, followed by the WikiOracle gitlink bump.

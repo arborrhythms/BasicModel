@@ -1,5 +1,15 @@
 # Step 1b: current gates and carry ledger
 
+**Step 2 complete, 2026-10-23:** Claude LAND `fcaff2d19` through Alec
+(step-2 §88). Its one default sweep completed 6,375 cases: 6,034 passed,
+17 failed, 323 skipped and one non-strict XPASS. All failures are retained
+and closed by test-only ports at `9f5500870`: 82 affected-file passes,
+four existing skips, two captured replays, and 36 unchanged harness
+passes with three existing skips. The [sweep receipt](../2026-10-23-item3-5-step2c/sweep/README.md)
+contains the exact ledger and probes. Production remains at the reviewed
+source; no second sweep. Main publication and the WikiOracle bump complete
+this line. Stage 4e/NP continuation follows; item 3.0 has not been reached.
+
 **2c ready for mediated review, 2026-10-23:** frozen `fcaff2d19` completes
 all 1,697 scoped cases: 1,685 passed, twelve existing skips, zero failures.
 Both decomposition arms retain the original snapshots/seeds; G1–G3,

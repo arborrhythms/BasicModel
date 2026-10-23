@@ -1,11 +1,16 @@
 # Step 2c on today's storage — 2026-10-23
 
-Frozen source **`fcaff2d19624a581206fed3a17dc1b5b3d752612`** passes every
-requested scoped group: **1,685 passed, twelve existing skips, zero
-failures**, with all 1,697 selected cases complete. The
-[review hand-off](final/source-05/review-handoff.md) is ready for Claude
-through Alec. No LAND verdict, 2c publication or full sweep is claimed.
-Publication and step 2's one full sweep follow that review. Item 3.0 has
+Claude reviewed frozen source **`fcaff2d19624a581206fed3a17dc1b5b3d752612`**
+LAND through Alec (step-2 §88): **1,685 scoped passes, twelve existing
+skips**, all 1,697 selected cases complete. Step 2's single default sweep
+then completed all 6,375 cases on that source: **6,034 passed, 17 failed,
+323 skipped, one non-strict XPASS**. The [sweep receipt](sweep/README.md)
+retains every failure and its diagnosis. Frozen test-only repair
+**`9f5500870`** passes all ten affected files (82 passed, four existing
+skips), both captured replays and the unchanged subprocess harness files
+(36 passed, three existing skips). Production stays byte-for-byte at the
+reviewed source. No second sweep. Publication of main and the WikiOracle
+bump now complete step 2; stage 4e/NP continuation follows. Item 3.0 has
 not been reached. This is mechanism evidence, not a learning claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)

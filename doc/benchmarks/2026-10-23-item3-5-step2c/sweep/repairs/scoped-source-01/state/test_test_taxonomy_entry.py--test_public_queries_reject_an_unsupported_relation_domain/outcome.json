@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_entry.py::test_public_queries_reject_an_unsupported_relation_domain",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

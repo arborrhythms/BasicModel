@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_loop_buckets_and_orders.py::test_one_operation_layer_owns_both_arities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

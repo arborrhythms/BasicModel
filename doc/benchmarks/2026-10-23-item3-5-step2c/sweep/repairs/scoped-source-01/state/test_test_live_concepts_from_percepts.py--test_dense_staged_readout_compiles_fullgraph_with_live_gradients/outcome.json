@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_concepts_from_percepts.py::test_dense_staged_readout_compiles_fullgraph_with_live_gradients",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

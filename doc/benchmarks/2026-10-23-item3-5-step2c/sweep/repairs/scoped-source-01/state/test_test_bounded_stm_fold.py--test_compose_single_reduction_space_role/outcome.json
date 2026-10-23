@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
