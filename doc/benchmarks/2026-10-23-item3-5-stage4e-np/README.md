@@ -79,3 +79,20 @@ Additional fixture ports: `test_parts_of_speech` and
 restoring the previous value after each test. No assertion changes or
 retired tests. The dated 5.5-plan section records this §39 repair. No
 training run or phase artifact has been produced on source 01.
+
+## Source 02: checks pass; old warm-up rejected
+
+Frozen `8dd3a197a`: [81 passed, three existing phase skips](source-02/gates/run.log).
+The first stage3 invocation stops before training because the native
+loader rejects the October-15 warm-up (366 unexpected parameter keys,
+79 newly initialized keys). [Failure](source-02/stage3.log),
+[source/input hash](source-02/stage3-capture/run.json). Initial and failed
+states are retained, with no compatibility bypass or architecture change.
+
+The next source regenerates only the producing stages-1–2 schedule:
+76 presentations, 38 paired updates, original seed 20261010 and LR .003.
+The adapter uses the original fields, order, native `present` and kept
+program observer. It does not run the following identity-balanced
+curriculum; its historical singleton-cosine gate is not a stage3 loader
+prerequisite and is not claimed. See the dated 5.5-plan decision. This
+dependency regeneration adds no stage3/NP presentation or retry budget.

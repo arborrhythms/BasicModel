@@ -14,7 +14,7 @@ import traceback
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-sys.path[:0] = [str(ROOT/'bin'), str(ROOT/'test'),
+sys.path[:0] = [str(HERE), str(ROOT/'bin'), str(ROOT/'test'),
     str(ROOT/'doc/benchmarks/2026-10-21-item3-5-reference-reconstruction'),
     str(ROOT/'doc/benchmarks/2026-10-23-item3-5-step2c/development')]
 
@@ -38,21 +38,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('out', type=Path)
     parser.add_argument('--stage', required=True,
-                        choices=('stage3','lower','definite','description','adjective','definite_adjective','final'))
-    parser.add_argument('--warmup', required=True, type=Path)
+                        choices=('warmup','stage3','lower','definite','description','adjective','definite_adjective','final'))
+    parser.add_argument('--warmup', type=Path)
     args = parser.parse_args()
     os.chdir(ROOT)
     if subprocess.check_output(['git','status','--porcelain','--untracked-files=normal'], text=True).strip():
         raise RuntimeError('lesson source must be clean and frozen')
     args.out = args.out.resolve()
-    args.warmup = args.warmup.resolve()
+    if args.stage!='warmup' and args.warmup is None:
+        parser.error('--warmup is required after the warmup stage')
+    args.warmup = None if args.warmup is None else args.warmup.resolve()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     capture = args.out.with_name(args.out.name+'-capture')
     capture.mkdir()
     source = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     audit = source_snapshot(ROOT)
-    manifest = dict(source=source, stage=args.stage, warmup=str(args.warmup),
-        warmup_sha256=digest(args.warmup), files=audit,
+    manifest = dict(source=source, stage=args.stage, warmup=None if args.warmup is None else str(args.warmup),
+        warmup_sha256=None if args.warmup is None else digest(args.warmup), files=audit,
         started=datetime.now(timezone.utc).isoformat())
     save(manifest,capture/'start.json')
     import identity_experiment
@@ -92,7 +94,8 @@ def main():
     identity_experiment.make_model = create
     BasicModel.runBatch, BasicModel._commit_sentence = run_batch, keep
     try:
-        module = importlib.import_module('constituent_order' if args.stage=='stage3' else 'np_experiment')
+        module = importlib.import_module('warmup' if args.stage=='warmup' else
+            'constituent_order' if args.stage=='stage3' else 'np_experiment')
         module.run(args)
         manifest['completed'] = True
     except BaseException:

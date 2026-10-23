@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

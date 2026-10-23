@@ -1,0 +1,6 @@
+{
+  "node": "test/test_modification_lessons.py::test_np_section5a_keeps_behavior_thresholds_and_only_reports_empty_meanings",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

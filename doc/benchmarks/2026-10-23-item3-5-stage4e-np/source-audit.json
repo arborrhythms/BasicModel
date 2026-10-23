@@ -841,7 +841,9 @@
     "test/tools/probe_pos_state.py": "f7d6acdd05d4eb0b5646cd1a9c772c3df6b629f7746697e015bd5d9d09d5e89b",
     "test/tools/xor_debug_params.py": "bed75be1f3de16450bdb6b3b3c9222d541cbcba4c6ab8cee96160cbae2502ac3",
     "test/tools/xor_experiment.py": "3297451250bf7d7630ac1e2845025458787056c61c84bce448debcf247d17310",
-    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/run.py": "8df3a3270d763b89411228be89ef19d4f113c98ebd5500934f562d760635d7f2",
-    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "1de9be37a57b33b0bd526788e140d41ac059824e952352bec8a3537fb4c926e9"
-  }
+    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/run.py": "5dde42381530b3765a214722e8bf593104353f98e4c794d658ace832e2e433f1",
+    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "1de9be37a57b33b0bd526788e140d41ac059824e952352bec8a3537fb4c926e9",
+    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/warmup.py": "f5e2beb97c26c0af72c1e13b46b2fa0267445464bfccb267af8603ff4be6811f"
+  },
+  "warmup_schedule_ast_matches_original": true
 }

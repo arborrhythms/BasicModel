@@ -1,0 +1,14 @@
+...........ss.......s................................................... [ 85%]
+............                                                             [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_reading_curriculum.py::test_supplied_text_reader_preserves_shared_work_spent_during_sentence_scoring
+  /Users/arogers/github/WikiOracle/basicmodel/test/attention_field_gates.py:46: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    words.append('<unresolved>' if float(scores[b,i,j]) <= 0 else
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+81 passed, 3 skipped, 2 warnings in 36.08s

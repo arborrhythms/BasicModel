@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_curriculum.py::test_lossy_derivation_has_no_inverse_or_search_and_reports_every_coordinate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
