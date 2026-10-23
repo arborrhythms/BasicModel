@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_lookup_gauge.py::test_certainty_survives_retrieval",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

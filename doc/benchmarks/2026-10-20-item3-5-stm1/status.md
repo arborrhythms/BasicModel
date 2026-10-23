@@ -1,13 +1,13 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading continued, 2026-10-23:** source-10 is prepared after
-source-09's 1,582 passes, twelve skips and three retained failures. Actual
-Claude diagnosis accepts the fixes under §39; the later thought writer
-boundary is also captured and keep-probed before repair. The [spec §§23–26](../../plans/2026-10-23-identity-threading.md)
-and [receipt](../2026-10-23-identity-threading/README.md) list every fix and
-port. New frozen-source gates and Claude's landing review precede
-publication. No earlier evidence is promoted and no learning claim is made.
-Layout/STM changes stay item 3.0; 2c follows identity. Item 3.0 is not reached.
+**Identity threading continued, 2026-10-23:** source-11 is prepared after
+source-10 `d55544d98` completes 1,608 passes, twelve skips and one retained
+stream-index failure. Its pre-change capture/keep probe and both reader
+guards are in [spec §28](../../plans/2026-10-23-identity-threading.md) and
+the [receipt](../2026-10-23-identity-threading/README.md). Development checks
+pass; new frozen-source gates and Claude's LAND review precede publication.
+No earlier evidence is promoted. Layout/STM changes stay item 3.0; 2c follows
+identity. Item 3.0 is not reached; no learning claim.
 
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
 WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,

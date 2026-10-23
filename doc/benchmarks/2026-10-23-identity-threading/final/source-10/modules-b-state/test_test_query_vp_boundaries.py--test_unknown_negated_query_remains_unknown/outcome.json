@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_interpretation.py::test_known_word_survives_full_inventory_without_partial_alternative",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

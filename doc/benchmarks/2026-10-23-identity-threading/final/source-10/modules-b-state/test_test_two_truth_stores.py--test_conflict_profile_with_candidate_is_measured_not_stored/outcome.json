@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

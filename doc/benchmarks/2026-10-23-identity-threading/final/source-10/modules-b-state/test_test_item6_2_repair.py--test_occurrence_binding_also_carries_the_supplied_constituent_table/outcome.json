@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_repair.py::test_occurrence_binding_also_carries_the_supplied_constituent_table",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

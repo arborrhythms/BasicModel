@@ -1,0 +1,6 @@
+{
+  "node": "test/test_occurrence_coordinates.py::test_percept_group_keeps_each_members_band_and_one_field_time",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_rows.py::test_32_retired_head_meta_checkpoint_is_rejected",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

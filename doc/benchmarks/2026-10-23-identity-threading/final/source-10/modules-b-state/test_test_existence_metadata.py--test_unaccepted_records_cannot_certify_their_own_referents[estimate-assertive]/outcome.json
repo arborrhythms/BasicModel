@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

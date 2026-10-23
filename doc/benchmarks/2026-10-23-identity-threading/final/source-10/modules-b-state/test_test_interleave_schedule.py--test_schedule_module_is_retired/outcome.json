@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interleave_schedule.py::test_schedule_module_is_retired",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

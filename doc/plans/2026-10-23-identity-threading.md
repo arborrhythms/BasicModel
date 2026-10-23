@@ -1376,3 +1376,57 @@ entry retains its past stamp, and an estimate can be stamped ahead. The
 separate LTM0 `when` column retires in that later round. This identity line
 keeps today's columns and close stamps unchanged; it does not partially
 implement the item-3 layout.
+
+## 27. Codex: corrected read-ahead time representation — 2026-10-23
+
+Claude's incoming layout amendment corrects the preceding read-ahead
+summary: ConceptualSpace has no reserved time band. The later STM row
+appends `RowTime` beside the concept vector and retains the LTM0 `when`
+column; the symbol's muxed source-position band is a different quantity.
+The earlier in-band wording in §26 describes the now-superseded draft.
+These are incoming item-3 documentation edits, preserved unchanged. They
+change no identity source, gate, row layout or current closing stamp on
+frozen `d55544d98`.
+
+## 28. Codex: growing stream groups at pending-name reads — 2026-10-23
+
+Source-10 `d55544d98`'s second module group retains a production failure in
+`test_ordinary_driver_two_three_eight_stream_groups_after_single_write`:
+`pending_names` reads stream column 1 from an old table with one column.
+The existing test exercises real groups of 1, 2, 3 and 8. The row is scoped
+to stream 0, so it cannot belong to a stream whose column has not yet been
+created. The read must reject that membership before indexing the column.
+The identical unsafe access also exists in `_arrival_plan`.
+
+The pre-change diagnostic `stream-boundary-01` restores the captured
+initial RNG and reproduces the error with stream shape `[8192, 1]`, old
+row 0's membership `[true]`, and requested stream 1. Full scoring/readings
+and the preceding greedy tie are retained. The failing close stops during
+exploit preview, before its second trial or keep exists. As before, the
+private presentation generator is not restored; this is diagnostic, not
+promoted first-draw gate evidence.
+
+Under §39, both arrival readers gain the same upper-bound membership
+check. A row with no stream membership retains its existing unscoped
+behavior; an explicitly scoped row cannot leak to a new stream. New unit
+certificates cover both readers and scoped/unscoped rows without changing
+the table width. The original driver assertions stay verbatim, as do all
+other existing assertions. No menu, objective, layout or §1 decision changes.
+The complete source-10 results remain retained; the repaired source must
+own a new frozen scoped pass.
+
+The complete source-10 pass ends with 1,608 passed, twelve existing
+prerequisite skips and this one failure. All requested cases complete;
+both pending-premise orders, both original-snapshot decomposition arms,
+c/e, the regression/native groups and the first module group pass. None
+is promoted to the next source.
+
+`stream-guard-01` passes six cases and exposes a setup omission in the new
+unscoped-row unit: its hand-built plan lacks preview's zero `cost` field.
+Add that field exactly as production supplies it, retaining every
+assertion (§17's same-round setup exception). No existing fixture changes.
+
+`stream-guard-02` passes all seven arrival-review cases.
+`stream-boundary-02` passes the unchanged real 1/2/3/8-stream driver from
+the retained initial RNG. These are diagnostics; source-11 freezes the
+repair and reruns all requested scoped gates on its own hash.

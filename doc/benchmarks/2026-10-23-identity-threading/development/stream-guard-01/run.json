@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_reference_arrival_review.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T16:34:47.848229+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T16:34:50.608607+00:00"
+}

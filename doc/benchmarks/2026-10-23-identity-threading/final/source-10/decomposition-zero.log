@@ -1,0 +1,6 @@
+[collect] 1 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 4.1s; peak 0.41 GiB
+[worker-000] 2 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 121.3s; peak 2.95 GiB
+Result: passed, exit 0; 2/2 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-10/decomposition-zero/result.json

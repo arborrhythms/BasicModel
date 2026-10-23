@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review11_contracts.py::test_thought_retrieval_is_live_bounded_and_does_not_write_keys",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

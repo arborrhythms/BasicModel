@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

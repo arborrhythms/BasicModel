@@ -142,14 +142,21 @@ Forgetting's age reads the sentence's stamp for what the sentence
 references.
 **STM rows have the LTM0 width (Alec, 2026-10-23):** "when a concept
 is written to an STM row, it should receive a timestamp, which makes its
-width equivalent to an LTM0." Not a vector plus a `.when` field: the
-concept is muxed, and the stamp is written into its reserved time band,
-where symbols already carry `.when` (Alec: "stamped with it, since
-concepts are muxed"). A chunk's idea is therefore one concept-width
-vector, and LTM0's separate `when[cap, 4]` column retires in this round:
-the band is the stamp, and recall by time matches the band. A concept
-pulled from the index has the band empty and is stamped with the
-current `RowTime` on entry, and a recalled entry keeps its own stamp,
+width equivalent to an LTM0." The code facts (checked 2026-10-23):
+percepts and symbols are muxed event vectors with `.where` and `.when`
+bands inside them (`canonical_shape`: 4 + 4 for InputSpace, PartSpace,
+WholeSpace and SymbolSpace); a concept has no bands at all
+(ConceptualSpace `(0, 0)`: "one opaque code"), and its cached paired
+row is `[form | meaning]`, the symbol's muxed form block first. The
+symbol band's `.when` is the sentence's position in its source document
+(`relative_positions`, `source_at`), not the clock; the clock is
+`RowTime`, model time on a 4-dim ladder, kept as LTM0's `when` column:
+"a column, never an operand of composition". So the stamp is appended,
+as Alec says, not written into a band: an STM row is the concept vector
+with the current `RowTime` appended as its `when`, the same two parts as
+an LTM0 row (`slots[cap, D]` beside `when[cap, 4]`), and the column
+stays. A concept pulled from the index has no time and is stamped with
+the current `RowTime` on entry, and a recalled entry keeps its own stamp,
 the time it happened, while its place in STM is governed by recency
 (Claude's reading of the recalled case). So STM, LTM0 and the sentence
 entry share one form, and the close keeps the stamp on the sentence

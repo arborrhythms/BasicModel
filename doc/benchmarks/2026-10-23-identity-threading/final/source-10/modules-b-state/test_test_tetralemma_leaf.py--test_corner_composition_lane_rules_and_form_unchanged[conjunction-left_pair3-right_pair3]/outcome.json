@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[conjunction-left_pair3-right_pair3]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_references.py::test_unknown_composite_cannot_borrow_an_unrelated_lexical_kind",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

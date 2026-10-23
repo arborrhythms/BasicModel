@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_work_boundaries.py::test_arma_reserves_context_reads_before_running_the_predictor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_metadata.py::test_store_checkpoint_keeps_scoped_evidence_and_rejects_missing_sidecar",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

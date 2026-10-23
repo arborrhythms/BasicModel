@@ -1,18 +1,17 @@
 # Identity threading — 2026-10-23
 
-Source-10 is prepared after the documented source-09 boundary repairs.
-Source-09 `81ba14861` completed 1,582 passes, twelve prerequisite skips
-and three retained failures. The actual focused Claude diagnosis accepts
-the repairs without a §1 reversal; it is not a LAND verdict. The later
-thought-writer failure is captured and keep-probed too. Final frozen-source
-gates, Claude's landing review and publication remain. No earlier result
-is promoted.
+Source-11 is prepared after the growing-stream guard repair. Source-10
+`d55544d98` completed 1,608 passes, twelve prerequisite skips and one
+retained stream-index failure. The failure is reproduced and keep-probed
+before changes. Both reader guards and the unchanged real driver now pass
+development checks. The next frozen scoped pass, Claude's LAND review and
+publication remain; no earlier result is promoted.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–26. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–28. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -46,10 +45,10 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-10/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-11/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-10/test-ports.patch)
-is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-10/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
+pre-implementation review. [`test-ports.patch`](final/source-11/test-ports.patch)
+is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-11/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
 
 ## Every existing-test port
 
@@ -98,7 +97,7 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-10`: the eight
+The required selections and runner are in `final/source-11`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
 arms. The distinct-file scope is 132 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
@@ -113,7 +112,7 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-10
+Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-11
 runs the complete scoped set, with its module files partitioned between
 two independent process groups and each selection run once.
 No development pass or earlier frozen result substitutes for that source. The long module group and the other groups may run in separate processes on that same unchanged hash; each selection runs once.
@@ -253,4 +252,31 @@ later binds, dummy reuse, separate determinations, direct/readmitted close
 correspondence, order-zero fallback/ambiguity in both phases with unchanged
 allocation/bank, concluded occurrence arguments in either role, and loud
 loss of an event's introducing owner. No test is retired. The later layout
-spec's new in-vector STM time stamp is read and preserved, not implemented.
+spec's corrected appended STM time stamp is read and preserved, not implemented.
+It retains LTM0's time column; the earlier in-band draft is superseded
+(spec §27). This does not change the frozen identity source.
+
+### Source-11 stream-boundary repair
+
+- `final/source-10`, `d55544d98`: 1,608 passed, twelve prerequisite skips,
+  one production failure; every requested case completes. Both pending
+  orders pass unchanged (forward 0 bound / 16 open, reverse 0 / 32), as do
+  c/e and both decomposition arms. Their original snapshots/seeds and
+  surviving parameter equality are in `decomposition-snapshots.json`.
+- `stream-boundary-01`: retained initial RNG, full capture and keep probe
+  reproduce stream 1 indexing a one-column store scoped to stream 0.
+  The failed close stops at exploit preview, before its second trial or
+  keep. The earlier completed greedy tie is captured. Private corpus RNG
+  is not restored; the run is diagnostic only.
+- `stream-guard-01`: six passes, one new-fixture setup failure. Supply its
+  omitted production zero `cost` field, preserving every assertion.
+  `stream-guard-02`: all seven arrival-review cases pass.
+- `stream-boundary-02`: the unchanged 1/2/3/8-stream driver passes from
+  the retained initial RNG after both reader bounds checks.
+
+Only `ReferenceClose.pending_names` and `_arrival_plan` gain the bound
+check. No row is resized or rewritten. New tests check scoped rows are
+excluded from not-yet-created streams while unscoped rows retain their
+availability; pool, rows and bank stay unchanged. No pre-existing fixture
+or assertion changes, and no test retires. The next frozen source owns all
+its gate evidence independently.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_unified_thought_controller.py::test_retired_controllers_cannot_be_constructed_or_restored",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

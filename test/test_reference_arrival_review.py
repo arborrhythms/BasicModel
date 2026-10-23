@@ -106,3 +106,44 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
     torch.testing.assert_close(resolver.token_value(token), description)
     assert pool.token_of(use) == candidate_token
     assert pool.entries[candidate_token].occurrences[:len(before.occurrences)] == before.occurrences
+
+
+def test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists():
+    resolver, store, atoms, words, _ = world()
+    clause = named(atoms[0], words['x'])
+    plan = resolver.preview(clause, (), stream=0)
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    pending = store.write_clause(prepared, document_key='initial-stream', stream=0,
+                                 written_rows=written)
+    resolver.commit(plan, pending, written, document='initial-stream', position=0, training=False)
+    token = store.occurrence_of(pending)
+    retained, entry = snapshot(resolver), resolver.components.owner.mtm.entries[token]
+    assert store.stream.shape[1] == 1 and store.stream[pending, 0]
+    arrival = equality(atoms[0], words['x'], words['three'])
+    individuals = resolver.individuals(resolver.accessible((SituationFrame.from_row(store.row(pending)),)))
+    for stream in (1, 2, 7):
+        assert resolver.pending_names(arrival, individuals, stream) == ()
+        result = dict(items=[], records={token: (pending, 1.)})
+        resolver._arrival_plan(arrival, result, individuals, stream=stream)
+        assert result['arrivals'] == []
+        assert resolver.components.owner.mtm.entries[token] is entry
+        assert store.stream.shape[1] == 1
+        unchanged(resolver, retained)
+
+
+def test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream():
+    resolver, store, atoms, words, _ = world()
+    pending, _ = keep(resolver, named(atoms[0], words['x']))
+    token = store.occurrence_of(pending)
+    assert not store.stream[pending].any()
+    arrival = equality(atoms[0], words['x'], words['three'])
+    individuals = resolver.individuals(resolver.accessible((SituationFrame.from_row(store.row(pending)),)))
+    retained = snapshot(resolver)
+    stream = store.stream.shape[1]
+    assert resolver.pending_names(arrival, individuals, stream) == (words['x'],)
+    result = dict(items=[], records={token: (pending, 1.)}, decisions=[], departure=-1,
+                  cost=atoms[0].new_zeros(()))
+    resolver._arrival_plan(arrival, result, individuals, stream=stream)
+    assert len(result['arrivals']) == 1 and result['arrivals'][0]['token'] == token
+    unchanged(resolver, retained)

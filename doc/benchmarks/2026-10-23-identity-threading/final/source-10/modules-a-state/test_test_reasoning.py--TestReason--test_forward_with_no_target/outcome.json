@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestReason::test_forward_with_no_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

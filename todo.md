@@ -18,10 +18,10 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Item 3.5 line 2's identity threading is implemented on main.
-Source-10 is prepared after the retained source-09 failures and actual
-Claude diagnosis. [Spec §§23–26](doc/plans/2026-10-23-identity-threading.md)
-record each boundary repair; the [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
-lists every port and failed run. Frozen-source gates and Claude's landing
+Source-11 is prepared after source-10 `d55544d98` completed 1,608 passes,
+twelve skips and one retained stream-index failure. [Spec §28](doc/plans/2026-10-23-identity-threading.md)
+records its capture, keep probe and repair; the [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
+lists every port and failed run. New frozen gates and Claude's landing
 review precede publication. Published storage-only 2b remains BasicModel
 `39272e7a6`, WikiOracle `ade0399`.
 

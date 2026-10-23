@@ -742,7 +742,7 @@ class ReferenceClose(nn.Module):
         for address in store._forward_addresses(names) if store is not None and names else ():
             index = store.location(address)
             if not isinstance(index, int) or (stream is not None and bool(store.stream[index].any())
-                                             and not bool(store.stream[index, stream])):
+                    and (stream >= store.stream.shape[1] or not bool(store.stream[index, stream]))):
                 continue
             value = store.raw_meaning_of(index)
             for role, name in bindings(value).get('_forward_references', ()):
@@ -895,7 +895,8 @@ class ReferenceClose(nn.Module):
             location = store.location(address)
             if not isinstance(location, int):
                 continue
-            if stream is not None and bool(store.stream[location].any()) and not bool(store.stream[location, stream]):
+            if (stream is not None and bool(store.stream[location].any())
+                    and (stream >= store.stream.shape[1] or not bool(store.stream[location, stream]))):
                 continue
             value = store.raw_meaning_of(location)
             data = bindings(value)
