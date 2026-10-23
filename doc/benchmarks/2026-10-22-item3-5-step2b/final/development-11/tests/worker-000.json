@@ -1,0 +1,29 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher"
+  ],
+  "completed": [
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher"
+  ],
+  "slow_selected": [
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 10.163360332837328,
+      "message": "test/test_joint_objectives.py:109: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/test_joint_objectives.py:109: in <genexpr>\n    assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)\n                                                                        ^^^^^^^\nE   TypeError: cannot unpack non-iterable SituationAddress object",
+      "stdout": "pace.layers.0.operation_layer.chooser.mlp.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias\", \"writers\": []}, {\"elements\": 21840, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.reference_choice.weight\", \"writers\": []}, {\"elements\": 10816, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight\", \"writers\": []}, {\"elements\": 10816, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight\", \"writers\": []}, {\"elements\": 725, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight\", \"writers\": []}, {\"elements\": 8, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.0.layers.3.reference_close.policy\", \"writers\": []}, {\"elements\": 26624, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 64, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 13312, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 208, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 8, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.weight\", \"writers\": [\"expectation\"]}, {\"elements\": 2, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.bias\", \"writers\": [\"expectation\"]}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 13312, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 13312, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 832, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 6, \"owner\": \"output\", \"parameter\": \"answer_attention.space_bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.consume_gate\", \"writers\": []}, {\"elements\": 64, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.bias\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.bias\", \"writers\": []}, {\"elements\": 3016, \"owner\": \"output\", \"parameter\": \"question_conditioners.104.weight\", \"writers\": []}, {\"elements\": 53248, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 256, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}, {\"elements\": 13086720, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.weight\", \"writers\": [\"attention\"]}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.bias\", \"writers\": [\"attention\"]}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.weight\", \"writers\": [\"attention\"]}, {\"elements\": 1, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.bias\", \"writers\": [\"attention\"]}]}\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

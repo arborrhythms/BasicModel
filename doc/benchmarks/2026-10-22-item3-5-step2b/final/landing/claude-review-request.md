@@ -43,6 +43,12 @@ Check in particular:
    tests retire. P5 retires none. §40 remains operand-scoped. The native
    concept fixture uses an explicit mint; the no-consumer journal fixture
    now disables its consumer inside the run and keeps original assertions.
+   In particular, assess §46's three Part-read ports against the explicit
+   retirement of the reader-side equality binder in bind §10.4: those
+   fixtures have no resolver choice and now require a pending name, while
+   selected refinement/content remain gated by the arrival tests. Flag any
+   unauthorized weakening of a semantic certificate; passing tests alone
+   would not justify such a port.
 6. Extra production repairs required by observed failures are sound:
    Models/Queries/ClauseJournal retired-reference readers; iterative deep
    participant traversal with unchanged ordering; isolation and restoration

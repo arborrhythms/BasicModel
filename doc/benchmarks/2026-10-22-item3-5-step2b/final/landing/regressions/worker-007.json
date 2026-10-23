@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+    "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+    "test/test_reference_participants.py::test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu",
+    "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-participant]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-marker]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-predicate]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-marker]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-predicate]",
+    "test/test_reference_participants.py::test_retained_argument_classification_uses_only_its_own_occupations"
+  ],
+  "completed": [
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+    "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+    "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+    "test/test_reference_participants.py::test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu",
+    "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-participant]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-marker]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-predicate]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-marker]",
+    "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-predicate]",
+    "test/test_reference_participants.py::test_retained_argument_classification_uses_only_its_own_occupations"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-surface]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010411333059892058,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006384457927197218,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[False-punctuation]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0061172908172011375,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-surface]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006295208120718598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006008166819810867,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_positive_marker_or_predicate_is_never_an_arrival_candidate[True-punctuation]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006132292095571756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_an_objectless_marker_leaf_without_a_participant_position_has_no_site",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0038139158859848976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020675875013694167,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003142666071653366,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-participant]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015168541111052036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-marker]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014578541973605752,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[0-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015540624968707561,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-participant]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015865250024944544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-marker]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01460145809687674,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_journal_and_close_use_the_reading_order_and_argument_position[1-predicate]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015570833114907146,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_participants.py::test_retained_argument_classification_uses_only_its_own_occupations",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012252916116267443,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

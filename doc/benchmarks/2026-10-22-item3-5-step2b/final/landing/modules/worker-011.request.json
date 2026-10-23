@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_forgetting.py::test_age_is_per_stream_and_rewitnessing_does_not_refresh",
+    "test/test_forgetting.py::test_trigger_interval_and_age_select_oldest_without_moving_addresses",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[trust]",
+    "test/test_forgetting.py::test_value_terms_outweigh_age[utility]",
+    "test/test_forgetting.py::test_source_trust_is_separate_from_both_evidence",
+    "test/test_forgetting.py::test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age",
+    "test/test_forgetting.py::test_dissonance_drops_weaker_opposition_not_intrinsic_both",
+    "test/test_forgetting.py::test_protected_and_live_roots_survive_and_block_unsafe_target",
+    "test/test_forgetting.py::test_idea_coarsens_parent_and_releases_its_child_next_pass",
+    "test/test_forgetting.py::test_live_parent_pins_its_child",
+    "test/test_forgetting.py::test_wording_is_one_stage_and_checkpoint_preserves_the_result",
+    "test/test_forgetting.py::test_pair_unlinking_preserves_observation_and_restores_cleanly",
+    "test/test_forgetting.py::test_transitive_row_is_expendable_but_its_proof_survives",
+    "test/test_forgetting.py::test_epoch_trigger_and_disabled_setting",
+    "test/test_forgetting.py::test_legacy_checkpoint_does_not_infer_trust_from_evidence",
+    "test/test_forgetting.py::test_boundary_rebuilds_truth_and_preserves_predictor_tensors"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/landing/modules/worker-011.recycle.json"
+}

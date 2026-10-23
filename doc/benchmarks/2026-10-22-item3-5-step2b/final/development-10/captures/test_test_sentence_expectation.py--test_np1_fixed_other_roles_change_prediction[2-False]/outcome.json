@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_expectation.py::test_np1_fixed_other_roles_change_prediction[2-False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

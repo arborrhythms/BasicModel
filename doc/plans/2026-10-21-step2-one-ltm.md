@@ -2932,3 +2932,130 @@ forcing, seed, budget or objective change. The full failed frozen run and
 its replay remain under `final/`; the corrected source's complete scoped
 gates will be under `final/landing/`. Nothing is promoted from the failed
 hash and no full sweep is added.
+
+## 58. Codex: final storage-source validation — 2026-10-22
+
+Final source `3c5cc2a1d5243dd80c2cdcfc3cc2ebcdaa98c56c` completes all
+683 requested scoped cases: 675 passed, eight existing prerequisite skips,
+zero failures. The eight regression files give 85 passes; the eight-file
+native set gives 123 passes and seven skips; the direct changed-module
+files give 467 passes and one skip. The pending-premise counts are forward
+bound/open `0/8`, reverse `0/16`, with no closure forcing and zero attention
+budget. These are mechanism results, not learning evidence.
+
+The [receipt](../benchmarks/2026-10-22-item3-5-step2b/final/landing/README.md)
+links the frozen commands, reports, captures, full assertion/fixture
+ledger, module coverage and every failed earlier run. Its audit explicitly
+includes the three new fixture helpers and their assertion bodies. The
+first freeze remains a failed attempt; none of its passing subsets is
+promoted. No full sweep or twelve-draw series was added. Claude's read-only
+review of this source returned HOLD; §59 records the continuation. The next line
+is the requested §§34–35 code review and Claude's identity spec, not an
+early implementation of it.
+
+## 59. Codex: repairs from Claude's storage-source HOLD — 2026-10-22
+
+Claude's read-only review of `3c5cc2a1d` returned HOLD, despite its 675
+passes and eight existing skips. Preserve that source, gates and review
+under `final/landing/`; none is promoted to the repaired source. Under §39,
+repair the findings without reversing Alec's decisions, then re-freeze and
+run the expanded three scoped groups, followed by another Claude review.
+
+**B1, live mode.** Removing stored mode must not erase the current parse's
+mode. `closing_question` applies the live parsed/clause mode to the retained
+reference view; `_commit_sentence` applies the clause's mode to its
+sentence end state, preserving the answer reader's interrogative guard.
+The held-description expectation reader follows an LTM address under the
+current `ask`'s query intent, as `_ask` already does. Thought-memory records
+still use their live mode. No mode column, sidecar field or structural
+replacement is introduced. Four new cases write a zero-evidence yes/no
+question and close it, with/without an explicit parsed view and for both
+absolute and relative clauses; all must open an episode without an open
+referent slot. The existing direct/nested expectation comparison joins the
+scoped module set unchanged.
+
+This completes the §41.3 consumer list beyond the removed `LTM0.MODES`
+enumeration: `ThoughtClosing`, end-state answer seeds, and held-description
+expectation needed live-context repairs. `ThoughtFeatures`' stored reads
+now receive the ordinary default mode, while live thought records keep
+theirs. `accept_fact` continues to reject the stored `question` record kind;
+a row explicitly stored as an `observation` with evidence has no saved
+interrogative mode to test. Incoming live TruthSet questions remain refused.
+
+**B2, writer coverage.** Include every direct `write_clause` test file and
+the additional `commit_reading` callers identified by the review. Three
+known completed-relative count ports change LTM0 `0 -> 1` in
+`test_relative_sentence_codebook_insertion`, `test_lies_can_be_learned` and
+both observation-boundary cases in `test_selected_relation_meaning`.
+Their Part counts, evidence and content checks stay. Any further diagnosis
+and exact port is recorded below and in the receipt. This is the requested
+changed-module scope, not a full sweep.
+
+**B3, numeric end-state references.** Preserve the retired unused LTM0
+column's effective value `(-1, -1, -1)` in an occurrence's end state. Do
+not flatten `('slot', occurrence, role)` or `('constituent', index)` into a
+number; their typed references stay in `meaning.role_refs`. Native Part
+returns keep their two native arguments.
+
+**Follow-ups.** Remove the always-empty native predicate cache and its
+unreachable lookup. Sharpen the narrow-idea check to exclude every LTM
+operand reference, and compare it with the pre-2b writer in a retained
+diagnostic. Explicitly list the removed `where` loop comparison as an
+assertion port. The three §46 Part-read cases were already failing after
+§10.4, independently of 2b: the published source carried those stale
+reader-binder assertions. The first frozen end-state failure belongs to
+the module group; “native” describes its production path, not its group.
+
+## 60. Codex: expanded writer checks and exact retained-value ports — 2026-10-22
+
+Development-10 completes 359 cases: 346 passed, one existing device skip,
+12 failed. The four new closing-mode cases and the unchanged direct/nested
+held-question comparison pass. All failures and initial states remain.
+
+The exact count ports required by the completed-S rule are:
+
+| Test | Old published assertion → new |
+| --- | --- |
+| relative insertion, repeated opposite-polarity claims | LTM0 `0 -> 2`; Part `1` stays |
+| lies, conflicting claims | LTM0 `0 -> 2`; Part `1` stays |
+| negative expectation, concluded `not` | LTM0 `1 -> 2` |
+| replacement contracts, direct and two chain lengths | LTM0 `0 -> 1`, three cases |
+| taxonomy policy, nested conclusion | LTM0 `0 -> 1` |
+
+The first two correct §59's static `0 -> 1` proposal: opposite polarities
+have distinct native content keys and therefore distinct occurrences,
+while sharing the Part edge. The selected-relation observation's `0 -> 1`
+port passes in both cases. Evidence, ablation and path assertions stay.
+`test_real_packed_runbatch_trains_prediction_and_representation_with_teacher`
+now asserts absence of the already-retired `legacy_prediction_enabled`
+attribute instead of reading it; all predictor/gradient assertions stay.
+
+Four predicate-argument cases also fail with the pre-2b clause writer,
+replayed from their captured initial RNG states. Both writers return the
+same Part arguments (`18`, `25`) and no native bank value for either: they
+are retained derivation roots, whose content belongs to their LTM0 source
+occurrences. Port the fixture's native-bank-value assumption to two exact
+checks per argument: the source occurrence's root reference equals that
+argument, and its retained point equals the original operand leaf. Keep
+both relation types, registry/no-registry paths, two-column layout,
+row-free predicate and predicate-not-an-argument checks. This makes the
+identity link and full retained content explicit without seating roots or
+changing the derivation reader or close-time minting. The retained
+`review-repair/predicate-arguments.json` includes both writers' exact reads.
+
+No test is retired, skipped or resized in these ports. The three original
+P3 adjacency-only retirements remain the entire retirement list. The
+standalone-site fix, identity threading and removal-round readers remain
+at their decided later steps.
+
+## 61. Codex: predictor-context observation port — 2026-10-22
+
+Development-11 passes 11 of the 12 retained failures. The joint-objective
+case reaches its next stale storage assumption: `_inter_context` now holds
+`SituationAddress` values, not only `(depth, tensor, mask)` triples. Read
+the same bounded predictor context through `_read_context(b)[0]` before
+applying its unchanged `not p.requires_grad` predicate. Do not substitute
+the full LTM history or add a detach; this tests the actual predictor view
+for each existing stream. All gradient, parameter-update, loss-weight and
+observation checks remain unchanged. The first failure and this second
+failure stay retained; there is no production or objective change.

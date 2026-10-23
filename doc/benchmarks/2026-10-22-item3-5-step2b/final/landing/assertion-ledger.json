@@ -1118,8 +1118,8 @@
   "new_tests": [
     {
       "file": "test/test_step2b_storage.py",
-      "test": "test_truth_ingestion_restores_caller_recall_and_isolates_each_source",
-      "body": "def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure):\n    from contextlib import contextmanager, nullcontext\n    from types import SimpleNamespace, MethodType\n    from Models import BasicModel\n    caller = {4: [object()]}\n    model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,\n        eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,\n        conceptualSpaces=(), data=SimpleNamespace(train_input=['source']),\n        _runtime_batch=lambda *args, **kwargs: nullcontext(),\n        inputSpace=SimpleNamespace(prepInput=lambda values: torch.zeros(1, 4)))\n    model._clear_recall_history = MethodType(BasicModel._clear_recall_history, model)\n    store = SimpleNamespace()\n    @contextmanager\n    def assertions(**kwargs):\n        store.rows = []\n        yield store.rows\n    store.clause_assertions = assertions\n    def present(**kwargs):\n        assert model._what_recall_sentence_history == {}\n        assert model._what_recall_batch_size is None\n        model._what_recall_sentence_history[0] = [object()]\n        model._what_recall_batch_size = 1\n        if failure:\n            raise RuntimeError('failed presentation')\n        store.rows.append(12)\n    model.runBatch = present\n    if failure:\n        with pytest.raises(RuntimeError, match='failed presentation'):\n            BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second'])\n    else:\n        assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]\n    assert model._what_recall_sentence_history is caller\n    assert model._what_recall_batch_size == 5"
+      "test": "test_pending_forgetting_pressure_survives_restore_below_high_water",
+      "body": "def test_pending_forgetting_pressure_survives_restore_below_high_water():\n    from Forgetting import forget\n    from test_forgetting import linked_store, config\n    store, child, parent = linked_store(child_is_relation=True)\n    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)\n    with pytest.warns(RuntimeWarning, match='low water'):\n        report = forget(store, cfg, document_boundary=True)\n    assert report['after'] == 3 and store.index_of_row(parent[2]) is None\n    assert store.index_of_row(child[2]) is not None and bool(store.forget_pending)\n    restored = LTM0(4, capacity=4)\n    restored.load_state_dict(store.state_dict())\n    restored.load_semantic_extras(store.semantic_extras())\n    assert bool(restored.forget_pending)\n    report = forget(restored, cfg, document_boundary=True)\n    assert report['target_reached'] and not bool(restored.forget_pending)\n    assert restored.index_of_row(child[2]) is None"
     },
     {
       "file": "test/test_step2b_storage.py",
@@ -1128,13 +1128,38 @@
     },
     {
       "file": "test/test_step2b_storage.py",
-      "test": "test_stored_question_is_refused_by_kind_without_a_mode_column",
-      "body": "def test_stored_question_is_refused_by_kind_without_a_mode_column():\n    store = LTM0(4, capacity=4)\n    question = ConceptualMeaning.from_description(torch.ones(4))\n    from dataclasses import replace\n    row = store.append_meaning(replace(question, mode='interrogative'), kind='question')\n    state = copy.deepcopy(store.state_dict())\n    assert 'grammatical_mode' not in state and not hasattr(store, 'MODES')\n    restored = LTM0(4, capacity=4)\n    restored.load_state_dict(state)\n    restored.load_semantic_extras(store.semantic_extras())\n    for owner in (store, restored):\n        assert owner.row(row)['kind'] == 'question'\n        assert owner.row(row)['evidence'] == (0., 0.)\n        with pytest.raises(ValueError, match='question or estimate'):\n            owner.accept_fact(row)\n        ordinary = owner.append_meaning(question, sentence_index=1)\n        owner.accept_fact(ordinary)\n        assert owner.row(ordinary)['kind'] == 'fact'"
+      "test": "test_truth_ingestion_restores_caller_recall_and_isolates_each_source",
+      "body": "def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure):\n    from contextlib import contextmanager, nullcontext\n    from types import SimpleNamespace, MethodType\n    from Models import BasicModel\n    caller = {4: [object()]}\n    model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,\n        eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,\n        conceptualSpaces=(), data=SimpleNamespace(train_input=['source']),\n        _runtime_batch=lambda *args, **kwargs: nullcontext(),\n        inputSpace=SimpleNamespace(prepInput=lambda values: torch.zeros(1, 4)))\n    model._clear_recall_history = MethodType(BasicModel._clear_recall_history, model)\n    store = SimpleNamespace()\n    @contextmanager\n    def assertions(**kwargs):\n        store.rows = []\n        yield store.rows\n    store.clause_assertions = assertions\n    def present(**kwargs):\n        assert model._what_recall_sentence_history == {}\n        assert model._what_recall_batch_size is None\n        model._what_recall_sentence_history[0] = [object()]\n        model._what_recall_batch_size = 1\n        if failure:\n            raise RuntimeError('failed presentation')\n        store.rows.append(12)\n    model.runBatch = present\n    if failure:\n        with pytest.raises(RuntimeError, match='failed presentation'):\n            BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second'])\n    else:\n        assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]\n    assert model._what_recall_sentence_history is caller\n    assert model._what_recall_batch_size == 5"
     },
     {
       "file": "test/test_step2b_storage.py",
-      "test": "test_pending_forgetting_pressure_survives_restore_below_high_water",
-      "body": "def test_pending_forgetting_pressure_survives_restore_below_high_water():\n    from Forgetting import forget\n    from test_forgetting import linked_store, config\n    store, child, parent = linked_store(child_is_relation=True)\n    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)\n    with pytest.warns(RuntimeWarning, match='low water'):\n        report = forget(store, cfg, document_boundary=True)\n    assert report['after'] == 3 and store.index_of_row(parent[2]) is None\n    assert store.index_of_row(child[2]) is not None and bool(store.forget_pending)\n    restored = LTM0(4, capacity=4)\n    restored.load_state_dict(store.state_dict())\n    restored.load_semantic_extras(store.semantic_extras())\n    assert bool(restored.forget_pending)\n    report = forget(restored, cfg, document_boundary=True)\n    assert report['target_reached'] and not bool(restored.forget_pending)\n    assert restored.index_of_row(child[2]) is None"
+      "test": "test_stored_question_is_refused_by_kind_without_a_mode_column",
+      "body": "def test_stored_question_is_refused_by_kind_without_a_mode_column():\n    store = LTM0(4, capacity=4)\n    question = ConceptualMeaning.from_description(torch.ones(4))\n    from dataclasses import replace\n    row = store.append_meaning(replace(question, mode='interrogative'), kind='question')\n    state = copy.deepcopy(store.state_dict())\n    assert 'grammatical_mode' not in state and not hasattr(store, 'MODES')\n    restored = LTM0(4, capacity=4)\n    restored.load_state_dict(state)\n    restored.load_semantic_extras(store.semantic_extras())\n    for owner in (store, restored):\n        assert owner.row(row)['kind'] == 'question'\n        assert owner.row(row)['evidence'] == (0., 0.)\n        with pytest.raises(ValueError, match='question or estimate'):\n            owner.accept_fact(row)\n        ordinary = owner.append_meaning(question, sentence_index=1)\n        owner.accept_fact(ordinary)\n        assert owner.row(ordinary)['kind'] == 'fact'"
+    }
+  ],
+  "added_helpers": [
+    {
+      "file": "test/index_fixtures.py",
+      "function": "restore_index",
+      "body": "def restore_index(source, restored):\n    \"\"\"Restore the fixture's numerical reader after rows and sidecar load.\"\"\"\n    mapping = dict(source._fixture_unfolding)\n    def unfold(value, limit, **kwargs):\n        codes = mapping.get(tuple(value.detach().tolist()), ())\n        return codes, min(1, limit), bool(limit)\n    restored.configure_leaf_index(read=unfold)\n    restored.reindex_meanings()",
+      "checks": []
+    },
+    {
+      "file": "test/part_fixtures.py",
+      "function": "part_references",
+      "body": "def part_references(store):\n    \"\"\"Snapshot occupied Part arguments by stable handle, excluding new rows.\"\"\"\n    return {row: store.parts.refs[row].clone() for row in store.parts.indices().tolist()}",
+      "checks": []
+    },
+    {
+      "file": "test/part_fixtures.py",
+      "function": "assert_part_references",
+      "body": "def assert_part_references(store, before):\n    for row, references in before.items():\n        torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)",
+      "checks": [
+        {
+          "line": 49,
+          "text": "torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)"
+        }
+      ]
     }
   ]
 }

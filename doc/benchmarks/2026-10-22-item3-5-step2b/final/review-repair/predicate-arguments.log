@@ -1,0 +1,356 @@
+/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+[
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[False-part]",
+    "writer": "current",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[False-part]",
+    "writer": "pre_2b_writer",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[False-implies]",
+    "writer": "current",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[False-implies]",
+    "writer": "pre_2b_writer",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[True-part]",
+    "writer": "current",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[True-part]",
+    "writer": "pre_2b_writer",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[True-implies]",
+    "writer": "current",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  {
+    "case": "test_test_predicate_identity.py--test_first_three_slot_predicate_occurrence[True-implies]",
+    "writer": "pre_2b_writer",
+    "readings": [
+      {
+        "argument": 18,
+        "source": 0,
+        "reference": [
+          "sym",
+          18
+        ],
+        "native": null,
+        "content": [
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "argument": 25,
+        "source": 1,
+        "reference": [
+          "sym",
+          25
+        ],
+        "native": null,
+        "content": [
+          0.0,
+          0.0,
+          0.5,
+          0.5,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  }
+]

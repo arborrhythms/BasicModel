@@ -1,0 +1,178 @@
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index 8a4afb90c..b03738e02 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -285,17 +285,16 @@ class ClauseRows:
+         count = len(self)
+         token = (count, id(self.row_ids), self.row_ids._version)
+         if self.__dict__.get('_native_reference_token') != token:
+-            rows, predicates = {}, {}
++            rows = {}
+             for row, identity in enumerate(self.row_ids[:count].tolist()):
+                 if identity not in (-1, 0):
+                     rows.setdefault(identity, row)
+             object.__setattr__(self, '_native_row_index', rows)
+-            object.__setattr__(self, '_native_predicate_index', predicates)
+             object.__setattr__(self, '_native_reference_token', token)
+-        return self._native_row_index, self._native_predicate_index
++        return self._native_row_index
+ 
+     def index_of_row(self, reference):
+-        return self._native_reference_indexes()[0].get(int(reference))
++        return self._native_reference_indexes().get(int(reference))
+ 
+     def _index_slot_metadata(self, address):
+         from Occurrence import slot_key
+@@ -341,9 +340,6 @@ class ClauseRows:
+         index = self.index_of_row(reference)
+         if index is not None:
+             return self.slots[index, 0] if int(self.role_mask[index].sum()) == 1 else None
+-        occurrence = self._native_reference_indexes()[1].get(int(reference))
+-        if occurrence is not None:
+-            return self.slots[occurrence]
+         resolve = getattr(self, '_concept_point', None)
+         if resolve is None:
+             raise ValueError('shared concept index is not attached')
+diff --git a/bin/Models.py b/bin/Models.py
+index 2791eecb9..b085394b8 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -5735,17 +5735,18 @@ class BasicModel(BaseModel):
+                 try:
+                     # LTM addresses cost one read. Serial addresses may name
+                     # a later record; scan the bounded owner on the same meter.
++                    reference = question.role_refs[0]
+                     question, _ = context.ltm.resolve_description(
+-                        question.role_refs[0], row=row,
++                        reference, row=row,
+                         max_records=self._what_memory().capacity, work=work)
+                 except QueryWorkExhausted:
+                     # The controller's ordinary cutoff drains this exhausted
+                     # episode; no unmetered read or guessed open role follows.
+                     break
+-                if question.mode != 'interrogative':
+-                    # Content retrieval also accepts an addressed assertion.
+-                    # It has no nested executable question whose holes this
+-                    # expectation context may follow.
++                if reference[0] != 'ltm' and question.mode != 'interrogative':
++                    # A live ask supplies query intent for an LTM description,
++                    # as its executor does; stored rows have no mode. Thought
++                    # records still carry their live mode.
+                     break
+                 signature = registry.signature_for(question)
+             for role in signature.open_roles:
+@@ -20407,12 +20408,14 @@ class BasicModel(BaseModel):
+             index = None if store is None or row_ids[b] in (-1, 0) else store.location(row_ids[b])
+             if index is not None:
+                 retained = store.row(index)
+-                meaning = retained['meaning']
++                meaning = replace(retained['meaning'], mode=clause.meaning.mode)
+                 if isinstance(index, tuple):
+                     left, right = retained['refs'].tolist()
+                     refs = (left, -1, right)
+                 else:
+-                    refs = tuple(-1 if ref is None else ref[-1] for ref in meaning.role_refs)
++                    # The retired numeric column was unfilled for occurrences.
++                    # Typed slot/constituent refs stay in meaning.role_refs.
++                    refs = (-1, -1, -1)
+             else:
+                 meaning = (clause.meaning if clause.relation is not None else
+                            replace(ConceptualMeaning.from_description(clause.point),
+diff --git a/bin/ThoughtClosing.py b/bin/ThoughtClosing.py
+index fb01047c1..6816b8a92 100644
+--- a/bin/ThoughtClosing.py
++++ b/bin/ThoughtClosing.py
+@@ -36,7 +36,9 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None,
+                 return nested
+     source = parsed if parsed is not None else meaning
+     if committed is not None:
+-        source = committed
++        # Storage does not retain grammatical mode. The live closing still
++        # supplies it, while its row supplies the canonical references.
++        source = replace(committed, mode=(parsed if parsed is not None else clause.meaning).mode)
+     if (committed is None and parsed is not None and torch.equal(parsed.roles, meaning.roles)
+             and torch.equal(parsed.role_mask, meaning.role_mask)):
+         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)
+diff --git a/test/test_lies_can_be_learned.py b/test/test_lies_can_be_learned.py
+index 75ababd29..a5fe45119 100644
+--- a/test/test_lies_can_be_learned.py
++++ b/test/test_lies_can_be_learned.py
+@@ -7,7 +7,7 @@ def test_conflicting_claim_preserves_support_and_counterevidence():
+     store, _ = clause_store()
+     row = store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))
+     assert store.write_clause(part_clause(polarity=False), trust=.6, evidence=(0., .6)) == row
+-    assert len(store) == 0 and len(store.parts) == 1
++    assert len(store) == 1 and len(store.parts) == 1
+     assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+     assert min(store.row(row)['evidence']) == pytest.approx(.6)
+ 
+diff --git a/test/test_relative_sentence_codebook_insertion.py b/test/test_relative_sentence_codebook_insertion.py
+index 88243dc57..deb85007e 100644
+--- a/test/test_relative_sentence_codebook_insertion.py
++++ b/test/test_relative_sentence_codebook_insertion.py
+@@ -12,5 +12,5 @@ def test_closing_reuses_relation_and_preserves_independent_evidence():
+     clause = part_clause()
+     row = store.write_clause(clause, trust=.8, evidence=(.8, 0.))
+     assert store.write_clause(replace(clause, meaning=replace(clause.meaning, polarity=False)), trust=.7, evidence=(0., .7)) == row
+-    assert len(store) == 0 and len(store.parts) == 1
++    assert len(store) == 1 and len(store.parts) == 1
+     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
+diff --git a/test/test_selected_relation_meaning.py b/test/test_selected_relation_meaning.py
+index 603cf3e78..e0ca3a348 100644
+--- a/test/test_selected_relation_meaning.py
++++ b/test/test_selected_relation_meaning.py
+@@ -394,7 +394,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
+     cs._concept_allocator.parts.remove(_a[1], _b[1])
+     before_parts = set(cs._concept_allocator.parts.indices().tolist())
+     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+-    assert len(store) == 0 and len(calls) == 1
++    assert len(store) == 1 and len(calls) == 1
+     row = ('sym', store.parts.find(_a[1], _b[1]))
+     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
+     stored = store.meaning_of(row)
+diff --git a/test/test_sentence_retention.py b/test/test_sentence_retention.py
+index 2b40238e8..93dd03631 100644
+--- a/test/test_sentence_retention.py
++++ b/test/test_sentence_retention.py
+@@ -60,8 +60,8 @@ def test_narrow_idea_retains_no_implicit_operand_reference():
+     first = store.write_clause(idea_clause())
+     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
+     assert not hasattr(store, 'refs')
+-    assert store.meaning_of(second).role_refs == store.meaning_of(first).role_refs
+-    assert store.occurrence_of(first) not in store.meaning_of(second).role_refs
++    assert not any(ref is not None and ref[0] == 'ltm'
++                   for ref in store.meaning_of(second).role_refs)
+ 
+ 
+ def test_invalid_prediction_does_not_publish_embedded_clauses():
+diff --git a/test/test_step2b_storage.py b/test/test_step2b_storage.py
+index 33776466d..4d3282c31 100644
+--- a/test/test_step2b_storage.py
++++ b/test/test_step2b_storage.py
+@@ -8,6 +8,26 @@ from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
++@pytest.mark.parametrize('relative', (False, True))
++@pytest.mark.parametrize('parsed', (False, True))
++def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, parsed):
++    from dataclasses import replace
++    from ThoughtClosing import closing_question
++    from ThoughtReferences import evidence_pair, needs_episode, open_slots
++    from test_clause_storage import clause_store, idea_clause, part_clause
++    store, _ = clause_store()
++    clause = part_clause() if relative else idea_clause()
++    clause = replace(clause, meaning=replace(clause.meaning, mode='interrogative'))
++    written = {}
++    row = store.write_clause(clause, evidence=(0., 0.), written_rows=written)
++    query = closing_question(store.meaning_of(row), clause,
++        clause.meaning if parsed else None, store=store, written_rows=written)
++    assert query is not None and query.mode == 'interrogative'
++    assert needs_episode(query) and open_slots(query) == ()
++    assert evidence_pair(query) == (0., 0.)
++    assert 'grammatical_mode' not in store.state_dict()
++
++
+ def test_stored_question_is_refused_by_kind_without_a_mode_column():
+     store = LTM0(4, capacity=4)
+     question = ConceptualMeaning.from_description(torch.ones(4))

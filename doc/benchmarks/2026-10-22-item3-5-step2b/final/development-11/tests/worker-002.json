@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation"
+  ],
+  "completed": [
+    "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.034236166859045625,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

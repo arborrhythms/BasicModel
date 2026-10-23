@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_omitted_symbol_has_a_residual_and_trains_only_the_predictor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

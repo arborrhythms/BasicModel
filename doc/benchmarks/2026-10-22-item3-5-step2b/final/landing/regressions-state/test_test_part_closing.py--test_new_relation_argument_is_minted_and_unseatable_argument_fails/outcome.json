@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_closing.py::test_new_relation_argument_is_minted_and_unseatable_argument_fails",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

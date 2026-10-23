@@ -1,0 +1,30 @@
+[
+  {
+    "writer": "current",
+    "first": 0,
+    "second": 0,
+    "role_refs": [
+      [
+        "sym",
+        1
+      ],
+      null,
+      null
+    ],
+    "no_occurrence_reference": true
+  },
+  {
+    "writer": "pre_2b_writer",
+    "first": 0,
+    "second": 0,
+    "role_refs": [
+      [
+        "sym",
+        1
+      ],
+      null,
+      null
+    ],
+    "no_occurrence_reference": true
+  }
+]

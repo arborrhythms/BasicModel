@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+  "outcome": "failed",
+  "failure": "test/test_negative_expectation.py:65: in test_declared_not_is_a_thought_act_not_an_observation\n    assert len(store) == 1\nE   assert 2 == 1\nE    +  where 2 = len(LTM0())",
+  "records": []
+}

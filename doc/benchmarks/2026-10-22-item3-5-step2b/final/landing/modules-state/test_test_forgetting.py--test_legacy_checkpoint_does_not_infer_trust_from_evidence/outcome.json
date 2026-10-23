@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_legacy_checkpoint_does_not_infer_trust_from_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

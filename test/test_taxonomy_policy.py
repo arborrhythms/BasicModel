@@ -48,7 +48,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     assert result.support_true == 1
     path = result.result.evidence['path']
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
-    assert len(store) == 0
+    assert len(store) == 1
     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     # Remove the derived conclusion as well as its shared-store premises.

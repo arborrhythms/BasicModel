@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_capture_does_not_invent_anchoring_for_an_unresolved_word",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

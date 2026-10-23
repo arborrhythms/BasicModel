@@ -5735,17 +5735,18 @@ class BasicModel(BaseModel):
                 try:
                     # LTM addresses cost one read. Serial addresses may name
                     # a later record; scan the bounded owner on the same meter.
+                    reference = question.role_refs[0]
                     question, _ = context.ltm.resolve_description(
-                        question.role_refs[0], row=row,
+                        reference, row=row,
                         max_records=self._what_memory().capacity, work=work)
                 except QueryWorkExhausted:
                     # The controller's ordinary cutoff drains this exhausted
                     # episode; no unmetered read or guessed open role follows.
                     break
-                if question.mode != 'interrogative':
-                    # Content retrieval also accepts an addressed assertion.
-                    # It has no nested executable question whose holes this
-                    # expectation context may follow.
+                if reference[0] != 'ltm' and question.mode != 'interrogative':
+                    # A live ask supplies query intent for an LTM description,
+                    # as its executor does; stored rows have no mode. Thought
+                    # records still carry their live mode.
                     break
                 signature = registry.signature_for(question)
             for role in signature.open_roles:
@@ -20407,12 +20408,14 @@ class BasicModel(BaseModel):
             index = None if store is None or row_ids[b] in (-1, 0) else store.location(row_ids[b])
             if index is not None:
                 retained = store.row(index)
-                meaning = retained['meaning']
+                meaning = replace(retained['meaning'], mode=clause.meaning.mode)
                 if isinstance(index, tuple):
                     left, right = retained['refs'].tolist()
                     refs = (left, -1, right)
                 else:
-                    refs = tuple(-1 if ref is None else ref[-1] for ref in meaning.role_refs)
+                    # The retired numeric column was unfilled for occurrences.
+                    # Typed slot/constituent refs stay in meaning.role_refs.
+                    refs = (-1, -1, -1)
             else:
                 meaning = (clause.meaning if clause.relation is not None else
                            replace(ConceptualMeaning.from_description(clause.point),

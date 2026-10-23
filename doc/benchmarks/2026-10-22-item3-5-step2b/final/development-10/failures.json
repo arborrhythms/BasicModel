@@ -1,0 +1,110 @@
+[
+  {
+    "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.1846581669524312,
+    "message": "test/test_joint_objectives.py:80: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    assert disc is not None and not m.legacy_prediction_enabled\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'legacy_prediction_enabled'",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.017495542066171765,
+    "message": "test/test_lies_can_be_learned.py:10: in test_conflicting_claim_preserves_support_and_counterevidence\n    assert len(store) == 1 and len(store.parts) == 1\nE   assert (2 == 1)\nE    +  where 2 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.03227112512104213,
+    "message": "test/test_negative_expectation.py:65: in test_declared_not_is_a_thought_act_not_an_observation\n    assert len(store) == 1\nE   assert 2 == 1\nE    +  where 2 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.01102462480776012,
+    "message": "test/test_predicate_identity.py:90: in test_first_three_slot_predicate_occurrence\n    torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])\nE   AssertionError: None mismatch: None is not tensor([0.5000, 0.5000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000])",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.010226208018139005,
+    "message": "test/test_predicate_identity.py:90: in test_first_three_slot_predicate_occurrence\n    torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])\nE   AssertionError: None mismatch: None is not tensor([0.5000, 0.5000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000])",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.010198332834988832,
+    "message": "test/test_predicate_identity.py:90: in test_first_three_slot_predicate_occurrence\n    torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])\nE   AssertionError: None mismatch: None is not tensor([0.5000, 0.5000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000])",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.01010287506505847,
+    "message": "test/test_predicate_identity.py:90: in test_first_three_slot_predicate_occurrence\n    torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])\nE   AssertionError: None mismatch: None is not tensor([0.5000, 0.5000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000])",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.017497791908681393,
+    "message": "test/test_relative_sentence_codebook_insertion.py:15: in test_closing_reuses_relation_and_preserves_independent_evidence\n    assert len(store) == 1 and len(store.parts) == 1\nE   assert (2 == 1)\nE    +  where 2 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[1]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.019189999904483557,
+    "message": "test/test_replacement_kernel_contracts.py:39: in test_direct_and_depth_one_two_chains_keep_native_premises\n    assert len(store) == 0\nE   assert 1 == 0\nE    +  where 1 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.012643291847780347,
+    "message": "test/test_replacement_kernel_contracts.py:39: in test_direct_and_depth_one_two_chains_keep_native_premises\n    assert len(store) == 0\nE   assert 1 == 0\nE    +  where 1 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[3]",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.013013500021770597,
+    "message": "test/test_replacement_kernel_contracts.py:39: in test_direct_and_depth_one_two_chains_keep_native_premises\n    assert len(store) == 0\nE   assert 1 == 0\nE    +  where 1 = len(LTM0())",
+    "stdout": ""
+  },
+  {
+    "nodeid": "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "phase": "call",
+    "outcome": "failed",
+    "certificate_phase": null,
+    "duration": 0.011563875013962388,
+    "message": "test/test_taxonomy_policy.py:51: in test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation\n    assert len(store) == 0\nE   assert 1 == 0\nE    +  where 1 = len(LTM0())",
+    "stdout": ""
+  }
+]

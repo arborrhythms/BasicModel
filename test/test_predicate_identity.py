@@ -86,6 +86,8 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     assert f.store.parts.refs.shape[-1] == 2
     arguments = f.store.row(row)['refs'].tolist()
     assert reference[1] not in arguments
-    for argument, source in zip(arguments, (left, right)):
-        torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])
+    for role, argument, source in zip((0, 2), arguments, (left, right)):
+        retained = f.store.raw_meaning_of(source)
+        assert retained.role_refs[0] == ('sym', argument)
+        torch.testing.assert_close(retained.roles[0], leaves[role])
     assert f.cs._csw_row_of(reference[1]) is None

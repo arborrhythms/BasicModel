@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+  "outcome": "failed",
+  "failure": "test/test_taxonomy_policy.py:51: in test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation\n    assert len(store) == 0\nE   assert 1 == 0\nE    +  where 1 = len(LTM0())",
+  "records": []
+}

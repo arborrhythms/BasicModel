@@ -16,7 +16,7 @@ renames={
 def git(*args):return subprocess.check_output(['git',*args],cwd=ROOT)
 paths=set(git('diff','--name-only',BASE,'--','bin','test','data').decode().splitlines())
 paths.update(git('ls-files','--others','--exclude-standard','--','bin','test','data').decode().splitlines())
-ledger,functions,retired,new_tests=[],[],[],[]
+ledger,functions,retired,new_tests,new_helpers=[],[],[],[],[]
 for path in sorted(paths):
  new=(ROOT/path).read_text()
  original=copies.get(path,path)
@@ -61,8 +61,11 @@ for path in sorted(paths):
    ledger.append(dict(file=path,function=other,change='parameters',before=value['decorators'],after=fresh['decorators']))
  for name in b.keys()-{renames.get(n,n) for n in a}:
   if name.startswith('test_'):new_tests.append(dict(file=path,test=name,body=b[name]['text']))
+  else:new_helpers.append(dict(file=path,function=name,body=b[name]['text'],
+    checks=[dict(line=line,text=text) for line,text in b[name]['checks']]))
 (HERE/'assertion-ledger.json').write_text(json.dumps(dict(base=BASE,changed_checks=ledger,
- copied_from=copies,renamed_tests=renames,retired_tests=retired,new_tests=new_tests),indent=2)+'\n')
+ copied_from=copies,renamed_tests=renames,retired_tests=retired,new_tests=new_tests,
+ added_helpers=new_helpers),indent=2)+'\n')
 (HERE/'fixture-ledger.json').write_text(json.dumps(functions,indent=2)+'\n')
 (HERE/'source-diff.patch').write_bytes(git('diff','--binary',BASE,'--','bin','test','data'))
 (HERE/'test-ports.patch').write_bytes(git('diff',BASE,'--','test'))
@@ -84,11 +87,14 @@ lines += ['\n## Retired tests\n']
 for entry in retired:lines += [f"\n- `{entry['file']}::{entry['test']}` — adjacency/nudge only (P3).\n"]
 lines += ['\n## New regressions\n']
 for entry in new_tests:lines += [f"\n- `{entry['file']}::{entry['test']}`\n"]
+lines += ['\n## Added fixture helpers, including their new assertions\n']
+for entry in new_helpers:
+ lines += [f"\n### {entry['file']} — {entry['function']}\n\n```python\n{entry['body']}\n```\n"]
 (HERE/'assertion-ports.md').write_text(''.join(lines))
 audit=dict(base=BASE,branch=git('branch','--show-current').decode().strip(),
  published_2a='0b030e3ebdeca87f9ebf80739237437c3c75ea8f',
  files={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in sorted(paths)},
  retired=[dict(file=r['file'],test=r['test']) for r in retired],
- counts=dict(changed_checks=len(ledger),changed_functions=len(functions),retired_tests=len(retired),new_tests=len(new_tests)))
+ counts=dict(changed_checks=len(ledger),changed_functions=len(functions),retired_tests=len(retired),new_tests=len(new_tests),added_helpers=len(new_helpers)))
 (HERE/'source-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
 print(json.dumps(audit['counts']))

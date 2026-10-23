@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

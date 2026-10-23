@@ -77,7 +77,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     m.inputSpace.data.has_supervised_outputs = False
     optimizer = m.getOptimizer(lr=1e-5)
     disc = m.symbolSpace.expectation
-    assert disc is not None and not m.legacy_prediction_enabled
+    assert disc is not None and not hasattr(m, 'legacy_prediction_enabled')
     predictor = list(disc._inter_predictor.parameters())
     observed_predictor_gradient = []
     backward = m._backward_training_loss
@@ -106,7 +106,8 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
             assert result is not None
             changed = [not torch.equal(p, old) for p, old in zip(predictor, before)]
             assert any(changed) if weight else not any(changed)
-            assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)
+            assert all(not p.requires_grad for b in range(len(disc._inter_context))
+                       for _, p, _ in disc._read_context(b)[0])
         assert any(observed_predictor_gradient)
     finally:
         m.inputSpace.data.has_supervised_outputs = had_outputs

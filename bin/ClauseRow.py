@@ -285,17 +285,16 @@ class ClauseRows:
         count = len(self)
         token = (count, id(self.row_ids), self.row_ids._version)
         if self.__dict__.get('_native_reference_token') != token:
-            rows, predicates = {}, {}
+            rows = {}
             for row, identity in enumerate(self.row_ids[:count].tolist()):
                 if identity not in (-1, 0):
                     rows.setdefault(identity, row)
             object.__setattr__(self, '_native_row_index', rows)
-            object.__setattr__(self, '_native_predicate_index', predicates)
             object.__setattr__(self, '_native_reference_token', token)
-        return self._native_row_index, self._native_predicate_index
+        return self._native_row_index
 
     def index_of_row(self, reference):
-        return self._native_reference_indexes()[0].get(int(reference))
+        return self._native_reference_indexes().get(int(reference))
 
     def _index_slot_metadata(self, address):
         from Occurrence import slot_key
@@ -341,9 +340,6 @@ class ClauseRows:
         index = self.index_of_row(reference)
         if index is not None:
             return self.slots[index, 0] if int(self.role_mask[index].sum()) == 1 else None
-        occurrence = self._native_reference_indexes()[1].get(int(reference))
-        if occurrence is not None:
-            return self.slots[occurrence]
         resolve = getattr(self, '_concept_point', None)
         if resolve is None:
             raise ValueError('shared concept index is not attached')

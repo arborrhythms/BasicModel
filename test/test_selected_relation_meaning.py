@@ -394,7 +394,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     cs._concept_allocator.parts.remove(_a[1], _b[1])
     before_parts = set(cs._concept_allocator.parts.indices().tolist())
     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
-    assert len(store) == 0 and len(calls) == 1
+    assert len(store) == 1 and len(calls) == 1
     row = ('sym', store.parts.find(_a[1], _b[1]))
     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
     stored = store.meaning_of(row)

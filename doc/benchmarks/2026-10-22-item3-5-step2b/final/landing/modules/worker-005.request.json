@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_sentence_identity.py::test_closing_idea_is_narrow_and_the_operation_has_a_native_part",
+    "test/test_sentence_identity.py::test_referenced_phrase_is_minted_as_a_part_argument",
+    "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_sentence_identity.py::test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+    "test/test_sentence_identity.py::test_full_inventory_can_record_part_of_already_seated_arguments"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/landing/modules/worker-005.recycle.json"
+}

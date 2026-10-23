@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/landing/modules/worker-013.recycle.json"
+}

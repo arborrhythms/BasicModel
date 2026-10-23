@@ -8,6 +8,26 @@ from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
+@pytest.mark.parametrize('relative', (False, True))
+@pytest.mark.parametrize('parsed', (False, True))
+def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, parsed):
+    from dataclasses import replace
+    from ThoughtClosing import closing_question
+    from ThoughtReferences import evidence_pair, needs_episode, open_slots
+    from test_clause_storage import clause_store, idea_clause, part_clause
+    store, _ = clause_store()
+    clause = part_clause() if relative else idea_clause()
+    clause = replace(clause, meaning=replace(clause.meaning, mode='interrogative'))
+    written = {}
+    row = store.write_clause(clause, evidence=(0., 0.), written_rows=written)
+    query = closing_question(store.meaning_of(row), clause,
+        clause.meaning if parsed else None, store=store, written_rows=written)
+    assert query is not None and query.mode == 'interrogative'
+    assert needs_episode(query) and open_slots(query) == ()
+    assert evidence_pair(query) == (0., 0.)
+    assert 'grammatical_mode' not in store.state_dict()
+
+
 def test_stored_question_is_refused_by_kind_without_a_mode_column():
     store = LTM0(4, capacity=4)
     question = ConceptualMeaning.from_description(torch.ones(4))

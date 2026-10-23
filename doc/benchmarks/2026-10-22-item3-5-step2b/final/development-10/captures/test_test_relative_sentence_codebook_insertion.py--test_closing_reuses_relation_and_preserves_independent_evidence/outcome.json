@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relative_sentence_codebook_insertion.py::test_closing_reuses_relation_and_preserves_independent_evidence",
+  "outcome": "failed",
+  "failure": "test/test_relative_sentence_codebook_insertion.py:15: in test_closing_reuses_relation_and_preserves_independent_evidence\n    assert len(store) == 1 and len(store.parts) == 1\nE   assert (2 == 1)\nE    +  where 2 = len(LTM0())",
+  "records": []
+}

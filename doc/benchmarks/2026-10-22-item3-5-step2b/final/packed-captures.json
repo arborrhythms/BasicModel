@@ -62,5 +62,69 @@
     "original_sha256": "b2ae03f42d3ea40f33ec001dd9d9b53f37b643ab68defc4e11143b602e03443b",
     "compressed_bytes": 375616,
     "compressed_sha256": "3257233ddd0106d743ac2b52fffdf2dd40854929dfa4b7144a41a746e60d400e"
+  },
+  {
+    "original": "development-10/captures/test_test_item55_mechanisms.py--test_interleaving/initial-1.pt",
+    "compressed": "development-10/captures/test_test_item55_mechanisms.py--test_interleaving/initial-1.pt.gz",
+    "original_bytes": 376784961,
+    "original_sha256": "78b4ed1f050fa08b7a858ffbc84eef90ffaae571edbab75d16b03d7c5105aca8",
+    "compressed_bytes": 373925,
+    "compressed_sha256": "96346502b8913546b0579765ebbb50a0b8e3baec2c4760fe6a364d3ef82d2b7d"
+  },
+  {
+    "original": "development-10/captures/test_test_item55_mechanisms.py--test_stream_chain/initial-1.pt",
+    "compressed": "development-10/captures/test_test_item55_mechanisms.py--test_stream_chain/initial-1.pt.gz",
+    "original_bytes": 376741057,
+    "original_sha256": "d167fd0a4a101b03f75cfc2acda5437faf022f2fe2679c9e3431142f5bb2d991",
+    "compressed_bytes": 373695,
+    "compressed_sha256": "c7dce9f2d2a7c5928dd8deb55b5e2bff8f1a45a332f81ecd66caefb9831e32e5"
+  },
+  {
+    "original": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-1.pt",
+    "compressed": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "b8ecb74c73e67a41e5df5abae1e7e7633872392e73bd81f2d49a6d83e81a26f8",
+    "compressed_bytes": 373757,
+    "compressed_sha256": "6ae934ae62b53589381e9ea5040b1ceb3273628085ea2ed14236dbe314b17136"
+  },
+  {
+    "original": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-2.pt",
+    "compressed": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-2.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "01311c4fbfa85f799db4c73f54068901ead83a4a0443f16e89ba8ef0ee694eb9",
+    "compressed_bytes": 373756,
+    "compressed_sha256": "7533bbcdcb6f5e25920ef59afcbb8085de88cc0f5d37eb70394f93ebffd0d1e9"
+  },
+  {
+    "original": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-3.pt",
+    "compressed": "development-10/captures/test_test_item55_mechanisms.py--test_surface_inverses/initial-3.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "18cdec808ee12b9516b18021cca3e0fc19c4751c0de8072580b60bd02a96ac29",
+    "compressed_bytes": 373831,
+    "compressed_sha256": "bbec1a740f30afa9bbc8328a55404d047e2156899f5c8cbfc08e8467705b7535"
+  },
+  {
+    "original": "development-10/captures/test_test_negative_expectation.py--test_native_unlabelled_batch_trains_the_same_chooser/initial-1.pt",
+    "compressed": "development-10/captures/test_test_negative_expectation.py--test_native_unlabelled_batch_trains_the_same_chooser/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "06851773729111cd3fcf850f9c38c920db0b5ace356e336b6b0f215c5b27c7ba",
+    "compressed_bytes": 373753,
+    "compressed_sha256": "d094917f6c9ef334e5bdb02fcf2564b3f3f20cc6a29be1d191ec379fd803f3c5"
+  },
+  {
+    "original": "development-10/captures/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[False]/initial-1.pt",
+    "compressed": "development-10/captures/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[False]/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "0b822f119eef687bcf9e6f4aa23af0e35bb69bc1b6ab9edef127e944914ea30f",
+    "compressed_bytes": 373775,
+    "compressed_sha256": "74c885b9df94a2ab6170fffcf7f7c9570f5ed00e67fd58b03daf37d9fa80d395"
+  },
+  {
+    "original": "development-10/captures/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[True]/initial-1.pt",
+    "compressed": "development-10/captures/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[True]/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "4989c7f9b0985a3b61fd84c7be87724fc95b991b928d4ae2ca60fca7d87ed167",
+    "compressed_bytes": 373783,
+    "compressed_sha256": "75d4bd2a38dca940576777b7c6684c0224319b3a40cd189908deb3d4d58c409d"
   }
 ]

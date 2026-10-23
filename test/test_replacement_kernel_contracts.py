@@ -36,7 +36,7 @@ def test_direct_and_depth_one_two_chains_keep_native_premises(hops):
     # chain adds that same native Part edge, not a second LTM1 relation.
     edge = store.parts.find(refs[0][1], refs[hops][1])
     assert edge is not None and store.parts.truth_plus[edge] == 1
-    assert len(store) == 0
+    assert len(store) == 1
     if hops > 1:
         model.conceptualSpace.retire_concept(edge)
     model.conceptualSpace.retire_concept(refs[1][1])

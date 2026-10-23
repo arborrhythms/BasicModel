@@ -895,10 +895,41 @@ assert store.ideas().tolist() == [0, 1]
 
 ## New regressions
 
-- `test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source`
+- `test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water`
 
 - `test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge`
 
+- `test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source`
+
 - `test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column`
 
-- `test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water`
+## Added fixture helpers, including their new assertions
+
+### test/index_fixtures.py — restore_index
+
+```python
+def restore_index(source, restored):
+    """Restore the fixture's numerical reader after rows and sidecar load."""
+    mapping = dict(source._fixture_unfolding)
+    def unfold(value, limit, **kwargs):
+        codes = mapping.get(tuple(value.detach().tolist()), ())
+        return codes, min(1, limit), bool(limit)
+    restored.configure_leaf_index(read=unfold)
+    restored.reindex_meanings()
+```
+
+### test/part_fixtures.py — part_references
+
+```python
+def part_references(store):
+    """Snapshot occupied Part arguments by stable handle, excluding new rows."""
+    return {row: store.parts.refs[row].clone() for row in store.parts.indices().tolist()}
+```
+
+### test/part_fixtures.py — assert_part_references
+
+```python
+def assert_part_references(store, before):
+    for row, references in before.items():
+        torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)
+```

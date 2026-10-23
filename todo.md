@@ -31,14 +31,16 @@ in step-2 §§33–36:** the scoped storage changes now, identity threading
 specified by Claude next, then derivation removal. Claude's incoming spec,
 bind plan, Architecture and todo edits were committed unchanged at
 `cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **§38 approves the P5 port:** Claude's edit is
-committed unchanged at `bb0045d7a` and the approved patch is applied.
-The scoped implementation continues under §§39–42. §41 approves the
-§40 operand-scoped port, now applied. The [historical partial-work record](doc/benchmarks/2026-10-22-item3-5-step2b/storage/README.md)
-retains the earlier stop unchanged. The storage round removes persisted
-postings, adjacency, mode and unused refs; retains every completed S; and
-stages forgetting before deletion. Source audit, scoped gates and Claude's
-end-of-round review precede publication. Metadata
+All work stays on main. **Storage-only 2b is repairing Claude's HOLD on
+`3c5cc2a1d`** (675 passes, eight existing skips). §59 preserves live question
+mode, expands writer coverage and restores occurrence end states' empty
+numeric refs. The [review and frozen receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/landing/README.md)
+retain that source, every failed run and the three retired adjacency tests.
+New scoped evidence and a fresh review are required before publication.
+The storage round removes
+persisted postings, adjacency, mode and unused refs; retains every
+completed S; and stages forgetting before deletion. Identity threading
+requires Claude's next spec and a code review of §§34–35. Metadata
 authentication stays while sidecar content needs it. 2c retains the two R10
 arrival notes; the recall-history location note belongs to the 5.5
 context-wholes spec. One full sweep remains at step 2's end. Item 3.0 has

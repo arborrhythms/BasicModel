@@ -60,8 +60,8 @@ def test_narrow_idea_retains_no_implicit_operand_reference():
     first = store.write_clause(idea_clause())
     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
     assert not hasattr(store, 'refs')
-    assert store.meaning_of(second).role_refs == store.meaning_of(first).role_refs
-    assert store.occurrence_of(first) not in store.meaning_of(second).role_refs
+    assert not any(ref is not None and ref[0] == 'ltm'
+                   for ref in store.meaning_of(second).role_refs)
 
 
 def test_invalid_prediction_does_not_publish_embedded_clauses():

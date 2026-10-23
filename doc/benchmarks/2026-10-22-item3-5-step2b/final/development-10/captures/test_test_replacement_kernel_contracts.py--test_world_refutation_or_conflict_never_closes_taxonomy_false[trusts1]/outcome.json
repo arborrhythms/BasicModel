@@ -1,0 +1,6 @@
+{
+  "node": "test/test_replacement_kernel_contracts.py::test_world_refutation_or_conflict_never_closes_taxonomy_false[trusts1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

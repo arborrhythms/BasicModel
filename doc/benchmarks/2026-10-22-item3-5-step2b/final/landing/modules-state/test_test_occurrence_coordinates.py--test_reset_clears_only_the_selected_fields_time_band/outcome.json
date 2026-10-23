@@ -1,0 +1,6 @@
+{
+  "node": "test/test_occurrence_coordinates.py::test_reset_clears_only_the_selected_fields_time_band",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_closing.py::test_inline_lower_rejects_content_change_without_a_partial_close",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

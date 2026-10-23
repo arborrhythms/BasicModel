@@ -36,7 +36,9 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
                 return nested
     source = parsed if parsed is not None else meaning
     if committed is not None:
-        source = committed
+        # Storage does not retain grammatical mode. The live closing still
+        # supplies it, while its row supplies the canonical references.
+        source = replace(committed, mode=(parsed if parsed is not None else clause.meaning).mode)
     if (committed is None and parsed is not None and torch.equal(parsed.roles, meaning.roles)
             and torch.equal(parsed.role_mask, meaning.role_mask)):
         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)

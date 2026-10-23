@@ -1,0 +1,18 @@
+..F............                                                          [100%]
+=================================== FAILURES ===================================
+_ test_real_packed_runbatch_trains_prediction_and_representation_with_teacher __
+test/test_joint_objectives.py:80: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher
+    assert disc is not None and not m.legacy_prediction_enabled
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__
+    raise AttributeError(
+E   AttributeError: 'BasicModel' object has no attribute 'legacy_prediction_enabled'
+=============================== warnings summary ===============================
+test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher
+1 failed, 14 passed, 1 warning in 4.12s

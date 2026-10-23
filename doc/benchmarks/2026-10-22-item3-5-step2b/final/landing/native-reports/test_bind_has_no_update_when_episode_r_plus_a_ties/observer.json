@@ -1,0 +1,31 @@
+{
+  "counts": {
+    "episodes": 1
+  },
+  "operations": {
+    "bind": 1,
+    "conclude": 1
+  },
+  "credit": {
+    "reconstruction_and_answer": 1,
+    "nonzero_graph": 0,
+    "ties": 1,
+    "nonzero_chooser_gradients": 0
+  },
+  "credit_sample": [
+    {
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "category": "expectation",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.0,
+  "raw_chooser_gradient_l2_max": 0.0
+}

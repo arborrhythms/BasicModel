@@ -62,7 +62,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
         result = model.run_selected_thought(request,work_budget=32)
     assert result.result.semantic_id == 'not'
     assert evidence_pair(result.meaning) == (.7,.3)
-    assert len(store) == 1
+    assert len(store) == 2
     edge = store.parts.find(part[1], whole[1])
     # The common Part owner also retains the fixture's earlier affirmation.
     assert store.row(('sym', edge))['evidence'] == pytest.approx((1.,.3))

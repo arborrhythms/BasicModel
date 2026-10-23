@@ -1,0 +1,6 @@
+{
+  "node": "test/test_occurrence_coordinates.py::test_symbol_range_has_one_address_per_pole_without_word_slots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

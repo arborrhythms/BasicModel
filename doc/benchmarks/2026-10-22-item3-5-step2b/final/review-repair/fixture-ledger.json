@@ -1,0 +1,708 @@
+[
+  {
+    "file": "test/identity_measurement.py",
+    "before": "native_observer",
+    "after": "native_observer",
+    "before_decorators": [
+      "contextmanager"
+    ],
+    "after_decorators": [
+      "contextmanager"
+    ],
+    "diff": "--- native_observer\n+++ native_observer\n@@ -86,7 +86,12 @@\n         for (sid, b), records in getattr(model, '_reference_close_audit', {}).items():\n             for record in records:\n                 index = store.index_of_row(record['occurrence'])\n-                reference = None if index is None else int(store.refs[index, 0])\n+                reference = None\n+                if index is not None:\n+                    occurrence = store.occurrence_of(index)\n+                    reference = model.conceptualSpace.mtm.token_of(occurrence) or record['reference']\n+                    if isinstance(reference, tuple):\n+                        reference = reference[-1]\n                 for leaf in record['leaves']:\n                     word = source_leaves.get((sid, b, leaf))\n                     if word is None or sid not in captured or b >= len(captured[sid]):\n"
+  },
+  {
+    "file": "test/index_fixtures.py",
+    "before": "append_indexed",
+    "after": "append_indexed",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- append_indexed\n+++ append_indexed\n@@ -6,6 +6,9 @@\n     prior = store._index_read\n     mapping = {tuple(value.detach().tolist()): tuple(codes)\n                for value, live, codes in zip(meaning.roles, meaning.role_mask, terms) if live}\n+    grammar = getattr(store, '_fixture_unfolding', {})\n+    grammar.update(mapping)\n+    store._fixture_unfolding = grammar\n     def unfold(value, limit, **_kwargs):\n         codes = mapping.get(tuple(value.detach().tolist()), ())\n         return codes, min(1, limit), bool(limit)\n"
+  },
+  {
+    "file": "test/observer_probe.py",
+    "before": "test_margin_and_ownership_observe_the_same_actual_steps",
+    "after": "test_margin_and_ownership_observe_the_same_actual_steps",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_margin_and_ownership_observe_the_same_actual_steps\n+++ test_margin_and_ownership_observe_the_same_actual_steps\n@@ -54,7 +54,7 @@\n         assert identity['collisions'] == identity['reconstruction_errors'] == 0\n         assert identity['rung0']['errors'] == 0\n         assert identity['containment_violations'] == 0\n-    assert run_audit['start']['identity']['projection_sha256'] == run_audit['end']['identity']['projection_sha256']\n+    assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']\n     assert all(phase in run_audit['centroid'] for phase in ('start','end'))\n     (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))\n     operators_gate_observer.save_ownership(model)\n@@ -68,7 +68,8 @@\n     assert not any(step['walks'] for step in steps)\n     assert 'attention_score_function_steps' not in run_audit\n     assert len([r for r in run_audit['sentence_trials'] if r['training']]) == 1\n-    assert all(v==128 for v in run_audit['closing_image']['concept_widths'].values())\n+    assert all(v==model._concept_owner().outputShape[-1]\n+               for v in run_audit['closing_image']['concept_widths'].values())\n     assert all(v>=0 for v in run_audit['closing_image']['image_max'].values())\n     assert run_audit['end']['codes'][0]['centroid']['identity_recovered']\n     assert 'reconstruction.attention_score_function' not in model._sentence_cost_registry._terms\n"
+  },
+  {
+    "file": "test/operators_run_audit.py",
+    "before": "storage_snapshot",
+    "after": "storage_snapshot",
+    "before_decorators": [
+      "torch.no_grad()"
+    ],
+    "after_decorators": [
+      "torch.no_grad()"
+    ],
+    "diff": "--- storage_snapshot\n+++ storage_snapshot\n@@ -1,12 +1,12 @@\n def storage_snapshot(model):\n     store=model.symbolSpace.ltm_store\n     n=len(store)\n-    sentences=(store.rel_type[:n] != store.REL_DEF).nonzero().flatten()\n+    sentences=torch.arange(n, device=store.address_keys.device)\n     return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),\n-        definition_rows=int((store.rel_type[:n] == store.REL_DEF).sum()),\n+        definition_rows=0,\n         addresses=store.address_keys[sentences].detach().cpu().tolist(),\n         sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),\n         content_keys=[store.content_key(int(row)).hex() for row in sentences],\n         witness_counts=store.witness_count[sentences].detach().cpu().tolist(),\n-        timestamps=store.timestamp[sentences].detach().cpu().tolist(),\n+        when=store.when[sentences].detach().cpu().tolist(),\n         all_witness_counts=store.witness_count[:n].detach().cpu().tolist())"
+  },
+  {
+    "file": "test/operators_run_audit.py",
+    "before": "geometry",
+    "after": "geometry",
+    "before_decorators": [
+      "torch.no_grad()"
+    ],
+    "after_decorators": [
+      "torch.no_grad()"
+    ],
+    "diff": "--- geometry\n+++ geometry\n@@ -51,7 +51,7 @@\n                              minimum_linear_weight_norm=float(linear_weights.norm()))\n     identity = getattr(getattr(model.perceptualSpace, 'percept_store', None), 'identity', None)\n     identity_audit = None if identity is None else dict(**identity.audit(),\n-        projection_sha256=hashlib.sha256(identity.projection.cpu().numpy().tobytes()).hexdigest(),\n+        form_codes_sha256=hashlib.sha256(identity.store._basis.fixed_row_codes.cpu().numpy().tobytes()).hexdigest(),\n         rung0=getattr(model, '_last_rung0_identity_audit', None))\n     return dict(storage=storage_snapshot(model), roots=metrics(root),root_inputs=inputs,codes=books,\n                 unit_root_xor_interaction=interaction,interaction_order=order,\n"
+  },
+  {
+    "file": "test/test_accessible_mind.py",
+    "before": "test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "after": "test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe\n+++ test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe\n@@ -10,12 +10,12 @@\n     torch.save(store.state_dict(), checkpoint)\n     checkpoint.seek(0)\n     state = torch.load(checkpoint, weights_only=True)\n-    column = state[\"posting_codes\"]\n-    assert column.numel() == 384\n-    assert column.untyped_storage().nbytes() == column.numel() * column.element_size()\n+    assert not any(key.startswith(\"posting_\") for key in state)\n+    assert \"leaf_complete\" not in state\n     restored = LTM0(8, capacity=256)\n     restored.load_state_dict(state)\n     restored.load_semantic_extras(store.semantic_extras())\n+    restore_index(store, restored)\n     row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))\n     assert restored.leaf_terms(127, 0) == (3, 17)\n     assert restored.leaf_terms(row, 0) == (9,)\n"
+  },
+  {
+    "file": "test/test_accessible_mind.py",
+    "before": "test_index_checkpoint_compaction_and_codebook_remap",
+    "after": "test_index_checkpoint_compaction_and_codebook_remap",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_index_checkpoint_compaction_and_codebook_remap\n+++ test_index_checkpoint_compaction_and_codebook_remap\n@@ -8,6 +8,7 @@\n     restored = LTM0(8, capacity=8)\n     restored.load_state_dict(copy.deepcopy(store.state_dict()))\n     restored.load_semantic_extras(store.semantic_extras())\n+    restore_index(store, restored)\n     assert restored.rows_for_code(17) == (0, 1)\n     assert restored.clear_origin(store.ORIGIN_USER) == 1\n     assert restored.occurrence_of(0) == reference\n"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "after": "test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse\n+++ test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse\n@@ -3,8 +3,8 @@\n     clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))\n     row = f.store.write_clause(clause, trust=.7)\n     assert len(f.store) == 3 and f.store.ideas().tolist() == [0, 1, 2]\n-    assert f.store.refs[row].tolist() == [-1, -1, -1]\n-    assert len(f.store.parts) == 10  # four definitions, four operations, two named mints\n+    assert not hasattr(f.store, 'refs')\n+    assert len(f.store.parts) == 6  # four definitions, verb and lift; lowers are inline\n     # The factored target belongs to the open reading; only the fused point\n     # survives. Its numeric operands are the actual compound NP/VP fields.\n     assert clause.subject_word_id == f.words['cat'][0]\n"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "after": "test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_04_absolute_clauses_close_bottom_up_with_their_part_edges\n+++ test_04_absolute_clauses_close_bottom_up_with_their_part_edges\n@@ -5,6 +5,6 @@\n     clause = f.clause(('lift', 'he', ('verb', 'said', middle)))\n     row = f.store.write_clause(clause, trust=.8)\n     assert row == 2 and f.store.ideas().tolist() == [0, 1, 2]\n-    assert len(f.store.parts) == 14  # seven lexical definitions and seven operations\n+    assert len(f.store.parts) == 15  # seven definitions, seven operations, one argument definition\n     torch.testing.assert_close(f.store.meaning_of(0).roles[0], clause.children[0].children[0].point)\n     assert not hasattr(f.store, 'clause_derivation')"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "after": "test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_05_embedded_part_is_unasserted_and_propagates_operator_kind\n+++ test_05_embedded_part_is_unasserted_and_propagates_operator_kind\n@@ -7,6 +7,6 @@\n     outer = f.store.row(row)\n     verb = int(outer['refs'][1])\n     assert f.store.parts.refs[verb, 1] == child\n-    assert not len(f.store)\n+    assert len(f.store) == 2\n     assert f.store.row(('sym', child))['evidence'] == (0., 0.)\n     assert outer['evidence'] == pytest.approx((.6, 0.))"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_03_particular_subject_ends_an_idea",
+    "after": "test_03_particular_subject_ends_an_idea",
+    "before_decorators": [
+      "pytest.mark.parametrize('predicate', ['black', ('verb', 'is', 'animal')])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('predicate', ['black', ('verb', 'is', 'animal')])"
+    ],
+    "diff": "--- test_03_particular_subject_ends_an_idea\n+++ test_03_particular_subject_ends_an_idea\n@@ -2,4 +2,4 @@\n     f = SentenceFixture(monkeypatch)\n     row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))\n     assert f.store.ideas().tolist() == [0, row]\n-    assert len(f.store.parts) >= len(f.words) + 2+    assert len(f.store.parts) >= len(f.words) + 1"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_06_implication_keeps_two_unasserted_relation_operands",
+    "after": "test_06_implication_keeps_two_unasserted_relation_operands",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_06_implication_keeps_two_unasserted_relation_operands\n+++ test_06_implication_keeps_two_unasserted_relation_operands\n@@ -8,4 +8,4 @@\n     assert left['evidence'] == right['evidence'] == (0., 0.)\n     assert f.store.row(row)['readings'] == ('conditional',)\n     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))\n-    assert not len(f.store)+    assert len(f.store) == 3"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "after": "test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_implication_closes_bare_np_arguments_as_idea_clauses\n+++ test_implication_closes_bare_np_arguments_as_idea_clauses\n@@ -1,5 +1,5 @@\n def test_implication_closes_bare_np_arguments_as_idea_clauses(monkeypatch):\n     f = SentenceFixture(monkeypatch)\n     row = f.store.write_clause(f.clause(('implies', 'rain', 'wet')))\n-    assert f.store.ideas().tolist() == [0, 1]\n+    assert f.store.ideas().tolist() == [0, 1, 2]\n     assert f.store.row(row)['refs'].tolist() == [f.noun('rain'), f.noun('wet')]"
+  },
+  {
+    "file": "test/test_clause_acceptance.py",
+    "before": "test_07_equality_is_one_membership_in_a_singleton",
+    "after": "test_07_equality_is_one_membership_in_a_singleton",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_07_equality_is_one_membership_in_a_singleton\n+++ test_07_equality_is_one_membership_in_a_singleton\n@@ -4,7 +4,7 @@\n     count = len(f.store.parts)\n     first = f.store.write_clause(clause, trust=.7, evidence=(.7, 0.))\n     a, b = f.noun('morning-star'), f.noun('evening-star')\n-    assert len(f.store.parts) == count + 1 and not len(f.store)\n+    assert len(f.store.parts) == count + 1 and len(f.store) == 1\n     assert f.store.row(first)['refs'].tolist() == [a, b]\n     assert 'equality' in f.store.row(first)['readings']\n     assert f.store.parts.find(b, a) is None\n"
+  },
+  {
+    "file": "test/test_clause_closing.py",
+    "before": "test_three_slot_closing_registers_its_composite_operand",
+    "after": "test_three_slot_closing_registers_its_composite_operand",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_three_slot_closing_registers_its_composite_operand\n+++ test_three_slot_closing_registers_its_composite_operand\n@@ -25,4 +25,4 @@\n     row = store.write_clause(clause)\n     inner = store.parts.find(*entry.concept_ids[:2].tolist())\n     assert store.parts.refs[row[1], 0] == inner\n-    assert len(store) == 0 and store.parts.contains(inner)+    assert len(store) == 2 and store.parts.contains(inner)"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_end_row_has_shared_references_and_field_coordinates",
+    "after": "test_end_row_has_shared_references_and_field_coordinates",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_end_row_has_shared_references_and_field_coordinates\n+++ test_end_row_has_shared_references_and_field_coordinates\n@@ -1,6 +1,5 @@\n def test_end_row_has_shared_references_and_field_coordinates():\n     store = LTM0(4, capacity=8)\n-    assert store.refs.shape == (8, 3)\n-    assert store.refs.dtype == torch.int64\n-    assert bool((store.refs == -1).all())\n+    assert not hasattr(store, 'refs')\n+    assert 'refs' not in store.state_dict()\n     assert store.when.shape == (8, 4)"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_compound_idea_stores_only_fused_point_without_factored_target",
+    "after": "test_compound_idea_stores_only_fused_point_without_factored_target",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_compound_idea_stores_only_fused_point_without_factored_target\n+++ test_compound_idea_stores_only_fused_point_without_factored_target\n@@ -7,7 +7,7 @@\n     assert not bool(store.slots[row, 1:].any())\n     torch.testing.assert_close(store.meaning_of(row).roles[0], clause.point)\n     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]\n-    assert store.refs[row].tolist() == [-1, -1, -1]\n+    assert not hasattr(store, 'refs')\n     from Spaces import WhenEncoding\n     from Occurrence import document_digest\n     assert int(store.sentence_index[row]) == 0\n"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_recursive_absolute_clauses_each_write_one_idea",
+    "after": "test_recursive_absolute_clauses_each_write_one_idea",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_recursive_absolute_clauses_each_write_one_idea\n+++ test_recursive_absolute_clauses_each_write_one_idea\n@@ -8,4 +8,4 @@\n         assert store.write_clause(outer, trust=.7) == 2\n     assert store.ideas().tolist() == [0, 1, 2]\n     assert store.trust[:3].tolist() == pytest.approx([0., 0., .7])\n-    assert bool((store.refs[:3, 2] == -1).all())+    assert not hasattr(store, 'refs')"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "after": "test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it\n+++ test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it\n@@ -10,7 +10,7 @@\n     assert store.row(child_row)['evidence'] == (0.,0.)\n     assert store.row(row)['refs'].tolist() == [4,child_row[1]]\n     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row\n-    assert len(store) == 0 and len(store.parts) == 2\n+    assert len(store) == 2 and len(store.parts) == 2\n     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))\n     store.parts.truth_plus[row[1]] = 0\n     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_second_order_implication_names_two_part_symbols",
+    "after": "test_second_order_implication_names_two_part_symbols",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_second_order_implication_names_two_part_symbols\n+++ test_second_order_implication_names_two_part_symbols\n@@ -4,7 +4,7 @@\n     outer = Clause(left.meaning, relation='implies',\n         refs=(('clause',0),4,('clause',1)), children=(left,right))\n     row = store.write_clause(outer, evidence=(.9,0.))\n-    assert len(store) == 0 and len(store.parts) == 3\n+    assert len(store) == 3 and len(store.parts) == 3\n     first, second = store.relation_operands(row)\n     assert first['refs'].tolist() == [1,2] and second['refs'].tolist() == [1,4]\n     assert first['evidence'] == second['evidence'] == (0.,0.)\n"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "after": "test_clause_end_state_and_evidence_checkpoint_roundtrip",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_clause_end_state_and_evidence_checkpoint_roundtrip\n+++ test_clause_end_state_and_evidence_checkpoint_roundtrip\n@@ -8,4 +8,4 @@\n     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))\n     torch.testing.assert_close(restored.meaning_of(row).roles[0], clause.point)\n     assert restored.row(row)['evidence'] == pytest.approx((.6, 0.))\n-    torch.testing.assert_close(restored.refs, store.refs)+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_observation_writer_accepts_a_completed_field_without_a_program",
+    "after": "test_observation_writer_accepts_a_completed_field_without_a_program",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_observation_writer_accepts_a_completed_field_without_a_program\n+++ test_observation_writer_accepts_a_completed_field_without_a_program\n@@ -2,4 +2,4 @@\n     from Models import _append_observed_meaning\n     store,_=clause_store();field=part_clause()\n     row=_append_observed_meaning(store,field)\n-    assert len(store)==0 and store.row(row)['refs'].tolist()==[1,2]+    assert len(store)==1 and store.row(row)['refs'].tolist()==[1,2]"
+  },
+  {
+    "file": "test/test_clause_storage.py",
+    "before": "test_full_store_can_update_an_existing_relation",
+    "after": "test_full_store_can_update_an_existing_relation",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_full_store_can_update_an_existing_relation\n+++ test_full_store_can_update_an_existing_relation\n@@ -1,7 +1,7 @@\n def test_full_store_can_update_an_existing_relation():\n     store,points=clause_store()\n     row=store.write_clause(part_clause(),evidence=(.2,0.))\n-    for position in range(store.capacity):\n+    for position in range(store.capacity - len(store)):\n         store.append_idea(points[1],sentence_index=position)\n     assert store.write_clause(part_clause(),evidence=(.8,0.))==row\n     assert len(store)==store.capacity and len(store.parts)==1\n"
+  },
+  {
+    "file": "test/test_concept_forgetting.py",
+    "before": "test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "after": "test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_live_reference_preserves_weak_candidate_and_keeps_a_representative\n+++ test_live_reference_preserves_weak_candidate_and_keeps_a_representative\n@@ -3,8 +3,8 @@\n     weak, _ = concept(cs, magnitude=.1)\n     strong, _ = concept(cs, magnitude=.9)\n     store = LTM0(8, capacity=4)\n-    store.append_idea(torch.ones(8), sentence_index=0)\n-    store.refs[0, 0] = weak\n+    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),\n+        role_refs=(('sym', weak), None, None)), sentence_index=0)\n     report = reclaim_concepts(cs, store)\n     assert report['retired'] == (strong,)\n     assert cs._csw_row_of(weak) is not None"
+  },
+  {
+    "file": "test/test_concept_forgetting.py",
+    "before": "test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "after": "test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "before_decorators": [
+      "torch.no_grad()"
+    ],
+    "after_decorators": [
+      "torch.no_grad()"
+    ],
+    "diff": "--- test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts\n+++ test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts\n@@ -10,8 +10,8 @@\n     cs.similarity_codebook.W[rows[1], 1] = .05  # A different direction, not an exact duplicate.\n     cs.add_part(defined, 42)\n     store = cs._closed_clause_store()\n-    stored = store.append_idea(torch.ones(8), sentence_index=0)\n-    store.refs[stored, 0] = referenced\n+    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),\n+        role_refs=(('sym', referenced), None, None)), sentence_index=0)\n     cs._concept_allocator.parts.add(posted, referenced)\n     layer.add_edge(rows[6], rows[5], 0.)  # Zero coefficients still have sparse placement.\n     layer.features.add_edge(rows[7], 0, 0.)\n"
+  },
+  {
+    "file": "test/test_definition_taxonomy.py",
+    "before": "test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "after": "test_closing_uses_the_ordered_object_parent_and_deduplicates_it",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_closing_uses_the_ordered_object_parent_and_deduplicates_it\n+++ test_closing_uses_the_ordered_object_parent_and_deduplicates_it\n@@ -19,4 +19,4 @@\n     assert store.parts.refs[row[1]].tolist() == [first, second]\n     assert first in cs.taxonomy_children(second)\n     assert store.write_clause(source) == row\n-    assert len(store) == 0+    assert len(store) == 1"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "before": "test_protected_and_live_roots_survive_and_block_unsafe_target",
+    "after": "test_protected_and_live_roots_survive_and_block_unsafe_target",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_protected_and_live_roots_survive_and_block_unsafe_target\n+++ test_protected_and_live_roots_survive_and_block_unsafe_target\n@@ -7,5 +7,5 @@\n     with pytest.warns(RuntimeWarning, match='low water'):\n         report = forget(store, config(), document_boundary=True, retained_occurrences=roots)\n     assert not report['target_reached'] and len(store) == 8\n-    for key in ('slots', 'refs', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):\n+    for key in ('slots', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):\n         torch.testing.assert_close(before[key], store.state_dict()[key])"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "before": "linked_store",
+    "after": "linked_store",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- linked_store\n+++ linked_store\n@@ -7,7 +7,6 @@\n     roles = torch.tensor([[1., 0., 0., 0.], [0., 1., 0., 0.], [1., 0., 0., 0.]])\n     parent = store.append_meaning(ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),\n         role_refs=(ref, ('sym', 27), None)), trust=.9, stream=0, sentence_index=1)\n-    store.refs[parent, 0] = int(store.address_keys[child])\n     append(store, 2, trust=.7)\n     append(store, 3, trust=.8)\n     return store, ref, store.occurrence_of(parent)"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "before": "test_idea_coarsens_parent_and_relation_cascades",
+    "after": "test_idea_coarsens_parent_and_releases_its_child_next_pass",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_idea_coarsens_parent_and_relation_cascades\n+++ test_idea_coarsens_parent_and_releases_its_child_next_pass\n@@ -1,15 +1,22 @@\n-def test_idea_coarsens_parent_and_relation_cascades():\n+def test_idea_coarsens_parent_and_releases_its_child_next_pass():\n     for relation in (False, True):\n         store, child, parent = linked_store(child_is_relation=relation)\n         root = store.meaning_of(1)\n         cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)\n+        with pytest.warns(RuntimeWarning, match='low water'):\n+            report = forget(store, cfg, document_boundary=True)\n+        assert store.index_of_row(child[2]) is not None\n+        assert report['cascade'] == 0 and bool(store.forget_pending)\n+        if relation:\n+            assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0\n+        else:\n+            index = store.index_of_row(parent[2])\n+            assert index is not None and not hasattr(store, 'refs')\n+            assert store.meaning_of(index).role_refs[0] is None\n+            torch.testing.assert_close(store.meaning_of(index).roles, root.roles)\n+            assert report['coarsened'] == 1\n         report = forget(store, cfg, document_boundary=True)\n         assert store.index_of_row(child[2]) is None\n-        if relation:\n-            assert store.index_of_row(parent[2]) is None and report['cascade'] == 1\n-        else:\n-            index = store.index_of_row(parent[2])\n-            assert index is not None and store.refs[index, 0] == -1\n-            assert store.meaning_of(index).role_refs[0] is None\n-            torch.testing.assert_close(store.meaning_of(index).roles, root.roles)\n-            assert report['coarsened'] == 1+        assert report['cascade'] == 0 and report['target_reached']\n+        if not relation:\n+            torch.testing.assert_close(store.meaning_of(store.index_of_row(parent[2])).roles, root.roles)"
+  },
+  {
+    "file": "test/test_forgetting.py",
+    "before": "test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "after": "test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads\n+++ test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads\n@@ -41,8 +41,10 @@\n         document('first', ['cat', 'dog', 'bird', 'horse'] * 2)\n         report = store.last_forgetting_report\n         assert int(store.forget_passes) == 1\n-        assert report['before'] >= 8 and report['after'] == len(store) == 6\n-        assert report['target_reached']\n+        assert report['before'] >= 8 and report['after'] == len(store)\n+        assert 6 <= len(store) < report['before']\n+        assert report['target_reached'] == (len(store) == 6)\n+        assert bool(store.forget_pending) == (len(store) > 6)\n         messages = capsys.readouterr().out\n         assert f'[LTM forgetting] {report}' in messages\n         print(f'[LTM forgetting] {report}')\n"
+  },
+  {
+    "file": "test/test_identity_rows.py",
+    "before": "test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "after": "test_forgetting_and_reinterpretation_never_refold_a_native_identity",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_forgetting_and_reinterpretation_never_refold_a_native_identity\n+++ test_forgetting_and_reinterpretation_never_refold_a_native_identity\n@@ -5,8 +5,8 @@\n     second, address2, _ = close(resolver,a[0],a[6],'bind',(first,),document='fold',sentence=1)\n     # Read only the surviving occurrence, as after forgetting. Its working\n     # interpretation must leave the original native code intact.\n-    original = store.slots.clone(), store.refs.clone()\n+    original = store.slots.clone(), store.parts.refs.clone()\n     resolver.individuals(resolver.accessible((second,)))\n     torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])\n     torch.testing.assert_close(store.slots,original[0],rtol=0,atol=0)\n-    torch.testing.assert_close(store.refs,original[1],rtol=0,atol=0)+    torch.testing.assert_close(store.parts.refs,original[1],rtol=0,atol=0)"
+  },
+  {
+    "file": "test/test_independent_components.py",
+    "before": "test_native_admission_optimizer_ownership_and_checkpoint",
+    "after": "test_native_admission_optimizer_ownership_and_checkpoint",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_native_admission_optimizer_ownership_and_checkpoint\n+++ test_native_admission_optimizer_ownership_and_checkpoint\n@@ -31,9 +31,11 @@\n             meaning_pairs=derived.meaning_pairs, pole_stride=derived.reserved_pairs)\n         from ClauseRow import attach_clause_index\n         attach_clause_index(model, owner._closed_clause_store(), owner)\n-        from test_reference_close import close\n-        close(columns.reference_close, code[0], torch.zeros_like(code[0]), 'mint', (),\n-              document='native-columns', sentence=0)\n+        # This is a native-column checkpoint fixture. A determiner's mint\n+        # opens an MTM token; native concepts are minted explicitly here.\n+        from IdentityRows import mint\n+        identity = mint(owner, code[0])\n+        owner._closed_clause_store().parts.add(identity, event, truth_plus=1.)\n         identity, = columns.individual_ids\n         assert _concept_alloc_of(owner).order_of(identity) == 1\n         assert owner._csw_row_of(identity) != event_row\n"
+  },
+  {
+    "file": "test/test_joint_objectives.py",
+    "before": "test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "after": "test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "before_decorators": [
+      "pytest.mark.slow"
+    ],
+    "after_decorators": [
+      "pytest.mark.slow"
+    ],
+    "diff": "--- test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n+++ test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n@@ -24,7 +24,7 @@\n     m.inputSpace.data.has_supervised_outputs = False\n     optimizer = m.getOptimizer(lr=1e-5)\n     disc = m.symbolSpace.expectation\n-    assert disc is not None and not m.legacy_prediction_enabled\n+    assert disc is not None and not hasattr(m, 'legacy_prediction_enabled')\n     predictor = list(disc._inter_predictor.parameters())\n     observed_predictor_gradient = []\n     backward = m._backward_training_loss\n@@ -53,7 +53,8 @@\n             assert result is not None\n             changed = [not torch.equal(p, old) for p, old in zip(predictor, before)]\n             assert any(changed) if weight else not any(changed)\n-            assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)\n+            assert all(not p.requires_grad for b in range(len(disc._inter_context))\n+                       for _, p, _ in disc._read_context(b)[0])\n         assert any(observed_predictor_gradient)\n     finally:\n         m.inputSpace.data.has_supervised_outputs = had_outputs\n"
+  },
+  {
+    "file": "test/test_learning_readiness.py",
+    "before": "test_native_progress_and_trained_artifact_evaluation_path",
+    "after": "test_native_progress_and_trained_artifact_evaluation_path",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_native_progress_and_trained_artifact_evaluation_path\n+++ test_native_progress_and_trained_artifact_evaluation_path\n@@ -77,10 +77,19 @@\n         assert loaded._fineweb_training_progress['sentences'] == 3\n     finally:\n         loaded.End()\n-    broken = torch.load(path, map_location='cpu', weights_only=False)\n-    key = next(k for k in broken['state_dict'] if k.endswith('.posting_codes'))\n-    broken['state_dict'][key] = broken['state_dict'][key].reshape(1, -1)\n-    corrupt = tmp_path/'invalid-index.ckpt'\n-    torch.save(broken, corrupt)\n-    with pytest.raises(ValueError, match='posting_codes'):\n-        load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)+    owner_index = next(i for i, space in enumerate(model.conceptualSpaces)\n+                       if space is model._concept_owner())\n+    for damage, message in (\n+            ('value', 'Part arguments must be positive native symbol handles'),\n+            ('shape', 'two symbol references')):\n+        broken = torch.load(path, map_location='cpu', weights_only=False)\n+        parts = broken['structural_extras']['conceptual_spaces'][owner_index]['allocator']['part_store']\n+        if damage == 'value':\n+            row = int((parts['refs'][:, 0] > 0).nonzero()[0, 0])\n+            parts['refs'][row, 1] = 0\n+        else:\n+            parts['refs'] = parts['refs'][:, :1].clone()\n+        corrupt = tmp_path/f'invalid-part-{damage}.ckpt'\n+        torch.save(broken, corrupt)\n+        with pytest.raises(ValueError, match=message):\n+            load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)"
+  },
+  {
+    "file": "test/test_lies_can_be_learned.py",
+    "before": "test_conflicting_claim_preserves_support_and_counterevidence",
+    "after": "test_conflicting_claim_preserves_support_and_counterevidence",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_conflicting_claim_preserves_support_and_counterevidence\n+++ test_conflicting_claim_preserves_support_and_counterevidence\n@@ -2,6 +2,6 @@\n     store, _ = clause_store()\n     row = store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))\n     assert store.write_clause(part_clause(polarity=False), trust=.6, evidence=(0., .6)) == row\n-    assert len(store) == 0 and len(store.parts) == 1\n+    assert len(store) == 2 and len(store.parts) == 1\n     assert store.row(row)['evidence'] == pytest.approx((.8, .6))\n     assert min(store.row(row)['evidence']) == pytest.approx(.6)"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "before": "snapshot",
+    "after": "snapshot",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- snapshot\n+++ snapshot\n@@ -1,5 +1,5 @@\n def snapshot(resolver):\n     store = resolver.store\n-    return (store.refs.clone(), store.slots.clone(), store.when.clone(),\n+    return (part_references(store), store.slots.clone(), store.when.clone(),\n             {k: v.clone() for k, v in store.parts.state_dict().items()},\n             resolver.components.owner.similarity_codebook.W.detach().clone())"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "before": "test_bound_use_reads_as_its_introduction_without_rewriting_rows",
+    "after": "test_bound_use_reads_as_its_introduction_without_rewriting_rows",
+    "before_decorators": [
+      "pytest.mark.parametrize('mode', ('bind', 'pronoun', 'elision'))"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('mode', ('bind', 'pronoun', 'elision'))"
+    ],
+    "diff": "--- test_bound_use_reads_as_its_introduction_without_rewriting_rows\n+++ test_bound_use_reads_as_its_introduction_without_rewriting_rows\n@@ -4,7 +4,7 @@\n     pool = resolver.components.owner.mtm\n     introduction = store.occurrence_of(store.index_of_row(address))\n     original = pool.entries[introduction]\n-    before = store.refs.clone(), store.slots.clone()\n+    before = part_references(store), store.slots.clone()\n     use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)\n     occurrence = store.occurrence_of(use)\n     assert plan['items'][0]['reference'] == introduction\n@@ -13,8 +13,8 @@\n     assert entry.occurrences == (introduction, occurrence) and entry.count == 2\n     assert entry.kind == store.raw_meaning_of(store.index_of_row(address)).role_refs[0][1]\n     assert entry.when > original.when\n-    for current, old in zip((store.refs, store.slots), before):\n-        torch.testing.assert_close(current[:use], old[:use], rtol=0, atol=0)\n+    assert_part_references(store, before[0])\n+    torch.testing.assert_close(store.slots[:use], before[1][:use], rtol=0, atol=0)\n     frame = SituationFrame.from_row(store.row(use))\n     # Both the direct row and activation read use the retained token.\n     for held in (frame, replace(first, activations=((occurrence, None, 0),))):\n"
+  },
+  {
+    "file": "test/test_medium_term_memory.py",
+    "before": "test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "after": "test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token\n+++ test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token\n@@ -11,7 +11,8 @@\n     retained_rows = len(store)\n     # Admission may write new rows; eviction at commit must not touch them.\n     third, _, plan = close(resolver, a[2], a[6], 'mint', (), document='lru', sentence=3)\n-    for current, before in zip((store.refs, store.slots, store.when), old[:3]):\n+    assert_part_references(store, old[0])\n+    for current, before in zip((store.slots, store.when), old[1:3]):\n         torch.testing.assert_close(current[:retained_rows], before[:retained_rows], rtol=0, atol=0)\n     assert tokens[0] in pool.entries and tokens[1] not in pool.entries\n     assert pool.token_of(tokens[1]) is None\n"
+  },
+  {
+    "file": "test/test_negative_expectation.py",
+    "before": "test_declared_not_is_a_thought_act_not_an_observation",
+    "after": "test_declared_not_is_a_thought_act_not_an_observation",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_declared_not_is_a_thought_act_not_an_observation\n+++ test_declared_not_is_a_thought_act_not_an_observation\n@@ -13,7 +13,7 @@\n         result = model.run_selected_thought(request,work_budget=32)\n     assert result.result.semantic_id == 'not'\n     assert evidence_pair(result.meaning) == (.7,.3)\n-    assert len(store) == 1\n+    assert len(store) == 2\n     edge = store.parts.find(part[1], whole[1])\n     # The common Part owner also retains the fixture's earlier affirmation.\n     assert store.row(('sym', edge))['evidence'] == pytest.approx((1.,.3))\n"
+  },
+  {
+    "file": "test/test_nested_retention.py",
+    "before": "test_origin_replacement_retains_reachable_content_without_fact_authority",
+    "after": "test_origin_replacement_retains_reachable_content_without_fact_authority",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_origin_replacement_retains_reachable_content_without_fact_authority\n+++ test_origin_replacement_retains_reachable_content_without_fact_authority\n@@ -23,5 +23,6 @@\n     assert kept[\"kind\"] == \"unverified\" and kept[\"trust\"] == 0\n     assert kept[\"text\"] == \"reported content\"\n     assert kept[\"meaning\"].scope == ((\"quote\", \"inner\"),)\n-    assert store.meaning_of(_index(store, inner_ref)).mode == \"interrogative\"\n+    assert store.row(_index(store, inner_ref))[\"kind\"] == \"question\"\n+    assert store.row(_index(store, inner_ref))[\"evidence\"] == (0., 0.)\n     assert store.clear_origin(store.ORIGIN_USER) == 0"
+  },
+  {
+    "file": "test/test_operators_final.py",
+    "before": "test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "after": "test_definition_sentence_joins_identities_beside_the_interpret_definition",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_definition_sentence_joins_identities_beside_the_interpret_definition\n+++ test_definition_sentence_joins_identities_beside_the_interpret_definition\n@@ -3,7 +3,7 @@\n     f = SentenceFixture(monkeypatch)\n     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))\n     first = f.store.write_clause(clause, document_key='definition', sentence_index=1)\n-    assert len(f.store) == 0 and first[0] == 'sym'\n+    assert len(f.store) == 1 and first[0] == 'sym'\n     row = f.store.row(first)\n     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]\n     assert row['readings'] == ('equality',)\n"
+  },
+  {
+    "file": "test/test_operators_final_b.py",
+    "before": "forced_prefix_certificate",
+    "after": "forced_prefix_certificate",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- forced_prefix_certificate\n+++ forced_prefix_certificate\n@@ -49,7 +49,7 @@\n         model,_,data=_fresh_model('data/XOR_grammar.xml')\n         try:\n             derived=model._concept_owner().similarity_codebook.mereology\n-            assert derived.context_width == 128 and derived.symbol_centroid\n+            assert derived.context_width == 128\n             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))\n             batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)\n             inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]\n"
+  },
+  {
+    "file": "test/test_operators_round3a.py",
+    "before": "test_trust_to_pair_and_negation",
+    "after": "test_trust_to_pair_and_negation",
+    "before_decorators": [
+      "pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),\n    (.7,False,(0.,.7)),(-.4,False,(.4,0.)),(0.,True,(0.,0.))])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),\n    (.7,False,(.7,0.)),(-.4,False,(0.,.4)),(0.,True,(0.,0.))])"
+    ],
+    "diff": ""
+  },
+  {
+    "file": "test/test_operators_round4a0.py",
+    "before": "test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "after": "test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_references_and_content_keys_survive_compaction_and_checkpoint\n+++ test_references_and_content_keys_survive_compaction_and_checkpoint\n@@ -6,12 +6,11 @@\n     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,\n                              role_refs=(store.occurrence_of(source), None, None))\n     target = store.append_meaning(child, kind='observation', document_key='reference')\n-    store.refs[target, 0] = store.address_keys[source]\n     reference = store.occurrence_of(source)\n     assert store.clear_origin(store.ORIGIN_USER) == 1\n     assert store._index_occurrences[reference] == 0\n     assert store.meaning_of(1).role_refs[0] == reference\n-    assert int(store.refs[1, 0]) == int(store.address_keys[0])\n+    assert not hasattr(store, 'refs')\n     restored = LTM0(4, 8)\n     restored.load_state_dict(copy.deepcopy(store.state_dict()))\n     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))\n"
+  },
+  {
+    "file": "test/test_operators_round4a0.py",
+    "before": "test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "after": "test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_legacy_checkpoint_rekeys_native_and_typed_edges\n+++ test_legacy_checkpoint_rekeys_native_and_typed_edges\n@@ -20,6 +20,7 @@\n     state['_next_occurrence'] = torch.tensor(2)\n     state['_occurrence_namespace'] = torch.tensor(list(bytes.fromhex(namespace)), dtype=torch.uint8)\n     state['row_ids'][:2] = torch.tensor([2**62, 2**62 + 1])\n+    state['refs'] = torch.full((store.capacity, 3), -1, dtype=torch.long)\n     state['refs'][target, 0] = 2**62\n     state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)\n     state['stream'][0,0] = state['stream'][1,1] = True\n@@ -28,7 +29,7 @@\n     restored.load_semantic_extras(extras)\n     reference = restored.occurrence_of(0)\n     assert restored.meaning_of(1).role_refs[0] == reference\n-    assert int(restored.refs[1, 0]) == reference[2]\n+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()\n     assert restored.stream[:2].tolist() == [[True, False], [False, True]]\n     assert restored.remap_legacy_references({'history': (old_ref,)}) == {'history': (reference,)}\n     from Spaces import WhenEncoding\n"
+  },
+  {
+    "file": "test/test_part_closing.py",
+    "before": "test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "after": "test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes\n+++ test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes\n@@ -4,7 +4,7 @@\n     before = len(f.cs._concept_allocator.parts)\n     location = f.store.write_clause(clause, evidence=(.7, .2))\n     assert location[0] == 'sym'\n-    assert len(f.store) == 0\n+    assert len(f.store) == 1\n     assert len(f.store.parts) == before + 1\n     row = f.store.row(location)\n     assert row['refs'].tolist() == [f.noun('a'), f.noun('b')]\n"
+  },
+  {
+    "file": "test/test_part_closing.py",
+    "before": "test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "after": "test_absolute_close_keeps_only_the_concept_and_derivation_pairs",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_absolute_close_keeps_only_the_concept_and_derivation_pairs\n+++ test_absolute_close_keeps_only_the_concept_and_derivation_pairs\n@@ -8,6 +8,6 @@\n     assert not f.store.slots[row, 1:].any()\n     root = f.store.raw_meaning_of(row).role_refs[0]\n     assert root[0] == 'sym' and f.store.parts.contains(root[1])\n-    assert f.store.refs[row].eq(-1).all()\n+    assert not hasattr(f.store, 'refs')\n     assert len(f.store.parts) == before + 2\n     assert not any(key.startswith('_individual') for key, _ in f.store.meaning_of(row).bindings)"
+  },
+  {
+    "file": "test/test_part_read.py",
+    "before": "test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "after": "test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_postings_rebuild_from_part_without_inverting_the_narrowed_point\n+++ test_postings_rebuild_from_part_without_inverting_the_narrowed_point\n@@ -15,10 +15,8 @@\n     f.store.slots[row, 0].copy_(original)\n     state = f.store.state_dict()\n     extras = f.store.semantic_extras()\n-    # A stale serialized cache is rebuilt from the retained source.\n-    state['posting_codes'] = torch.full_like(state['posting_codes'], 999)\n-    # Keep its sorted/unique wire contract while changing every term.\n-    state['posting_codes'] += torch.arange(len(state['posting_codes']))\n+    # Retrieval postings are regenerated after the complete owner loads.\n+    assert not any(key.startswith('posting_') for key in state)\n     f.store.load_state_dict(state)\n     f.store.load_semantic_extras(extras)\n     configure_model_index(f.model, f.store)\n"
+  },
+  {
+    "file": "test/test_part_read.py",
+    "before": "test_closing_excludes_its_own_witness_without_restricting_copular_reads",
+    "after": "test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_closing_excludes_its_own_witness_without_restricting_copular_reads\n+++ test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice\n@@ -1,4 +1,4 @@\n-def test_closing_excludes_its_own_witness_without_restricting_copular_reads():\n+def test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice():\n     from dataclasses import replace\n     from Meaning import ConceptualMeaning\n     from ThoughtReferences import bindings, open_slots, question, with_slots\n@@ -20,11 +20,10 @@\n     closing = closing_question(raw, clause, store=store, written_rows={id(clause): source})\n     assert closing is not None and open_slots(closing) == (('referent', 0),)\n     assert closing.role_refs == raw.role_refs\n-    # Ordinary interpretation still reads the witnessed copular complement.\n-    assert store.meaning_of(source).role_refs[0] == ('sym', answer)\n-    # The same observed complement can resolve a different occurrence.\n+    # Equality evidence alone cannot replace the resolver's choice.\n+    assert store.meaning_of(source).role_refs[0] is None\n     resolved = store.meaning_of(earlier)\n-    assert not open_slots(resolved)\n-    assert resolved.role_refs[0] == ('sym', answer)\n-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)\n+    assert open_slots(resolved) == (('referent', 0),)\n+    assert resolved.role_refs[0] is None\n+    assert not bindings(resolved).get('_thought_witnesses')\n     assert store.raw_meaning_of(source).role_refs == raw.role_refs"
+  },
+  {
+    "file": "test/test_part_read.py",
+    "before": "test_forward_name_accepts_a_witnessed_occurrence_complement",
+    "after": "test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement",
+    "before_decorators": [
+      "pytest.mark.parametrize('relative', (False, True))"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('relative', (False, True))"
+    ],
+    "diff": "--- test_forward_name_accepts_a_witnessed_occurrence_complement\n+++ test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement\n@@ -1,4 +1,4 @@\n-def test_forward_name_accepts_a_witnessed_occurrence_complement(relative):\n+def test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement(relative):\n     from dataclasses import replace\n     from Meaning import ConceptualMeaning\n     from ThoughtReferences import bindings, open_slots, question, with_slots\n@@ -22,8 +22,8 @@\n                                   kind='question', evidence=(0., 0.), sentence_index=2)\n     raw = store.raw_meaning_of(pending)\n     resolved = store.meaning_of(pending)\n-    assert not open_slots(resolved)\n-    assert not bindings(resolved).get('_forward_references')\n-    assert resolved.role_refs[0] == reference\n-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)\n+    assert open_slots(resolved) == (('referent', 0),)\n+    assert bindings(resolved)['_forward_references'] == ((0, name),)\n+    assert resolved.role_refs[0] is None and resolved.role_refs[2] == reference\n+    assert not bindings(resolved).get('_thought_witnesses')\n     assert store.raw_meaning_of(pending).role_refs == raw.role_refs"
+  },
+  {
+    "file": "test/test_predicate_identity.py",
+    "before": "test_first_three_slot_predicate_occurrence",
+    "after": "test_first_three_slot_predicate_occurrence",
+    "before_decorators": [
+      "pytest.mark.parametrize('relation', ['part', 'implies'])",
+      "pytest.mark.parametrize('use_registry', [False, True])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('relation', ['part', 'implies'])",
+      "pytest.mark.parametrize('use_registry', [False, True])"
+    ],
+    "diff": "--- test_first_three_slot_predicate_occurrence\n+++ test_first_three_slot_predicate_occurrence\n@@ -16,6 +16,8 @@\n     assert f.store.parts.refs.shape[-1] == 2\n     arguments = f.store.row(row)['refs'].tolist()\n     assert reference[1] not in arguments\n-    for argument, source in zip(arguments, (left, right)):\n-        torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])\n+    for role, argument, source in zip((0, 2), arguments, (left, right)):\n+        retained = f.store.raw_meaning_of(source)\n+        assert retained.role_refs[0] == ('sym', argument)\n+        torch.testing.assert_close(retained.roles[0], leaves[role])\n     assert f.cs._csw_row_of(reference[1]) is None"
+  },
+  {
+    "file": "test/test_reasoning_cde_model.py",
+    "before": "TestReasoningCDEModel.test_training_step_uses_the_normal_policy_configuration",
+    "after": "TestReasoningCDEModel.test_training_step_uses_the_normal_policy_configuration",
+    "before_decorators": [
+      "pytest.mark.slow",
+      "pytest.mark.usefixtures(\"eager_reading\")"
+    ],
+    "after_decorators": [
+      "pytest.mark.slow",
+      "pytest.mark.usefixtures(\"eager_reading\")"
+    ],
+    "diff": "--- TestReasoningCDEModel.test_training_step_uses_the_normal_policy_configuration\n+++ TestReasoningCDEModel.test_training_step_uses_the_normal_policy_configuration\n@@ -1,4 +1,5 @@\n def test_training_step_uses_the_normal_policy_configuration(self):\n+        self.m.dispatch_per_row_reset([True])\n         opt = self.m.getOptimizer(lr=0.01)\n         self.m.runEpoch(optimizer=opt, batchSize=6, split='train',\n                         max_batches=1)"
+  },
+  {
+    "file": "test/test_reference_arrivals.py",
+    "before": "test_arrival_bind_refines_and_reads_three_through_the_token",
+    "after": "test_arrival_bind_refines_and_reads_three_through_the_token",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_arrival_bind_refines_and_reads_three_through_the_token\n+++ test_arrival_bind_refines_and_reads_three_through_the_token\n@@ -7,7 +7,7 @@\n     pending, _ = keep(resolver, named(a[0], words['x']))\n     token = store.occurrence_of(pending)\n     frame = SituationFrame.from_row(store.row(pending))\n-    raw, refs = store.slots.clone(), store.refs.clone()\n+    raw, refs = store.slots.clone(), part_references(store)\n     arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)\n     entry = resolver.components.owner.mtm.entries[token]\n     assert entry.kind == words['three'] and entry.count == 3\n@@ -27,4 +27,4 @@\n     terms, _, incomplete = expression_components(store, (token,), max_records=8, work=QueryWorkBudget(8))\n     assert not incomplete and terms[token]['head_reference'] == ('sym', words['three'])\n     torch.testing.assert_close(store.slots[:pending+1], raw[:pending+1], rtol=0, atol=0)\n-    torch.testing.assert_close(store.refs[:pending+1], refs[:pending+1], rtol=0, atol=0)+    assert_part_references(store, refs)"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "before": "current_identities",
+    "after": "current_identities",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- current_identities\n+++ current_identities\n@@ -1,10 +1,10 @@\n def current_identities(resolver, frames):\n     \"\"\"Observe the working partition without editing a row or a bank code.\"\"\"\n     store, bank = resolver.store, resolver.components.owner.similarity_codebook\n-    before = store.refs.clone(), store.slots.clone(), bank.W.detach().clone()\n+    before = store.parts.refs.clone(), store.slots.clone(), bank.W.detach().clone()\n     result = {address: identity\n               for identity, item in resolver.individuals(resolver.accessible(frames)).items()\n               for address in item['occurrences']}\n-    for actual, expected in zip((store.refs, store.slots, bank.W), before):\n+    for actual, expected in zip((store.parts.refs, store.slots, bank.W), before):\n         torch.testing.assert_close(actual, expected, rtol=0, atol=0)\n     return result"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "before": "test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "after": "test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised\n+++ test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised\n@@ -1,10 +1,10 @@\n def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():\n     resolver, store, atoms = fixture()\n     frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (), document='a', sentence=0)\n-    before = store.refs.clone()\n+    before = part_references(store)\n     _, missing, plan = close(resolver, torch.zeros(12), atoms[6], 'pronoun', (), document='b', sentence=0)\n     assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 0\n     assert tuple(resolver.components.owner.mtm.entries) == (store.occurrence_of(store.index_of_row(address)),)\n-    assert int(store.refs[store.index_of_row(missing), 0]) == -1\n-    torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])\n+    assert not hasattr(store, 'refs')\n+    assert_part_references(store, before)\n     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "before": "test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "after": "test_empty_close_has_no_policy_gradient_or_store_side_effect",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_empty_close_has_no_policy_gradient_or_store_side_effect\n+++ test_empty_close_has_no_policy_gradient_or_store_side_effect\n@@ -8,9 +8,9 @@\n     written = {}\n     row = store.write_clause(kept, document_key='field', sentence_index=0, written_rows=written)\n     metadata = dict(store._semantic_rows)\n-    required, refs = store.metadata_required.clone(), store.refs.clone()\n+    required, refs = store.metadata_required.clone(), store.parts.refs.clone()\n     resolver.commit(plan, row, written, document='field', position=0, training=True)\n     assert store._semantic_rows == metadata and resolver.last_audit == ()\n     torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)\n-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)\n+    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)\n     assert not resolver.components.individual_ids and not resolver._participants()"
+  },
+  {
+    "file": "test/test_reference_close.py",
+    "before": "test_kept_journal_supplies_np_content_predicate_and_positional_provenance",
+    "after": "test_kept_journal_supplies_np_content_predicate_and_positional_provenance",
+    "before_decorators": [
+      "pytest.mark.parametrize('description_order', (0, 2))"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('description_order', (0, 2))"
+    ],
+    "diff": "--- test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n+++ test_kept_journal_supplies_np_content_predicate_and_positional_provenance\n@@ -47,5 +47,5 @@\n     restored = LTM0(8, capacity=64)\n     restored.load_state_dict(f.store.state_dict())\n     restored.load_semantic_extras(f.store.semantic_extras())\n-    torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)\n+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()\n     torch.testing.assert_close(restored.slots, f.store.slots, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_index.py",
+    "before": "test_only_the_inverted_index_is_owned_or_checkpointed",
+    "after": "test_inverted_index_is_derived_after_checkpoint_restore",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_only_the_inverted_index_is_owned_or_checkpointed\n+++ test_inverted_index_is_derived_after_checkpoint_restore\n@@ -1,4 +1,4 @@\n-def test_only_the_inverted_index_is_owned_or_checkpointed():\n+def test_inverted_index_is_derived_after_checkpoint_restore():\n     store = LTM0(4, capacity=8)\n     store.configure_leaf_index(read=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))\n     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))\n@@ -10,5 +10,7 @@\n     restored = LTM0(4, capacity=8)\n     restored.load_state_dict(copy.deepcopy(store.state_dict()))\n     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))\n+    restored.configure_leaf_index(read=store._index_read)\n+    restored.reindex_meanings()\n     assert restored.rows_for_code(2) == (a,)\n     assert restored.rows_for_code(3) == (b,)"
+  },
+  {
+    "file": "test/test_reference_mentions.py",
+    "before": "test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "after": "test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph\n+++ test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph\n@@ -7,7 +7,7 @@\n     resolver.commit(plan, row, written, document='pending', position=0, training=False)\n     original = store.meaning_of(row)\n     assert resolver._mentions[store.occurrence_of(row)]\n-    rows, refs = store.slots.clone(), store.refs.clone()\n+    rows, refs = store.slots.clone(), store.parts.refs.clone()\n     # A subsequent known binding refers to this same occurrence and role.\n     pending = question(replace(original, role_refs=(None, None, None)),\n                        (('referent', 0),))\n@@ -27,4 +27,4 @@\n     resolver.resolved(row, 0, ('sym', correct), errors)\n     assert errors._terms['expectation.reference_mentions']['count'] == 1\n     torch.testing.assert_close(store.slots, rows, rtol=0, atol=0)\n-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)+    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_reference_occurrence_views.py",
+    "before": "test_occurrence_candidates_use_retained_part_participants",
+    "after": "test_occurrence_candidates_use_retained_part_participants",
+    "before_decorators": [
+      "pytest.mark.parametrize('kind,other', ((0, 1), (1, 2), (2, 3), (3, 0)))"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('kind,other', ((0, 1), (1, 2), (2, 3), (3, 0)))"
+    ],
+    "diff": "--- test_occurrence_candidates_use_retained_part_participants\n+++ test_occurrence_candidates_use_retained_part_participants\n@@ -5,7 +5,7 @@\n     address = f.identities[target]\n     assert address == f.store.occurrence_of(target)\n     assert not f.cs.components.individual_ids\n-    before = f.store.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()\n+    before = f.store.parts.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()\n     records = f.resolver.accessible(f.frames)\n     candidates = f.resolver.individuals(records)\n     assert address in candidates and f.identities[distractor] in candidates\n@@ -15,5 +15,5 @@\n     assert context['identity'] == address and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]\n     result = execute(f, site(f, f.atoms[kind]*0, predicate=f.atoms[4]))\n     assert result.value.role_refs[0] == address\n-    for actual, expected in zip((f.store.refs, f.store.slots, f.cs.similarity_codebook.W), before):\n+    for actual, expected in zip((f.store.parts.refs, f.store.slots, f.cs.similarity_codebook.W), before):\n         torch.testing.assert_close(actual, expected, rtol=0, atol=0)"
+  },
+  {
+    "file": "test/test_relation_closing.py",
+    "before": "test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent",
+    "after": "test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent",
+    "before_decorators": [
+      "pytest.mark.parametrize('unknown', [(0,), (1,), (0, 1)])",
+      "pytest.mark.parametrize('nested', [False, True])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('unknown', [(0,), (1,), (0, 1)])",
+      "pytest.mark.parametrize('nested', [False, True])"
+    ],
+    "diff": "--- test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent\n+++ test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent\n@@ -15,9 +15,12 @@\n     for leaf, child in zip(unknown, relation.children):\n         assert child.relation is None\n         torch.testing.assert_close(child.point, entry.leaves[leaf])\n-    assert len(f.store) == len(unknown)\n+    assert len(f.store) == len(unknown) + 1 + int(nested)\n     assert (f.store.parts.refs[f.store.relations()] > 0).all()\n-    assert not f.store.trust[:len(f.store)].any()\n+    assert not f.store.trust[:len(unknown)].any()\n     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))\n-    for index in f.store.ideas().tolist():\n-        assert f.store.row(index)['kind'] == 'unverified'+    for index in range(len(unknown)):\n+        assert f.store.row(index)['kind'] == 'unverified'\n+    sentence = f.store.row(len(f.store) - 1)\n+    assert sentence['kind'] == 'observation'\n+    assert sentence['evidence'] == pytest.approx((.7, 0.))"
+  },
+  {
+    "file": "test/test_relation_closing.py",
+    "before": "test_three_slot_relation_closes_unindexed_numerical_operands",
+    "after": "test_three_slot_relation_closes_unindexed_numerical_operands",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_three_slot_relation_closes_unindexed_numerical_operands\n+++ test_three_slot_relation_closes_unindexed_numerical_operands\n@@ -10,7 +10,7 @@\n         symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3)\n     clause = finish_reading(f.language, entry, registry=f.registry)\n     row = f.store.write_clause(clause, trust=.6)\n-    assert len(f.store) == 2 and isinstance(row, tuple)\n+    assert len(f.store) == 3 and isinstance(row, tuple)\n     for symbol, point in zip(f.store.row(row)['refs'].tolist(), leaves[[0, 2]]):\n         torch.testing.assert_close(f.store._concept_point(symbol), point)\n     torch.testing.assert_close(f.store.slots[:2, 0], leaves[[0, 2]])"
+  },
+  {
+    "file": "test/test_relative_sentence_codebook_insertion.py",
+    "before": "test_closing_reuses_relation_and_preserves_independent_evidence",
+    "after": "test_closing_reuses_relation_and_preserves_independent_evidence",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_closing_reuses_relation_and_preserves_independent_evidence\n+++ test_closing_reuses_relation_and_preserves_independent_evidence\n@@ -4,5 +4,5 @@\n     clause = part_clause()\n     row = store.write_clause(clause, trust=.8, evidence=(.8, 0.))\n     assert store.write_clause(replace(clause, meaning=replace(clause.meaning, polarity=False)), trust=.7, evidence=(0., .7)) == row\n-    assert len(store) == 0 and len(store.parts) == 1\n+    assert len(store) == 2 and len(store.parts) == 1\n     assert store.row(row)['evidence'] == pytest.approx((.8, .7))"
+  },
+  {
+    "file": "test/test_replacement_kernel_contracts.py",
+    "before": "test_direct_and_depth_one_two_chains_keep_native_premises",
+    "after": "test_direct_and_depth_one_two_chains_keep_native_premises",
+    "before_decorators": [
+      "pytest.mark.parametrize('hops', [1, 2, 3])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize('hops', [1, 2, 3])"
+    ],
+    "diff": "--- test_direct_and_depth_one_two_chains_keep_native_premises\n+++ test_direct_and_depth_one_two_chains_keep_native_premises\n@@ -13,7 +13,7 @@\n     # chain adds that same native Part edge, not a second LTM1 relation.\n     edge = store.parts.find(refs[0][1], refs[hops][1])\n     assert edge is not None and store.parts.truth_plus[edge] == 1\n-    assert len(store) == 0\n+    assert len(store) == 1\n     if hops > 1:\n         model.conceptualSpace.retire_concept(edge)\n     model.conceptualSpace.retire_concept(refs[1][1])\n"
+  },
+  {
+    "file": "test/test_review14_contracts.py",
+    "before": "test_review17_measurement_wiring_on_one_ordinary_batch",
+    "after": "test_review17_measurement_wiring_on_one_ordinary_batch",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_review17_measurement_wiring_on_one_ordinary_batch\n+++ test_review17_measurement_wiring_on_one_ordinary_batch\n@@ -11,6 +11,6 @@\n         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',\n         REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),\n         PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))\n-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],\n+    result=run_guarded([sys.executable,'-m','pytest','-q',str(root/'test/observer_probe.py')],\n         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)\n     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()"
+  },
+  {
+    "file": "test/test_selected_nested_meaning.py",
+    "before": "test_nested_observation_writers_retain_children_without_certifying_them",
+    "after": "test_nested_observation_writers_retain_children_without_certifying_them",
+    "before_decorators": [
+      "pytest.mark.parametrize(\"path\", [\"forward\", \"batch_eval\", \"packed\"])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize(\"path\", [\"forward\", \"batch_eval\", \"packed\"])"
+    ],
+    "diff": "--- test_nested_observation_writers_retain_children_without_certifying_them\n+++ test_nested_observation_writers_retain_children_without_certifying_them\n@@ -4,7 +4,7 @@\n     _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())\n     store = _write_selected_observation(language, registry, entry, path)\n     # The two native pairs retain ignorance independently in the common owner.\n-    assert len(store) == 0\n+    assert len(store) == 2\n     child_id = store.parts.find(*entry.concept_ids[:2].tolist())\n     parent_id = store.parts.find(int(entry.concept_ids[2]), child_id)\n     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}\n"
+  },
+  {
+    "file": "test/test_selected_nested_meaning.py",
+    "before": "test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "after": "test_10_packed_pending_and_eager_ends_write_identical_rows",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_10_packed_pending_and_eager_ends_write_identical_rows\n+++ test_10_packed_pending_and_eager_ends_write_identical_rows\n@@ -6,10 +6,12 @@\n         def address(cid):\n             row = store.index_of_row(cid)\n             return ('concept', cid) if row is None else ('clause', row)\n-        return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]\n+        return [tuple(None if ref is None else address(ref[1]) if ref[0] == 'sym'\n+                      else ('clause', store.location(ref))\n+                      for ref in store.raw_meaning_of(row).role_refs) for row in range(len(store))]\n     for store in stores[1:]:\n         assert addresses(store) == addresses(stores[0])\n-        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):\n+        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'when'):\n             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)\n         for name in ('refs', 'truth_plus', 'truth_minus', 'surprise', 'when'):\n             torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)\n"
+  },
+  {
+    "file": "test/test_selected_relation_meaning.py",
+    "before": "test_observation_boundary_uses_selected_relation_before_prediction_and_ltm",
+    "after": "test_observation_boundary_uses_selected_relation_before_prediction_and_ltm",
+    "before_decorators": [
+      "pytest.mark.parametrize(\"path\", [\"forward\", \"packed\"])"
+    ],
+    "after_decorators": [
+      "pytest.mark.parametrize(\"path\", [\"forward\", \"packed\"])"
+    ],
+    "diff": "--- test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n+++ test_observation_boundary_uses_selected_relation_before_prediction_and_ltm\n@@ -23,7 +23,7 @@\n     cs._concept_allocator.parts.remove(_a[1], _b[1])\n     before_parts = set(cs._concept_allocator.parts.indices().tolist())\n     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')\n-    assert len(store) == 0 and len(calls) == 1\n+    assert len(store) == 1 and len(calls) == 1\n     row = ('sym', store.parts.find(_a[1], _b[1]))\n     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}\n     stored = store.meaning_of(row)\n"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "before": "test_reading_an_idea_returns_its_one_occupied_slot",
+    "after": "test_reading_an_idea_returns_its_one_occupied_slot",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_reading_an_idea_returns_its_one_occupied_slot\n+++ test_reading_an_idea_returns_its_one_occupied_slot\n@@ -6,5 +6,5 @@\n     assert meaning.role_mask.tolist() == [True, False, False]\n     torch.testing.assert_close(meaning.roles[0], ended.point, rtol=0, atol=0)\n     assert not meaning.roles[1:].any()\n-    assert store.refs[row].tolist() == [-1, -1, -1]\n+    assert not hasattr(store, 'refs')\n     assert store.row(row)['evidence'] == (.75, .25)"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "before": "test_part_stores_native_addresses_and_reads_current_concept_content",
+    "after": "test_part_stores_native_addresses_and_reads_current_concept_content",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_part_stores_native_addresses_and_reads_current_concept_content\n+++ test_part_stores_native_addresses_and_reads_current_concept_content\n@@ -2,7 +2,7 @@\n     store, points = clause_store()\n     row = store.write_clause(part_clause())\n     assert store.row(row)['refs'].tolist() == [1, 2]\n-    assert not len(store)\n+    assert len(store) == 1\n     owner = store._concept_owner()\n     with torch.no_grad():\n         owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)\n"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "before": "test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "after": "test_no_clause_derivation_or_factored_target_is_checkpointed",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_no_clause_derivation_or_factored_target_is_checkpointed\n+++ test_no_clause_derivation_or_factored_target_is_checkpointed\n@@ -10,5 +10,5 @@\n     restored.load_state_dict(copy.deepcopy(store.state_dict()))\n     restored.load_semantic_extras(copy.deepcopy(extras))\n     torch.testing.assert_close(restored.slots, store.slots, rtol=0, atol=0)\n-    torch.testing.assert_close(restored.refs, store.refs, rtol=0, atol=0)\n+    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()\n     assert restored.meaning_of(row).role_mask.tolist() == [True, False, False]"
+  },
+  {
+    "file": "test/test_sentence_end_state.py",
+    "before": "test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "after": "test_one_native_sentence_owns_only_its_end_state_after_the_boundary",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_one_native_sentence_owns_only_its_end_state_after_the_boundary\n+++ test_one_native_sentence_owns_only_its_end_state_after_the_boundary\n@@ -10,15 +10,20 @@\n     model._install_unit_span_fn()\n     model.reconstruct_in_loop = False\n     model.loss.reconstruction_scale = 0.\n+    model.stateless = False\n+    from What import What\n     try:\n         inputs = model.inputSpace.prepPackedInput([['1 plus 2']])\n         model.runBatch(train=False, batchSize=1, split='runtime',\n-                       batch_override=(inputs, torch.zeros(1, 1, 0)))\n+                       batch_override=(inputs, torch.zeros(1, 1, 0)),\n+                       questions=(What.present(0, split='runtime'),))\n         ended = model._sentence_fields[0][0]\n         store = model.symbolSpace.ltm_store\n-        row = store.index_of_row(ended.row_id)\n+        row = store.location(ended.row_id)\n         assert row is not None\n-        torch.testing.assert_close(ended.meaning.roles, store.slots[row], rtol=0, atol=0)\n+        retained_roles = (store.row(row)['meaning'].roles if isinstance(row, tuple)\n+                          else store.slots[row])\n+        torch.testing.assert_close(ended.meaning.roles, retained_roles, rtol=0, atol=0)\n         trace = model._reconstruction_stack()\n         assert not trace._choice_mask.any()\n         assert not trace._choice_values.any()\n"
+  },
+  {
+    "file": "test/test_sentence_identity.py",
+    "before": "test_referenced_phrase_is_minted_as_a_part_argument",
+    "after": "test_referenced_phrase_is_minted_as_a_part_argument",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_referenced_phrase_is_minted_as_a_part_argument\n+++ test_referenced_phrase_is_minted_as_a_part_argument\n@@ -6,4 +6,4 @@\n     assert f.cs._csw_row_of(reference) is not None\n     assert f.store.parts.refs[reference].tolist() == [f.noun('chases'), f.noun('mouse')]\n     torch.testing.assert_close(f.store._concept_point(reference), clause.children[0].point)\n-    assert len(f.store) == 1+    assert len(f.store) == 2"
+  },
+  {
+    "file": "test/test_sentence_identity.py",
+    "before": "test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+    "after": "test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically\n+++ test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically\n@@ -21,7 +21,7 @@\n     from ClauseRow import attach_clause_index\n     attach_clause_index(model, f.store, f.cs)\n     try:\n-        entry = f.program(('disjunction', ('part', 'cat', 'animal'), 'sleeps'))\n+        entry = f.program(('part', ('disjunction', ('part', 'cat', 'animal'), 'sleeps'), 'cat'))\n         layer = _concept_alloc_of(f.cs).layer(0)\n         caps = f.cs._order_caps()\n         # Occupy the remaining physical seats in the mechanism fixture;\n"
+  },
+  {
+    "file": "test/test_sentence_journal.py",
+    "before": "test_no_numerical_frames_without_a_sentence_closing_reader",
+    "after": "test_no_numerical_frames_without_a_sentence_closing_reader",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_no_numerical_frames_without_a_sentence_closing_reader\n+++ test_no_numerical_frames_without_a_sentence_closing_reader\n@@ -2,7 +2,12 @@\n     from test_reverse_traversal import _traversal_model, _run\n     model = _traversal_model(tmp_path)\n     try:\n-        _run(model, ['1 plus 2', '3 plus 4'])\n+        # Disable the consumer during the run. _run's normal boundary\n+        # enables it inside the context and clears it on exit.\n+        with model._sentence_run():\n+            model._sentence_ends = False\n+            model._sentence_reconstruction = False\n+            _run(model, ['1 plus 2', '3 plus 4'])\n         trace = model._reconstruction_stack()\n         assert not getattr(model, '_sentence_ends', False)\n         assert trace._choice_mask.any(), 'the probe must perform an operation'\n"
+  },
+  {
+    "file": "test/test_sentence_retention.py",
+    "before": "test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "after": "test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims\n+++ test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims\n@@ -7,6 +7,6 @@\n     assert store.relations().tolist() == [target[1]]\n     store._validate_expectation_links()\n     # Re-reading the same thought address refreshes its one retained estimate.\n-    assert len(store) == 2\n+    assert len(store) == 3\n     for index in (1,):\n         assert store.expectation_pair(index)['observation_occurrence'] == store.occurrence_of(target)"
+  },
+  {
+    "file": "test/test_sentence_retention.py",
+    "before": "test_narrow_idea_retains_no_implicit_operand_reference",
+    "after": "test_narrow_idea_retains_no_implicit_operand_reference",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_narrow_idea_retains_no_implicit_operand_reference\n+++ test_narrow_idea_retains_no_implicit_operand_reference\n@@ -2,5 +2,6 @@\n     store, _ = clause_store()\n     first = store.write_clause(idea_clause())\n     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))\n-    assert store.refs[second].tolist() == [-1, -1, -1]\n-    assert store.meaning_of(second).role_refs == (None, None, None)+    assert not hasattr(store, 'refs')\n+    assert not any(ref is not None and ref[0] == 'ltm'\n+                   for ref in store.meaning_of(second).role_refs)"
+  },
+  {
+    "file": "test/test_taxonomy_policy.py",
+    "before": "test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "after": "test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation\n+++ test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation\n@@ -6,7 +6,7 @@\n     assert result.support_true == 1\n     path = result.result.evidence['path']\n     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}\n-    assert len(store) == 0\n+    assert len(store) == 1\n     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)\n     model.symbolSpace.ltm_store=LTM0(8,capacity=32)\n     # Remove the derived conclusion as well as its shared-store premises.\n"
+  },
+  {
+    "file": "test/test_truth_text.py",
+    "before": "test_supplied_trust_preserves_both_possible_grammatical_fields",
+    "after": "test_supplied_trust_preserves_both_possible_grammatical_fields",
+    "before_decorators": [],
+    "after_decorators": [],
+    "diff": "--- test_supplied_trust_preserves_both_possible_grammatical_fields\n+++ test_supplied_trust_preserves_both_possible_grammatical_fields\n@@ -10,7 +10,10 @@\n             store.write_clause(field)\n         assert len(rows) == 1\n         row = rows[0]\n-        assert store.row(row)['refs'].numel() == (3 if field.relation is None else 2)\n+        if field.relation is None:\n+            assert 'refs' not in store.row(row)\n+        else:\n+            assert store.row(row)['refs'].numel() == 2\n         assert store.row(row)['trust'] == pytest.approx(.8)\n-    assert store.ideas().tolist() == [0]\n+    assert store.ideas().tolist() == [0, 1]\n     assert store.relations().tolist() == [store.parts.find(1, 2)]"
+  }
+]

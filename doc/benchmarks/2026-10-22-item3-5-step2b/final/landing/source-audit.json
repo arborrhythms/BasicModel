@@ -76,6 +76,7 @@
     "changed_checks": 56,
     "changed_functions": 71,
     "retired_tests": 3,
-    "new_tests": 4
+    "new_tests": 4,
+    "added_helpers": 3
   }
 }

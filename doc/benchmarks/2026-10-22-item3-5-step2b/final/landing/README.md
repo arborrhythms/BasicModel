@@ -71,3 +71,44 @@ No learning claim is made. The requested code review of §§34–35 follows
 publication; Claude specifies that next line before implementation.
 
 Final gate counts, review and publication are recorded below when complete.
+
+## Final frozen gates
+
+Source: **`3c5cc2a1d5243dd80c2cdcfc3cc2ebcdaa98c56c`**. All 683 selected
+cases completed: **675 passed, eight existing prerequisite skips, zero
+failures**. [The source-linked summary](gate-summary.json) records commands,
+elapsed times and report hashes.
+
+| Scope | Passed | Existing skips |
+| --- | ---: | ---: |
+| Eight regression files | 85 | 0 |
+| Eight-file native set | 123 | 7 |
+| Direct changed-module files | 467 | 1 |
+
+The skips are copular identity (one), MTM re-identification (four), live
+pending-premise learning (two), and FineWeb prerequisite (one). Nothing is
+newly skipped. The pending-premise certificate records forward bound/open
+`0/8` and reverse `0/16`, with closure forcing off and zero attention
+budget in both. These are mechanism certificates, not learned binding.
+
+The final ledger covers 56 changed-check groups, 71 modified existing
+functions, four new regression functions (five parameterized cases), and
+three added fixture helpers with their full bodies/assertions. The helper
+listing is a receipt-completeness addition after freezing; audited source
+hashes remain unchanged. Large final captures, like the retained failed
+captures, are losslessly packed with byte hashes in
+[packed-captures.json](packed-captures.json).
+
+Claude's read-only review is requested by
+[claude-review-request.md](claude-review-request.md). Publication awaits
+the returned verdict.
+
+## Review disposition: HOLD
+
+Claude's [read-only review](claude-review.md) returned HOLD. The green
+scoped set did not cover live-mode preservation at all boundaries or all
+direct writer files; numeric end-state refs also flattened typed addresses.
+This source is not published. §59 and the [repair receipt](../review-repair/README.md)
+record the continuation. No gates here are promoted to its next source.
+The first frozen end-state failure was in the module group; “native” above
+describes its production path. §46's three Part-read failures predate 2b.
