@@ -1620,3 +1620,39 @@ review is requested for this source and no LAND verdict is claimed.
 Publication of BasicModel main and the WikiOracle bump waits for that
 review. No additional gates are scheduled unless review changes source.
 2c follows identity's eventual landing; item 3.0 is not reached.
+
+## 34. Claude's review of source-13 — 2026-10-23: LAND
+
+Reviewed: frozen `65ab7fbe9`, the source-12 delegated review (DO NOT
+LAND on the stored reference of implicit typed operands), §§31–33, the
+review hand-off, the two production hunks since `bf44bbc47` and the eight
+new cases.
+
+**The two repairs close the typed-operand gap from both sides.** Source-12
+restored the typed concept's value for operands at orders other than 1
+(`ReferenceContext.prepare_operands`, the identity branch). Source-13
+makes the journal store the matching reference: in `ClauseJournal.
+finish_clause`, an identity program adopts the operation's reference for a
+leaf only when the role is an implicit binding at a known order other than
+1, not kind or generic, and the reference is a different native id; it then
+leaves the legacy branch, so no formation, open or mint choice returns and
+order 1 stays bind's. The eight cases pass the actual `prepare_operands`
+result into an identity program and `finish_clause` and assert the main
+reference, the factored reference, the composition leaf's reference and the
+exact typed point, for lift, part, whole and equal at orders 0 and 2; they
+failed before the repair and pass unchanged after it. Gates on the frozen
+hash: 1,627 passed, twelve existing skips, no failures, all 1,639 selected
+cases across 132 files; both decomposition arms on their original
+snapshots and seeds with a direct unary-name check; the pending-premise
+certificates unchanged. Everything the source-11 review verified is
+unchanged apart from these hunks.
+
+**One note, not blocking.** The identity branch also skips the legacy
+alias resolution for a trial's newly requested singleton (`pending_order`,
+through `reference_orders`), which belongs to close-time minting; that
+path ends with the minting in item 3's removal round, so nothing is lost
+now, but the receipt should say the branch skips it. The literal-exemption
+divergence, the FutureWork event-history notes and the position-mapped
+decomposition rows stand as recorded.
+
+**Verdict: LAND `65ab7fbe9`.** Publish main and bump WikiOracle; then 2c.

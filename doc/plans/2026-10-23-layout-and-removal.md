@@ -42,6 +42,31 @@ read the existing journal as the chunk record.
    object (identity spec §1.6).
 9. A pre-layout checkpoint is rejected by version, loudly; no
    classification is guessed (§33 R8).
+10. **Every mental event has a perceptual and a conceptual part.**
+    Episodic memory is the percept part of STM and LTM, semantic memory
+    the concept part; an entry is `[form | meaning]`. `.when` is not a
+    field of LTM but belongs to the percept part, so the separate
+    `LTM0.when` and `LTM1.when` columns retire into it; recall by time is
+    a cue with only the percept `.when` filled. An order-0 concept is an
+    event with `.where` and `.when`; higher orders abstract them. The
+    stamp sits at the sentence level only. An STM row has the LTM0 form,
+    a concept entering STM being stamped now (§2, "Recall by `.when`
+    alone" and the decided paragraphs after it).
+11. **STM is eight shared chunks**, each over a few ideas and relations,
+    one working set for the open sentence, recalled chains and recent
+    rows; the least recently read chunk not still on the parse stack
+    leaves when a ninth arrives (step-2 §72).
+12. **Operations on meaning, centroids on form.** Every grammar and
+    logical operation acts on the meaning block, the logical ones by
+    their exact rules and the grammatical ones by learned kernels; a
+    reduce's percept part is the centroid of its constituents' forms,
+    with the bracket for its bands; zeroth-order concepts start as random
+    codes and are moved by the priming surface; generation reverses the
+    meaning composition and reaches forms through the symbol index (§2,
+    "Decided: operations on meaning, centroids on form", with the audit of
+    today's form-side kernels and their side effects).
+13. **The object supplies its own Q basis** for a transitive verb; the
+    verb is the diagonal (occurrence spec §14.5; step 4's spec).
 
 ## 2. The layout, in code names
 
@@ -170,18 +195,99 @@ is the fold over its words' forms, lossy, which is what the free decoder
 reconstructs from ("reconstruct from the vector; it will not be exact"),
 with its `.where` and `.when` bands; and the source wording is retained
 beside the row (`_texts`) as the first forgetting stage, the exact
-surface while it lasts. Alec asked how a reduce generates the new
-percept fields when the operations describe how concepts combine, and
-whether centroids serve: the grammar operations act on the whole paired
-vector, so a reduce's percept part is the same fold applied to the
-operands' form blocks, the join for a sigma operation and the meet for a
-pi, and the free decoder reverses exactly that, searching word pairs
-whose fold reproduces the parent's form block (`Language.py`, the
-candidate search's form residual). No centroid is involved; the removed
-symbol-centroid nudge placed word forms among neighbours, and Orders §9's
-centroids are caches over classes, not reduce results. The `.where` and
-`.when` bands of a reduce are a bracket from the first owned leaf, not a
-fold (`ClauseJournal.bands`). A read sentence's percept part is therefore
+surface while it lasts. Alec asked how a reduce generates the new percept fields, given that
+the operations describe how concepts combine, and whether centroids
+serve. Claude first answered that the operations act on the whole paired
+vector; Alec corrected it: "grammar operations do not operate on both
+form and meaning together. They combine concepts in conceptual space,
+and we are discussing how percepts combine." The code fact, checked:
+`GrammarLayer.compose_blocks` splits the paired vector and applies the
+operation's learned kernel (the sigma or pi butterfly) to the operands'
+*form* blocks, while the *meaning* blocks combine by a declared
+bilattice rule (`MeaningCodes.compose`: intersection and conjunction
+take the lane-wise meet, union and disjunction the join, `sum` the
+mean, `not` the lane exchange) or, for a headed operation, pass one
+operand's meaning through: `lift(NP, VP)` keeps the subject's meaning
+and drops the verb phrase's, `verb(V, NP)` keeps the verb's and drops
+the object's, `lower(DET, N)` keeps the noun's. So today the learned
+grammar acts on percepts, the logical operations combine concepts by
+fixed rules, and a predication's idea in conceptual space is its
+subject's meaning alone: nothing of "runs" enters "Felix runs". That
+is the reverse of the design, and it is why identity threading's "the
+VP replaces the identity's state" has no composition to act through
+yet on the meaning side. The free decoder reverses the form
+kernel (the candidate search's form residual). The `.where` and `.when`
+bands of a reduce are a bracket from the first owned leaf, not a fold
+(`ClauseJournal.bands`).
+
+**Decided (Alec, 2026-10-23): operations on meaning, centroids on form.**
+"Percepts are mereological towers, and therefore a shape at order-0
+percepts. Even though higher-order concepts have a mereology that is
+less and less meaningful at higher orders, centroid is still reasonable
+on forms. And grammar and logical operations are all on meaning, with
+zeroth-order concepts starting with random assignment and being moved
+by the priming surface." So, in item 3:
+
+- The percept part of every reduce is the centroid of its constituents'
+  forms in the percept cube, the mereological fold that makes a word's
+  form from its letters, with the bracket for `.where` and `.when`. The
+  learned form kernels retire; no operation learns on forms.
+- Every operation acts on the meaning block, in conceptual space: the
+  logical ones by their exact bilattice rules (the order-0 calculus of
+  `intuit`), the grammatical ones, `lift`, `verb`, `lower` and `bind`,
+  by learned kernels, so a predication composes the verb phrase into
+  its subject's meaning and identity threading's "the VP replaces the
+  identity's state" has its composition.
+- A zeroth-order concept's meaning is a random code at its mint, moved
+  by the registered priming surface (the placement decision); no fold
+  generates it.
+- Generation reverses the meaning composition to word meanings and
+  reaches forms through the symbol index, the only link between the
+  spaces; reconstruction's objective moves with the kernels, which is
+  item 3's invertible-path work.
+
+**Side effects of the form-side kernels (Claude's audit, 2026-10-23, at
+Alec's question).** Fewer than the discrepancy suggests, because the
+paired representation made most semantic readers meaning-only:
+`IdentityRows.coordinates` zeroes the whole percept-event block, so
+bind's meet, `individuals`, the reference-reconstruction term, queries'
+vectors, extents and negation, placement's context codes
+(`MeaningCodes`), answer credit (`SentenceCredit.forward_discard`) and the
+closing image's split all read meanings. What the form-side arrangement
+does affect:
+
+1. *Predication's idea.* With headed passthrough, a sentence's meaning is
+   its subject's; expectation over stored ideas predicts subjects, and
+   evaluation through identity cannot compose "x plus two" on the meaning
+   side ("plus 2"'s meaning is "plus"'s). The decomposition gates pass on
+   stored components and the form side.
+2. *The identity line's values.* "The VP replaces the identity's state"
+   is implemented, but the verb's effect today lands in the form block of
+   the value, since that is where the kernel acts; the meaning block of
+   the state stays the subject's. The mechanism is right and its content
+   is on the wrong side until item 3 moves the kernels.
+3. *Reconstruction's objective* trains the form kernels; after the swap
+   it trains the meaning kernels through generation, and the surface is
+   reconstructed from the percept centroid by mereological decomposition.
+4. *The XOR composition gate* exercises the kernels on forms; it moves to
+   meanings with them (`XOR_grammar.xml` already carries a meaning width).
+5. *Reading back* a form fold through the learned kernel's inverse
+   (`Language.py`, the candidate search) becomes reading parts out of a
+   centroid, the meronomy's own inverse.
+
+Everything else, MTM, STM, LTM0 and LTM1, bind, forgetting, priming and
+the orders, is unaffected by which block the kernel acts on.
+
+**A contiguous event takes its actual mereology.** Alec: "Hopefully it will
+take on the actual mereology of the event if the event is contiguous?"
+Yes: a sentence or clause whose words are one run in the input is a whole
+in WholeSpace's sense, a maximal constant-type run, its parts the words,
+its `.where` the bracket, and the centroid of its parts' forms is that
+whole's form, as a word's is the centroid of its letters. A discontiguous
+event, one interrupted by another clause, has no single run; its centroid
+is then a type over disjoint parts, Orders §9's discontinuous case, which
+is where the mereology becomes "less and less meaningful" as Alec says.
+ A read sentence's percept part is therefore
 what was said, where and when; its concept part what it meant. A
 concept pulled from the index
 gets a percept part stamped now, the mental event of thinking it; a

@@ -993,6 +993,16 @@ not by a passing identity lesson.
      LTM0 form; STM is eight shared chunks with least-recently-read
      eviction off the stack; the object supplies its own Q basis for
      transitive verbs (step 4).
+     *Decided (Alec, 2026-10-23):* **operations on meaning, centroids on
+     form.** Today the learned kernels act on the form block and headed
+     operations pass one operand's meaning through ("Felix runs" is
+     Felix's meaning). In item 3 every grammar and logical operation acts
+     on the meaning block, logical ones by their exact rules and
+     grammatical ones by learned kernels; the percept part of a reduce is
+     the centroid of its constituents' forms; zeroth-order concepts start
+     random and are moved by the priming surface; generation reverses
+     meaning composition and reaches forms through the symbol index
+     ([layout spec](doc/plans/2026-10-23-layout-and-removal.md)).
    - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
      of 3.0"; moved from FutureWork).
 
