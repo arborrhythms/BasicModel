@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

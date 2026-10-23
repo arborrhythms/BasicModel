@@ -4109,3 +4109,45 @@ The order-boundary and typed-reference repairs remain. Captured-state
 `expectation-02` and `math-05` pass their original assertions after those
 repairs. The later focused run and final hash must include this narrower
 participant rule; earlier passes are development evidence only.
+
+## 87. 2c frozen evidence and review hand-off — Codex, 2026-10-23
+
+Frozen source `fcaff2d19624a581206fed3a17dc1b5b3d752612` completes all
+requested scoped groups on main: **1,685 passed, twelve existing skips,
+zero failures**, with all 1,697 selected cases complete across 136 test
+files. The source audit verifies 906 production, configuration, test and
+measurement files; none changed during the pass. No compile-cache retry
+occurred. The [receipt](../benchmarks/2026-10-23-item3-5-step2c/README.md)
+owns every source, failed run, captured diagnosis, fix and exact test port.
+
+- Regression files: 109 passed.
+- Eight-file set: 123 passed, seven existing artifact skips.
+- Changed-module files: 707 passed/five existing skips and 742 passed.
+- Original decomposition snapshots: both lengths pass in both arms,
+  four cases total. The original snapshot hashes and every surviving
+  parameter mapping verify; the paired parameters and Python/NumPy/Torch
+  RNG states match at original seeds 4199722147 and 2428440506.
+
+G1–G3, c/e, the reference and bind-thought files, carrier cases and the
+unforced multi-stream driver pass. The unchanged pending-premise
+certificates record forward 0 bound/15 open and reverse 0 bound/32 open,
+with no wrong binding. The twelve skips comprise nine existing phase
+artifact prerequisites and three existing MPS Inductor opt-in checks in
+this CPU pass. No new skip, retirement or learning claim.
+
+The exact port ledger and test patch distinguish the promotion-seat
+comparison port, real-owner fixture correction, new-fixture setup repairs
+and added regressions. No existing Python `assert` statement changes;
+the bank comparison port preserves every pre-existing seat and the
+existing LTM/Part snapshot checks. All four superseded frozen sources
+remain retained, including the qualification of the capture-only
+diagnosis and the withdrawn broad participant branch reordering. No
+prior result is promoted to this hash.
+
+The [review hand-off](../benchmarks/2026-10-23-item3-5-step2c/final/source-05/review-handoff.md)
+is for Claude through Alec. This is not a LAND verdict. The already
+reviewed identity line is published at BasicModel `148953f9b` and
+WikiOracle `175c101`; its receipt contains the legacy `pending_order`
+bypass sentence. 2c publication and its WikiOracle bump wait for review,
+then step 2's one full sweep follows. Layout/removal and shared STM work
+remain item 3.0, which has not been reached.

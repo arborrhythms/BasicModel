@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_detached_pending_prediction_replays_without_an_optimizer_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

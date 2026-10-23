@@ -1,10 +1,14 @@
 # Step 1b: current gates and carry ledger
 
-**Identity published; 2c frozen pass next, 2026-10-23:** BasicModel
-`148953f9b`, WikiOracle `175c101`, reviewed source `65ab7fbe9`; no further
-identity gates. The [2c receipt](../2026-10-23-item3-5-step2c/README.md)
-records implementation on today's storage and every development failure
-and port. Review through Alec precedes publication and step 2's full
+**2c ready for mediated review, 2026-10-23:** frozen `fcaff2d19` completes
+all 1,697 scoped cases: 1,685 passed, twelve existing skips, zero failures.
+Both decomposition arms retain the original snapshots/seeds; G1–G3,
+c/e, both pending-premise orders and the unforced driver pass. The
+[2c receipt](../2026-10-23-item3-5-step2c/README.md) records every failed
+source, diagnosis and port. Identity is published at BasicModel
+`148953f9b`, WikiOracle `175c101`, reviewed source `65ab7fbe9`, with the
+required `pending_order` receipt sentence and no further identity gates.
+Claude reviews 2c through Alec before publication and step 2's one full
 sweep. Item 3.0 has not been reached.
 
 **Identity threading reviewed LAND through Alec, 2026-10-23:** frozen

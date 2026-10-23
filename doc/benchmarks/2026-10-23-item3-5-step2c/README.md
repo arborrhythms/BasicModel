@@ -1,13 +1,15 @@
 # Step 2c on today's storage — 2026-10-23
 
-Implementation is ready for a frozen scoped pass. No gate result or review
-is claimed yet. Review is mediated through Alec; no direct Claude request
-will be sent. Publication and step 2's one full sweep follow that review.
-Item 3.0 has not been reached. This is mechanism evidence, not a learning
-claim.
+Frozen source **`fcaff2d19624a581206fed3a17dc1b5b3d752612`** passes every
+requested scoped group: **1,685 passed, twelve existing skips, zero
+failures**, with all 1,697 selected cases complete. The
+[review hand-off](final/source-05/review-handoff.md) is ready for Claude
+through Alec. No LAND verdict, 2c publication or full sweep is claimed.
+Publication and step 2's one full sweep follow that review. Item 3.0 has
+not been reached. This is mechanism evidence, not a learning claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)
-§§73–86 records the code review, decisions and each development repair under
+§§73–87 records the code review, decisions and each development repair under
 §39. The published base is BasicModel `148953f9b` (identity source
 `65ab7fbe9`, Claude LAND in identity §34), WikiOracle `175c101`.
 [Publication record](publication-identity.json). The required identity
@@ -164,8 +166,48 @@ captured replays, admission/order probes and both completed trials where a
 keep exists. The capture-only diagnosis is explicitly qualified in §84.
 No result from this source is promoted.
 
-`final/source-05` holds the final source audit and selections: the prior scoped
-groups, both decomposition arms at their original snapshots/seeds, and
-new/direct changed-module files. Gates are run once by source. Every
-failure is retained and diagnosed before source changes. No full sweep
-runs until this source is reviewed through Alec and published.
+`final/source-05` owns all final evidence on `fcaff2d19`. The
+[source audit](final/source-05/source-audit.json) verifies 906
+production/configuration/test/measurement files and lists the fifteen
+changed source/test/configuration paths from publication. The
+[selections](final/source-05/selections.json) cover 136 distinct test files.
+No result from an earlier source is promoted. Every selected case is
+complete, no compile-cache retry occurred, and no audited file changed
+during the pass.
+
+| Scoped group | Passed | Existing skips | Failed |
+| --- | ---: | ---: | ---: |
+| Regression files | 109 | 0 | 0 |
+| Eight-file set | 123 | 7 | 0 |
+| Changed-module files, group A | 707 | 5 | 0 |
+| Changed-module files, group B | 742 | 0 | 0 |
+| Decomposition, zero gain | 2 | 0 | 0 |
+| Decomposition, enabled gain | 2 | 0 | 0 |
+| **Total** | **1,685** | **12** | **0** |
+
+The [machine summary](final/source-05/gate-summary.json) records every
+skip and result by source; adjacent `*-run.json` files retain each exact
+command and its exit status. Nine skips require existing
+phase artifacts: copular identity (one), live pending-premise learning
+(two), MTM re-identification (four), fineweb (one) and stage3 (one). Three
+existing MPS Inductor checks require their explicit device opt-in; this
+pass uses CPU. No test was newly skipped or retired.
+
+G1–G3, c/e, both forced pending-premise orders, the reference and
+bind-thought files, the carrier cases and the unforced multi-stream driver
+pass. The pending-premise counts are forward **0 bound / 15 open** and
+reverse **0 bound / 32 open**; the unchanged bound-or-open assertions hold,
+with no wrong binding. These are mechanism certificates, not evidence of
+learned closure.
+
+Both decomposition lengths pass in both arms at their original seeds
+4199722147 and 2428440506. The
+[snapshot verification](final/source-05/decomposition-snapshots.json)
+checks the original snapshot hashes, every surviving mapped parameter,
+and equality of paired parameters and Python/NumPy/Torch RNG states.
+Captured capsules are retained losslessly with their hashes. The existing
+accepted catalogue adapter is unchanged.
+
+Gates ran once on this source. Every earlier failure and its diagnosis
+remain above and in the retained captures. Claude reviews through Alec
+before 2c publication; step 2's one full sweep follows publication.

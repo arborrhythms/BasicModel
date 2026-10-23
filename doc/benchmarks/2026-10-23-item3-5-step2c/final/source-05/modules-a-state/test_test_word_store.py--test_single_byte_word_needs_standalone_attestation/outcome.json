@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

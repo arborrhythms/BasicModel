@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_review.py::test_memory_attention_is_bounded_metered_and_row_local",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_work_boundaries.py::test_registry_description_resolution_and_fact_scan_use_one_budget",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

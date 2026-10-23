@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_rows.py::test_27_definition_rewitness_keeps_its_when_and_store_position",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -19,12 +19,13 @@ lines below keep the numbers their items had when they landed.
 
 **Current:** Item 3.5 line 2's identity threading is published on BasicModel
 `148953f9b` and WikiOracle `175c101`, reviewed source `65ab7fbe9` (Claude
-LAND through Alec, identity spec §34). **2c is implemented for its frozen
-scoped pass** on today's storage: document recurrence, token promotion,
-MTM expiry, the definitions cache, the standalone composite, and the
-arrival/event-history follow-ups. Its [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md)
-retains every failed development run and port. Review goes through Alec
-before publication; step 2's one full sweep follows. The layout/removal
+LAND through Alec, identity spec §34). **2c awaits review on frozen
+`fcaff2d19`: 1,685 scoped passes, twelve existing skips, zero failures.**
+It implements document recurrence, token promotion, MTM expiry, the
+definitions cache, the standalone composite and the arrival/event-history
+follow-ups on today's storage. Its [receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md)
+retains every failed source, development run and port. Review goes through
+Alec before publication; step 2's one full sweep follows. The layout/removal
 round and shared eight STM chunks stay in item 3.0. All work stays on main.
 Item 3.0 has not been reached.
 
@@ -802,9 +803,11 @@ not by a passing identity lesson.
      *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](doc/plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
      no sentence derivation in LTM (§30), MTM stores working content
      (§35), identity first. Storage-only **2b** is Done at `39272e7a6`;
-     **identity threading** is Done at reviewed source `65ab7fbe9`
+     **identity threading** is Done at landing `148953f9b` (reviewed source `65ab7fbe9`)
      ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md));
-     next **2c** on today's storage, then step 2's one full sweep.
+     **2c** on today's storage awaits review at `fcaff2d19`
+     ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/README.md));
+     publication and step 2's one full sweep follow.
      *Layout
      decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
@@ -1525,7 +1528,7 @@ Everything that is decided in direction but not on this path is in
 
 ### Done (newest first)
 
-- **Item 3.5 step 2 identity threading:** reviewed landing source `65ab7fbe9`, Claude LAND through Alec; 1,627 scoped passes and twelve existing skips ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)).
+- **Item 3.5 step 2 identity threading:** landing `148953f9b` (WikiOracle `175c101`), reviewed source `65ab7fbe9`, Claude LAND through Alec; 1,627 scoped passes and twelve existing skips ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)).
 
 - **Item 3.5 step 2b — storage-only round:** landing `39272e7a6` (WikiOracle `ade0399`), reviewed source `6a36b7cee`; 1,144 scoped passes, nine existing skips, Claude LAND, every failure and port retained ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)). Identity, derivation removal and 2c remain open.
 

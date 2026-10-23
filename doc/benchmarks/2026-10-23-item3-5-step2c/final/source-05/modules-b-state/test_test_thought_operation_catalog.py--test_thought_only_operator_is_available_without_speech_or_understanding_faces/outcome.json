@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_thought_only_operator_is_available_without_speech_or_understanding_faces",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

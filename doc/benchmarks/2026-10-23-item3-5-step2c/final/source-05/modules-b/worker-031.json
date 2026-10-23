@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[ordinary]",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[identity]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-bind-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-generic-7]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0]"
+  ],
+  "completed": [
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[ordinary]",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[identity]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-bind-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-generic-7]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024213582975789905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005047500599175692,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[ordinary]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00044283410534262657,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[identity]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025716680102050304,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-False-None-7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002554580569267273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-False-None-7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00029762485064566135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-None-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00023812497965991497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-bind-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002332502044737339,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-True-None-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026279198937118053,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-None-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022929185070097446,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-generic-7]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022950000129640102,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006387089379131794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006580830086022615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006494580302387476,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006978330202400684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006483339238911867,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

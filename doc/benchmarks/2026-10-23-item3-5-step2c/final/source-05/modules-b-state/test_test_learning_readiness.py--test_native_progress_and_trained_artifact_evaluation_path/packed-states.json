@@ -1,0 +1,18 @@
+[
+  {
+    "original": "initial-1.pt",
+    "compressed": "initial-1.pt.gz",
+    "bytes": 377719845,
+    "gzip_bytes": 380368,
+    "sha256": "1979f0762d2b75c18331647041e3c71b06d0f0b369747021dd6dda329a5ba4cf",
+    "gzip_sha256": "02d54e9e7c8e520f328d0ed5045ec56149b53518462c017a5bfc9be712536b54"
+  },
+  {
+    "original": "initial-2.pt",
+    "compressed": "initial-2.pt.gz",
+    "bytes": 379578571,
+    "gzip_bytes": 390165,
+    "sha256": "a44131ae746177bf86bc384c9c18fa9a00bc80f66524c0bbfa6d593d3a947afb",
+    "gzip_sha256": "1e028c444d532de61ecc74020eddb8f2d91578d0170b97826155ebd651aa9814"
+  }
+]

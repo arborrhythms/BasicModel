@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

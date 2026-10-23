@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

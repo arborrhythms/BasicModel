@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compiled_word_chunk.py::test_peer_leg_profiler_executes_real_ps_ws_and_conceptual_bodies",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

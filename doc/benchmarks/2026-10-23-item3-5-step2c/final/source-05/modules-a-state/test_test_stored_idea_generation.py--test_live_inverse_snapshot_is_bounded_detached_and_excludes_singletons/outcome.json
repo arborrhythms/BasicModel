@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

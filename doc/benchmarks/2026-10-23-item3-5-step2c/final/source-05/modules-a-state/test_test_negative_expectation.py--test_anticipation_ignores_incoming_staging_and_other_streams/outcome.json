@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_anticipation_ignores_incoming_staging_and_other_streams",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_higher_order_retrieval_seeds_discontinuous_members_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_clause_end_state_and_evidence_checkpoint_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

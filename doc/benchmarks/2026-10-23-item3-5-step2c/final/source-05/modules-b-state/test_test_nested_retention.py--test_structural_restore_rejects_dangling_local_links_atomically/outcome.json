@@ -1,0 +1,6 @@
+{
+  "node": "test/test_nested_retention.py::test_structural_restore_rejects_dangling_local_links_atomically",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

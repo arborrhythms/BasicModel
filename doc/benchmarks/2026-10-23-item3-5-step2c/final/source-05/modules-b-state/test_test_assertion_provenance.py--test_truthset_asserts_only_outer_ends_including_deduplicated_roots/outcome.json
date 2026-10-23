@@ -1,0 +1,6 @@
+{
+  "node": "test/test_assertion_provenance.py::test_truthset_asserts_only_outer_ends_including_deduplicated_roots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

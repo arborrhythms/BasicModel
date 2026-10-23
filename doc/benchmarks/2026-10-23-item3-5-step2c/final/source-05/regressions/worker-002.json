@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+    "test/test_reference_arrival_review.py::test_native_arrival_without_synthetic_occurrence_joins_its_working_entry",
+    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+    "test/test_reference_arrival_review.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+    "test/test_reference_arrival_review.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+    "test/test_reference_arrival_review.py::test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists",
+    "test/test_reference_arrival_review.py::test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream"
+  ],
+  "completed": [
+    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+    "test/test_reference_arrival_review.py::test_native_arrival_without_synthetic_occurrence_joins_its_working_entry",
+    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+    "test/test_reference_arrival_review.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+    "test/test_reference_arrival_review.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+    "test/test_reference_arrival_review.py::test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists",
+    "test/test_reference_arrival_review.py::test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.025384000036865473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_native_arrival_without_synthetic_occurrence_joins_its_working_entry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011383875040337443,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010564125142991543,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00933491694740951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014348833821713924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007685624994337559,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrival_review.py::test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007294874871149659,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_repair.py::test_nested_metadata_and_goal_local_references_are_checked_at_fill",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

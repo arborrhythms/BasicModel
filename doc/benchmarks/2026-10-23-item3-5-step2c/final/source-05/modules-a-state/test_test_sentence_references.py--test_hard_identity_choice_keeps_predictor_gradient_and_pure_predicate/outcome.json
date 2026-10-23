@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_references.py::test_hard_identity_choice_keeps_predictor_gradient_and_pure_predicate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
