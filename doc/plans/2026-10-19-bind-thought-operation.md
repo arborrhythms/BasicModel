@@ -1408,6 +1408,10 @@ symbol, `raw_meaning_of(index).role_refs[0][1]`, a kind or a fold
 handle), `count` (accesses), `when` (model time of the last access,
 `RowTime.stamp`). No working vector, no label: the working vector is
 computed on read, as now, from `point_of_row` over the occurrences.
+*Reversed (Alec, 2026-10-22): "MTM should store working content." An
+entry holds its identity's current value, the state after its latest
+verb, and names map to identities; see
+[step-2 spec §35](2026-10-21-step2-one-ltm.md#35-decided-alec-2026-10-22-mtm-stores-working-content).*
 
 **Writes, only in `ReferenceClose.commit`.** A mint whose written
 symbol is not in `alloc.individuals` opens an entry at its occurrence.

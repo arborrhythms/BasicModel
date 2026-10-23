@@ -26,19 +26,20 @@ frozen source `d4f316411` passed 223 cases with seven existing skips;
 Claude approved publication. `where` is off the LTM0 row and frame;
 `.when` and percept location stay, with both storage-test ports authorized.
 The [receipt](doc/benchmarks/2026-10-22-item3-5-step2a-where/README.md)
-retains every report and capture. **2b's design is decided in §§20–23.**
+retains every report and capture. **2b is stopped at the restated design review.**
 The repository handoff is published at `c39ef9f3a`, including both preflight
 commits and Claude's unchanged seven-file commit; no documentation-only
-WikiOracle bump. All work now stays on main. **§27 authorizes P1–P7 and
-decides the occurrence-only occupation read.** Claude's six subsequent
-documents are committed unchanged at `00bc915a9`. **Implementation stops
-for the reading-row discriminator in
-[spec §28](doc/plans/2026-10-21-step2-one-ltm.md#28-reading-row-discrimination--2026-10-22-reviewed-by-claude-for-alec):**
-Claude confirms that the two tags cannot distinguish a reading from an
-ordinary relation with the same arguments; the recommended third READING
-tag needs Alec's decision. The [2b receipt](doc/benchmarks/2026-10-22-item3-5-step2b/README.md)
-retains that review and the source audit. The authorized ports remain
-pending implementation in the two frozen commits.
+WikiOracle bump. All work now stays on main. Claude's six subsequent
+documents are committed unchanged at `00bc915a9`. **Alec's §30 decision
+removes sentence derivations from LTM; §28's question lapses as posed.**
+Claude's §31 restatement has been reviewed against the code in
+[spec §32](doc/plans/2026-10-21-step2-one-ltm.md#32-codexs-review-of-31-against-the-code--2026-10-22-stopped-for-claude-and-alec).
+The [static review record](doc/benchmarks/2026-10-22-item3-5-step2b/restated-review/README.md)
+retains the source audit and exact P4/P6/P7 proposals, including held
+semantic checks. P1/P2/P3/P5 stand; the new choices and ports await Claude
+and Alec. No implementation, freeze or gate before that decision. The
+earlier sealed [2b review](doc/benchmarks/2026-10-22-item3-5-step2b/README.md)
+is historical and remains unchanged.
 The [port receipt](doc/benchmarks/2026-10-22-item3-5-step2b-port-preflight/README.md)
 retains both Claude reviews and the corrected proposals: stored mode, tagged
 layout/restore, typed fixtures and the end of argument minting. No 2b code
@@ -816,6 +817,14 @@ not by a passing identity lesson.
      from forgetting while referenced. Alec, 2026-10-21: the classes are
      renamed to match, `TernaryTruthStore` → `LTM0` and `PartStore` → `LTM1`,
      as round 2a's first commit ([step 2 spec](doc/plans/2026-10-21-step2-one-ltm.md)).
+     *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](doc/plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
+     no sentence derivation in LTM (§30), MTM stores working content
+     (§35), identity first. Rounds: **2b** the storage changes that do not
+     depend on the derivation; then **the identity line** (Claude specs it
+     first): MTM values, a sentence as an occurrence of its subject's
+     identity, substitution and role evidence through identities, the
+     subject resolved at determination; then **derivation removal**;
+     then 2c and step 2's one sweep.
    - **VP vectors by temporal difference** — the deferred per-individual
      teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
      stays confined to verbs (plan §17), and it goes when the teacher lands.

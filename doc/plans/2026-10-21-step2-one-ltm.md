@@ -13,8 +13,10 @@ replacement. §17 authorizes the remaining shape-test port. The
 records frozen source `d4f316411`, 223 passes / seven existing skips and
 Claude's approval to publish the sole cull, completing 2a at `0b030e3eb`
 (WikiOracle `baa2e7f`). **2b's design is decided in §§20–23. The additional
-assertion ports and occupation read are authorized in §27. The reading-row
-discriminator is a new decision for Alec in §28; no implementation has begun.**
+assertion ports and occupation read were authorized in §27. §30 removes
+sentence derivations from LTM and supersedes that layout. §31 restates it;
+the dated code review and P4/P6/P7 re-audit are §32, for Claude and Alec.
+P1, P2, P3 and P5 stand. No implementation has begun.**
 Main includes the published documentation handoff at `c39ef9f3a`; all work
 now stays on main. Original code facts below describe
 `cf61b5678`; old class names in those historical facts locate that source.
@@ -1781,3 +1783,681 @@ spec choice. The two frozen commits and their per-commit scoped gates
 remain pending; no earlier evidence is promoted. P1–P7 are authorized,
 not awaiting approval again. The two arrival notes remain in 2c, with
 step 2's one full sweep at its end. Item 3.0 has not been reached.
+
+## 29. Claude's review of §28 — 2026-10-22
+
+**The gap is real, and it is my layout's.** §20's worked example gives an
+occurrence's reading row and an ordinary derivation the same tag pattern,
+and §10 S2 called the reading "the same relation as 'Felix is a cat'".
+Today `role_refs[0]` on the occurrence's side is the one-way pointer that
+names the root; once it moves into LTM1, nothing persistent says which
+`(OCC, SYM)` row is the reading, and a reading and a relation with equal
+arguments coalesce under `LTM1.find`. Codex was right to stop, and the
+delegated review's corrections (no true recursion; today's protection
+narrows the coarsening example) are right too.
+
+**`READING` as the third `ref_kinds` value is the right fix.** It is a
+property of how argument 0 is referenced, not a new relation type, so the
+one-relation design stands. It needs no column, keeps LTM0 at the decided
+row, survives forgetting and restore, and separates the coalescing keys.
+It also makes §21's staged rule exact: a READING argument is not a
+protecting reference (the occurrence owns its reading), while the reading
+protects its SYM root and the root's derivation.
+
+**One correction: re-witnessing replaces the reading; it must not fail.**
+§28 says writing a conflicting reading "fails before mutation". But a
+perceived sentence's address comes from its source text
+(`Occurrence._address_for_write`: document, position, source content key),
+so the same sentence read again in a later epoch reaches the same address,
+and `append_meaning` overwrites its slots and its meaning, root included:
+the last reading wins today. As the grammar learns, a re-read's parse
+changes, and the proposed rule would turn every such re-read into a loud
+failure. So: on re-witness, the new reading row replaces the old one,
+matching the overwritten content; the old reading is retired, and its root
+is released for the next pass. Two readings for one occurrence in a single
+write or a single load remain a loud failure, as corruption.
+
+**Decision for Alec:** approve `READING` with that correction. Every other
+§28 consequence stands: the reading's exclusion from definitions, three-
+value validation in P5, P4/P7 reads through READING, and the listed new
+coverage, to which add one case: a re-read with a different parse replaces
+the reading and leaves exactly one.
+
+## 30. Alec: "Sentence derivation should not be in LTM" — 2026-10-22
+
+Asked to approve §28/§29's `READING` tag, Alec answered: "Sentence
+derivation should not be in LTM." This withdraws the premise of §10 S2's
+layouts, §20's worked layout and §§28–29: there are no derivation edges in
+LTM1 to tell a reading apart from. The derivation stays in working memory,
+the open sentence's journal, and ends with it. The `READING` question
+lapses; 2b stays stopped until the layout is restated.
+
+Readers of the stored derivation today, which the restated layout must
+replace or retire:
+
+- `PartRead.occurrence_roots` and `occurrence_memberships`, which feed
+  the order-0 placement (`MereologicalCodes.occurrence_terms`) and priming
+  diffusion (`Priming.diffuse`): which words a stored sentence contains.
+- `PartRead.expression_components`, read by thought queries
+  (`Queries._with_components`) and answer matching (`BindingAnswers`): a
+  stored sentence's components and head references.
+- `ReferenceClose.accessible`, which finds bind candidates inside earlier
+  sentences by walking their derivations, and
+  `ReferenceParticipants.nonparticipants`, which classifies retained pairs.
+- §21/§23's staged forgetting, which drops structure before the sentence.
+
+Claude's reading, for Alec to confirm: LTM keeps whole occurrences, both
+sentences and their noun-phrase mentions, as LTM0 entries; each mention's
+reading, the word or symbol it reads to; each mention's membership in its
+sentence, `Part(OCC mention, OCC sentence)` ("a word is part of its
+sentence"); and the relations a sentence asserts, such as equalities and
+definitions. A sentence's internal structure, who did what to whom, is
+recovered when needed by inverting its stored concept, item 3's invertible
+path, not read from stored edges.
+
+**Decided (Alec, 2026-10-22).** "If we need the original sentence, just
+reconstruct from the vector. It will not be exact." No derivation is
+stored, and nothing replaces it: a stored sentence's structure is
+recovered, when needed, by reconstructing from its vector through the
+existing reverse path, inexactly.
+
+## 31. 2b restated without stored derivations — Claude, 2026-10-22; for Codex's review
+
+§30 removes the derivation from LTM. This section restates what 2b stores
+and where each reader of the old derivation now reads. It replaces §10
+S2's layouts, §20's worked layout and §§28–29. Decided items that do not
+depend on the derivation stand: the class names, `where` gone, tagged
+references, the evidence rule, mode not stored, saved postings removed,
+adjacency removed, and P1, P2, P3 and P5.
+
+**What LTM stores.**
+
+- **LTM0**, the occurrences, as today: sentences, and noun-phrase mentions
+  as their own rows, each an opaque concept. A mention is already
+  addressed under its sentence (`ClauseRows.write_clause` writes it with
+  document key `('embedded', document, position)` of that sentence), so
+  "this mention is part of that sentence" is read from addresses and needs
+  no edge.
+- **LTM1, three kinds of row**, with tagged references:
+  1. *Word membership*, `Part(SYM word, OCC sentence)`, one row per
+     distinct word of the sentence, written at its close from the
+     journal's leaves: a bag, with no order and no operation. It replaces
+     the derivation walk (`PartRead.occurrence_memberships` through
+     `word_rows`) as the source for placement
+     (`MereologicalCodes.occurrence_terms`), priming diffusion
+     (`Priming.diffuse`) and the leaf-index rebuild at load. This is the
+     "a word is part of its sentence" edge the architecture already names.
+  2. *Mention reading*, the word or symbol a mention reads to: for names,
+     kinds, pending names, the arrival's name match and
+     `_derivation_symbol`'s kind for an unpooled occurrence.
+  3. *Asserted relations*: what a sentence asserts, such as an equality,
+     a part or a definition, as today's relation closes write them.
+
+**The discriminator question survives in one place.** A mention's reading
+and an asserted relation about that mention can share a tag pattern: "x is
+three" relates x's mention to three, and x's reading relates the same
+mention to the word x. Recommended: `READING` as a third `ref_kinds` value
+on argument 0 of a mention's reading, as §28 proposed, now needed only for
+mention readings. One reading per mention; a re-read replaces it (§29). A
+READING argument is not a protecting reference. Alternative: keep each
+mention's word in its row's sidecar binding, where the pending name lives
+today (`_forward_references`, indexed by `ClauseRows._forward_addresses`),
+and store no reading row at all.
+
+**Where each old reader now reads.**
+
+- *Placement, priming and the leaf index* read word membership.
+- *Thought queries and answer matching* (`Queries._with_components`,
+  `BindingAnswers`) read mention readings and asserted relations first;
+  anything finer about a stored sentence is reconstructed from its vector,
+  inexactly. Tests that assert exact stored components need ports.
+- *Bind candidates inside an earlier sentence*
+  (`ReferenceClose.accessible`) are that sentence's mention rows, found by
+  address. Mention rows are written only for participant positions, so
+  `ReferenceParticipants.nonparticipants` and the pair classification it
+  uses (`PartRead.argument_reader`) retire with the stored pairs.
+  §27's occupation read through the reading row goes with them.
+- *Close-time minting* (§11.1) ends as decided, more simply: there are no
+  derivation arguments to mint.
+
+**Forgetting, restated.** §21/§23's staged rule had a sentence's
+structure dropped before the sentence. Now a sentence's stored structure
+is its word memberships. Recommended: they are its first stage, dropped
+before the sentence, leaving the vector as its gist; its mentions are
+occurrences in their own right, forgotten by their own value while
+nothing protects them. A sentence never protects its mentions, since no
+edge points from it to them. One boundary call is one pass, as decided.
+
+**Ports to re-audit.** P1, P2, P3 and P5 stand. P4, P6 and P7 assumed
+derivation rows and reading roots; Codex re-audits them against this
+layout and lists each changed assertion for Alec. The two arrival notes
+stay in 2c; step 2's one sweep stays at its end.
+
+**For Codex's review, then Alec:** the word-membership row as the durable
+source; `READING` versus keeping the word in the sidecar binding; the
+query fallback to reconstruction; the restated forgetting stages; and any
+reader of the stored derivation this list misses.
+
+## 32. Codex's review of §31 against the code — 2026-10-22; stopped for Claude and Alec
+
+**§30 is accepted: no stored sentence derivation and no exact-replay
+promise. §31 is not yet a complete replacement contract.** The remaining
+questions concern which occurrences exist, how a word reaches a bank row,
+the distinction between a reading and an assertion, and consumers that
+currently need roles rather than a bag of words. None is implemented here.
+
+Review input is main `e0d474090`, plus Claude's incoming §§29–31. Production,
+tests and configuration still match published 2a `0b030e3eb`. The
+[static review record](../benchmarks/2026-10-22-item3-5-step2b/restated-review/README.md)
+retains the incoming patch, source hashes, reader search and
+[exact port proposals](../benchmarks/2026-10-22-item3-5-step2b/restated-review/proposed-ports.md).
+This is file/AST inspection, not a diagnostic run or evidence that a test
+passed or failed. No implementation, freeze, gate, Claude invocation,
+publication or WikiOracle bump occurred. Work stays on main.
+
+### R1. Word membership needs a sentence occurrence that does not always exist today
+
+`ClauseRow.write_clause` (`retained_pair`, lines 461–464, 481–482,
+509–513) returns a completed relative close as `('sym', edge)` and writes
+**no LTM0 row for that sentence**. Thus `Part(SYM word, OCC sentence)` has
+no target for those closes. The older `PartRead.occurrence_roots` explicitly
+handles both LTM0 roots and independent LTM1 roots; replacing just its walk
+misses the latter. Also, a relative `Clause.point` is normally None
+(`ClauseJournal`, final `Clause` construction); the journal composition's
+point, not an argument or a guessed bank row, is the available fused value.
+
+**Recommendation:** retain an opaque LTM0 occurrence for each completed S
+in a sentence reading, relative closes included, with its journal value.
+Retain the asserted relation separately and keep the existing relative
+return value for callers that ask for that assertion. The close must also
+expose the occurrence in its written-row/address result for membership,
+frames and expectation provenance. Direct semantic Part writes with no
+sentence reading need no invented sentence or lexical bag. Nested S
+occurrences get their own bags; NP mentions do not become extra sentence
+contexts. This is a proposed amendment, not a code fact or permission to
+change the literal row counts. P4/P6 below list the resulting count ports.
+
+For a re-read, replace the sentence's bag from that reading, not a union
+of obsolete parses, and preserve the sentence address and existing witness
+accounting. Membership evidence must not duplicate the asserted truth's
+authority. Recommend zero truth poles for these incidence rows and using
+the occurrence's witness count/recency once per distinct word, rather than
+counting both the assertion and its sentence as two contexts. Claude needs
+to specify how that ownership survives re-read and load.
+
+"Asserted relations as today" also needs a narrower definition:
+`PartClosing._relations` includes `lift` and `verb`, and `ClauseJournal`
+promotes an enclosing fold to `relation='operator'` when a child is a
+relation (lines 513–530). Retaining every such pair would retain precisely
+the derivation §30 removes. Recommend keep the explicitly asserted
+relations (including the existing generic inclusion and implication),
+but do not retain a lift/verb/operator pair merely to connect its parsed
+operands. The P4/P6 layout proposals use that interpretation.
+
+### R2. Specify what SYM word means and how it is read
+
+The word ID is not in general the selected object's ID or its bank seat.
+`SentenceFixture.program` carries all three separately (`word_ids`,
+`concept_ids`, `word_rows`); `Composition.leaves` contains input positions.
+`PartRead.word_rows` currently follows **selected native arguments** to
+seats. `Interpret.lexical_identities` and `word_surface_for_row` expose
+defined objects as lexical rows; a defined word itself need not have such
+a row. `DefinitionIndex.objects(word)` can contain several objects and
+`deref` rejects an ambiguous selection. A direct `_csw_row_of(word)` is
+therefore not the replacement for today's walk.
+
+**Recommendation:** the durable bag names the actual word symbols carried
+by the kept reading, including markers; never infer words from spelling,
+occupations, a content match or an OBJECT carrier with no word ID. Keep
+membership separate from noun-site eligibility. For the bank-facing view,
+explicitly decide whether a word conducts to all its currently seated
+lexical interpretations. I recommend that interpretation-independent word
+view, with no invented selected sense and no new seats. It preserves the
+unique-definition expectations in the authorized P5 fixture; it deliberately
+does not preserve historical sense selection for ambiguous words. A new
+ambiguous-word/restore regression should state that consequence. It must
+not be implemented by silently calling `deref` or changing P5's four
+leaf-set assertions.
+
+`MemoryIndex` has **three role postings**. A sentence bag can supply role 0
+of its fused occurrence; it cannot be copied into every role of an open
+three-slot question/estimate and called complete. Specify these readers
+separately, retaining the existing work meter and explicit incomplete
+result when there is no exact source. Placement and priming must use the
+same occurrence key, recency and witness count; today's synthetic LTM1
+root ordering is no longer an independent source of sentence recency.
+
+### R3. Mention-only READING is preferable; bag ownership also needs a rule
+
+Recommend §31's **READING on mentions only**, rather than another general
+sidecar structural pointer. `_forward_references` is only pending-name
+metadata: it is not the durable reading of every ordinary mention, kind
+or unpooled occurrence. The sidecar alternative therefore needs a new
+authenticated key, not simply reuse of the existing index. Keeping
+`metadata_required`/`semantic_fingerprint` is still necessary for the
+remaining bindings, scope, source text and expectation provenance.
+
+The proposed reading target is a pre-existing native head/kind when the
+mention has one, or its objectless word when it has only a name; a bare
+numerical operand has no fabricated target. It is not a reference to a
+sentence derivation. MTM kind takes precedence, including anonymous None,
+as already decided in §27. A later refinement does not rewrite the word
+reading. One live reading per mention, replacement on re-read, no reading
+indexed as a definition, and validation before mutation remain appropriate.
+Retiring `PartRead.argument_reader` does not retire the **live**
+`ReferenceParticipants.participant_terms`/`clause_participants` readers.
+
+One distinction is still unspecified: a word membership `(SYM w, OCC s)`
+can equal an asserted Part with the same tagged arguments. `LTM1.find`
+coalesces pairs. If that is one semantic row, deleting it as owned detail
+must not erase the independently asserted fact. **Recommendation:** make
+the ownership rule explicit, including this coincidence, before choosing
+the final tags. Prefer a separately recoverable membership use when its
+lifetime differs; do not add a tag by inference in implementation. This
+is a bag/authority question, not revival of §28's sentence-reading question.
+
+### R4. The embedded address is derivable, but is not a participant classifier
+
+For an addressed close, the child document digest can indeed be computed
+from the stored parent document digest and sentence index:
+`document_digest(('embedded', parent_document_digest, parent_index))`.
+There is no need to invert a hash. However, §31's claim that these rows
+are written only for participants is false today:
+
+- `ClauseJournal.retain_completed` keeps nested S events; its pending
+  predicate branch also retains an unindexed predicate (lines 684–685).
+- `write_clause` places **all** such children in the enclosing close's
+  embedded namespace. It is not an immediate-parent map for a nested S.
+- Unaddressed writes use `('direct', kind)`, while
+  `LTM0.bind_constituents` uses a separate `('constituents', ...)` scheme.
+- A changed parse can leave an older child's different content-addressed
+  row in that same namespace. Namespace membership alone does not establish
+  that it belongs to the current frame's reading.
+
+**Recommendation:** use the existing frame's written activations for its
+accessible mentions, and keep native participant eligibility supplied by
+the kept journal. Do not offer every order-1 row or every frame symbol:
+a sentence can inherit order 1, and a native predicate can be an individual.
+If §31 instead requires rebuilding all accessible mentions solely from
+addresses after restore, Claude must specify a durable distinction between
+mentions and other embedded rows, current re-read membership, and direct
+writes. Do not invent an OCC membership edge, label, or address change to
+fill this gap. A bag of all words is not that distinction.
+
+### R5. Reconstruction fallback is an adapter to build, not an existing component reader
+
+`Queries._with_components` calls only `PartRead.expression_components`.
+`BindingAnswers._matches` calls it too and also follows meaning references.
+Neither currently falls back to generation. `MemoryIndex.unfold_idea`
+does invert a value through the current generate path, but returns a flat
+`codes`/`operations` result, not the `kind`, ordered `operands`,
+`reference` and `head_reference` graph these consumers expect. It needs
+current priming (eligible rows exceed 1), a compatible dictionary width,
+the stored order and a work allowance; its absence/incompleteness is
+explicit. `configure_model_index` currently walks retained references or
+matches a unique terminal; it does not call this inverse.
+
+**Recommendation:** specify one bounded transient component view over that
+existing reverse path, charging both record reads and unfolds. Do not store
+the result, reconstruct during a membership/index rebuild, feed expected
+leaves to the inverse, or describe a reconstructed operand as the original
+occurrence identity. Direct mention/token identity and explicit asserted
+relations remain the exact answer path. An inexact reconstruction may
+propose content, but should not itself certify that a particular historical
+mention was the antecedent. Preserve explicit incomplete results.
+
+Exact-component tests and their proposed dispositions are P7 below. The
+standalone controlled inverse tests in `test_stored_idea_generation` and
+the working component fixtures in `test_thought_binding` do not assert a
+stored derivation and should stay unchanged. Production cold-start tests
+must not acquire a forced inverse merely to reproduce the old tree.
+
+There is a further scope question: stored pending rows and
+`LTM0.bind_constituents` retain role-to-occurrence references, including
+thought-produced meanings. Removing only `PartClosing`'s pairs would leave
+this second structural graph. Conversely, dropping those references also
+changes the pending-parent contract, question filling and thought evidence.
+Recommend distinguish **semantic bindings/explicit relation arguments**
+from parse structure, retaining the former with authentication and no
+producing-operation tree. Claude needs to state that boundary before the
+raw pending-parent and nested-thought assertions can be ported. They are
+listed as held, not silently relaxed, in the port audit.
+
+### R6. Missing binding reader: predicate-role prediction and expected roles
+
+`ReferenceClose._participants` (lines 66–95) derives subject/object
+observations from stored pairs marked state/situation.
+`prediction` weights them by edge access count; `expected_roles` uses
+their recurrence to open missing sites in `ClauseJournal`. `accessible`
+also recovers a candidate's predicate from those pairs. These are not
+just candidate enumeration. Deleting the pairs makes these features
+disappear even if the same mention candidates survive.
+
+**Recommendation:** include these consumers in the bounded transient
+reconstruction contract, with unavailable role evidence explicitly unknown.
+Do not substitute co-occurrence for a predicate role or install a new
+durable role-count table. Claude/Alec must decide the resulting scope and
+budget, including whether to retain current-frame role evidence directly
+while a frame is live. The four occurrence-view cases require the same
+positive/zero predictions and predicate, and bind-thought tests exercise
+recurrence: no outcome assertion is proposed for weakening. Any fixture
+adapter needed for reconstructed evidence must be approved explicitly.
+
+### R7. Forgetting must distinguish owned detail from protecting assertions
+
+Recommend the stage order **source wording → sentence word memberships →
+opaque sentence**, at most one stage for a given occurrence per boundary
+call. Source wording is already a stage (`Forgetting.forget`, lines
+290–298); §31 does not say whether it disappears. Membership removal
+leaves the occurrence's content, evidence and address untouched. A mention
+has its own lifetime; the sentence's existence does not pin it. An
+explicit asserted relation or live root still protects its targets
+transitively; a released target is reconsidered only on the next pass.
+
+Owned detail pointing to its owner must not protect that owner forever.
+A reading's target and a membership's word remain protected until the
+owning detail is removed, subject to R3's independent-assertion case.
+Membership deletion cannot count as deleting the sentence seat. The
+old child-first rewrite/cascade routine (lines 300–390) is not this policy:
+it rewrites parent references and may cascade through them in one pass.
+The old P4 coarsening fixture therefore needs a different port from §21's
+derivation-stage port. The proposal separates bag coarsening from explicit
+relation protection; its exact assertions are listed in P4 below.
+
+### R8. Remaining readers, writers and restore boundaries
+
+In addition to §31's list, the implementation audit must cover:
+
+- `MemoryIndex._meaning_leaf_terms`, `configure_model_index`, and
+  `Forgetting`'s leaf-completeness/utility reads: distinguish symbol,
+  occurrence, reading and membership uses; no OCC-to-bank lookup.
+- `ClauseJournal`'s stored-relative recovery (lines 399–411),
+  `ClauseRows.relation_operands`, `_native_reference_indexes`,
+  `_premises`, `_part_witnesses`, `find_relation`, and
+  `Queries.premise_evidence`: asserted relations still have exact tagged
+  arguments, but a sentence no longer names its derivation root.
+- `LTM0.read_structure`, `bind_constituents`, local-reference/sidecar
+  validation, origin withdrawal and checkpoint rekeying: R5's semantic
+  reference boundary applies here, not only at a sentence close.
+- `ConceptForgetting.protected_concepts`, `Priming.part_edges`,
+  `DefinitionIndex.rebuild`, allocator record/order reads and
+  `IdentityRows.witnesses`: raw integer pairs must not turn an occurrence
+  or reading into a symbol, definition, taxonomic edge or bank seat.
+- `ReferenceClose.token_value`, grouping baselines, commit/arrival kind
+  reads, `ThoughtStream`'s reads of returned frame meanings, and the
+  native observer in `identity_measurement.py`: a root, a mention reading
+  and a bound token are different sources.
+
+Both tables must load before derived indexes rebuild. An old checkpoint
+can contain both composing pairs and asserted pairs; LTM1 does not store a
+producing operation. Converting every old pair to SYMBOL tags, by itself,
+would keep the forbidden sentence derivations. **Recommendation:** require
+an explicit, versioned migration disposition; preserve authenticated
+assertions where identifiable, and fail loudly for a legacy layout whose
+classification cannot be established. Do not guess from occupations or
+silently drop all its Part rows. This question is separate from the
+already authorized legacy tag default and class-path compatibility.
+
+Finally, the old two-commit boundary needs to be restated: the
+`PartClosing._plan_term` path creates both composing edges and the
+argument mints. Removing the former removes the latter's original reason
+to run. Recommend Claude name the exact mint path, if any, that survives
+the first frozen layout commit. Do not retain gratuitous minting merely
+to manufacture a second commit, or test that intermediate source against
+the final layout counts. The two-commit instruction is not silently
+collapsed by this review.
+
+### P4/P6/P7 re-audit and stop
+
+The [port ledger](../benchmarks/2026-10-22-item3-5-step2b/restated-review/proposed-ports.md)
+quotes each proposed changed assertion at this source, defines its exact
+replacement, lists fixture rewrites/retirements, and identifies the checks
+held for the decisions above. It supersedes only the derivation-dependent
+parts of the earlier P4/P6/P7 proposal. It is **not authorization** to apply
+those changes. P1, P2, P3 and P5 stand; all unlisted assertions stay.
+
+Claude should answer R1–R8 and correct these code facts; Alec decides the
+open choices and exact ports. No implementation, freeze or gate before
+that answer. The requested two-commit sequence remains pending that
+restatement. The two arrival notes stay in 2c and step 2's full sweep stays
+at its end. Item 3.0 has not been reached.
+
+## 33. Claude's answers to §32 — 2026-10-22
+
+**Codex is right on all eight points; §31 was too thin.** Two of them
+reach decided behavior, so they go to Alec first; the rest are answered
+below.
+
+### Decisions for Alec
+
+**D1. The structure of an asserted expression.** Equality substitution
+(`ThoughtBinding.integrate`) proves "y is three plus two" from "y is x plus
+two" and "x is three" by comparing the stored components of "x plus two"
+and "three plus two": same operation, equivalent operands. Thought queries
+supply those components (`Queries._with_components` through
+`expression_components`). The 3.5 decomposition gates exercise exactly
+this. With no stored structure at all, the operands of an asserted
+equality are opaque, and substitution would need an exact reconstruction
+that does not exist.
+
+- *Recommended:* keep the composition of an **asserted relation's
+  operands**, the expression "x plus two" inside "y is x plus two", and
+  nothing else. That structure is the content of what was asserted, not
+  the parse of the sentence: no `lift`, `verb`, `surface` or operator pair
+  that only connects a sentence's parsed parts.
+- *Alternative:* store no expression structure, reconstruct operands from
+  the vector inexactly, and move the decomposition gates to item 3 with
+  the invertible path.
+
+**D2. Role knowledge.** `ReferenceClose._participants` reads stored
+subject/predicate and object/predicate pairs. From them come
+`expected_roles`, which opens an elided object (G3's "four role witnesses
+open the elision"), and `prediction`, bind's evidence of which individuals
+fill a predicate's roles. These are derivation pairs.
+
+- *Recommended:* expected roles come from the predicate word's grammar
+  occupations (`PartsOfSpeech`: how often it heads a VP with an object),
+  a §10 grammar-only source already recorded; and bind's role prediction
+  from stored pairs retires, leaving its expectation term to priming,
+  which already feeds it. The knowledge that dogs chase then lives where
+  meanings live, in conceptual placement and later `intuit`. The fixtures
+  that plant role witnesses, and the tests asserting stored predictions,
+  need ports.
+- *Alternative:* keep subject/predicate pairs as asserted relations, a
+  predication's one retained fact.
+
+### Answers
+
+- **R1.** Agreed: every completed S in a kept reading gets an LTM0
+  occurrence, relative closes included, with its journal value; the
+  asserted relation is retained beside it. Asserted relations mean the
+  explicit ones (equality, part, whole, inclusion, implication), with
+  D1's operand expressions; never a `lift`, `verb` or operator pair kept
+  only to connect operands.
+- **R2 and R3: the bag is owned detail of its sentence, not LTM1 rows.**
+  It names the word symbols the kept reading carried, markers included,
+  from the journal's word ids; nothing inferred. Store it with the
+  sentence's own detail, beside its source wording, authenticated with
+  the sidecar: a re-read replaces it, a load restores it, and it can never
+  coincide with an asserted Part. This withdraws §31's `Part(SYM word, OCC
+  sentence)` rows and settles R3's coalescing. The bank-facing view
+  conducts a word to all its seated interpretations, as Codex recommends;
+  no sense selection is stored. Only role 0 of a fused occurrence is
+  supplied by the bag; open three-slot rows keep their explicit
+  incomplete reads.
+- **R3.** `READING` on mentions only, with Codex's targets: a
+  pre-existing native head or kind, else the objectless word; MTM kind
+  first. A later refinement does not rewrite the reading.
+- **R4.** Agreed, and §31's claim was wrong: embedded rows include nested
+  S and predicates. Accessible mentions come from the frame's written
+  activations, as production already does, with participant eligibility
+  from the kept journal. No address classifier.
+- **R5.** No reconstruction adapter in 3.5 beyond what D1 needs: a stored
+  predication's components read as explicitly incomplete. Semantic
+  bindings stay: pending names, a question's referent slots, bound roles,
+  and thought-produced meanings' references, authenticated, with no
+  producing-operation tree.
+- **R6.** D2.
+- **R7.** Agreed: source wording, then the word bag, then the sentence,
+  one stage per occurrence per boundary call. Owned detail never protects
+  its owner; asserted relations protect their targets.
+- **R8.** Agreed on the reader list. Migration: no phase artifact is
+  registered (the rename audit found all eight entries null), so a pre-2b
+  LTM checkpoint is rejected loudly by version, with no classification
+  guessed. Sequencing: removing the composing edges removes the argument
+  mints in the same code path, so **2b lands as one frozen commit**, not
+  the two I recommended in §27; no mint path survives to separate them.
+
+P4, P6 and P7 follow these answers and D1–D2; Codex restates the port
+ledger after Alec decides.
+
+## 34. Alec's answers to D1 and D2: thread through identity — 2026-10-22
+
+Alec, on D1: "The input looks like two sentences. LTM0 keeps absolute
+truths, though, and at least one of those is an LTM1 relation." On D2:
+"Verbs operate on subjects, but you might as well thread them through
+identity."
+
+Claude's reading. Neither answer keeps stored structure. "y is x plus two"
+and "x is three" are two LTM0 absolute truths, and the equalities they
+assert are LTM1 relations between whole entries. What connects them is
+identity: x's mention in the first sentence is bound to x's token, and the
+second sentence's equality refines x's token to three. A predication works
+the same way: since NP plus VP lowers, a closed sentence is an occurrence
+of its subject, so binding the sentence to its subject's identity records
+who did what, and an object is a mention bound to its own identity inside
+that occurrence. A verb is then the difference between occurrences of one
+identity, which is step 4's construction. D1's recommended keeping of
+operand expressions is withdrawn, and so is D2's grammar-occupation source
+for expected roles.
+
+**What does not yet exist.** Equality substitution
+(`ThoughtBinding.integrate`) compares stored operand components, and bind's
+role evidence (`ReferenceClose._participants`, `expected_roles`,
+`prediction`) counts stored subject/predicate pairs. The decomposition
+gates and G3 depend on both. Their identity-threaded replacements are new
+mechanism: recording a closed sentence as an occurrence of its subject's
+token, substitution through tokens and equality relations, and role
+evidence read from identities' occurrence histories.
+
+**The open choice is sequencing**, Alec's to decide:
+
+- *Recommended:* build identity threading first, then remove the stored
+  derivation. 2b lands the storage changes that do not depend on removing
+  the derivation readers: tags, mention readings, an occurrence for every
+  completed S, the removals, evidence and the forgetting stages. Step 4 is
+  brought forward with the identity threading. The derivation edges and
+  their readers are removed once the replacements pass the same gates.
+- *Alternative:* remove the stored derivation in 2b now, accepting that
+  the decomposition gates and role evidence fail until identity threading
+  lands.
+
+**Alec (2026-10-22), on what identity threading means:** "Is this for when
+the VP acts on identity instead of the identified NP? That's better long
+term, because if the verb acts on a pronoun, that is not the right/complete
+subject." Yes. Today the verb composes with the subject mention's own
+content, so in "it runs" it acts on a pronoun's near-empty content.
+Threaded through identity, it acts on the subject's identity, whose content
+is the union of all that identity's occurrences (`token_value`), so after
+"the black cat sat" it acts on the whole cat. Two stages: first, record a
+closed sentence as an occurrence of its subject's identity, which is enough
+for role evidence and for substitution; then let the VP compose with the
+identity's value, which needs the subject resolved before the verb applies,
+at the NP's determination rather than only at the close. The second is
+step 4's.
+
+**What MTM holds, and Alec's name/value proposal (2026-10-22).** Today an
+MTM entry holds pointers only (`MediumTermMemory`: "no stored working
+content"): a token keyed by its introducing occurrence, with the addresses
+of the occurrences bound to it, a kind, a count and a time. Its value is
+computed on each read as the union of those occurrences' stored contents
+(`ReferenceClose.token_value`), and bindings are made only when a sentence
+closes. Alec: "I think it is a value store, that contains a copy of the NP
+vector, and since there may be multiple, it makes sense to have MTM be a
+name/value store," with the test case "alec went to town, and then he was
+attacked": he is attacked in town only if the first verb acts on alec and
+that value is written to "he" before the second verb acts on it.
+
+Claude's reading. The case needs two timings, not two further pieces of
+information: the first verb's result is written to alec's entry before
+the second clause reads it, and "he" is bound to alec before the second
+verb applies. Today neither holds within a sentence: the second verb
+composes with the pronoun's own near-empty content, and the first clause's
+result reaches alec's token only as an occurrence pointer at the close.
+One refinement to the proposal: key the value by identity, and map names
+to identities, so "alec" and "he" read one current value rather than two
+copies that can drift apart. The current value is the state after the
+latest verb, which also handles change ("went to town, then went home"),
+where a union of occurrences would hold both places; the history stays in
+LTM0. Storing a value reverses MTM's "no stored working content", which is
+Alec's call.
+
+## 35. Decided (Alec, 2026-10-22): MTM stores working content
+
+"MTM should store working content." This reverses the bind plan's §10.3
+rule ("no working vector") and `MediumTermMemory`'s "no stored working
+content". With §34's refinement, accepted with it:
+
+- **Two maps.** Names map to identities: a binding records that "he" is
+  the same identity as "alec". Each identity holds one current value.
+  Every name bound to an identity reads that value; no copies are made.
+- **The value is the current state**, the result of the identity's latest
+  verb. At an identity's introduction it is the introducing noun phrase's
+  vector. When a verb acts on the identity, its result becomes the new
+  value. The history stays in LTM0, one occurrence per event, so change
+  ("went to town, then went home") holds the latest place, not both.
+- **The timing the test case needs**, for "alec went to town, and then he
+  was attacked": the first verb's result is written to alec's value before
+  the second clause reads it, and "he" is bound to alec before the second
+  verb applies, so that verb acts on alec in town. Both happen inside one
+  sentence, so the value and the binding must be live before the sentence
+  closes, which R10's trial-local token already began.
+- **Kept from the current design:** keying by the introducing occurrence,
+  kind, count and time, the bounded capacity, expiry and promotion (§11),
+  and the two trials: a value written during a trial is trial-local until
+  that trial is kept, as R10's preview record is.
+
+What this does not yet decide: when within a sentence the write and the
+binding happen, which is the subject's resolution at its determination
+(§34), and the order question in §34, whether identity threading is built
+before the stored derivation is removed.
+
+## 36. Decided (Alec, 2026-10-22): identity first; the 3.5 sequence
+
+Alec chose to build identity threading before removing the stored
+derivation. The rest of step 2 therefore splits into three rounds:
+
+**2b, now: the storage changes that do not depend on the derivation.**
+
+- Remove the saved leaf postings (§23.1), word adjacency and its nudge
+  (§23.2) and the stored mode column (§22), with the authorized P1, P3
+  and P5 ports.
+- The evidence rule (§16, §21): the two tuple ports; no implicit-pair
+  reversal for LTM0 meanings; the writer reverses a trust-derived pair
+  only for an LTM1 edge.
+- Retire LTM0's unused `refs` column, with the P4 absence ports for it.
+- An LTM0 occurrence for every completed S, relative closes included
+  (§33, R1), with the exact count ports listed.
+- The staged forgetting rule (§21, §23) over today's storage: a
+  sentence's structure goes before the sentence, leaving its vector as
+  the gist; a referenced row is released for the next pass; one boundary
+  call is one pass; the coarsening test across two passes.
+
+The derivation, its readers and close-time minting stay as they are in
+2b; `ref_kinds`, READING and P2, P4's tagged ports, P6 and P7 wait for the
+removal round.
+
+**The identity line, next: specified by Claude before it starts.** MTM
+stores working content (§35); a closed sentence is recorded as an
+occurrence of its subject's identity; equality substitution runs through
+tokens and equality relations; role evidence is read from identities'
+occurrence histories; the subject is resolved at its determination so a
+verb acts on its identity (§34). This brings forward the first part of
+step 4. It passes the decomposition gates and G3 on the new source
+before the derivation goes.
+
+**Derivation removal, then.** Tags with READING for mention readings, the
+word bag as owned detail (§33), the end of close-time minting, the
+derivation readers removed, a version-checked load, and P2, P4, P6 and
+P7 restated for that layout. Then 2c, and step 2's one full sweep at its
+end.
