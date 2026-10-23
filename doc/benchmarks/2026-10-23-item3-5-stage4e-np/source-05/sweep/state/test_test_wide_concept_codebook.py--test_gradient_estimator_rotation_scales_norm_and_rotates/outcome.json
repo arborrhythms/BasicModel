@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wide_concept_codebook.py::test_gradient_estimator_rotation_scales_norm_and_rotates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

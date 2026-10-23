@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_checked_execution_requires_a_completed_answer_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

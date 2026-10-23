@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ramsification_table.py::test_invert_with_neither_pass_is_identity_on_that_pass",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

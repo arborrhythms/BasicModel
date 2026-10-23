@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_bracket.py::test_tense_shifts_center_by_step_via_shift_time",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

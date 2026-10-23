@@ -1,0 +1,6 @@
+{
+  "node": "test/test_native_candidate_attention.py::test_native_attention_checkpoint_and_missing_legacy_parameters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

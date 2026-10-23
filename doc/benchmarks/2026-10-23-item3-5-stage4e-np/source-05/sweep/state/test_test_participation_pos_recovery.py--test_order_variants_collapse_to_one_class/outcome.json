@@ -1,0 +1,6 @@
+{
+  "node": "test/test_participation_pos_recovery.py::test_order_variants_collapse_to_one_class",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

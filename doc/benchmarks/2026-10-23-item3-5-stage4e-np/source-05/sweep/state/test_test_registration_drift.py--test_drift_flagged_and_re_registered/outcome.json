@@ -1,0 +1,6 @@
+{
+  "node": "test/test_registration_drift.py::test_drift_flagged_and_re_registered",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

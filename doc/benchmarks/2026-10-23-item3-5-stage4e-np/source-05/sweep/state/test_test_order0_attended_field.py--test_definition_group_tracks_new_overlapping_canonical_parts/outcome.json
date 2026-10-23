@@ -1,0 +1,6 @@
+{
+  "node": "test/test_order0_attended_field.py::test_definition_group_tracks_new_overlapping_canonical_parts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

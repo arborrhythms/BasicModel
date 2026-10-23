@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_matches_priming_mask_formula",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

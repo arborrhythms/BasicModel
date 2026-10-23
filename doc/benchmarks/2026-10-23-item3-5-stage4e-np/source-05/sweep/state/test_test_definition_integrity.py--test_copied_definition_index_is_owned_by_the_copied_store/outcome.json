@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_integrity.py::test_copied_definition_index_is_owned_by_the_copied_store",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

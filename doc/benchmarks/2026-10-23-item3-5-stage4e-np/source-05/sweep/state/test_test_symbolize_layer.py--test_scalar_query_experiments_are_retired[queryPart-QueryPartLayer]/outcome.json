@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryPart-QueryPartLayer]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

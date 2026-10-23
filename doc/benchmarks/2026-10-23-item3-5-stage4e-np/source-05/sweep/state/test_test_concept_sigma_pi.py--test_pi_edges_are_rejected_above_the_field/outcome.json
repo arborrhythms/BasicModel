@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_pi_edges_are_rejected_above_the_field",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

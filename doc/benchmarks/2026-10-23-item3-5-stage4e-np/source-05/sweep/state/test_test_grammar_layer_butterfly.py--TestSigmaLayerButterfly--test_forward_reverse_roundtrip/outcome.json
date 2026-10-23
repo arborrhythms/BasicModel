@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_layer_butterfly.py::TestSigmaLayerButterfly::test_forward_reverse_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

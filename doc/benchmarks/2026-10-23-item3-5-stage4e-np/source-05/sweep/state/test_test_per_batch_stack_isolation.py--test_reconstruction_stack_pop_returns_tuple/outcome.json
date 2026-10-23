@@ -1,0 +1,6 @@
+{
+  "node": "test/test_per_batch_stack_isolation.py::test_reconstruction_stack_pop_returns_tuple",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

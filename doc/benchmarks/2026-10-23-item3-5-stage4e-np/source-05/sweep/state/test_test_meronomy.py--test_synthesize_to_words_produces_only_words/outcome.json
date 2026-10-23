@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_synthesize_to_words_produces_only_words",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

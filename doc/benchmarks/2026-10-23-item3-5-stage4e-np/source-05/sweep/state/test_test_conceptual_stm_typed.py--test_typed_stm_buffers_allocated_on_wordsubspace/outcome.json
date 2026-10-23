@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm_typed.py::test_typed_stm_buffers_allocated_on_wordsubspace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

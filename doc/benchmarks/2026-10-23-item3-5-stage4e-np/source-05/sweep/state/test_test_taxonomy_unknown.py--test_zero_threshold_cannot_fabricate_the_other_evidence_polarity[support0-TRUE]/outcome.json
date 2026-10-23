@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_unknown.py::test_zero_threshold_cannot_fabricate_the_other_evidence_polarity[support0-TRUE]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

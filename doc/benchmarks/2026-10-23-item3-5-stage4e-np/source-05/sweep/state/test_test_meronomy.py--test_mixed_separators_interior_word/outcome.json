@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_mixed_separators_interior_word",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

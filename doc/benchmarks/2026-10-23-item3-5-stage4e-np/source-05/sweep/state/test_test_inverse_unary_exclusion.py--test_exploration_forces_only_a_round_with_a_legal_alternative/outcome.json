@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inverse_unary_exclusion.py::test_exploration_forces_only_a_round_with_a_legal_alternative",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

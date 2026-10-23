@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_populate_then_resolve_identities_live_lifecycle",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

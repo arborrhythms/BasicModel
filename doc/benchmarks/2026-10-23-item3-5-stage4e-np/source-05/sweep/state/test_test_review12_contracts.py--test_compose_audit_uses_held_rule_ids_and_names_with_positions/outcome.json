@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review12_contracts.py::test_compose_audit_uses_held_rule_ids_and_names_with_positions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

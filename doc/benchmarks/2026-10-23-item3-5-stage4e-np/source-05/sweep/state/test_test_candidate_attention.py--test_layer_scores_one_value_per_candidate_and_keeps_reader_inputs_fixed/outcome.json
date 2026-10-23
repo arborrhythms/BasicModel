@@ -1,0 +1,6 @@
+{
+  "node": "test/test_candidate_attention.py::test_layer_scores_one_value_per_candidate_and_keeps_reader_inputs_fixed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

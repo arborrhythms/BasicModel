@@ -1,0 +1,6 @@
+{
+  "node": "test/test_recon_bench.py::test_exact_match_rate_is_1_on_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

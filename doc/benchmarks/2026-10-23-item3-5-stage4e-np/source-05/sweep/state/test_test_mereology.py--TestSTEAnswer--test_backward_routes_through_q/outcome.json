@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestSTEAnswer::test_backward_routes_through_q",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

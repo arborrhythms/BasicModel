@@ -1,0 +1,6 @@
+{
+  "node": "test/test_partition_rule_predictor.py::test_rule_predictor_output_shape",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

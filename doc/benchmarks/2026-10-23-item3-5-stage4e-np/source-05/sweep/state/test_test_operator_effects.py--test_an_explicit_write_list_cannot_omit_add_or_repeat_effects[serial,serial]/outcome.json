@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_effects.py::test_an_explicit_write_list_cannot_omit_add_or_repeat_effects[serial,serial]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_attention.py::test_codebook_path_keeps_complete_word_coverage",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

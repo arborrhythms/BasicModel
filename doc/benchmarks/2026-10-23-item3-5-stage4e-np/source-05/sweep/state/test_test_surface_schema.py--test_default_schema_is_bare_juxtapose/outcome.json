@@ -1,0 +1,6 @@
+{
+  "node": "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_test_modes.py::test_slow_mode_controls_collection_before_expensive_fixture_setup[0-1 passed, 1 skipped]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

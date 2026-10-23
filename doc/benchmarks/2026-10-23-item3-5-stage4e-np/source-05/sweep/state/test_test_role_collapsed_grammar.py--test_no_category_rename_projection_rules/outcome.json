@@ -1,0 +1,6 @@
+{
+  "node": "test/test_role_collapsed_grammar.py::test_no_category_rename_projection_rules",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

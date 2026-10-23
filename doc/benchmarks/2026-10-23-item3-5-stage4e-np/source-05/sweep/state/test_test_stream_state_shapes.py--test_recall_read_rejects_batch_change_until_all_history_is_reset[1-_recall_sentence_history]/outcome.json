@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_state_shapes.py::test_recall_read_rejects_batch_change_until_all_history_is_reset[1-_recall_sentence_history]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

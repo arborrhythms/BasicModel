@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_factor_with_no_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

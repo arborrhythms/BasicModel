@@ -1,0 +1,6 @@
+{
+  "node": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_default_only_fallback_is_detached",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

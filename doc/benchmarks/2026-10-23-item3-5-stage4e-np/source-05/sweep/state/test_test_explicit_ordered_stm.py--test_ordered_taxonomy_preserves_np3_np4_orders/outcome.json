@@ -1,0 +1,6 @@
+{
+  "node": "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

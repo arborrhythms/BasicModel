@@ -1,0 +1,6 @@
+{
+  "node": "test/test_native_perception.py::test_old_subsymbolic_noop_spelling_is_rejected",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

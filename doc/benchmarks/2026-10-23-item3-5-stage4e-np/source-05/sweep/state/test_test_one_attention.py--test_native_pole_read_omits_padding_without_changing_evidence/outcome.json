@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_native_pole_read_omits_padding_without_changing_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

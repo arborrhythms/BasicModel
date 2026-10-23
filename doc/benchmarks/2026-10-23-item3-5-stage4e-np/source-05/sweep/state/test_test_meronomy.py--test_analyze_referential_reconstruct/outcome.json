@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_analyze_referential_reconstruct",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

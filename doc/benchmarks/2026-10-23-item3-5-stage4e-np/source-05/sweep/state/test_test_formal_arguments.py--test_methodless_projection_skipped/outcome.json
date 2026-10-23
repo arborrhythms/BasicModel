@@ -1,0 +1,6 @@
+{
+  "node": "test/test_formal_arguments.py::test_methodless_projection_skipped",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

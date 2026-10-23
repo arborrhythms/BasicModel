@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_meronomy_knob_code_fallback_is_off",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

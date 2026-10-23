@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item4_repair.py::test_order_zero_pole_handoff_applies_percept_gain_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

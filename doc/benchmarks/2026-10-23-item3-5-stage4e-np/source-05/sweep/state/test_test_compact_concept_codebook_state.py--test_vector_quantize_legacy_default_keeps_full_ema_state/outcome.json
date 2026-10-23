@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compact_concept_codebook_state.py::test_vector_quantize_legacy_default_keeps_full_ema_state",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

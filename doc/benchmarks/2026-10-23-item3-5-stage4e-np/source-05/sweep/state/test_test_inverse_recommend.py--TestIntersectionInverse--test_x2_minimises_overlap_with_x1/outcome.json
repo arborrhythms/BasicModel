@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inverse_recommend.py::TestIntersectionInverse::test_x2_minimises_overlap_with_x1",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

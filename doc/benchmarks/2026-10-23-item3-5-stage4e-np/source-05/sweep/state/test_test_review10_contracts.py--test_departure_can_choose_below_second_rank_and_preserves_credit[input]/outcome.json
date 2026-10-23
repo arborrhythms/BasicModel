@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review10_contracts.py::test_departure_can_choose_below_second_rank_and_preserves_credit[input]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

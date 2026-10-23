@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_inadmissible_binary_order_mismatch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

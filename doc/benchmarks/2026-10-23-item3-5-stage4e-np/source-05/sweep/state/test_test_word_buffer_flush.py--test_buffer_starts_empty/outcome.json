@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_buffer_flush.py::test_buffer_starts_empty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

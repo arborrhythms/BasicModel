@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_documentation_is_recorded_without_invalidating_code_snapshot",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

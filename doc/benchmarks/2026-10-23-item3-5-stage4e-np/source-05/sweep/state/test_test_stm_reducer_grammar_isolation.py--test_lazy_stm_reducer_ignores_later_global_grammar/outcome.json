@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reducer_grammar_isolation.py::test_lazy_stm_reducer_ignores_later_global_grammar",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_hard_mask.py::test_kwargs_priming_present_when_buffer_allocated",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

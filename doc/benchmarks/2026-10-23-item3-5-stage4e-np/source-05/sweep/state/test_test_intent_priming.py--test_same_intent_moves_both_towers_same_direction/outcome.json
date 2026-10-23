@@ -1,0 +1,6 @@
+{
+  "node": "test/test_intent_priming.py::test_same_intent_moves_both_towers_same_direction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

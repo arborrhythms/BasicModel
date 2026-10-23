@@ -1,0 +1,6 @@
+{
+  "node": "test/test_contractive_linear.py::test_constraints_hold_at_init_unary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

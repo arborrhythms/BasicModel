@@ -1,0 +1,6 @@
+{
+  "node": "test/test_connective_supervision.py::test_soft_compose_one_hot_matches_hard",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

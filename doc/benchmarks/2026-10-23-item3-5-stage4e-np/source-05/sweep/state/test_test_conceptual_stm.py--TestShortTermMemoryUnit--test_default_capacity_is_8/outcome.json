@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_default_capacity_is_8",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

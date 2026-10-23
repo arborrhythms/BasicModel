@@ -1,0 +1,6 @@
+{
+  "node": "test/test_test_modes.py::test_weekly_includes_the_parked_inline_suites",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_packed_parameter_shape",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

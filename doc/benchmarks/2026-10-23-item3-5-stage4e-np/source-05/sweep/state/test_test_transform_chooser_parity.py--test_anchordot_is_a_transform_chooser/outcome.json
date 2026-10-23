@@ -1,0 +1,6 @@
+{
+  "node": "test/test_transform_chooser_parity.py::test_anchordot_is_a_transform_chooser",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_null_word_pathway.py::test_positionless_tokens_break_at_terminator",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

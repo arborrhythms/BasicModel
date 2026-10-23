@@ -1,0 +1,6 @@
+{
+  "node": "test/test_intent_priming.py::test_vq_selection_byte_identical_with_no_intent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a.py::test_sentence_identity_is_recomputable_and_does_not_consume_global_rng",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

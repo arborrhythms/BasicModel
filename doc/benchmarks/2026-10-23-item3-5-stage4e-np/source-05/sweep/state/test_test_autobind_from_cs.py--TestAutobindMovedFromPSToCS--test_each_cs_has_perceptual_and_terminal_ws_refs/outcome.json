@@ -1,0 +1,6 @@
+{
+  "node": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_each_cs_has_perceptual_and_terminal_ws_refs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

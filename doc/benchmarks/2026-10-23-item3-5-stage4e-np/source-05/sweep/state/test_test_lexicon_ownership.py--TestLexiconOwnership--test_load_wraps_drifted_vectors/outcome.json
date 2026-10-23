@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_load_wraps_drifted_vectors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

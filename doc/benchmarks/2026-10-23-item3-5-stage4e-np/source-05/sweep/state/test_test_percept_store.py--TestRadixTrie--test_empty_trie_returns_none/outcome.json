@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestRadixTrie::test_empty_trie_returns_none",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

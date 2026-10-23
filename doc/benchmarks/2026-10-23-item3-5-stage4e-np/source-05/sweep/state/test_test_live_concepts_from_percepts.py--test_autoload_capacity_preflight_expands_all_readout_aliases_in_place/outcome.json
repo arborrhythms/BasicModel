@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_concepts_from_percepts.py::test_autoload_capacity_preflight_expands_all_readout_aliases_in_place",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

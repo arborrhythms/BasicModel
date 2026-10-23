@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_state_dict_roundtrip_gradcheck_and_fullgraph_compile[SigmaConceptsFromPercepts]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

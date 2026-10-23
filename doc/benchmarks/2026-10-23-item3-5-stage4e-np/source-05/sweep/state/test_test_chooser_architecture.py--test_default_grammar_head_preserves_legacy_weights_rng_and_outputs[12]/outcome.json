@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chooser_architecture.py::test_default_grammar_head_preserves_legacy_weights_rng_and_outputs[12]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

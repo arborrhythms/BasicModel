@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_encoding_recovery.py::test_restore_without_counter_defaults_to_one",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

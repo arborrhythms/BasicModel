@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_ladder_grammar_has_chunk_as_a_reduce_candidate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

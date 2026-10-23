@@ -1,0 +1,6 @@
+{
+  "node": "test/test_when_range_encoding.py::test_default_period_is_65536",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

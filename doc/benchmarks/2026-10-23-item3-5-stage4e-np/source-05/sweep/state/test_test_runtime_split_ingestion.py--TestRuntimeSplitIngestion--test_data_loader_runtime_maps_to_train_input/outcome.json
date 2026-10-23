@@ -1,0 +1,6 @@
+{
+  "node": "test/test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_data_loader_runtime_maps_to_train_input",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

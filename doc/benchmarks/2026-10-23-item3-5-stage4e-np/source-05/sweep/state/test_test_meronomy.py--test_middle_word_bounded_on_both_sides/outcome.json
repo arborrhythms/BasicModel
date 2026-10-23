@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_middle_word_bounded_on_both_sides",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

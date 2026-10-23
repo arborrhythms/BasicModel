@@ -1,0 +1,6 @@
+{
+  "node": "test/test_contractive_linear.py::test_constraints_hold_after_random_regression",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

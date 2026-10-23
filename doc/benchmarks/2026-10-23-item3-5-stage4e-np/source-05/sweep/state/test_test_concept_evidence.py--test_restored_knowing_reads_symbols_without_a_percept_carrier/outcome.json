@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_restored_knowing_reads_symbols_without_a_percept_carrier",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

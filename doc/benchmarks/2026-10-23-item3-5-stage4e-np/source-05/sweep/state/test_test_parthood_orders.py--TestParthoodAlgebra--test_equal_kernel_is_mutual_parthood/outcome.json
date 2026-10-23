@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestParthoodAlgebra::test_equal_kernel_is_mutual_parthood",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_synthesis.py::test_output_traverses_symbol_concepts_percepts_output",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

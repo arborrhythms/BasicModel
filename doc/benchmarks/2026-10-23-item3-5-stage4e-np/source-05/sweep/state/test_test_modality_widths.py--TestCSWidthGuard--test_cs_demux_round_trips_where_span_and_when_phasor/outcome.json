@@ -1,0 +1,6 @@
+{
+  "node": "test/test_modality_widths.py::TestCSWidthGuard::test_cs_demux_round_trips_where_span_and_when_phasor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

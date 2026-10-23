@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mnist.py::test_mnist_loader_names_an_unfetched_lfs_pointer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

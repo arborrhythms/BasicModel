@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_contract_boundaries.py::test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

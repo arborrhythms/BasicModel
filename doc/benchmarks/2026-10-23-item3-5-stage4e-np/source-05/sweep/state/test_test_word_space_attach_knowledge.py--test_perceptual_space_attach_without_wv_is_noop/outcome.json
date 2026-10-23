@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_space_attach_knowledge.py::test_perceptual_space_attach_without_wv_is_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

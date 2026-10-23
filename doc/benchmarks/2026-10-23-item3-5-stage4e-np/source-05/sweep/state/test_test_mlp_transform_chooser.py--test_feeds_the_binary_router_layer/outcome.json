@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_feeds_the_binary_router_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

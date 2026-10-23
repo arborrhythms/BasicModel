@@ -1,0 +1,6 @@
+{
+  "node": "test/test_field_binding.py::test_padding_does_not_create_observed_complements",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

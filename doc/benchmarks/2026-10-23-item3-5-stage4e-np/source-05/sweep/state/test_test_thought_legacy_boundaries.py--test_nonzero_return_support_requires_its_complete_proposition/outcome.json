@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_legacy_boundaries.py::test_nonzero_return_support_requires_its_complete_proposition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

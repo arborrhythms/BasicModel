@@ -1,0 +1,6 @@
+{
+  "node": "test/test_quaternary_corners.py::TestConfigScoping::test_default_values",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

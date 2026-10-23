@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_prior_thought_reserves_the_input_allowance",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

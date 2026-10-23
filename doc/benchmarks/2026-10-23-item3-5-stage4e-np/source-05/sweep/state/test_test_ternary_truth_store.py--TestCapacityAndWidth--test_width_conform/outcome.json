@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_multi_optimizer_closure_runs_once_and_returns_its_loss",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

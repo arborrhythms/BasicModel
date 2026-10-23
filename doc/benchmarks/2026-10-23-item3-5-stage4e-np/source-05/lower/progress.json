@@ -1,0 +1,45 @@
+[
+  {
+    "batch": 1,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "np:np:0:-1:0",
+      "np:np:0:-1:2",
+      "np:np:0:-1:1"
+    ],
+    "updates": {
+      "paired": 2,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 147.90169749991037
+  },
+  {
+    "batch": 2,
+    "training": true,
+    "epoch": 1,
+    "ids": [
+      "np:np:0:-1:2",
+      "np:np:0:-1:0",
+      "np:np:0:-1:1"
+    ],
+    "updates": {
+      "paired": 4,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 151.51890845806338
+  },
+  {
+    "batch": 3,
+    "training": false,
+    "epoch": null,
+    "ids": [
+      "np:np:0:-1:3"
+    ],
+    "updates": {
+      "paired": 4,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 153.61854845797643
+  }
+]

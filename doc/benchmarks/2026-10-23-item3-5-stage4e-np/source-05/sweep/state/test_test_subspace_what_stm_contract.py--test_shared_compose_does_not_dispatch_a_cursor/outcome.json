@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_shared_compose_does_not_dispatch_a_cursor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

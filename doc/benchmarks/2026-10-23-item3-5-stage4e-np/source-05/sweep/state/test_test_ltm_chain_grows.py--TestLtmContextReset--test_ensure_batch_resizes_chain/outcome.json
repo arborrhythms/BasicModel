@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_ensure_batch_resizes_chain",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

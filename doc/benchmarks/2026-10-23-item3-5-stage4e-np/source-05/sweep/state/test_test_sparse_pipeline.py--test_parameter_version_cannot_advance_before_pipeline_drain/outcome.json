@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_parameter_version_cannot_advance_before_pipeline_drain",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

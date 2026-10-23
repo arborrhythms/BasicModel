@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparsity_regularizer.py::test_soft_threshold_shrinks_small_values",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

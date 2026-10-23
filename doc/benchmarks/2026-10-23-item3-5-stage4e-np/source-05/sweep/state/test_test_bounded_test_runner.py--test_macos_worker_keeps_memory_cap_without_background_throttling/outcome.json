@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_macos_worker_keeps_memory_cap_without_background_throttling",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

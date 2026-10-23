@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_expectation.py::test_document_change_is_cold_preserves_scored_loss_and_other_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

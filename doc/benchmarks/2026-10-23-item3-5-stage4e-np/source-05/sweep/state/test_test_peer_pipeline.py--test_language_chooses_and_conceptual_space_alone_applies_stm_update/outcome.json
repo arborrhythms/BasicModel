@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_language_chooses_and_conceptual_space_alone_applies_stm_update",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_sparse_growth_preserves_adam_and_pending_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

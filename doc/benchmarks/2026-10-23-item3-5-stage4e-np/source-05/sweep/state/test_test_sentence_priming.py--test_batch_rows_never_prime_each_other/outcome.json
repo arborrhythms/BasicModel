@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_priming.py::test_batch_rows_never_prime_each_other",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

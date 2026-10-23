@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_boundary.py::test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

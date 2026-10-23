@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_save_and_load_embeddings_round_trip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

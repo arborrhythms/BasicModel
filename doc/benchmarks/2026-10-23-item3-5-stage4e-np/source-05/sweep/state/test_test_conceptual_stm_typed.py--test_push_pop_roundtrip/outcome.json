@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm_typed.py::test_push_pop_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

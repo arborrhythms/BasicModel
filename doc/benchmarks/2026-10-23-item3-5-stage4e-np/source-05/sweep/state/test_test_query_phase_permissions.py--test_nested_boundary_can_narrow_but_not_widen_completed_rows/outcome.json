@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_nested_boundary_can_narrow_but_not_widen_completed_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

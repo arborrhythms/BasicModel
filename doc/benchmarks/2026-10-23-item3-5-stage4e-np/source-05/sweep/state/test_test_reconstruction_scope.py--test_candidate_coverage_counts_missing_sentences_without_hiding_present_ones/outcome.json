@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_scope.py::test_candidate_coverage_counts_missing_sentences_without_hiding_present_ones",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

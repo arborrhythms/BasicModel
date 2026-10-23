@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_optimizer_includes_emb_params_when_trainable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

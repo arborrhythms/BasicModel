@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_nonfinite_dense_gradient_raises_without_any_mutation[inf]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

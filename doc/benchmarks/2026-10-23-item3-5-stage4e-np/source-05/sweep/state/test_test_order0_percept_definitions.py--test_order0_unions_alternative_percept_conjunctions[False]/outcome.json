@@ -1,0 +1,6 @@
+{
+  "node": "test/test_order0_percept_definitions.py::test_order0_unions_alternative_percept_conjunctions[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

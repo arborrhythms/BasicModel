@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_operations.py::test_stop_is_eligible_only_when_each_row_fits",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

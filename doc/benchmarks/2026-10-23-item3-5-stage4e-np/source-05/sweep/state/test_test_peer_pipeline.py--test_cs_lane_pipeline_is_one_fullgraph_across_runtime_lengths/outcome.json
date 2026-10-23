@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_cs_lane_pipeline_is_one_fullgraph_across_runtime_lengths",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

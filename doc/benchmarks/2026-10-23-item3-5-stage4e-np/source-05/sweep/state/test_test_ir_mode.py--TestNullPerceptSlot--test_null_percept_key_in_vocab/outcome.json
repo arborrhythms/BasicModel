@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_key_in_vocab",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

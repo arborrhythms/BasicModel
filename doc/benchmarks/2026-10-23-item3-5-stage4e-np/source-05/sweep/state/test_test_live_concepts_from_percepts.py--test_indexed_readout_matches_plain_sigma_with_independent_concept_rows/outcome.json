@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_concepts_from_percepts.py::test_indexed_readout_matches_plain_sigma_with_independent_concept_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

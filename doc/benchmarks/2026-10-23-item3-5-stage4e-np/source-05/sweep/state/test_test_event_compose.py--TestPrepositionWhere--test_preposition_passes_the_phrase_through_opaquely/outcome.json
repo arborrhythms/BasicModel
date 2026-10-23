@@ -1,0 +1,6 @@
+{
+  "node": "test/test_event_compose.py::TestPrepositionWhere::test_preposition_passes_the_phrase_through_opaquely",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

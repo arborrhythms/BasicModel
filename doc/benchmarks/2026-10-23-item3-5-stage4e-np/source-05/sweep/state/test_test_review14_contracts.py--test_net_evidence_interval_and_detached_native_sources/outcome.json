@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review14_contracts.py::test_net_evidence_interval_and_detached_native_sources",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestReverseModeCoverageMatrix::test_cross_mode_routing_is_consistent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

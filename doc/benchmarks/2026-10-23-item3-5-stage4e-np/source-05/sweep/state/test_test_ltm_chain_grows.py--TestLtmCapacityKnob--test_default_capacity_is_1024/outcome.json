@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmCapacityKnob::test_default_capacity_is_1024",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

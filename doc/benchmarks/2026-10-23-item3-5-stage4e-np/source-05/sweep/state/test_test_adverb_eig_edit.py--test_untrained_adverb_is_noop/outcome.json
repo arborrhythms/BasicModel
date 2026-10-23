@@ -1,0 +1,6 @@
+{
+  "node": "test/test_adverb_eig_edit.py::test_untrained_adverb_is_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

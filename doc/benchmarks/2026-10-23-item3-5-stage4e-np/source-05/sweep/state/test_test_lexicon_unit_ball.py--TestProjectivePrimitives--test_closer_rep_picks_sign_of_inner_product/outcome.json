@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_unit_ball.py::TestProjectivePrimitives::test_closer_rep_picks_sign_of_inner_product",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

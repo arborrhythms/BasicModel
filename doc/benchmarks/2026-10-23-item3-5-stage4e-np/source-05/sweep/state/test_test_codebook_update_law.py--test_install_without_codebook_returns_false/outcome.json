@@ -1,0 +1,6 @@
+{
+  "node": "test/test_codebook_update_law.py::test_install_without_codebook_returns_false",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

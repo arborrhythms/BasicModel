@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wide_concept_codebook.py::test_codebook_freezing_stable_entry_gets_frozen",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

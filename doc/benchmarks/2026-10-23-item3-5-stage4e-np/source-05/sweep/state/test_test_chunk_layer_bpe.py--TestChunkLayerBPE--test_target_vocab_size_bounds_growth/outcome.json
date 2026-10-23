@@ -1,0 +1,6 @@
+{
+  "node": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_target_vocab_size_bounds_growth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

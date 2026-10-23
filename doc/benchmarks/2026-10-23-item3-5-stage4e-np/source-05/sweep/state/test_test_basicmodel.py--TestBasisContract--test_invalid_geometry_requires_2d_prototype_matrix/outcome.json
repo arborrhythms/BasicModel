@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisContract::test_invalid_geometry_requires_2d_prototype_matrix",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

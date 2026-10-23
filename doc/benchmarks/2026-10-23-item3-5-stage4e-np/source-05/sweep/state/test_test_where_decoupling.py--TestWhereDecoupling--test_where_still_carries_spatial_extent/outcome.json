@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_decoupling.py::TestWhereDecoupling::test_where_still_carries_spatial_extent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

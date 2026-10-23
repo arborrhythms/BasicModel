@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain.py::test_bound_answer_is_an_identity_not_a_nearest_numeral_class",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

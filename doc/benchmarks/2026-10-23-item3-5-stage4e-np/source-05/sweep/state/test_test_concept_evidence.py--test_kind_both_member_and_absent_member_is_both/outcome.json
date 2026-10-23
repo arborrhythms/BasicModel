@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_kind_both_member_and_absent_member_is_both",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

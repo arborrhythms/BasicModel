@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_artifact_writer.py::test_save_artifact_accepts_knowledge_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_registry.py::test_complete_grammar_declares_the_general_what_subgoal",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

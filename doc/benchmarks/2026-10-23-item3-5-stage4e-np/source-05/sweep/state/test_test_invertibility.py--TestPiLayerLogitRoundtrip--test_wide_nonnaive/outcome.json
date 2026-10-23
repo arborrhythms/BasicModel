@@ -1,0 +1,6 @@
+{
+  "node": "test/test_invertibility.py::TestPiLayerLogitRoundtrip::test_wide_nonnaive",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

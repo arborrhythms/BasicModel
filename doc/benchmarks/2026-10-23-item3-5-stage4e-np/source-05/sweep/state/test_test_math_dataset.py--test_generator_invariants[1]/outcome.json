@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_dataset.py::test_generator_invariants[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

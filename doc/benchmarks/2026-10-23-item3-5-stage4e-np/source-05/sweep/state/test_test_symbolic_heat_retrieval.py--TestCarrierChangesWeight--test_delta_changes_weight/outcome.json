@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestCarrierChangesWeight::test_delta_changes_weight",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

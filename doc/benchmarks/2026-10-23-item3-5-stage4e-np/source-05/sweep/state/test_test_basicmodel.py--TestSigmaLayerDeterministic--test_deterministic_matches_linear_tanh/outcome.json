@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_matches_linear_tanh",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

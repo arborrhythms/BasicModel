@@ -1,0 +1,6 @@
+{
+  "node": "test/test_smoothing_regularizer.py::test_zero_lambda_returns_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

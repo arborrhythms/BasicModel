@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_training.py::test_unavailable_rows_are_omitted_not_substituted",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

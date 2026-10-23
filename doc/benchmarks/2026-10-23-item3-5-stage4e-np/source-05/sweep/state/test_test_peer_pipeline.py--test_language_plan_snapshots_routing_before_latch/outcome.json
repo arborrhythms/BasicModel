@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_language_plan_snapshots_routing_before_latch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_parts_wholes_are_independent_multivalued",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

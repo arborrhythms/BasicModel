@@ -1,0 +1,6 @@
+{
+  "node": "test/test_closing_gradient_diagnostics.py::test_read_only_perception_pullback_matches_both_real_updates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

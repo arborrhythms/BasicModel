@@ -1,0 +1,6 @@
+{
+  "node": "test/test_transform_chooser_parity.py::test_unary_score_matches_raw_einsum",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

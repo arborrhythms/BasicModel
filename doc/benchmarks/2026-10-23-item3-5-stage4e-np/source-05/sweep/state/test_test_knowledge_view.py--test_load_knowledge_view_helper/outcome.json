@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_load_knowledge_view_helper",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

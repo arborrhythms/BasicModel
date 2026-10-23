@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_unlabelled_admitted_word_has_no_prior_and_passes_whole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

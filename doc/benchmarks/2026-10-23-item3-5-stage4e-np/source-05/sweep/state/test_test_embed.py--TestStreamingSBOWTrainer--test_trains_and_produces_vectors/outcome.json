@@ -1,0 +1,6 @@
+{
+  "node": "test/test_embed.py::TestStreamingSBOWTrainer::test_trains_and_produces_vectors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

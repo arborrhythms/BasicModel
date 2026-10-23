@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_attention.py::test_codebook_path_preserves_gradient_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

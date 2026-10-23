@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_effects.py::test_aliases_and_faces_inherit_one_complete_contract",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

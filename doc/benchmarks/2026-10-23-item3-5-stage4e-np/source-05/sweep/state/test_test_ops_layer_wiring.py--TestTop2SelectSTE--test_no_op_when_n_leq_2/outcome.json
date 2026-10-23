@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_layer_wiring.py::TestTop2SelectSTE::test_no_op_when_n_leq_2",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

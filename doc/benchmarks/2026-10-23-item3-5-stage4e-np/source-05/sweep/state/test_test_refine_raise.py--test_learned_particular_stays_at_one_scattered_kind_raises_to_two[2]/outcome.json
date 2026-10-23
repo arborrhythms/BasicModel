@@ -1,0 +1,6 @@
+{
+  "node": "test/test_refine_raise.py::test_learned_particular_stays_at_one_scattered_kind_raises_to_two[2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_witness_replay_is_byte_exact[21 plus 1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

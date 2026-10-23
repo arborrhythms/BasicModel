@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_stored_unfold_preserves_live_native_operator_activation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

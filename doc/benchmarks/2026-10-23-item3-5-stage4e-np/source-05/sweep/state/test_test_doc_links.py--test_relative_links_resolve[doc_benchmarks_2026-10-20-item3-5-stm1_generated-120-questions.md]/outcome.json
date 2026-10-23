@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-20-item3-5-stm1/generated-120-questions.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

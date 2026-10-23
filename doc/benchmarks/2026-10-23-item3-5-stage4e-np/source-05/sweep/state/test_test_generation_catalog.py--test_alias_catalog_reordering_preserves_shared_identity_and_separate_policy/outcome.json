@@ -1,0 +1,6 @@
+{
+  "node": "test/test_generation_catalog.py::test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

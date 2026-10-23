@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_forward_dispatches_to_forward_stack_with_actions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

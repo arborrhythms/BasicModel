@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_attribution.py::test_descent_keeps_the_source_pole_and_scope",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

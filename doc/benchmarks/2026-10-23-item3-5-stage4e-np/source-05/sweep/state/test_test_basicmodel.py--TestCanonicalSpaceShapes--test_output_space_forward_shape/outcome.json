@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestCanonicalSpaceShapes::test_output_space_forward_shape",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

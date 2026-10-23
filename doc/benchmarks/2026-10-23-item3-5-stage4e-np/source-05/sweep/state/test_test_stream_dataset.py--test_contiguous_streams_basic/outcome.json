@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_contiguous_streams_basic",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubspaceNormalize::test_percepts_range",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

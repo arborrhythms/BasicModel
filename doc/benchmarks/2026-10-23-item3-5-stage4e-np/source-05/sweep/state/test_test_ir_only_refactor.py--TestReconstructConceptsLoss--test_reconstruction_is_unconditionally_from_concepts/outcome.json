@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_only_refactor.py::TestReconstructConceptsLoss::test_reconstruction_is_unconditionally_from_concepts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

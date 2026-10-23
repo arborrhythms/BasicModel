@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_text_mode_false_without_lex",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

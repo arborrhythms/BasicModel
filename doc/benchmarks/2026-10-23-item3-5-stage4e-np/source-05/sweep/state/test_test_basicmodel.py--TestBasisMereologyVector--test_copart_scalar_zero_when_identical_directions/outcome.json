@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_zero_when_identical_directions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

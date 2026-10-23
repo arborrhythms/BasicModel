@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_chunk_is_licensed_only_inside_one_coarse_whole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

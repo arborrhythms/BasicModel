@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_tightest_container_picks_smallest_whole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

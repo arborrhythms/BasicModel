@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_meronomy_knob_forms",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

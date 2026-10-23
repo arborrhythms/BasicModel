@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review14_contracts.py::test_compose_score_function_moves_toward_the_cheaper_departure[-0.5]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

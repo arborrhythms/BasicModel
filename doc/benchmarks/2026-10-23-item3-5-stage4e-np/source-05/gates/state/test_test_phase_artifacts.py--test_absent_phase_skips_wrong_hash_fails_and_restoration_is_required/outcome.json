@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase_artifacts.py::test_absent_phase_skips_wrong_hash_fails_and_restoration_is_required",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

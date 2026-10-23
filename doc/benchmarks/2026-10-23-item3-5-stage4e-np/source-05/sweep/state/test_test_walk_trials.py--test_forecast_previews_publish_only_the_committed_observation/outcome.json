@@ -1,0 +1,6 @@
+{
+  "node": "test/test_walk_trials.py::test_forecast_previews_publish_only_the_committed_observation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

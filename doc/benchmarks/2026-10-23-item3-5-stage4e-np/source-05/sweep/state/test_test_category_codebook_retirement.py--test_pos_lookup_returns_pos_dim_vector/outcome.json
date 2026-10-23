@@ -1,0 +1,6 @@
+{
+  "node": "test/test_category_codebook_retirement.py::test_pos_lookup_returns_pos_dim_vector",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

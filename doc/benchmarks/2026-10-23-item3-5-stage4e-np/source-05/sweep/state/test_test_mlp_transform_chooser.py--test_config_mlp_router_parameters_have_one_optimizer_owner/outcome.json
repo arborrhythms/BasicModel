@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_config_mlp_router_parameters_have_one_optimizer_owner",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

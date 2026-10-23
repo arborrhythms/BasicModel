@@ -1,0 +1,6 @@
+{
+  "node": "test/test_prior_stm_symbol_peer.py::test_seventh_source_is_location_masked_and_unbind_ignores_ss",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

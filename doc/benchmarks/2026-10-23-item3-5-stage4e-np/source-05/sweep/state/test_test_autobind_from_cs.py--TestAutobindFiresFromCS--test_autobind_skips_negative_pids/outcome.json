@@ -1,0 +1,6 @@
+{
+  "node": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_skips_negative_pids",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

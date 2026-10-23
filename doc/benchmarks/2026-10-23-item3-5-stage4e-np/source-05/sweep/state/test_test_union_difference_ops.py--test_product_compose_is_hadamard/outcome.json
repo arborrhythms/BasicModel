@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_product_compose_is_hadamard",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

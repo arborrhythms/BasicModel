@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_synthesize_codes_stay_in_unit_cube",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

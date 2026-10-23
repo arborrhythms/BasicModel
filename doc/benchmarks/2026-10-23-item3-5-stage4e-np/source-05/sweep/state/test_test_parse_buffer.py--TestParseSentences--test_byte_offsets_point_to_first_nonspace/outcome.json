@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parse_buffer.py::TestParseSentences::test_byte_offsets_point_to_first_nonspace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

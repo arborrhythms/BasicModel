@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reduction_pressure.py::test_pressure_and_deadlines_keep_fullgraph_forward_and_backward",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

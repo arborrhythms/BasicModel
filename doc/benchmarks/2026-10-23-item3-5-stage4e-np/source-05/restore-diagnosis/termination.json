@@ -1,0 +1,16 @@
+{
+  "source": "3b34b3f388a7d4d5f455fe12bec7ea1a6b5007e2",
+  "started": "2026-10-23T22:59:11.499079+00:00",
+  "checkpoint": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-stage4e-np-20261023/source-05/stage3/order.ckpt",
+  "training_updates": 0,
+  "completed": false,
+  "terminated": true,
+  "signal": "SIGTERM",
+  "finished": "2026-10-23T23:05:54.780067+00:00",
+  "reason": "Native sample finds the main thread in faulthandler.cancel_dump_traceback_later waiting for its tracing thread, which spins in CPython dump_frame. Native load logged completion; independent NP restore and unchanged phase consumer completed. This extra diagnostic is not a passing restore gate.",
+  "evidence": [
+    "run.log",
+    "stacks.txt",
+    "native-sample.txt"
+  ]
+}

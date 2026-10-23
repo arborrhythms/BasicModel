@@ -1,0 +1,6 @@
+{
+  "node": "test/test_native_attention_field.py::test_new_run_resets_trial_scratch_even_if_the_body_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestArea::test_area_returns_zero_for_empty_event",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

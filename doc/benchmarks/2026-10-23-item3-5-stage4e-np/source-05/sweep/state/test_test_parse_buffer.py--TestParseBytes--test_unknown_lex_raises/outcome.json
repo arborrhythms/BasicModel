@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parse_buffer.py::TestParseBytes::test_unknown_lex_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

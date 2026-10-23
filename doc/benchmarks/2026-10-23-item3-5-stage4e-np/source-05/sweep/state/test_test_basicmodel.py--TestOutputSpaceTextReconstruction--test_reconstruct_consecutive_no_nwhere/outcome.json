@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_consecutive_no_nwhere",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

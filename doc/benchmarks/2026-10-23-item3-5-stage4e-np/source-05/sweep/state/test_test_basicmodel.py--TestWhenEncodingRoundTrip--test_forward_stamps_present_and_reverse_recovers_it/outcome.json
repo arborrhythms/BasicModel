@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestWhenEncodingRoundTrip::test_forward_stamps_present_and_reverse_recovers_it",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

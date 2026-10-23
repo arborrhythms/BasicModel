@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_content_selects_evidence_scales",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

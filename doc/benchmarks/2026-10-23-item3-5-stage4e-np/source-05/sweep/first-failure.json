@@ -1,0 +1,9 @@
+{
+  "nodeid": "test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]",
+  "phase": "call",
+  "outcome": "failed",
+  "certificate_phase": null,
+  "duration": 0.7004215421620756,
+  "message": "test/test_operators_round2c.py:116: in test_zero_meaning_departures_and_one_reader_step\n    assert not torch.equal(first['root'],second['root'])\nE   assert not True\nE    +  where True = <built-in method equal of type object at 0x10d0553a0>(tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.1366, 0.0000, 0.0000, 0.1465,\\n          0.1366, 0.1465, 0.0000, 0.1366, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]), tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.1366, 0.0000, 0.0000, 0.1465,\\n          0.1366, 0.1465, 0.0000, 0.1366, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]))\nE    +    where <built-in method equal of type object at 0x10d0553a0> = torch.equal",
+  "stdout": "batch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 0.662s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+}

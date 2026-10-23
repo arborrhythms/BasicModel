@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_retired_operators[symbolize]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

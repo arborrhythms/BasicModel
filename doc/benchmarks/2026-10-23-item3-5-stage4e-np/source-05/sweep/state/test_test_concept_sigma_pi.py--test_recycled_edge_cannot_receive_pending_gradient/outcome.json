@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_sigma_pi.py::test_recycled_edge_cannot_receive_pending_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

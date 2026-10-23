@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_read.py::test_property_read_and_gradient_compile_as_one_graph",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

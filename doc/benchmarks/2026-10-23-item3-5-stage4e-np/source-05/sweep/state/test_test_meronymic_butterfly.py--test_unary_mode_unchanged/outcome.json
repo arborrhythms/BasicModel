@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronymic_butterfly.py::test_unary_mode_unchanged",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_no_flag_model_allocates_ps_ws_tables",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

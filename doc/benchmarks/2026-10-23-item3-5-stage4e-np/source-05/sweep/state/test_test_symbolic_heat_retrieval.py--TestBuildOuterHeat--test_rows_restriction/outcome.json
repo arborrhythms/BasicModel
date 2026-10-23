@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_rows_restriction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

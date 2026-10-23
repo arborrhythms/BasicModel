@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_payload_audit.py::test_pure_event_lookup_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

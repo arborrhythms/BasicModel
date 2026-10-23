@@ -1,0 +1,6 @@
+{
+  "node": "test/test_smoothing_regularizer.py::test_bivector_paired_poles_are_safe",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

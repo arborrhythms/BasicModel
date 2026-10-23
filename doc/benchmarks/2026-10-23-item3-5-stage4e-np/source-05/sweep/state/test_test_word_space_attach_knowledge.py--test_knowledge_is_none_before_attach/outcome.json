@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_space_attach_knowledge.py::test_knowledge_is_none_before_attach",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_admission.py::test_23_fuse_parts_before_word_admission",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

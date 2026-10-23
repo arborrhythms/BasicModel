@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_executor_interleaves_stages_and_reassembles_microbatch_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

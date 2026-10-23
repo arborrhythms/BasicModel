@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_dead_stack_slots_zero_in_materialized_event",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

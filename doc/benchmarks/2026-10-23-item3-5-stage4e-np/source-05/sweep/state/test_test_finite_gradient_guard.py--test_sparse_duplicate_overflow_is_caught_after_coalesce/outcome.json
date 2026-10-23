@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_sparse_duplicate_overflow_is_caught_after_coalesce",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

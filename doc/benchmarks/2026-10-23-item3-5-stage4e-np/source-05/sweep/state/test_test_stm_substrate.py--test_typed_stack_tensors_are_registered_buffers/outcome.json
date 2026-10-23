@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_substrate.py::test_typed_stack_tensors_are_registered_buffers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

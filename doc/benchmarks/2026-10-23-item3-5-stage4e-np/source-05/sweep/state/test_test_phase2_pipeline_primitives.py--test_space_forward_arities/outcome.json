@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase2_pipeline_primitives.py::test_space_forward_arities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

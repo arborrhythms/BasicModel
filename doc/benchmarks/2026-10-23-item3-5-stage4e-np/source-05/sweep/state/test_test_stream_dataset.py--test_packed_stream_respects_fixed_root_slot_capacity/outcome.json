@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_packed_stream_respects_fixed_root_slot_capacity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

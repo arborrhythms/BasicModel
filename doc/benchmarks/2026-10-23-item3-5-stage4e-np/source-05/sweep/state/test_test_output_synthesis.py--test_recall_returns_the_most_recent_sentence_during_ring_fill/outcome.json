@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_synthesis.py::test_recall_returns_the_most_recent_sentence_during_ring_fill",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

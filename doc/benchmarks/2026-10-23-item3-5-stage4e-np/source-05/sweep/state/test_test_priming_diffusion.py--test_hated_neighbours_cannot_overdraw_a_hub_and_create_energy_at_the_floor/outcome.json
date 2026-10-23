@@ -1,0 +1,6 @@
+{
+  "node": "test/test_priming_diffusion.py::test_hated_neighbours_cannot_overdraw_a_hub_and_create_energy_at_the_floor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology_raise.py::test_stage_analysis_spans_is_structural_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

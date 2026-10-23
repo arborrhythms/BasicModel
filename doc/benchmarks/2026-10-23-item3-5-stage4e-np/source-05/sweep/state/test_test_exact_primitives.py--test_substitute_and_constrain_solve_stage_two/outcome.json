@@ -1,0 +1,6 @@
+{
+  "node": "test/test_exact_primitives.py::test_substitute_and_constrain_solve_stage_two",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

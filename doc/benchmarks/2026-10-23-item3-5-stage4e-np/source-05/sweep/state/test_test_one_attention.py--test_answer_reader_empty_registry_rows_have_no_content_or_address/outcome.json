@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_answer_reader_empty_registry_rows_have_no_content_or_address",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ensure_microbatch_cascade.py::test_sentence_completed_survives_K_change",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

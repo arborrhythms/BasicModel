@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_concept_e2e.py::test_csw_weights_update_under_optimizer_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inter_sentence_prediction_shape.py::test_consolidated_prediction_uses_observed_context_without_target_leak",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

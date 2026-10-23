@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_public_helpers.py::test_public_part_helpers_follow_typed_links_without_world_materialization",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

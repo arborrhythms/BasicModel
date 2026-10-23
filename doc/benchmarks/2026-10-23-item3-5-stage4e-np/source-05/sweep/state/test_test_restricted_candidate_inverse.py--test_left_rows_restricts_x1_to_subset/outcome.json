@@ -1,0 +1,6 @@
+{
+  "node": "test/test_restricted_candidate_inverse.py::test_left_rows_restricts_x1_to_subset",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

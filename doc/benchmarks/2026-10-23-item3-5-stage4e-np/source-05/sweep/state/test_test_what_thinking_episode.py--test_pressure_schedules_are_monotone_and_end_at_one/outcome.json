@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_thinking_episode.py::test_pressure_schedules_are_monotone_and_end_at_one",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

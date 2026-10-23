@@ -1,0 +1,6 @@
+{
+  "node": "test/test_evidence_folds.py::test_native_ordered_case_supplies_the_bracket_conjunction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

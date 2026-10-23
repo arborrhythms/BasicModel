@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reduction_pressure.py::test_pressure_default_and_xml_override_share_the_compose_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_typed_stack.py::test_typed_stack_per_row_isolation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

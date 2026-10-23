@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_episode_memory.py::test_default_has_one_memory_and_think_is_single_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

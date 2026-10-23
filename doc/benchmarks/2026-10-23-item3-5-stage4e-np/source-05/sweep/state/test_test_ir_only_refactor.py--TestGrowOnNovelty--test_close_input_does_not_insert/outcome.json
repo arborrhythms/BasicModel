@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_close_input_does_not_insert",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

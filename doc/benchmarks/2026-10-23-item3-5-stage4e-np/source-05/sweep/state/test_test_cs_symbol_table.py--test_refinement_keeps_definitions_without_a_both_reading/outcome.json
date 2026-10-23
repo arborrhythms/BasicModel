@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_refinement_keeps_definitions_without_a_both_reading",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

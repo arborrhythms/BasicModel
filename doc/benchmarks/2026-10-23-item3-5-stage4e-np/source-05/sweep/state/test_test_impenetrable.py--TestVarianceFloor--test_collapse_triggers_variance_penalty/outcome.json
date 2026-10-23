@@ -1,0 +1,6 @@
+{
+  "node": "test/test_impenetrable.py::TestVarianceFloor::test_collapse_triggers_variance_penalty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

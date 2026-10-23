@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestRegionPromotion::test_as_region_passes_through_existing_region",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

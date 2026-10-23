@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_synthesis.py::test_present_and_supervised_resolve_by_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

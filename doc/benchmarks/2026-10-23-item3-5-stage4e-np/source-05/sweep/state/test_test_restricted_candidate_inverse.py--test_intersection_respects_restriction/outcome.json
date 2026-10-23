@@ -1,0 +1,6 @@
+{
+  "node": "test/test_restricted_candidate_inverse.py::test_intersection_respects_restriction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

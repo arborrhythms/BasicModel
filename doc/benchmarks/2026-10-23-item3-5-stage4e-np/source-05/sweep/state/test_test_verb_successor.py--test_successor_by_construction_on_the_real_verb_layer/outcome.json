@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_successor.py::test_successor_by_construction_on_the_real_verb_layer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

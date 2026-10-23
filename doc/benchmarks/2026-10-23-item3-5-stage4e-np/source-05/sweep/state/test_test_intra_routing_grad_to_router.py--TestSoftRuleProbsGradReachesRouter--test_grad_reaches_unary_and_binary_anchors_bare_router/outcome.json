@@ -1,0 +1,6 @@
+{
+  "node": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_grad_reaches_unary_and_binary_anchors_bare_router",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_conceptualSpace_has_stm_attribute",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

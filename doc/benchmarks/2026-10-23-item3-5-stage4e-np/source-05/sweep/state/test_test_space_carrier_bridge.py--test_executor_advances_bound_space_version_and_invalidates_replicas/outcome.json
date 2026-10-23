@@ -1,0 +1,6 @@
+{
+  "node": "test/test_space_carrier_bridge.py::test_executor_advances_bound_space_version_and_invalidates_replicas",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_chain_grows.py::TestLtmChainGrows::test_tetralemma_field_records_when_provided",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

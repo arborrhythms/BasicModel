@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pilayer_log_domain_finite.py::test_forward_finite_on_out_of_range_input[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

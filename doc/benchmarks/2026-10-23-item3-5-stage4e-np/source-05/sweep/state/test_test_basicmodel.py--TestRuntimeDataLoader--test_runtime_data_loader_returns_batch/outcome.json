@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestRuntimeDataLoader::test_runtime_data_loader_returns_batch",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_history_boundaries.py::test_credit_boundary_cannot_detach_an_unfinished_thought_episode",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

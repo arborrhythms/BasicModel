@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestLiftOR::test_point_form_kind_strict_is_max",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

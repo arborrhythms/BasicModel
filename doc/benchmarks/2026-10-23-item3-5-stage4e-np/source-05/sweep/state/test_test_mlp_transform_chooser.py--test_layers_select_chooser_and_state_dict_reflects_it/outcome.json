@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_layers_select_chooser_and_state_dict_reflects_it",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

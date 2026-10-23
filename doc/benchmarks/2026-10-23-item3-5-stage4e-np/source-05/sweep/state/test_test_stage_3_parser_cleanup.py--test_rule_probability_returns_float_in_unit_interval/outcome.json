@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stage_3_parser_cleanup.py::test_rule_probability_returns_float_in_unit_interval",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

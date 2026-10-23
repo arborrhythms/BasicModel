@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_example_alnum_splits_by_type",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

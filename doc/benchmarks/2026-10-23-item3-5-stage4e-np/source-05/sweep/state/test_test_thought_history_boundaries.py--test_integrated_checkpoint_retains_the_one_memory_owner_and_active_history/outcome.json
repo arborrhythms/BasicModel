@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_history_boundaries.py::test_integrated_checkpoint_retains_the_one_memory_owner_and_active_history",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

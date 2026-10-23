@@ -1,0 +1,6 @@
+{
+  "node": "test/test_adverb_eig_edit.py::test_delta_is_sparse",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

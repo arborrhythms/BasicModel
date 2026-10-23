@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_luminosity_codes.py::test_no_decode_pullback",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

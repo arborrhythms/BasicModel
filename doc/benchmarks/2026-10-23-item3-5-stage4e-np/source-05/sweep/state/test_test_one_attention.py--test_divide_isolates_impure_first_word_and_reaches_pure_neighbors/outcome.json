@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_divide_isolates_impure_first_word_and_reaches_pure_neighbors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

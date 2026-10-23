@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_xpass_respects_pytest_strictness[True-1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

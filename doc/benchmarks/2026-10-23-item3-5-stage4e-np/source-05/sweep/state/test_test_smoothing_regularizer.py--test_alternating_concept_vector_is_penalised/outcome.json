@@ -1,0 +1,6 @@
+{
+  "node": "test/test_smoothing_regularizer.py::test_alternating_concept_vector_is_penalised",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

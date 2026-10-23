@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_execute_superposed_independent_then_weighted_sum",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

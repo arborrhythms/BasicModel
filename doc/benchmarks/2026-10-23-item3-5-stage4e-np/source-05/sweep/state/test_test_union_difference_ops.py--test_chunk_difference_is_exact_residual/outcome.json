@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_chunk_difference_is_exact_residual",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

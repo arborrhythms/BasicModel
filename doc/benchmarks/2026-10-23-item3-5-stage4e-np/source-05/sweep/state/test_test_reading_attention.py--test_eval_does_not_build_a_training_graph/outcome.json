@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_attention.py::test_eval_does_not_build_a_training_graph",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review20_activation.py::test_kernel_uses_activation_and_is_invariant_to_form_length[ConjunctionLayer-0.3]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

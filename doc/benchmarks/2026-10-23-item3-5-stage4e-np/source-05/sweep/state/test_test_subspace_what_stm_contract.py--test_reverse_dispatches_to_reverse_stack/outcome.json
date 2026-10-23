@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_reverse_dispatches_to_reverse_stack",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

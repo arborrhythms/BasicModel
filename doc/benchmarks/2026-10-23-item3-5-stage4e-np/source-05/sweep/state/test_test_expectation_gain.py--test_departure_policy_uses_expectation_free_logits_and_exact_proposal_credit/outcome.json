@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_departure_policy_uses_expectation_free_logits_and_exact_proposal_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

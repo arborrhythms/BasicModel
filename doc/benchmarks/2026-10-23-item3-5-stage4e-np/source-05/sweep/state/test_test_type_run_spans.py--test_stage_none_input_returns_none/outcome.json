@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_stage_none_input_returns_none",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

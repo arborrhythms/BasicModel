@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_synthesis.py::test_reconstruction_and_output_are_order_independent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

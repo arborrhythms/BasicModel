@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_predictor_parameters_are_registered_once_and_word_shared",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

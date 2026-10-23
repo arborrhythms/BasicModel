@@ -1,0 +1,20 @@
+.....................................................................    [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:75: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    assert cs._csw_concept_row(0, 1000 + row) == row
+
+test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:88: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    assert cs._csw_concept_row(0, 1000 + row) == row
+
+test/test_concept_capacity_policy.py::test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_concept_capacity_policy.py:145: RuntimeWarning: Concept inventory reached maximum preallocation (8); a redundancy review is required at a closed document boundary
+    cs._csw_concept_row(0, 1000 + row)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+69 passed, 4 warnings in 5.94s

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_fused_retained_row_replays_original_two_lane_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

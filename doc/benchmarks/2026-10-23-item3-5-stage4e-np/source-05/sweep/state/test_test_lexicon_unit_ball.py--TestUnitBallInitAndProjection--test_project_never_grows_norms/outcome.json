@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_unit_ball.py::TestUnitBallInitAndProjection::test_project_never_grows_norms",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

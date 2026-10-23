@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_factored_crossing_lives_in_the_row_span",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

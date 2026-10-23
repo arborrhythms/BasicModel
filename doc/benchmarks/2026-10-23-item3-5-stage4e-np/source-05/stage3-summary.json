@@ -1,0 +1,82 @@
+{
+  "completed": true,
+  "full_gate": false,
+  "updates": {
+    "paired": 256,
+    "batch_end_disabled": 0
+  },
+  "elapsed_seconds": 933.4680286671501,
+  "stages": [
+    {
+      "name": "reading_two",
+      "source_order": true,
+      "orders": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "final_training_ce": [
+        0.03204331547021866,
+        0.032076019793748856,
+        0.032101117074489594,
+        0.0320182703435421
+      ],
+      "free_decoder_exact": 1,
+      "inverse_exact": 1
+    },
+    {
+      "name": "reading_four",
+      "source_order": true,
+      "orders": [
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          3
+        ]
+      ],
+      "final_training_ce": [
+        0.016393356025218964,
+        0.016595618799328804,
+        0.016531819477677345,
+        0.01643843948841095
+      ],
+      "free_decoder_exact": 0,
+      "inverse_exact": 0
+    }
+  ],
+  "continuation_permitted": true,
+  "warmup/warmup.ckpt_sha256": "43d94f59aa0248154961e5b6a4c28fc3dda1a061bc7c86effff510253cb86688",
+  "stage3/order.ckpt_sha256": "a843c1b45892ab3896e17cf2dc5ba36ae6a33af3304ad9235af01040901aee6b"
+}

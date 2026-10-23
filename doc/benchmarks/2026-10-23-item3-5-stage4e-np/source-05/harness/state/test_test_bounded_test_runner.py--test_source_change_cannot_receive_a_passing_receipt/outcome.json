@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_source_change_cannot_receive_a_passing_receipt",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

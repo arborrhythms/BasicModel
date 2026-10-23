@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_intersection_is_exact_minimum_with_silence_neutral",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

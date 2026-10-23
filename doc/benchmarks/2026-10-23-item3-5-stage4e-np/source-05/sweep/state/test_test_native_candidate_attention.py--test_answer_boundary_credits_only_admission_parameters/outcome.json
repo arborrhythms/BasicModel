@@ -1,0 +1,6 @@
+{
+  "node": "test/test_native_candidate_attention.py::test_answer_boundary_credits_only_admission_parameters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_invalid_mode_raises_value_error",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

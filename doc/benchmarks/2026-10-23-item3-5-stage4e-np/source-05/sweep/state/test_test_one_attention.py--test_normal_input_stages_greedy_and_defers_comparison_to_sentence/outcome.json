@@ -1,0 +1,6 @@
+{
+  "node": "test/test_one_attention.py::test_normal_input_stages_greedy_and_defers_comparison_to_sentence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

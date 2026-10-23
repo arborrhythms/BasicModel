@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestWeightShapeMismatch::test_save_load_vocab_mismatch_fails",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_word_learning.py::test_legacy_grammar_weights_keep_predictions_and_new_order_weights_start_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_traversal.py::test_disabled_reads_source_order_once_and_enabled_uses_candidate_scores",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

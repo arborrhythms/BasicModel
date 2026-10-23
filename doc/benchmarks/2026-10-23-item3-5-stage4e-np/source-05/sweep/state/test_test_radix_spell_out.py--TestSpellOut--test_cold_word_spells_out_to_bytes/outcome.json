@@ -1,0 +1,6 @@
+{
+  "node": "test/test_radix_spell_out.py::TestSpellOut::test_cold_word_spells_out_to_bytes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

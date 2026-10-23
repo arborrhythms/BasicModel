@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestSubspaceNormalize::test_invalid_kind_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

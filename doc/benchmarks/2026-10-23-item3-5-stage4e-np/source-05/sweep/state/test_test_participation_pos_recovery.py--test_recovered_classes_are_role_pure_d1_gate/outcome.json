@@ -1,0 +1,6 @@
+{
+  "node": "test/test_participation_pos_recovery.py::test_recovered_classes_are_role_pure_d1_gate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parse_buffer.py::TestParseWords::test_byte_offsets_contiguous",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

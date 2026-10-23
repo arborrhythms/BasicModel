@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestLiftOR::test_point_form_kind_radial_is_radmax",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

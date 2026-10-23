@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_encoding_recovery.py::test_allocate_position_persists_via_structural_extras",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

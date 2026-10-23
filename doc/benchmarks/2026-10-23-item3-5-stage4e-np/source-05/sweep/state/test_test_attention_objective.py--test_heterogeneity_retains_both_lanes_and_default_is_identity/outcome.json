@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_objective.py::test_heterogeneity_retains_both_lanes_and_default_is_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_concept_identity_slabs.py::test_pop_shifts_and_clears_identity_tail",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

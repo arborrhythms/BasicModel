@@ -1,0 +1,6 @@
+{
+  "node": "test/test_supplied_answer_training.py::test_automatic_answers_do_not_start_a_supplied_answer_trial",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_dimensional_governance.py::test_cs_ws_recurrent_input_mismatch_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

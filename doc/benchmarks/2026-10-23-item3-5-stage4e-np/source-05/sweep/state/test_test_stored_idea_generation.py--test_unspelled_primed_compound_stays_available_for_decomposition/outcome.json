@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

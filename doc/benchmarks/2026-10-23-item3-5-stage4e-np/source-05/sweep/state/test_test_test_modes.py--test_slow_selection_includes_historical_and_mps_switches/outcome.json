@@ -1,0 +1,6 @@
+{
+  "node": "test/test_test_modes.py::test_slow_selection_includes_historical_and_mps_switches",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

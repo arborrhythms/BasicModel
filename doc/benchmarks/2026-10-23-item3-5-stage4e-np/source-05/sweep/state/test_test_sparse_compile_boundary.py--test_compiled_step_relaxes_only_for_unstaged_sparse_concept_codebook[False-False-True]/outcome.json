@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_compile_boundary.py::test_compiled_step_relaxes_only_for_unstaged_sparse_concept_codebook[False-False-True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

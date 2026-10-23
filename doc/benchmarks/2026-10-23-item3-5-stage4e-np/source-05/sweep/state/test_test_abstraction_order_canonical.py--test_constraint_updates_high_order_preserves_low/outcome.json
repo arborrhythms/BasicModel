@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_constraint_updates_high_order_preserves_low",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

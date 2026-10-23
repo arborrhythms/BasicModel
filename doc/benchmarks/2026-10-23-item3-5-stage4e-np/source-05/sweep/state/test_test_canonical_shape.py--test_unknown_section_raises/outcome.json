@@ -1,0 +1,6 @@
+{
+  "node": "test/test_canonical_shape.py::test_unknown_section_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

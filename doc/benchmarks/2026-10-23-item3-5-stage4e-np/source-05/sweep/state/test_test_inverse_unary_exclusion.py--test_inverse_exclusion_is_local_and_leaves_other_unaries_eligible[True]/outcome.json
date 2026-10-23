@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inverse_unary_exclusion.py::test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

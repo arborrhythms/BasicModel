@@ -140,3 +140,96 @@ production and the existing Composition. Every assertion stays verbatim;
 no test is retired and production is unchanged. This same-round setup
 correction follows reconstruction §17's exception and §39. No lessons
 ran on source 04.
+
+## Source 05: frozen mechanism and fixed-budget lessons
+
+Frozen **3b34b3f388a7d4d5f455fe12bec7ea1a6b5007e2** passes the fifteen
+scoped files: **192 passed, seven existing prerequisite skips**. The
+original occupation failure's captured initial RNG passes unchanged.
+The observational capture isolation passes 36 harness cases with three
+existing skips; it removes only these observers from child harnesses'
+environment after loading them in the current pytest worker. No test
+selection, value, mask, choice or assertion changes. Source manifests
+remain unchanged for each run.
+
+Original warm-up: 76 presentations, 38 paired updates, no extra step.
+Stage3: 512 presentations, 256 paired updates, 16 evaluations; **source
+order 8/8**. Both original last-training CE gates fail: two words
+.032018–.032101; four words .016393–.016596, against .01. This full gate
+is not relabeled. The accepted source-order continuation rule permits
+the next lesson. Free decoder reconstruction is 1/4 plus 0/4, separately
+reported. The stage3 checkpoint SHA-256 is
+`a843c1b45892ab3896e17cf2dc5ba36ae6a33af3304ad9235af01040901aee6b`.
+Its existing nested-wholes consumer passes through a private phase map,
+without changing the public registry or its assertions.
+
+The original NP lower lesson completes six presentations, four paired
+updates and one held-out evaluation. **Brackets 1/1; order-1 occurrence
+0/1; duplicates and collisions zero.** The held-out reading chooses
+`product`, carries both operands at order 0, and closes with no singular
+NP occurrence. Its norm is .428571. Both reported evaluation trials have
+R=1.646708846, E=0, A=0 and tie/keep greedy. These are the captured costs,
+not a forced keep or a supplied premise answer.
+
+All twelve training fold targets are reachable. Each first-pair menu has
+one legal `lower` and one legal `definite` action. In the final training
+batch, the target lower probability is .0831–.1393 while product is
+.5026–.6919; none of the six kept training first pairs chooses the target.
+The complete menus, both trials and keep records are retained. No claim
+of a plateau or successful constituent learning follows from two batches.
+
+The lesson sequence stops at this first failed behavior gate. Definite,
+description, adjective, definite-adjective, final evaluation and copular
+identity have **not run**. No np_definite, np_description or copular
+artifact is promoted, and their prerequisite skips remain. The lower
+checkpoint is retained as failed evidence only. No seed rescue, budget
+increase, forcing, answer-target change or gate change.
+
+Native stage3 restore was slow (roughly two minutes), but completed with
+exact-retention checks intact; its existing consumer passes. A read-only
+restore with timed stack captures is retained. It neither trains nor
+relaxes the loader. The trace observes metadata freezing. The extra diagnostic later hangs
+in CPython faulthandler cancellation; the retained native sample identifies
+its main thread waiting on the tracing thread in `dump_frame`. That owned
+diagnostic was terminated and is not counted as a passing gate. The
+independent NP restore and existing phase consumer completed. No loader
+or performance repair is included in this line.
+
+## Disposition for review through Alec
+
+Recommend landing the occupation-count ownership repair and the audited
+lesson preparation, with the fixed-budget failure retained. Carry the
+stage3 CE/decoder learning bars and the NP continuation from the failed
+lower prerequisite through copular identity to item 0, preserving their
+budgets, gates and artifact requirements. No later phase has been passed.
+The private stage3 map demonstrates its existing consumer; public phase
+registration remains for review with this receipt. Lines 4–7 stay in 3.5;
+layout, removal and STM chunks stay in item 3.0. Item 3.0 is not reached.
+
+The AST assertion ledger and source patch list every edit. Only the two
+NP menu assertions change; two annotation fixtures now restore their
+shared attribute, the new lower fixture selects its declared formal face,
+and the obsolete empty-occupation driver prerequisite is removed. Every
+other existing assertion stays verbatim. No test is retired.
+
+## One line-3 default sweep; fixture repair pending scoped gates
+
+[Source-05 sweep](source-05/sweep/summary.json): all 6,378 cases complete
+in 526.34 seconds. **6,053 passed, one failed, 323 skipped, one non-strict
+XPASS**; no compile-cache retry. Three extra zero-duration reports are
+excluded from the case totals. The default suite retains its existing
+slow/device/phase boundaries and reports the stale weekly-run warning;
+this is not weekly coverage.
+
+The [captured-RNG replay before editing](source-05/departure-replay-before/run.log)
+reproduces the compose/MM root-equality failure. Its probe records all
+four saved STOP departures at depth one taking a legal bind, all four
+forks joined/taken, R=0 in both trials, equal A (about .35), and greedy
+kept in every row. The unchanged numerical-root assertion needs a binary
+face change. Source 06 restricts this already-forced fixture's saved
+compose reservoir to binary folds; its product/probabilistic-sum choices
+and all assertions stay. The narrowing arm, production sampling, menus,
+keep law, objectives and learning drivers stay unchanged. No test is
+retired, no seed is pinned, and the failed sweep remains failed. The
+related compose/fork/exploration tests join the scoped gate set. There
+will be no second full sweep.

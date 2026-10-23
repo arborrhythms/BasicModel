@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestDefaultsXml::test_architecture_keeps_model_wide",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_objective_optimizer_resume.py::test_reconstruction_change_keeps_reader_adam_and_starts_sgd_momentum_empty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

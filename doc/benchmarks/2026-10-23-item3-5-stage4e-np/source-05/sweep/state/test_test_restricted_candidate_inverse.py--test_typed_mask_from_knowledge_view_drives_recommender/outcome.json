@@ -1,0 +1,6 @@
+{
+  "node": "test/test_restricted_candidate_inverse.py::test_typed_mask_from_knowledge_view_drives_recommender",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

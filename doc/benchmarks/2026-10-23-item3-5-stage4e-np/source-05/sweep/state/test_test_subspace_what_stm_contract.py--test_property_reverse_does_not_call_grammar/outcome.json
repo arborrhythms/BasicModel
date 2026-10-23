@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_property_reverse_does_not_call_grammar",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

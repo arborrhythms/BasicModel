@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

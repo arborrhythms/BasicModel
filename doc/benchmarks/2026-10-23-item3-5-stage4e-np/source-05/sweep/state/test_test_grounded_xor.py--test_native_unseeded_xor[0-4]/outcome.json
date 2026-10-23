@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grounded_xor.py::test_native_unseeded_xor[0-4]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

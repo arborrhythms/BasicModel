@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestLatticeCodebookReverse::test_and_forward_of_reverse_batched",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

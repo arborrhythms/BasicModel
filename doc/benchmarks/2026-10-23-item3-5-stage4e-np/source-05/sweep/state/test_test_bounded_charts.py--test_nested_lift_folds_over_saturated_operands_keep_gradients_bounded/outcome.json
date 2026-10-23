@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_charts.py::test_nested_lift_folds_over_saturated_operands_keep_gradients_bounded",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

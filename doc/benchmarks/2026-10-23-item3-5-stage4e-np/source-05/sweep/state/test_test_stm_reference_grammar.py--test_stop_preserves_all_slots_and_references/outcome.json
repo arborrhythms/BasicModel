@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_reference_grammar.py::test_stop_preserves_all_slots_and_references",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

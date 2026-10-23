@@ -1,0 +1,6 @@
+{
+  "node": "test/test_row_local_concept_optimizer.py::test_parallel_aligned_meta_model_does_not_enable_sparse_lookup_mode",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_belief_to_extent_is_the_chart_applied_once",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

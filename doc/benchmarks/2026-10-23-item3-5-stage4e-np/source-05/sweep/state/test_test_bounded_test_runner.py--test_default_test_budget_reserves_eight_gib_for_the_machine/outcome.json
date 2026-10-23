@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_default_test_budget_reserves_eight_gib_for_the_machine",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

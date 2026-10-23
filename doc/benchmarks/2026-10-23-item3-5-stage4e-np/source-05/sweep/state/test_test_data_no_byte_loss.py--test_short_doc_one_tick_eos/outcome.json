@@ -1,0 +1,6 @@
+{
+  "node": "test/test_data_no_byte_loss.py::test_short_doc_one_tick_eos",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

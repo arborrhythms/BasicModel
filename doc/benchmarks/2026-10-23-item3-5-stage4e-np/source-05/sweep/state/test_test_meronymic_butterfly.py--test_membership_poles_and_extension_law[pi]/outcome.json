@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronymic_butterfly.py::test_membership_poles_and_extension_law[pi]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

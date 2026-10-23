@@ -1,0 +1,6 @@
+{
+  "node": "test/test_codebook_update_law.py::test_frozen_rows_do_not_move",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_mode_config.py::TestAttentionModeValidation::test_bogus_not_in_valid_modes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

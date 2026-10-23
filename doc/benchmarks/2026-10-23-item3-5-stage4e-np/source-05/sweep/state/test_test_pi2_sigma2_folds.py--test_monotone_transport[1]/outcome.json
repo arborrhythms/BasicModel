@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pi2_sigma2_folds.py::test_monotone_transport[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

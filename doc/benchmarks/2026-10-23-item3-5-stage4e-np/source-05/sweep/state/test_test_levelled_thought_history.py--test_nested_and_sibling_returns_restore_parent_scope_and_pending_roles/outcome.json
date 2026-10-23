@@ -1,0 +1,6 @@
+{
+  "node": "test/test_levelled_thought_history.py::test_nested_and_sibling_returns_restore_parent_scope_and_pending_roles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

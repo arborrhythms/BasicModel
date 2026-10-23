@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_combined.py::test_empty_priming_tensor_treated_as_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_aggregate_memory_includes_child_allocations",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasicModelCreation::test_encodings",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

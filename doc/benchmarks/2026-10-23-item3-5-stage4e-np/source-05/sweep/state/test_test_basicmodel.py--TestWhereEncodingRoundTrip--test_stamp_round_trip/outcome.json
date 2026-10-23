@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_stamp_round_trip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

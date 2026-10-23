@@ -1,0 +1,6 @@
+{
+  "node": "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

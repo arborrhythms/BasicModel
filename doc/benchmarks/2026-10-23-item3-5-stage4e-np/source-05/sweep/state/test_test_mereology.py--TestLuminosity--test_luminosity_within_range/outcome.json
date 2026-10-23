@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestLuminosity::test_luminosity_within_range",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

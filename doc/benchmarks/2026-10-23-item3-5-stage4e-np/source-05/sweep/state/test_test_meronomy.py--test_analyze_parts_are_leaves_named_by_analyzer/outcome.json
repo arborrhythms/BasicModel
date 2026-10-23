@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_analyze_parts_are_leaves_named_by_analyzer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

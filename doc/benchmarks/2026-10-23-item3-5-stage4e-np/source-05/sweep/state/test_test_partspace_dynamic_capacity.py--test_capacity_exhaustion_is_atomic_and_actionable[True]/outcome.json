@@ -1,0 +1,6 @@
+{
+  "node": "test/test_partspace_dynamic_capacity.py::test_capacity_exhaustion_is_atomic_and_actionable[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_truth_layer_attached_when_consolidated",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

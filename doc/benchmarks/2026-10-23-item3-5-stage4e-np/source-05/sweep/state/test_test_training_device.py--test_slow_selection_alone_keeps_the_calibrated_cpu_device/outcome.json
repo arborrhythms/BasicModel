@@ -1,0 +1,6 @@
+{
+  "node": "test/test_training_device.py::test_slow_selection_alone_keeps_the_calibrated_cpu_device",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

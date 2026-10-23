@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item4_review.py::test_bank_confidence_follows_each_symbol_in_every_role",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

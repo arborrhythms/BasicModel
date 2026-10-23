@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_laws.py::test_no_relu_injection_law_in_bin",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

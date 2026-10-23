@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_benchmark.py::test_throughput_excludes_warmup_and_counts_actual_sentences_pairs_and_labels",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

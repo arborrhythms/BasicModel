@@ -1,0 +1,6 @@
+{
+  "node": "test/test_router_fires_per_word.py::test_invalid_router_wire_serial_raises_loud",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

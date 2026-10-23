@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ruledef_typed.py::TestRuleDefTyped::test_function_call_rhs_populates_rhs_symbols",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

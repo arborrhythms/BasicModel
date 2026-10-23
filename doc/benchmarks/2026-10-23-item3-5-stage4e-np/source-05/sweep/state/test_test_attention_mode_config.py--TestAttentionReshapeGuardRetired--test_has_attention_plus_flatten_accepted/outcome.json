@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_mode_config.py::TestAttentionReshapeGuardRetired::test_has_attention_plus_flatten_accepted",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

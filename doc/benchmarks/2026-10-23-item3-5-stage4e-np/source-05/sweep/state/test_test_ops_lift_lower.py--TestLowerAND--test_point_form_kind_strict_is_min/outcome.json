@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestLowerAND::test_point_form_kind_strict_is_min",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

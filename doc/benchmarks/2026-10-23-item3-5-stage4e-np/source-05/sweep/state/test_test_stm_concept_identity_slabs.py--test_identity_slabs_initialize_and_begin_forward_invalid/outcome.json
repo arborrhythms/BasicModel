@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_concept_identity_slabs.py::test_identity_slabs_initialize_and_begin_forward_invalid",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

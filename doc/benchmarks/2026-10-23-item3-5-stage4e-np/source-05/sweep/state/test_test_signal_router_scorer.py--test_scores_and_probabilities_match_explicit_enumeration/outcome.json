@@ -1,0 +1,6 @@
+{
+  "node": "test/test_signal_router_scorer.py::test_scores_and_probabilities_match_explicit_enumeration",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

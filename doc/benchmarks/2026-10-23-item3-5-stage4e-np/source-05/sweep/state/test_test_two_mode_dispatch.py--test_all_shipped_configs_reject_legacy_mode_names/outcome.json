@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_mode_dispatch.py::test_all_shipped_configs_reject_legacy_mode_names",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

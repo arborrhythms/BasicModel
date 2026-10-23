@@ -25,11 +25,20 @@ def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
 def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eager_reading):
     from test_mm_xor import _fresh_model
     from Language import OperationSelectionLayer
+    from SentenceFork import SentenceFork
     import SentenceCredit
     model,_,data=_fresh_model('data/'+config+'.xml')
     original_attend=OperationSelectionLayer.attend
     original_forward=OperationSelectionLayer.forward
     original_departure=SentenceCredit.departure
+    original_record=SentenceFork.record
+    def numeric_fork(fork,choice,*args,**kwargs):
+        if walk=='compose' and not fork.explore:
+            # This fixture witnesses a numerical change of binary face.
+            # A legal bind departure can leave the working value unchanged.
+            choice=choice._replace(alternative_count=torch.where(
+                (choice.kind==1)&choice.applied,choice.alternative_count,0.))
+        return original_record(fork,choice,*args,**kwargs)
     def depart(narrowing,compose,**kwargs):
         draw=original_departure(narrowing,compose,**kwargs)
         if walk=='narrowing':
@@ -86,6 +95,7 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         with patch.object(module,'select_logits',choose):
             return original_forward(module,x,**kwargs)
     monkeypatch.setattr(SentenceCredit,'departure',depart)
+    monkeypatch.setattr(SentenceFork,'record',numeric_fork)
     monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
     monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
     snapshots=[]

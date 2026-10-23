@@ -1,0 +1,6 @@
+{
+  "node": "test/test_exact_primitives.py::test_evaluate_reports_unbound_dependencies_then_resolves",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_model_time_when.py::test_next_previous_are_symmetric_time_shifts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

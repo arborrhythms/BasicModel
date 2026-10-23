@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_synthesis.py::test_answer_path_modules_join_the_live_optimizer_and_move",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

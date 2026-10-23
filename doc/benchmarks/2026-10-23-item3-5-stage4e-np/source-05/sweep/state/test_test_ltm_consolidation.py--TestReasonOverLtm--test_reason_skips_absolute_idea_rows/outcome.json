@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestReasonOverLtm::test_reason_skips_absolute_idea_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

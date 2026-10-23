@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relative_error.py::test_squared_error_is_ratio_of_means_and_baseline_is_detached",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

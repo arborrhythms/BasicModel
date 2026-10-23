@@ -1,0 +1,6 @@
+{
+  "node": "test/test_invertibility_contract.py::test_noise_is_sampled_before_forward_and_after_reverse_only",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

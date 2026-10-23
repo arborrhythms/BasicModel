@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_shared_training_group_survives_batch_and_recycle_boundaries",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_payload_audit.py::test_codebook_slot_what_for_unmuxed_codebook",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

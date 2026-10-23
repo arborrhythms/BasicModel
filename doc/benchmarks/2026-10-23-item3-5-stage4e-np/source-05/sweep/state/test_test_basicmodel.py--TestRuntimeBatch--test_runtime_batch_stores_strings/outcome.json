@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_stores_strings",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

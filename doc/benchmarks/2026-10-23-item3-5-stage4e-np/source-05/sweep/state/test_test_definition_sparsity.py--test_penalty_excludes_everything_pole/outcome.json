@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_sparsity.py::test_penalty_excludes_everything_pole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

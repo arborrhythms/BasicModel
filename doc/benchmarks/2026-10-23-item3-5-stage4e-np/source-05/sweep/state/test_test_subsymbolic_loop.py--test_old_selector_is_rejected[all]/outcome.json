@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subsymbolic_loop.py::test_old_selector_is_rejected[all]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

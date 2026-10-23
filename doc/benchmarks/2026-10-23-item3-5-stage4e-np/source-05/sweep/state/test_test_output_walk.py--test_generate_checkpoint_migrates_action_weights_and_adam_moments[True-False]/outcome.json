@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_walk.py::test_generate_checkpoint_migrates_action_weights_and_adam_moments[True-False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

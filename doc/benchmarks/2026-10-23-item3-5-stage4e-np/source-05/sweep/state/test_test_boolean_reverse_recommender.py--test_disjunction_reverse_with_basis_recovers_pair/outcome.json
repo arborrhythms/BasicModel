@@ -1,0 +1,6 @@
+{
+  "node": "test/test_boolean_reverse_recommender.py::test_disjunction_reverse_with_basis_recovers_pair",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

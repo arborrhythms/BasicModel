@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_extent_excludes_pads",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ramsification_table.py::test_ramsification_not_in_state_dict",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

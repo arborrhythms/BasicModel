@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_training.py::test_data_what_supervised_target_matches_loader_output",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

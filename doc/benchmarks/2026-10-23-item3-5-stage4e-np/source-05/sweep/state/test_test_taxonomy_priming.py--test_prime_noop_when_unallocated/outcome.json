@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_priming.py::test_prime_noop_when_unallocated",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

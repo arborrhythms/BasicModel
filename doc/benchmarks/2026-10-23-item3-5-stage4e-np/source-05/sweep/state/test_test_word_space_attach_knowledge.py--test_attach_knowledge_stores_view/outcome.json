@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_space_attach_knowledge.py::test_attach_knowledge_stores_view",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

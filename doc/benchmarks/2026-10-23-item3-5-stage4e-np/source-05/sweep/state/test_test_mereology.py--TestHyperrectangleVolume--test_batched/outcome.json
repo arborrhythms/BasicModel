@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestHyperrectangleVolume::test_batched",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

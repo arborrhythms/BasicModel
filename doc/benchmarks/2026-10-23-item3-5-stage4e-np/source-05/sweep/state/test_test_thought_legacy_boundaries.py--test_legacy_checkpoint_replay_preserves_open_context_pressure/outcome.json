@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_replay_preserves_open_context_pressure",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

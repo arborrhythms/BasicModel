@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_loop_buckets_and_orders.py::test_overlong_sentence_is_rejected_not_clipped",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

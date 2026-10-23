@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_gain.py::test_percept_prior_is_causal_normalized_and_checkpointed",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_parallel_does_not_receive_sparse_boundary_relaxation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

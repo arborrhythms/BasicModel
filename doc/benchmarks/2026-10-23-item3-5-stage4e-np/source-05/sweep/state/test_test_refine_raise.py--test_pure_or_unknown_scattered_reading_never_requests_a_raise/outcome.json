@@ -1,0 +1,6 @@
+{
+  "node": "test/test_refine_raise.py::test_pure_or_unknown_scattered_reading_never_requests_a_raise",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

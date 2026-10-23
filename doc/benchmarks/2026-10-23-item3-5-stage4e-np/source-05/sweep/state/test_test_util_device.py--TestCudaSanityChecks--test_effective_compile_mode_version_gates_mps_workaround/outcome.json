@@ -1,0 +1,6 @@
+{
+  "node": "test/test_util_device.py::TestCudaSanityChecks::test_effective_compile_mode_version_gates_mps_workaround",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy.py::test_class_segments_abc_d",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

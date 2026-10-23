@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_scope.py::test_missing_candidate_cost_is_zero_with_zero_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

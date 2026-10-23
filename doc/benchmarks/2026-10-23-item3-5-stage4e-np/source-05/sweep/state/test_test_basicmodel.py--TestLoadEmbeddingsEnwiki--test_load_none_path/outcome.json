@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_none_path",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

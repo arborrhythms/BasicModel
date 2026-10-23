@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_is_a_transform_chooser",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

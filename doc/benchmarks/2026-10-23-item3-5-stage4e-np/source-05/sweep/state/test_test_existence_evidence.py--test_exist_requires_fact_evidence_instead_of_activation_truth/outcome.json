@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_evidence.py::test_exist_requires_fact_evidence_instead_of_activation_truth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

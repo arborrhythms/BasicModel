@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_artifact_writer.py::test_reference_codebook_dtypes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

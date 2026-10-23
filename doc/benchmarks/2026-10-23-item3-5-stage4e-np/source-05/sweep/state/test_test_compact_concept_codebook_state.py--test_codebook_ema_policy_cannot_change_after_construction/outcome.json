@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compact_concept_codebook_state.py::test_codebook_ema_policy_cannot_change_after_construction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

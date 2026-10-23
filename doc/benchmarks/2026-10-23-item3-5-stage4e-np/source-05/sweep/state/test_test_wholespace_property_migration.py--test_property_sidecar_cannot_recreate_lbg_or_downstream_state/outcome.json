@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wholespace_property_migration.py::test_property_sidecar_cannot_recreate_lbg_or_downstream_state",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

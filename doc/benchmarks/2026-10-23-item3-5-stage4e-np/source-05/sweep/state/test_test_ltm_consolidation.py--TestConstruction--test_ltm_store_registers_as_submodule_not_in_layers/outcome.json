@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestConstruction::test_ltm_store_registers_as_submodule_not_in_layers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

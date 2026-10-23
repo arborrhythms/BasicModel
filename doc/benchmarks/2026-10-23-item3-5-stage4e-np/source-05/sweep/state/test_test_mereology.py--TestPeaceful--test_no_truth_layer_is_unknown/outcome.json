@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestPeaceful::test_no_truth_layer_is_unknown",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

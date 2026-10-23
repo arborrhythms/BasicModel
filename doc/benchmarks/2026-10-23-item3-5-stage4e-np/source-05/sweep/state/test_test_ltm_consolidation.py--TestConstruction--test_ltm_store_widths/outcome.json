@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestConstruction::test_ltm_store_widths",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

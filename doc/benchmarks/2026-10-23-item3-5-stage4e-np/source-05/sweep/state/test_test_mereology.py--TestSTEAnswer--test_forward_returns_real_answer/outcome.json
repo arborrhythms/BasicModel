@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestSTEAnswer::test_forward_returns_real_answer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

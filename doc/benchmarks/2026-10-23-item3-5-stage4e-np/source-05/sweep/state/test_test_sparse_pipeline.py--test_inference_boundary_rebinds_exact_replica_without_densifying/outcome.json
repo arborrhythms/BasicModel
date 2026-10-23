@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_inference_boundary_rebinds_exact_replica_without_densifying",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

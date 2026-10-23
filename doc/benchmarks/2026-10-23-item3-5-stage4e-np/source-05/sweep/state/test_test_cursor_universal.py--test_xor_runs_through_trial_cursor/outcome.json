@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cursor_universal.py::test_xor_runs_through_trial_cursor",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

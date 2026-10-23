@@ -1,0 +1,6 @@
+{
+  "node": "test/test_aligned_fold_binding.py::test_basicmodel_selects_three_folds_per_tower",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

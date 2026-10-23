@@ -1,0 +1,6 @@
+{
+  "node": "test/test_vq_chunked_oom.py::test_chunked_indices_match_unchunked_cosine",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

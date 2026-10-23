@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compile_cache_recovery.py::test_ordinary_compiler_errors_and_assertions_are_not_cache_failures",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,149 @@
+{
+  "blocks": [
+    {
+      "first_batch": 1,
+      "last_batch": 2,
+      "lesson_calls": 12,
+      "fold_targets": 12,
+      "fold_targets_per_lesson_call": 1.0,
+      "reachable_state_ce": {
+        "wait": {
+          "reachable": 141,
+          "mean": 0.8557297443088994,
+          "unreachable": 0
+        },
+        "fold": {
+          "reachable": 12,
+          "mean": 3.31436814593271,
+          "unreachable": 0
+        }
+      },
+      "first_pair_by_family": {
+        "description": {
+          "total": 0,
+          "correct": 0,
+          "unreached": 0,
+          "accuracy": null
+        },
+        "np": {
+          "total": 6,
+          "correct": 0,
+          "unreached": 0,
+          "accuracy": 0.0
+        },
+        "intransitive": {
+          "total": 0,
+          "correct": 0,
+          "unreached": 0,
+          "accuracy": null
+        },
+        "transitive": {
+          "total": 0,
+          "correct": 0,
+          "unreached": 0,
+          "accuracy": null
+        },
+        "preposition": {
+          "total": 0,
+          "correct": 0,
+          "unreached": 0,
+          "accuracy": null
+        }
+      },
+      "kept_program_steps": {
+        "sentences": 6,
+        "totals": {
+          "leaf": 12,
+          "binary": 6,
+          "unary": 56,
+          "transpose": 0,
+          "compose": 62,
+          "total": 74
+        },
+        "means": {
+          "leaf": 2.0,
+          "binary": 1.0,
+          "unary": 9.333333333333334,
+          "transpose": 0.0,
+          "compose": 10.333333333333334,
+          "total": 12.333333333333334
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "ce": "observed pre-update probabilities on reachable student trial-states; reused prefixes count in each loss call",
+    "first_pair": "first visited ((0,), (1,)) source pair in the kept trial; missing pairs count as incorrect",
+    "steps": "chronological kept leaf, binary, unary and transpose actions; compose excludes leaves"
+  },
+  "overall": {
+    "first_batch": 1,
+    "last_batch": 2,
+    "lesson_calls": 12,
+    "fold_targets": 12,
+    "fold_targets_per_lesson_call": 1.0,
+    "reachable_state_ce": {
+      "wait": {
+        "reachable": 141,
+        "mean": 0.8557297443088994,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 12,
+        "mean": 3.31436814593271,
+        "unreachable": 0
+      }
+    },
+    "first_pair_by_family": {
+      "description": {
+        "total": 0,
+        "correct": 0,
+        "unreached": 0,
+        "accuracy": null
+      },
+      "np": {
+        "total": 6,
+        "correct": 0,
+        "unreached": 0,
+        "accuracy": 0.0
+      },
+      "intransitive": {
+        "total": 0,
+        "correct": 0,
+        "unreached": 0,
+        "accuracy": null
+      },
+      "transitive": {
+        "total": 0,
+        "correct": 0,
+        "unreached": 0,
+        "accuracy": null
+      },
+      "preposition": {
+        "total": 0,
+        "correct": 0,
+        "unreached": 0,
+        "accuracy": null
+      }
+    },
+    "kept_program_steps": {
+      "sentences": 6,
+      "totals": {
+        "leaf": 12,
+        "binary": 6,
+        "unary": 56,
+        "transpose": 0,
+        "compose": 62,
+        "total": 74
+      },
+      "means": {
+        "leaf": 2.0,
+        "binary": 1.0,
+        "unary": 9.333333333333334,
+        "transpose": 0.0,
+        "compose": 10.333333333333334,
+        "total": 12.333333333333334
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_artifact_writer.py::test_grammar_signatures_lift_rule_fields",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

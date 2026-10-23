@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparsity_regularizer.py::test_preserves_grad",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_contractive_linear.py::test_blocks_shape_validation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

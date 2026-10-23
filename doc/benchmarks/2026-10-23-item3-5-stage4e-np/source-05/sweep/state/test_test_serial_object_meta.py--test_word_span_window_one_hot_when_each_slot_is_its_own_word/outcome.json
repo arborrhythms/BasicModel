@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_object_meta.py::test_word_span_window_one_hot_when_each_slot_is_its_own_word",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_embedding_vectors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

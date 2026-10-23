@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_enwiki",
+  "outcome": "skipped",
+  "failure": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_basicmodel.py', 1688, 'Skipped: slow -- set RUN_SLOW=1')",
+  "records": []
+}

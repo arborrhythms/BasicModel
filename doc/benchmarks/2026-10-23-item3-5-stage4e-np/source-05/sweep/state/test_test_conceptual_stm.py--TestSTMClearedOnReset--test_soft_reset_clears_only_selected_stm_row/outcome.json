@@ -1,0 +1,6 @@
+{
+  "node": "test/test_conceptual_stm.py::TestSTMClearedOnReset::test_soft_reset_clears_only_selected_stm_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

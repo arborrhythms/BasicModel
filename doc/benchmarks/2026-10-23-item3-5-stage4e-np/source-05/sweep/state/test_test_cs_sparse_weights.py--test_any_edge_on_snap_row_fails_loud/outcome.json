@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_sparse_weights.py::test_any_edge_on_snap_row_fails_loud",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

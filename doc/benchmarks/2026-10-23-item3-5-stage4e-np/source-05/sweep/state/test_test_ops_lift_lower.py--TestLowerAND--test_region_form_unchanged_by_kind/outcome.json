@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestLowerAND::test_region_form_unchanged_by_kind",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

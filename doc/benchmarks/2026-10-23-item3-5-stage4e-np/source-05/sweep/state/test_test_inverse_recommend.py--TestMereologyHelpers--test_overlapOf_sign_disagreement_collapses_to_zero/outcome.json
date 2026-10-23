@@ -1,0 +1,6 @@
+{
+  "node": "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_sign_disagreement_collapses_to_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

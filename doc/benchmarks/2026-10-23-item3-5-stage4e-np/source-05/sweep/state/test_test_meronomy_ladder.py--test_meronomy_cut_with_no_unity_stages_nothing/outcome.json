@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_ladder.py::test_meronomy_cut_with_no_unity_stages_nothing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

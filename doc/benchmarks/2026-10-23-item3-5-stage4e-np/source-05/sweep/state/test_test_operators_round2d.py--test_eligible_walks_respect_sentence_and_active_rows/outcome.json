@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2d.py::test_eligible_walks_respect_sentence_and_active_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

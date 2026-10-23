@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_priming.py::test_part_graph_has_no_edge_cap",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

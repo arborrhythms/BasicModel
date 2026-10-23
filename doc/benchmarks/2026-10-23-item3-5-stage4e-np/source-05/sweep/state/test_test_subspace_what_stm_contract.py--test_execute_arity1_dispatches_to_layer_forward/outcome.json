@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_execute_arity1_dispatches_to_layer_forward",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

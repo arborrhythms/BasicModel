@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lower_has_internal_pi_trainable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

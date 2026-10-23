@@ -1,0 +1,6 @@
+{
+  "node": "test/test_coordinate_registry.py::test_copy_preserves_the_single_registry_ladder",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

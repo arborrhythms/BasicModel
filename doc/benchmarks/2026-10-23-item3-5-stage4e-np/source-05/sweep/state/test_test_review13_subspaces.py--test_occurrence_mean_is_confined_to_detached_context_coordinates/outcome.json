@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review13_subspaces.py::test_occurrence_mean_is_confined_to_detached_context_coordinates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

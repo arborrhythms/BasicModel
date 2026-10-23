@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_concepts_from_percepts.py::test_sparse_update_changes_only_selected_concepts_and_unknown_is_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

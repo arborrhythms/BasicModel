@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_percept_concept_pipeline_overlaps_adjacent_words_and_drains_latches",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

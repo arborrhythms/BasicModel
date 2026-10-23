@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestMonotonicCodebookRequirement::test_allows_monotonic_without_cs_codebook",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

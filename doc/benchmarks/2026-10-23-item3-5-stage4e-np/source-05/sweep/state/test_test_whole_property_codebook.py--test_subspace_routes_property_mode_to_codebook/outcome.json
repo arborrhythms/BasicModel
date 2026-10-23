@@ -1,0 +1,6 @@
+{
+  "node": "test/test_whole_property_codebook.py::test_subspace_routes_property_mode_to_codebook",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

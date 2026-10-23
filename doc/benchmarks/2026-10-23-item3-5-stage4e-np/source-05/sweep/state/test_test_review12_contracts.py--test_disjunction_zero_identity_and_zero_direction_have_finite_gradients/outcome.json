@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review12_contracts.py::test_disjunction_zero_identity_and_zero_direction_have_finite_gradients",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

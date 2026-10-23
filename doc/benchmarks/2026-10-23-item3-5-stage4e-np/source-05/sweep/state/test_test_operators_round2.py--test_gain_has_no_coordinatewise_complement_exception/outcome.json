@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round2.py::test_gain_has_no_coordinatewise_complement_exception",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

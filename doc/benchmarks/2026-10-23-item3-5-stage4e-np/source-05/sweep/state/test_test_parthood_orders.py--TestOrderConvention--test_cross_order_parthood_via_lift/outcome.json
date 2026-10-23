@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestOrderConvention::test_cross_order_parthood_via_lift",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

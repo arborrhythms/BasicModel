@@ -1,0 +1,6 @@
+{
+  "node": "test/test_streaming_ar_training.py::test_subspace_has_reset_event",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

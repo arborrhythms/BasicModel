@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_only_refactor.py::TestIrForwardShape::test_ir_forward_returns_b_n_d",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

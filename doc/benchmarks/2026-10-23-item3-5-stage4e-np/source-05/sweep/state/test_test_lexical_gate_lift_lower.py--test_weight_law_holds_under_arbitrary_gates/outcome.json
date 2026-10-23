@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexical_gate_lift_lower.py::test_weight_law_holds_under_arbitrary_gates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

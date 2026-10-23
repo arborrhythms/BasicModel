@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_projected_updates_keep_nonnegative_parts_and_kind_maximum",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_different_ADJs_give_different_lower_outputs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

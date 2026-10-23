@@ -1,0 +1,6 @@
+{
+  "node": "test/test_activation_priming_multiply.py::test_apply_priming_shape_mismatch_is_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

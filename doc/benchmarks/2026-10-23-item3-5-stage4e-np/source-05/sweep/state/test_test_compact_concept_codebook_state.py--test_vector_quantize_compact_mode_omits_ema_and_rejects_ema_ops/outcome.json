@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compact_concept_codebook_state.py::test_vector_quantize_compact_mode_omits_ema_and_rejects_ema_ops",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

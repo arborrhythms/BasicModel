@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_metadata_comes_from_the_preceding_occurrence_not_the_target",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

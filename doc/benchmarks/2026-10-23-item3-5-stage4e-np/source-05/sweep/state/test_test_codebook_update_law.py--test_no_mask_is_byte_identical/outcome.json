@@ -1,0 +1,6 @@
+{
+  "node": "test/test_codebook_update_law.py::test_no_mask_is_byte_identical",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

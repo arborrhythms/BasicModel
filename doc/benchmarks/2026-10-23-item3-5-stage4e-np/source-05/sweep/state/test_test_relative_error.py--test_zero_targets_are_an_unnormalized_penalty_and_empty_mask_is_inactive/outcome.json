@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relative_error.py::test_zero_targets_are_an_unnormalized_penalty_and_empty_mask_is_inactive",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

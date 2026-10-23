@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereology.py::TestGaussianKernelOverlap::test_self_overlap_diagonal_ones",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

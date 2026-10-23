@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_objective.py::test_undefined_inverse_coordinates_have_no_inside_charge_or_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

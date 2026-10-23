@@ -1,0 +1,6 @@
+{
+  "node": "test/test_xor_grammar.py::TestXORGrammarRouterWiring::test_grammar_rule_arities",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_partition_grammar_rewrite.py::test_grammar_golden[1-S -> non(S)]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

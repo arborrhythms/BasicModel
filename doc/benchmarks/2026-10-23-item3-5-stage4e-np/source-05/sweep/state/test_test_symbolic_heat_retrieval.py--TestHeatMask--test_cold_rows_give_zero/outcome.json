@@ -1,0 +1,6 @@
+{
+  "node": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_cold_rows_give_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mlp_transform_chooser.py::test_owns_params_and_scores_are_differentiable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

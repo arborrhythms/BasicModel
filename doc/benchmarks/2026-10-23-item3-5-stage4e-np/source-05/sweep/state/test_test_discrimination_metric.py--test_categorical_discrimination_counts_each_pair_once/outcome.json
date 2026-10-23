@@ -1,0 +1,6 @@
+{
+  "node": "test/test_discrimination_metric.py::test_categorical_discrimination_counts_each_pair_once",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

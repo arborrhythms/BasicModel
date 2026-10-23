@@ -1,0 +1,6 @@
+{
+  "node": "test/test_order0_attended_field.py::test_formation_stops_aggregation_until_the_next_turn",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

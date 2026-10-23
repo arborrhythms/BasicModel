@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decoder_exploration.py::test_trial_selects_strictly_lower_full_reconstruction_before_backward",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

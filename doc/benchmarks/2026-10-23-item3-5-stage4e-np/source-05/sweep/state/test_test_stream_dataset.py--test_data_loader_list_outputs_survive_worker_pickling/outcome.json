@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stream_dataset.py::test_data_loader_list_outputs_survive_worker_pickling",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

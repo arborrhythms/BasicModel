@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_history_boundaries.py::test_malformed_history_load_is_atomic[extra_budget]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

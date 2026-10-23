@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestNOT::test_lift_not_monotonic_paired_index_flip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

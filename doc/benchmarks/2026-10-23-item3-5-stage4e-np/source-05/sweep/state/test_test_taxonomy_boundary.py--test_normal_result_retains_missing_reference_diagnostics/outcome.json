@@ -1,0 +1,6 @@
+{
+  "node": "test/test_taxonomy_boundary.py::test_normal_result_retains_missing_reference_diagnostics",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

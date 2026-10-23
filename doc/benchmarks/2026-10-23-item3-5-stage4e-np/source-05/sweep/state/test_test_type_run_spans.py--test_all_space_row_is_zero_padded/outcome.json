@@ -1,0 +1,6 @@
+{
+  "node": "test/test_type_run_spans.py::test_all_space_row_is_zero_padded",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

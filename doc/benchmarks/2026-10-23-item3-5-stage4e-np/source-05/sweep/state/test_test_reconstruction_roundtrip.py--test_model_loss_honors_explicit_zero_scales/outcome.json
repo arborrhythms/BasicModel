@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

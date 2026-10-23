@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ir_only_refactor.py::TestReverseScaleBackcompat::test_reconstruction_scale_parses_cleanly",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

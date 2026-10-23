@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_artifact_writer.py::test_taxonomy_handles_order_stripped_categories",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_serial_stm_split.py::test_constituent_stack_mechanics",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

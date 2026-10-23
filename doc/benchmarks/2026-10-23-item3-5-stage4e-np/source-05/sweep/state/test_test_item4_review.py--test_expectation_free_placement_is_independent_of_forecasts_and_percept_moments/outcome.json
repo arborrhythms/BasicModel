@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item4_review.py::test_expectation_free_placement_is_independent_of_forecasts_and_percept_moments",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_bounded_test_runner.py::test_full_sweep_warns_for_missing_stale_or_incomplete_slow_record",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parthood_orders.py::TestParthoodAlgebra::test_contained_scores_higher_than_disjoint",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestSchema::test_unary_content_is_an_idea_and_supplies_no_part_pair",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

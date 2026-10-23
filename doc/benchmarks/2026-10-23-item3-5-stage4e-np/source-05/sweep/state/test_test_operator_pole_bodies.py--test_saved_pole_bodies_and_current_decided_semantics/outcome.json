@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_pole_bodies.py::test_saved_pole_bodies_and_current_decided_semantics",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

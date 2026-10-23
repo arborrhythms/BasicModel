@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_layer_wiring.py::TestTop2SelectSTE::test_keeps_top_two_zeros_rest",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

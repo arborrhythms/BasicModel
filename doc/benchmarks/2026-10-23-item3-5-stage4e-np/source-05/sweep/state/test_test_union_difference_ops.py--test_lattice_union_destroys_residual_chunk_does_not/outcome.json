@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_lattice_union_destroys_residual_chunk_does_not",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_teacher_reconstruction.py::test_snapshot_identity_changes_when_manifest_changes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

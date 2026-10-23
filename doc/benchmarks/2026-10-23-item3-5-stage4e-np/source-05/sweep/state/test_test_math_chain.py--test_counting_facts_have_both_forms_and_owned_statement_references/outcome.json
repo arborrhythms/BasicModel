@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain.py::test_counting_facts_have_both_forms_and_owned_statement_references",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

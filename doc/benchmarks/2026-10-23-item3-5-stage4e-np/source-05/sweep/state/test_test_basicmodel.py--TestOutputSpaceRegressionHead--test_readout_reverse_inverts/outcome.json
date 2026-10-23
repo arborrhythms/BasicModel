@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_readout_reverse_inverts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

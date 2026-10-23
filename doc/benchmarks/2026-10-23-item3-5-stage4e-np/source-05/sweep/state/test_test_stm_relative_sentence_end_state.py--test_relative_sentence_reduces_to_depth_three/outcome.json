@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stm_relative_sentence_end_state.py::test_relative_sentence_reduces_to_depth_three",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

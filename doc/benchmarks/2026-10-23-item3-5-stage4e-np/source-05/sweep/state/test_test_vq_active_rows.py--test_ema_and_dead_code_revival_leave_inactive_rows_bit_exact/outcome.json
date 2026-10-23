@@ -1,0 +1,6 @@
+{
+  "node": "test/test_vq_active_rows.py::test_ema_and_dead_code_revival_leave_inactive_rows_bit_exact",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

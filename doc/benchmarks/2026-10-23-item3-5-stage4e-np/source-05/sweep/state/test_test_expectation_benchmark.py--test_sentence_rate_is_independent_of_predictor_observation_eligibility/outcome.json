@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_benchmark.py::test_sentence_rate_is_independent_of_predictor_observation_eligibility",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

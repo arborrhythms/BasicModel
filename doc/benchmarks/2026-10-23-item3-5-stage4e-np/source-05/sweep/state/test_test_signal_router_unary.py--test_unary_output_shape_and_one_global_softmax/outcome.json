@@ -1,0 +1,6 @@
+{
+  "node": "test/test_signal_router_unary.py::test_unary_output_shape_and_one_global_softmax",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

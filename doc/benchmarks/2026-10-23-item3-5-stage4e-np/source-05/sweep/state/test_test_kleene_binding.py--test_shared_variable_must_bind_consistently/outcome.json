@@ -1,0 +1,6 @@
+{
+  "node": "test/test_kleene_binding.py::test_shared_variable_must_bind_consistently",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

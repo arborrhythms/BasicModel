@@ -1,0 +1,6 @@
+{
+  "node": "test/test_fineweb_preflight.py::test_remote_cli_preserves_safety_and_embedding_flags",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_signal_router_unary.py::test_exactly_one_unary_position_changes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

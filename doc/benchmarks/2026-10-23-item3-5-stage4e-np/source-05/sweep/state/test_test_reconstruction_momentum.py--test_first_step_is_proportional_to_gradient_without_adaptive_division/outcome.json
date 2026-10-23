@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reconstruction_momentum.py::test_first_step_is_proportional_to_gradient_without_adaptive_division",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_lasso_penalizes_connections_not_percepts_or_bias[GatedConceptsFromPercepts]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

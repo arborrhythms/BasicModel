@@ -1,0 +1,6 @@
+{
+  "node": "test/test_priming_energy.py::test_energy_transfers_not_amplifies",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

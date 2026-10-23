@@ -1,0 +1,6 @@
+{
+  "node": "test/test_while_loop_gradients.py::test_release_leaves_a_foreign_pending_graph_intact",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

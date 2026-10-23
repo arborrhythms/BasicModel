@@ -1,0 +1,6 @@
+{
+  "node": "test/test_teacher_reconstruction.py::test_what_rejects_forged_location_or_snapshot",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_single_span_one_run",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

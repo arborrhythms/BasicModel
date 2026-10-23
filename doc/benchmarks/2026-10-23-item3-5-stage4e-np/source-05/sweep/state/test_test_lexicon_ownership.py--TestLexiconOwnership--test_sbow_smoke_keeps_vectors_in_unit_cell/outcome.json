@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_sbow_smoke_keeps_vectors_in_unit_cell",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

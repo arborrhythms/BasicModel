@@ -1,0 +1,6 @@
+{
+  "node": "test/test_connective_supervision.py::test_or_corpus_recovers_disjunction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

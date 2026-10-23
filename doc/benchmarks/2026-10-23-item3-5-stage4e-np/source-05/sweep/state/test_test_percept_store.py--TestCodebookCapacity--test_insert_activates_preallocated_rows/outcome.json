@@ -1,0 +1,6 @@
+{
+  "node": "test/test_percept_store.py::TestCodebookCapacity::test_insert_activates_preallocated_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

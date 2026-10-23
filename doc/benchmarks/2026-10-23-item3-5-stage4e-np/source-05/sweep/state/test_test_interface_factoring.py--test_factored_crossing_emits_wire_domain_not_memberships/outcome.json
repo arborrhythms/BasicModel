@@ -1,0 +1,6 @@
+{
+  "node": "test/test_interface_factoring.py::test_factored_crossing_emits_wire_domain_not_memberships",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_relation_slot_reconstruction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ramsification_table.py::test_record_out_of_range_pass_is_noop",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

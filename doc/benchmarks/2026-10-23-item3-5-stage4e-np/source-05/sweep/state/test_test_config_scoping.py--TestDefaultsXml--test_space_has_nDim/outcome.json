@@ -1,0 +1,6 @@
+{
+  "node": "test/test_config_scoping.py::TestDefaultsXml::test_space_has_nDim",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

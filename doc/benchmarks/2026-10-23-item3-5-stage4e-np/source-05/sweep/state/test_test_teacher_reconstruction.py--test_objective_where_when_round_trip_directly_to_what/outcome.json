@@ -1,0 +1,6 @@
+{
+  "node": "test/test_teacher_reconstruction.py::test_objective_where_when_round_trip_directly_to_what",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

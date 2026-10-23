@@ -1,0 +1,6 @@
+{
+  "node": "test/test_cs_symbol_table.py::test_populate_cs_symbols_when_mismatch_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

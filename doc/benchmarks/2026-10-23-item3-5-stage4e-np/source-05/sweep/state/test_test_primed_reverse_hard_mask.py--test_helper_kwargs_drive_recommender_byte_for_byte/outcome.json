@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primed_reverse_hard_mask.py::test_helper_kwargs_drive_recommender_byte_for_byte",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

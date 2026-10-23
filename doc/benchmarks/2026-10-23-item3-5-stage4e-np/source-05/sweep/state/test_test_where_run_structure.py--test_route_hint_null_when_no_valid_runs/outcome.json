@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_run_structure.py::test_route_hint_null_when_no_valid_runs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

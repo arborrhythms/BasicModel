@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compound_cases.py::test_native_case_staging_uses_existing_sigma_and_allocates_nothing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

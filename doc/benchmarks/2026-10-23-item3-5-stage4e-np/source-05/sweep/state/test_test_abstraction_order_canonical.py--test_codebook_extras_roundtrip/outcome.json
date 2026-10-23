@@ -1,0 +1,6 @@
+{
+  "node": "test/test_abstraction_order_canonical.py::test_codebook_extras_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

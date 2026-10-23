@@ -1,0 +1,6 @@
+{
+  "node": "test/test_exact_primitives.py::test_illumination_is_monotone_along_the_solver_trace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

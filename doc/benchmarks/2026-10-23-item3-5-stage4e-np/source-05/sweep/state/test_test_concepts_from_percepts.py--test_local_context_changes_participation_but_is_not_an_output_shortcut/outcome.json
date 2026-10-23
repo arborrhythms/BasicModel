@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concepts_from_percepts.py::test_local_context_changes_participation_but_is_not_an_output_shortcut",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_what_stm_contract.py::test_shift_appends_after_existing_live_slots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

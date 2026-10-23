@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wholespace_fixed_capacity.py::test_wholespace_capacity_exhaustion_is_atomic_and_actionable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

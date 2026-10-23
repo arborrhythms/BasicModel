@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_vectors_compile.py::test_untied_vectors_compiles_fullgraph",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

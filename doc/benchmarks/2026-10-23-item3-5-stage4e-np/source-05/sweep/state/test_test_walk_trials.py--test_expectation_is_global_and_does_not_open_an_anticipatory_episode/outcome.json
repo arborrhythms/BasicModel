@@ -1,0 +1,6 @@
+{
+  "node": "test/test_walk_trials.py::test_expectation_is_global_and_does_not_open_an_anticipatory_episode",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

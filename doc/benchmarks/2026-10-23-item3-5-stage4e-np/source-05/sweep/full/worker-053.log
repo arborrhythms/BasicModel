@@ -1,0 +1,26 @@
+.............ssssssss...................................ss...sssss...... [ 90%]
+........                                                                 [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_reading_curriculum.py::test_supplied_text_reader_preserves_shared_work_spent_during_sentence_scoring
+  /Users/arogers/github/WikiOracle/basicmodel/test/attention_field_gates.py:46: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    words.append('<unresolved>' if float(scores[b,i,j]) <= 0 else
+
+test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_answer_query_degrades_gracefully
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Spaces.py:1215: RuntimeWarning: EventEncoding[WholeSpace]: nDim=8 leaves no content width after the canonical band (nWhere=4 + nWhen=4); raise <nDim> to at least 9 if this space builds a what-basis.
+    warnings.warn(
+
+test/test_recon_bench.py::test_run_record_schema_smoke
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7129: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_recon_bench.py::test_decode_rows_align_with_last_eval_batch
+  /Users/arogers/github/WikiOracle/basicmodel/test/../bin/Models.py:7129: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor_fixture.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+65 passed, 15 skipped, 5 warnings in 26.41s

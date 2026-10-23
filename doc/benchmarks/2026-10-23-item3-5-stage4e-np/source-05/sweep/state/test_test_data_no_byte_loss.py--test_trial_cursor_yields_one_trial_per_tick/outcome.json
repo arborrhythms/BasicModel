@@ -1,0 +1,6 @@
+{
+  "node": "test/test_data_no_byte_loss.py::test_trial_cursor_yields_one_trial_per_tick",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

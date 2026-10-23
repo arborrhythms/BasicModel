@@ -1,0 +1,386 @@
+{
+  "source": "3b34b3f388a7d4d5f455fe12bec7ea1a6b5007e2",
+  "training_presentations": 6,
+  "updates": {
+    "paired": 4,
+    "batch_end_disabled": 0
+  },
+  "evaluation_presentations": 1,
+  "gates": {
+    "brackets": {
+      "correct": 1,
+      "total": 1,
+      "threshold": 0.9,
+      "passed": true
+    },
+    "occurrences": {
+      "correct": 0,
+      "total": 1,
+      "threshold": 0.95,
+      "duplicate_writes": 0,
+      "collisions": 0,
+      "passed": false
+    }
+  },
+  "reports": {
+    "reductions": {
+      "correct": 0,
+      "total": 1
+    },
+    "unlowered": {
+      "correct": 0,
+      "total": 0
+    },
+    "kept_programs": {
+      "product": 1
+    },
+    "kept_operators": {
+      "product": 1
+    },
+    "unexpected_occurrences": 0,
+    "lowering_stamps": [
+      {
+        "id": "np:np:0:-1:3",
+        "lowerings": []
+      }
+    ],
+    "meaning_norms": [
+      {
+        "id": "np:np:0:-1:3",
+        "closed_meaning_norm": 0.4285714030265808,
+        "operations": [
+          {
+            "method": "product",
+            "meaning_norms": [
+              0.4285714030265808,
+              0.0,
+              0.4285714030265808
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "target_reachability": {
+    "wait": {
+      "reachable": 141,
+      "mean": 0.8557297443088994,
+      "unreachable": 0
+    },
+    "fold": {
+      "reachable": 12,
+      "mean": 3.31436814593271,
+      "unreachable": 0
+    }
+  },
+  "first_pairs": [
+    {
+      "batch": 1,
+      "id": "np:np:0:-1:0",
+      "trial": 1,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.5454177856445312,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.021348951384425163
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.40437036752700806,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.4078056514263153
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -3.07208251953125,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.012608080171048641
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.985130786895752,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.01375344954431057
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -7.521044731140137,
+          "occupation_term": 0.0,
+          "probability": 0.0001473971933592111
+        }
+      ]
+    },
+    {
+      "batch": 1,
+      "id": "np:np:0:-1:2",
+      "trial": 0,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -3.4079859256744385,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.008575164712965488
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.5661678910255432,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.45624226331710815
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -3.4578113555908203,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.008158373646438122
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -3.371845006942749,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.008890747092664242
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -7.686773300170898,
+          "occupation_term": 0.0,
+          "probability": 0.0001188471433124505
+        }
+      ]
+    },
+    {
+      "batch": 1,
+      "id": "np:np:0:-1:1",
+      "trial": 0,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.367197036743164,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.02468494512140751
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.4119075834751129,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.3975410759449005
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.478689432144165,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.022080639377236366
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.3612453937530518,
+          "occupation_term": 0.010989011265337467,
+          "probability": 0.02483230084180832
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -4.135891914367676,
+          "occupation_term": 0.0,
+          "probability": 0.004210151731967926
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "id": "np:np:0:-1:2",
+      "trial": 0,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.9175401926040649,
+          "occupation_term": 0.0,
+          "probability": 0.07172265648841858
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 3.184195041656494,
+          "occupation_term": 0.030686885118484497,
+          "probability": 0.6919140219688416
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 1.119651198387146,
+          "occupation_term": 0.0,
+          "probability": 0.08778740465641022
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 1.157377004623413,
+          "occupation_term": 0.0,
+          "probability": 0.09116250276565552
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -5.590083122253418,
+          "occupation_term": 0.0,
+          "probability": 0.00010701172141125426
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "id": "np:np:0:-1:0",
+      "trial": 0,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.7865652441978455,
+          "occupation_term": 0.0,
+          "probability": 0.10701894015073776
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 2.5548224449157715,
+          "occupation_term": 0.03110554628074169,
+          "probability": 0.6271984577178955
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.5340452194213867,
+          "occupation_term": 0.0,
+          "probability": 0.0831366628408432
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 0.5564005970954895,
+          "occupation_term": 0.0,
+          "probability": 0.08501613885164261
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -5.746461868286133,
+          "occupation_term": 0.0,
+          "probability": 0.00015566922957077622
+        }
+      ]
+    },
+    {
+      "batch": 2,
+      "id": "np:np:0:-1:1",
+      "trial": 0,
+      "target": 12,
+      "selected_operation": 7,
+      "correct": false,
+      "menu": [
+        {
+          "operation": "intersection",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 1.2473760843276978,
+          "occupation_term": 0.0,
+          "probability": 0.13212445378303528
+        },
+        {
+          "operation": "product",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 2.583500862121582,
+          "occupation_term": 0.030686885118484497,
+          "probability": 0.5026373863220215
+        },
+        {
+          "operation": "lower",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 1.3004668951034546,
+          "occupation_term": 0.0,
+          "probability": 0.13932858407497406
+        },
+        {
+          "operation": "definite",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": 1.3487915992736816,
+          "occupation_term": 0.0,
+          "probability": 0.1462269276380539
+        },
+        {
+          "operation": "STOP",
+          "variants": 1,
+          "legal": 1,
+          "maximum_logit": -2.3079135417938232,
+          "occupation_term": 0.0,
+          "probability": 0.003775203600525856
+        }
+      ]
+    }
+  ],
+  "stopped_before": [
+    "definite",
+    "description",
+    "adjective",
+    "definite_adjective",
+    "final",
+    "copular_identity"
+  ]
+}

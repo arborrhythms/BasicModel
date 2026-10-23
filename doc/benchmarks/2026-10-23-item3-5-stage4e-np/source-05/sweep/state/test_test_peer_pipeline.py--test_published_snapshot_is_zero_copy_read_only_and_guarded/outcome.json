@@ -1,0 +1,6 @@
+{
+  "node": "test/test_peer_pipeline.py::test_published_snapshot_is_zero_copy_read_only_and_guarded",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reduction_pressure.py::test_row_allowance_is_one_or_three_never_two",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

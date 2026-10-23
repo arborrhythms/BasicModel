@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primitive_properties.py::test_property_union_and_part_conjunction_from_primitive_counts",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_evidence.py::test_thought_transpose_keeps_negated_literal_in_a_separate_occurrence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

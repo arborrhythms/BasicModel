@@ -1,0 +1,6 @@
+{
+  "node": "test/test_activation_priming_multiply.py::test_note_selection_bumps_total_count",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

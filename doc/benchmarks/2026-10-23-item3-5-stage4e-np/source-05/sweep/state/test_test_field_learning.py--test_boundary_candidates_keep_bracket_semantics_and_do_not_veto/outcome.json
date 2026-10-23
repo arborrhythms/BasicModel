@@ -1,0 +1,6 @@
+{
+  "node": "test/test_field_learning.py::test_boundary_candidates_keep_bracket_semantics_and_do_not_veto",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

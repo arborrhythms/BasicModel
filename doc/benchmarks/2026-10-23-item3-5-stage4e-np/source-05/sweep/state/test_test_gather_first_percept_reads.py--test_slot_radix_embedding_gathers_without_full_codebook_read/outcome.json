@@ -1,0 +1,6 @@
+{
+  "node": "test/test_gather_first_percept_reads.py::test_slot_radix_embedding_gathers_without_full_codebook_read",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

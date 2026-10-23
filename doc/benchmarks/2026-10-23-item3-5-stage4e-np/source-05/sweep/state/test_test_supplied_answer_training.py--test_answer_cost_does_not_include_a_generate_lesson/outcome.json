@@ -1,0 +1,6 @@
+{
+  "node": "test/test_supplied_answer_training.py::test_answer_cost_does_not_include_a_generate_lesson",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

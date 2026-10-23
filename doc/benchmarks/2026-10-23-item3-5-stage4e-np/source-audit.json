@@ -522,7 +522,7 @@
     "test/test_operators_round1.py": "8e602d815cfd9b65387540da071fe70c44c199f8c99cd314a0a0f6bda181647f",
     "test/test_operators_round2.py": "09c8450f30278c68d08fb62096379c3f3529a5e81194c2d9097b7882f989eb1e",
     "test/test_operators_round2b.py": "064c9e4dc32fbe4286fb56a6001abeedaa95bb5f0a2d1585b538af6ef3866b79",
-    "test/test_operators_round2c.py": "489b3e8b33282c010de7c627d1e1d7238cd9f5f5cf8c41a9ee9f62fe024c7f2b",
+    "test/test_operators_round2c.py": "cd180f4c3196dbcf843397f2e1d198820562c2b49aa128803fcea72900a6badc",
     "test/test_operators_round2d.py": "3d3ecd74008efd2dab0187d7a5cedb4eb7420ed0e7723d44a4234f5ee4dd002d",
     "test/test_operators_round2e.py": "e162523566b077162dfaa2499238e741eb32bfc0e5aeaa43fedd9ff44cd0ae80",
     "test/test_operators_round3a.py": "af7aba60add33d2ea4422feed7131baa77bcfc2d06b950e04d6e56c0d79820cd",
@@ -842,9 +842,10 @@
     "test/tools/xor_debug_params.py": "bed75be1f3de16450bdb6b3b3c9222d541cbcba4c6ab8cee96160cbae2502ac3",
     "test/tools/xor_experiment.py": "3297451250bf7d7630ac1e2845025458787056c61c84bce448debcf247d17310",
     "doc/benchmarks/2026-10-23-item3-5-stage4e-np/run.py": "5dde42381530b3765a214722e8bf593104353f98e4c794d658ace832e2e433f1",
-    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "661486592f4769ad16dffbf6fe2a2e013f8addd46c512a313a69f10382b2346b",
+    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "f07ced995021ee511aa5d8914300ba77844dce126d6ff2a444137f4eea6d2174",
     "doc/benchmarks/2026-10-23-item3-5-stage4e-np/warmup.py": "f5e2beb97c26c0af72c1e13b46b2fa0267445464bfccb267af8603ff4be6811f"
   },
   "warmup_schedule_ast_matches_original": true,
-  "review": "Source 05: source-04 production unchanged; new fixture uses declared formal face. All assertions preserved."
+  "review": "Source 06: numeric departure fixture only; production and lesson producers match 3b34b3f38. Scoped gates follow. Concurrent todo/spec edits are preserved separately.",
+  "production_and_lesson_diff_from_source05": ""
 }

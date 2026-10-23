@@ -1,0 +1,6 @@
+{
+  "node": "test/test_subspace_context.py::test_pipeline_spaces_carry_symbolSpace",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

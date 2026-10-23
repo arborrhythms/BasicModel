@@ -1,0 +1,6 @@
+{
+  "node": "test/test_decomposition_chooser.py::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

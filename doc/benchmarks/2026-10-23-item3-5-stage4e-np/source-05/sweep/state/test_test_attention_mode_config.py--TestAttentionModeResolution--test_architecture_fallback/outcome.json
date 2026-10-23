@@ -1,0 +1,6 @@
+{
+  "node": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_architecture_fallback",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

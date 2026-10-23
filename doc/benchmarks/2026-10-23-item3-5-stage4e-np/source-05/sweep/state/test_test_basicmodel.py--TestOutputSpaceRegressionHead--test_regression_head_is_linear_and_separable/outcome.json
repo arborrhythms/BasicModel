@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_is_linear_and_separable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

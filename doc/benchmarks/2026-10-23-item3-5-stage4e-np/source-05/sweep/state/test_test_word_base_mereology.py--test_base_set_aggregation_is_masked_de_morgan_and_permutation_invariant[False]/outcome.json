@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_base_mereology.py::test_base_set_aggregation_is_masked_de_morgan_and_permutation_invariant[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

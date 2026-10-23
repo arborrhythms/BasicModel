@@ -1,0 +1,6 @@
+{
+  "node": "test/test_row_local_concept_optimizer.py::test_zero_valued_sparse_placeholder_does_not_decay_row_zero[mps]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

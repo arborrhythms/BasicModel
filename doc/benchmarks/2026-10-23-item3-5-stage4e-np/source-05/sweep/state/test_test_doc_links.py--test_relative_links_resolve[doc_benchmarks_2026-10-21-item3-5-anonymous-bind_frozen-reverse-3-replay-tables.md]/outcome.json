@@ -1,0 +1,6 @@
+{
+  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-21-item3-5-anonymous-bind/frozen-reverse-3-replay-tables.md]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

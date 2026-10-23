@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ruledef_typed.py::TestRuleDefTyped::test_s_first_ordering_is_stable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

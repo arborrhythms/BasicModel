@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stage_3_parser_cleanup.py::test_chart_inside_helpers_gone",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

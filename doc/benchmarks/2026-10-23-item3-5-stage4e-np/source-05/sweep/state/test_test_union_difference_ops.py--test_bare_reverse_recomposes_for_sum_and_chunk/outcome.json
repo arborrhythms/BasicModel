@@ -1,0 +1,6 @@
+{
+  "node": "test/test_union_difference_ops.py::test_bare_reverse_recomposes_for_sum_and_chunk",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

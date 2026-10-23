@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compound_cases.py::test_answer_case_bank_detaches_reader_keys_without_detaching_parent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

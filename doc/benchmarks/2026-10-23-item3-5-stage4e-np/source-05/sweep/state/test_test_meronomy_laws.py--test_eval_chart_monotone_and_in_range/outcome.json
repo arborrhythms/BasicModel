@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meronomy_laws.py::test_eval_chart_monotone_and_in_range",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_percept_store_roundtrips_inserted_words",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_read.py::test_property_read_does_not_save_event_property_primitive_product",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

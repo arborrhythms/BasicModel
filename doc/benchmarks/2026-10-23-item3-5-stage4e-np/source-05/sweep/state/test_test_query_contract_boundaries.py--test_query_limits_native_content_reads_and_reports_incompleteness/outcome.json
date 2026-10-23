@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_contract_boundaries.py::test_query_limits_native_content_reads_and_reports_incompleteness",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_matches_torch_min",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

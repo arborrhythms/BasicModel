@@ -1,0 +1,6 @@
+{
+  "node": "test/test_dimensional_governance.py::test_full_sigma_pi_is_invertible_over_flat_slab",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

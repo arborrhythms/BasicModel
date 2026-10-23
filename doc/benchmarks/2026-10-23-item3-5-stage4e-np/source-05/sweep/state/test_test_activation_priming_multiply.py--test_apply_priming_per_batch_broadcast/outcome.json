@@ -1,0 +1,6 @@
+{
+  "node": "test/test_activation_priming_multiply.py::test_apply_priming_per_batch_broadcast",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

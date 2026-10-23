@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_plus_whole_equals_yhat",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

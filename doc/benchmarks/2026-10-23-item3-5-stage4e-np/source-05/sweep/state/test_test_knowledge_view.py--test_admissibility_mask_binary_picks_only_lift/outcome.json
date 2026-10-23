@@ -1,0 +1,6 @@
+{
+  "node": "test/test_knowledge_view.py::test_admissibility_mask_binary_picks_only_lift",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

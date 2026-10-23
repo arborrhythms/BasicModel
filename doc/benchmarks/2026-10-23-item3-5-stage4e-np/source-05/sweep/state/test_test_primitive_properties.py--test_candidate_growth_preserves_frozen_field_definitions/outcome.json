@@ -1,0 +1,6 @@
+{
+  "node": "test/test_primitive_properties.py::test_candidate_growth_preserves_frozen_field_definitions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

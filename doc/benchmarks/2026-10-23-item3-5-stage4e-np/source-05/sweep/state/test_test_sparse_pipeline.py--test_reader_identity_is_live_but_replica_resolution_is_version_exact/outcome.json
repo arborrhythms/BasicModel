@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sparse_pipeline.py::test_reader_identity_is_live_but_replica_resolution_is_version_exact",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

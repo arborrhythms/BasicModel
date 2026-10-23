@@ -1,0 +1,6 @@
+{
+  "node": "test/test_wholespace_fixed_capacity.py::test_property_reads_are_rng_neutral_and_admit_no_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

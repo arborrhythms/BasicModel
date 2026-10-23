@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_phase_permissions.py::test_resolution_opens_only_completed_rows_and_closes_after_return",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_binding_operators.py::test_conjunction_keeps_the_repeated_reference_for_the_next_operation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

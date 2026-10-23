@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_unary_and_generate_use_the_same_exact_tie_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

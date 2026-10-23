@@ -1,0 +1,6 @@
+{
+  "node": "test/test_whole_property_codebook.py::test_property_codebook_public_reads_share_membership_view",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

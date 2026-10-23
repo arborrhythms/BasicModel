@@ -1,0 +1,6 @@
+{
+  "node": "test/test_registration_drift.py::test_fixed_points_non_degenerate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

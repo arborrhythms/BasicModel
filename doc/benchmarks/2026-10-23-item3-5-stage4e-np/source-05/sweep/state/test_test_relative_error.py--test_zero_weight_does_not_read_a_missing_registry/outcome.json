@@ -1,0 +1,6 @@
+{
+  "node": "test/test_relative_error.py::test_zero_weight_does_not_read_a_missing_registry",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

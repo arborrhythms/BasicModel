@@ -1,0 +1,6 @@
+{
+  "node": "test/test_finite_gradient_guard.py::test_multi_optimizer_preflights_later_sparse_child_before_dense_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

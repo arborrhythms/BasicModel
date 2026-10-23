@@ -1,0 +1,6 @@
+{
+  "node": "test/test_where_decoupling.py::TestWhereDecoupling::test_codebook_identity_is_the_active_row_index",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_effects.py::test_every_shipped_rule_has_exhaustive_effects_and_operand_kinds",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

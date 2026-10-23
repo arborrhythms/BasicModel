@@ -1,0 +1,6 @@
+{
+  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_one_vector_is_regression_head",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

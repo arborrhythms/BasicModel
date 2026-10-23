@@ -1,0 +1,6 @@
+{
+  "node": "test/test_typed_stack.py::test_typed_stack_pop_returns_metadata_and_decrements_depth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

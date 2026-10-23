@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

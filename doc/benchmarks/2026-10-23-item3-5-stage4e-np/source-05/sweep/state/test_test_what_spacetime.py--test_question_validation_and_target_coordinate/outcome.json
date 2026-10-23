@@ -1,0 +1,6 @@
+{
+  "node": "test/test_what_spacetime.py::test_question_validation_and_target_coordinate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

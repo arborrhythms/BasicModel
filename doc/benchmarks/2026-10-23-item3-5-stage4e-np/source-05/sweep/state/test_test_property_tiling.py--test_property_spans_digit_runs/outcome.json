@@ -1,0 +1,6 @@
+{
+  "node": "test/test_property_tiling.py::test_property_spans_digit_runs",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

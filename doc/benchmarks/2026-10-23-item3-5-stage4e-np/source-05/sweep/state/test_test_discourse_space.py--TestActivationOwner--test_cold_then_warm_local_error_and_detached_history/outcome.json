@@ -1,0 +1,6 @@
+{
+  "node": "test/test_discourse_space.py::TestActivationOwner::test_cold_then_warm_local_error_and_detached_history",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

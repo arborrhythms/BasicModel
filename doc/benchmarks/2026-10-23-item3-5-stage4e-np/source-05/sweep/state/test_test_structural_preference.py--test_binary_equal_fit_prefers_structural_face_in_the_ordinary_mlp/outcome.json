@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_preference.py::test_binary_equal_fit_prefers_structural_face_in_the_ordinary_mlp",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

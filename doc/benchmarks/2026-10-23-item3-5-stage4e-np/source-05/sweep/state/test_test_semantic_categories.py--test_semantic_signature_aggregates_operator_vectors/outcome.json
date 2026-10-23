@@ -1,0 +1,6 @@
+{
+  "node": "test/test_semantic_categories.py::test_semantic_signature_aggregates_operator_vectors",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

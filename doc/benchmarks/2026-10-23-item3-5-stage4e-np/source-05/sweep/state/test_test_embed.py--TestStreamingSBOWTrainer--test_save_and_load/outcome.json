@@ -1,0 +1,6 @@
+{
+  "node": "test/test_embed.py::TestStreamingSBOWTrainer::test_save_and_load",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
