@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parts_of_speech.py::test_one_stored_part_of_speech_is_the_recomputed_argmax",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

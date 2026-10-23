@@ -194,7 +194,7 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
         lessons = [next(lesson for split, text, lesson, label in corpus()
                         if split == 'train' and label['family'] == family)
                    for family in ('np', 'intransitive', 'transitive', 'preposition')]
-        model.inputSpace.data.grammar_lessons = {'train': lessons}
+        monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': lessons}, raising=False)
         inputs = model.inputSpace.prepPackedInput([[lesson['text']] for lesson in lessons])
         from constituent_budget import paired_updates_only
         optimizer = model.getOptimizer(lr=.003)

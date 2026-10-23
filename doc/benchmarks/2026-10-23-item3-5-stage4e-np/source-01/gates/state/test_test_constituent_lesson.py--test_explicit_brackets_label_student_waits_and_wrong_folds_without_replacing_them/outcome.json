@@ -1,0 +1,6 @@
+{
+  "node": "test/test_constituent_lesson.py::test_explicit_brackets_label_student_waits_and_wrong_folds_without_replacing_them",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

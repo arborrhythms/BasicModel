@@ -48,9 +48,9 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
     model.inputSpace.data.train_input = ['a red cat', 'the blue dog']
     model.inputSpace.data.train_output = [torch.zeros(1),torch.zeros(1)]
     model.inputSpace.data.text_answers = {'train':['cat','dog']}
-    model.inputSpace.data.grammar_lessons = {'train': [
+    monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': [
         dict(text='a red cat', tree=['lower',0,['intersection',1,2]], waits=True),
-        dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}
+        dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}, raising=False)
     parts = model.languageSpace.parts_of_speech
     events, lessons, initial = [], [], {}
     stage = model._stage_reconstruction_teacher

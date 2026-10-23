@@ -30,6 +30,19 @@ index c182a17ef..6e25d0f33 100644
              model.languageSpace.language_layer.operation_layer.set_stage_menu(MENU)
              identity=model.perceptualSpace.percept_store.identity
              if identity.nested or identity._marker_pattern is not None:
+diff --git a/test/test_constituent_lesson.py b/test/test_constituent_lesson.py
+index f06ea36cd..5b49dd8d1 100644
+--- a/test/test_constituent_lesson.py
++++ b/test/test_constituent_lesson.py
+@@ -194,7 +194,7 @@ def test_native_constituent_lesson_captures_student_states_without_cases(tmp_pat
+         lessons = [next(lesson for split, text, lesson, label in corpus()
+                         if split == 'train' and label['family'] == family)
+                    for family in ('np', 'intransitive', 'transitive', 'preposition')]
+-        model.inputSpace.data.grammar_lessons = {'train': lessons}
++        monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': lessons}, raising=False)
+         inputs = model.inputSpace.prepPackedInput([[lesson['text']] for lesson in lessons])
+         from constituent_budget import paired_updates_only
+         optimizer = model.getOptimizer(lr=.003)
 diff --git a/test/test_modification_lessons.py b/test/test_modification_lessons.py
 index 4f9ced733..1329e8522 100644
 --- a/test/test_modification_lessons.py
@@ -57,3 +70,19 @@ index 4f9ced733..1329e8522 100644
      logits=layer(torch.ones(1,2,4),slots=2,occupation=torch.ones(1,2,len(arguments)))[2]['logits']
 -    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,False,False,True]]
 +    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,True,False,True,False,True]]
+diff --git a/test/test_parts_of_speech.py b/test/test_parts_of_speech.py
+index 269b2285e..b318ea7cc 100644
+--- a/test/test_parts_of_speech.py
++++ b/test/test_parts_of_speech.py
+@@ -48,9 +48,9 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
+     model.inputSpace.data.train_input = ['a red cat', 'the blue dog']
+     model.inputSpace.data.train_output = [torch.zeros(1),torch.zeros(1)]
+     model.inputSpace.data.text_answers = {'train':['cat','dog']}
+-    model.inputSpace.data.grammar_lessons = {'train': [
++    monkeypatch.setattr(model.inputSpace.data, 'grammar_lessons', {'train': [
+         dict(text='a red cat', tree=['lower',0,['intersection',1,2]], waits=True),
+-        dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}
++        dict(text='the blue dog', tree=['definite',0,['intersection',1,2]], waits=True)]}, raising=False)
+     parts = model.languageSpace.parts_of_speech
+     events, lessons, initial = [], [], {}
+     stage = model._stage_reconstruction_teacher

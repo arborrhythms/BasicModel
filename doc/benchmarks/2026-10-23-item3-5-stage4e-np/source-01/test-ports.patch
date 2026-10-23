@@ -1,0 +1,59 @@
+diff --git a/test/np_experiment.py b/test/np_experiment.py
+index c182a17ef..6e25d0f33 100644
+--- a/test/np_experiment.py
++++ b/test/np_experiment.py
+@@ -25,7 +25,7 @@ from np_trajectory import NPTrajectory
+ from identity_experiment import make_model, restore_warmup, reset, save, digest
+ 
+ SEED, RATE, EPOCHS = 20261010, .003, 2
+-MENU = ('STOP', 'lower', 'definite', 'intersection', 'product')
++MENU = ('STOP', 'lower', 'definite', 'intersection', 'product', 'bind')
+ # Learn modification on two familiar words before asking the reader to
+ # schedule it inside a larger NP. Nesting is then the next unknown.
+ STAGES = ('lower', 'definite', 'description', 'adjective', 'definite_adjective')
+@@ -211,7 +211,8 @@ def run(args):
+         questions='none for bare NPs; what is <adjective> ? otherwise, supplied answer only during training',
+         heldout_labels='grader only; no model call receives a held-out tree, span, answer or occurrence label',
+         noun_prior='table only; not read by chooser',
+-        reference_variants='unchanged',nested_marker_pattern=None,
++        reference_variants='one determiner action per operator; bind offers accessible locations and dummy',
++        recency='store order',nested_marker_pattern=None,
+         compose_step_cost='WHAT_STEP_COST for every binary, unary or transpose step',
+         gates=dict(GATES),reports=dict(REPORTS),
+         measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps, kept operators and bare-description occurrences reported; absent families have no gate',
+@@ -232,8 +233,6 @@ def run(args):
+             if previous is None:
+                 random.seed(SEED);np.random.seed(SEED);torch.manual_seed(SEED)
+             parts=model.languageSpace.parts_of_speech
+-            if previous is None and parts.counts:
+-                raise ValueError('stage-3 artifact must start with empty occupation evidence')
+             model.languageSpace.language_layer.operation_layer.set_stage_menu(MENU)
+             identity=model.perceptualSpace.percept_store.identity
+             if identity.nested or identity._marker_pattern is not None:
+diff --git a/test/test_modification_lessons.py b/test/test_modification_lessons.py
+index 4f9ced733..1329e8522 100644
+--- a/test/test_modification_lessons.py
++++ b/test/test_modification_lessons.py
+@@ -58,7 +58,7 @@ def test_identity_carrying_unary_faces_reverse_exactly_and_retire_free_marker_st
+ 
+ def test_np_gates_behaviors_and_reports_the_kept_operator():
+     from np_experiment import summarize_stage, MENU
+-    assert MENU==('STOP','lower','definite','intersection','product')
++    assert MENU==('STOP','lower','definite','intersection','product','bind')
+     description=dict(family='description',brackets=True,nps=[],duplicate_writes=0,occurrence_collisions=0,
+         unexpected_occurrences=1,unlowered_clean=False,question_expected=True,answer_exact=True,
+         observed=dict(program=['lower']))
+@@ -109,10 +109,10 @@ def test_np_menu_admits_both_modification_operators_at_the_native_mask():
+     from test_parts_of_speech import Pair, Unary, rule
+     from np_experiment import MENU
+     binary=[rule(name) for name in ('lower','definite','intersection','product','verb')]
+-    unary=[rule('surface_unary',1)]
++    unary=[rule('bind',1),rule('surface_unary',1)]
+     arguments=formal_arguments(binary+unary)
+-    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary()],reduce_pressure=0.)
++    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary() for _ in unary],reduce_pressure=0.)
+     layer.configure_arguments(arguments,binary,unary)
+     layer.set_stage_menu(MENU)
+     logits=layer(torch.ones(1,2,4),slots=2,occupation=torch.ones(1,2,len(arguments)))[2]['logits']
+-    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,False,False,True]]
++    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,True,False,True,False,True]]

@@ -61,3 +61,21 @@ unique and ignored while the source stays clean; their receipts are
 archived before review. No lesson result or phase artifact is claimed yet.
 Claude reviews through Alec before line 3 is published. Item 3.0 has not
 been reached; layout/removal/STM work stays there.
+
+## Source 01: scoped check and annotation leak
+
+Frozen `acc916026`: 79 passed, three phase-artifact skips, two failures
+in the reading-curriculum file. [Full scoped log](source-01/gates/run.log).
+Both failing cases pass unchanged in a fresh process
+([isolated diagnostic](source-01/isolated-before/run.log)). Prepending
+only the occupation-count test reproduces both exceptions
+([causal diagnostic](source-01/annotation-leak-before/run.log)).
+The annotating fixtures left `grammar_lessons` on their shared data owner.
+The source/text guards correctly refused the stale annotation before
+greedy cost completed; no paired keep exists for either exception.
+
+Additional fixture ports: `test_parts_of_speech` and
+`test_constituent_lesson` use `monkeypatch.setattr` for `grammar_lessons`,
+restoring the previous value after each test. No assertion changes or
+retired tests. The dated 5.5-plan section records this §39 repair. No
+training run or phase artifact has been produced on source 01.

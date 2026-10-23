@@ -1,0 +1,174 @@
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="model.xsd">
+  
+  <architecture>
+    
+
+    <bindingDepth>4</bindingDepth>
+    
+    <conceptBinding>aligned</conceptBinding>
+    <conceptLayers>5</conceptLayers>
+    
+    <syntacticOrder>0</syntacticOrder>
+
+    <mereologyRaise>true</mereologyRaise>
+    
+    <serialObjectMeta>true</serialObjectMeta>
+    
+    <sentenceProtocol>false</sentenceProtocol>
+    <serialWordCapacity>8</serialWordCapacity>
+    <serialWordBuckets>8</serialWordBuckets>
+    
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
+    <sigmaPi>butterfly</sigmaPi>
+    <l1Lambda>0.01</l1Lambda>
+
+    
+    <transformChooser>mlp</transformChooser>
+    
+    <transformChooserHidden>0</transformChooserHidden>
+    <transformChooserDepth>1</transformChooserDepth>
+    <whatThinkingHidden>16</whatThinkingHidden>
+    <whatThinkingDepth>1</whatThinkingDepth>
+    
+    <answerSynthesis>true</answerSynthesis>
+    <synthesisBindings>4</synthesisBindings>
+    <whatCurriculum>full</whatCurriculum>
+    <whatCurriculumDistance>1</whatCurriculumDistance>
+    <whatCurriculumRatio>0.25</whatCurriculumRatio>
+    <data>
+      <dataType>embedding</dataType>
+      <dataset>text</dataset>
+      <shardDir>data/fineweb</shardDir>
+      
+      <contextWhole>FineWeb-Edu 100B shuffle</contextWhole>
+      <numShards>1</numShards>
+      <maxDocs>2000</maxDocs>
+      
+      <maxSentenceWords>256</maxSentenceWords>
+    </data>
+
+    <training>
+      <numEpochs>1</numEpochs>
+      <seed>42</seed>
+      
+      <batchSize>2</batchSize>
+      <packSentences>true</packSentences>
+      
+      <numWorkers>0</numWorkers>
+      <learningRate>0.0005</learningRate>
+
+      
+      <conceptualContextLearningRate>0</conceptualContextLearningRate>
+      <conceptualContextNegatives>4</conceptualContextNegatives>
+
+      
+      <reconstructionScale>1.0</reconstructionScale>
+      
+      <branchDiagnosticsEvery>0</branchDiagnosticsEvery>
+      <teacherReconstruction>true</teacherReconstruction>
+      <reconstructInLoop>true</reconstructInLoop>
+      <reconstructionPlacement>eager</reconstructionPlacement>
+      <reconstructionBasisLimit>16</reconstructionBasisLimit>
+      
+      <outputInLoop>true</outputInLoop>
+      <outputPolicyWeight>1.0</outputPolicyWeight>
+      <leafDistillWeight>0.0</leafDistillWeight>
+      
+
+      
+      <sentenceExpectation>true</sentenceExpectation>
+      <perceptExpectationGain>0</perceptExpectationGain>
+      <symbolExpectationGain>0</symbolExpectationGain>
+      <rowExpectationGain>0</rowExpectationGain>
+      <documentExpectationGain>0</documentExpectationGain>
+      <expectationOmissionThreshold>0.5</expectationOmissionThreshold>
+      <perceptExpectationRate>0.05</perceptExpectationRate>
+      <expectationEpsilon>0.000001</expectationEpsilon>
+      <expectationSaturation>clip</expectationSaturation>
+      <expectationPrime>true</expectationPrime>
+      <explorationUniformFraction>0.5</explorationUniformFraction>
+      <explorationTemperature>1.0</explorationTemperature>
+      <sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+
+      <autoload>false</autoload>
+      <autosave>false</autosave>
+      <checkpointEveryBatches>100</checkpointEveryBatches>
+    </training>
+    
+    <weightsPath>/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9310/test_supplied_text_reader_pres0/unused.ckpt</weightsPath>
+  </architecture>
+
+  
+  <InputSpace>
+    <nOutput>32</nOutput>
+    <nVectors>256</nVectors>
+    <nDim>16</nDim>
+  </InputSpace>
+
+  
+  <PartSpace>
+    <nInput>32</nInput>
+    <nInputDim>16</nInputDim>
+    <nVectors>256</nVectors>
+    
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>16</nOutputDim>
+
+    <invertible>true</invertible>
+    <synthesis>meronomy</synthesis>
+    <chunkPromotionThreshold>2</chunkPromotionThreshold>
+  </PartSpace>
+
+  <ConceptualSpace>
+    
+    <conceptReadoutL1>0.01</conceptReadoutL1>
+    <nInput>8</nInput>
+    
+    <nInputDim>16</nInputDim>
+    
+    <nVectors>32</nVectors>
+    
+    <activeVectors>16</activeVectors>
+    <stmCapacity>8</stmCapacity>
+    <nDim>16</nDim>
+    
+    <meaningWidth>896</meaningWidth>
+    <nOutput>8</nOutput>
+    <nOutputDim>16</nOutputDim>
+
+    <invertible>true</invertible>
+  </ConceptualSpace>
+
+  
+  <WholeSpace>
+    <analysis>meronomy</analysis>
+    
+    <butterfly>true</butterfly>
+    <nInput>8</nInput>
+    <nInputDim>16</nInputDim>
+    <nVectors>9</nVectors>
+    <nDim>16</nDim>
+    <nOutput>8</nOutput>
+    <nOutputDim>16</nOutputDim>
+
+    <invertible>true</invertible>
+  </WholeSpace>
+
+  
+  <OutputSpace>
+    <nInput>8</nInput>
+    <nInputDim>16</nInputDim>
+    <nVectors>1</nVectors>
+    <nDim>1</nDim>
+    <nOutput>1</nOutput>
+    <nOutputDim>1</nOutputDim>
+  </OutputSpace>
+
+  <SymbolSpace>
+    <ltmCapacity>262144</ltmCapacity>
+    <language>
+      <grammar>complete.grammar</grammar>
+    </language>
+  </SymbolSpace>
+</model>

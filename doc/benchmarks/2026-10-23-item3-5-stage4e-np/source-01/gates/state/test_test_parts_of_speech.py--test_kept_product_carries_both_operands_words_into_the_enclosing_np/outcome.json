@@ -1,0 +1,6 @@
+{
+  "node": "test/test_parts_of_speech.py::test_kept_product_carries_both_operands_words_into_the_enclosing_np",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
