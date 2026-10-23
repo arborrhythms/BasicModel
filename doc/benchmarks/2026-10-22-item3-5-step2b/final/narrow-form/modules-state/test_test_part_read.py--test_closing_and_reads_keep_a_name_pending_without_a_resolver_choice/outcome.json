@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_read.py::test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

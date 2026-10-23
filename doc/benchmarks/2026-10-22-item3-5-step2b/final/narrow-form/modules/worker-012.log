@@ -1,0 +1,13 @@
+................                                                         [100%]
+=============================== warnings summary ===============================
+test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership
+test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: RuntimeWarning: LTM forgetting could not reach low water without violating protection or gradual detail loss
+    return func(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+16 passed, 3 warnings in 3.03s

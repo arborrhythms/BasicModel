@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_reconstruction.py::test_bind_departure_changes_r_keep_and_the_resolvers_score_function",
+    "test/test_reference_reconstruction.py::test_same_close_alias_charges_the_bound_mention_and_not_the_mint",
+    "test/test_reference_reconstruction.py::test_named_token_keeps_its_content_before_and_after_the_close",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.0]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.1]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.35]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[own]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[mint]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[gap]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[arrival]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[covered]",
+    "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description"
+  ],
+  "completed": [
+    "test/test_reference_reconstruction.py::test_bind_departure_changes_r_keep_and_the_resolvers_score_function",
+    "test/test_reference_reconstruction.py::test_same_close_alias_charges_the_bound_mention_and_not_the_mint",
+    "test/test_reference_reconstruction.py::test_named_token_keeps_its_content_before_and_after_the_close",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.0]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.1]",
+    "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.35]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[own]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[mint]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[gap]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[arrival]",
+    "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[covered]",
+    "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_bind_departure_changes_r_keep_and_the_resolvers_score_function",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02118966612033546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_same_close_alias_charges_the_bound_mention_and_not_the_mint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004476458067074418,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_named_token_keeps_its_content_before_and_after_the_close",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008617499843239784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005461165914312005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005417415872216225,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_registration_sums_sites_and_includes_zero_cost_active_rows[0.35]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005367042031139135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[own]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004893000004813075,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[mint]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005441582994535565,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[gap]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0051171251107007265,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0051421248354017735,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[arrival]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005268292035907507,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[covered]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005457499995827675,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_reconstruction.py::test_missing_candidate_coordinates_are_uncovered_description",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002315916121006012,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

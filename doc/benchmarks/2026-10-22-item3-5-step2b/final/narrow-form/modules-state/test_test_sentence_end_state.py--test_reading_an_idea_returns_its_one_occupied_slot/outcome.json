@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_end_state.py::test_reading_an_idea_returns_its_one_occupied_slot",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[True]",
+  "outcome": "failed",
+  "failure": "test/test_echoic_decoder.py:120: in test_same_walk_infers_binary_and_unary_without_a_journal\n    assert count.tolist() == [2, 2]\nE   assert [0, 0] == [2, 2]\nE     \nE     At index 0 diff: 0 != 2\nE     Use -v to get more diff",
+  "records": []
+}

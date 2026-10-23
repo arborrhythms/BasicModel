@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

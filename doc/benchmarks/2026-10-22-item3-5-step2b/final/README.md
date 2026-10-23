@@ -1,6 +1,6 @@
 # Step 2b: storage changes before identity threading
 
-**Current receipt:** [narrow-form/README.md](narrow-form/README.md).
+**Current receipt:** [decoder-domain/README.md](decoder-domain/README.md).
 Earlier freezes remain retained: `bfa9c94ee` failed its relative-handle
 fixture; `3c5cc2a1d` received Claude's HOLD; `9c3899f2f` passed its scoped
 set but the additional held-idea probe found the guard fixed in §62.

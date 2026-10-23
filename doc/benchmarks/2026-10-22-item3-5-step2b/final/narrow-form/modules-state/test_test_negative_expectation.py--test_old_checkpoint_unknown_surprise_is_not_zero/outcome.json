@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_old_checkpoint_unknown_surprise_is_not_zero",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

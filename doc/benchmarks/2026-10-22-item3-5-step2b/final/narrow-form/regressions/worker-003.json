@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+    "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+    "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+    "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool"
+  ],
+  "completed": [
+    "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+    "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+    "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+    "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+    "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008319040993228555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0066835409961640835,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_choices.py::test_definite_with_nonpositive_best_candidate_keeps_its_own_object[-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006079582963138819,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_choices.py::test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016958625055849552,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_choices.py::test_gap_with_dummy_stays_open_without_an_object",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006030957913026214,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_choices.py::test_supplied_referent_judges_the_trials_bind_without_writing_the_pool",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006233708001673222,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

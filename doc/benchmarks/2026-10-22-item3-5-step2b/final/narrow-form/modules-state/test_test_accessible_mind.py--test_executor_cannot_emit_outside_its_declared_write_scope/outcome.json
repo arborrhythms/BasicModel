@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

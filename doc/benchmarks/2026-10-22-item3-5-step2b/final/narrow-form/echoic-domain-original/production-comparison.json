@@ -1,0 +1,51 @@
+[
+  {
+    "file": "bin/Models.py",
+    "function": "BasicModel._output_generate_walk",
+    "before": "7afad77f1841b3b6a4d1da19f98857d1d2b85b9e383b4b86559cd23a0b64d6dc",
+    "after": "7afad77f1841b3b6a4d1da19f98857d1d2b85b9e383b4b86559cd23a0b64d6dc",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Language.py",
+    "function": "LanguageSpace.decoder_eligibility",
+    "before": "36cf33ed0473182c8bc58b580c04367b90fa0c65fd4860a29d3fa814a148f8af",
+    "after": "36cf33ed0473182c8bc58b580c04367b90fa0c65fd4860a29d3fa814a148f8af",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Language.py",
+    "function": "LanguageSpace._bounded_binary_reconstruction",
+    "before": "40bc682e39092f3843c17cc3fd9530f187a3518e5c8f5b067a6f1611b767c5a1",
+    "after": "40bc682e39092f3843c17cc3fd9530f187a3518e5c8f5b067a6f1611b767c5a1",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Language.py",
+    "function": "LanguageSpace.reverse_binary_step",
+    "before": "9b1b3428d5e7ee9af7fe4367b297765f1cb23e22036ee9e71d10f6557e766e60",
+    "after": "9b1b3428d5e7ee9af7fe4367b297765f1cb23e22036ee9e71d10f6557e766e60",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Layers.py",
+    "function": "Ops._conjunction_kernel",
+    "before": "505186ebc2f40a11adc5066c01d2ce9b440c405bbd775648a65020e9e2e7fc35",
+    "after": "505186ebc2f40a11adc5066c01d2ce9b440c405bbd775648a65020e9e2e7fc35",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Layers.py",
+    "function": "Ops._code_direction",
+    "before": "e3ee86be040b50d338f9f7e22de37786193d49ab0e5dafc42db39a9476142fde",
+    "after": "e3ee86be040b50d338f9f7e22de37786193d49ab0e5dafc42db39a9476142fde",
+    "unchanged": true
+  },
+  {
+    "file": "bin/Generative.py",
+    "function": "inverse_menu",
+    "before": "7383587f16414ebd108fca7385f6f84fa09513d672a807a8e66792744470cbdf",
+    "after": "7383587f16414ebd108fca7385f6f84fa09513d672a807a8e66792744470cbdf",
+    "unchanged": true
+  }
+]

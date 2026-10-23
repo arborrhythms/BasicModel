@@ -1,0 +1,137 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
+  ],
+  "completed": [
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+    "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019197416957467794,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012240124866366386,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[1.0-0.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012504291022196412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-0.5-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012234166963025928,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.0-1.0-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011848458088934422,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012098042061552405,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_expected_cat_and_omission_survive_native_answer_and_store[0.5-0.5-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012561332900077105,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[1.0-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015208999859169126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.0-1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01452254201285541,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015034832991659641,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.31135729188099504,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

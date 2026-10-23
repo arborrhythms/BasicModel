@@ -1,0 +1,16 @@
+{
+  "source": "85da7c14d8f06384afc38c63f4e8eea029bdf3d0",
+  "mode": "original",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal",
+    "--tb=short"
+  ],
+  "evidence": "diagnostic replay only; no gate initialization",
+  "started": "2026-10-23T06:26:27.680314+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T06:26:36.484590+00:00"
+}

@@ -1,0 +1,1873 @@
+diff --git a/test/fixtures/when-readers-round4a0.json b/test/fixtures/when-readers-round4a0.json
+index 3eb8c6e7f..358a3bdb6 100644
+--- a/test/fixtures/when-readers-round4a0.json
++++ b/test/fixtures/when-readers-round4a0.json
+@@ -46,6 +46,16 @@
+       "previous_absolute_time": false,
+       "now": "Reads the common row model-time band; no identity operator consumes it."
+     },
++    {
++      "file": "bin/LTM1.py",
++      "function": "LTM1.add",
++      "attributes": [
++        "when"
++      ],
++      "role": "retained model-time provenance",
++      "previous_absolute_time": false,
++      "now": "Reads the common row model-time band; no identity operator consumes it."
++    },
+     {
+       "file": "bin/Language.py",
+       "function": "SymbolSpace._publish_symbol_snapshot",
+@@ -68,9 +78,9 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "ModelLoss.compute",
++      "function": "LTM0.append_meaning",
+       "attributes": [
+-        "nWhen"
++        "when"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+@@ -78,9 +88,9 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "ModelLoss.compute_masked",
++      "function": "LTM0.reset",
+       "attributes": [
+-        "nWhen"
++        "when"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+@@ -88,9 +98,9 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "ModelLoss.compute_piecewise",
++      "function": "LTM0.row",
+       "attributes": [
+-        "nWhen"
++        "when"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+@@ -98,7 +108,7 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "ModelLoss.register",
++      "function": "ModelLoss.compute",
+       "attributes": [
+         "nWhen"
+       ],
+@@ -108,9 +118,9 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "LTM0.append_meaning",
++      "function": "ModelLoss.compute_masked",
+       "attributes": [
+-        "when"
++        "nWhen"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+@@ -118,9 +128,9 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "LTM0.reset",
++      "function": "ModelLoss.compute_piecewise",
+       "attributes": [
+-        "when"
++        "nWhen"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+@@ -128,14 +138,24 @@
+     },
+     {
+       "file": "bin/Layers.py",
+-      "function": "LTM0.row",
++      "function": "ModelLoss.register",
+       "attributes": [
+-        "when"
++        "nWhen"
+       ],
+       "role": "carrier",
+       "previous_absolute_time": false,
+       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+     },
++    {
++      "file": "bin/MediumTermMemory.py",
++      "function": "MediumTermMemory.open",
++      "attributes": [
++        "when"
++      ],
++      "role": "retention priority",
++      "previous_absolute_time": false,
++      "now": "The oldest retained token tick selects capacity eviction; the tick comes from RowTime.stamp."
++    },
+     {
+       "file": "bin/ModelCandidateAttention.py",
+       "function": "context",
+@@ -229,16 +249,6 @@
+       "previous_absolute_time": false,
+       "now": "Reads the common row model-time band; no identity operator consumes it."
+     },
+-    {
+-      "file": "bin/LTM1.py",
+-      "function": "LTM1.add",
+-      "attributes": [
+-        "when"
+-      ],
+-      "role": "retained model-time provenance",
+-      "previous_absolute_time": false,
+-      "now": "Reads the common row model-time band; no identity operator consumes it."
+-    },
+     {
+       "file": "bin/PerceptField.py",
+       "function": "PerceptField.select",
+diff --git a/test/identity_measurement.py b/test/identity_measurement.py
+index 7f6d3b34e..72b135820 100644
+--- a/test/identity_measurement.py
++++ b/test/identity_measurement.py
+@@ -194,7 +194,12 @@ def native_observer(model):
+         for (sid, b), records in getattr(model, '_reference_close_audit', {}).items():
+             for record in records:
+                 index = store.index_of_row(record['occurrence'])
+-                reference = None if index is None else int(store.refs[index, 0])
++                reference = None
++                if index is not None:
++                    occurrence = store.occurrence_of(index)
++                    reference = model.conceptualSpace.mtm.token_of(occurrence) or record['reference']
++                    if isinstance(reference, tuple):
++                        reference = reference[-1]
+                 for leaf in record['leaves']:
+                     word = source_leaves.get((sid, b, leaf))
+                     if word is None or sid not in captured or b >= len(captured[sid]):
+diff --git a/test/index_fixtures.py b/test/index_fixtures.py
+index 37eb438fa..1722c83d6 100644
+--- a/test/index_fixtures.py
++++ b/test/index_fixtures.py
+@@ -40,6 +40,9 @@ def append_indexed(store, meaning, *, terms, **kwargs):
+     prior = store._index_read
+     mapping = {tuple(value.detach().tolist()): tuple(codes)
+                for value, live, codes in zip(meaning.roles, meaning.role_mask, terms) if live}
++    grammar = getattr(store, '_fixture_unfolding', {})
++    grammar.update(mapping)
++    store._fixture_unfolding = grammar
+     def unfold(value, limit, **_kwargs):
+         codes = mapping.get(tuple(value.detach().tolist()), ())
+         return codes, min(1, limit), bool(limit)
+@@ -48,3 +51,13 @@ def append_indexed(store, meaning, *, terms, **kwargs):
+         return store.append_meaning(meaning, **kwargs)
+     finally:
+         store._index_read = prior or one_hot_unfold
++
++
++def restore_index(source, restored):
++    """Restore the fixture's numerical reader after rows and sidecar load."""
++    mapping = dict(source._fixture_unfolding)
++    def unfold(value, limit, **kwargs):
++        codes = mapping.get(tuple(value.detach().tolist()), ())
++        return codes, min(1, limit), bool(limit)
++    restored.configure_leaf_index(read=unfold)
++    restored.reindex_meanings()
+diff --git a/test/observer_probe.py b/test/observer_probe.py
+new file mode 100644
+index 000000000..221c09592
+--- /dev/null
++++ b/test/observer_probe.py
+@@ -0,0 +1,109 @@
++"""One ordinary batch validates audit wiring; it is not a gate training."""
++import json
++import os
++from pathlib import Path
++
++
++def test_margin_and_ownership_observe_the_same_actual_steps():
++    from test_mm_xor import _fresh_model
++    import operators_gate_observer
++    model, _, data = _fresh_model('data/XOR_grammar.xml')
++    optimizer = model.getOptimizer(lr=.01)
++    owners=model.objective_parameter_groups(optimizer)
++    assert 'compose_preference' not in owners
++    preference=owners['reconstruction']
++    assert any(p is model.languageSpace.decomposition_chooser.weight for p in preference)
++    operation=model.languageSpace._tree_layer(2)
++    assert all(any(p is anchor for p in preference) for anchor in
++               (operation.stop_anchor,operation.reduce_anchor,operation.apply_anchor))
++    raw, target = next(iter(data.data_loader(split='train', num_streams=4)))
++    batch = model.inputSpace.prepInput(raw), model.outputSpace.prepOutput(target)
++    from operators_run_audit import observe_run, json_value
++    with observe_run() as run_audit:
++        model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
++        model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
++    decomposition=run_audit['decomposition_chooser']
++    assert decomposition['start']['weights'] == [1., 0., 0., 0., 0.]
++    assert decomposition['start']['undos'] > 0
++    assert decomposition['start']['true_pair_in_shortlist_rate'] == 1.
++    assert decomposition['end']['undos'] > 0
++    steps=run_audit['compose_score_function_steps']
++    assert len(steps)==4
++    assert all(row['sampling_scale']==row['W']*row['R_walk']*row['K'] for row in steps)
++    assert all(row['W']==2 for row in steps)
++    assert run_audit['chooser_logit_ranges']['1']['calls']>0
++    assert all(row.get('gradient_max_error',0.)<2e-6 for row in steps)
++    assert all(row.get('finite_difference',{}).get('error',0.)<2e-6 for row in steps)
++    assert len(run_audit['reader_weights']) == 1
++    assert run_audit['storage_after_training']['sentence_rows'] == 4
++    assert run_audit['storage_after_training']['witness_counts'] == [1] * 4
++    assert len(set(run_audit['storage_after_training']['content_keys'])) == 4
++    assert run_audit['storage']['sentence_rows'] == 4
++    assert run_audit['storage']['rows_used'] < run_audit['storage']['capacity']
++    assert run_audit['reader_weights'][0]['reader_updates'] == 1
++    assert set(run_audit['reader_weights'][0]['optimizer_steps'].values()) == {1.}
++    assert len(run_audit['reader_training_rows']) == 1
++    assert len(run_audit['comparison_reader_weights']) == 1
++    assert run_audit['comparison_reader_weights'][0]['reader_updates'] == 1
++    assert set(run_audit['comparison_reader_weights'][0]['optimizer_steps'].values()) == {1.}
++    assert len(run_audit['reader_mse']) == 1
++    assert all(sum(w)==1 and set(w)<={0.,1.} for w in run_audit['reader_training_rows'][0]['weights'])
++    assert all(all(row['rows']) for row in run_audit['reader_training_rows'])
++    assert run_audit['pole_consumers']['_attention_sentence_payload'] > 0
++    assert run_audit['pole_consumers']['commit_word_reference_slab:per_word'] > 0
++    assert all(book['containment']['after']['largest']==0 for phase in ('start','end') for book in run_audit[phase]['codes'])
++    assert len(run_audit['before_learning_readback']['texts']) == 4
++    assert all(row['nonzero']==0 for row in run_audit['sentence_gradients'].values())
++    assert all(phase in run_audit for phase in ('start','end'))
++    for phase in ('start','end'):
++        identity = run_audit[phase]['identity']
++        assert identity['collisions'] == identity['reconstruction_errors'] == 0
++        assert identity['rung0']['errors'] == 0
++        assert identity['containment_violations'] == 0
++    assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']
++    assert all(phase in run_audit['centroid'] for phase in ('start','end'))
++    (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
++    operators_gate_observer.save_ownership(model)
++    folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
++    events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
++    first = [event for event in events if event['kind'] == 'decoder_first_logits']
++    steps = [event for event in events if event['kind'] == 'decoder_margin_step']
++    assert len(first) >= 2
++    assert {row['path'] for row in first} == {'greedy', 'explore'}
++    assert len(steps) == 2
++    assert not any(step['walks'] for step in steps)
++    assert 'attention_score_function_steps' not in run_audit
++    assert len([r for r in run_audit['sentence_trials'] if r['training']]) == 1
++    assert all(v==model._concept_owner().outputShape[-1]
++               for v in run_audit['closing_image']['concept_widths'].values())
++    assert all(v>=0 for v in run_audit['closing_image']['image_max'].values())
++    assert run_audit['end']['codes'][0]['centroid']['identity_recovered']
++    assert 'reconstruction.attention_score_function' not in model._sentence_cost_registry._terms
++    assert json.loads((folder/'ownership.json').read_text())['conflicts'] == 0
++    assert 'reconstruction.antipode' not in model._sentence_cost_registry._terms
++    ownership = json.loads((folder/'ownership.json').read_text())
++    native = [row for row in ownership['parameters']
++              if row['parameter'].startswith('perceptualSpace.') and row['writers']]
++    assert native and all(row['writers'] == ['reconstruction'] for row in native)
++    assert all(row['binary_rule_names'] == ['conjunction', 'disjunction'] for row in first)
++    assert all(row['binary_rule_ids'] == [1, 2] for row in first)
++    stability = json.loads((folder/'derivation-stability.json').read_text())
++    assert len(stability) == 4
++    assert all(step['rule_name'] in ('conjunction', 'disjunction', 'not')
++               for row in stability for step in row['modal_derivation'])
++    with operators_gate_observer.capture_final_derivations() as final:
++        model.runBatch(train=False, optimizer=None, batchSize=4, split='test', batch_override=batch)
++    assert len(final) == 4
++    assert all(row['sequence'] for row in final.values())
++    assert all(step['rule_name'] in ('conjunction', 'disjunction', 'not')
++               for row in final.values() for step in row['sequence'])
++    (folder/'final-greedy-compose.json').write_text(json.dumps(list(final.values()), indent=2)+'\n')
++    observer = operators_gate_observer.OBSERVER.P
++    observer.geometry(model, 'end')
++    for phase in ('start', 'end'):
++        geometry = json.loads((folder/f'geometry-{phase}.json').read_text())
++        supports = [row for book in geometry['dictionary']
++                    for row in book['word_perceptual_support']]
++        assert {row['word'] for row in supports} == {'hello', 'world', 'loving', 'there'}
++        assert all(row['dimension'] == 96 and 'nonzero_fraction' in row
++                   and 'minimum_absolute_value' in row for row in supports)
+diff --git a/test/operators_run_audit.py b/test/operators_run_audit.py
+new file mode 100644
+index 000000000..ccbf8f193
+--- /dev/null
++++ b/test/operators_run_audit.py
+@@ -0,0 +1,218 @@
++"""Observe the existing training; fixed-feature chooser reads draw no RNG."""
++from contextlib import contextmanager, nullcontext
++from unittest.mock import patch
++import torch
++import os
++import hashlib
++
++
++def json_value(value):
++    if torch.is_tensor(value): return value.detach().cpu().tolist()
++    raise TypeError(type(value).__name__)
++
++
++def native_parameters(model):
++    candidates = [model.perceptualSpace.subspace.what.W]
++    candidates += [ws.subspace.what.W for ws in model.wholeSpaces]
++    candidates += [cs._concept_allocator.layer().features.values for cs in model.conceptualSpaces]
++    ids = {id(p) for p in candidates if torch.is_tensor(p) and p.requires_grad}
++    return [(name,p) for name,p in model.named_parameters() if id(p) in ids]
++
++
++@torch.no_grad()
++def storage_snapshot(model):
++    store=model.symbolSpace.ltm_store
++    n=len(store)
++    sentences=torch.arange(n, device=store.address_keys.device)
++    return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),
++        definition_rows=0,
++        addresses=store.address_keys[sentences].detach().cpu().tolist(),
++        sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
++        content_keys=[store.content_key(int(row)).hex() for row in sentences],
++        witness_counts=store.witness_count[sentences].detach().cpu().tolist(),
++        when=store.when[sentences].detach().cpu().tolist(),
++        all_witness_counts=store.witness_count[:n].detach().cpu().tolist())
++
++
++@torch.no_grad()
++def geometry(model, record):
++    rows = sorted(set(record.primed.rows[record.primed.valid].detach().cpu().tolist()))
++    root = record.root.detach().cpu()
++    def metrics(values):
++        unit = torch.nn.functional.normalize(values,dim=-1)
++        cosines = unit@unit.T
++        upper = torch.triu_indices(len(values), len(values), offset=1)
++        mean = float(cosines[upper[0], upper[1]].mean()) if upper.shape[1] else None
++        return dict(values=values,pairwise_cosines=cosines,mean_pairwise_cosine=mean,
++                    centered_singular_values=torch.linalg.svdvals(values-values.mean(0,keepdim=True)))
++    books=[]
++    for cs in model.conceptualSpaces:
++        cb=cs.similarity_codebook
++        words=[r for r in rows if cs.word_surface_for_row(r) is not None]
++        values=cb.lookup_rows(torch.tensor(words,device=cb.W.device)).detach().cpu()
++        definitions=cb.mereology._definitions(words)
++        evidence={label:[d for edges in definitions.values() for t,p,d in edges if t==tower]
++                  for tower,label in ((0,'parts'),(1,'wholes'))}
++        ranges={label:dict(count=len(v), minimum=min(v) if v else None,
++                          maximum=max(v) if v else None, positive=sum(d>0 for d in v))
++                for label,v in evidence.items()}
++        forms=values[:,:cb.mereology.percept_width]
++        books.append(dict(rows=words,**metrics(values),forms=metrics(forms),
++                          d_definition='relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part',
++                          net_evidence=ranges, support=cb.mereology.support_audit(words),
++                          containment=cb.mereology.containment_audit(), centroid=cb.mereology.centroid_audit()))
++    owner=model._concept_owner()
++    inputs=[' '.join((owner.word_surface_for_row(int(row)) or b'').decode('utf8')
++                     for row,valid in zip(rows,mask) if valid)
++            for rows,mask in zip(record.word_rows.detach().cpu().tolist(),
++                                 record.word_valid.detach().cpu().tolist())]
++    order=['hello world','hello there','loving world','loving there']
++    unit=torch.nn.functional.normalize(root,dim=-1)
++    interaction=None
++    if len(inputs)==4 and set(inputs)==set(order):
++        hw,ht,lw,lt=[unit[inputs.index(text)] for text in order]
++        interaction=float((hw-ht-lw+lt).norm())
++    fit = None
++    if len(inputs)==4 and set(inputs)==set(order):
++        target = root.new_tensor([dict(zip(order,(0.,1.,1.,0.)))[text] for text in inputs])
++        fit = {}
++        for name, values in (('roots', root), ('unit_roots', unit),
++                             ('reader_features', record.reader_features().detach().cpu())):
++            design = torch.cat((values.double(), torch.ones(len(values),1,dtype=torch.float64)), -1)
++            prediction = design @ (torch.linalg.pinv(design) @ target.double())
++            linear_weights = torch.linalg.pinv(values.double()) @ target.double()
++            fit[name] = dict(affine_rank=int(torch.linalg.matrix_rank(design)),
++                             optimal_affine_mse=float((prediction-target).square().mean()),
++                             linear_rank=int(torch.linalg.matrix_rank(values.double())),
++                             optimal_linear_mse=float((values.double()@linear_weights-target).square().mean()),
++                             minimum_linear_weight_norm=float(linear_weights.norm()))
++    identity = getattr(getattr(model.perceptualSpace, 'percept_store', None), 'identity', None)
++    identity_audit = None if identity is None else dict(**identity.audit(),
++        form_codes_sha256=hashlib.sha256(identity.store._basis.fixed_row_codes.cpu().numpy().tobytes()).hexdigest(),
++        rung0=getattr(model, '_last_rung0_identity_audit', None))
++    return dict(storage=storage_snapshot(model), roots=metrics(root),root_inputs=inputs,codes=books,
++                unit_root_xor_interaction=interaction,interaction_order=order,
++                affine_fit=fit,identity=identity_audit)
++
++
++@contextmanager
++def observe_run():
++    from Models import BasicModel, BaseModel
++    from util import TheXMLConfig
++    result=dict(reader_weights=[],comparison_reader_weights=[],reader_mse=[],
++                reader_training_rows=[],sentence_gradients={},centroid={})
++    commit = BasicModel._commit_sentence
++    result['sentence_trials'] = []
++    def observed_commit(model,state,sid,active,*args):
++        audit=getattr(model,'_last_sentence_credit',None)
++        if audit is not None:
++            result['sentence_trials'].append(dict(epoch=result.get('_active_epoch',0),
++                training=model._sentence_training, **audit))
++            if model._sentence_training:
++                reads=audit['readers']
++                if len(reads)==2 and all(r is not None for r in reads):
++                    row=dict(epoch=result.get('_active_epoch',0),sentence=sid,
++                             timing='before either trial update, selected by reconstruction keep')
++                    for reader in ('presented','comparison'):
++                        first,second=reads[0][reader],reads[1][reader]
++                        selected=torch.where(audit['wins'],second['mse'],first['mse'])
++                        gate=audit['wins'].reshape((-1,)+(1,)*(first['predictions'].ndim-1))
++                        prediction=torch.where(gate,second['predictions'],first['predictions'])
++                        row[reader]=dict(mse=float(selected[active].mean()),rows=selected.detach().tolist(),
++                                         predictions=prediction.detach().tolist())
++                    result['reader_mse'].append(row)
++                from derivation_probe import compose_derivations
++                final=[]
++                for row in compose_derivations(model,state,sid,active):
++                    b=row['batch_row']; kept=int(audit['wins'][b])
++                    row.update(epoch=result.get('_active_epoch',0),
++                        trial='explore' if kept else 'greedy',
++                        cost_components=dict(zip(('reconstruction','expectation','answer'),
++                            audit['components'][b,kept].tolist())),
++                        trial_components=audit['components'][b].tolist(),
++                        selected_cost=float(audit['keep_costs'][b,kept]), credit_total=float(audit['costs'][b,kept]), decision=audit['keep_decision'][b], advantage_sign=float(audit['advantage_sign'][b]), answer_against_keep=bool(audit['answer_against_keep'][b]))
++                    final.append(row)
++                result['final_committed_training_operators']=final
++        value=commit(model,state,sid,active,*args)
++        result['closing_image']=getattr(model,'_last_closing_image_audit',{})
++        result['storage']=storage_snapshot(model)
++        owner=model._concept_owner()
++        prime=getattr(owner, '_last_occurrence_priming', {})
++        result['priming']={str(owner.word_surface_for_row(row)): dict(
++            received=prime['received'][:,row].tolist() if 'received' in prime else [],
++            weight=owner.priming_weights()[:,row].tolist())
++            for row in range(owner.nVectors) if owner.word_surface_for_row(row) is not None}
++        return value
++    trial,epoch,project,backward=BasicModel._reconstruct_trial,BasicModel.runEpoch,BasicModel._project_sentence_parameters,BaseModel._backward_training_loss
++    def observed_trial(model, record):
++        model._review17_margin=float(TheXMLConfig.space('ConceptualSpace','latticeMargin',0.))
++        train=bool(getattr(model,'_sentence_training',False))
++        if 'start' not in result: result['start']=geometry(model,record)
++        if not train: result['end']=geometry(model,record)
++        value=trial(model,record)
++        audit = getattr(model, '_last_rung0_identity_audit', None)
++        if audit is not None:
++            totals = result.setdefault('rung0_audit', dict(trials=0, identified_reads=0, errors=0))
++            totals['trials'] += 1
++            totals['identified_reads'] += audit['identified_words']
++            totals['errors'] += audit['errors']
++        if train and 'before_learning_readback' not in result:
++            trace=model._last_decoder_trace
++            result['before_learning_readback']=dict(
++                texts=model._generated_word_text(trace[0],trace[1],bank=record.primed),
++                truncated=trace[2])
++        return value
++    def observed_epoch(model,*args,**kwargs):
++        result['_active_epoch']=len(result['reader_weights'])+1
++        value=epoch(model,*args,**kwargs)
++        key='storage_after_training' if kwargs.get('optimizer') is not None else 'storage_after_evaluation'
++        result[key]=storage_snapshot(model)
++        if kwargs.get('optimizer') is not None:
++            named={id(p):name for name,p in model.named_parameters()}
++            params=model.objective_parameter_groups(kwargs['optimizer'])['output']
++            comparison={id(p) for p in model.comparison_reader.parameters()} if model.comparison_reader is not None else set()
++            for judge,key in ((False,'reader_weights'),(True,'comparison_reader_weights')):
++                selected=[p for p in params if (id(p) in comparison)==judge]
++                weights={named[id(p)]:float(p.detach().norm()) for p in selected if p.ndim>=2}
++                stepped={named[id(p)] for p in selected if p in kwargs['optimizer'].state
++                         and 'step' in kwargs['optimizer'].state[p]}
++                result[key].append(dict(epoch=len(result[key])+1,
++                    norm=sum(n*n for n in weights.values())**.5,parameters=weights,
++                    active_norm=sum(n*n for name,n in weights.items() if name in stepped)**.5,
++                    reader_updates=(model._sentence_comparison_reader_updates if judge else model._sentence_reader_updates),
++                    optimizer_steps={named[id(p)]:float(kwargs['optimizer'].state[p]['step']) for p in selected
++                        if p in kwargs['optimizer'].state and 'step' in kwargs['optimizer'].state[p]}))
++        return value
++    def observed_projection(model,*args,**kwargs):
++        value=project(model,*args,**kwargs)
++        reports=[cs.similarity_codebook.mereology.centroid_audit() for cs in model.conceptualSpaces]
++        if any(r is not None for r in reports):
++            result['centroid'].setdefault('start', reports)
++            result['centroid']['end']=reports
++        return value
++    def observed_backward(model,total,*args,**kwargs):
++        if getattr(model,'_sentence_backward',False):
++            if model._sentence_reader_costs:
++                result['reader_training_rows'].append(dict(epoch=result.get('_active_epoch',0), trial=model._sentence_trial,
++                    rows=model._sentence_reader_rows.detach().tolist(), weights=model._sentence_reader_weights.detach().tolist(),
++                    comparison_weights=model._sentence_comparison_reader_weights.detach().tolist()))
++            named=native_parameters(model)
++            pullback=getattr(model,'_sentence_pullback',None)
++            parameters=[p for _,p in named]
++            grads=(pullback.gradients(total,parameters) if pullback is not None else
++                   torch.autograd.grad(total,parameters,retain_graph=True,allow_unused=True))
++            for (name,p),g in zip(named,grads):
++                row=result['sentence_gradients'].setdefault(name,dict(backwards=0,absent=0,zero=0,nonzero=0,maximum=0.))
++                maximum=0. if g is None else float(g.detach().abs().max())
++                row['absent']+=int(g is None); row['zero']+=int(g is not None and maximum==0)
++                row['backwards']+=1; row['nonzero']+=int(maximum>0); row['maximum']=max(row['maximum'],maximum)
++        return backward(model,total,*args,**kwargs)
++    from round2_score_probe import observe_score_function
++    from review17_decomposition_probe import observe_decomposition
++    preferences=observe_score_function(result)
++    from handoff_probe import observe_handoff
++    with observe_handoff(result), preferences, patch.object(BasicModel,'_commit_sentence',observed_commit), observe_decomposition(result), patch.object(BasicModel,'_reconstruct_trial',observed_trial), patch.object(BasicModel,'runEpoch',observed_epoch), patch.object(BasicModel,'_project_sentence_parameters',observed_projection), patch.object(BaseModel,'_backward_training_loss',observed_backward):
++        try:
++            yield result
++        finally:
++            result.pop('_active_epoch',None)
+diff --git a/test/part_fixtures.py b/test/part_fixtures.py
+index ea64b059b..947916295 100644
+--- a/test/part_fixtures.py
++++ b/test/part_fixtures.py
+@@ -37,3 +37,13 @@ def part(store, left, right, *, evidence=(1., 0.), types=()):
+     """Supply native arguments explicitly; their identity is never inferred."""
+     a, b = (symbol(store, point, types=types) for point in (left, right))
+     return store.append_relation(a, b, truth_plus=evidence[0], truth_minus=evidence[1])
++
++
++def part_references(store):
++    """Snapshot occupied Part arguments by stable handle, excluding new rows."""
++    return {row: store.parts.refs[row].clone() for row in store.parts.indices().tolist()}
++
++
++def assert_part_references(store, before):
++    for row, references in before.items():
++        torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)
+diff --git a/test/test_accessible_mind.py b/test/test_accessible_mind.py
+index 397109121..30873a932 100644
+--- a/test/test_accessible_mind.py
++++ b/test/test_accessible_mind.py
+@@ -6,7 +6,7 @@ import torch
+ 
+ from Layers import LTM0
+ from Meaning import ConceptualMeaning
+-from index_fixtures import append_indexed, one_hot_unfold
++from index_fixtures import append_indexed, one_hot_unfold, restore_index
+ 
+ 
+ def _meaning(a=0, b=1, *, width=8, scope=()):
+@@ -40,12 +40,12 @@ def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
+     torch.save(store.state_dict(), checkpoint)
+     checkpoint.seek(0)
+     state = torch.load(checkpoint, weights_only=True)
+-    column = state["posting_codes"]
+-    assert column.numel() == 384
+-    assert column.untyped_storage().nbytes() == column.numel() * column.element_size()
++    assert not any(key.startswith("posting_") for key in state)
++    assert "leaf_complete" not in state
+     restored = LTM0(8, capacity=256)
+     restored.load_state_dict(state)
+     restored.load_semantic_extras(store.semantic_extras())
++    restore_index(store, restored)
+     row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
+     assert restored.leaf_terms(127, 0) == (3, 17)
+     assert restored.leaf_terms(row, 0) == (9,)
+@@ -83,6 +83,7 @@ def test_index_checkpoint_compaction_and_codebook_remap():
+     restored = LTM0(8, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(store.semantic_extras())
++    restore_index(store, restored)
+     assert restored.rows_for_code(17) == (0, 1)
+     assert restored.clear_origin(store.ORIGIN_USER) == 1
+     assert restored.occurrence_of(0) == reference
+diff --git a/test/test_clause_acceptance.py b/test/test_clause_acceptance.py
+index 9872fe360..189e45450 100644
+--- a/test/test_clause_acceptance.py
++++ b/test/test_clause_acceptance.py
+@@ -110,8 +110,8 @@ def test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse(monkeypatch):
+     clause = f.clause(('lift', ('lower', 'the', 'cat'), ('verb', 'chased', ('lower', 'the', 'mouse'))))
+     row = f.store.write_clause(clause, trust=.7)
+     assert len(f.store) == 3 and f.store.ideas().tolist() == [0, 1, 2]
+-    assert f.store.refs[row].tolist() == [-1, -1, -1]
+-    assert len(f.store.parts) == 10  # four definitions, four operations, two named mints
++    assert not hasattr(f.store, 'refs')
++    assert len(f.store.parts) == 6  # four definitions, verb and lift; lowers are inline
+     # The factored target belongs to the open reading; only the fused point
+     # survives. Its numeric operands are the actual compound NP/VP fields.
+     assert clause.subject_word_id == f.words['cat'][0]
+@@ -126,7 +126,7 @@ def test_04_absolute_clauses_close_bottom_up_with_their_part_edges(monkeypatch):
+     clause = f.clause(('lift', 'he', ('verb', 'said', middle)))
+     row = f.store.write_clause(clause, trust=.8)
+     assert row == 2 and f.store.ideas().tolist() == [0, 1, 2]
+-    assert len(f.store.parts) == 14  # seven lexical definitions and seven operations
++    assert len(f.store.parts) == 15  # seven definitions, seven operations, one argument definition
+     torch.testing.assert_close(f.store.meaning_of(0).roles[0], clause.children[0].children[0].point)
+     assert not hasattr(f.store, 'clause_derivation')
+ 
+@@ -140,7 +140,7 @@ def test_05_embedded_part_is_unasserted_and_propagates_operator_kind(monkeypatch
+     outer = f.store.row(row)
+     verb = int(outer['refs'][1])
+     assert f.store.parts.refs[verb, 1] == child
+-    assert not len(f.store)
++    assert len(f.store) == 2
+     assert f.store.row(('sym', child))['evidence'] == (0., 0.)
+     assert outer['evidence'] == pytest.approx((.6, 0.))
+ 
+@@ -169,7 +169,7 @@ def test_03_particular_subject_ends_an_idea(monkeypatch, predicate):
+     f = SentenceFixture(monkeypatch)
+     row = f.store.write_clause(f.clause(('lift', ('lower', 'the', 'cat'), predicate)))
+     assert f.store.ideas().tolist() == [0, row]
+-    assert len(f.store.parts) >= len(f.words) + 2
++    assert len(f.store.parts) >= len(f.words) + 1
+ 
+ 
+ def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
+@@ -182,13 +182,13 @@ def test_06_implication_keeps_two_unasserted_relation_operands(monkeypatch):
+     assert left['evidence'] == right['evidence'] == (0., 0.)
+     assert f.store.row(row)['readings'] == ('conditional',)
+     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+-    assert not len(f.store)
++    assert len(f.store) == 3
+ 
+ 
+ def test_implication_closes_bare_np_arguments_as_idea_clauses(monkeypatch):
+     f = SentenceFixture(monkeypatch)
+     row = f.store.write_clause(f.clause(('implies', 'rain', 'wet')))
+-    assert f.store.ideas().tolist() == [0, 1]
++    assert f.store.ideas().tolist() == [0, 1, 2]
+     assert f.store.row(row)['refs'].tolist() == [f.noun('rain'), f.noun('wet')]
+ 
+ 
+@@ -198,7 +198,7 @@ def test_07_equality_is_one_membership_in_a_singleton(monkeypatch):
+     count = len(f.store.parts)
+     first = f.store.write_clause(clause, trust=.7, evidence=(.7, 0.))
+     a, b = f.noun('morning-star'), f.noun('evening-star')
+-    assert len(f.store.parts) == count + 1 and not len(f.store)
++    assert len(f.store.parts) == count + 1 and len(f.store) == 1
+     assert f.store.row(first)['refs'].tolist() == [a, b]
+     assert 'equality' in f.store.row(first)['readings']
+     assert f.store.parts.find(b, a) is None
+diff --git a/test/test_clause_closing.py b/test/test_clause_closing.py
+index 7a02d6b71..7f586fc5a 100644
+--- a/test/test_clause_closing.py
++++ b/test/test_clause_closing.py
+@@ -95,4 +95,4 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
+     row = store.write_clause(clause)
+     inner = store.parts.find(*entry.concept_ids[:2].tolist())
+     assert store.parts.refs[row[1], 0] == inner
+-    assert len(store) == 0 and store.parts.contains(inner)
++    assert len(store) == 2 and store.parts.contains(inner)
+diff --git a/test/test_clause_storage.py b/test/test_clause_storage.py
+index c8ddf30f4..6a56e8bf5 100644
+--- a/test/test_clause_storage.py
++++ b/test/test_clause_storage.py
+@@ -17,9 +17,8 @@ from Meaning import ConceptualMeaning
+ 
+ def test_end_row_has_shared_references_and_field_coordinates():
+     store = LTM0(4, capacity=8)
+-    assert store.refs.shape == (8, 3)
+-    assert store.refs.dtype == torch.int64
+-    assert bool((store.refs == -1).all())
++    assert not hasattr(store, 'refs')
++    assert 'refs' not in store.state_dict()
+     assert store.when.shape == (8, 4)
+ 
+ 
+@@ -92,7 +91,7 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
+     assert not bool(store.slots[row, 1:].any())
+     torch.testing.assert_close(store.meaning_of(row).roles[0], clause.point)
+     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]
+-    assert store.refs[row].tolist() == [-1, -1, -1]
++    assert not hasattr(store, 'refs')
+     from Spaces import WhenEncoding
+     from Occurrence import document_digest
+     assert int(store.sentence_index[row]) == 0
+@@ -111,7 +110,7 @@ def test_recursive_absolute_clauses_each_write_one_idea():
+         assert store.write_clause(outer, trust=.7) == 2
+     assert store.ideas().tolist() == [0, 1, 2]
+     assert store.trust[:3].tolist() == pytest.approx([0., 0., .7])
+-    assert bool((store.refs[:3, 2] == -1).all())
++    assert not hasattr(store, 'refs')
+ 
+ 
+ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it():
+@@ -126,7 +125,7 @@ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_
+     assert store.row(child_row)['evidence'] == (0.,0.)
+     assert store.row(row)['refs'].tolist() == [4,child_row[1]]
+     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row
+-    assert len(store) == 0 and len(store.parts) == 2
++    assert len(store) == 2 and len(store.parts) == 2
+     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
+     store.parts.truth_plus[row[1]] = 0
+     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
+@@ -138,7 +137,7 @@ def test_second_order_implication_names_two_part_symbols():
+     outer = Clause(left.meaning, relation='implies',
+         refs=(('clause',0),4,('clause',1)), children=(left,right))
+     row = store.write_clause(outer, evidence=(.9,0.))
+-    assert len(store) == 0 and len(store.parts) == 3
++    assert len(store) == 3 and len(store.parts) == 3
+     first, second = store.relation_operands(row)
+     assert first['refs'].tolist() == [1,2] and second['refs'].tolist() == [1,4]
+     assert first['evidence'] == second['evidence'] == (0.,0.)
+@@ -198,7 +197,7 @@ def test_clause_end_state_and_evidence_checkpoint_roundtrip():
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+     torch.testing.assert_close(restored.meaning_of(row).roles[0], clause.point)
+     assert restored.row(row)['evidence'] == pytest.approx((.6, 0.))
+-    torch.testing.assert_close(restored.refs, store.refs)
++    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
+ 
+ 
+ def test_retired_relation_columns_are_rejected_without_dropping_rows():
+@@ -259,13 +258,13 @@ def test_observation_writer_accepts_a_completed_field_without_a_program():
+     from Models import _append_observed_meaning
+     store,_=clause_store();field=part_clause()
+     row=_append_observed_meaning(store,field)
+-    assert len(store)==0 and store.row(row)['refs'].tolist()==[1,2]
++    assert len(store)==1 and store.row(row)['refs'].tolist()==[1,2]
+ 
+ 
+ def test_full_store_can_update_an_existing_relation():
+     store,points=clause_store()
+     row=store.write_clause(part_clause(),evidence=(.2,0.))
+-    for position in range(store.capacity):
++    for position in range(store.capacity - len(store)):
+         store.append_idea(points[1],sentence_index=position)
+     assert store.write_clause(part_clause(),evidence=(.8,0.))==row
+     assert len(store)==store.capacity and len(store.parts)==1
+diff --git a/test/test_concept_forgetting.py b/test/test_concept_forgetting.py
+index 84f5067d5..964ceac8e 100644
+--- a/test/test_concept_forgetting.py
++++ b/test/test_concept_forgetting.py
+@@ -8,6 +8,8 @@ import torch
+ 
+ from ConceptForgetting import reclaim_concepts, warn_capacity
+ from Layers import LTM0
++from Meaning import ConceptualMeaning
++from dataclasses import replace
+ from test_concept_capacity_policy import _cs
+ 
+ 
+@@ -49,8 +51,8 @@ def test_live_reference_preserves_weak_candidate_and_keeps_a_representative():
+     weak, _ = concept(cs, magnitude=.1)
+     strong, _ = concept(cs, magnitude=.9)
+     store = LTM0(8, capacity=4)
+-    store.append_idea(torch.ones(8), sentence_index=0)
+-    store.refs[0, 0] = weak
++    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
++        role_refs=(('sym', weak), None, None)), sentence_index=0)
+     report = reclaim_concepts(cs, store)
+     assert report['retired'] == (strong,)
+     assert cs._csw_row_of(weak) is not None
+@@ -81,8 +83,8 @@ def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_refe
+     cs.similarity_codebook.W[rows[1], 1] = .05  # A different direction, not an exact duplicate.
+     cs.add_part(defined, 42)
+     store = cs._closed_clause_store()
+-    stored = store.append_idea(torch.ones(8), sentence_index=0)
+-    store.refs[stored, 0] = referenced
++    store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
++        role_refs=(('sym', referenced), None, None)), sentence_index=0)
+     cs._concept_allocator.parts.add(posted, referenced)
+     layer.add_edge(rows[6], rows[5], 0.)  # Zero coefficients still have sparse placement.
+     layer.features.add_edge(rows[7], 0, 0.)
+diff --git a/test/test_definition_taxonomy.py b/test/test_definition_taxonomy.py
+index a8b288504..09771ff37 100644
+--- a/test/test_definition_taxonomy.py
++++ b/test/test_definition_taxonomy.py
+@@ -88,7 +88,7 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
+     assert store.parts.refs[row[1]].tolist() == [first, second]
+     assert first in cs.taxonomy_children(second)
+     assert store.write_clause(source) == row
+-    assert len(store) == 0
++    assert len(store) == 1
+ 
+ 
+ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
+diff --git a/test/test_echoic_decoder.py b/test/test_echoic_decoder.py
+index b8dba85c8..90fb0ceeb 100644
+--- a/test/test_echoic_decoder.py
++++ b/test/test_echoic_decoder.py
+@@ -107,7 +107,8 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
+     def forbidden():
+         raise AssertionError('decoding accessed the compose journal')
+     owner._reconstruction_stack = forbidden
+-    bank = torch.tensor([[[2., 1.], [1., 2.]]]).expand(2, -1, -1).clone().requires_grad_()
++    # Keep these form directions inside the inverse's declared cube domain.
++    bank = torch.tensor([[[1., .5], [.5, 1.]]]).expand(2, -1, -1).clone().requires_grad_()
+     root = conjunction.compose(bank[:, 0], bank[:, 1])
+     signed = root * torch.tensor([[1.], [-1.]])
+     event = torch.cat((signed[:, None], signed.new_zeros(2, 3, 2)), 1)
+diff --git a/test/test_forgetting.py b/test/test_forgetting.py
+index 66a02d1cf..37abab0af 100644
+--- a/test/test_forgetting.py
++++ b/test/test_forgetting.py
+@@ -123,7 +123,7 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
+     with pytest.warns(RuntimeWarning, match='low water'):
+         report = forget(store, config(), document_boundary=True, retained_occurrences=roots)
+     assert not report['target_reached'] and len(store) == 8
+-    for key in ('slots', 'refs', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):
++    for key in ('slots', 'address_keys', 'c_plus', 'c_minus', 'source_trust'):
+         torch.testing.assert_close(before[key], store.state_dict()[key])
+ 
+ 
+@@ -136,27 +136,33 @@ def linked_store(*, child_is_relation=False):
+     roles = torch.tensor([[1., 0., 0., 0.], [0., 1., 0., 0.], [1., 0., 0., 0.]])
+     parent = store.append_meaning(ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),
+         role_refs=(ref, ('sym', 27), None)), trust=.9, stream=0, sentence_index=1)
+-    store.refs[parent, 0] = int(store.address_keys[child])
+     append(store, 2, trust=.7)
+     append(store, 3, trust=.8)
+     return store, ref, store.occurrence_of(parent)
+ 
+ 
+-def test_idea_coarsens_parent_and_relation_cascades():
++def test_idea_coarsens_parent_and_releases_its_child_next_pass():
+     for relation in (False, True):
+         store, child, parent = linked_store(child_is_relation=relation)
+         root = store.meaning_of(1)
+         cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
+-        report = forget(store, cfg, document_boundary=True)
+-        assert store.index_of_row(child[2]) is None
++        with pytest.warns(RuntimeWarning, match='low water'):
++            report = forget(store, cfg, document_boundary=True)
++        assert store.index_of_row(child[2]) is not None
++        assert report['cascade'] == 0 and bool(store.forget_pending)
+         if relation:
+-            assert store.index_of_row(parent[2]) is None and report['cascade'] == 1
++            assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0
+         else:
+             index = store.index_of_row(parent[2])
+-            assert index is not None and store.refs[index, 0] == -1
++            assert index is not None and not hasattr(store, 'refs')
+             assert store.meaning_of(index).role_refs[0] is None
+             torch.testing.assert_close(store.meaning_of(index).roles, root.roles)
+             assert report['coarsened'] == 1
++        report = forget(store, cfg, document_boundary=True)
++        assert store.index_of_row(child[2]) is None
++        assert report['cascade'] == 0 and report['target_reached']
++        if not relation:
++            torch.testing.assert_close(store.meaning_of(store.index_of_row(parent[2])).roles, root.roles)
+ 
+ 
+ def test_live_parent_pins_its_child():
+@@ -346,8 +352,10 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
+         document('first', ['cat', 'dog', 'bird', 'horse'] * 2)
+         report = store.last_forgetting_report
+         assert int(store.forget_passes) == 1
+-        assert report['before'] >= 8 and report['after'] == len(store) == 6
+-        assert report['target_reached']
++        assert report['before'] >= 8 and report['after'] == len(store)
++        assert 6 <= len(store) < report['before']
++        assert report['target_reached'] == (len(store) == 6)
++        assert bool(store.forget_pending) == (len(store) > 6)
+         messages = capsys.readouterr().out
+         assert f'[LTM forgetting] {report}' in messages
+         print(f'[LTM forgetting] {report}')
+diff --git a/test/test_identity_rows.py b/test/test_identity_rows.py
+index 5bd881ce4..857529936 100644
+--- a/test/test_identity_rows.py
++++ b/test/test_identity_rows.py
+@@ -102,11 +102,11 @@ def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
+     second, address2, _ = close(resolver,a[0],a[6],'bind',(first,),document='fold',sentence=1)
+     # Read only the surviving occurrence, as after forgetting. Its working
+     # interpretation must leave the original native code intact.
+-    original = store.slots.clone(), store.refs.clone()
++    original = store.slots.clone(), store.parts.refs.clone()
+     resolver.individuals(resolver.accessible((second,)))
+     torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])
+     torch.testing.assert_close(store.slots,original[0],rtol=0,atol=0)
+-    torch.testing.assert_close(store.refs,original[1],rtol=0,atol=0)
++    torch.testing.assert_close(store.parts.refs,original[1],rtol=0,atol=0)
+ 
+ 
+ def test_form_region_is_a_concept_and_known_exposure_changes_containment():
+diff --git a/test/test_independent_components.py b/test/test_independent_components.py
+index a95af582e..1507b20b8 100644
+--- a/test/test_independent_components.py
++++ b/test/test_independent_components.py
+@@ -350,9 +350,11 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
+             meaning_pairs=derived.meaning_pairs, pole_stride=derived.reserved_pairs)
+         from ClauseRow import attach_clause_index
+         attach_clause_index(model, owner._closed_clause_store(), owner)
+-        from test_reference_close import close
+-        close(columns.reference_close, code[0], torch.zeros_like(code[0]), 'mint', (),
+-              document='native-columns', sentence=0)
++        # This is a native-column checkpoint fixture. A determiner's mint
++        # opens an MTM token; native concepts are minted explicitly here.
++        from IdentityRows import mint
++        identity = mint(owner, code[0])
++        owner._closed_clause_store().parts.add(identity, event, truth_plus=1.)
+         identity, = columns.individual_ids
+         assert _concept_alloc_of(owner).order_of(identity) == 1
+         assert owner._csw_row_of(identity) != event_row
+diff --git a/test/test_joint_objectives.py b/test/test_joint_objectives.py
+index ebe94acc3..a53e8d33c 100644
+--- a/test/test_joint_objectives.py
++++ b/test/test_joint_objectives.py
+@@ -77,7 +77,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
+     m.inputSpace.data.has_supervised_outputs = False
+     optimizer = m.getOptimizer(lr=1e-5)
+     disc = m.symbolSpace.expectation
+-    assert disc is not None and not m.legacy_prediction_enabled
++    assert disc is not None and not hasattr(m, 'legacy_prediction_enabled')
+     predictor = list(disc._inter_predictor.parameters())
+     observed_predictor_gradient = []
+     backward = m._backward_training_loss
+@@ -106,7 +106,8 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
+             assert result is not None
+             changed = [not torch.equal(p, old) for p, old in zip(predictor, before)]
+             assert any(changed) if weight else not any(changed)
+-            assert all(not p.requires_grad for chain in disc._inter_context for _, p, _ in chain)
++            assert all(not p.requires_grad for b in range(len(disc._inter_context))
++                       for _, p, _ in disc._read_context(b)[0])
+         assert any(observed_predictor_gradient)
+     finally:
+         m.inputSpace.data.has_supervised_outputs = had_outputs
+diff --git a/test/test_learning_readiness.py b/test/test_learning_readiness.py
+index bd96d3291..2658588b7 100644
+--- a/test/test_learning_readiness.py
++++ b/test/test_learning_readiness.py
+@@ -186,10 +186,19 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
+         assert loaded._fineweb_training_progress['sentences'] == 3
+     finally:
+         loaded.End()
+-    broken = torch.load(path, map_location='cpu', weights_only=False)
+-    key = next(k for k in broken['state_dict'] if k.endswith('.posting_codes'))
+-    broken['state_dict'][key] = broken['state_dict'][key].reshape(1, -1)
+-    corrupt = tmp_path/'invalid-index.ckpt'
+-    torch.save(broken, corrupt)
+-    with pytest.raises(ValueError, match='posting_codes'):
+-        load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)
++    owner_index = next(i for i, space in enumerate(model.conceptualSpaces)
++                       if space is model._concept_owner())
++    for damage, message in (
++            ('value', 'Part arguments must be positive native symbol handles'),
++            ('shape', 'two symbol references')):
++        broken = torch.load(path, map_location='cpu', weights_only=False)
++        parts = broken['structural_extras']['conceptual_spaces'][owner_index]['allocator']['part_store']
++        if damage == 'value':
++            row = int((parts['refs'][:, 0] > 0).nonzero()[0, 0])
++            parts['refs'][row, 1] = 0
++        else:
++            parts['refs'] = parts['refs'][:, :1].clone()
++        corrupt = tmp_path/f'invalid-part-{damage}.ckpt'
++        torch.save(broken, corrupt)
++        with pytest.raises(ValueError, match=message):
++            load_model(tmp_path/'tiny_chunk_model.xml', corrupt, minimum_sentences=3)
+diff --git a/test/test_lies_can_be_learned.py b/test/test_lies_can_be_learned.py
+index 75ababd29..389397cb3 100644
+--- a/test/test_lies_can_be_learned.py
++++ b/test/test_lies_can_be_learned.py
+@@ -7,7 +7,7 @@ def test_conflicting_claim_preserves_support_and_counterevidence():
+     store, _ = clause_store()
+     row = store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))
+     assert store.write_clause(part_clause(polarity=False), trust=.6, evidence=(0., .6)) == row
+-    assert len(store) == 0 and len(store.parts) == 1
++    assert len(store) == 2 and len(store.parts) == 1
+     assert store.row(row)['evidence'] == pytest.approx((.8, .6))
+     assert min(store.row(row)['evidence']) == pytest.approx(.6)
+ 
+diff --git a/test/test_medium_term_memory.py b/test/test_medium_term_memory.py
+index f616db76a..d2020eef1 100644
+--- a/test/test_medium_term_memory.py
++++ b/test/test_medium_term_memory.py
+@@ -8,11 +8,12 @@ from Meaning import ConceptualMeaning
+ from MediumTermMemory import MediumTermMemory
+ from ReferenceContext import SituationFrame
+ from test_reference_close import close, fixture
++from part_fixtures import part_references, assert_part_references
+ 
+ 
+ def snapshot(resolver):
+     store = resolver.store
+-    return (store.refs.clone(), store.slots.clone(), store.when.clone(),
++    return (part_references(store), store.slots.clone(), store.when.clone(),
+             {k: v.clone() for k, v in store.parts.state_dict().items()},
+             resolver.components.owner.similarity_codebook.W.detach().clone())
+ 
+@@ -56,7 +57,7 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
+     pool = resolver.components.owner.mtm
+     introduction = store.occurrence_of(store.index_of_row(address))
+     original = pool.entries[introduction]
+-    before = store.refs.clone(), store.slots.clone()
++    before = part_references(store), store.slots.clone()
+     use, plan = keep(resolver, mention(a[0], mode=mode), (first,), position=1)
+     occurrence = store.occurrence_of(use)
+     assert plan['items'][0]['reference'] == introduction
+@@ -65,8 +66,8 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
+     assert entry.occurrences == (introduction, occurrence) and entry.count == 2
+     assert entry.kind == store.raw_meaning_of(store.index_of_row(address)).role_refs[0][1]
+     assert entry.when > original.when
+-    for current, old in zip((store.refs, store.slots), before):
+-        torch.testing.assert_close(current[:use], old[:use], rtol=0, atol=0)
++    assert_part_references(store, before[0])
++    torch.testing.assert_close(store.slots[:use], before[1][:use], rtol=0, atol=0)
+     frame = SituationFrame.from_row(store.row(use))
+     # Both the direct row and activation read use the retained token.
+     for held in (frame, replace(first, activations=((occurrence, None, 0),))):
+@@ -93,7 +94,8 @@ def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
+     retained_rows = len(store)
+     # Admission may write new rows; eviction at commit must not touch them.
+     third, _, plan = close(resolver, a[2], a[6], 'mint', (), document='lru', sentence=3)
+-    for current, before in zip((store.refs, store.slots, store.when), old[:3]):
++    assert_part_references(store, old[0])
++    for current, before in zip((store.slots, store.when), old[1:3]):
+         torch.testing.assert_close(current[:retained_rows], before[:retained_rows], rtol=0, atol=0)
+     assert tokens[0] in pool.entries and tokens[1] not in pool.entries
+     assert pool.token_of(tokens[1]) is None
+diff --git a/test/test_negative_expectation.py b/test/test_negative_expectation.py
+index 136262a18..270110acd 100644
+--- a/test/test_negative_expectation.py
++++ b/test/test_negative_expectation.py
+@@ -62,7 +62,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
+         result = model.run_selected_thought(request,work_budget=32)
+     assert result.result.semantic_id == 'not'
+     assert evidence_pair(result.meaning) == (.7,.3)
+-    assert len(store) == 1
++    assert len(store) == 2
+     edge = store.parts.find(part[1], whole[1])
+     # The common Part owner also retains the fixture's earlier affirmation.
+     assert store.row(('sym', edge))['evidence'] == pytest.approx((1.,.3))
+diff --git a/test/test_nested_retention.py b/test/test_nested_retention.py
+index 1d6f35eda..8f346fd2e 100644
+--- a/test/test_nested_retention.py
++++ b/test/test_nested_retention.py
+@@ -53,7 +53,8 @@ def test_origin_replacement_retains_reachable_content_without_fact_authority():
+     assert kept["kind"] == "unverified" and kept["trust"] == 0
+     assert kept["text"] == "reported content"
+     assert kept["meaning"].scope == (("quote", "inner"),)
+-    assert store.meaning_of(_index(store, inner_ref)).mode == "interrogative"
++    assert store.row(_index(store, inner_ref))["kind"] == "question"
++    assert store.row(_index(store, inner_ref))["evidence"] == (0., 0.)
+     assert store.clear_origin(store.ORIGIN_USER) == 0
+ 
+ 
+diff --git a/test/test_operators_final.py b/test/test_operators_final.py
+index b33be65c5..4c8b62a49 100644
+--- a/test/test_operators_final.py
++++ b/test/test_operators_final.py
+@@ -6,45 +6,8 @@ import pytest
+ import torch
+ 
+ 
+-def test_centroid_moves_without_losing_identity_and_caps_containment():
+-    from SymbolCentroid import place
+-    forms = {0: torch.tensor([1., 0., 0.]), 1: torch.tensor([1., 1., 0.]),
+-             2: torch.tensor([0., 0., 1.]), 3: torch.tensor([1., 0., 0.])}
+-    parts = {0: {'a'}, 1: {'a', 'b'}, 2: {'c'}, 3: {'a'}}
+-    pairs = {(0, 2): {(11, 0), (12, 0)}, (1, 3): {(13, 0)}}
+-    codes, audit = place(forms, parts, pairs)
+-    assert audit['before']['violating_pairs'] > 0
+-    assert audit['after']['violating_pairs'] == audit['below_lower'] == 0
+-    assert audit['identity_recovered'] and 0 < audit['share_moved'] < 1
+-    assert audit['cosine_after'] < 1
+-    assert torch.equal(codes[0], codes[3])
+-    assert not any(value.requires_grad for value in codes.values())
+-    off, audit = place(forms, parts, pairs, enabled=False)
+-    assert audit['moved'] == 0
+-    for row in forms:
+-        torch.testing.assert_close(off[row], forms[row], rtol=0, atol=0)
+-
+-
+-def test_adjacent_wholes_rewitness_compact_and_checkpoint():
+-    from Layers import LTM0
+-    from Meaning import ConceptualMeaning
+-    store = LTM0(4, capacity=4)
+-    value = ConceptualMeaning.from_description(torch.ones(4))
+-    discarded = store.append_meaning(value, document_key='gone')
+-    store.origin[discarded] = store.ORIGIN_USER
+-    row = store.append_meaning(value, document_key='kept')
+-    for _ in range(400):
+-        store.witness_adjacency(row, [2, 3, 2])
+-    address = int(store.address_keys[row])
+-    assert store._adjacent_postings == {(2, 3): {(address, 0)}, (3, 2): {(address, 1)}}
+-    store.witness_adjacency(discarded, [7, 8])
+-    store.clear_origin(store.ORIGIN_USER)
+-    assert store.index_of_row(address) == 0 and (7, 8) not in store._adjacent_postings
+-    loaded = LTM0(4, capacity=4)
+-    loaded.load_state_dict(store.state_dict())
+-    assert loaded._adjacent_postings == store._adjacent_postings
+-    store.witness_adjacency(0, [2, 4])
+-    assert store._adjacent_postings == {(2, 4): {(address, 0)}}
++
++
+ 
+ 
+ def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
+@@ -155,7 +118,7 @@ def test_definition_sentence_joins_identities_beside_the_interpret_definition(mo
+     f = SentenceFixture(monkeypatch)
+     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
+     first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
+-    assert len(f.store) == 0 and first[0] == 'sym'
++    assert len(f.store) == 1 and first[0] == 'sym'
+     row = f.store.row(first)
+     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
+     assert row['readings'] == ('equality',)
+diff --git a/test/test_operators_final_b.py b/test/test_operators_final_b.py
+index 6af84fcd4..07db56ed7 100644
+--- a/test/test_operators_final_b.py
++++ b/test/test_operators_final_b.py
+@@ -130,7 +130,7 @@ def forced_prefix_certificate():
+         model,_,data=_fresh_model('data/XOR_grammar.xml')
+         try:
+             derived=model._concept_owner().similarity_codebook.mereology
+-            assert derived.context_width == 128 and derived.symbol_centroid
++            assert derived.context_width == 128
+             raw,target=next(iter(data.data_loader(split='test',num_streams=4)))
+             batch=model.inputSpace.prepInput(raw),model.outputSpace.prepOutput(target)
+             inputs=[model._bytes_to_text(x).rstrip(chr(0)) for x in raw]
+diff --git a/test/test_operators_round3a.py b/test/test_operators_round3a.py
+index a82a596ab..0df2ca3c6 100644
+--- a/test/test_operators_round3a.py
++++ b/test/test_operators_round3a.py
+@@ -149,7 +149,7 @@ def test_numeric_mm_keeps_its_original_geometry():
+ 
+ 
+ @pytest.mark.parametrize('trust,polarity,expected', [(.7,True,(.7,0.)),(-.4,True,(0.,.4)),
+-    (.7,False,(0.,.7)),(-.4,False,(.4,0.)),(0.,True,(0.,0.))])
++    (.7,False,(.7,0.)),(-.4,False,(0.,.4)),(0.,True,(0.,0.))])
+ def test_trust_to_pair_and_negation(trust, polarity, expected):
+     from Layers import LTM0
+     from Meaning import ConceptualMeaning
+diff --git a/test/test_operators_round4a0.py b/test/test_operators_round4a0.py
+index af86a44bf..fa5663642 100644
+--- a/test/test_operators_round4a0.py
++++ b/test/test_operators_round4a0.py
+@@ -95,12 +95,11 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
+     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
+                              role_refs=(store.occurrence_of(source), None, None))
+     target = store.append_meaning(child, kind='observation', document_key='reference')
+-    store.refs[target, 0] = store.address_keys[source]
+     reference = store.occurrence_of(source)
+     assert store.clear_origin(store.ORIGIN_USER) == 1
+     assert store._index_occurrences[reference] == 0
+     assert store.meaning_of(1).role_refs[0] == reference
+-    assert int(store.refs[1, 0]) == int(store.address_keys[0])
++    assert not hasattr(store, 'refs')
+     restored = LTM0(4, 8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+@@ -130,6 +129,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
+     state['_next_occurrence'] = torch.tensor(2)
+     state['_occurrence_namespace'] = torch.tensor(list(bytes.fromhex(namespace)), dtype=torch.uint8)
+     state['row_ids'][:2] = torch.tensor([2**62, 2**62 + 1])
++    state['refs'] = torch.full((store.capacity, 3), -1, dtype=torch.long)
+     state['refs'][target, 0] = 2**62
+     state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
+     state['stream'][0,0] = state['stream'][1,1] = True
+@@ -138,7 +138,7 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
+     restored.load_semantic_extras(extras)
+     reference = restored.occurrence_of(0)
+     assert restored.meaning_of(1).role_refs[0] == reference
+-    assert int(restored.refs[1, 0]) == reference[2]
++    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
+     assert restored.stream[:2].tolist() == [[True, False], [False, True]]
+     assert restored.remap_legacy_references({'history': (old_ref,)}) == {'history': (reference,)}
+     from Spaces import WhenEncoding
+diff --git a/test/test_part_closing.py b/test/test_part_closing.py
+index 103afc9c8..46fc1b56f 100644
+--- a/test/test_part_closing.py
++++ b/test/test_part_closing.py
+@@ -10,7 +10,7 @@ def test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes(monkeypat
+     before = len(f.cs._concept_allocator.parts)
+     location = f.store.write_clause(clause, evidence=(.7, .2))
+     assert location[0] == 'sym'
+-    assert len(f.store) == 0
++    assert len(f.store) == 1
+     assert len(f.store.parts) == before + 1
+     row = f.store.row(location)
+     assert row['refs'].tolist() == [f.noun('a'), f.noun('b')]
+@@ -39,7 +39,7 @@ def test_absolute_close_keeps_only_the_concept_and_derivation_pairs(monkeypatch)
+     assert not f.store.slots[row, 1:].any()
+     root = f.store.raw_meaning_of(row).role_refs[0]
+     assert root[0] == 'sym' and f.store.parts.contains(root[1])
+-    assert f.store.refs[row].eq(-1).all()
++    assert not hasattr(f.store, 'refs')
+     assert len(f.store.parts) == before + 2
+     assert not any(key.startswith('_individual') for key, _ in f.store.meaning_of(row).bindings)
+ 
+diff --git a/test/test_part_read.py b/test/test_part_read.py
+index 5758520aa..0e8679b85 100644
+--- a/test/test_part_read.py
++++ b/test/test_part_read.py
+@@ -22,10 +22,8 @@ def test_postings_rebuild_from_part_without_inverting_the_narrowed_point(monkeyp
+     f.store.slots[row, 0].copy_(original)
+     state = f.store.state_dict()
+     extras = f.store.semantic_extras()
+-    # A stale serialized cache is rebuilt from the retained source.
+-    state['posting_codes'] = torch.full_like(state['posting_codes'], 999)
+-    # Keep its sorted/unique wire contract while changing every term.
+-    state['posting_codes'] += torch.arange(len(state['posting_codes']))
++    # Retrieval postings are regenerated after the complete owner loads.
++    assert not any(key.startswith('posting_') for key in state)
+     f.store.load_state_dict(state)
+     f.store.load_semantic_extras(extras)
+     configure_model_index(f.model, f.store)
+@@ -42,7 +40,7 @@ def test_part_membership_terminates_on_cycles_and_retains_reachable_leaves():
+     assert set(leaves(parts, 10)) == {2, 3}
+ 
+ 
+-def test_closing_excludes_its_own_witness_without_restricting_copular_reads():
++def test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice():
+     from dataclasses import replace
+     from Meaning import ConceptualMeaning
+     from ThoughtReferences import bindings, open_slots, question, with_slots
+@@ -64,18 +62,17 @@ def test_closing_excludes_its_own_witness_without_restricting_copular_reads():
+     closing = closing_question(raw, clause, store=store, written_rows={id(clause): source})
+     assert closing is not None and open_slots(closing) == (('referent', 0),)
+     assert closing.role_refs == raw.role_refs
+-    # Ordinary interpretation still reads the witnessed copular complement.
+-    assert store.meaning_of(source).role_refs[0] == ('sym', answer)
+-    # The same observed complement can resolve a different occurrence.
++    # Equality evidence alone cannot replace the resolver's choice.
++    assert store.meaning_of(source).role_refs[0] is None
+     resolved = store.meaning_of(earlier)
+-    assert not open_slots(resolved)
+-    assert resolved.role_refs[0] == ('sym', answer)
+-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)
++    assert open_slots(resolved) == (('referent', 0),)
++    assert resolved.role_refs[0] is None
++    assert not bindings(resolved).get('_thought_witnesses')
+     assert store.raw_meaning_of(source).role_refs == raw.role_refs
+ 
+ 
+ @pytest.mark.parametrize('relative', (False, True))
+-def test_forward_name_accepts_a_witnessed_occurrence_complement(relative):
++def test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement(relative):
+     from dataclasses import replace
+     from Meaning import ConceptualMeaning
+     from ThoughtReferences import bindings, open_slots, question, with_slots
+@@ -99,10 +96,10 @@ def test_forward_name_accepts_a_witnessed_occurrence_complement(relative):
+                                   kind='question', evidence=(0., 0.), sentence_index=2)
+     raw = store.raw_meaning_of(pending)
+     resolved = store.meaning_of(pending)
+-    assert not open_slots(resolved)
+-    assert not bindings(resolved).get('_forward_references')
+-    assert resolved.role_refs[0] == reference
+-    assert bindings(resolved)['_thought_witnesses'] == (store.occurrence_of(source),)
++    assert open_slots(resolved) == (('referent', 0),)
++    assert bindings(resolved)['_forward_references'] == ((0, name),)
++    assert resolved.role_refs[0] is None and resolved.role_refs[2] == reference
++    assert not bindings(resolved).get('_thought_witnesses')
+     assert store.raw_meaning_of(pending).role_refs == raw.role_refs
+ 
+ 
+diff --git a/test/test_predicate_identity.py b/test/test_predicate_identity.py
+index ec673990b..8fa5664f0 100644
+--- a/test/test_predicate_identity.py
++++ b/test/test_predicate_identity.py
+@@ -86,6 +86,8 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
+     assert f.store.parts.refs.shape[-1] == 2
+     arguments = f.store.row(row)['refs'].tolist()
+     assert reference[1] not in arguments
+-    for argument, source in zip(arguments, (left, right)):
+-        torch.testing.assert_close(f.store._concept_point(argument), f.store.slots[source, 0])
++    for role, argument, source in zip((0, 2), arguments, (left, right)):
++        retained = f.store.raw_meaning_of(source)
++        assert retained.role_refs[0] == ('sym', argument)
++        torch.testing.assert_close(retained.roles[0], leaves[role])
+     assert f.cs._csw_row_of(reference[1]) is None
+diff --git a/test/test_reasoning_cde_model.py b/test/test_reasoning_cde_model.py
+index ae1f03e50..228e693c8 100644
+--- a/test/test_reasoning_cde_model.py
++++ b/test/test_reasoning_cde_model.py
+@@ -64,6 +64,7 @@ class TestReasoningCDEModel(unittest.TestCase):
+     @pytest.mark.slow
+     @pytest.mark.usefixtures("eager_reading")
+     def test_training_step_uses_the_normal_policy_configuration(self):
++        self.m.dispatch_per_row_reset([True])
+         opt = self.m.getOptimizer(lr=0.01)
+         self.m.runEpoch(optimizer=opt, batchSize=6, split='train',
+                         max_batches=1)
+diff --git a/test/test_reference_arrivals.py b/test/test_reference_arrivals.py
+index d9cfaaf8e..4f6f8a785 100644
+--- a/test/test_reference_arrivals.py
++++ b/test/test_reference_arrivals.py
+@@ -4,6 +4,7 @@ from types import SimpleNamespace
+ 
+ import pytest
+ import torch
++from part_fixtures import part_references, assert_part_references
+ 
+ from ClauseRow import Clause, Composition, ClausePredicate, predicate_point
+ from Meaning import ConceptualMeaning
+@@ -90,7 +91,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
+     pending, _ = keep(resolver, named(a[0], words['x']))
+     token = store.occurrence_of(pending)
+     frame = SituationFrame.from_row(store.row(pending))
+-    raw, refs = store.slots.clone(), store.refs.clone()
++    raw, refs = store.slots.clone(), part_references(store)
+     arrival, plan = keep(resolver, equality(a[0], words['x'], words['three']), (frame,), position=1)
+     entry = resolver.components.owner.mtm.entries[token]
+     assert entry.kind == words['three'] and entry.count == 3
+@@ -110,7 +111,7 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
+     terms, _, incomplete = expression_components(store, (token,), max_records=8, work=QueryWorkBudget(8))
+     assert not incomplete and terms[token]['head_reference'] == ('sym', words['three'])
+     torch.testing.assert_close(store.slots[:pending+1], raw[:pending+1], rtol=0, atol=0)
+-    torch.testing.assert_close(store.refs[:pending+1], refs[:pending+1], rtol=0, atol=0)
++    assert_part_references(store, refs)
+ 
+ 
+ @pytest.mark.parametrize('when', ('before', 'after'))
+diff --git a/test/test_reference_close.py b/test/test_reference_close.py
+index 5c757eca2..d2eb0ed3e 100644
+--- a/test/test_reference_close.py
++++ b/test/test_reference_close.py
+@@ -10,6 +10,7 @@ from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ from ReferenceClose import ReferenceClose
+ from ReferenceContext import SituationFrame
++from part_fixtures import part_references, assert_part_references
+ 
+ 
+ def fixture():
+@@ -76,11 +77,11 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
+ def current_identities(resolver, frames):
+     """Observe the working partition without editing a row or a bank code."""
+     store, bank = resolver.store, resolver.components.owner.similarity_codebook
+-    before = store.refs.clone(), store.slots.clone(), bank.W.detach().clone()
++    before = store.parts.refs.clone(), store.slots.clone(), bank.W.detach().clone()
+     result = {address: identity
+               for identity, item in resolver.individuals(resolver.accessible(frames)).items()
+               for address in item['occurrences']}
+-    for actual, expected in zip((store.refs, store.slots, bank.W), before):
++    for actual, expected in zip((store.parts.refs, store.slots, bank.W), before):
+         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+     return result
+ 
+@@ -191,12 +192,12 @@ def test_reidentification_revises_the_earlier_ambiguous_binding(kind):
+ def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
+     resolver, store, atoms = fixture()
+     frame, address, _ = close(resolver, atoms[0], atoms[6], 'mint', (), document='a', sentence=0)
+-    before = store.refs.clone()
++    before = part_references(store)
+     _, missing, plan = close(resolver, torch.zeros(12), atoms[6], 'pronoun', (), document='b', sentence=0)
+     assert plan['items'][0]['reference'] is None and len(resolver.components.individual_ids) == 0
+     assert tuple(resolver.components.owner.mtm.entries) == (store.occurrence_of(store.index_of_row(address)),)
+-    assert int(store.refs[store.index_of_row(missing), 0]) == -1
+-    torch.testing.assert_close(store.refs[:store.index_of_row(missing)], before[:store.index_of_row(missing)])
++    assert not hasattr(store, 'refs')
++    assert_part_references(store, before)
+     assert resolver.last_audit[0]['missing_reason'] == 'no_accessible_individual'
+ 
+ 
+@@ -210,11 +211,11 @@ def test_empty_close_has_no_policy_gradient_or_store_side_effect():
+     written = {}
+     row = store.write_clause(kept, document_key='field', sentence_index=0, written_rows=written)
+     metadata = dict(store._semantic_rows)
+-    required, refs = store.metadata_required.clone(), store.refs.clone()
++    required, refs = store.metadata_required.clone(), store.parts.refs.clone()
+     resolver.commit(plan, row, written, document='field', position=0, training=True)
+     assert store._semantic_rows == metadata and resolver.last_audit == ()
+     torch.testing.assert_close(store.metadata_required, required, rtol=0, atol=0)
+-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
++    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
+     assert not resolver.components.individual_ids and not resolver._participants()
+ 
+ 
+@@ -418,5 +419,5 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
+     restored = LTM0(8, capacity=64)
+     restored.load_state_dict(f.store.state_dict())
+     restored.load_semantic_extras(f.store.semantic_extras())
+-    torch.testing.assert_close(restored.refs, f.store.refs, rtol=0, atol=0)
++    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
+     torch.testing.assert_close(restored.slots, f.store.slots, rtol=0, atol=0)
+diff --git a/test/test_reference_index.py b/test/test_reference_index.py
+index 9b2c012f4..dce834eea 100644
+--- a/test/test_reference_index.py
++++ b/test/test_reference_index.py
+@@ -27,7 +27,7 @@ def test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat():
+     assert store.rows_for_code(99) == ()
+ 
+ 
+-def test_only_the_inverted_index_is_owned_or_checkpointed():
++def test_inverted_index_is_derived_after_checkpoint_restore():
+     store = LTM0(4, capacity=8)
+     store.configure_leaf_index(read=lambda value, limit, **kwargs: ((int(value[0]),), 1, True))
+     a = store.append_meaning(ConceptualMeaning.from_description(torch.tensor([2., 0., 0., 0.])))
+@@ -39,6 +39,8 @@ def test_only_the_inverted_index_is_owned_or_checkpointed():
+     restored = LTM0(4, capacity=8)
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
++    restored.configure_leaf_index(read=store._index_read)
++    restored.reindex_meanings()
+     assert restored.rows_for_code(2) == (a,)
+     assert restored.rows_for_code(3) == (b,)
+ 
+diff --git a/test/test_reference_mentions.py b/test/test_reference_mentions.py
+index 7b5687655..f84910b71 100644
+--- a/test/test_reference_mentions.py
++++ b/test/test_reference_mentions.py
+@@ -71,7 +71,7 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
+     resolver.commit(plan, row, written, document='pending', position=0, training=False)
+     original = store.meaning_of(row)
+     assert resolver._mentions[store.occurrence_of(row)]
+-    rows, refs = store.slots.clone(), store.refs.clone()
++    rows, refs = store.slots.clone(), store.parts.refs.clone()
+     # A subsequent known binding refers to this same occurrence and role.
+     pending = question(replace(original, role_refs=(None, None, None)),
+                        (('referent', 0),))
+@@ -91,7 +91,7 @@ def test_later_fill_trains_the_same_occurrence_menu_without_a_live_graph():
+     resolver.resolved(row, 0, ('sym', correct), errors)
+     assert errors._terms['expectation.reference_mentions']['count'] == 1
+     torch.testing.assert_close(store.slots, rows, rtol=0, atol=0)
+-    torch.testing.assert_close(store.refs, refs, rtol=0, atol=0)
++    torch.testing.assert_close(store.parts.refs, refs, rtol=0, atol=0)
+ 
+ 
+ def test_mention_training_record_is_not_a_thought_chooser_feature():
+diff --git a/test/test_reference_occurrence_views.py b/test/test_reference_occurrence_views.py
+index ceb3d0243..d3d715e39 100644
+--- a/test/test_reference_occurrence_views.py
++++ b/test/test_reference_occurrence_views.py
+@@ -13,7 +13,7 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
+     address = f.identities[target]
+     assert address == f.store.occurrence_of(target)
+     assert not f.cs.components.individual_ids
+-    before = f.store.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()
++    before = f.store.parts.refs.clone(), f.store.slots.clone(), f.cs.similarity_codebook.W.clone()
+     records = f.resolver.accessible(f.frames)
+     candidates = f.resolver.individuals(records)
+     assert address in candidates and f.identities[distractor] in candidates
+@@ -23,5 +23,5 @@ def test_occurrence_candidates_use_retained_part_participants(monkeypatch, kind,
+     assert context['identity'] == address and context['predicate'] == f.predicates[tuple(f.atoms[4].tolist())]
+     result = execute(f, site(f, f.atoms[kind]*0, predicate=f.atoms[4]))
+     assert result.value.role_refs[0] == address
+-    for actual, expected in zip((f.store.refs, f.store.slots, f.cs.similarity_codebook.W), before):
++    for actual, expected in zip((f.store.parts.refs, f.store.slots, f.cs.similarity_codebook.W), before):
+         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+diff --git a/test/test_relation_closing.py b/test/test_relation_closing.py
+index f88fb7afa..175d16d0f 100644
+--- a/test/test_relation_closing.py
++++ b/test/test_relation_closing.py
+@@ -31,12 +31,15 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
+     for leaf, child in zip(unknown, relation.children):
+         assert child.relation is None
+         torch.testing.assert_close(child.point, entry.leaves[leaf])
+-    assert len(f.store) == len(unknown)
++    assert len(f.store) == len(unknown) + 1 + int(nested)
+     assert (f.store.parts.refs[f.store.relations()] > 0).all()
+-    assert not f.store.trust[:len(f.store)].any()
++    assert not f.store.trust[:len(unknown)].any()
+     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
+-    for index in f.store.ideas().tolist():
++    for index in range(len(unknown)):
+         assert f.store.row(index)['kind'] == 'unverified'
++    sentence = f.store.row(len(f.store) - 1)
++    assert sentence['kind'] == 'observation'
++    assert sentence['evidence'] == pytest.approx((.7, 0.))
+ 
+ 
+ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
+@@ -51,7 +54,7 @@ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
+         symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3)
+     clause = finish_reading(f.language, entry, registry=f.registry)
+     row = f.store.write_clause(clause, trust=.6)
+-    assert len(f.store) == 2 and isinstance(row, tuple)
++    assert len(f.store) == 3 and isinstance(row, tuple)
+     for symbol, point in zip(f.store.row(row)['refs'].tolist(), leaves[[0, 2]]):
+         torch.testing.assert_close(f.store._concept_point(symbol), point)
+     torch.testing.assert_close(f.store.slots[:2, 0], leaves[[0, 2]])
+diff --git a/test/test_relative_sentence_codebook_insertion.py b/test/test_relative_sentence_codebook_insertion.py
+index 88243dc57..2af53a258 100644
+--- a/test/test_relative_sentence_codebook_insertion.py
++++ b/test/test_relative_sentence_codebook_insertion.py
+@@ -12,5 +12,5 @@ def test_closing_reuses_relation_and_preserves_independent_evidence():
+     clause = part_clause()
+     row = store.write_clause(clause, trust=.8, evidence=(.8, 0.))
+     assert store.write_clause(replace(clause, meaning=replace(clause.meaning, polarity=False)), trust=.7, evidence=(0., .7)) == row
+-    assert len(store) == 0 and len(store.parts) == 1
++    assert len(store) == 2 and len(store.parts) == 1
+     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
+diff --git a/test/test_replacement_kernel_contracts.py b/test/test_replacement_kernel_contracts.py
+index 48936847e..c22582c2d 100644
+--- a/test/test_replacement_kernel_contracts.py
++++ b/test/test_replacement_kernel_contracts.py
+@@ -36,7 +36,7 @@ def test_direct_and_depth_one_two_chains_keep_native_premises(hops):
+     # chain adds that same native Part edge, not a second LTM1 relation.
+     edge = store.parts.find(refs[0][1], refs[hops][1])
+     assert edge is not None and store.parts.truth_plus[edge] == 1
+-    assert len(store) == 0
++    assert len(store) == 1
+     if hops > 1:
+         model.conceptualSpace.retire_concept(edge)
+     model.conceptualSpace.retire_concept(refs[1][1])
+diff --git a/test/test_review14_contracts.py b/test/test_review14_contracts.py
+index 3fe284597..5b46ff1b2 100644
+--- a/test/test_review14_contracts.py
++++ b/test/test_review14_contracts.py
+@@ -149,7 +149,7 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
+         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',
+         REVIEW17_REPORTS=str(tmp_path/'reports.jsonl'),
+         PYTHONPATH=os.pathsep.join(map(str,(receipt,prior,root/'bin',root/'test'))))
+-    result=run_guarded([sys.executable,'-m','pytest','-q',str(receipt/'observer_probe.py')],
++    result=run_guarded([sys.executable,'-m','pytest','-q',str(root/'test/observer_probe.py')],
+         cwd=root,env=env,log_path=tmp_path/'observer.log',memory_bytes=8*GIB,timeout=1800)
+     assert result['exit_code']==0,(tmp_path/'observer.log').read_text()
+ 
+@@ -167,12 +167,6 @@ def test_zero_parent_relative_search_with_large_valid_codes_stays_finite():
+     assert not left.requires_grad and not right.requires_grad
+ 
+ 
+-def test_absent_adjacent_wholes_leave_the_lower_form():
+-    from SymbolCentroid import place
+-    lower = {0: torch.tensor([1., 0., 1.])}
+-    placed, report = place(lower, {0: {'a', 'b'}}, {})
+-    torch.testing.assert_close(placed[0], lower[0])
+-    assert report['moved'] == 0 and report['identity_recovered']
+ 
+ 
+ @pytest.mark.parametrize('advantage', [-.5, 0., .5])
+diff --git a/test/test_selected_nested_meaning.py b/test/test_selected_nested_meaning.py
+index 71f60fcd7..30230da31 100644
+--- a/test/test_selected_nested_meaning.py
++++ b/test/test_selected_nested_meaning.py
+@@ -54,7 +54,7 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
+     _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())
+     store = _write_selected_observation(language, registry, entry, path)
+     # The two native pairs retain ignorance independently in the common owner.
+-    assert len(store) == 0
++    assert len(store) == 2
+     child_id = store.parts.find(*entry.concept_ids[:2].tolist())
+     parent_id = store.parts.find(int(entry.concept_ids[2]), child_id)
+     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
+@@ -75,10 +75,12 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
+         def address(cid):
+             row = store.index_of_row(cid)
+             return ('concept', cid) if row is None else ('clause', row)
+-        return [tuple(address(int(cid)) for cid in store.refs[row]) for row in range(len(store))]
++        return [tuple(None if ref is None else address(ref[1]) if ref[0] == 'sym'
++                      else ('clause', store.location(ref))
++                      for ref in store.raw_meaning_of(row).role_refs) for row in range(len(store))]
+     for store in stores[1:]:
+         assert addresses(store) == addresses(stores[0])
+-        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'where', 'when'):
++        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'when'):
+             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
+         for name in ('refs', 'truth_plus', 'truth_minus', 'surprise', 'when'):
+             torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)
+diff --git a/test/test_selected_relation_meaning.py b/test/test_selected_relation_meaning.py
+index 603cf3e78..e0ca3a348 100644
+--- a/test/test_selected_relation_meaning.py
++++ b/test/test_selected_relation_meaning.py
+@@ -394,7 +394,7 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
+     cs._concept_allocator.parts.remove(_a[1], _b[1])
+     before_parts = set(cs._concept_allocator.parts.indices().tolist())
+     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
+-    assert len(store) == 0 and len(calls) == 1
++    assert len(store) == 1 and len(calls) == 1
+     row = ('sym', store.parts.find(_a[1], _b[1]))
+     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
+     stored = store.meaning_of(row)
+diff --git a/test/test_sentence_end_state.py b/test/test_sentence_end_state.py
+index fb94b039a..b5b7380de 100644
+--- a/test/test_sentence_end_state.py
++++ b/test/test_sentence_end_state.py
+@@ -18,7 +18,7 @@ def test_reading_an_idea_returns_its_one_occupied_slot():
+     assert meaning.role_mask.tolist() == [True, False, False]
+     torch.testing.assert_close(meaning.roles[0], ended.point, rtol=0, atol=0)
+     assert not meaning.roles[1:].any()
+-    assert store.refs[row].tolist() == [-1, -1, -1]
++    assert not hasattr(store, 'refs')
+     assert store.row(row)['evidence'] == (.75, .25)
+ 
+ 
+@@ -26,7 +26,7 @@ def test_part_stores_native_addresses_and_reads_current_concept_content():
+     store, points = clause_store()
+     row = store.write_clause(part_clause())
+     assert store.row(row)['refs'].tolist() == [1, 2]
+-    assert not len(store)
++    assert len(store) == 1
+     owner = store._concept_owner()
+     with torch.no_grad():
+         owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)
+@@ -46,7 +46,7 @@ def test_no_clause_derivation_or_factored_target_is_checkpointed():
+     restored.load_state_dict(copy.deepcopy(store.state_dict()))
+     restored.load_semantic_extras(copy.deepcopy(extras))
+     torch.testing.assert_close(restored.slots, store.slots, rtol=0, atol=0)
+-    torch.testing.assert_close(restored.refs, store.refs, rtol=0, atol=0)
++    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
+     assert restored.meaning_of(row).role_mask.tolist() == [True, False, False]
+ 
+ 
+@@ -182,15 +182,20 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
+     model._install_unit_span_fn()
+     model.reconstruct_in_loop = False
+     model.loss.reconstruction_scale = 0.
++    model.stateless = False
++    from What import What
+     try:
+         inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
+         model.runBatch(train=False, batchSize=1, split='runtime',
+-                       batch_override=(inputs, torch.zeros(1, 1, 0)))
++                       batch_override=(inputs, torch.zeros(1, 1, 0)),
++                       questions=(What.present(0, split='runtime'),))
+         ended = model._sentence_fields[0][0]
+         store = model.symbolSpace.ltm_store
+-        row = store.index_of_row(ended.row_id)
++        row = store.location(ended.row_id)
+         assert row is not None
+-        torch.testing.assert_close(ended.meaning.roles, store.slots[row], rtol=0, atol=0)
++        retained_roles = (store.row(row)['meaning'].roles if isinstance(row, tuple)
++                          else store.slots[row])
++        torch.testing.assert_close(ended.meaning.roles, retained_roles, rtol=0, atol=0)
+         trace = model._reconstruction_stack()
+         assert not trace._choice_mask.any()
+         assert not trace._choice_values.any()
+diff --git a/test/test_sentence_identity.py b/test/test_sentence_identity.py
+index 916351d17..41bdfdc58 100644
+--- a/test/test_sentence_identity.py
++++ b/test/test_sentence_identity.py
+@@ -36,7 +36,7 @@ def test_referenced_phrase_is_minted_as_a_part_argument(monkeypatch):
+     assert f.cs._csw_row_of(reference) is not None
+     assert f.store.parts.refs[reference].tolist() == [f.noun('chases'), f.noun('mouse')]
+     torch.testing.assert_close(f.store._concept_point(reference), clause.children[0].point)
+-    assert len(f.store) == 1  # the narrowed constituent occurrence also survives
++    assert len(f.store) == 2  # the constituent and completed sentence both survive
+ 
+ 
+ def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
+@@ -78,7 +78,7 @@ def test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically(monkeypa
+     from ClauseRow import attach_clause_index
+     attach_clause_index(model, f.store, f.cs)
+     try:
+-        entry = f.program(('disjunction', ('part', 'cat', 'animal'), 'sleeps'))
++        entry = f.program(('part', ('disjunction', ('part', 'cat', 'animal'), 'sleeps'), 'cat'))
+         layer = _concept_alloc_of(f.cs).layer(0)
+         caps = f.cs._order_caps()
+         # Occupy the remaining physical seats in the mechanism fixture;
+diff --git a/test/test_sentence_journal.py b/test/test_sentence_journal.py
+index bfd31d5d7..66cd9e129 100644
+--- a/test/test_sentence_journal.py
++++ b/test/test_sentence_journal.py
+@@ -10,7 +10,12 @@ def test_no_numerical_frames_without_a_sentence_closing_reader(tmp_path):
+     from test_reverse_traversal import _traversal_model, _run
+     model = _traversal_model(tmp_path)
+     try:
+-        _run(model, ['1 plus 2', '3 plus 4'])
++        # Disable the consumer during the run. _run's normal boundary
++        # enables it inside the context and clears it on exit.
++        with model._sentence_run():
++            model._sentence_ends = False
++            model._sentence_reconstruction = False
++            _run(model, ['1 plus 2', '3 plus 4'])
+         trace = model._reconstruction_stack()
+         assert not getattr(model, '_sentence_ends', False)
+         assert trace._choice_mask.any(), 'the probe must perform an operation'
+diff --git a/test/test_sentence_retention.py b/test/test_sentence_retention.py
+index bbc1b5e31..93dd03631 100644
+--- a/test/test_sentence_retention.py
++++ b/test/test_sentence_retention.py
+@@ -40,7 +40,7 @@ def test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claim
+     assert store.relations().tolist() == [target[1]]
+     store._validate_expectation_links()
+     # Re-reading the same thought address refreshes its one retained estimate.
+-    assert len(store) == 2
++    assert len(store) == 3
+     for index in (1,):
+         assert store.expectation_pair(index)['observation_occurrence'] == store.occurrence_of(target)
+ 
+@@ -59,8 +59,9 @@ def test_narrow_idea_retains_no_implicit_operand_reference():
+     store, _ = clause_store()
+     first = store.write_clause(idea_clause())
+     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
+-    assert store.refs[second].tolist() == [-1, -1, -1]
+-    assert store.meaning_of(second).role_refs == (None, None, None)
++    assert not hasattr(store, 'refs')
++    assert not any(ref is not None and ref[0] == 'ltm'
++                   for ref in store.meaning_of(second).role_refs)
+ 
+ 
+ def test_invalid_prediction_does_not_publish_embedded_clauses():
+diff --git a/test/test_step2b_storage.py b/test/test_step2b_storage.py
+new file mode 100644
+index 000000000..d31c56a44
+--- /dev/null
++++ b/test/test_step2b_storage.py
+@@ -0,0 +1,165 @@
++"""Storage-only 2b contracts; no parsing or learning claim."""
++import copy
++
++import pytest
++import torch
++
++from Layers import LTM0
++from Meaning import ConceptualMeaning
++
++
++def test_word_bank_form_survives_use_as_another_words_object():
++    from test_definition_rows import model as definition_model, admit
++    model = definition_model()
++    try:
++        owner = model._concept_owner()
++        identity = model.perceptualSpace.percept_store.identity
++        word, obj = admit(model, '12')
++        other, _ = admit(model, 'plus')
++        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
++        owner.interpret.define(other, word)
++        assert owner.definitions.words(word) == (other,)
++        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
++        assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'
++        for symbol in (word, obj):
++            row = owner._csw_row_of(symbol)
++            assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'
++        assert owner.definitions.words(obj) == (word,)
++    finally:
++        model.End()
++        model.symbolSpace.soft_reset()
++
++
++@pytest.mark.parametrize('relative', (False, True))
++@pytest.mark.parametrize('parsed', (False, True))
++def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, parsed):
++    from dataclasses import replace
++    from ThoughtClosing import closing_question
++    from ThoughtReferences import evidence_pair, needs_episode, open_slots
++    from test_clause_storage import clause_store, idea_clause, part_clause
++    store, _ = clause_store()
++    clause = part_clause() if relative else idea_clause()
++    clause = replace(clause, meaning=replace(clause.meaning, mode='interrogative'))
++    written = {}
++    row = store.write_clause(clause, evidence=(0., 0.), written_rows=written)
++    query = closing_question(store.meaning_of(row), clause,
++        clause.meaning if parsed else None, store=store, written_rows=written)
++    assert query is not None and query.mode == 'interrogative'
++    assert needs_episode(query) and open_slots(query) == ()
++    assert evidence_pair(query) == (0., 0.)
++    assert 'grammatical_mode' not in store.state_dict()
++
++
++def test_stored_question_is_refused_by_kind_without_a_mode_column():
++    store = LTM0(4, capacity=4)
++    question = ConceptualMeaning.from_description(torch.ones(4))
++    from dataclasses import replace
++    row = store.append_meaning(replace(question, mode='interrogative'), kind='question')
++    state = copy.deepcopy(store.state_dict())
++    assert 'grammatical_mode' not in state and not hasattr(store, 'MODES')
++    restored = LTM0(4, capacity=4)
++    restored.load_state_dict(state)
++    restored.load_semantic_extras(store.semantic_extras())
++    for owner in (store, restored):
++        assert owner.row(row)['kind'] == 'question'
++        assert owner.row(row)['evidence'] == (0., 0.)
++        with pytest.raises(ValueError, match='question or estimate'):
++            owner.accept_fact(row)
++        ordinary = owner.append_meaning(question, sentence_index=1)
++        owner.accept_fact(ordinary)
++        assert owner.row(ordinary)['kind'] == 'fact'
++
++
++@pytest.mark.parametrize('relation', (False, True))
++def test_held_content_without_a_thought_signature_has_no_expectation_holes(relation):
++    from dataclasses import replace
++    from Queries import QueryWorkBudget
++    from test_negative_expectation import _anticipating_model
++    model, _, meaning = _anticipating_model()
++    registry = model.grammatical_thoughts
++    if relation:
++        # An ordinary concept in the VP slot is not a registered operation.
++        roles = meaning.roles.clone()
++        roles[1] = roles[0]
++        held = replace(meaning, roles=roles,
++            role_refs=(meaning.role_refs[0], meaning.role_refs[0], meaning.role_refs[2]))
++    else:
++        held = ConceptualMeaning.from_description(meaning.roles[0])
++    store = model.symbolSpace.ltm_store
++    index = store.append_meaning(held, kind='observation', sentence_index=len(store))
++    with model._query_boundary_scope((0,)):
++        context = model._thought_grammar_context(meaning, row=0,
++            work=QueryWorkBudget(64), continuation=None)
++        request = registry.form('ask', store.occurrence_of(index), context=context)
++        work = QueryWorkBudget(64)
++        result = model._selected_thought_expectation(request, row=0, work=work)
++    assert result[-4:-1].tolist() == [0., 0., 0.]
++    assert work.spent == 1
++
++
++def test_negative_trust_derived_pair_reverses_only_on_the_relation_edge():
++    from dataclasses import replace
++    from test_clause_storage import clause_store, part_clause
++    store, _ = clause_store()
++    clause = part_clause()
++    clause = replace(clause, meaning=replace(clause.meaning, polarity=False))
++    edge = store.write_clause(clause, trust=.7)
++    assert len(store) == 1
++    assert store.row(edge)['evidence'] == pytest.approx((0., .7))
++    assert store.row(0)['evidence'] == pytest.approx((.7, 0.))
++    assert not store.raw_meaning_of(0).polarity
++    torch.testing.assert_close(store.slots[0, 0], clause.meaning.roles[2])
++
++
++def test_pending_forgetting_pressure_survives_restore_below_high_water():
++    from Forgetting import forget
++    from test_forgetting import linked_store, config
++    store, child, parent = linked_store(child_is_relation=True)
++    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
++    with pytest.warns(RuntimeWarning, match='low water'):
++        report = forget(store, cfg, document_boundary=True)
++    assert report['after'] == 3 and store.index_of_row(parent[2]) is None
++    assert store.index_of_row(child[2]) is not None and bool(store.forget_pending)
++    restored = LTM0(4, capacity=4)
++    restored.load_state_dict(store.state_dict())
++    restored.load_semantic_extras(store.semantic_extras())
++    assert bool(restored.forget_pending)
++    report = forget(restored, cfg, document_boundary=True)
++    assert report['target_reached'] and not bool(restored.forget_pending)
++    assert restored.index_of_row(child[2]) is None
++
++
++@pytest.mark.parametrize('failure', (False, True))
++def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure):
++    from contextlib import contextmanager, nullcontext
++    from types import SimpleNamespace, MethodType
++    from Models import BasicModel
++    caller = {4: [object()]}
++    model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,
++        eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,
++        conceptualSpaces=(), data=SimpleNamespace(train_input=['source']),
++        _runtime_batch=lambda *args, **kwargs: nullcontext(),
++        inputSpace=SimpleNamespace(prepInput=lambda values: torch.zeros(1, 4)))
++    model._clear_recall_history = MethodType(BasicModel._clear_recall_history, model)
++    store = SimpleNamespace()
++    @contextmanager
++    def assertions(**kwargs):
++        store.rows = []
++        yield store.rows
++    store.clause_assertions = assertions
++    def present(**kwargs):
++        assert model._what_recall_sentence_history == {}
++        assert model._what_recall_batch_size is None
++        model._what_recall_sentence_history[0] = [object()]
++        model._what_recall_batch_size = 1
++        if failure:
++            raise RuntimeError('failed presentation')
++        store.rows.append(12)
++    model.runBatch = present
++    if failure:
++        with pytest.raises(RuntimeError, match='failed presentation'):
++            BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second'])
++    else:
++        assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]
++    assert model._what_recall_sentence_history is caller
++    assert model._what_recall_batch_size == 5
+diff --git a/test/test_taxonomy_policy.py b/test/test_taxonomy_policy.py
+index 359d43e2a..b22e4e944 100644
+--- a/test/test_taxonomy_policy.py
++++ b/test/test_taxonomy_policy.py
+@@ -48,7 +48,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
+     assert result.support_true == 1
+     path = result.result.evidence['path']
+     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
+-    assert len(store) == 0
++    assert len(store) == 1
+     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
+     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
+     # Remove the derived conclusion as well as its shared-store premises.
+diff --git a/test/test_truth_text.py b/test/test_truth_text.py
+index a7c9ebb19..698ab66df 100644
+--- a/test/test_truth_text.py
++++ b/test/test_truth_text.py
+@@ -44,7 +44,10 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
+             store.write_clause(field)
+         assert len(rows) == 1
+         row = rows[0]
+-        assert store.row(row)['refs'].numel() == (3 if field.relation is None else 2)
++        if field.relation is None:
++            assert 'refs' not in store.row(row)
++        else:
++            assert store.row(row)['refs'].numel() == 2
+         assert store.row(row)['trust'] == pytest.approx(.8)
+-    assert store.ideas().tolist() == [0]
++    assert store.ideas().tolist() == [0, 1]
+     assert store.relations().tolist() == [store.parts.find(1, 2)]

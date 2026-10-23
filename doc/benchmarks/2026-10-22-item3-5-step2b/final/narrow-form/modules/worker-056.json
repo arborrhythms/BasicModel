@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+    "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[bindings]",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[scope]",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[role_refs]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified]",
+    "test/test_existence_metadata.py::test_question_cannot_be_written_as_accepted_fact",
+    "test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset",
+    "test/test_existence_metadata.py::test_repeated_evidence_does_not_inflate_partial_support",
+    "test/test_existence_metadata.py::test_live_description_owns_values_but_fact_storage_detaches",
+    "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1]"
+  ],
+  "completed": [
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+    "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+    "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[bindings]",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[scope]",
+    "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[role_refs]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]",
+    "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified]",
+    "test/test_existence_metadata.py::test_question_cannot_be_written_as_accepted_fact",
+    "test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset",
+    "test/test_existence_metadata.py::test_repeated_evidence_does_not_inflate_partial_support",
+    "test/test_existence_metadata.py::test_live_description_owns_values_but_fact_storage_detaches",
+    "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-cat-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.028165291994810104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[pending-tree1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009780999971553683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-cat-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007941583171486855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_actual_observation_writers_keep_roles_without_asserting_world_facts[packed-tree1-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009148166049271822,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012344999704509974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[bindings]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005937500391155481,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[scope]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000602042069658637,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[role_refs]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006917919963598251,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[question-interrogative]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004407919477671385,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[estimate-assertive]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004573750775307417,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_unaccepted_records_cannot_certify_their_own_referents[observation-unspecified]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00037820800207555294,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_question_cannot_be_written_as_accepted_fact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025029201060533524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001768541056662798,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_repeated_evidence_does_not_inflate_partial_support",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012471671216189861,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_live_description_owns_values_but_fact_storage_detaches",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010580208152532578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021637510508298874,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

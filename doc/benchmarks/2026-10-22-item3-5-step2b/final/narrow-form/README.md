@@ -5,6 +5,14 @@ Work stays on main. The [full review-repair receipt](../review-repair/README.md)
 records the storage implementation and earlier attempts. All failed runs,
 withdrawn sources and reviews remain retained. Nothing is promoted.
 
+## Withdrawn after the added consumer gates
+
+Frozen `85da7c14d` completes 1,142 passes, nine existing skips and two
+echoic-decoder failures. Their captured replays and diagnosis are retained
+here. §66 corrects only the invalid-domain fixture operands, keeping every
+assertion. The next [receipt](../decoder-domain/README.md) uses a new hash
+and new gates; none of this source's results is promoted.
+
 ## N1: narrow word-form repair
 
 [Claude's HOLD on `867452a79`](../word-form/claude-review.md) accepts B1–B3,
@@ -136,7 +144,8 @@ receipt. Compressed captures retain original byte hashes.
 
 ## Gates, review and publication
 
-Freeze and run all three scoped groups on one new hash: the eight
+Frozen source: `85da7c14d8f06384afc38c63f4e8eea029bdf3d0`.
+Run all three scoped groups on that hash: the eight
 regression files, the complete eight-file native set and 76 module files.
 This includes the four direct decoder consumers Claude named in N1:
 `radix_layer_reverse`, `active_decode_candidates`, `echoic_decoder`, and

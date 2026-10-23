@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_open_question_and_nested_what_spare_the_same_role",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

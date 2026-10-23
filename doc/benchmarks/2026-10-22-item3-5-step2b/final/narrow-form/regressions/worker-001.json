@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+    "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+    "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+    "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[False]",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[True]",
+    "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token"
+  ],
+  "completed": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+    "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+    "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+    "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[False]",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[True]",
+    "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009512124815955758,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011171209160238504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010917125036939979,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010313374921679497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004537999862805009,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01864137500524521,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011518750106915832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006828333018347621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011731541017070413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.2857683338224888,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005558083998039365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0050823751371353865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005468457937240601,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008701999904587865,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009599249809980392,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01238350011408329,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

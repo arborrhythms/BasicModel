@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+    "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+    "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "completed": [
+    "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+    "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+    "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+    "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+    "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+    "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+    "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+    "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+    "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+    "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+    "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+    "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+    "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01658112509176135,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0029546250589191914,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002496458124369383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_row_compaction_preserves_each_order_and_pole",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028334581293165684,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_embedded_identification_does_not_grant_source_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002505917102098465,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_open_reading_keeps_both_poles_and_its_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011940750060603023,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_index_reading_reads_the_stored_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022322088479995728,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005861250683665276,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_old_scalar_checkpoint_does_not_invent_evidence_or_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023467091377824545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003123751375824213,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002252416918054223,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002692792098969221,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identification_evidence.py::test_native_sentence_carries_paired_identification_to_its_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.7003413748461753,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

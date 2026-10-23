@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_raises_with_and_without_a_store",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_retired_prediction_aliases_point_to_global_expectation",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+    "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+    "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys"
+  ],
+  "completed": [
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_raises_with_and_without_a_store",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+    "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_retired_prediction_aliases_point_to_global_expectation",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+    "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+    "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+    "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_quantize_raises_with_and_without_a_store",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0011720829643309116,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_query_idea_and_relation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016071208054199815,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestGrammarOps::test_retired_prediction_aliases_point_to_global_expectation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014691590331494808,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_chain_trace_rendered",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002788916928693652,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_direct_trace_rendered",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018060831353068352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00045766704715788364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_world_refutation_does_not_establish_taxonomic_falsehood",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038583320565521717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0018707080744206905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_truth_grounded_reasoning.py::TestSoftRead::test_where_read_grounds_in_real_keys",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010697499383240938,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

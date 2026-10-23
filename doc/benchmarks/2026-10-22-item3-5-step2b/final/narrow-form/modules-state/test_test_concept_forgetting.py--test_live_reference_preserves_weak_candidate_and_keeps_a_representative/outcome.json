@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

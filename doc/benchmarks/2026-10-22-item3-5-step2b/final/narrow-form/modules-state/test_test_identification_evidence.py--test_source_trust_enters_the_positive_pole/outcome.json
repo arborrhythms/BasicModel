@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identification_evidence.py::test_source_trust_enters_the_positive_pole",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

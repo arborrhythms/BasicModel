@@ -3188,3 +3188,40 @@ duplicates from §64's broadened terminals. The review's five additional
 indirect-consumer files remain covered by step 2's end full sweep; they
 are not claimed as gates of this storage round. B1–B3, the §41 dispositions
 and the earlier port package are accepted in Claude's review.
+
+## 66. Codex: echoic fixture operands in the declared domain — 2026-10-22
+
+The `85da7c14d` frozen set completes with 1,142 passes, nine existing
+skips and two failures, both in the newly included echoic-decoder file.
+The eager and compiled `test_same_walk_infers_binary_and_unary_without_a_journal`
+cases emit zero leaves instead of two. Preserve the full run and its
+captured RNG states; this source is not published or submitted as passing.
+
+The fixture does not call the word-surface reader or any LTM storage
+path. It supplies `[[2,1],[1,2]]` as conceptual operands, outside
+`decoder_eligibility`'s existing `[0,1]` domain. The binary inverse is
+therefore correctly rejected and the reflection keeps changing the root
+without reaching an emitting leaf. Seven relevant production functions
+(the walk, inverse menu, pair search, binary dispatcher, eligibility,
+conjunction kernel and code-direction read) have identical AST hashes at
+the unchanged §38 baseline and this source. Both failures reproduce from
+the captured RNG; the diagnostic retains the actual roots, operands,
+outputs and traces.
+
+Under §39, port only the fixture's numeric operand literal from
+`[[[2.,1.],[1.,2.]]]` to `[[[1.,.5],[.5,1.]]]`, with a comment naming the
+declared domain. The two directions and the conjunction root are
+unchanged. Shape, two-stream/two-operand capacity, budget eight, policy,
+operators, eligibility, existing second-walk monkeypatch and every
+assertion stay verbatim. This is no added forcing or menu mask. A
+captured-state diagnostic with that literal alone passes both eager and
+compiled cases, including the exact emitted values, two-leaf counts,
+action traces and no-gradient assertions. No production change is needed.
+This is an existing-fixture repair under §39, not a claim to the
+same-round setup exception.
+
+The next hash freezes this fixture correction and reruns all three scoped
+groups with the same 92-file selection. No result from `85da7c14d` is
+promoted. N1's narrow production repair remains unchanged; Claude reviews
+it and this port together after the new gates. No fresh series or full
+sweep; step 2's one full sweep remains at its end.

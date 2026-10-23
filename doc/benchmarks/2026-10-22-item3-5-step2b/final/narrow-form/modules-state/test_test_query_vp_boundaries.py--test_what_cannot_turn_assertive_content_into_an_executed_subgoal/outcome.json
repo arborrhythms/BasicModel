@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

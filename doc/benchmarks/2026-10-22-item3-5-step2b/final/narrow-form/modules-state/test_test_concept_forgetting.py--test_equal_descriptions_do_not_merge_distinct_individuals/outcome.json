@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
