@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_work_boundaries.py::test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

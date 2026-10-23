@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexical_reference_orders.py::test_order_zero_reference_agrees_before_and_after_admission[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

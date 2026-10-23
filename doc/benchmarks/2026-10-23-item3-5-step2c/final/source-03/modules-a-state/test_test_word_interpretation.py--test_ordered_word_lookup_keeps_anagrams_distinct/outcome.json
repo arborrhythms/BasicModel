@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_interpretation.py::test_ordered_word_lookup_keeps_anagrams_distinct",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

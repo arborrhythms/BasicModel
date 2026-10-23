@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammatical_query_vps.py::test_open_taxonomy_roles_use_the_same_vp_without_fabricating_an_operand",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

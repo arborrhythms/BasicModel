@@ -12829,6 +12829,16 @@ class BasicModel(BaseModel):
             source_orders = reference_columns[0][1]
             selected_leaf_orders = (None if source_orders is None else
                                    source_orders[b].index_select(0, pos.to(source_orders.device)))
+            identity_leaves = None if identity is None else pos + 1 + (
+                identity[0].shape[1] - identity[4].shape[1] - rows.shape[1])
+            if identity_leaves is not None:
+                # A provisional leaf origin carries the order-1 stamp that
+                # actually entered composition, after symbolic promotion.
+                # The inventory slab can still hold the earlier word order.
+                provisional = identity[3][b, identity_leaves - 1, 0] == 4
+                if selected_leaf_orders is None:
+                    selected_leaf_orders = torch.full_like(identity_leaves, -1)
+                selected_leaf_orders = torch.where(provisional, 1, selected_leaf_orders)
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
@@ -12848,9 +12858,10 @@ class BasicModel(BaseModel):
                           self.inputSpace._ar_word_concept_ids[b].index_select(0, pos.to(self.inputSpace._ar_word_concept_ids.device))),
                 concept_ids=selected_ids, reference_ids=reference_ids,
                 reference_orders=reference_orders, lexical_forms=selected_forms,
+                leaf_orders=selected_leaf_orders,
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value, _ in reference_columns
-                   if torch.is_tensor(value)},
+                   if name != 'leaf_orders' and torch.is_tensor(value)},
                 operation_values=(None if journal is None else
                     journal[b, columns[b, :L].clamp_min(0)].reshape(L, 3, leaf_slab.shape[-1])),
                 operation_refs=(None if addresses is None else
@@ -12863,8 +12874,7 @@ class BasicModel(BaseModel):
                 identity_origins=None if identity is None else identity[3][b],
                 identity_values=None if identity is None else identity[0][b],
                 identity_actions=None if identity is None else identity[4][b, columns[b, :L].clamp_min(0)],
-                identity_leaves=None if identity is None else pos + 1 + (
-                    identity[0].shape[1] - identity[4].shape[1] - rows.shape[1]),
+                identity_leaves=identity_leaves,
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),

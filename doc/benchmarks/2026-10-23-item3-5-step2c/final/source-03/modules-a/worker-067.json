@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+    "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+    "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+    "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+    "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+    "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+    "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+    "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+    "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+    "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+    "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+    "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner"
+  ],
+  "completed": [
+    "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+    "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+    "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+    "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+    "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+    "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+    "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+    "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+    "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+    "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+    "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+    "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+    "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+    "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+    "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020225292071700096,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_catalog_refinement_preserves_selected_polarity_and_semantic_metadata",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006908000214025378,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_boundary_query_records_one_episode_and_its_actual_work",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.017085916129872203,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_history_retains_the_typed_checked_result_through_restore",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01687554200179875,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001183166867122054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_what_subgoal_descends_executes_returns_and_causally_carries_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02921399986371398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006081542000174522,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_compose_program_enters_normal_controller_before_legacy_thinking",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020468999864533544,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_completed_unary_concept_program_enters_the_normal_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012492417125031352,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023454624926671386,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012394959107041359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_resolution_releases_completed_eval_episode",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.026167958974838257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015849124873057008,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007060667034238577,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_normal_boundary_realizes_the_controller_selected_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009372625034302473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_normal_thought_controller.py::test_selected_program_precedes_the_legacy_surface_reasoner",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01645133411511779,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

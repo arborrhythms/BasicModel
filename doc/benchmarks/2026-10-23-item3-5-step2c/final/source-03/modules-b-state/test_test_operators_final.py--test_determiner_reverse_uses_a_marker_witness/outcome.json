@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final.py::test_determiner_reverse_uses_a_marker_witness",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

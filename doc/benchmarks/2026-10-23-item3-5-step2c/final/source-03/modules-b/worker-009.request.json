@@ -1,0 +1,7 @@
+{
+  "selectors": [
+    "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[scope]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-03/modules-b/worker-009.recycle.json"
+}

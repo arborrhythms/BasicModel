@@ -1,0 +1,126 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]"
+  ],
+  "completed": [
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+    "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+    "test/test_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+    "test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+    "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016487790970131755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[reference-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011830416973680258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008926333859562874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_closing_and_registry_share_predicate[point-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011279250029474497,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_registry_allocates_no_inventory_rows_for_part_or_implies",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006937500089406967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007755582919344306,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012438708916306496,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[False-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011906416853889823,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-part]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011958792107179761,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_predicate_identity.py::test_first_three_slot_predicate_occurrence[True-implies]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012655457947403193,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_review.py::test_temperature_and_forced_mask_do_not_change_model_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

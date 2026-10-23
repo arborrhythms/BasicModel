@@ -7,7 +7,7 @@ Item 3.0 has not been reached. This is mechanism evidence, not a learning
 claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)
-§§73–81 records the code review, decisions and each development repair under
+§§73–82 records the code review, decisions and each development repair under
 §39. The published base is BasicModel `148953f9b` (identity source
 `65ab7fbe9`, Claude LAND in identity §34), WikiOracle `175c101`.
 [Publication record](publication-identity.json). The required identity
@@ -54,7 +54,9 @@ receipt sentence was added; no further identity gates ran.
   word with one DEF resolves to that object for role evidence. An ambiguous
   unavailable lexical reading supplies no invented role evidence.
 
-The derivation, its readers, close-time minting, three-slot rows, chooser,
+Capture keeps the actual provisional leaf stamp that entered composition,
+before reference resolution; inventory stamps cannot erase an introduction.
+The derivation, its stored readers, close-time minting, three-slot rows, chooser,
 objective and keep rule stay. The new LTM0/LTM1 layout, meaning/form kernel
 change and shared STM chunks remain item 3. No new forcing, answer targets,
 seat reservation, menu masking, fixture resizing or MTM-read detach.
@@ -62,7 +64,7 @@ seat reservation, menu masking, fixture resizing or MTM-read detach.
 ## Exact test-port ledger
 
 1. `test_medium_term_memory.unchanged` gains an optional `promoted_rows`
-   argument. Its exact tensor comparison still covers all LTM/Part tensors
+   argument. Its exact tensor comparison still covers the existing LTM/Part snapshot tensors
    and every bank coordinate outside explicitly newly seated promotion
    rows. Its default compares the entire bank as before.
 2. `test_medium_term_memory.keep` records the pre-commit seat set and calls
@@ -84,7 +86,7 @@ seat reservation, menu masking, fixture resizing or MTM-read detach.
    and compiled-expectation fixtures keep every assertion. No timestamp
    inventory port is needed after the production refresh repair.
 
-No existing test is retired. `final/source-03/test-ports.patch` and
+No existing test is retired. `final/source-04/test-ports.patch` and
 `assertion-audit.json` give the exact changes, including all added tests.
 
 ## Retained development runs
@@ -111,6 +113,10 @@ one. None of these runs substitutes for frozen-source gates.
 | capacity-03 | 1 | 0 | 0 | Original driver assertions pass for 1/2/3/8 streams; all paired closes and private generator states retained. |
 | event-retention-01 | 0 | 0 | 2 | Capacity and expiry incorrectly remove another retained token's event while its row survives. |
 | event-retention-02 | 80 | 0 | 0 | Corrected ownership, MTM, consolidation and identity contracts; row reclamation still removes witnesses. |
+| interleave-01 | 0 | 0 | 1 | Exact captured program replay: inventory order 0 replaces the actual provisional order-1 stamp; second preview loses its introduction. |
+| capture-stamp-01 | 0 | 0 | 1 | Deterministic capture regression, before repair. |
+| interleave-02 | 1 | 0 | 0 | Exact original draw passes after preserving the carried stamp; no existing assertion change. |
+| capture-stamp-02 | 100 | 0 | 0 | Journal, identity, live-reference and consolidation contracts. |
 
 ## Frozen evidence and review
 
@@ -127,7 +133,12 @@ and is not claimed as an exact presentation replay.
 finds the two failures recorded in §81, so this source is superseded.
 No result from it is promoted.
 
-`final/source-03` holds the final source audit and selections: the prior scoped
+`final/source-03` retains `e4f61bd5b`: 1,679 passed, twelve existing skips,
+one failure. Its [diagnosis](final/source-03/diagnosis.json) and exact replay
+show the lost provisional stamp. The new deterministic regression failed
+before repair. No result from this source is promoted.
+
+`final/source-04` holds the final source audit and selections: the prior scoped
 groups, both decomposition arms at their original snapshots/seeds, and
 new/direct changed-module files. Gates are run once by source. Every
 failure is retained and diagnosed before source changes. No full sweep

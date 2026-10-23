@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty"
+  ],
+  "completed": [
+    "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+    "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+    "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+    "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+    "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+    "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+    "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+    "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+    "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+    "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+    "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00031666597351431847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_geometric_decay",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001265411265194416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015129102393984795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012029102072119713,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_consistent_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07167737488634884,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_contradictory_truths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.058862874982878566,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05578733398579061,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_isTrue_ungrounded_returns_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.057554625207558274,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.056070958031341434,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestGroundAndIsTrue::test_unmatched_activation_not_grounded",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.058197000063955784,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_agreeing_proposition_low_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027762516401708126,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_contradicting_proposition_positive_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002845001872628927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002478749956935644,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012864417163655162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_truth_loss_weight_zero_no_effect",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.05890679080039263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030800001695752144,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

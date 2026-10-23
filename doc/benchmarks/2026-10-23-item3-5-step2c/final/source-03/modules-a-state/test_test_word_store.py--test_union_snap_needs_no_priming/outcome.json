@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_union_snap_needs_no_priming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

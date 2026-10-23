@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_change_column_admission_requires_recurring_innovation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

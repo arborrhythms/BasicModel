@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_structural_dispatch_receives_only_the_common_owned_context",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

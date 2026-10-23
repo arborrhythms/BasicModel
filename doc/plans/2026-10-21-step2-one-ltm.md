@@ -3975,3 +3975,31 @@ The earlier green pass remains retained under its source; no result is
 promoted to the final corrected hash. All scoped groups run on that hash
 before mediated review. This closes the event-ownership boundary requested
 by the identity review without changing the bind or keep rules.
+
+## 82. Keep the leaf stamp that entered composition — Codex, 2026-10-23
+
+Source `e4f61bd5b` completes all 1,692 scoped cases: 1,679 passed, twelve
+existing skips and one shared-owner interleave failure. The exact captured
+process RNG reproduces every captured program in `interleave-01`; this
+fixture has no private corpus generator. The first sentence ties at R =
+1.5796749592, A = 0 and keeps greedy. The second sentence fails in its
+exploit preview before a complete cost or keep; that keep does not exist.
+The probe retains the earlier pair and the failing sites/identity records.
+
+The second word entered composition at order 1 after symbolic promotion,
+recorded by its provisional leaf origin (tag 4). `_program_entries` instead
+copies the inventory slab's earlier order 0. The journal therefore omits
+its introduction, although the chosen bind names it. Preserve the actual
+order-1 stamp from that origin before resolving/capturing references; keep
+other stamps and every content/reference unchanged. This is capture of the
+kept parse, not an order-conditioned grammar choice, a second binder, or
+the FutureWork redesign of root positions. The loud missing-introduction
+check stays. Stored derivation readers do not change.
+
+`capture-stamp-01` fails the new deterministic stamp check before repair.
+The same assertion is now in `test_sentence_journal`; no existing assertion
+changes. `interleave-02` passes the original test on its captured draw, and
+`capture-stamp-02` passes all 100 journal, identity, live-reference and
+consolidation cases. All failures and probes remain. The corrected frozen
+source receives the scoped groups anew; source-03 results are not promoted.
+No explicit decision of Alec's is reversed.

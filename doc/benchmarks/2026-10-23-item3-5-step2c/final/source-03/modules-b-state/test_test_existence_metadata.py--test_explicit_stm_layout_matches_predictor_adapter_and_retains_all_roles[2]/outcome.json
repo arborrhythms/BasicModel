@@ -1,0 +1,6 @@
+{
+  "node": "test/test_existence_metadata.py::test_explicit_stm_layout_matches_predictor_adapter_and_retains_all_roles[2]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

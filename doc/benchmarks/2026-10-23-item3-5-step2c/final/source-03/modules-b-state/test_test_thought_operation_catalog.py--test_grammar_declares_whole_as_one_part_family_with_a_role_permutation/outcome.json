@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_grammar_declares_whole_as_one_part_family_with_a_role_permutation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

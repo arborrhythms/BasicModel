@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestPostureAndTrace::test_geometry_and_world_refutation_do_not_establish_taxonomic_conflict",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

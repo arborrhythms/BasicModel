@@ -1,0 +1,139 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:0]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:-1]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:1.5]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[mixed]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[parallel]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[serial]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:2]",
+    "test/test_interleave_schedule.py::test_schedule_module_is_retired",
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]",
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]"
+  ],
+  "completed": [
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:0]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:-1]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:1.5]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[mixed]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[parallel]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[serial]",
+    "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:2]",
+    "test/test_interleave_schedule.py::test_schedule_module_is_retired",
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]",
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]"
+  ],
+  "slow_selected": [
+    "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017341598868370056,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.795906953513622e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010000006295740604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:1.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.770900942385197e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[mixed]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.583309292793274e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[parallel]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.325006976723671e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[serial]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.325006976723671e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_rejected_for_all_old_values[interleave:2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.874999523162842e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_schedule_module_is_retired",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019712490029633045,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 1.8405686249025166,
+      "message": "test/test_interleave_schedule.py:39: in test_one_native_read_retains_shared_owner\n    model.runBatch(train=training,optimizer=opt,batchNum=step,batchSize=1,\nbin/Models.py:13593: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13749: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14125: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8802: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10178: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8487: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23932: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17178: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22484: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22053: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21033: in _run_sentence_word_bricks\n    (chosen, reconstruction), costs, wins = sentence_pair(cache, compose, score,\nbin/SentenceCompose.py:143: in sentence_pair\n    cost_a, state_a = score(exploit, False)\n                      ^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20940: in score\n    cost, reconstruction, observation, pending = self._sentence_path_cost(path, sid, present)\n                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19866: in _sentence_path_cost\n    observation = self._sentence_observation(state, sid, active)\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:19655: in _sentence_observation\n    plans.append(resolver.preview(clause,\ndoc/benchmarks/2026-10-23-item3-5-step2c/development/identity_capture.py:78: in close\n    result = preview(resolver, *args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:833: in preview\n    raise RuntimeError('a compose bind names an unwritten introduction')\nE   RuntimeError: a compose bind names an unwritten introduction",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.933961167000234,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 1 (\u0394=3.097s)\r\nbatch = 2 (\u0394=1.939s)\r\nbatch = 3 (\u0394=3.142s)\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

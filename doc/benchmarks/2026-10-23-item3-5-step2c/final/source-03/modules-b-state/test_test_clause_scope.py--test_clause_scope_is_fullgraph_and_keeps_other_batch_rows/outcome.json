@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_scope.py::test_clause_scope_is_fullgraph_and_keeps_other_batch_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

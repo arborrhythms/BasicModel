@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_repair.py::test_multiple_roles_share_the_imported_child_without_reindexing_goal",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

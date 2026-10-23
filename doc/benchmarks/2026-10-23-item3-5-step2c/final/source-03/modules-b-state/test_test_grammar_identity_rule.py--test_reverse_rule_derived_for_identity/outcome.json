@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_identity_rule.py::test_reverse_rule_derived_for_identity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

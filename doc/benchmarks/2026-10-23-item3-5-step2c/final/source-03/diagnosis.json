@@ -1,0 +1,287 @@
+{
+  "source": "e4f61bd5b2ba4315f2e753119106c8a22fd17696",
+  "counts": {
+    "passed": 1679,
+    "skipped": 12,
+    "failed": 1
+  },
+  "nodeid": "test/test_interleave_schedule.py::test_one_native_read_retains_shared_owner[False]",
+  "capture": "final/source-03/modules-b-state/test_test_interleave_schedule.py--test_one_native_read_retains_shared_owner[False]",
+  "replay": "development/interleave-01",
+  "exact_all_captured_programs_equal": true,
+  "private_corpus_rng": "not used by this test",
+  "diagnosis": "The provisional identity origin records order 1 after symbolic promotion; capture takes inventory order 0. The journal loses the second word introduction, then preview rejects the selected compose bind to its handle.",
+  "failure_keep": "The second sentence fails during exploit preview, before complete cost or keep. No keep decision exists for it.",
+  "preceding_keep": [
+    {
+      "costs": [
+        [
+          1.5796749591827393,
+          1.5796749591827393
+        ]
+      ],
+      "keep_costs": [
+        [
+          1.5796749591827393,
+          1.5796749591827393
+        ]
+      ],
+      "components": [
+        [
+          [
+            1.5796749591827393,
+            0.0,
+            0.0
+          ],
+          [
+            1.5796749591827393,
+            0.0,
+            0.0
+          ]
+        ]
+      ],
+      "delta": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "wins": [
+        false
+      ],
+      "deciding": [
+        "tie:greedy"
+      ],
+      "keep_decision": [
+        "tie:greedy"
+      ],
+      "advantage": [
+        0.0
+      ],
+      "advantage_sign": [
+        0.0
+      ],
+      "policy_against_keep": [
+        false
+      ],
+      "answer_against_keep": [
+        false
+      ],
+      "sentence": 0,
+      "departure": null,
+      "actions": [
+        [
+          [
+            27,
+            27,
+            27,
+            0,
+            27,
+            27,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            27,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ]
+        ]
+      ],
+      "narrowing_actions": [
+        [
+          [
+            3,
+            4,
+            1,
+            1,
+            7,
+            2,
+            8,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ]
+        ]
+      ],
+      "readers": [
+        null
+      ],
+      "bind_choices": [
+        [
+          []
+        ]
+      ]
+    }
+  ],
+  "probe": "development/interleave-01/interleave-probe/observations.json.gz",
+  "deterministic_regression_failure": "development/capture-stamp-01",
+  "repair": "Capture retains order 1 for an actual provisional leaf origin before lexical reference resolution; other stamps, values, references, choices and keep rule stay.",
+  "repaired_exact_replay": "development/interleave-02",
+  "focused_result": "development/capture-stamp-02: 100 passed",
+  "assertion_ports": [],
+  "retired_tests": [],
+  "superseded": true
+}

@@ -1,0 +1,10 @@
+[
+  {
+    "original": "initial-1.pt",
+    "compressed": "initial-1.pt.gz",
+    "bytes": 377655013,
+    "gzip_bytes": 379708,
+    "sha256": "b4e8ecd63977380b67244593cc8b48488fe26a0df8051a61b9b38a41a697d965",
+    "gzip_sha256": "1872905530957aa7b5448123bb04f18bd24298173b47aeb609ff488f35f9ddfe"
+  }
+]

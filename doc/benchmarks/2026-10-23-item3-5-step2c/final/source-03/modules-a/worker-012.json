@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+    "test/test_ternary_truth_store.py::TestSchema::test_relation_has_two_native_symbol_arguments",
+    "test/test_ternary_truth_store.py::TestSchema::test_unary_content_is_an_idea_and_supplies_no_part_pair",
+    "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_evidence_is_separate",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+    "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+    "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_raises",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+    "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+    "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts"
+  ],
+  "completed": [
+    "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+    "test/test_ternary_truth_store.py::TestSchema::test_relation_has_two_native_symbol_arguments",
+    "test/test_ternary_truth_store.py::TestSchema::test_unary_content_is_an_idea_and_supplies_no_part_pair",
+    "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_evidence_is_separate",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+    "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+    "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+    "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_raises",
+    "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+    "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+    "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+    "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01936604198999703,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_relation_has_two_native_symbol_arguments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030033329967409372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_unary_content_is_an_idea_and_supplies_no_part_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027572079561650753,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_evidence_is_separate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022635001223534346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_set_trust_overwrites",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020843329839408398,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022067499812692404,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestQueries::test_empty_queries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0017534580547362566,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestQueries::test_relations_and_ideas_filters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002652000170201063,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_full_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026806669775396585,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestCapacityAndWidth::test_width_conform",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024437918327748775,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestPersistence::test_reset_clears",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002383749932050705,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004837041953578591,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0023401249200105667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_clear_origin_compacts_survivors_in_place",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004003125010058284,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003776834113523364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0022460001055151224,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
