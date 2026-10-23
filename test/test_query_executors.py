@@ -154,3 +154,27 @@ def test_global_expectation_retains_all_roles_without_a_thought_operation():
     assert value.roles.shape==(3,layer.concept_dim) and value.presence_logits.shape==(3,)
     assert layer._inter_last_meaning[0] is marker
     assert 'arma' not in THOUGHT_EXECUTORS
+
+
+@pytest.mark.parametrize('reverse', (False, True))
+def test_query_returns_only_the_completed_direction_of_an_unresolved_equality(monkeypatch, reverse):
+    from Queries import ThoughtLTMCapability
+    from ThoughtReferences import bindings, question
+    from test_thought_binding import equality
+    name, unresolved = ('sym', 1), ('ltm', 'test', 2)
+    meaning = equality(name, unresolved)
+    meaning = replace(meaning, bindings=dict(bindings(meaning),
+        _unresolved_operands=((2, unresolved),)))
+    frame = dict(meaning=meaning, occurrence=('ltm', 'test', 3),
+                 kind='observation', evidence=(.8, 0.), match=1.)
+    monkeypatch.setattr(ThoughtLTMCapability, '_cued', lambda *args, **kwargs:
+        dict(value=(frame,), records_scanned=1, incomplete=()))
+    target = unresolved if reverse else name
+    pattern = question(equality(None, target), (('referent', 0),))
+    result = _context(_cs()).ltm.best_match(pattern, max_records=10, work=None)
+    assert result['records_scanned'] == 1
+    if reverse:
+        assert result['frames'] == (frame,) and result['support_true'] == .8
+    else:
+        assert result['frames'] == () and result['witnesses'] == ()
+        assert result['support_true'] == result['support_false'] == 0.

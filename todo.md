@@ -17,15 +17,14 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is implemented on main,
-with frozen `6da7938e6` completing its scoped pass (nine retained failures).
-The next frozen source includes the documented boundary/resolution repairs
-and fixture ports after Claude’s focused diagnosis; no prior result is promoted.
+**Current:** Item 3.5 line 2's identity threading is implemented on main.
+Source-07 `59b7c8b87` completed all scoped groups with 1,442 passes, twelve
+skips and one retained c/e failure. Claude's focused diagnosis and the
+repair are in the [spec's §§20–21](doc/plans/2026-10-23-identity-threading.md).
+Source-08 is prepared for the complete scoped pass and final Claude review.
 The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) lists
-every assertion port, fixture rewrite, failed attempt and withdrawn source.
-The [spec's §§5–19](doc/plans/2026-10-23-identity-threading.md) record the code
-review, alignment with the future LTM/STM layout and documented repairs
-under step-2 §39. Published storage-only 2b remains BasicModel `39272e7a6`,
+every assertion port, fixture rewrite and failed source. No earlier result
+is promoted. Published storage-only 2b remains BasicModel `39272e7a6`,
 WikiOracle `ade0399`; identity is not yet published.
 
 **Next is 2c** after identity lands, carrying the two R10 arrival notes,

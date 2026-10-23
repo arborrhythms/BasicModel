@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identification_evidence.py::test_native_word_reference_accepts_both_without_touching_its_signed_value",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

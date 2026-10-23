@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_section14.py::test_formation_provenance_is_not_a_chooser_input",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

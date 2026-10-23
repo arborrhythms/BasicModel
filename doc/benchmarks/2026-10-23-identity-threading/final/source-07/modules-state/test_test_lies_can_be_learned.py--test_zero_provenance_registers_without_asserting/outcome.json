@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lies_can_be_learned.py::test_zero_provenance_registers_without_asserting",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

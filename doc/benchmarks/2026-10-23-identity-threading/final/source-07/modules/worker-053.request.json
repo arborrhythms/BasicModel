@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_independent_components.py::test_greedy_support_stops_when_an_extra_column_worsens_remainder",
+    "test/test_independent_components.py::test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-07/modules/worker-053.recycle.json"
+}

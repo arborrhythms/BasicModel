@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

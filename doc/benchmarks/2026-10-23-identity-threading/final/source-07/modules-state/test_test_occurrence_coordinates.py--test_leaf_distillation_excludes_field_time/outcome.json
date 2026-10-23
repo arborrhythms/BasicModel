@@ -1,0 +1,6 @@
+{
+  "node": "test/test_occurrence_coordinates.py::test_leaf_distillation_excludes_field_time",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

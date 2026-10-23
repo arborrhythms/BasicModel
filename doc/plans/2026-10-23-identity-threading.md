@@ -179,6 +179,31 @@ is updated by a VP whose object is resolved; an unresolved object leaves
 the event as an open reference, which thought may fill, as a pending name
 is today.
 
+**MTM and concepts (Alec's question, 2026-10-23).** MTM writes nothing
+into a concept. An identity's current value is working state; its
+permanent record is the LTM0 occurrences the close writes, immutable, and
+the LTM1 membership edges (identity in kind). Promotion (2c, three
+distinct sentences) mints the identity as a concept whose content is the
+fold over those occurrences, rebuildable; a kind's content never changes
+from a member's state, only its extension does, by an edge. One current
+path contradicts this and yields to it: `IdentityRows.expose_form` and
+`absorb_form` write a named identity's codebook row as the union of its
+content and each kept bind's content during training. The identity line
+retires that write; the value lives in MTM until promotion.
+
+Indices: concepts are indexed by id in the shared symbol/concept index;
+`.where` is a band inside a symbol's percept vector, not an index; LTM0
+is keyed by occurrence address and stamped `.when`; STM frames hold
+occurrence addresses with their symbols and activations
+(`SituationAddress`). MTM keys are occurrence addresses, a token's kind
+is a concept id, and a native individual is a symbol id, so MTM resolves
+by address and id, never by `.where` or `.when`. MTM is populated only
+from STM at the close: an identity enters it through a mention in a
+frame, and bind's candidates are the frames, so a concept is bound only
+when a mention of it is in STM. A kind is referenced by id without being
+pulled into STM. Recall (`query()`) brings LTM entries into STM, and
+their identities re-enter MTM.
+
 **Lifetime.** `values` and `names` serialize with the pool in
 `ConceptualSpace`'s checkpoint extras (the resolver extra is version-only
 today); document and stream isolation follow the frames; reclamation of
@@ -966,3 +991,193 @@ present participant slots of a relative clause. `resolved-02` then passes
 all 102 cases with the same four skips; every R10 assertion stays verbatim.
 The failed capture remains retained. Source-07 will run the complete scoped
 selection, including both decomposition arms, with no earlier result promoted.
+
+
+## 20. Codex: retained c/e query failure on source-07 — 2026-10-23
+
+Frozen `59b7c8b87` passes all 85 regression tests. Its native set completes
+122 passes, seven prerequisite skips and one c/e failure at the unchanged
+line 348: the question must remain open. Both pending-premise orders pass
+with counts 0 bound/8 open and 0 bound/24 open. No source is changed while
+the other frozen groups finish.
+
+The full failure, semantic sidecar, MTM, both readings and keep costs are in
+`final/source-07`; `ce-probe.json` and `ce-memory-probe.json` are compact
+extracts, not replacement captures. Both trials tie R and A; keep is greedy.
+The question now retains its actual equality and only its direct requested
+referent is open. Query selects the other sentence's equality, then treats
+its fused operand occurrence as a complete answer, even though that
+operand's named child is pending. The child is open in MTM; its fused parent
+row has neither a derivation reference nor a semantic child reference.
+This is a mechanism failure, not a revised expected answer or a learning
+claim. A focused read-only Claude diagnosis examines the retained-storage
+boundary before the next repair. No assertion, forcing, objective or keep
+rule changes; the current hash remains frozen for all remaining gates.
+
+
+### Claude's diagnosis and the repair, same date
+
+The [actual read-only report](../benchmarks/2026-10-23-identity-threading/final/source-07/claude-ce-diagnosis/report.md)
+confirms the loss at `ClauseRows.write_clause`: an absolute child with an
+open descendant is not PartClosed, but its fused row has no remaining
+resolution information. This predates identity. The previous c/e pass
+queried the isolated word instead of the actual equality; the corrected
+direct-role question exposes it. Neither query's Part reader nor the keep
+selected a wrong interpretation.
+
+Record `_unresolved_operands` on the retained parent's existing semantic
+sidecar for a referenced child that is incomplete strictly below that
+child (`incomplete(child) and not pending(child)`). Each entry pairs the
+parent role with the occurrence reference already in that role. This is
+a write-once resolution annotation, not a new row, tensor, column, parse
+or identity. Direct named children keep their existing open-slot path.
+The old fused placeholder is never recomputed when its inner name later
+resolves, so it must not become a completed answer merely because time
+passes; re-evaluating retained expressions stays with the later design.
+
+`ThoughtBinding.integrate` refuses a marked operand as the final answer,
+while preserving the equality as a rewrite and permitting its unmarked
+reverse endpoint. The ordinary one-frame `ThoughtReferences.fill` uses
+the same answer boundary, preventing a non-equality bypass. Exclude the
+annotation from `semantic_metadata`, so it does not change chooser inputs.
+Tests cover write-time marking, resolved/direct-pending counterparts,
+sidecar round-trip, both equality directions, ordinary fill and identical
+metadata features. The c/e assertion and all other existing assertions
+stay verbatim. Claude identifies no reversal of §1; §39 permits this
+repair. Apply after the source-07 scoped run ends, then freeze and run every
+required gate again on the repaired source.
+
+
+## 21. Codex: repeated equality is not progress — 2026-10-23
+
+`unresolved-01` passes all 58 focused unit/reference cases but retains the
+c/e failure and keep probe. The new annotation is present on the equality;
+the first answer direction is correctly refused. A previous read of that
+same equality, however, lets `equivalent` reach the opposite endpoint and
+answer the still-free question with its own fixed side. This is the same
+backwards no-progress path the existing integration guard already rejects
+for a bound region. Both c/e trials still tie and keep greedy.
+
+`unresolved-02` reproduces exactly that defect by giving the new equality
+unit its prior result: eleven pass and the repeated/free case fails. Extend
+the existing guard to a free region when its source only matches through
+an equality path and the proposed answer is that region's fixed side.
+An explicitly reflexive direct witness remains permitted; a new test
+checks it. The valid reverse endpoint and all previous substitution proofs
+remain live. No assertion, query rank, chooser feature, objective or keep
+rule changes. This is another proof-validity repair under §39, not an
+alternative accepted answer. Every failed run stays in the receipt.
+
+## 5. Grounding: the psychological stores and Dharmakīrti (Claude, 2026-10-23, at Alec's request)
+
+**Three stores, three literatures.**
+
+- *STM as chunks.* Miller's seven plus or minus two (1956) and Cowan's
+  four (2001) are counts of chunks, not items, and a chunk is a bound
+  group; §72's eight shared chunks of ideas and relations is that
+  reading. Baddeley's episodic buffer (2000) is the shared set itself: a
+  limited store that binds information from the slave systems and from
+  long-term memory into integrated episodes, which is what a chunk
+  holding a recalled chain's head beside the open sentence's constituents
+  does. Ericsson and Kintsch's long-term working memory (1995) is recall
+  by cue: retrieval structures in LTM are reached from STM, and what they
+  return occupies working memory, which is `query()` loading a chain's
+  head into a chunk.
+- *MTM as object files and file cards.* Kahneman, Treisman and Gibbs
+  (1992) distinguish the object file, a temporary episodic record indexed
+  by spatiotemporal continuity and updated as the object changes, from
+  the type, the long-term recognition category. MTM is the object file:
+  keyed by its introducing occurrence, holding the current state, updated
+  by each event, with the kind as a separate reference. Pylyshyn's visual
+  indexes (1989, 2001) are the pointer-only version MTM had until §35;
+  the object-file literature is why it now holds content. In discourse
+  semantics the same object is Heim's file card (1982): one card per
+  discourse referent, written to as the discourse proceeds, which is a
+  name/value store with VP updates; Kamp's discourse referents (1981)
+  with their accessibility conditions are bind's candidate frames;
+  Recanati's mental files (2012) are the same thing for names. Situation
+  models (Zwaan and Radvansky 1998) track protagonists' states across
+  sentences and update them at events, which is identity threading;
+  event segmentation theory (Zacks et al. 2007) puts the update at the
+  event boundary, which is the close.
+- *LTM0 and LTM1 as episodic and semantic memory.* Tulving (1972):
+  episodic memory holds dated occurrences, semantic memory holds concepts
+  and their relations. LTM0 ideas with `.when` are episodic; the concept
+  index with LTM1's edges is semantic. Complementary learning systems
+  (McClelland, McNaughton and O'Reilly 1995) make consolidation a slow
+  extraction of structure from replayed episodes; promotion by recurrence,
+  three distinct sentences, is that extraction, and the minted concept's
+  content as the fold over its occurrences is the extracted structure.
+  Alec's episodic-memory note, several LTM0 entries per time, is Tulving's
+  episode proper.
+
+**Dharmakīrti.** The fit is close enough to use as a check on the design.
+
+- *Two objects of cognition.* The unique particular (svalakṣaṇa) is
+  momentary, located, causally efficacious and grasped directly by
+  perception without conceptual construction; the universal
+  (sāmānyalakṣaṇa) is a conceptual construction by exclusion (apoha) and
+  is what inference and language handle. An LTM0 idea, "an absolute truth
+  understood directly ... a single vector ... not necessary in any
+  codebook" (§71), is the particular; a concept in the index, with its
+  for and against lanes, is the universal, and the project's apoha reading
+  (Philosophy, "Apoha: attention excludes") already treats exclusion as
+  what forms it. Dharmakīrti's two truths, the ultimately real particular
+  and the conventionally real universal, are the project's two truths,
+  ideas and relations, in his vocabulary.
+- *Identity as a continuum.* On momentariness (kṣaṇikatva) nothing
+  persists; a continuing object is a continuum (santāna) of causally
+  linked moments, and its identity is imputed (prajñapti). An MTM token is
+  a santāna: its occurrences are the moments, its current value the
+  latest, its identity a designation that binding makes, which is
+  "identity is its occurrences" and Philosophy's uncollapsed model.
+- *Recognition and determination.* For Dharmakīrti, "this is that same
+  one" is a conceptual determination (adhyavasāya, niścaya) that follows
+  perception; it is a judgment, not a perception, and can be wrong. Bind
+  is that judgment: scored, with the dummy as the option to withhold it,
+  made at the noun phrase's determination, and revisable only as
+  re-identification, which is future work. "An object at its
+  determination" is his term as well as ours.
+- *Memory.* Memory (smṛti) is conceptual for Dharmakīrti, a construction
+  from traces, not a valid means of knowing the particular again. "If we
+  need the original sentence, reconstruct from the vector; it will not be
+  exact" (§30) is the same claim.
+
+References: Baddeley 2000, *Trends Cogn. Sci.* 4; Baddeley and Hitch
+1974; Cowan 2001, *Behav. Brain Sci.* 24; Ericsson and Kintsch 1995,
+*Psychol. Rev.* 102; Heim 1982, *The Semantics of Definite and Indefinite
+Noun Phrases*; Kahneman, Treisman and Gibbs 1992, *Cognitive Psychology*
+24; Kamp 1981, "A theory of truth and semantic representation";
+McClelland, McNaughton and O'Reilly 1995, *Psychol. Rev.* 102; Miller
+1956, *Psychol. Rev.* 63; Pylyshyn 2001, *Cognition* 80; Recanati 2012,
+*Mental Files*; Tulving 1972, in *Organization of Memory*; Zacks et al.
+2007, *Psychol. Bull.* 133; Zwaan and Radvansky 1998, *Psychol. Bull.*
+123. Dharmakīrti: *Nyāyabindu* I (perception, the two objects) and
+*Pramāṇavārttika*, Pratyakṣa chapter; Dunne 2004, *Foundations of
+Dharmakīrti's Philosophy*; Dreyfus 1997, *Recognizing Reality*; Siderits,
+Tillemans and Chakrabarti (eds.) 2011, *Apoha*; Arnold 2012, *Brains,
+Buddhas, and Believing*; Tillemans, "Dharmakīrti", *Stanford Encyclopedia
+of Philosophy*.
+
+
+`unresolved-03` passes 61 focused cases. The c/e question now correctly
+stays open with nothing minted, but the unchanged operation assertion
+finds a second query before conclude: retrieval still returns the marked
+frame as an answer witness before integration refuses it. Apply the same
+resolution check at `ThoughtLTMCapability.best_match`'s answer boundary.
+For a free equality side, the marked endpoint cannot supply the answer;
+its unmarked reverse endpoint remains usable when the query identifies
+the marked occurrence. Other queries retain their direct role alignment.
+This changes which retrieved evidence can answer a free role, not the
+operation/bind menus. Add both direction checks; retain the recorded scan
+count. No test assertion is ported. The failed run and keep probe remain.
+
+
+`unresolved-04` passes all 72 focused cases, including the c/e certificate
+with every original assertion. Source-07 is complete with 1,442 passes,
+twelve prerequisite/device skips and its one retained c/e failure.
+Source-08 runs the whole scoped selection again. The ten additional direct
+consumers of the changed thought readers join the module selection; the
+114 module files are partitioned into two independent process groups,
+each file run once on the same frozen source. This is still a scoped pass,
+not step 2's deferred full sweep. No previous source supplies evidence.

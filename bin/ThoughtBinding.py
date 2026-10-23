@@ -85,12 +85,18 @@ def integrate(goal, result, previous):
         meaning = frame['meaning']
         if not equality(meaning) or frame['evidence'][0] <= 0:
             continue
+        unresolved = dict(bindings(meaning).get('_unresolved_operands', ()))
         for source, answer in ((0, 2), (2, 0)):
+            if answer in unresolved:
+                continue
             found = equivalent(region, meaning.role_refs[source])
             if found is None or meaning.role_refs[answer] is None:
                 continue
-            if not free and meaning.role_refs[answer] == goal.role_refs[2-target]:
-                continue  # The defining premise read backwards makes no progress.
+            if (meaning.role_refs[answer] == goal.role_refs[2-target]
+                    and (not free or meaning.role_refs[source] != region)):
+                # Reusing a prior equality backwards cannot answer a free
+                # region with its own fixed side, or undo a derived binding.
+                continue
             proof, support = found
             witnesses = tuple(dict.fromkeys((*bindings(goal).get('_thought_witnesses', ()),
                                              *proof, frame['occurrence'])))

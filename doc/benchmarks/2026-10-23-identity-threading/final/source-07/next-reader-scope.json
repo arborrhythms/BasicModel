@@ -1,0 +1,12 @@
+[
+  "test/test_gradient_factorization.py",
+  "test/test_item4_step0.py",
+  "test/test_item6_2_repair.py",
+  "test/test_math_chain.py",
+  "test/test_math_chain_repair2.py",
+  "test/test_normal_thought_controller.py",
+  "test/test_query_work_boundaries.py",
+  "test/test_review11_contracts.py",
+  "test/test_thought_binding.py",
+  "test/test_thought_review.py"
+]

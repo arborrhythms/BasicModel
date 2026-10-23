@@ -103,3 +103,53 @@ def test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part(mo
     assert store.row(index)['kind'] == 'inference'
     assert store.meaning_of(index).role_refs == meaning.role_refs
     assert bindings(store.meaning_of(index))['_thought_witnesses'] == (('sym', a),)
+
+
+@pytest.mark.parametrize('reverse', (False, True))
+@pytest.mark.parametrize('repeated', (False, True))
+def test_unresolved_operand_is_not_an_answer_but_keeps_its_equality(reverse, repeated):
+    from dataclasses import replace
+    from ThoughtReferences import open_slots
+    name, unresolved = ('sym', 1), ('ltm', 'test', 2)
+    result = read(name, unresolved, ('ltm', 'test', 3))
+    frame = result.evidence['frames'][0]
+    frame['meaning'] = replace(frame['meaning'], bindings=dict(
+        bindings(frame['meaning']), _unresolved_operands=((2, unresolved),)))
+    target = unresolved if reverse else name
+    goal = question(equality(None, target), (('referent', 0),))
+    updated = integrate(goal, result, (result,) if repeated else ())
+    if reverse:
+        assert updated.role_refs[0] == name and not open_slots(updated)
+        assert bindings(updated)['_thought_witnesses'] == (frame['occurrence'],)
+    else:
+        assert updated is goal and open_slots(updated) == (('referent', 0),)
+        assert '_bound_roles' not in bindings(updated)
+
+
+def test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features():
+    from dataclasses import replace
+    from ThoughtFeatures import semantic_metadata
+    from ThoughtReferences import fill, open_slots
+    name, unresolved = ('sym', 1), ('ltm', 'test', 2)
+    supplied = equality(name, unresolved)
+    marked = replace(supplied, bindings=dict(bindings(supplied),
+        _unresolved_operands=((2, unresolved),)))
+    torch.testing.assert_close(semantic_metadata((supplied,))[0],
+                               semantic_metadata((marked,))[0], rtol=0, atol=0)
+    goal = question(equality(name, None), (('referent', 2),))
+    evidence = dict(frames=(dict(meaning=marked, occurrence=('ltm', 'test', 3)),),
+                    support_true=.8, support_false=0.)
+    updated = fill(goal, evidence, operation='query')
+    assert updated.role_refs[2] is None and open_slots(updated) == (('referent', 2),)
+    assert '_bound_roles' not in bindings(updated)
+    evidence['frames'] = (dict(meaning=supplied, occurrence=('ltm', 'test', 3)),)
+    assert fill(goal, evidence, operation='query').role_refs[2] == unresolved
+
+
+def test_explicit_reflexive_equality_remains_a_direct_witness():
+    from ThoughtReferences import open_slots
+    name = ('sym', 1)
+    goal = question(equality(None, name), (('referent', 0),))
+    updated = integrate(goal, read(name, name, ('ltm', 'test', 3)), ())
+    assert updated.role_refs[0] == name and not open_slots(updated)
+    assert bindings(updated)['_thought_witnesses'] == (('ltm', 'test', 3),)

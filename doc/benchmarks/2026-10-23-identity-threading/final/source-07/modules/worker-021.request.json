@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_operators_round4a0.py::test_address_is_full_int64_content_based_and_rng_independent",
+    "test/test_operators_round4a0.py::test_four_occurrences_after_four_hundred_presentations_and_full_upsert",
+    "test/test_operators_round4a0.py::test_rereading_replaces_vectors_refreshes_time_and_joins_poles",
+    "test/test_operators_round4a0.py::test_full_store_can_rewitness_both_existing_prediction_pair_addresses",
+    "test/test_operators_round4a0.py::test_when_is_unit_bracket_with_coarse_fine_roundtrip",
+    "test/test_operators_round4a0.py::test_references_and_content_keys_survive_compaction_and_checkpoint",
+    "test/test_operators_round4a0.py::test_legacy_checkpoint_rekeys_native_and_typed_edges",
+    "test/test_operators_round4a0.py::test_live_gate_reread_changes_clock_but_not_address_or_when",
+    "test/test_operators_round4a0.py::test_thought_references_are_source_addresses_not_history_counters",
+    "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+    "test/test_operators_round4a0.py::test_prepared_dataset_value_retains_its_source_after_cursor_advances",
+    "test/test_operators_round4a0.py::test_rewitness_keeps_poles_and_the_round3a_net_existence_read",
+    "test/test_operators_round4a0.py::test_checkpoint_can_grow_capacity_without_changing_an_address",
+    "test/test_operators_round4a0.py::test_serving_source_is_conversation_and_turn_and_replay_is_stable",
+    "test/test_operators_round4a0.py::test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence",
+    "test/test_operators_round4a0.py::test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-07/modules/worker-021.recycle.json"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_greedy_support_stops_when_an_extra_column_worsens_remainder",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

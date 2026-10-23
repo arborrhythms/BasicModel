@@ -508,6 +508,7 @@ class ClauseRows:
                 if symbol is None or not self.parts.contains(symbol):
                     raise RuntimeError('a completed relation did not produce a Part edge')
             retain_open = pending(value) or (value.relation is not None and incomplete(value))
+            unresolved_operands = []
             if retain_open:
                 # An open question is retained at the existing occurrence
                 # boundary. Filling it later changes only its working read.
@@ -522,6 +523,10 @@ class ClauseRows:
                         reference = (('sym', symbol) if symbol is not None
                             and closing._point(symbol) is not None else
                             self.occurrence_of(rows[id(child)]))
+                        if incomplete(child) and not pending(child):
+                            # This operand contains an unresolved dependency;
+                            # its fused placeholder is not a completed answer.
+                            unresolved_operands.append((role, reference))
                     elif type(reference) is int and reference not in (-1, 0):
                         reference = self.semantic_reference(reference)
                     else:
@@ -542,6 +547,8 @@ class ClauseRows:
             retained = {key: marks[key] for key in ('_withheld_symbols',) if key in marks}
             if retain_open:
                 retained.update(marks)
+            if unresolved_operands:
+                retained['_unresolved_operands'] = tuple(unresolved_operands)
             if value is clause:
                 retained.update(observation_marks)
             stored = with_slots(replace(stored, mode=value.meaning.mode,

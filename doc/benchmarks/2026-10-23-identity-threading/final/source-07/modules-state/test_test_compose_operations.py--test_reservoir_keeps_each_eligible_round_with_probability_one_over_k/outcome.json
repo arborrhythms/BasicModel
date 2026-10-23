@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_operations.py::test_reservoir_keeps_each_eligible_round_with_probability_one_over_k",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_canonical_thought_executors_use_only_their_named_capability_views",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

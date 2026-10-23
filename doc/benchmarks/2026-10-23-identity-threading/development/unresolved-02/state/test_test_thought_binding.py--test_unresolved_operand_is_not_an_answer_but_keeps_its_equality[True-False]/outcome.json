@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-False]",
+  "outcome": "failed",
+  "failure": "test/test_thought_binding.py:125: in test_unresolved_operand_is_not_an_answer_but_keeps_its_equality\n    assert updated is goal and open_slots(updated) == (('referent', 0),)\nE   AssertionError: assert (ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(('sym', 1), ('sym', 99), ('sym', 1)), bindings=(('_b...uery'), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', (('ltm', 'test', 3),))), scope=(), sentence_kind=None) is ConceptualMeaning(mode='interrogative', polarity=True, role_refs=(None, ('sym', 99), ('sym', 1)), bindings=(('_equalit...(0.0, 0.0)), ('_open_references', (('referent', 0),)), ('_source_evidence', (0.0, 0.0))), scope=(), sentence_kind=None))",
+  "records": []
+}

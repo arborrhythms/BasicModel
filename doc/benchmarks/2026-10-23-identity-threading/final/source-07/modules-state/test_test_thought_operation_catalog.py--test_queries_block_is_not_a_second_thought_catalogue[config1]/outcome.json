@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_queries_block_is_not_a_second_thought_catalogue[config1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

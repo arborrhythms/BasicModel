@@ -1,0 +1,49 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+  ],
+  "completed": [
+    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008393292082473636,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009443340823054314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001482666004449129,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

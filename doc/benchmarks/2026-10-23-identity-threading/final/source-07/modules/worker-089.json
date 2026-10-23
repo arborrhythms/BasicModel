@@ -1,0 +1,197 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual"
+  ],
+  "completed": [
+    "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+    "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+    "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+    "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+    "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+    "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+    "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+    "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+    "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+    "test/test_word_store.py::test_union_snap_needs_no_priming",
+    "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+    "test/test_word_store.py::test_word_side_snap_minimal_residual"
+  ],
+  "slow_selected": [
+    "test/test_word_store.py::test_reading_promotes_the_batch_words",
+    "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+    "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+    "test/test_word_store.py::test_storeless_configs_emit_no_percept_key"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_are_promoted_multibyte_entries",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002066750079393387,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_single_byte_word_needs_standalone_attestation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005455000791698694,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006371659692376852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_radial_recommender_recovers_signed_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00035337498411536217,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020470796152949333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_reading_promotes_the_batch_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.207634582882747,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_one_to_one_recognition_registers_under_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04988574981689453,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_percept_extras_ride_the_checkpoint_envelope",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.3365481249056756,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04905975004658103,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013477499596774578,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_pair_snap_orders_by_side_dot",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022291694767773151,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033991714008152485,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00044100009836256504,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_union_snap_needs_no_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005018329247832298,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013358285650610924,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_word_store.py::test_word_side_snap_minimal_residual",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00042399996891617775,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_operations.py::test_explore_differs_and_static_budget_can_stop_early",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

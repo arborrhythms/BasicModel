@@ -185,6 +185,8 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
     for kind, role in open_slots(meaning):
         if slots is not None and (kind, role) not in slots:
             continue
+        if supplied is not None and role in dict(bindings(supplied).get('_unresolved_operands', ())):
+            continue
         if supplied is not None and supplied.role_refs[role] is not None:
             references[role] = import_reference(supplied.role_refs[role])
             roles[role], mask[role] = supplied.roles[role], supplied.role_mask[role]

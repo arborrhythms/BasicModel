@@ -970,10 +970,21 @@ class ThoughtLTMCapability:
         excluded = set(data.get('_query_exclude', ()))
         if data.get('_query_occurrence') is not None:
             excluded.add(data['_query_occurrence'])
+        free = [role for kind, role in open_slots(pattern) if kind != 'evidence']
+        def can_answer(row):
+            meaning = row['meaning']
+            marked = dict(bindings(meaning).get('_unresolved_operands', ()))
+            if not marked or not free:
+                return True
+            if data.get('_equality') and bindings(meaning).get('_equality') and len(free) == 1 and free[0] in (0, 2):
+                region = pattern.role_refs[2-free[0]]
+                return any(answer not in marked and meaning.role_refs[source] == region
+                           for source, answer in ((0, 2), (2, 0)))
+            return not any(role in marked for role in free)
         candidates = tuple(row for row in found['value']
                            if row['match'] >= tau and row['kind'] != 'estimate'
                            and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))
-                           and row['occurrence'] not in excluded)
+                           and row['occurrence'] not in excluded and can_answer(row))
         best = max(candidates, key=lambda row: row['match']) if candidates else None
         frames = () if best is None else (best,)
         positive, negative = (0., 0.) if best is None else best['evidence']

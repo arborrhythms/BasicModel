@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_activation_without_fact_evidence_remains_unknown",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

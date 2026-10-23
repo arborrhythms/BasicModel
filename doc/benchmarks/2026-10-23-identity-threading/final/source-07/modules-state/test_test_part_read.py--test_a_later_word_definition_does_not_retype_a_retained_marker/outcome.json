@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

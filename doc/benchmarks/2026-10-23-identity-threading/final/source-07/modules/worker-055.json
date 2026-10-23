@@ -1,0 +1,76 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+  ],
+  "completed": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows"
+  ],
+  "slow_selected": [
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+    "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 39.30341037502512,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[True-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 76.39175725006498,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.9930622498504817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_unpacked_forward_observes_each_published_sentence_once[False-0.5]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4953757501207292,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_factored_roles_and_skips_masked_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.017852499848231673,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

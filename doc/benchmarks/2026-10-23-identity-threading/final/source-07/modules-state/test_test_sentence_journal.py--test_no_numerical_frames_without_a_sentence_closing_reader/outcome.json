@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

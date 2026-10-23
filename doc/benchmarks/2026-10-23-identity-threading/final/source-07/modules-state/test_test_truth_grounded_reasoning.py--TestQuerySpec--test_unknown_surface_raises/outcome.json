@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestQuerySpec::test_unknown_surface_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_sentence_content_cannot_choose_its_own_trust",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

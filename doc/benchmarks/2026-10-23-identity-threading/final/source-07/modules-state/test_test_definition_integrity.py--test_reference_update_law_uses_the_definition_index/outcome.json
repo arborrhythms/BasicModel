@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_integrity.py::test_reference_update_law_uses_the_definition_index",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

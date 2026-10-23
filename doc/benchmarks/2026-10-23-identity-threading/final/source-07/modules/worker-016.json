@@ -1,0 +1,104 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates"
+  ],
+  "completed": [
+    "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+    "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+    "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+    "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+    "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+    "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+    "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+    "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.027002417016774416,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013859417056664824,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001693124882876873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010668625123798847,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0069565000012516975,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010834578424692154,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_executor_cannot_emit_outside_its_declared_write_scope",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016514169983565807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_accessible_mind.py::test_unnamed_vectors_cannot_offer_open_taxonomy_candidates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0071766250766813755,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

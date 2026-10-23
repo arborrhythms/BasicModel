@@ -1,16 +1,13 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading continued, 2026-10-23:** frozen `6da7938e6` completed
-the scoped pass with 1,423 passes, twelve skips and nine retained failures.
-The [identity spec §§15–19](../../plans/2026-10-23-identity-threading.md)
-records the boundary/resolution repairs and fixture ports under step-2 §39.
-Claude’s focused diagnosis is completed and retained;
-the next frozen hash gets all scoped gates, final review and publication. The
-[receipt](../2026-10-23-identity-threading/README.md) lists every port and
-failed source. The latest §72 decision moves layout-and-removal and
-shared STM chunks to item 3.0; 2c follows identity on today's storage.
-Captures remain lossless. No learning claim or full sweep. Item 3.0 has
-not been reached.
+**Identity threading continued, 2026-10-23:** source-07 `59b7c8b87` completed
+with 1,442 passes, twelve skips and one c/e failure. The actual Claude
+diagnosis and repair are in the [identity spec §§20–21](../../plans/2026-10-23-identity-threading.md).
+Source-08 is prepared for all scoped gates and final review. Every failed
+capture and port stays in the [receipt](../2026-10-23-identity-threading/README.md).
+Layout-and-removal and shared STM chunks remain item 3.0; 2c follows
+identity on today's storage. No learning claim or full sweep. Item 3.0
+has not been reached.
 
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
 WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,
