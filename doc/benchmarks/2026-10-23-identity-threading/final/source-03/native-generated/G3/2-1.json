@@ -1,0 +1,24 @@
+{
+  "case": "2-1",
+  "text": "horse chases",
+  "expected": [
+    "ltm",
+    "address-v1",
+    5265723160801606865
+  ],
+  "chosen": "address-v1",
+  "open_roles": [
+    [
+      "referent",
+      0
+    ],
+    [
+      "relation",
+      1
+    ]
+  ],
+  "pair": [
+    0.3521873950958252,
+    0.6478126049041748
+  ]
+}

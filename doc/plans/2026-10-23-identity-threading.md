@@ -611,3 +611,18 @@ The unpublished freeze is retained in `source-02/withdrawn-freeze.bundle`
 and replaced before publication. Production and tests are unchanged by
 this packaging correction. `source-03` runs all scoped groups on its
 replacement hash; nothing is promoted from either earlier source.
+
+## 10. Codex: retained annotations versus open slots — 2026-10-23
+
+Frozen `10a36531c` passes the 85 regression cases. Its native group has
+122 passes, seven existing prerequisite skips and one failure:
+`test_one_empty_region_query_permits_conclude_and_only_source_mints[True]`.
+The c/e certificate and both pending-premise orders pass unchanged.
+
+The new question-kind rule read the retained `_open_references` annotation
+even after a thought filled that role with a minted local constituent.
+Use `open_slots` for the actual unfilled roles, beside the existing null
+relation-operand check. The old annotation remains immutable provenance;
+it does not turn a concluded inference into a question. No assertion or
+fixture changes. The failed source and capture stay in `source-03`; the
+replacement source reruns all required groups without promoting results.

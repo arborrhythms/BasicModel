@@ -3673,3 +3673,29 @@ opens, with Claude's recommendations, for the layout-and-removal spec:
 7. *Gradient.* Chunks are the compiled loop's differentiable state; a
    recalled chain's ideas are detached reads, except identity values,
    which the identity line makes pathwise within a sentence.
+
+**Remaining opens on STM, MTM and ideas with relations (Claude, 2026-10-23,
+at Alec's question).** Three, each with a recommendation:
+
+1. *Which chunk leaves STM when the ninth arrives.* Recommended: the least
+   recently read chunk that is not an operand still on the parse stack;
+   attention chooses what is read, recency what is kept.
+2. *Which words a sentence contained, after derivation removal.* Placement
+   (`MereologicalCodes.occurrence_terms`), priming's membership diffusion
+   (`Priming.diffuse`) and retrieval by word (the leaf index) read this
+   from the derivation today; a compressed idea has no references, a
+   chain's mentions are occurrences, and MTM's readings expire.
+   Recommended: the sentence entry keeps its word bag as owned detail in
+   the sidecar (§33 R2), dropped as its first forgetting stage; not a
+   relation, not a derivation.
+3. *A chain whose unknowns later resolve.* "y is x plus two" is a chain;
+   after "x is three", thought can evaluate it. Recommended: the chain is
+   immutable history; the evaluation writes y's value to MTM and, when
+   kept, a new LTM0 idea as an inference row, as the thought loop writes
+   inferences today.
+
+Implementation consequences carried to the layout-and-removal spec, not
+decisions: the expectation predictor reads ideas and chain heads instead
+of three-slot rows; forgetting values ideas and chains by their own value
+with chains protecting what they reference; a promoted identity (2c) is a
+minted symbol whose occurrences are its LTM0 ideas.

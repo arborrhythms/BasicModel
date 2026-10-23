@@ -17,25 +17,22 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's storage-only 2b is published at
-BasicModel `39272e7a6`, WikiOracle `ade0399`. Frozen source `6a36b7cee`
-passes all 92 scoped files: 1,144 passes, nine existing prerequisite
-skips. Claude's actual review returns LAND (§67). The
-[receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
-lists every assertion port, fixture change, retirement, failed run and
-withdrawn source. All work stays on main.
+**Current:** Item 3.5 line 2's identity threading is implemented on main,
+with the next scoped freeze before Claude's review after the retained
+inference-kind repair.
+The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) lists
+every assertion port, fixture rewrite, failed attempt and withdrawn source.
+The [spec's §§5–9](doc/plans/2026-10-23-identity-threading.md) record the code
+review, alignment with the future LTM/STM layout and documented repairs
+under step-2 §39. Published storage-only 2b remains BasicModel `39272e7a6`,
+WikiOracle `ade0399`; identity is not yet published.
 
-**Next is the identity line**, before derivation removal, as step-2 §36
-decides. The requested [code review of §§34–35](doc/plans/2026-10-21-step2-one-ltm.md#68-codex-identity-3435-against-the-landed-storage-source--2026-10-22)
-is written as §68 with recommendations for Claude's spec. Identity
-implementation has not started and awaits that spec. The current landing
-removes persisted postings, adjacency, stored mode and unused refs,
-retains every completed S and stages forgetting; derivation, its readers,
-close-time minting and MTM values stay unchanged. Metadata authentication
-stays while sidecar content needs it. Derivation removal follows identity,
-then 2c with the two R10 arrival notes and step 2's one full sweep.
-The recall-history location note belongs to the 5.5 context-wholes spec.
-Item 3.0 has not been reached.
+**Next is Claude's layout-and-removal spec** after identity lands. This
+line retains derivation, its readers, close-time minting and today's
+three-slot rows. LTM0 ideas, LTM1 binary chains and the shared eight STM
+chunks belong to the next spec, including §72's remaining questions.
+Then 2c carries the two R10 arrival notes and step 2's one full sweep.
+All work stays on main. Item 3.0 has not been reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 

@@ -1,5 +1,15 @@
 # Step 1b: current gates and carry ledger
 
+**Identity threading continued, 2026-10-23:** the next freeze implements the
+[identity spec](../../plans/2026-10-23-identity-threading.md) on main.
+The `10a36531c` inference-kind failure is repaired with its assertion
+unchanged; new scoped gates, Claude's review and publication remain pending.
+The [receipt](../2026-10-23-identity-threading/README.md) retains every port,
+failed attempt and source, including the lossless capture packaging
+correction. The future LTM0/LTM1 layout and shared STM chunks are read and
+carried to Claude's layout-and-removal spec. No learning claim or full
+sweep. Item 3.0 has not been reached.
+
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
 WikiOracle main `ade0399`, reviewed source `6a36b7cee`; 1,144 passes,
 nine existing prerequisite skips and Claude LAND. The
