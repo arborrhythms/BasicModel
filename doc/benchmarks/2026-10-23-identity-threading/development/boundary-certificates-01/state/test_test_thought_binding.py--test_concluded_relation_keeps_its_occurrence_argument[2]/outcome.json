@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_binding.py::test_concluded_relation_keeps_its_occurrence_argument[2]",
+  "outcome": "failed",
+  "failure": "test/test_thought_binding.py:182: in test_concluded_relation_keeps_its_occurrence_argument\n    assert f.store.parts.contains(result)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/LTM1.py:59: in contains\n    return 0 <= int(symbol) < self.capacity and bool((self.refs[int(symbol)] > 0).all())\n                ^^^^^^^^^^^\nE   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'tuple'",
+  "records": []
+}

@@ -173,3 +173,32 @@ def test_ambiguous_particular_requires_a_carried_reference():
     cs.bind_word_concept('cat', other)
     assert cs.resolve_word_concept('cat', order=1) is None
     assert cs.resolve_word_concept('cat', order=1, previous=other) == other
+
+
+@pytest.mark.parametrize('ambiguous', (False, True))
+def test_order_zero_reference_agrees_before_and_after_admission(ambiguous):
+    from Spaces import _concept_alloc_of
+    cs = _cs(nS=256, order=3)
+    word, _ = cs.interpret_word([7], [], key='token')
+    if ambiguous:
+        for _ in range(2):
+            obj = cs.new_concept()
+            cs._csw_concept_row(0, obj)
+            cs.interpret.define(word, obj)
+            cs.bind_word_concept('token', obj)
+    grammar = Language.Grammar()
+    grammar.configure({'compose': {'rule': {
+        '_': 'generic_argout1 = generic.forward(generic_argin1)',
+        'reference': 'argin1'}}})
+    rule = next(r for r in grammar.rules if r.method_name == 'generic')
+    language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
+    bank, next_id = cs.similarity_codebook.W.clone(), _concept_alloc_of(cs).next_id
+    results = [Language.LanguageSpace.resolve_lexical_references(language, cs,
+        torch.tensor([cs._csw_row_of(word)]), torch.tensor([word]),
+        torch.tensor([[0, -1, 0], [2, 0, -1]]), leaf_orders=torch.tensor([0]), admit=admit)
+        for admit in (False, True)]
+    for refs, orders in results:
+        assert refs.tolist() == [-1 if ambiguous else word]
+        assert orders.tolist() == [0]
+    assert _concept_alloc_of(cs).next_id == next_id
+    torch.testing.assert_close(cs.similarity_codebook.W, bank, rtol=0, atol=0)

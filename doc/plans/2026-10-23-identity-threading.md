@@ -1241,3 +1241,138 @@ a VP changes the current MTM value, not its native concept. Promotion,
 consolidation and rebuilding remain their scheduled work. Source-09 will
 run all scoped groups on its own frozen hash, including every direct
 consumer of IdentityRows; the source-08 partial pass supplies no evidence.
+
+
+## 23. Codex: full scoped source-09 boundary failures — 2026-10-23
+
+Frozen `81ba14861` completes every requested group: 1,582 passes, twelve
+existing prerequisite skips, three failures. Regression/native groups,
+G1–G3, c/e, both pending-premise orders, and both original-snapshot
+and original-seed decomposition arms pass. The wider changed-module
+selection exposes three defects; this source is not submitted for LAND or
+published. No earlier evidence is promoted. All captures and replays are
+in the identity receipt's `final/source-09`.
+
+Before changing source, replay the three retained initial RNG states with
+read-only boundary and keep probes (`diagnosis`). The presentation corpus's
+private generator was not captured; that limitation is explicit, and the
+replays are diagnostic only. Both mechanism errors reproduce. The first
+fails during exploit preview before the other trial or its keep exists;
+previous completed closes retain both R/A readings and decisions. The
+admission failure has both readings and the actual keep: row 0 compares
+R 1.214051008 versus 1.591376066, row 1 ties at 1.480019212; A is zero,
+and both keep greedy. The decoder case has no sentence keep.
+
+1. A grammatical `definite_unary` over a relation opens a live overlay
+   handle, but `ClauseJournal` requires `region(description)` and a fused
+   `has_point` before recovering its site. Its later compose bind reaches
+   an unwritten introduction. The captured missing handle is 24, opened
+   before the later relation/bind wrappers. It needs a consistent
+   occurrence-backed determined object that preserves the underlying
+   relation, not a menu restriction or an invented resolved value. The
+   focused Claude diagnosis is requested before choosing that repair.
+2. `resolve_lexical_references` keeps an order-0 source word in preview
+   when no corresponding object exists, but replaces it with -1 during
+   admission. The identical reading then acquires extra child clauses and
+   trips the frozen-structure guard. Proposed narrow fix: retain the
+   word's identity fallback at order zero in both phases; leave absent or
+   ambiguous higher orders unchanged. Every existing assertion stays.
+3. The old two-operation decoder fixture supplies Difference an operand
+   `[1, 2]`, outside the conceptual cube. The inverse probe shows Sum
+   available and Difference rejected, so there is no second choice. The
+   proposed fixture port scales its event and bank uniformly by 0.5,
+   preserving shapes, both operations and all existing assertions. The
+   production decoder domain stays unchanged.
+
+These proposals are not code changes yet. The actual read-only Claude
+response will be retained beside the three probes; it is a focused
+diagnosis, not final review. §39 remains the authority to repair and
+continue without reversing §1.
+
+
+## 24. Codex: source-09 diagnosis accepted and repaired — 2026-10-23
+
+The actual read-only Claude diagnosis is retained at
+`final/source-09/diagnosis/claude/report.md`. It finds no §1 reversal and
+accepts all three repairs under §39; this is not a LAND verdict.
+
+A relative description's grammatical determination retains the exact value
+opened by its numerical operation journal. Its own-object clause owns that
+value and its introducing handle; the original relation is a child with
+its references intact. No guessed fused meaning, word reading, seat or
+menu rule is added. The site has no lexical reading: `subject_word_id=-1`
+and an explicit introduction marker. Required introducing actions are
+retained independently of later bind wrappers, and chronological sites
+still put the introduction first. A dummy on an already determined object
+keeps that handle and remains free in reference reconstruction. An event
+whose tag-3 introduction has vanished raises instead of silently losing
+that event. Separate determinations still create separate handles.
+
+Order-zero reference capture now uses the source word in both phases when
+there is no association; an ambiguous order-zero reading is unknown in
+both phases. Higher orders keep their prior behavior. This preserves the
+identity fallback and the scored/admitted clause correspondence without
+changing R, A, the keep or forced choices.
+
+The exact existing-test fixture port is limited to
+`test_free_policy_has_no_pathwise_credit_between_supported_operations`:
+its event `[1,1]` becomes `[.5,.5]` and bank `[[1,0],[0,1],[1,2]]` becomes
+`[[.5,0],[0,.5],[.5,1]]`. Shapes, operations and every assertion remain
+verbatim. `diagnosis/unchanged-decoder.json` verifies that the decoder,
+eligibility method and old fixture were unchanged from the pre-identity
+source. No test is retired. New certificates and retained-RNG diagnostics
+will check the repairs before the next freeze; no source-09 result is
+promoted.
+
+## 25. Codex: occurrence arguments at the thought writer — 2026-10-23
+
+The retained-RNG development replay `boundary-repair-01` gets past the
+source-09 introduction error, then stops at `ThoughtStream.write`: a
+concluded relation contains an existing LTM0 occurrence as its left
+argument, but the adapter accepts only symbols and local constituents.
+`thought-boundary-01` captures the conclusion and both trial readings
+before the repair. The actual keep ties on R 0.503043473 and A 0 and
+keeps greedy; neither the keep nor the conclusion is changed. The corpus
+uses an uncaptured private generator, so these are diagnostic replays,
+not source-hash gate evidence.
+
+The adapter now translates that validated occurrence to its existing row
+address for the ordinary `ClauseRows`/`PartClosing` writer. The existing
+derivation and mint path still applies, including the derivation reference
+on the completed occurrence; no new table, tag, row layout, object-to-word definition,
+answer target or bank update is introduced. Missing occurrence arguments
+still fail loudly. This completes a reader/writer boundary required by
+identity threading and reverses no §1 decision. New tests cover both
+argument roles with unchanged input rows and the asserted relation pair.
+No existing assertion is changed or test retired by this repair.
+
+## 26. Codex: boundary certificates and the next freeze — 2026-10-23
+
+`boundary-certificates-01` retains five failures in new certificates. Two
+expose the dummy wrapper still losing its relative site: recovery must
+accept its recorded bind request and keep the determined phrase's
+nonlexical carrier. One exposes `word_concepts` including the word itself:
+order-zero ambiguity checks exclude words, exactly as the resolver does.
+The other two are new fixture correspondence errors: the writer returns
+`('sym', handle)` and today's completed occurrence stores that derivation
+reference, not its input roles. Correct the new fixture's handle unpacking
+and replace its new raw-input-role assertion with exact
+`(('sym', result), None, None)`. The asserted pair, evidence and unchanged
+prior row checks stay. The original failed run is retained. This is no
+layout change and no existing-test assertion port.
+
+`boundary-certificates-02` passes all 71 cases. `boundary-guard-01` passes
+the extra loud-loss check. The relation-backed fixture covers two equality
+updates, a later bind, an intervening dummy, and direct versus readmitted
+plans; both mention and event counts and immutable rows/bank are checked.
+Separate determinations remain separate. `thought-boundary-02` completes
+the unforced math presentation from the retained initial RNG after the
+writer repair. These are development checks only. The next frozen source
+runs every requested scoped group anew; all failures above stay retained.
+
+The newly incoming layout text further specifies the STM/LTM0 time band:
+a concept gets the current stamp on entering an STM chunk, a recalled
+entry retains its past stamp, and an estimate can be stamped ahead. The
+separate LTM0 `when` column retires in that later round. This identity line
+keeps today's columns and close stamps unchanged; it does not partially
+implement the item-3 layout.

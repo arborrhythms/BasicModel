@@ -18,16 +18,12 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Item 3.5 line 2's identity threading is implemented on main.
-Source-07 `59b7c8b87` completed all scoped groups with 1,442 passes, twelve
-skips and one retained c/e failure. Claude's focused diagnosis and the
-repair are in the [spec's §§20–22](doc/plans/2026-10-23-identity-threading.md).
-Source-08 was interrupted for the incoming MTM/concept clarification.
-Source-09 includes retirement of the bind-to-bank write and is prepared
-for the complete scoped pass and final Claude review.
-The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) lists
-every assertion port, fixture rewrite and failed source. No earlier result
-is promoted. Published storage-only 2b remains BasicModel `39272e7a6`,
-WikiOracle `ade0399`; identity is not yet published.
+Source-10 is prepared after the retained source-09 failures and actual
+Claude diagnosis. [Spec §§23–26](doc/plans/2026-10-23-identity-threading.md)
+record each boundary repair; the [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
+lists every port and failed run. Frozen-source gates and Claude's landing
+review precede publication. Published storage-only 2b remains BasicModel
+`39272e7a6`, WikiOracle `ade0399`.
 
 **Next is 2c** after identity lands, carrying the two R10 arrival notes,
 then step 2's one full sweep. The latest §72 decision moves the

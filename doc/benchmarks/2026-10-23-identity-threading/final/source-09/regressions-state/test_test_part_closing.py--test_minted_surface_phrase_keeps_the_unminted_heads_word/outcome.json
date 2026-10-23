@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_closing.py::test_minted_surface_phrase_keeps_the_unminted_heads_word",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

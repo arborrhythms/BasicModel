@@ -218,7 +218,7 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
         assert bool(available[0, 0, 1]) == (not resolver.exclusion_query()(own, atoms[0]))
 
 
-def recorded_identity_reading(f, tree):
+def recorded_identity_reading(f, tree, *, dummy_binds=()):
     """Execute fixed grammar operations and capture the production tensor journal."""
     from dataclasses import replace
     from ReferenceContext import result_order
@@ -230,7 +230,7 @@ def recorded_identity_reading(f, tree):
     words, columns = len(entry.leaves), len(entry.actions)
     state = overlay.empty(entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns)
     stack, stamps, frames, refs, inputs = [], [], [], [], []
-    first = 0
+    first, binds = 0, 0
     for action, (kind, local, word) in enumerate(entry.actions.tolist()):
         if kind == 0:
             value = entry.leaves[word][None]
@@ -247,7 +247,8 @@ def recorded_identity_reading(f, tree):
         handle = 0
         if rule.method_name == 'bind':
             points, records, _, _, available = overlay.menu(state, live[:, :1], torch.tensor([[0]]))
-            handle = first
+            handle = 0 if binds in dummy_binds else first
+            binds += 1
             assert available[0, 0, handle]
             result = f.operation(rule).compose(points[:, :, handle])[:, 0]
             operands = torch.stack((live[:, 0], records[:, 0, handle]), 1)
@@ -686,3 +687,90 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
         assert loss is not None and loss.requires_grad
     assert alloc.next_id == allocation and alloc.form_regions == regions
     unchanged(resolver, retained)
+
+
+@pytest.mark.parametrize('readmit', (False, True))
+@pytest.mark.parametrize('dummy', (False, True))
+def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatch, readmit, dummy):
+    from ClauseJournal import finish_clause
+    from ReferenceReconstruction import cost
+    from test_clause_acceptance import SentenceFixture
+    from test_medium_term_memory import snapshot, unchanged
+    f = SentenceFixture(monkeypatch)
+    relative = ('definite_unary', ('implies', 'left', 'right'))
+    if dummy:
+        relative = ('bind', relative)
+    tree = ('sum', ('equal', ('equal', relative, 'changed'), 'latest'), ('bind', 'alias'))
+    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else ())
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, ())
+    intro = next(item for item in plan['items'] if item['node'].identity['introduction']
+                 and item['node'].identity['handle'] == handle)
+    assert intro['node'].subject_word_id == -1
+    assert intro['node'].children[0].relation == 'implies'
+    opened = next(value for name, _, value in inputs if name == 'definite_unary')[0]
+    torch.testing.assert_close(intro['content'], opened)
+    assert intro['own_object'] and intro['selected'] == ('new', 0)
+    assert plan['items'][-1]['selected'] == intro['selected']
+    assert all(item['selected'] == intro['selected'] for item in plan['items']
+               if item['node'].identity['handle'] == handle)
+    if dummy:
+        wrapper = next(item for item in plan['items'] if item.get('compose_dummy') and item is not intro)
+        assert not wrapper['own_object']
+        torch.testing.assert_close(cost(resolver, [dict(plan, items=[wrapper])], torch.zeros(1)), torch.zeros(1))
+    if readmit:
+        clause = finish_clause(f.language, entry, registry=f.registry)
+        sites = resolver.sites(clause, pending_names=plan['pending_names'])
+        plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = f.store.write_clause(prepared, written_rows=written, document_key='relative', sentence_index=0)
+    retained = snapshot(resolver)
+    resolver.commit(plan, row, written, document='relative', position=0, training=False)
+    mentions = [written[('occurrence', id(item['written_node']))] for item in plan['items']
+                if item['written_node'].identity['handle'] == handle]
+    token = f.cs.mtm.token_of(mentions[0])
+    assert all(f.cs.mtm.token_of(mention) == token for mention in mentions)
+    assert f.cs.mtm.entries[token].count == len(mentions)
+    assert len([event for event in f.cs.mtm.entries[token].events if event.role == 0]) == 2
+    torch.testing.assert_close(f.cs.mtm.value_of(token), entry.identity_values[handle-1])
+    unchanged(resolver, retained)
+
+
+def test_two_relative_determinations_keep_distinct_objects(monkeypatch):
+    from ClauseJournal import finish_clause
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    relative = ('definite_unary', ('implies', 'left', 'right'))
+    entry, _, _ = recorded_identity_reading(f, ('sum', relative, relative))
+    resolver = f.cs.components.reference_close
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    plan = resolver.preview(clause, ())
+    introductions = [item for item in plan['items'] if item['node'].identity['introduction']]
+    assert len(introductions) == 2
+    assert introductions[0]['node'].identity['handle'] != introductions[1]['node'].identity['handle']
+    assert [item['selected'] for item in introductions] == [('new', 0), ('new', 1)]
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = f.store.write_clause(prepared, written_rows=written, document_key='separate', sentence_index=0)
+    resolver.commit(plan, row, written, document='separate', position=0, training=False)
+    tokens = [f.cs.mtm.token_of(written[('occurrence', id(item['written_node']))]) for item in introductions]
+    assert tokens[0] != tokens[1]
+    assert all(f.cs.mtm.entries[token].count == 1 for token in tokens)
+
+
+def test_missing_determined_event_introduction_fails_loudly():
+    from ClauseRow import Clause
+    from Meaning import ConceptualMeaning
+    from test_reference_close import fixture
+    resolver, store, atoms = fixture()
+    value = ConceptualMeaning.from_description(atoms[0])
+    node = Clause(value, point=atoms[0], identity=dict(handle=1, action=0,
+        event=(1, 1, 0, 101, -1, 1), origins=torch.tensor([[3, 0, 1]]), values=atoms[:1]))
+    row = store.write_clause(Clause(value, point=atoms[0]), document_key='lost-introduction')
+    plan = dict(items=[], prepared_root=node)
+    written = {('occurrence', id(node)): store.occurrence_of(row)}
+    with pytest.raises(RuntimeError, match='lost its determined introduction'):
+        resolver._commit_events(plan, written, when=1)
+    assert not resolver.components.owner.mtm.entries

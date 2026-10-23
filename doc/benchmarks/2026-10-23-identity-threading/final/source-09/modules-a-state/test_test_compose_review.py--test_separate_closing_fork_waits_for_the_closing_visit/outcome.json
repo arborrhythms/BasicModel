@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_review.py::test_separate_closing_fork_waits_for_the_closing_visit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

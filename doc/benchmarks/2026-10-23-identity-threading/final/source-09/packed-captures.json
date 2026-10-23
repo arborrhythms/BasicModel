@@ -1,0 +1,34 @@
+[
+  {
+    "original": "decomposition-zero-e9daaa04366132fba57e-0-initial.pt",
+    "compressed": "decomposition-zero-e9daaa04366132fba57e-0-initial.pt.gz",
+    "bytes": 20507580,
+    "gzip_bytes": 3361771,
+    "sha256": "37d8c0ddeaef47a1d947ca789a8f0813340d0f29422dd0e8cfffebeef4d43d28",
+    "gzip_sha256": "607657780dd11fe9932a4414f89e5986f1f629ec1c7ebc375fa916aae4800519"
+  },
+  {
+    "original": "decomposition-zero-03fb1f716073d152892b-0-initial.pt",
+    "compressed": "decomposition-zero-03fb1f716073d152892b-0-initial.pt.gz",
+    "bytes": 20507452,
+    "gzip_bytes": 3357189,
+    "sha256": "a304f1a19bae40ced0f97051ca68ef08b6e707eb7a59d0ee8413d61b03fc46ed",
+    "gzip_sha256": "0b14f7ead2fd9ea19bf348efd4880a4a371df8e1b60ca7ee23b8c3b3e9540624"
+  },
+  {
+    "original": "decomposition-enabled-03fb1f716073d152892b-0-initial.pt",
+    "compressed": "decomposition-enabled-03fb1f716073d152892b-0-initial.pt.gz",
+    "bytes": 20507807,
+    "gzip_bytes": 3357256,
+    "sha256": "ef09d40854329ea76349118a02944e0adddc12702beca9ce7d55fb0179693ad9",
+    "gzip_sha256": "1ac24177db065fda31f410a3cf459adaafa19f898c06dd8bbf79c83a40312412"
+  },
+  {
+    "original": "decomposition-enabled-e9daaa04366132fba57e-0-initial.pt",
+    "compressed": "decomposition-enabled-e9daaa04366132fba57e-0-initial.pt.gz",
+    "bytes": 20507935,
+    "gzip_bytes": 3361881,
+    "sha256": "612d8542908ce68e9803a68a857cbdce2583c8a3fea55a27a1502b3d005a9b3a",
+    "gzip_sha256": "604e5a63dfe24bd2d20272766bbfc2a9c0d5152c1f912811ab8255c185fc2e3a"
+  }
+]

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_verification_keeps_conflicting_observations_as_two_poles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

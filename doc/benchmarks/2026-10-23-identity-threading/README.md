@@ -1,18 +1,27 @@
 # Identity threading — 2026-10-23
 
-Source-07 `59b7c8b87` completed with 1,442 passes, twelve skips and one
-retained c/e failure. Its read-only Claude diagnosis and the completed
-repair are recorded below. Source-08 was interrupted for the incoming MTM/concept clarification.
-Source-09 is prepared for freezing; gates, final review and publication
-remain pending. No earlier result is promoted.
+Source-10 is prepared after the documented source-09 boundary repairs.
+Source-09 `81ba14861` completed 1,582 passes, twelve prerequisite skips
+and three retained failures. The actual focused Claude diagnosis accepts
+the repairs without a §1 reversal; it is not a LAND verdict. The later
+thought-writer failure is captured and keep-probed too. Final frozen-source
+gates, Claude's landing review and publication remain. No earlier result
+is promoted.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–22. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–26. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
+
+The later layout spec was re-read after Claude's incoming time-recall
+amendment: only the final sentence entry will carry the stamp, and a
+blank-content query may recall by `.when` alone. That is item 3's layout
+work, alongside LTM0 ideas, LTM1 chains and shared STM chunks; today's row
+stamping and identity event order are unchanged here. Claude's Architecture,
+FutureWork and layout-spec edits are preserved unchanged for the landing.
 
 ## Source and scope
 
@@ -37,10 +46,10 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-09/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-10/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-09/test-ports.patch)
-is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-09/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
+pre-implementation review. [`test-ports.patch`](final/source-10/test-ports.patch)
+is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-10/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
 
 ## Every existing-test port
 
@@ -66,6 +75,7 @@ All assertions not listed remain unchanged.
 | `test_thought_operation_catalog.py`, live router structural context | Change only the unary test stub from `value + 1.0` to `1.0 - value`, so every selected application stays in the identity cube. Both assertions that the unary and binary faces receive the identical owner context remain verbatim. |
 | `test_math_chain_repair.py`, pending relation, both orders | Retain the appended arrival index, then explicitly `mtm.open` the pending occurrence and `mtm.bind` its selected native symbol after both rows exist. All assertions remain verbatim: no open/forward slot, native symbol 1, unchanged occurrence address, document, position and raw meaning/roles. This supplies the kept bind that the storage-only fixture bypasses; equality never selects it. |
 | `decomposition_certificate.py` and `forced_decomposition_grammar.py` | Port the existing mint/reference/open fixture choices to determination and compose bind; declare the fixture's noun readings via `reference_orders` (x/y/what for one successor, plus z for two; constants retain their original readings). Preserve the preferred source references and the question-only open `what`, with no closure forcing. Read MTM mention labels and normalize its token handles at this fixture seam. Retire the stale unused `store.refs` read, keeping its +6 occurrence rank. Correct unary action indexing for the top operand at depth two, and tolerate an actually open preferred source. Guard these fixture NP actions with the bare pushed-word producing-action column, preserving the original scope. Attach trailing markers by transpose then surface, whose declared marker position preserves the bound noun head, instead of using verb. All certificate assertions, original snapshots/seeds, budgets, objective and live keep remain unchanged. The exact fixture diff is in the final test-port patch. |
+| `test_review11_contracts.py`, free decoder policy | Uniformly scale event `[1,1]` to `[.5,.5]` and bank `[[1,0],[0,1],[1,2]]` to `[[.5,0],[0,.5],[.5,1]]`. This keeps the Difference operand inside the unchanged conceptual cube. Shapes, operations and every assertion remain verbatim. |
 
 ## New certificates and development corrections
 
@@ -88,10 +98,10 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-09`: the eight
+The required selections and runner are in `final/source-10`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
-arms. The distinct-file scope is 131 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
+arms. The distinct-file scope is 132 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
 Initializations, journal states, failures and keep probes are retained.
 
 Both decomposition arms restore their original snapshots and original
@@ -103,8 +113,8 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-09
-runs the complete scoped set, with its 114 module files partitioned between
+Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-10
+runs the complete scoped set, with its module files partitioned between
 two independent process groups and each selection run once.
 No development pass or earlier frozen result substitutes for that source. The long module group and the other groups may run in separate processes on that same unchanged hash; each selection runs once.
 
@@ -193,6 +203,8 @@ retired or changed for this repair.
 
 - `final/source-08`, `248f8f8d7`: deliberately interrupted when Claude's incoming §2 clarification identified the live form-exposure bank write. Partial result: 517 passes, one skip, no failed assertion; the other cases and decomposition arms are incomplete. Its interruption ledger and every partial capture remain. Nothing is promoted.
 - `bank-isolation-01`: 123 passes, four existing prerequisite skips after retiring the live exposure calls and functions. Four new cases prove kept bind training and delayed mention credit cannot allocate a cue-region concept or alter the bank, with/without a prior region. The delayed loss still requires gradients.
+- `final/source-09`, `81ba14861`: 1,582 passes, twelve skips, three failures. All groups complete. The regression/native sets and both decomposition arms pass; the expanded module scope exposes a lost determined-relative introduction, an order-0 preview/admission mismatch, and a decoder fixture outside the cube. All failures and initial states stay; the three `diagnosis` replays reproduce them before changes. The first close fails before a keep exists; the second retains both R/A readings and greedy decisions; the third is a decoder unit without keep. The actual focused Claude diagnosis is retained and accepts the repairs under §39, not a landing verdict.
+
 
 Claude's concurrent §2 concept/current-value clarification and grounding
 text are preserved verbatim. Philosophy's first companion edit is commit
@@ -213,3 +225,32 @@ Claude's actual review of the frozen source must follow the complete
 scoped results. Publication means the BasicModel main push, then the
 WikiOracle gitlink bump and main push. Neither has happened for this line.
 Next is 2c with the two R10 arrival notes and step 2's one full sweep. The layout-and-removal spec and shared STM chunks now belong to item 3.0.
+
+### Source-10 boundary evidence and ports
+
+- `boundary-repair-01`: the retained-RNG math replay passes the original
+  introduction boundary and fails in the thought writer. `boundary-repair-02`:
+  all 51 selected identity/order/admission/decoder cases pass.
+- `thought-boundary-01`: the new failure is reproduced with both trial
+  readings, actual greedy tie and the concluded occurrence reference.
+  `thought-boundary-02`: the unforced presentation passes after the writer
+  accepts that existing reference. Private corpus RNG remains a declared
+  diagnostic limitation, not a pinned gate or promoted source.
+- `boundary-certificates-01`: 66 pass, five fail in newly added tests. Two
+  dummy wrappers need their recorded sites retained; the order-zero check
+  must exclude the word itself from object ambiguity. The two new writer
+  fixtures unpack the returned symbol handle and correct their newly
+  written raw-role check to today's exact derivation reference. This new
+  assertion changes from `raw.role_refs[role] == address` to
+  `raw.role_refs == (('sym', result), None, None)`; no pre-existing assertion
+  changes. Both asserted pair/evidence and immutable-row checks remain.
+- `boundary-certificates-02`: all 71 cases pass; `boundary-guard-01`: the
+  missing-introduction event raises as required. These are development
+  results; the next full scoped pass owns the frozen-source evidence.
+
+New cases cover relation-backed determination, two ordered equality updates,
+later binds, dummy reuse, separate determinations, direct/readmitted close
+correspondence, order-zero fallback/ambiguity in both phases with unchanged
+allocation/bank, concluded occurrence arguments in either role, and loud
+loss of an event's introducing owner. No test is retired. The later layout
+spec's new in-vector STM time stamp is read and preserved, not implemented.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_normal_thought_controller.py::test_normal_controller_checkpoint_rebuilds_its_width_owned_policy",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T16:15:22.793919+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T16:15:28.377342+00:00"
+}

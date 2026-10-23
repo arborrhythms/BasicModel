@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_binding.py::test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

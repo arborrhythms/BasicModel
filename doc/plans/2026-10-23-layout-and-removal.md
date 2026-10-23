@@ -116,6 +116,52 @@ reads:
   released for the next pass; the structure stage is gone, since an idea
   has none; source wording stays the first stage.
 
+**Recall by `.when` alone (Alec, 2026-10-23).** "A mind should be able
+to recall mental content by filling in only the `.when`, and leaving the
+rest blank." Both strata already carry `.when` as a column (`LTM0.when`
+and `LTM1.when`, `[cap, 4]`, `RowTime`'s sinusoidal model time) and no
+read is keyed by it: recency is stream order (`recency_weights`) and
+queries match content or references. Add the time-cued read: a `query()`
+whose description is blank and whose `.when` is set returns the LTM0
+ideas and LTM1 rows nearest that time in the encoding, within a bounded
+window, under the work meter, loaded into STM chunks with their
+identities re-entering MTM. Several entries at one time are an episode,
+so this makes the episodic-memory note decided work
+([FutureWork](../FutureWork.md#episodic-memory-several-ltm0-entries-per-time-alec-2026-10-23)).
+Concepts carry no `.when` (decided 2026-10-20, kept): an STM chunk's idea
+has the same form whether pulled from a concept or from LTM. **The stamp
+is inserted at the final sentence level, not in every entry (Alec,
+2026-10-23).** Only the entry that is the sentence carries `.when`: the
+LTM0 idea it compresses to, or the top row of its chain. Mentions and
+inner chain rows carry none; their time is their sentence's, reached by
+reference, and an identity's event history is ordered by its sentences'
+stamps. Today every row of a close is stamped alike (`write_clause`,
+`closing.when`); this round stamps the sentence entry only, and recall
+by time returns sentence entries, from which chains and mentions follow.
+Forgetting's age reads the sentence's stamp for what the sentence
+references.
+**STM rows have the LTM0 width (Alec, 2026-10-23):** "when a concept
+is written to an STM row, it should receive a timestamp, which makes its
+width equivalent to an LTM0." Not a vector plus a `.when` field: the
+concept is muxed, and the stamp is written into its reserved time band,
+where symbols already carry `.when` (Alec: "stamped with it, since
+concepts are muxed"). A chunk's idea is therefore one concept-width
+vector, and LTM0's separate `when[cap, 4]` column retires in this round:
+the band is the stamp, and recall by time matches the band. A concept
+pulled from the index has the band empty and is stamped with the
+current `RowTime` on entry, and a recalled entry keeps its own stamp,
+the time it happened, while its place in STM is governed by recency
+(Claude's reading of the recalled case). So STM, LTM0 and the sentence
+entry share one form, and the close keeps the stamp on the sentence
+entry alone.
+Alec: "That will allow thoughts of the three times." A chunk's stamp
+places its content in the past (a recalled entry keeps the time it
+happened), the present (a concept or perceived sentence stamped now)
+or the future (an expectation's estimate stamped ahead of now), and
+the same chunks hold all three, so thought ranges over them with one
+form; tense (5.5) is the relation between a sentence's stamp and now,
+and the modal (step 5) ranges over possibilities at a time.
+
 **Readers that stay.** Semantic bindings in `_semantic_rows`
 (`bind_constituents`, `read_structure` for those bindings), the pending
 name index (`_forward_addresses`), MTM, the identity line's overlay and
@@ -149,6 +195,9 @@ behavior stops for Alec.
 4. Placement: a word's order-0 meaning moves toward its sentences'
    context at the close, with no stored membership; retrieval by content
    finds the idea.
+4a. Recall by time: a query with a blank description and a `.when`
+   returns the ideas and rows written at that time and nothing else;
+   two sentences of one close are recalled together.
 5. A pre-layout checkpoint is rejected by version; a layout checkpoint
    round-trips ideas, chains and tags.
 6. `AnswerProgram` is gone; `Reading` names the kept reading.

@@ -1,0 +1,407 @@
+diff --git a/bin/ClauseJournal.py b/bin/ClauseJournal.py
+index f4c302691..05ff57891 100644
+--- a/bin/ClauseJournal.py
++++ b/bin/ClauseJournal.py
+@@ -54,7 +54,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+     frames = program.operation_values
+     if frames is None:
+         raise ValueError('the open reading has no numerical operation journal')
+-    stack = []
++    stack, introductions = [], {}
+     def region(node):
+         """Read the declared meaning without replaying numerical operators."""
+         if not node['has_point']:
+@@ -95,6 +95,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+                     forward_identity=forward_name(word), leaf=True)
+             if program.identity_leaves is not None:
+                 stack[-1]['identity_handle'] = int(program.identity_leaves[word]) if stack[-1]['order'] == 1 else 0
++                if stack[-1]['identity_handle']:
++                    introductions.setdefault(stack[-1]['identity_handle'], stack[-1])
+             continue
+         if kind == 3:
+             stack[-2:] = reversed(stack[-2:])
+@@ -220,12 +222,29 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             # Retain the own description and the pre-join record independently.
+             source = operands[0]
+             request = dict(source.get('close_request', {}))
++            request.pop('introduction', None)
+             request.update(mode='bind', leaves=source['leaves'],
+                 content=request.get('content', frames[action, 0]),
+                 cue=request.get('cue', frames[action, 0]),
+                 compose_bind=int(program.identity_actions[action, 4]),
+                 record=frames[action, 1])
+             parent['close_request'] = request
++        if program.identity_actions is not None:
++            handle, subject, _, _, selected, _ = parent['identity_event']
++            if (handle > 0 and not subject and selected <= 0 and parent['order'] == 1
++                    and int(program.identity_origins[handle-1, 0]) == 3):
++                introductions.setdefault(handle, parent)
++                if introductions[handle] is parent and not parent['has_point']:
++                    # Determination opens the journal's actual working value,
++                    # even when its description is a relation. Retain that
++                    # relation separately instead of inventing a fused meaning.
++                    rule = catalog[local]
++                    description = operands[(getattr(rule, 'head_role', 0) or 1)-1]
++                    request = dict(parent.get('close_request', {}))
++                    request.update(mode=getattr(rule, 'determiner_mode', None) or 'bind',
++                        leaves=description['leaves'], content=frames[action, 2],
++                        introduction=True, compose_bind=0)
++                    parent['close_request'] = request
+         stack.append(parent)
+         if unary_position:
+             stack.insert(len(stack)-1-unary_position, stack.pop())
+@@ -250,6 +269,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+         action = node.get('identity_action')
+         return dict(handle=node.get('identity_handle', 0),
+             event=node.get('identity_event'), action=action,
++            introduction=introductions.get(node.get('identity_handle', 0)) is node,
+             result=None if action is None else (frames[action, 1] if
+                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
+             origins=program.identity_origins, values=program.identity_values)
+@@ -373,7 +393,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+         excluded = False
+         mode = 'assertive'
+         def close_member(item, *, referent=True):
+-            if not item['has_point']:
++            if not item['has_point'] and not item.get('close_request', {}).get('introduction'):
+                 return None
+             current = item
+             request = current.get('close_request')
+@@ -411,8 +431,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             point = request['content'] if current is item or request.get('leaf') else region(item)
+             if point is None:
+                 return None
++            relative = request.get('introduction', False)
++            description = item['children'][(getattr(item['rule'], 'head_role', 0) or 1)-1] if relative else None
+             return Clause(ConceptualMeaning.from_description(point), point=point,
+-                subject_word_id=subject_word_id(item), order=1,
++                subject_word_id=-1 if relative else subject_word_id(item), order=1,
++                children=(recover(description),) if relative else (),
+                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
+                 reference_request=request, composition=composition(item), identity=identity_record(item))
+         standalone = close_member(root)
+@@ -747,20 +770,22 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
+             ordered.append(node)
+         for node in stack:
+             postorder(node)
+-        owners, events = set(), set()
++        owners, events, required = set(), set(), set()
+         def collect(clause):
+             if clause.identity and (event := clause.identity.get('event')) is not None and event[1]:
+                 events.add(clause.identity['action'])
+             request = clause.reference_request or {}
+-            if clause.identity and request and request.get('compose_bind', 0) <= 0:
+-                owners.add(clause.identity['handle'])
++            if clause.identity and request:
++                required.add(clause.identity['handle'])
++                if request.get('compose_bind', 0) <= 0 and clause.identity.get('introduction', True):
++                    owners.add(clause.identity['handle'])
+             for child in (*clause.children, *clause.companions):
+                 collect(child)
+         collect(result)
+         # The verb is a symbol, not an overlay handle.
+-        required = {int(event[index]) for node in ordered
++        required.update(int(event[index]) for node in ordered
+                     if (event := node.get('identity_event')) is not None
+-                    for index in (1, 2, 4) if int(event[index]) > 0}
++                    for index in (1, 2, 4) if int(event[index]) > 0)
+         extra = []
+         for node in ordered:
+             handle, request = node.get('identity_handle', 0), node.get('close_request', {})
+diff --git a/bin/Language.py b/bin/Language.py
+index c462b9ab6..ca4a705a0 100644
+--- a/bin/Language.py
++++ b/bin/Language.py
+@@ -12651,8 +12651,13 @@ class LanguageSpace(nn.Module):
+             # A trial can request a new symbolization order but may not mint
+             # it. Its singleton has the source's point; retain that source
+             # address until the winning host closing admits the new identity.
+-            refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
+-                          -1 if cid is None else cid)
++            if order == 0 and cid is None:
++                # A word with no object stands for itself in both trials and
++                # admission. An ambiguous reading stays unknown in both.
++                refs[leaf] = -1 if associated else int(concept_ids[leaf])
++            else:
++                refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
++                              -1 if cid is None else cid)
+             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
+         return refs, orders
+ 
+diff --git a/bin/ReferenceClose.py b/bin/ReferenceClose.py
+index adc351336..57d12d9d4 100644
+--- a/bin/ReferenceClose.py
++++ b/bin/ReferenceClose.py
+@@ -463,7 +463,7 @@ class ReferenceClose(nn.Module):
+     def has_word(node):
+         """A noun occurrence has a lexical carrier; an elided role has none."""
+         request = node.reference_request or {}
+-        if request.get('forward_identity') is not None or node.subject_word_id >= 0:
++        if request.get('introduction') or request.get('forward_identity') is not None or node.subject_word_id >= 0:
+             return True
+         # Lowering itself introduces the noun token. An elided role can
+         # retain a cue's composition without having a word of its own.
+@@ -792,6 +792,10 @@ class ReferenceClose(nn.Module):
+                     cost = cost + phi[:, 1].amax().clamp(0, 1)
+             elif 'compose_bind' in request:
+                 handle = request['compose_bind']
++                if handle <= 0 and node.identity is not None:
++                    # Dummy preserves an already determined own object; the
++                    # introducing occurrence remains its owner.
++                    selected = handles.get(node.identity['handle'])
+                 if handle > 0:
+                     if node.identity is None:
+                         raise RuntimeError('a recorded bind lost its identity transaction')
+@@ -824,7 +828,8 @@ class ReferenceClose(nn.Module):
+                 role=role, selected=selected, candidates=tuple(choices),
+                 features=phi if choices else None, cue=cue,
+                 probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous,
+-                own_object=own_object))
++                own_object=own_object,
++                compose_dummy='compose_bind' in request and request['compose_bind'] <= 0))
+             if 'record' in request and selected is not None and not own_object:
+                 items[-1]['record'] = dict(value=request['record'])
+         plan['cost'] = cost
+@@ -1296,6 +1301,8 @@ class ReferenceClose(nn.Module):
+                     reference = int(address) if tag == 1 else ('ltm', self.store.address_domain, int(address))
+                     token = mtm.token_of(reference) if tag in (1, 2) else None
+                 if token is None:
++                    if int(record['origins'][handle-1, 0]) == 3:
++                        raise RuntimeError('a kept identity event lost its determined introduction')
+                     continue
+                 mtm.event(token, event, verb=int(verb), role=role, when=when)
+                 if role == 0 and changed:
+diff --git a/bin/ReferenceReconstruction.py b/bin/ReferenceReconstruction.py
+index 67b2b4399..73027beb7 100644
+--- a/bin/ReferenceReconstruction.py
++++ b/bin/ReferenceReconstruction.py
+@@ -16,7 +16,7 @@ def cost(resolver, plans, like):
+         total = like.new_zeros(())
+         for item in (() if plan is None else plan['items']):
+             selected = item['selected']
+-            if (selected is None or item['mode'] == 'mint' or item.get('own_object')
++            if (selected is None or item['mode'] == 'mint' or item.get('own_object') or item.get('compose_dummy')
+                     or not resolver.has_word(item['node'])):
+                 continue
+             query = item['content']
+diff --git a/bin/ThoughtStream.py b/bin/ThoughtStream.py
+index ff72fae60..dcbc717d5 100644
+--- a/bin/ThoughtStream.py
++++ b/bin/ThoughtStream.py
+@@ -243,8 +243,16 @@ def write(model, meaning, *, row, _active=None, _bound=None):
+                         refs.append(int(reference[1]))
+                     elif reference is not None and reference[0] == 'constituent':
+                         refs.append(('clause', reference[1]))
++                    elif reference is not None and reference[0] == 'ltm':
++                        # A resolved identity can be an occurrence, including
++                        # a value supplied by a preceding kept close. The
++                        # ordinary writer already resolves its address.
++                        location = store.location(reference)
++                        if type(location) is not int:
++                            raise ValueError('a concluded Part argument names an unavailable occurrence')
++                        refs.append(int(store.row_ids[location]))
+                     else:
+-                        raise ValueError('a concluded Part argument requires a symbol or its derivation')
++                        raise ValueError('a concluded Part argument requires a symbol, occurrence or its derivation')
+                 result = Clause(value, relation=name,
+                     refs=(refs[0], predicate_identity(name), refs[1]), children=children,
+                     evidence=evidence_pair(value))
+diff --git a/test/test_identity_threading.py b/test/test_identity_threading.py
+index 6119cffbb..da594617c 100644
+--- a/test/test_identity_threading.py
++++ b/test/test_identity_threading.py
+@@ -218,7 +218,7 @@ def test_compose_menu_uses_the_resolvers_observed_exclusions():
+         assert bool(available[0, 0, 1]) == (not resolver.exclusion_query()(own, atoms[0]))
+ 
+ 
+-def recorded_identity_reading(f, tree):
++def recorded_identity_reading(f, tree, *, dummy_binds=()):
+     """Execute fixed grammar operations and capture the production tensor journal."""
+     from dataclasses import replace
+     from ReferenceContext import result_order
+@@ -230,7 +230,7 @@ def recorded_identity_reading(f, tree):
+     words, columns = len(entry.leaves), len(entry.actions)
+     state = overlay.empty(entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns)
+     stack, stamps, frames, refs, inputs = [], [], [], [], []
+-    first = 0
++    first, binds = 0, 0
+     for action, (kind, local, word) in enumerate(entry.actions.tolist()):
+         if kind == 0:
+             value = entry.leaves[word][None]
+@@ -247,7 +247,8 @@ def recorded_identity_reading(f, tree):
+         handle = 0
+         if rule.method_name == 'bind':
+             points, records, _, _, available = overlay.menu(state, live[:, :1], torch.tensor([[0]]))
+-            handle = first
++            handle = 0 if binds in dummy_binds else first
++            binds += 1
+             assert available[0, 0, handle]
+             result = f.operation(rule).compose(points[:, :, handle])[:, 0]
+             operands = torch.stack((live[:, 0], records[:, 0, handle]), 1)
+@@ -686,3 +687,74 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
+         assert loss is not None and loss.requires_grad
+     assert alloc.next_id == allocation and alloc.form_regions == regions
+     unchanged(resolver, retained)
++
++
++@pytest.mark.parametrize('readmit', (False, True))
++@pytest.mark.parametrize('dummy', (False, True))
++def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatch, readmit, dummy):
++    from ClauseJournal import finish_clause
++    from ReferenceReconstruction import cost
++    from test_clause_acceptance import SentenceFixture
++    from test_medium_term_memory import snapshot, unchanged
++    f = SentenceFixture(monkeypatch)
++    relative = ('definite_unary', ('implies', 'left', 'right'))
++    if dummy:
++        relative = ('bind', relative)
++    tree = ('sum', ('equal', ('equal', relative, 'changed'), 'latest'), ('bind', 'alias'))
++    entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else ())
++    clause = finish_clause(f.language, entry, registry=f.registry)
++    resolver = f.cs.components.reference_close
++    plan = resolver.preview(clause, ())
++    intro = next(item for item in plan['items'] if item['node'].identity['introduction']
++                 and item['node'].identity['handle'] == handle)
++    assert intro['node'].subject_word_id == -1
++    assert intro['node'].children[0].relation == 'implies'
++    opened = next(value for name, _, value in inputs if name == 'definite_unary')[0]
++    torch.testing.assert_close(intro['content'], opened)
++    assert intro['own_object'] and intro['selected'] == ('new', 0)
++    assert plan['items'][-1]['selected'] == intro['selected']
++    assert all(item['selected'] == intro['selected'] for item in plan['items']
++               if item['node'].identity['handle'] == handle)
++    if dummy:
++        wrapper = next(item for item in plan['items'] if item.get('compose_dummy') and item is not intro)
++        assert not wrapper['own_object']
++        torch.testing.assert_close(cost(resolver, [dict(plan, items=[wrapper])], torch.zeros(1)), torch.zeros(1))
++    if readmit:
++        clause = finish_clause(f.language, entry, registry=f.registry)
++        sites = resolver.sites(clause, pending_names=plan['pending_names'])
++        plan = dict(plan, items=[dict(item, **site) for item, site in zip(plan['items'], sites)])
++    prepared = resolver.prepare(clause, plan)
++    written = {}
++    row = f.store.write_clause(prepared, written_rows=written, document_key='relative', sentence_index=0)
++    retained = snapshot(resolver)
++    resolver.commit(plan, row, written, document='relative', position=0, training=False)
++    mentions = [written[('occurrence', id(item['written_node']))] for item in plan['items']
++                if item['written_node'].identity['handle'] == handle]
++    token = f.cs.mtm.token_of(mentions[0])
++    assert all(f.cs.mtm.token_of(mention) == token for mention in mentions)
++    assert f.cs.mtm.entries[token].count == len(mentions)
++    assert len([event for event in f.cs.mtm.entries[token].events if event.role == 0]) == 2
++    torch.testing.assert_close(f.cs.mtm.value_of(token), entry.identity_values[handle-1])
++    unchanged(resolver, retained)
++
++
++def test_two_relative_determinations_keep_distinct_objects(monkeypatch):
++    from ClauseJournal import finish_clause
++    from test_clause_acceptance import SentenceFixture
++    f = SentenceFixture(monkeypatch)
++    relative = ('definite_unary', ('implies', 'left', 'right'))
++    entry, _, _ = recorded_identity_reading(f, ('sum', relative, relative))
++    resolver = f.cs.components.reference_close
++    clause = finish_clause(f.language, entry, registry=f.registry)
++    plan = resolver.preview(clause, ())
++    introductions = [item for item in plan['items'] if item['node'].identity['introduction']]
++    assert len(introductions) == 2
++    assert introductions[0]['node'].identity['handle'] != introductions[1]['node'].identity['handle']
++    assert [item['selected'] for item in introductions] == [('new', 0), ('new', 1)]
++    prepared = resolver.prepare(clause, plan)
++    written = {}
++    row = f.store.write_clause(prepared, written_rows=written, document_key='separate', sentence_index=0)
++    resolver.commit(plan, row, written, document='separate', position=0, training=False)
++    tokens = [f.cs.mtm.token_of(written[('occurrence', id(item['written_node']))]) for item in introductions]
++    assert tokens[0] != tokens[1]
++    assert all(f.cs.mtm.entries[token].count == 1 for token in tokens)
+diff --git a/test/test_lexical_reference_orders.py b/test/test_lexical_reference_orders.py
+index 2171b64fa..a15580be6 100644
+--- a/test/test_lexical_reference_orders.py
++++ b/test/test_lexical_reference_orders.py
+@@ -173,3 +173,32 @@ def test_ambiguous_particular_requires_a_carried_reference():
+     cs.bind_word_concept('cat', other)
+     assert cs.resolve_word_concept('cat', order=1) is None
+     assert cs.resolve_word_concept('cat', order=1, previous=other) == other
++
++
++@pytest.mark.parametrize('ambiguous', (False, True))
++def test_order_zero_reference_agrees_before_and_after_admission(ambiguous):
++    from Spaces import _concept_alloc_of
++    cs = _cs(nS=256, order=3)
++    word, _ = cs.interpret_word([7], [], key='token')
++    if ambiguous:
++        for _ in range(2):
++            obj = cs.new_concept()
++            cs._csw_concept_row(0, obj)
++            cs.interpret.define(word, obj)
++            cs.bind_word_concept('token', obj)
++    grammar = Language.Grammar()
++    grammar.configure({'compose': {'rule': {
++        '_': 'generic_argout1 = generic.forward(generic_argin1)',
++        'reference': 'argin1'}}})
++    rule = next(r for r in grammar.rules if r.method_name == 'generic')
++    language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
++    bank, next_id = cs.similarity_codebook.W.clone(), _concept_alloc_of(cs).next_id
++    results = [Language.LanguageSpace.resolve_lexical_references(language, cs,
++        torch.tensor([cs._csw_row_of(word)]), torch.tensor([word]),
++        torch.tensor([[0, -1, 0], [2, 0, -1]]), leaf_orders=torch.tensor([0]), admit=admit)
++        for admit in (False, True)]
++    for refs, orders in results:
++        assert refs.tolist() == [-1 if ambiguous else word]
++        assert orders.tolist() == [0]
++    assert _concept_alloc_of(cs).next_id == next_id
++    torch.testing.assert_close(cs.similarity_codebook.W, bank, rtol=0, atol=0)
+diff --git a/test/test_review11_contracts.py b/test/test_review11_contracts.py
+index 4383aaf4b..060b0e918 100644
+--- a/test/test_review11_contracts.py
++++ b/test/test_review11_contracts.py
+@@ -128,8 +128,8 @@ def test_free_policy_has_no_pathwise_credit_between_supported_operations(monkeyp
+     with torch.no_grad():
+         language.generate_policy.weight.zero_()
+         language.generate_policy.bias.copy_(torch.tensor([1., 0., 20.]))
+-    event = torch.tensor([[[1., 1.], [0., 0.], [0., 0.]]], requires_grad=True)
+-    bank = torch.tensor([[[1., 0.], [0., 1.], [1., 2.]]])
++    event = torch.tensor([[[.5, .5], [0., 0.], [0., 0.]]], requires_grad=True)
++    bank = torch.tensor([[[.5, 0.], [0., .5], [.5, 1.]]])
+     out, count, truncated, _, actions, alternatives = model._output_generate_walk(
+         event, 6, basis=bank, basis_valid=torch.ones(1, 3, dtype=torch.bool), return_candidates=True)
+     assert alternatives[0, 0] and actions[0, 0] == 0
+diff --git a/test/test_thought_binding.py b/test/test_thought_binding.py
+index 918005302..033af0e16 100644
+--- a/test/test_thought_binding.py
++++ b/test/test_thought_binding.py
+@@ -153,3 +153,35 @@ def test_explicit_reflexive_equality_remains_a_direct_witness():
+     updated = integrate(goal, read(name, name, ('ltm', 'test', 3)), ())
+     assert updated.role_refs[0] == name and not open_slots(updated)
+     assert bindings(updated)['_thought_witnesses'] == (('ltm', 'test', 3),)
++
++
++@pytest.mark.parametrize('role', (0, 2))
++def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
++    from dataclasses import replace
++    from ClauseRow import Clause, predicate_identity, predicate_point
++    from ThoughtStream import write
++    from test_clause_acceptance import SentenceFixture
++    import Occurrence
++    f = SentenceFixture(monkeypatch)
++    a, b = f.noun('a'), f.noun('b')
++    point = f.registry._payload(('sym', a))
++    row = f.store.write_clause(Clause(ConceptualMeaning.from_description(point),
++        point=point, refs=(a, -1, -1)), document_key='initial', sentence_index=0)
++    address = f.store.occurrence_of(row)
++    refs = [('sym', b), ('sym', predicate_identity('part')), ('sym', b)]
++    refs[role] = address
++    values = torch.stack((f.registry._payload(('sym', b)), predicate_point('part', point),
++                          f.registry._payload(('sym', b))))
++    values[role] = point
++    concluded = with_slots(ConceptualMeaning(values, torch.ones(3, dtype=torch.bool),
++        role_refs=tuple(refs)), (), pair=(.8, .1))
++    f.model.symbolSpace = SimpleNamespace(ltm_store=f.store)
++    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('conclusion', 0))
++    original = f.store.slots[row].clone()
++    result = write(f.model, concluded, row=0)
++    assert f.store.parts.contains(result)
++    pair = f.store.parts.row(result)
++    assert pair['refs'].tolist() == ([a, b] if role == 0 else [b, a])
++    assert (pair['truth_plus'], pair['truth_minus']) == pytest.approx((.8, .1))
++    assert f.store.raw_meaning_of(len(f.store)-1).role_refs[role] == address
++    torch.testing.assert_close(f.store.slots[row], original, rtol=0, atol=0)

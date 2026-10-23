@@ -463,7 +463,7 @@ class ReferenceClose(nn.Module):
     def has_word(node):
         """A noun occurrence has a lexical carrier; an elided role has none."""
         request = node.reference_request or {}
-        if request.get('forward_identity') is not None or node.subject_word_id >= 0:
+        if request.get('determined') or request.get('forward_identity') is not None or node.subject_word_id >= 0:
             return True
         # Lowering itself introduces the noun token. An elided role can
         # retain a cue's composition without having a word of its own.
@@ -792,6 +792,10 @@ class ReferenceClose(nn.Module):
                     cost = cost + phi[:, 1].amax().clamp(0, 1)
             elif 'compose_bind' in request:
                 handle = request['compose_bind']
+                if handle <= 0 and node.identity is not None:
+                    # Dummy preserves an already determined own object; the
+                    # introducing occurrence remains its owner.
+                    selected = handles.get(node.identity['handle'])
                 if handle > 0:
                     if node.identity is None:
                         raise RuntimeError('a recorded bind lost its identity transaction')
@@ -824,7 +828,8 @@ class ReferenceClose(nn.Module):
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
                 probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous,
-                own_object=own_object))
+                own_object=own_object,
+                compose_dummy='compose_bind' in request and request['compose_bind'] <= 0))
             if 'record' in request and selected is not None and not own_object:
                 items[-1]['record'] = dict(value=request['record'])
         plan['cost'] = cost
@@ -1296,6 +1301,8 @@ class ReferenceClose(nn.Module):
                     reference = int(address) if tag == 1 else ('ltm', self.store.address_domain, int(address))
                     token = mtm.token_of(reference) if tag in (1, 2) else None
                 if token is None:
+                    if int(record['origins'][handle-1, 0]) == 3:
+                        raise RuntimeError('a kept identity event lost its determined introduction')
                     continue
                 mtm.event(token, event, verb=int(verb), role=role, when=when)
                 if role == 0 and changed:

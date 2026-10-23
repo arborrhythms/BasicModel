@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle",
+    "test/test_concept_forgetting.py::test_live_reference_preserves_weak_candidate_and_keeps_a_representative",
+    "test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant",
+    "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
+    "test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling",
+    "test/test_concept_forgetting.py::test_different_order_or_definition_never_merges",
+    "test/test_concept_forgetting.py::test_exact_physical_preallocation_warns_even_for_external_handles",
+    "test/test_concept_forgetting.py::test_equal_descriptions_do_not_merge_distinct_individuals",
+    "test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean",
+    "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
+    "test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned",
+    "test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats",
+    "test/test_concept_forgetting.py::test_concept_meaning_starts_zero_and_grows_without_changing_direction"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-09/modules-a/worker-008.recycle.json"
+}

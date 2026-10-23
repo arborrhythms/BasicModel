@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

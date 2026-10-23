@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_review.py::test_old_context_checkpoint_resets_policy_and_its_optimizer_moments",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

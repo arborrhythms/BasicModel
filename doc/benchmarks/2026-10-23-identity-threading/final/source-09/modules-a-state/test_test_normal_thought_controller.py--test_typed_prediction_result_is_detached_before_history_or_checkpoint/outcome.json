@@ -1,0 +1,6 @@
+{
+  "node": "test/test_normal_thought_controller.py::test_typed_prediction_result_is_detached_before_history_or_checkpoint",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

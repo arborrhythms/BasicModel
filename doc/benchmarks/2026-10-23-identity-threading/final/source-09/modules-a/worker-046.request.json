@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-resolved]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-resolved]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-09/modules-a/worker-046.recycle.json"
+}

@@ -1,0 +1,16 @@
+{
+  "source": "81ba1486119bf6afe09561b770ffc50e144ce92e",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations",
+    "--tb=short"
+  ],
+  "initial_rng": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-09/modules-a-state/test_test_review11_contracts.py--test_free_policy_has_no_pathwise_credit_between_supported_operations/initial-rng.pt",
+  "started": "2026-10-23T15:45:58.307021+00:00",
+  "scope": "diagnostic replay only, not gate evidence; corpus private generator is not restored",
+  "exit": 1,
+  "finished": "2026-10-23T15:46:01.430425+00:00"
+}

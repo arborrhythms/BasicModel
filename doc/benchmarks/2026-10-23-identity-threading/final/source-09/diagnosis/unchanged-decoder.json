@@ -1,0 +1,27 @@
+{
+  "base": "b38889eb787cc4a0d5b27b675e908a670257ea1a",
+  "source": "81ba1486119bf6afe09561b770ffc50e144ce92e",
+  "functions": [
+    {
+      "path": "bin/Language.py",
+      "function": "decoder_eligibility",
+      "unchanged": true,
+      "base_sha256": "7e5daf12719972ca52bffa03dce69c0906f7b663aabddcec00d958c04d045f2a",
+      "source_sha256": "7e5daf12719972ca52bffa03dce69c0906f7b663aabddcec00d958c04d045f2a"
+    },
+    {
+      "path": "bin/Models.py",
+      "function": "_output_generate_walk",
+      "unchanged": true,
+      "base_sha256": "7b52afa821f6cfff43eb233c9038b603e208252a82c8cf10ee99ecd9af03617b",
+      "source_sha256": "7b52afa821f6cfff43eb233c9038b603e208252a82c8cf10ee99ecd9af03617b"
+    },
+    {
+      "path": "test/test_review11_contracts.py",
+      "function": "test_free_policy_has_no_pathwise_credit_between_supported_operations",
+      "unchanged": true,
+      "base_sha256": "c57374c2675db4508d58d22b544acd25b1cb2367a745940ed76c6ea92c57ed56",
+      "source_sha256": "c57374c2675db4508d58d22b544acd25b1cb2367a745940ed76c6ea92c57ed56"
+    }
+  ]
+}

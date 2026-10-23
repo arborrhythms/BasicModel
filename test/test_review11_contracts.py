@@ -128,8 +128,8 @@ def test_free_policy_has_no_pathwise_credit_between_supported_operations(monkeyp
     with torch.no_grad():
         language.generate_policy.weight.zero_()
         language.generate_policy.bias.copy_(torch.tensor([1., 0., 20.]))
-    event = torch.tensor([[[1., 1.], [0., 0.], [0., 0.]]], requires_grad=True)
-    bank = torch.tensor([[[1., 0.], [0., 1.], [1., 2.]]])
+    event = torch.tensor([[[.5, .5], [0., 0.], [0., 0.]]], requires_grad=True)
+    bank = torch.tensor([[[.5, 0.], [0., .5], [.5, 1.]]])
     out, count, truncated, _, actions, alternatives = model._output_generate_walk(
         event, 6, basis=bank, basis_valid=torch.ones(1, 3, dtype=torch.bool), return_candidates=True)
     assert alternatives[0, 0] and actions[0, 0] == 0

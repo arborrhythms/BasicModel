@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_local_reference_tag_distinguishes_a_journal_slot_from_the_same_signed_address",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

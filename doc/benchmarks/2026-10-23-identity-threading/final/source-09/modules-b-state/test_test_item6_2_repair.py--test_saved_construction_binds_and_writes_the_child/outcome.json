@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_repair.py::test_saved_construction_binds_and_writes_the_child",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

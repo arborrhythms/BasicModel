@@ -243,8 +243,16 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                         refs.append(int(reference[1]))
                     elif reference is not None and reference[0] == 'constituent':
                         refs.append(('clause', reference[1]))
+                    elif reference is not None and reference[0] == 'ltm':
+                        # A resolved identity can be an occurrence, including
+                        # a value supplied by a preceding kept close. The
+                        # ordinary writer already resolves its address.
+                        location = store.location(reference)
+                        if type(location) is not int:
+                            raise ValueError('a concluded Part argument names an unavailable occurrence')
+                        refs.append(int(store.row_ids[location]))
                     else:
-                        raise ValueError('a concluded Part argument requires a symbol or its derivation')
+                        raise ValueError('a concluded Part argument requires a symbol, occurrence or its derivation')
                 result = Clause(value, relation=name,
                     refs=(refs[0], predicate_identity(name), refs[1]), children=children,
                     evidence=evidence_pair(value))

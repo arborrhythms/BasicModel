@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

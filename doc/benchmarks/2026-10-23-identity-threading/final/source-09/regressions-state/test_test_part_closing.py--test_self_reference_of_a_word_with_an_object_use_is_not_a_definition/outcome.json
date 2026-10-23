@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_closing.py::test_self_reference_of_a_word_with_an_object_use_is_not_a_definition",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

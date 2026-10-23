@@ -153,3 +153,35 @@ def test_explicit_reflexive_equality_remains_a_direct_witness():
     updated = integrate(goal, read(name, name, ('ltm', 'test', 3)), ())
     assert updated.role_refs[0] == name and not open_slots(updated)
     assert bindings(updated)['_thought_witnesses'] == (('ltm', 'test', 3),)
+
+
+@pytest.mark.parametrize('role', (0, 2))
+def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
+    from dataclasses import replace
+    from ClauseRow import Clause, predicate_identity, predicate_point
+    from ThoughtStream import write
+    from test_clause_acceptance import SentenceFixture
+    import Occurrence
+    f = SentenceFixture(monkeypatch)
+    a, b = f.noun('a'), f.noun('b')
+    point = f.registry._payload(('sym', a))
+    row = f.store.write_clause(Clause(ConceptualMeaning.from_description(point),
+        point=point, refs=(a, -1, -1)), document_key='initial', sentence_index=0)
+    address = f.store.occurrence_of(row)
+    refs = [('sym', b), ('sym', predicate_identity('part')), ('sym', b)]
+    refs[role] = address
+    values = torch.stack((f.registry._payload(('sym', b)), predicate_point('part', point),
+                          f.registry._payload(('sym', b))))
+    values[role] = point
+    concluded = with_slots(ConceptualMeaning(values, torch.ones(3, dtype=torch.bool),
+        role_refs=tuple(refs)), (), pair=(.8, .1))
+    f.model.symbolSpace = SimpleNamespace(ltm_store=f.store)
+    monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('conclusion', 0))
+    original = f.store.slots[row].clone()
+    result = write(f.model, concluded, row=0)[1]
+    assert f.store.parts.contains(result)
+    pair = f.store.parts.row(result)
+    assert pair['refs'].tolist() == ([a, b] if role == 0 else [b, a])
+    assert (pair['truth_plus'], pair['truth_minus']) == pytest.approx((.8, .1))
+    assert f.store.raw_meaning_of(len(f.store)-1).role_refs == (('sym', result), None, None)
+    torch.testing.assert_close(f.store.slots[row], original, rtol=0, atol=0)

@@ -12651,8 +12651,14 @@ class LanguageSpace(nn.Module):
             # A trial can request a new symbolization order but may not mint
             # it. Its singleton has the source's point; retain that source
             # address until the winning host closing admits the new identity.
-            refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
-                          -1 if cid is None else cid)
+            if order == 0 and cid is None:
+                # A word with no object stands for itself in both trials and
+                # admission. An ambiguous reading stays unknown in both.
+                objects = set(associated) - owner._word_definition_ids()
+                refs[leaf] = -1 if objects else int(concept_ids[leaf])
+            else:
+                refs[leaf] = (int(concept_ids[leaf]) if cid is None and not admit else
+                              -1 if cid is None else cid)
             orders[leaf] = order if cid is None else owner._concept_source_order(cid)
         return refs, orders
 

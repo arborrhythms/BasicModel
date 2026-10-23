@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-False]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-True]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-False]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-True]",
+    "test/test_thought_binding.py::test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features",
+    "test/test_thought_binding.py::test_explicit_reflexive_equality_remains_a_direct_witness"
+  ],
+  "completed": [
+    "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+    "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+    "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+    "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+    "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-False]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-True]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-False]",
+    "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-True]",
+    "test/test_thought_binding.py::test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features",
+    "test/test_thought_binding.py::test_explicit_reflexive_equality_remains_a_direct_witness"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_thought_binding.py::test_reverse_equality_binds_the_other_operand_not_the_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009455829858779907,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025179190561175346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_substitution_requires_the_returned_premise_and_keeps_its_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001168582821264863,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00044916686601936817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.018111333018168807,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002337584039196372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002260874956846237,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027662492357194424,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003992910496890545,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024833320640027523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_unresolved_operand_is_not_an_answer_but_keeps_its_equality[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003873750101774931,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009801250416785479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_thought_binding.py::test_explicit_reflexive_equality_remains_a_direct_witness",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004040419589728117,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

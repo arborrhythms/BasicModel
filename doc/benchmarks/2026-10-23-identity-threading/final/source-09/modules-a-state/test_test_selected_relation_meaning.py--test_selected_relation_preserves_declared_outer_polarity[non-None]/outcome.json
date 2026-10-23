@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_selected_relation_preserves_declared_outer_polarity[non-None]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

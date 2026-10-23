@@ -1659,4 +1659,7 @@ would be an episode, the co-present ideas of one moment, which recall
 could bring back together into STM's chunks. Today each close writes its
 ideas with one `RowTime` stamp per close, so the stamp already groups a
 sentence's ideas; episodic memory would make that grouping a read
-(entries at a time) rather than an accident of the writer. Unscheduled.
+(entries at a time) rather than an accident of the writer. *Decided the
+same day:* recall by `.when` alone is item 3's, in the
+[layout-and-removal spec](plans/2026-10-23-layout-and-removal.md); this
+entry is its record.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lexical_reference_orders.py::test_order_zero_reference_agrees_before_and_after_admission[False]",
+  "outcome": "failed",
+  "failure": "test/test_lexical_reference_orders.py:201: in test_order_zero_reference_agrees_before_and_after_admission\n    assert refs.tolist() == [-1 if ambiguous else word]\nE   assert [-1] == [1]\nE     \nE     At index 0 diff: -1 != 1\nE     Use -v to get more diff",
+  "records": []
+}

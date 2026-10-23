@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

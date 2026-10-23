@@ -1,0 +1,572 @@
+{
+  "base": "b38889eb787cc4a0d5b27b675e908a670257ea1a",
+  "note": "Exact Python assert statements; test-ports.patch also owns tensor/raises checks and fixture edits.",
+  "changes": [
+    {
+      "file": "test/test_bind_thought.py",
+      "function": "test_participant_cache_rebuilds_from_retained_identity_rows",
+      "before": [
+        "assert f.resolver.expected_roles(f.atoms[4]) == (2,)",
+        "assert f.resolver._participants() == saved",
+        "assert f.resolver.expected_roles(f.atoms[4]) == ()"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_bind_thought.py",
+      "function": "test_participant_evidence_lasts_with_the_identity_pool",
+      "before": null,
+      "after": [
+        "assert f.resolver.expected_roles(f.atoms[4]) == (2,)",
+        "assert f.resolver._participants() == saved",
+        "assert f.resolver.expected_roles(f.atoms[4]) == ()"
+      ]
+    },
+    {
+      "file": "test/test_identity_rows.py",
+      "function": "test_mtm_holds_current_content_and_native_witnesses_are_live_queries",
+      "before": null,
+      "after": [
+        "assert witness_count(resolver.components.owner, cid) == 1",
+        "assert not hasattr(resolver.components, 'nouns')",
+        "assert all((not hasattr(resolver, k) for k in ('seen', 'cooccurrence', 'associations', 'predicates', 'cue_policy')))",
+        "assert witness_count(owner, cid) == 0"
+      ]
+    },
+    {
+      "file": "test/test_identity_rows.py",
+      "function": "test_native_row_is_the_only_content_and_witnesses_are_live_queries",
+      "before": [
+        "assert witness_count(resolver.components.owner, cid) == 1",
+        "assert not hasattr(resolver.components, 'nouns')",
+        "assert all((not hasattr(resolver, k) for k in ('seen', 'cooccurrence', 'associations', 'predicates', 'cue_policy')))",
+        "assert witness_count(owner, cid) == 0"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "address",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "choice",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "event",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "operations",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "push",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "recorded_identity_reading",
+      "before": null,
+      "after": [
+        "assert available[0, 0, handle]"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "start",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_bind_training_never_updates_or_creates_a_concept_region",
+      "before": null,
+      "after": [
+        "assert selected == plan['items'][0]['candidates'][1]",
+        "assert alloc.next_id == allocation and alloc.form_regions == regions",
+        "assert loss is not None and loss.requires_grad"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_binding_an_unresolved_object_does_not_complete_its_verb",
+      "before": null,
+      "after": [
+        "assert state[2][0, 0, 3] == 0"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy",
+      "before": null,
+      "after": [
+        "assert identity.tolist() == [1] and logits[0, 0] == 0",
+        "assert layer.apply_anchor.grad is None or torch.count_nonzero(layer.apply_anchor.grad) == 0",
+        "assert layer.apply_anchor.grad is not None and layer.apply_anchor.grad.abs().sum() > 0",
+        "assert identity.tolist() == [0] and logits[0, 0] == 0 and (logits[0, 1:] < 0).all()"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_compose_bind_pending_child_keeps_the_direct_question_role",
+      "before": null,
+      "after": [
+        "assert raw.role_refs[role][0] == 'ltm'",
+        "assert bindings(raw)['_forward_references'] == ((role, words['x']),)",
+        "assert query is not None and open_slots(query) == (('referent', role),)",
+        "assert bindings(query)['_query_occurrence'] == store.occurrence_of(row)",
+        "assert query.role_refs[2 - role] == ('sym', words['three'])"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_compose_menu_uses_the_resolvers_observed_exclusions",
+      "before": null,
+      "after": [
+        "assert available[0, 0, 0]",
+        "assert bool(available[0, 0, 1]) == (not resolver.exclusion_query()(own, atoms[0]))"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_copied_store_rebinds_its_current_owner_before_closing",
+      "before": null,
+      "after": [
+        "assert store._concept_owner() is owner",
+        "assert store.parts is _concept_alloc_of(owner).parts and store.parts is not f.store.parts",
+        "assert owner._clause_store_ref() is store",
+        "assert sum((isinstance(observer, RowRemapObserver) and observer.store() is store for observer in observers)) == 1"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+      "before": null,
+      "after": [
+        "assert not torch.equal(closing._point(reference), value)",
+        "assert closing._plan_term(bound, True) == reference",
+        "assert not any((record['seat'] for record in closing._plan))",
+        "assert closing._next == closing.alloc.next_id"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_frame_access_does_not_leak_a_native_individuals_other_stream_value",
+      "before": null,
+      "after": [
+        "assert first != second and pool.token_of(first) != pool.token_of(second)",
+        "assert not resolver.individuals(resolver.accessible(()))",
+        "assert len(current) > 0"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_invalid_identity_checkpoint_does_not_replace_the_pool",
+      "before": null,
+      "after": [
+        "assert pool.state()['names'] == before['names']"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences",
+      "before": null,
+      "after": [
+        "assert not f.cs.mtm.entries and (not plan['decisions'])",
+        "assert len(names) == 2",
+        "assert f.cs.mtm.token_of(names[1]) == token",
+        "assert f.cs.mtm.entries[token].count == 2",
+        "assert len(f.cs.mtm.entries[token].events) == 2"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_later_bind_keeps_its_earlier_determination_under_a_wrapper",
+      "before": null,
+      "after": [
+        "assert len(plan['items']) == 2",
+        "assert introduction['mode'] == 'mint'",
+        "assert introduction['node'].identity['handle'] == use['node'].identity['handle'] == handle",
+        "assert use['selected'] == introduction['selected'] == ('new', 0)",
+        "assert f.cs.mtm.token_of(second) == first",
+        "assert f.cs.mtm.entries[first].occurrences == (first, second)"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_latest_verb_replaces_state_and_two_aliases_share_description_join",
+      "before": null,
+      "after": []
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_missing_determined_event_introduction_fails_loudly",
+      "before": null,
+      "after": [
+        "assert not resolver.components.owner.mtm.entries"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_names_events_checkpoint_and_reclamation_have_separate_ownership",
+      "before": null,
+      "after": [
+        "assert pool.entries[x].count == 2 and pool.entries[x].occurrences == (x, alias)",
+        "assert len(pool.entries[x].events) == 1",
+        "assert pool.reading_of(x) == 101 and pool.reading_of(alias) == 102",
+        "assert restored.names == pool.names and restored.entries[x].events == pool.entries[x].events",
+        "assert restored.token_of(alias) == x and (not restored.entries[x].events)",
+        "assert not restored.entries and (not restored.names)"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_nested_unresolved_operand_keeps_its_resolution_annotation",
+      "before": null,
+      "after": [
+        "assert marks == ((2, occurrence),) and raw.role_refs[2] == occurrence",
+        "assert gist.role_refs == (None, None, None)",
+        "assert bindings(restored.raw_meaning_of(row))['_unresolved_operands'] == marks",
+        "assert marks == ()",
+        "assert row[0] == 'sym' and store.parts.contains(row[1])"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_pending_checkpoint_migration_and_validation_are_atomic",
+      "before": null,
+      "after": [
+        "assert restored.entries[first].pending and (not restored.entries[second].pending)",
+        "assert restored.entries is previous",
+        "assert not pool.entries[first].pending",
+        "assert not pool.entries[address(4)].pending and pool.entries[address(4)].kind == 102"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_relative_determination_keeps_its_introduction_and_later_bind",
+      "before": null,
+      "after": [
+        "assert intro['node'].subject_word_id == -1",
+        "assert intro['node'].children[0].relation == 'implies'",
+        "assert intro['own_object'] and intro['selected'] == ('new', 0)",
+        "assert plan['items'][-1]['selected'] == intro['selected']",
+        "assert all((item['selected'] == intro['selected'] for item in plan['items'] if item['node'].identity['handle'] == handle))",
+        "assert all((f.cs.mtm.token_of(mention) == token for mention in mentions))",
+        "assert f.cs.mtm.entries[token].count == len(mentions)",
+        "assert len([event for event in f.cs.mtm.entries[token].events if event.role == 0]) == 2",
+        "assert not wrapper['own_object']"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_resolved_compose_bind_keeps_the_parent_relation_closed",
+      "before": null,
+      "after": [
+        "assert plan['items'][0]['reference'] == token",
+        "assert row[0] == 'sym' and store.parts.contains(row[1])",
+        "assert store.meaning_of(row).role_refs[role] == ('sym', words['three'])",
+        "assert not open_slots(store.meaning_of(row))",
+        "assert closing_question(store.meaning_of(row), prepared, store=store, written_rows=written) is None"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_second_verb_receives_first_result_through_bind_with_derivative",
+      "before": null,
+      "after": [
+        "assert available[0, 0, 1] and handles[0, 0, 1] == 1",
+        "assert second_scale.grad > 0"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_source_authority_closes_a_nested_region_without_hiding_a_free_role",
+      "before": null,
+      "after": [
+        "assert query is not None and needs_episode(query)",
+        "assert open_slots(query) == (('referent', 0),)",
+        "assert query is None"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_transparent_wrapper_retains_one_completed_event",
+      "before": null,
+      "after": [
+        "assert events == {written['occurrence', id(prepared)]}",
+        "assert len(f.store) == 3"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_trial_values_are_isolated_and_only_selected_values_commit",
+      "before": null,
+      "after": [
+        "assert not pool.value_of(address(1)).requires_grad"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_two_relative_determinations_keep_distinct_objects",
+      "before": null,
+      "after": [
+        "assert len(introductions) == 2",
+        "assert introductions[0]['node'].identity['handle'] != introductions[1]['node'].identity['handle']",
+        "assert [item['selected'] for item in introductions] == [('new', 0), ('new', 1)]",
+        "assert tokens[0] != tokens[1]",
+        "assert all((f.cs.mtm.entries[token].count == 1 for token in tokens))"
+      ]
+    },
+    {
+      "file": "test/test_identity_threading.py",
+      "function": "test_unminted_value_and_anonymous_name_have_distinct_pending_state",
+      "before": null,
+      "after": [
+        "assert bool(staged[3][0, 0, 2]) == (not pending)",
+        "assert bool(open_slots(read)) == pending",
+        "assert restored.entries[token].pending == pending and restored.entries[token].kind is None",
+        "assert read.role_refs[0] == token"
+      ]
+    },
+    {
+      "file": "test/test_lexical_reference_orders.py",
+      "function": "test_order_zero_reference_agrees_before_and_after_admission",
+      "before": null,
+      "after": [
+        "assert _concept_alloc_of(cs).next_id == next_id",
+        "assert refs.tolist() == [-1 if ambiguous else word]",
+        "assert orders.tolist() == [0]"
+      ]
+    },
+    {
+      "file": "test/test_live_references.py",
+      "function": "test_public_reading_fuses_the_reference_before_capture_and_write",
+      "before": [
+        "assert int(actions.sum()) == len(entry.leaves) - 1",
+        "assert entry.operation_refs[actions][-1, 0].item() == cid",
+        "assert clause.composition.children[0].reference == cid",
+        "assert not torch.equal(entry.leaves[0], prior)",
+        "assert model._recon_truncated.tolist() == [True]",
+        "assert query.grad is None",
+        "assert any((p.grad is not None and p.grad.any() for p in layer.chooser.parameters()))"
+      ],
+      "after": [
+        "assert int(actions.sum()) == len(entry.leaves) - 1",
+        "assert entry.identity_actions[actions][-1, 1].item() == 1",
+        "assert clause.children[0].identity['handle'] == 1",
+        "assert not torch.equal(entry.leaves[0], prior)",
+        "assert model._recon_truncated.tolist() == [True]",
+        "assert query.grad is None",
+        "assert any((p.grad is not None and p.grad.any() for p in layer.chooser.parameters()))"
+      ]
+    },
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "test_native_individual_mint_and_bind_make_no_pool_entry",
+      "before": [
+        "assert plan['items'][0]['reference'] == native",
+        "assert plan['items'][0]['reference'] == native",
+        "assert not resolver.components.owner.mtm.entries"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_medium_term_memory.py",
+      "function": "test_native_individual_mint_and_bind_share_an_occurrence_keyed_value",
+      "before": null,
+      "after": [
+        "assert plan['items'][0]['reference'] == native",
+        "assert plan['items'][0]['reference'] == native",
+        "assert token == store.occurrence_of(row)",
+        "assert pool.entries[token].native == native and pool.entries[token].count == 2"
+      ]
+    },
+    {
+      "file": "test/test_query_executors.py",
+      "function": "test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+      "before": null,
+      "after": [
+        "assert result['frames'] == () and result['witnesses'] == ()",
+        "assert result['support_true'] == result['support_false'] == 0.0",
+        "assert len(store) == 1"
+      ]
+    },
+    {
+      "file": "test/test_query_executors.py",
+      "function": "test_query_returns_only_the_completed_direction_of_an_unresolved_equality",
+      "before": null,
+      "after": [
+        "assert result['records_scanned'] == 1",
+        "assert result['frames'] == (frame,) and result['support_true'] == 0.8",
+        "assert result['frames'] == () and result['witnesses'] == ()",
+        "assert result['support_true'] == result['support_false'] == 0.0"
+      ]
+    },
+    {
+      "file": "test/test_reference_arrival_review.py",
+      "function": "test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
+      "before": [
+        "assert not prepared.companions and individual not in plan['arrival_written']",
+        "assert resolver.components.owner.mtm.entries == entries",
+        "assert entry.kind == individual and entry.occurrences == (token,) and (entry.count == 2)",
+        "assert any((item.get('refinement') and item['selected'] == individual and (item['reference'] == token) and (item['missing_reason'] is None) for item in resolver.last_audit))"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_reference_arrival_review.py",
+      "function": "test_native_arrival_without_synthetic_occurrence_joins_its_working_entry",
+      "before": null,
+      "after": [
+        "assert not prepared.companions and individual not in plan['arrival_written']",
+        "assert resolver.components.owner.mtm.entries == entries",
+        "assert entry.kind == individual and entry.occurrences == (owner, token) and (entry.count == 2)",
+        "assert any((item.get('refinement') and item['selected'] == individual and (item['reference'] == owner) and (item['missing_reason'] is None) for item in resolver.last_audit))"
+      ]
+    },
+    {
+      "file": "test/test_reference_arrivals.py",
+      "function": "test_named_bind_to_a_native_individual_creates_no_pool_entry",
+      "before": [
+        "assert plan['items'][0]['reference'] == native",
+        "assert value.role_refs[0] == ('sym', native) and (not open_slots(value))",
+        "assert not bindings(value).get('_forward_references')",
+        "assert not resolver.components.owner.mtm.entries"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_reference_arrivals.py",
+      "function": "test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value",
+      "before": null,
+      "after": [
+        "assert plan['items'][0]['reference'] == native",
+        "assert value.role_refs[0] == ('sym', native) and (not open_slots(value))",
+        "assert not bindings(value).get('_forward_references')",
+        "assert pool.token_of(token) == token and pool.entries[token].native == native"
+      ]
+    },
+    {
+      "file": "test/test_reference_arrivals.py",
+      "function": "test_native_arrival_refines_an_existing_anonymous_token",
+      "before": [
+        "assert refinement['selected'] == native",
+        "assert pool.entries[token].kind == native and pool.entries[token].count == 2",
+        "assert pool.entries[token].occurrences[-1] == refinement['reference']",
+        "assert set(pool.entries) == {token}",
+        "assert resolver._derivation_symbol(token) == native",
+        "assert not open_slots(store.meaning_of(pending))",
+        "assert refinement['reference'] == occurrence"
+      ],
+      "after": [
+        "assert refinement['selected'] == native",
+        "assert pool.entries[owner].kind == native and pool.entries[owner].count == (3 if retained_occurrence else 2)",
+        "assert token in pool.entries[owner].occurrences and refinement['reference'] in pool.entries[owner].occurrences",
+        "assert set(pool.entries) == {owner}",
+        "assert resolver._derivation_symbol(token) == native",
+        "assert not open_slots(store.meaning_of(pending))",
+        "assert refinement['reference'] == occurrence"
+      ]
+    },
+    {
+      "file": "test/test_step2b_storage.py",
+      "function": "test_definition_rejects_a_word_object_and_keeps_both_forms",
+      "before": null,
+      "after": [
+        "assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'",
+        "assert owner.definitions.words(word) == ()",
+        "assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'",
+        "assert owner.word_surface_for_row(owner._csw_row_of(other)) == b'plus'",
+        "assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'",
+        "assert owner.definitions.words(obj) == (word,)",
+        "assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'"
+      ]
+    },
+    {
+      "file": "test/test_step2b_storage.py",
+      "function": "test_truth_ingestion_restores_caller_recall_and_isolates_each_source",
+      "before": [
+        "assert model._what_recall_sentence_history is caller",
+        "assert model._what_recall_batch_size == 5",
+        "assert model._what_recall_sentence_history == {}",
+        "assert model._what_recall_batch_size is None",
+        "assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]"
+      ],
+      "after": [
+        "assert model._what_recall_sentence_history is caller",
+        "assert model._what_recall_batch_size == 5",
+        "assert owner.mtm is caller_pool",
+        "assert model._what_recall_sentence_history == {}",
+        "assert model._what_recall_batch_size is None",
+        "assert owner.mtm is not caller_pool",
+        "assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]"
+      ]
+    },
+    {
+      "file": "test/test_step2b_storage.py",
+      "function": "test_word_bank_form_survives_use_as_another_words_object",
+      "before": [
+        "assert owner.word_surface_for_row(owner._csw_row_of(word)) is None",
+        "assert owner.definitions.words(word) == (other,)",
+        "assert owner.word_surface_for_row(owner._csw_row_of(word)) is None",
+        "assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'",
+        "assert owner.definitions.words(obj) == (word,)",
+        "assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'"
+      ],
+      "after": null
+    },
+    {
+      "file": "test/test_thought_binding.py",
+      "function": "test_concluded_relation_keeps_its_occurrence_argument",
+      "before": null,
+      "after": [
+        "assert f.store.parts.contains(result)",
+        "assert pair['refs'].tolist() == ([a, b] if role == 0 else [b, a])",
+        "assert (pair['truth_plus'], pair['truth_minus']) == pytest.approx((0.8, 0.1))",
+        "assert f.store.raw_meaning_of(len(f.store) - 1).role_refs == (('sym', result), None, None)"
+      ]
+    },
+    {
+      "file": "test/test_thought_binding.py",
+      "function": "test_explicit_reflexive_equality_remains_a_direct_witness",
+      "before": null,
+      "after": [
+        "assert updated.role_refs[0] == name and (not open_slots(updated))",
+        "assert bindings(updated)['_thought_witnesses'] == (('ltm', 'test', 3),)"
+      ]
+    },
+    {
+      "file": "test/test_thought_binding.py",
+      "function": "test_unresolved_operand_guard_applies_to_ordinary_fill_without_changing_features",
+      "before": null,
+      "after": [
+        "assert updated.role_refs[2] is None and open_slots(updated) == (('referent', 2),)",
+        "assert '_bound_roles' not in bindings(updated)",
+        "assert fill(goal, evidence, operation='query').role_refs[2] == unresolved"
+      ]
+    },
+    {
+      "file": "test/test_thought_binding.py",
+      "function": "test_unresolved_operand_is_not_an_answer_but_keeps_its_equality",
+      "before": null,
+      "after": [
+        "assert updated.role_refs[0] == name and (not open_slots(updated))",
+        "assert bindings(updated)['_thought_witnesses'] == (frame['occurrence'],)",
+        "assert updated is goal and open_slots(updated) == (('referent', 0),)",
+        "assert '_bound_roles' not in bindings(updated)"
+      ]
+    }
+  ]
+}

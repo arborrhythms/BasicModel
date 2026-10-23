@@ -54,7 +54,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     frames = program.operation_values
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
-    stack = []
+    stack, introductions = [], {}
     def region(node):
         """Read the declared meaning without replaying numerical operators."""
         if not node['has_point']:
@@ -95,6 +95,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     forward_identity=forward_name(word), leaf=True)
             if program.identity_leaves is not None:
                 stack[-1]['identity_handle'] = int(program.identity_leaves[word]) if stack[-1]['order'] == 1 else 0
+                if stack[-1]['identity_handle']:
+                    introductions.setdefault(stack[-1]['identity_handle'], stack[-1])
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
@@ -220,12 +222,29 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             # Retain the own description and the pre-join record independently.
             source = operands[0]
             request = dict(source.get('close_request', {}))
+            request.pop('introduction', None)
             request.update(mode='bind', leaves=source['leaves'],
                 content=request.get('content', frames[action, 0]),
                 cue=request.get('cue', frames[action, 0]),
                 compose_bind=int(program.identity_actions[action, 4]),
                 record=frames[action, 1])
             parent['close_request'] = request
+        if program.identity_actions is not None:
+            handle, subject, _, _, selected, _ = parent['identity_event']
+            if (handle > 0 and not subject and selected <= 0 and parent['order'] == 1
+                    and int(program.identity_origins[handle-1, 0]) == 3):
+                introductions.setdefault(handle, parent)
+                if introductions[handle] is parent and not parent['has_point']:
+                    # Determination opens the journal's actual working value,
+                    # even when its description is a relation. Retain that
+                    # relation separately instead of inventing a fused meaning.
+                    rule = catalog[local]
+                    description = operands[(getattr(rule, 'head_role', 0) or 1)-1]
+                    request = dict(parent.get('close_request', {}))
+                    request.update(mode=getattr(rule, 'determiner_mode', None) or 'bind',
+                        leaves=description['leaves'], content=frames[action, 2],
+                        introduction=True, determined=True, compose_bind=0)
+                    parent['close_request'] = request
         stack.append(parent)
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
@@ -250,6 +269,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         action = node.get('identity_action')
         return dict(handle=node.get('identity_handle', 0),
             event=node.get('identity_event'), action=action,
+            introduction=introductions.get(node.get('identity_handle', 0)) is node,
             result=None if action is None else (frames[action, 1] if
                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
             origins=program.identity_origins, values=program.identity_values)
@@ -373,7 +393,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         excluded = False
         mode = 'assertive'
         def close_member(item, *, referent=True):
-            if not item['has_point']:
+            own_request = item.get('close_request', {})
+            if not item['has_point'] and not (own_request.get('introduction') or 'compose_bind' in own_request):
                 return None
             current = item
             request = current.get('close_request')
@@ -411,8 +432,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             point = request['content'] if current is item or request.get('leaf') else region(item)
             if point is None:
                 return None
+            relative = request.get('introduction', False)
+            description = item['children'][(getattr(item['rule'], 'head_role', 0) or 1)-1] if relative else None
             return Clause(ConceptualMeaning.from_description(point), point=point,
-                subject_word_id=subject_word_id(item), order=1,
+                subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=1,
+                children=(recover(description),) if relative else (),
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
                 reference_request=request, composition=composition(item), identity=identity_record(item))
         standalone = close_member(root)
@@ -747,20 +771,22 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             ordered.append(node)
         for node in stack:
             postorder(node)
-        owners, events = set(), set()
+        owners, events, required = set(), set(), set()
         def collect(clause):
             if clause.identity and (event := clause.identity.get('event')) is not None and event[1]:
                 events.add(clause.identity['action'])
             request = clause.reference_request or {}
-            if clause.identity and request and request.get('compose_bind', 0) <= 0:
-                owners.add(clause.identity['handle'])
+            if clause.identity and request:
+                required.add(clause.identity['handle'])
+                if request.get('compose_bind', 0) <= 0 and clause.identity.get('introduction', True):
+                    owners.add(clause.identity['handle'])
             for child in (*clause.children, *clause.companions):
                 collect(child)
         collect(result)
         # The verb is a symbol, not an overlay handle.
-        required = {int(event[index]) for node in ordered
+        required.update(int(event[index]) for node in ordered
                     if (event := node.get('identity_event')) is not None
-                    for index in (1, 2, 4) if int(event[index]) > 0}
+                    for index in (1, 2, 4) if int(event[index]) > 0)
         extra = []
         for node in ordered:
             handle, request = node.get('identity_handle', 0), node.get('close_request', {})

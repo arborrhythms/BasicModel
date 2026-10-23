@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "completed": [
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+    "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+    "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008720830082893372,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_open_region_with_only_negation_offers_conclude",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0253106658346951,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[anchordot]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011803125031292439,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_item4_step0.py::test_bounded_bracket_scoring_preserves_menu_draw_and_gradients[mlp]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020345000084489584,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

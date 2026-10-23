@@ -16,7 +16,7 @@ def cost(resolver, plans, like):
         total = like.new_zeros(())
         for item in (() if plan is None else plan['items']):
             selected = item['selected']
-            if (selected is None or item['mode'] == 'mint' or item.get('own_object')
+            if (selected is None or item['mode'] == 'mint' or item.get('own_object') or item.get('compose_dummy')
                     or not resolver.has_word(item['node'])):
                 continue
             query = item['content']

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_binding.py::test_an_unrelated_positive_row_does_not_fill_the_question",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

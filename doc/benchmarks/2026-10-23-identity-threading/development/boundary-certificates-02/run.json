@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_identity_threading.py",
+    "test/test_lexical_reference_orders.py",
+    "test/test_thought_binding.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T16:14:36.749550+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T16:14:42.435243+00:00"
+}

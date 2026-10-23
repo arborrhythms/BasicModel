@@ -1,0 +1,15 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_free_policy_has_no_pathwise_credit_between_supported_operations _____
+test/test_review11_contracts.py:135: in test_free_policy_has_no_pathwise_credit_between_supported_operations
+    assert alternatives[0, 0] and actions[0, 0] == 0
+E   assert (tensor(False))
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations
+1 failed, 1 warning in 1.94s

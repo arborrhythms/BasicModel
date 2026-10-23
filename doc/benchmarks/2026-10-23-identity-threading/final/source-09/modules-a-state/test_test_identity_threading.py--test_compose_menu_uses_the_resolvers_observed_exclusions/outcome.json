@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_compose_menu_uses_the_resolvers_observed_exclusions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

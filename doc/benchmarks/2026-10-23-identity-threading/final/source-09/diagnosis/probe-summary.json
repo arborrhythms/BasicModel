@@ -1,0 +1,3139 @@
+{
+  "introduction-01": [
+    {
+      "call": "score",
+      "trial": "exploit",
+      "cost": [
+        0.6669268608093262
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.3606737554073334,
+          "weighted": 0.03606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 1.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.coverage": {
+          "weight": 0.1,
+          "value": 1.0,
+          "weighted": 0.1,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0
+          ],
+          "raw": 6.0,
+          "baseline": 6.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.field": {
+          "weight": 0.1,
+          "value": 0.02500000037252903,
+          "weighted": 0.002500000037252903,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.02500000037252903
+          ],
+          "raw": 2.799999952316284,
+          "baseline": 112.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": 0.4000000059604645,
+          "weighted": 0.4000000059604645,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.4000000059604645
+          ]
+        },
+        "expectation.equal": {
+          "weight": 1.0,
+          "value": 0.11285421997308731,
+          "weighted": 0.11285421997308731,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.11285421997308731
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.260763943195343,
+          "weighted": 0.026076394319534305,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.260763943195343
+          ],
+          "raw": 0.260763943195343,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.2549620270729065,
+          "weighted": 0.025496202707290652,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.2549620270729065
+          ],
+          "raw": 0.2549620270729065,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "score",
+      "trial": "explore",
+      "cost": [
+        0.6468751430511475
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.3606737554073334,
+          "weighted": 0.03606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 1.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.coverage": {
+          "weight": 0.1,
+          "value": 1.0,
+          "weighted": 0.1,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0
+          ],
+          "raw": 6.0,
+          "baseline": 6.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.field": {
+          "weight": 0.1,
+          "value": 0.02500000037252903,
+          "weighted": 0.002500000037252903,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.02500000037252903
+          ],
+          "raw": 2.799999952316284,
+          "baseline": 112.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": 0.3799999952316284,
+          "weighted": 0.3799999952316284,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3799999952316284
+          ]
+        },
+        "expectation.equal": {
+          "weight": 1.0,
+          "value": 0.11285421997308731,
+          "weighted": 0.11285421997308731,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.11285421997308731
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.260763943195343,
+          "weighted": 0.026076394319534305,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.260763943195343
+          ],
+          "raw": 0.260763943195343,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.25444531440734863,
+          "weighted": 0.025444531440734865,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.25444531440734863
+          ],
+          "raw": 0.25444531440734863,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "commit",
+      "wins": [
+        true
+      ],
+      "credit": {
+        "costs": [
+          [
+            0.5024999976158142,
+            0.48249998688697815
+          ]
+        ],
+        "keep_costs": [
+          [
+            0.5024999976158142,
+            0.48249998688697815
+          ]
+        ],
+        "components": [
+          [
+            [
+              0.5024999976158142,
+              0.0,
+              0.0
+            ],
+            [
+              0.48249998688697815,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "delta": [
+          [
+            -0.02000001072883606,
+            0.0,
+            0.0
+          ]
+        ],
+        "wins": [
+          true
+        ],
+        "deciding": [
+          "reconstruction"
+        ],
+        "keep_decision": [
+          "explore"
+        ],
+        "advantage": [
+          -0.02000001072883606
+        ],
+        "advantage_sign": [
+          -1.0
+        ],
+        "policy_against_keep": [
+          false
+        ],
+        "answer_against_keep": [
+          false
+        ],
+        "sentence": 0,
+        "departure": {
+          "round": [
+            51
+          ],
+          "rounds": [
+            59
+          ],
+          "walk": [
+            1
+          ],
+          "walk_count": [
+            3
+          ],
+          "walk_rounds": [
+            34
+          ],
+          "narrowing": [
+            false
+          ],
+          "attention_round": [
+            -1
+          ],
+          "compose_round": [
+            19
+          ],
+          "candidate_round": [
+            -1
+          ],
+          "bind_round": [
+            -1
+          ]
+        },
+        "bind_choices": [
+          [
+            []
+          ],
+          [
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "call": "score",
+      "trial": "exploit",
+      "cost": [
+        0.5757792592048645
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.3606737554073334,
+          "weighted": 0.03606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 1.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.coverage": {
+          "weight": 0.1,
+          "value": 1.0,
+          "weighted": 0.1,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0
+          ],
+          "raw": 4.0,
+          "baseline": 4.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.field": {
+          "weight": 0.1,
+          "value": 0.019718309864401817,
+          "weighted": 0.0019718309864401816,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.019718309864401817
+          ],
+          "raw": 1.399999976158142,
+          "baseline": 71.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": 0.3199999928474426,
+          "weighted": 0.3199999928474426,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3199999928474426
+          ]
+        },
+        "expectation.equal": {
+          "weight": 1.0,
+          "value": 0.10390347987413406,
+          "weighted": 0.10390347987413406,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.10390347987413406
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.245391845703125,
+          "weighted": 0.0245391845703125,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.245391845703125
+          ],
+          "raw": 0.245391845703125,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.2536473870277405,
+          "weighted": 0.02536473870277405,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.2536473870277405
+          ],
+          "raw": 0.2536473870277405,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "score",
+      "trial": "explore",
+      "cost": [
+        0.5758801698684692
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 0.1,
+          "value": 0.3606737554073334,
+          "weighted": 0.03606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 1.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.coverage": {
+          "weight": 0.1,
+          "value": 1.0,
+          "weighted": 0.1,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            1.0
+          ],
+          "raw": 4.0,
+          "baseline": 4.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.field": {
+          "weight": 0.1,
+          "value": 0.019718309864401817,
+          "weighted": 0.0019718309864401816,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.019718309864401817
+          ],
+          "raw": 1.399999976158142,
+          "baseline": 71.0,
+          "active_entries": 1.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": 0.3199999928474426,
+          "weighted": 0.3199999928474426,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3199999928474426
+          ]
+        },
+        "expectation.equal": {
+          "weight": 1.0,
+          "value": 0.10390347987413406,
+          "weighted": 0.10390347987413406,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.10390347987413406
+          ]
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.245391845703125,
+          "weighted": 0.0245391845703125,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.245391845703125
+          ],
+          "raw": 0.245391845703125,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.2546563148498535,
+          "weighted": 0.025465631484985353,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.2546563148498535
+          ],
+          "raw": 0.2546563148498535,
+          "baseline": 1.0,
+          "active_entries": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "commit",
+      "wins": [
+        false
+      ],
+      "credit": {
+        "costs": [
+          [
+            0.4219718277454376,
+            0.4219718277454376
+          ]
+        ],
+        "keep_costs": [
+          [
+            0.4219718277454376,
+            0.4219718277454376
+          ]
+        ],
+        "components": [
+          [
+            [
+              0.4219718277454376,
+              0.0,
+              0.0
+            ],
+            [
+              0.4219718277454376,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "delta": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "wins": [
+          false
+        ],
+        "deciding": [
+          "tie:greedy"
+        ],
+        "keep_decision": [
+          "tie:greedy"
+        ],
+        "advantage": [
+          0.0
+        ],
+        "advantage_sign": [
+          0.0
+        ],
+        "policy_against_keep": [
+          false
+        ],
+        "answer_against_keep": [
+          false
+        ],
+        "sentence": 0,
+        "departure": {
+          "round": [
+            82
+          ],
+          "rounds": [
+            40
+          ],
+          "walk": [
+            1
+          ],
+          "walk_count": [
+            3
+          ],
+          "walk_rounds": [
+            28
+          ],
+          "narrowing": [
+            false
+          ],
+          "attention_round": [
+            -1
+          ],
+          "compose_round": [
+            50
+          ],
+          "candidate_round": [
+            -1
+          ],
+          "bind_round": [
+            -1
+          ]
+        },
+        "bind_choices": [
+          [
+            []
+          ],
+          [
+            []
+          ]
+        ]
+      }
+    },
+    {
+      "call": "score",
+      "trial": "exploit",
+      "error": "RuntimeError",
+      "message": "a compose bind names an unwritten introduction",
+      "frames": [
+        {
+          "name": "preview",
+          "handles": {
+            "2": [
+              "new",
+              0
+            ],
+            "3": [
+              "new",
+              1
+            ],
+            "19": [
+              "new",
+              6
+            ]
+          },
+          "handle": 24,
+          "tag": 3,
+          "address": 7,
+          "clause": [
+            {
+              "index": 0,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 24,
+                "action": 43,
+                "event": [
+                  24,
+                  0,
+                  0,
+                  0,
+                  24,
+                  0
+                ]
+              },
+              "children": [
+                1,
+                2,
+                8,
+                15
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 24,
+                "forward_identity": null,
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ]
+              }
+            },
+            {
+              "index": 1,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 19,
+                "action": 3,
+                "event": [
+                  19,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 27,
+                "leaves": [
+                  0
+                ]
+              }
+            },
+            {
+              "index": 2,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                16
+              ],
+              "identity": {
+                "handle": 25,
+                "action": 17,
+                "event": [
+                  25,
+                  25,
+                  0,
+                  16,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                3
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "equal",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 3,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 9,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                4,
+                7
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 4,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 5,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                5,
+                6
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0,
+                  1
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 5,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 19,
+                "action": 3,
+                "event": [
+                  19,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 27,
+                "leaves": [
+                  0
+                ]
+              }
+            },
+            {
+              "index": 6,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 2,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  1
+                ],
+                "word_id": 28,
+                "reference": 28
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 28,
+                "leaves": [
+                  1
+                ]
+              }
+            },
+            {
+              "index": 7,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 3,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  2
+                ],
+                "word_id": 29,
+                "reference": 29
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 29,
+                "leaves": [
+                  2
+                ]
+              }
+            },
+            {
+              "index": 8,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                15
+              ],
+              "identity": {
+                "handle": 24,
+                "action": 21,
+                "event": [
+                  24,
+                  24,
+                  0,
+                  15,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                9
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "equal",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 9,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                16
+              ],
+              "identity": {
+                "handle": 25,
+                "action": 17,
+                "event": [
+                  25,
+                  25,
+                  0,
+                  16,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                10
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 10,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 9,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                11,
+                14
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 11,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 5,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                12,
+                13
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0,
+                  1
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 12,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 19,
+                "action": 3,
+                "event": [
+                  19,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 27,
+                "leaves": [
+                  0
+                ]
+              }
+            },
+            {
+              "index": 13,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 2,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  1
+                ],
+                "word_id": 28,
+                "reference": 28
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 28,
+                "leaves": [
+                  1
+                ]
+              }
+            },
+            {
+              "index": 14,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 3,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  2
+                ],
+                "word_id": 29,
+                "reference": 29
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 29,
+                "leaves": [
+                  2
+                ]
+              }
+            },
+            {
+              "index": 15,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                17
+              ],
+              "identity": {
+                "handle": 24,
+                "action": 25,
+                "event": [
+                  24,
+                  24,
+                  0,
+                  17,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                16
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "equal",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 16,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                15
+              ],
+              "identity": {
+                "handle": 24,
+                "action": 21,
+                "event": [
+                  24,
+                  24,
+                  0,
+                  15,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                17
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 17,
+              "order": 1,
+              "relation": "part",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='equal')",
+                16
+              ],
+              "identity": {
+                "handle": 25,
+                "action": 17,
+                "event": [
+                  25,
+                  25,
+                  0,
+                  16,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                18
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 18,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 9,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                19,
+                22
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 19,
+              "order": 1,
+              "relation": "implies",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='implies')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 5,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                20,
+                21
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0,
+                  1
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 20,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 19,
+                "action": 3,
+                "event": [
+                  19,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "definite_unary",
+                "leaves": [
+                  0
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 27,
+                "leaves": [
+                  0
+                ]
+              }
+            },
+            {
+              "index": 21,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 2,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  1
+                ],
+                "word_id": 28,
+                "reference": 28
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 28,
+                "leaves": [
+                  1
+                ]
+              }
+            },
+            {
+              "index": 22,
+              "order": 1,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 3,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  2
+                ],
+                "word_id": 29,
+                "reference": 29
+              },
+              "request": {
+                "mode": "bind",
+                "compose_bind": 0,
+                "forward_identity": 29,
+                "leaves": [
+                  2
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "admission-01": [
+    {
+      "call": "score",
+      "trial": "exploit",
+      "cost": [
+        2.585297107696533,
+        3.3912241458892822
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 1.0,
+          "value": 0.3606737554073334,
+          "weighted": 0.3606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334,
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 2.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 1.0,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.coverage": {
+          "weight": 1.0,
+          "value": 1.0,
+          "weighted": 1.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.8888888955116272,
+            1.1111111640930176
+          ],
+          "raw": 4.5,
+          "baseline": 4.5,
+          "active_entries": 2.0
+        },
+        "reconstruction.field": {
+          "weight": 1.0,
+          "value": 0.0070350272580981255,
+          "weighted": 0.0070350272580981255,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.005162038374692202,
+            0.008908015675842762
+          ],
+          "raw": 0.6753625869750977,
+          "baseline": 96.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3199999928474426,
+            0.36000001430511475
+          ]
+        },
+        "grammar.compose.choice": {
+          "weight": 1.0,
+          "value": 0.9857462048530579,
+          "weighted": 0.9857462048530579,
+          "space": null,
+          "category": "grammar",
+          "count": 7,
+          "kind": "relative",
+          "objective": "grammar",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.8443824052810669,
+            1.1271100044250488
+          ],
+          "raw": 3.559448480606079,
+          "baseline": 3.610917806625366,
+          "active_entries": 7.0
+        },
+        "grammar.generate.operands": {
+          "weight": 1.0,
+          "value": 1.061448097229004,
+          "weighted": 1.061448097229004,
+          "space": null,
+          "category": "grammar",
+          "count": 6,
+          "kind": "relative",
+          "objective": "output",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.7829610109329224,
+            1.339935064315796
+          ],
+          "raw": 0.15946820378303528,
+          "baseline": 0.15023647248744965,
+          "active_entries": 624.0
+        },
+        "grammar.generate.choice": {
+          "weight": 1.0,
+          "value": 0.6116788387298584,
+          "weighted": 0.6116788387298584,
+          "space": null,
+          "category": "grammar",
+          "count": 2,
+          "kind": "relative",
+          "objective": "output",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.4848805069923401,
+            0.7384771704673767
+          ],
+          "raw": 2.01599383354187,
+          "baseline": 3.295837163925171,
+          "active_entries": 12.0
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.24391484260559082,
+          "weighted": 0.024391484260559083,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.24339820444583893,
+            0.24443146586418152
+          ],
+          "raw": 0.24391484260559082,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.19408924877643585,
+          "weighted": 0.019408924877643587,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.176431804895401,
+            0.2117466926574707
+          ],
+          "raw": 0.19408924877643585,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "concept_readout_l1": {
+          "weight": 0.01,
+          "value": 3.9166667461395264,
+          "weighted": 0.039166667461395265,
+          "space": null,
+          "category": "reg",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reg",
+          "trained": false,
+          "context_weight": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "score",
+      "trial": "explore",
+      "cost": [
+        2.9587934017181396,
+        3.3861641883850098
+      ],
+      "registry": {
+        "reconstruction.reference": {
+          "weight": 0.1,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.free_bytes": {
+          "weight": 1.0,
+          "value": 0.3606737554073334,
+          "weighted": 0.3606737554073334,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3606737554073334,
+            0.3606737554073334
+          ],
+          "raw": 2.0,
+          "baseline": 5.545177459716797,
+          "active_entries": 2.0
+        },
+        "reconstruction.forward_discard": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ]
+        },
+        "reconstruction.content": {
+          "weight": 1.0,
+          "value": 0.0,
+          "weighted": 0.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ],
+          "raw": 0.0,
+          "baseline": 0.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.coverage": {
+          "weight": 1.0,
+          "value": 1.0,
+          "weighted": 1.0,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.8888888955116272,
+            1.1111111640930176
+          ],
+          "raw": 4.5,
+          "baseline": 4.5,
+          "active_entries": 2.0
+        },
+        "reconstruction.field": {
+          "weight": 1.0,
+          "value": 0.1956976056098938,
+          "weighted": 0.1956976056098938,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "relative",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3824872076511383,
+            0.008908015675842762
+          ],
+          "raw": 18.786972045898438,
+          "baseline": 96.0,
+          "active_entries": 2.0
+        },
+        "reconstruction.iterations": {
+          "weight": 1.0,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "reconstruction",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reconstruction",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.3199999928474426,
+            0.36000001430511475
+          ]
+        },
+        "grammar.compose.choice": {
+          "weight": 1.0,
+          "value": 0.9856225252151489,
+          "weighted": 0.9856225252151489,
+          "space": null,
+          "category": "grammar",
+          "count": 7,
+          "kind": "relative",
+          "objective": "grammar",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.8444806337356567,
+            1.1267644166946411
+          ],
+          "raw": 3.559001922607422,
+          "baseline": 3.610917806625366,
+          "active_entries": 7.0
+        },
+        "grammar.generate.operands": {
+          "weight": 1.0,
+          "value": 1.061448097229004,
+          "weighted": 1.061448097229004,
+          "space": null,
+          "category": "grammar",
+          "count": 6,
+          "kind": "relative",
+          "objective": "output",
+          "trained": false,
+          "context_weight": 1.0,
+          "row_values": [
+            0.7829610109329224,
+            1.339935064315796
+          ],
+          "raw": 0.15946820378303528,
+          "baseline": 0.15023647248744965,
+          "active_entries": 624.0
+        },
+        "grammar.generate.choice": {
+          "weight": 1.0,
+          "value": 0.6116788387298584,
+          "weighted": 0.6116788387298584,
+          "space": null,
+          "category": "grammar",
+          "count": 2,
+          "kind": "relative",
+          "objective": "output",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.4848805069923401,
+            0.7384771704673767
+          ],
+          "raw": 2.01599383354187,
+          "baseline": 3.295837163925171,
+          "active_entries": 12.0
+        },
+        "expectation.components": {
+          "weight": 0.1,
+          "value": null,
+          "weighted": null,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.0,
+            0.0
+          ]
+        },
+        "expectation.word": {
+          "weight": 0.1,
+          "value": 0.24391484260559082,
+          "weighted": 0.024391484260559083,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.24339820444583893,
+            0.24443146586418152
+          ],
+          "raw": 0.24391484260559082,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "expectation.symbols": {
+          "weight": 0.1,
+          "value": 0.15088123083114624,
+          "weighted": 0.015088123083114625,
+          "space": null,
+          "category": "expectation",
+          "count": 1,
+          "kind": "relative",
+          "objective": "expectation",
+          "trained": true,
+          "context_weight": 1.0,
+          "row_values": [
+            0.13716159760951996,
+            0.16460084915161133
+          ],
+          "raw": 0.15088123083114624,
+          "baseline": 1.0,
+          "active_entries": 2.0
+        },
+        "concept_readout_l1": {
+          "weight": 0.01,
+          "value": 3.9166667461395264,
+          "weighted": 0.039166667461395265,
+          "space": null,
+          "category": "reg",
+          "count": 1,
+          "kind": "penalty",
+          "objective": "reg",
+          "trained": false,
+          "context_weight": 1.0
+        }
+      },
+      "answer": null
+    },
+    {
+      "call": "commit",
+      "wins": [
+        false,
+        false
+      ],
+      "error": "RuntimeError",
+      "message": "admission changed the selected clause structure",
+      "credit": {
+        "costs": [
+          [
+            1.2140510082244873,
+            1.5913760662078857
+          ],
+          [
+            1.480019211769104,
+            1.480019211769104
+          ]
+        ],
+        "keep_costs": [
+          [
+            1.2140510082244873,
+            1.5913760662078857
+          ],
+          [
+            1.480019211769104,
+            1.480019211769104
+          ]
+        ],
+        "components": [
+          [
+            [
+              1.2140510082244873,
+              0.0,
+              0.0
+            ],
+            [
+              1.5913760662078857,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              1.480019211769104,
+              0.0,
+              0.0
+            ],
+            [
+              1.480019211769104,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "delta": [
+          [
+            0.37732505798339844,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "wins": [
+          false,
+          false
+        ],
+        "deciding": [
+          "reconstruction",
+          "tie:greedy"
+        ],
+        "keep_decision": [
+          "greedy",
+          "tie:greedy"
+        ],
+        "advantage": [
+          0.37732505798339844,
+          0.0
+        ],
+        "advantage_sign": [
+          1.0,
+          0.0
+        ],
+        "policy_against_keep": [
+          false,
+          false
+        ],
+        "answer_against_keep": [
+          false,
+          false
+        ],
+        "sentence": 0,
+        "departure": {
+          "round": [
+            -1,
+            42
+          ],
+          "rounds": [
+            40,
+            47
+          ],
+          "walk": [
+            2,
+            1
+          ],
+          "walk_count": [
+            3,
+            3
+          ],
+          "walk_rounds": [
+            3,
+            31
+          ],
+          "narrowing": [
+            false,
+            false
+          ],
+          "attention_round": [
+            -1,
+            -1
+          ],
+          "compose_round": [
+            -1,
+            10
+          ],
+          "candidate_round": [
+            2,
+            -1
+          ],
+          "bind_round": [
+            -1,
+            -1
+          ]
+        },
+        "bind_choices": [
+          [
+            [],
+            []
+          ],
+          [
+            [],
+            []
+          ]
+        ]
+      },
+      "frames": [
+        {
+          "name": "frozen_values",
+          "admitted": [
+            {
+              "index": 0,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='sum')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 13,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                1,
+                6
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "generic",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 1,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='sum')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 9,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                2,
+                5
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "generic",
+                "leaves": [
+                  0,
+                  1,
+                  2
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 2,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='lift')",
+                [
+                  "clause",
+                  1
+                ]
+              ],
+              "identity": {
+                "handle": 1,
+                "action": 5,
+                "event": [
+                  1,
+                  1,
+                  0,
+                  13,
+                  -1,
+                  1
+                ]
+              },
+              "children": [
+                3,
+                4
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 3,
+              "order": 0,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 0,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 4,
+              "order": 0,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 0,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  1
+                ],
+                "word_id": 13,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 5,
+              "order": 0,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 0,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  2
+                ],
+                "word_id": 14,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 6,
+              "order": 0,
+              "relation": null,
+              "refs": [
+                -1,
+                -1,
+                -1
+              ],
+              "identity": {
+                "handle": 0,
+                "action": null,
+                "event": null
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": null,
+                "leaves": [
+                  3
+                ],
+                "word_id": 15,
+                "reference": -1
+              },
+              "request": null
+            }
+          ],
+          "scored": [
+            {
+              "index": 0,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='sum')",
+                15
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 13,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                1
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "generic",
+                "leaves": [
+                  0,
+                  1,
+                  2,
+                  3
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 1,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                [
+                  "clause",
+                  0
+                ],
+                "ClausePredicate(name='sum')",
+                14
+              ],
+              "identity": {
+                "handle": 0,
+                "action": 9,
+                "event": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  -1,
+                  0
+                ]
+              },
+              "children": [
+                2
+              ],
+              "companions": [],
+              "composition": {
+                "operation": "generic",
+                "leaves": [
+                  0,
+                  1,
+                  2
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            },
+            {
+              "index": 2,
+              "order": 0,
+              "relation": "operator",
+              "refs": [
+                12,
+                "ClausePredicate(name='lift')",
+                13
+              ],
+              "identity": {
+                "handle": 1,
+                "action": 5,
+                "event": [
+                  1,
+                  1,
+                  0,
+                  13,
+                  -1,
+                  1
+                ]
+              },
+              "children": [],
+              "companions": [],
+              "composition": {
+                "operation": "bind",
+                "leaves": [
+                  0,
+                  1
+                ],
+                "word_id": -1,
+                "reference": -1
+              },
+              "request": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "decoder-01": [
+    {
+      "call": "inverse",
+      "parent": [
+        [
+          1.0,
+          1.0
+        ]
+      ],
+      "options": [
+        [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            2.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ]
+      ],
+      "others": [
+        [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0
+          ]
+        ]
+      ],
+      "legal": [
+        [
+          true,
+          false,
+          false
+        ]
+      ]
+    },
+    {
+      "call": "inverse",
+      "parent": [
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      "options": [
+        [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      ],
+      "others": [
+        [
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0
+          ]
+        ]
+      ],
+      "legal": [
+        [
+          false,
+          false,
+          true
+        ]
+      ]
+    },
+    {
+      "call": "inverse",
+      "parent": [
+        [
+          1.0,
+          0.0
+        ]
+      ],
+      "options": [
+        [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ]
+      ],
+      "others": [
+        [
+          [
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ]
+      ],
+      "legal": [
+        [
+          false,
+          false,
+          true
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_legacy_index_rebuild_uses_real_rows_and_shares_truth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
