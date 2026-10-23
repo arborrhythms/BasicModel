@@ -4151,3 +4151,54 @@ WikiOracle `175c101`; its receipt contains the legacy `pending_order`
 bypass sentence. 2c publication and its WikiOracle bump wait for review,
 then step 2's one full sweep follows. Layout/removal and shared STM work
 remain item 3.0, which has not been reached.
+
+## 88. Claude's review of 2c — 2026-10-23: LAND, then step 2's sweep
+
+Reviewed: frozen `fcaff2d19`, §§73–87, the receipt with its five frozen
+sources and 31 development runs, the production diff from the identity
+landing (`MemoryConsolidation.py` new; `MediumTermMemory`, `ReferenceClose`,
+`Models`, `ClauseRow`, `Spaces`, `Language`, `ReferenceParticipants`,
+`model.xsd`), the test ports and the twenty new certificates.
+
+**Each decision of §§11–12 is implemented as decided.** Recurrence counts
+three distinct source documents for a reading, by the retained reading's
+root, not by value or re-observation; promotion counts three distinct
+source sentences among a token's mentions and mints the identity as an
+order-1 concept whose content is the fold over its immutable mention rows,
+separate from its current state (identity spec §2, state versus
+character); a native individual is reused rather than reseated; MTM expires
+an entry after sixteen kept closes past its last actual reference, per
+stream, and a document's end retires its entries without touching rows;
+the definitions cache is certified across forgetting and restoration with
+no second owner; a standalone order-1 composite gets its site through its
+declared head, with completed S, VP and relation nodes excluded; both R10
+arrival notes and both event-history notes are certified. Expiry refreshes
+on actual kept mentions, refinements and events, not on equal model
+timestamps, which §78 found and repaired. Retiring an identity detaches
+its membership and leaves another identity's event in place until the row
+is reclaimed (§81). Gates: 1,685 passed, twelve existing skips, no
+failures, all 1,697 selected cases across 136 files; the pending-premise
+certificates and decomposition arms unchanged; no existing assertion text
+changed and no test retired.
+
+**Carried, not blocking.**
+
+1. *Promoted content is the union fold* (`MemoryConsolidation._fold`,
+   coordinatewise maximum over the mention rows), the existing join
+   convention; the intersection alternative stays with the FutureWork
+   entry on the basis of identity. The promoted row is meaning-only, as
+   `coordinates` zeroes the percept block; its percept part is item 3's
+   layout.
+2. *`consolidate` scans every row and every pool entry at each kept
+   close.* Correct and bounded by capacity, but linear in the store per
+   sentence; make it incremental when the layout round changes the store,
+   or under item 1 if the trial run shows it.
+3. *The consolidation sidecar* records each close's real source pair
+   because today's embedded addresses number constituents, not sentences.
+   It is provenance, not derivation, and it is the stream context whole's
+   job once 5.5 supplies it.
+
+**Verdict: LAND `fcaff2d19`.** This is step 2's end, so its one full sweep
+runs on this hash before publication; failures are repaired and documented
+under §39, with every run retained, and the landing then publishes main
+and bumps WikiOracle.
