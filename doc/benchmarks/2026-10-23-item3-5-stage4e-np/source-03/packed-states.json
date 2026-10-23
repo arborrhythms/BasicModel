@@ -1,0 +1,74 @@
+[
+  {
+    "original": "stage3/order.ckpt",
+    "compressed": "stage3/order.ckpt.gz",
+    "bytes": 117056503,
+    "gzip_bytes": 18662684,
+    "sha256": "9601af63a2774d6a139a9d5b1220fe44c12d59d475541d6b9dd113970573a191",
+    "gzip_sha256": "eb5d49b1ed4efdfc8b9743725f009eee042d0d737beb6540d281e852e97e29c9"
+  },
+  {
+    "original": "stage3/results.json",
+    "compressed": "stage3/results.json.gz",
+    "bytes": 840856499,
+    "gzip_bytes": 3022866,
+    "sha256": "07664003b0f396338237b69b1aac04fad81cd8eecd66692a18b493072b34cab7",
+    "gzip_sha256": "eccf9092e8777b83be4961c9aa7e3376d3b01c6e9327eb271d1feb2d8ef2b87f"
+  },
+  {
+    "original": "stage3/stages.json",
+    "compressed": "stage3/stages.json.gz",
+    "bytes": 776025434,
+    "gzip_bytes": 2854860,
+    "sha256": "771861933fafba23f62ed52c09fd2b3308296bdd5f70e97bc8a04b64ceafec8d",
+    "gzip_sha256": "7e5cd0c8f6a4efa0a7004cfca135a2a45e37608485e44b44424f78270fd24137"
+  },
+  {
+    "original": "stage3-capture/initial.pt",
+    "compressed": "stage3-capture/initial.pt.gz",
+    "bytes": 56057795,
+    "gzip_bytes": 16914907,
+    "sha256": "0c43d597871177a6e41683a2b24ac3a320cd62bd532e5b1953381e264934878b",
+    "gzip_sha256": "09ac2ec0cbf2049efb2a638e077bd9f2f13d1e92e7a825b62df589bf97c17cc2"
+  },
+  {
+    "original": "stage3-capture/last-batch-start.pt",
+    "compressed": "stage3-capture/last-batch-start.pt.gz",
+    "bytes": 116716685,
+    "gzip_bytes": 18656113,
+    "sha256": "b79bbf4c393016b5ab0190d1dcb73f9cad628d69c427c3b1c2d58521adafe216",
+    "gzip_sha256": "e508b6d3e0bff7fd0541cadbe2393c58a88b62426e4c008ad34407b9067126d5"
+  },
+  {
+    "original": "warmup/presentations.json",
+    "compressed": "warmup/presentations.json.gz",
+    "bytes": 92571123,
+    "gzip_bytes": 308932,
+    "sha256": "14ee38392d302ca37bd4dcd30fe50ee7820645a9941b3afc6c4088c107b31a61",
+    "gzip_sha256": "f1c2949d59f6727a0980eaab8f22f117f2492e413bec447266f861c314df99f8"
+  },
+  {
+    "original": "warmup/warmup.ckpt",
+    "compressed": "warmup/warmup.ckpt.gz",
+    "bytes": 64402519,
+    "gzip_bytes": 17096489,
+    "sha256": "1244efb2dcb3cd7656e28e453f9a0c423360ba635ea3902d1c2626060f54d3e2",
+    "gzip_sha256": "e085175637d3fa38d6aa7edbc35beaaeb101a7645b0e3c6be8d9200cd29f32ae"
+  },
+  {
+    "original": "warmup-capture/initial.pt",
+    "compressed": "warmup-capture/initial.pt.gz",
+    "bytes": 56057795,
+    "gzip_bytes": 16914907,
+    "sha256": "0c43d597871177a6e41683a2b24ac3a320cd62bd532e5b1953381e264934878b",
+    "gzip_sha256": "09ac2ec0cbf2049efb2a638e077bd9f2f13d1e92e7a825b62df589bf97c17cc2"
+  },
+  {
+    "original": "warmup-capture/last-batch-start.pt",
+    "compressed": "warmup-capture/last-batch-start.pt.gz",
+    "bytes": 68120789,
+    "gzip_bytes": 17354842,
+    "sha256": "57c9ad1053c02f1d67340a5ce423888af5d654ca307bc34b9260057bc7a60856",
+    "gzip_sha256": "113acef5391a65410d1db40469b7d094f4856dbcbb9ce0581092f3c357029e27"
+  }
+]

@@ -1,0 +1,18 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_kept_readings_alone_supply_occupation_counts _______________
+test/test_parts_of_speech.py:133: in test_kept_readings_alone_supply_occupation_counts
+    assert {word: parts.counts[word] for word in expected.counts} == expected.counts
+E   AssertionError: assert {12: Counter(...n1': 1}), ...} == {12: Counter(...n1': 1}), ...}
+E     
+E     Omitting 4 identical items, use -vv to show
+E     Differing items:
+E     {16: Counter({'lower_argin2': 2, 'lower_argout1': 2, 'intersection_argin1': 2, 'and_argout1': 1, 'intersection_argout1': 1})} != {16: Counter({'and_argout1': 1, 'lower_argin2': 1, 'lower_argout1': 1, 'intersection_argin1': 1, 'intersection_argout1': 1})}
+E     {15: Counter({'lower_argin1': 2, 'and_argin1': 1})} != {15: Counter({'and_argin1': 1, 'lower_argin1': 1})}
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+=========================== short test summary info ============================
+FAILED test/test_parts_of_speech.py::test_kept_readings_alone_supply_occupation_counts
+1 failed in 11.39s

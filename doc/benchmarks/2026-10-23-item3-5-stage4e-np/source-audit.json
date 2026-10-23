@@ -58,7 +58,7 @@
     "bin/Occurrence.py": "3ffd6b6801dda7e961ac79dbab464933adef20203bf3de54479496de22b64516",
     "bin/Optimizer.py": "d5668c1f2539413f9065ec78c62b4aedc0dd47bad53a4f6dc0b2b7971988090a",
     "bin/Output.py": "a88d7978f3e34ba26ae15ab2d95905d935151bf8138c24ce7f1a2b363cc1b029",
-    "bin/PartClosing.py": "6bfb9c984b22ebef174d69246cea9a73c0b6c90617ad52b01683f4570c048609",
+    "bin/PartClosing.py": "9eaf3e56abe2b8bfb5750750e81d8eb3af5508a7e321673c3dfdcfdb1f4e3501",
     "bin/PartRead.py": "666cb31aea5dadcca10ea45346c8668142a449f51e3b1b901e5198ada1ac8621",
     "bin/PartsOfSpeech.py": "da90f23fc094474b3d8bdc606c9b317878829209356ffb42e8c496b4acd5bf79",
     "bin/PerceptField.py": "518cbb7fce037baeedb9df963a2bc33bf9a9440a950f79a8941ed3a267062306",
@@ -540,7 +540,7 @@
     "test/test_packed_reconstruction_parity.py": "6282a31344a71b6f931ae92edd7b82ef65adc71f96d1d54cc9b85ca189722ace",
     "test/test_padded_rows_no_op.py": "98bbc87c2163c6a3054d8f386d6cfb8da5840baf93950636612aec2138c4a63e",
     "test/test_parse_buffer.py": "bca9243f134a69f881d6271651763069d39791fb1c54f538a929eadfcde3fc46",
-    "test/test_part_closing.py": "c29c6b2344bbd92d509c9a445bc9d54bda2743d0218b3df89a326fc74cbbdc66",
+    "test/test_part_closing.py": "5cfe93f8c8b242745d6715c3dd2b8b6f7588887d31e0346134568ad7860fbae2",
     "test/test_part_expectation.py": "6de7c5e7f87904fc49ba9068dfed9e7ecc341f433cda6bcb2a494b3079392a27",
     "test/test_part_read.py": "00c0e97f1d25f734284ada5949ef41991c1ec836bf58de98b521f5abb7b6fd58",
     "test/test_part_store.py": "d0ddcaf8fd5f1cfa4e80854136566f29a316302d4e552bbde4c3b97bdb2e842c",
@@ -842,8 +842,9 @@
     "test/tools/xor_debug_params.py": "bed75be1f3de16450bdb6b3b3c9222d541cbcba4c6ab8cee96160cbae2502ac3",
     "test/tools/xor_experiment.py": "3297451250bf7d7630ac1e2845025458787056c61c84bce448debcf247d17310",
     "doc/benchmarks/2026-10-23-item3-5-stage4e-np/run.py": "5dde42381530b3765a214722e8bf593104353f98e4c794d658ace832e2e433f1",
-    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "1de9be37a57b33b0bd526788e140d41ac059824e952352bec8a3537fb4c926e9",
+    "doc/benchmarks/2026-10-23-item3-5-stage4e-np/gates.py": "661486592f4769ad16dffbf6fe2a2e013f8addd46c512a313a69f10382b2346b",
     "doc/benchmarks/2026-10-23-item3-5-stage4e-np/warmup.py": "f5e2beb97c26c0af72c1e13b46b2fa0267445464bfccb267af8603ff4be6811f"
   },
-  "warmup_schedule_ast_matches_original": true
+  "warmup_schedule_ast_matches_original": true,
+  "review": "Source 04: word occupations remain owned by the kept program; closing retains nonword occupations. No existing assertion changed."
 }

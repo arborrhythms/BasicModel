@@ -37,7 +37,8 @@ seed rescue, budget increase, premise targets or learning claim.
 
 ## Source/port ledger
 
-No production code changes. The native determiner menu already has one
+The initial source has no production changes; source 04 repairs the
+occupation-counting defect documented below. The native determiner menu has one
 action per operator; recency already follows store order.
 
 - `np_experiment.MENU` gains compose-time `bind`, replacing the binding
@@ -96,3 +97,30 @@ program observer. It does not run the following identity-balanced
 curriculum; its historical singleton-cosine gate is not a stage3 loader
 prerequisite and is not claimed. See the dated 5.5-plan decision. This
 dependency regeneration adds no stage3/NP presentation or retry budget.
+
+## Source 03: duplicate word occupations, captured before repair
+
+Frozen `711df4e841e05ad9630bbc4d9e3cdbb6458f8449`: 80 passed, three existing
+phase skips, one failure of the unchanged exact word-count assertion.
+[Scoped run](source-03/gates/run.log) and
+[captured-RNG replay](source-03/occupation-diagnosis/run.log) retain the
+same failure. The replay's `probe.json.gz` records both readings, R/A,
+keep decision and the closing plan. Row 0 ties and keeps greedy. Row 1
+keeps explore: R ties at 1.05; A is 1.089887 versus .764748. The plan adds
+lower input/output and intersection input counts to word handles already
+counted by the kept program. It is not a duplicate commit: the second
+commit call correctly sees `_committed=True`.
+
+Source 04's production repair restricts additional closing occupations
+to nonword handles. It uses kept word IDs and native symbol provenance,
+never definitions or a grammatical decision. The existing exact word-count
+assertion stays; the new deterministic test also checks the composite
+output's occupation. No assertion port or test retirement is required.
+The scoped files gain PartClosing's closing/reference/bind consumers.
+
+The original-budget warm-up on source 03 completed 76 presentations and
+38 paired updates. Stage3 completed 512 presentations, 256 paired updates
+and 16 evaluations; free order is 2/4 plus 3/4, and the original CE bar
+fails. Both artifacts are retained and ineligible for continuation due
+to the production defect. Regenerate the original schedules on the
+repaired source; no seed rescue, added lesson budget or relaxed gate.

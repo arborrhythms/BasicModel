@@ -275,6 +275,12 @@ class PartClosing:
                 self._definition(record['symbol'], word, evidence, marker=term in markers)
         ref = self.store.__dict__.get('_occupation_owner')
         occupations = None if ref is None else ref()
+        # The kept program already counts every carried word, including a
+        # lower's head at its parent's input. Closing owns only the additional
+        # nonword handles. This is count ownership, not a grammar decision.
+        words = {record['value'].word_id for record in self._plan}
+        def is_word(symbol):
+            return symbol in words or 'word' in self.alloc.symbol_types.get(symbol, ())
         for record in self._plan:
             value = record['value']
             # Only an admitted formal operation supplies distributional
@@ -284,12 +290,12 @@ class PartClosing:
                 continue
             for role, child in enumerate(value.children, 1):
                 symbol = self._planned[id(child)]['symbol']
-                if symbol is not None and (symbol != child.word_id or name == 'lower'):
+                if symbol is not None and not is_word(symbol):
                     argument = f'{name}_argin{role}'
                     if argument not in occupations.index:
                         raise ValueError(f'undeclared closing occupation: {argument}')
                     self._occupations.append((symbol, argument))
-            if record['symbol'] is not None:
+            if record['symbol'] is not None and not is_word(record['symbol']):
                 argument = f'{name}_argout1'
                 if argument in occupations.index:
                     self._occupations.append((record['symbol'], argument))

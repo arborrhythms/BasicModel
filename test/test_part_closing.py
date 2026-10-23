@@ -160,6 +160,36 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     assert counts[kind]['lower_argin2'] == counts[kind]['lower_argout1'] == 1
 
 
+def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
+    from types import SimpleNamespace
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    words = [f.cs.interpret.lookup_word([91+i], [], form=f'leaf-{i}') for i in range(3)]
+    leaves = [Composition(f.registry._payload(('sym', word)), reference=word,
+                          word_id=word) for word in words]
+    lower = Composition(leaves[1].point, tuple(leaves[:2]), operation='lower',
+                        formal_name='lower', head_role=2, order=1)
+    root = Composition(torch.maximum(lower.point, leaves[2].point), (lower, leaves[2]),
+                       operation='intersection', formal_name='intersection')
+    operations = {rule.method_name: i for i, rule in enumerate(f.binary)}
+    program = SimpleNamespace(word_ids=torch.tensor(words), actions=torch.tensor([
+        (0, -1, 0), (0, -1, 1), (1, operations['lower'], 0),
+        (0, -1, 2), (1, operations['intersection'], 0)]))
+    parts = f.language.parts_of_speech
+    parts.observe_kept(program, f.binary, f.unary)
+    expected = {word: dict(parts.counts[word]) for word in words}
+    clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
+                    composition=root)
+    row = f.store.write_clause(clause)
+    assert {word: dict(parts.counts[word]) for word in words} == expected
+    composite = f.store.raw_meaning_of(row).role_refs[0][1]
+    assert composite not in words
+    assert parts.counts[composite] == {'intersection_argout1': 1}
+    assert parts.counts[words[1]]['lower_argout1'] == 1
+    assert parts.counts[words[1]]['intersection_argin1'] == 1
+
+
 def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch):
     from dataclasses import replace
     from ClauseRow import Clause, Composition

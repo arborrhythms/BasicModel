@@ -1,0 +1,40 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "presentations": 4, "updates": {"paired": 2, "batch_end_disabled": 0}, "elapsed_seconds": 2.2884611249901354}
+batch = 0 (Δ=1.972s)
+{"batch": 2, "presentations": 8, "updates": {"paired": 4, "batch_end_disabled": 0}, "elapsed_seconds": 4.297587916953489}
+batch = 0 (Δ=2.232s)
+{"batch": 3, "presentations": 12, "updates": {"paired": 6, "batch_end_disabled": 0}, "elapsed_seconds": 6.5672088749706745}
+batch = 0 (Δ=2.348s)
+{"batch": 4, "presentations": 16, "updates": {"paired": 8, "batch_end_disabled": 0}, "elapsed_seconds": 8.954143499955535}
+batch = 0 (Δ=2.288s)
+{"batch": 5, "presentations": 20, "updates": {"paired": 10, "batch_end_disabled": 0}, "elapsed_seconds": 11.275018749991432}
+batch = 0 (Δ=2.892s)
+{"batch": 6, "presentations": 24, "updates": {"paired": 12, "batch_end_disabled": 0}, "elapsed_seconds": 14.207173542119563}
+batch = 0 (Δ=2.676s)
+{"batch": 7, "presentations": 28, "updates": {"paired": 14, "batch_end_disabled": 0}, "elapsed_seconds": 16.923448957968503}
+batch = 0 (Δ=2.690s)
+{"batch": 8, "presentations": 32, "updates": {"paired": 16, "batch_end_disabled": 0}, "elapsed_seconds": 19.649886541999876}
+batch = 0 (Δ=2.898s)
+{"batch": 9, "presentations": 36, "updates": {"paired": 18, "batch_end_disabled": 0}, "elapsed_seconds": 22.63132679206319}
+batch = 0 (Δ=3.044s)
+{"batch": 10, "presentations": 40, "updates": {"paired": 20, "batch_end_disabled": 0}, "elapsed_seconds": 25.657976542133838}
+batch = 0 (Δ=3.168s)
+{"batch": 11, "presentations": 44, "updates": {"paired": 22, "batch_end_disabled": 0}, "elapsed_seconds": 28.87474212492816}
+batch = 0 (Δ=3.165s)
+{"batch": 12, "presentations": 48, "updates": {"paired": 24, "batch_end_disabled": 0}, "elapsed_seconds": 32.0723703331314}
+batch = 0 (Δ=3.364s)
+{"batch": 13, "presentations": 52, "updates": {"paired": 26, "batch_end_disabled": 0}, "elapsed_seconds": 35.47492162510753}
+batch = 0 (Δ=3.257s)
+{"batch": 14, "presentations": 56, "updates": {"paired": 28, "batch_end_disabled": 0}, "elapsed_seconds": 38.775605499977246}
+batch = 0 (Δ=3.414s)
+{"batch": 15, "presentations": 60, "updates": {"paired": 30, "batch_end_disabled": 0}, "elapsed_seconds": 42.22445483296178}
+batch = 0 (Δ=3.363s)
+{"batch": 16, "presentations": 64, "updates": {"paired": 32, "batch_end_disabled": 0}, "elapsed_seconds": 45.648130000103265}
+batch = 0 (Δ=3.608s)
+{"batch": 17, "presentations": 68, "updates": {"paired": 34, "batch_end_disabled": 0}, "elapsed_seconds": 49.276347666978836}
+batch = 0 (Δ=3.460s)
+{"batch": 18, "presentations": 72, "updates": {"paired": 36, "batch_end_disabled": 0}, "elapsed_seconds": 52.76651216694154}
+batch = 0 (Δ=3.612s)
+{"batch": 19, "presentations": 76, "updates": {"paired": 38, "batch_end_disabled": 0}, "elapsed_seconds": 56.42372058308683}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-stage4e-np-20261023/source-03/warmup/warmup.ckpt

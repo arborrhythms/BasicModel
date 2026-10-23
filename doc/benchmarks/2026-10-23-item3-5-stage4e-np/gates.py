@@ -15,7 +15,11 @@ out.mkdir(parents=True)
 files = ['test/test_modification_lessons.py','test/test_parts_of_speech.py',
     'test/test_constituent_lesson.py','test/test_grammar_lesson_context.py',
     'test/test_phase_artifacts.py','test/test_identity_experiment.py',
-    'test/test_identity_threading.py','test/test_reading_curriculum.py']
+    'test/test_identity_threading.py','test/test_reading_curriculum.py',
+    'test/test_part_closing.py','test/test_relation_closing.py',
+    'test/test_clause_acceptance.py','test/test_reference_close.py',
+    'test/test_reference_mentions.py','test/test_bind_thought.py',
+    'test/test_reference_occurrence_views.py']
 base = ROOT/'doc/benchmarks'
 capture = base/'2026-10-23-item3-5-step2c'
 env = dict(os.environ,BASICMODEL_DEVICE='cpu',RUN_SLOW='1',
