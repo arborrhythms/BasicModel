@@ -58,7 +58,7 @@ def test_identity_carrying_unary_faces_reverse_exactly_and_retire_free_marker_st
 
 def test_np_gates_behaviors_and_reports_the_kept_operator():
     from np_experiment import summarize_stage, MENU
-    assert MENU==('STOP','lower','definite','intersection','product')
+    assert MENU==('STOP','lower','definite','intersection','product','bind')
     description=dict(family='description',brackets=True,nps=[],duplicate_writes=0,occurrence_collisions=0,
         unexpected_occurrences=1,unlowered_clean=False,question_expected=True,answer_exact=True,
         observed=dict(program=['lower']))
@@ -109,10 +109,10 @@ def test_np_menu_admits_both_modification_operators_at_the_native_mask():
     from test_parts_of_speech import Pair, Unary, rule
     from np_experiment import MENU
     binary=[rule(name) for name in ('lower','definite','intersection','product','verb')]
-    unary=[rule('surface_unary',1)]
+    unary=[rule('bind',1),rule('surface_unary',1)]
     arguments=formal_arguments(binary+unary)
-    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary()],reduce_pressure=0.)
+    layer=OperationSelectionLayer(d_model=4,ops=[Pair() for _ in binary],unary_ops=[Unary() for _ in unary],reduce_pressure=0.)
     layer.configure_arguments(arguments,binary,unary)
     layer.set_stage_menu(MENU)
     logits=layer(torch.ones(1,2,4),slots=2,occupation=torch.ones(1,2,len(arguments)))[2]['logits']
-    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,False,False,True]]
+    assert torch.isfinite(logits).tolist()==[[True,True,True,True,False,True,False,True,False,True]]

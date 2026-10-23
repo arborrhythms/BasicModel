@@ -25,7 +25,7 @@ from np_trajectory import NPTrajectory
 from identity_experiment import make_model, restore_warmup, reset, save, digest
 
 SEED, RATE, EPOCHS = 20261010, .003, 2
-MENU = ('STOP', 'lower', 'definite', 'intersection', 'product')
+MENU = ('STOP', 'lower', 'definite', 'intersection', 'product', 'bind')
 # Learn modification on two familiar words before asking the reader to
 # schedule it inside a larger NP. Nesting is then the next unknown.
 STAGES = ('lower', 'definite', 'description', 'adjective', 'definite_adjective')
@@ -211,7 +211,8 @@ def run(args):
         questions='none for bare NPs; what is <adjective> ? otherwise, supplied answer only during training',
         heldout_labels='grader only; no model call receives a held-out tree, span, answer or occurrence label',
         noun_prior='table only; not read by chooser',
-        reference_variants='unchanged',nested_marker_pattern=None,
+        reference_variants='one determiner action per operator; bind offers accessible locations and dummy',
+        recency='store order',nested_marker_pattern=None,
         compose_step_cost='WHAT_STEP_COST for every binary, unary or transpose step',
         gates=dict(GATES),reports=dict(REPORTS),
         measurement='final stage: all 14 held-out brackets, 10 determiner NPs, 4 bare controls; otherwise the current lesson only; lowering stamps, kept operators and bare-description occurrences reported; absent families have no gate',
@@ -232,8 +233,6 @@ def run(args):
             if previous is None:
                 random.seed(SEED);np.random.seed(SEED);torch.manual_seed(SEED)
             parts=model.languageSpace.parts_of_speech
-            if previous is None and parts.counts:
-                raise ValueError('stage-3 artifact must start with empty occupation evidence')
             model.languageSpace.language_layer.operation_layer.set_stage_menu(MENU)
             identity=model.perceptualSpace.percept_store.identity
             if identity.nested or identity._marker_pattern is not None:
