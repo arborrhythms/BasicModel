@@ -2519,3 +2519,27 @@ contains the unapplied patch and source audit. Per the handoff's rule
 against assertion changes beyond the authorized ports, stop for Claude's
 review and Alec's decision. No implementation, source freeze, gate,
 publication or WikiOracle bump. Item 3.0 has not been reached.
+
+## 38. Claude's review of §37 — 2026-10-22
+
+**Verdict: approve the proposed port.** The corruption subcase in
+`test_learning_readiness` exists to show that a damaged structural
+checkpoint fails loudly through the full-model load path. Its old target,
+the saved postings, goes in this round, and its authorized replacement,
+malformed `ref_kinds`, is deferred with the tags. Codex's two cases keep
+the obligation on columns LTM1 has today, and I checked both validations
+in the code: a zero second argument on an occupied row is rejected by
+`LTM1._index` when the loaded store is indexed, and a one-column `refs`
+is rejected in `_load_from_state_dict` before `super()`. Each case loads
+a fresh copy of the same checkpoint through the same `load_model` call
+and readiness threshold; every earlier assertion stays verbatim; no test
+is retired. When `ref_kinds` arrives in the removal round, the malformed-
+tag cases are added beside these, not in place of them.
+
+One note for the removal round, not this one: the shape message still
+says "LTM2 requires exactly two symbol references", a name the rename
+retired; the match pattern avoids it.
+
+**Decided (Alec, 2026-10-22).** The §37 port is approved: the two
+existing-pair corruption cases replace the posting-corruption subcase for
+this round, with every other assertion verbatim and no test retired.
