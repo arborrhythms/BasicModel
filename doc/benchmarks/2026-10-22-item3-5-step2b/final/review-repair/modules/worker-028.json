@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_part_arguments_remain_unscaled_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_respects_both_argument_positions",
+    "test/test_two_truth_stores.py::test_consequents_read_the_native_whole_without_a_predicate_filter",
+    "test/test_two_truth_stores.py::test_distinct_wholes_do_not_imply_negative_membership"
+  ],
+  "completed": [
+    "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+    "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+    "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+    "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+    "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+    "test/test_two_truth_stores.py::test_part_arguments_remain_unscaled_and_separate_from_luminosity",
+    "test/test_two_truth_stores.py::test_relational_evaluation_respects_both_argument_positions",
+    "test/test_two_truth_stores.py::test_consequents_read_the_native_whole_without_a_predicate_filter",
+    "test/test_two_truth_stores.py::test_distinct_wholes_do_not_imply_negative_membership"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00073245819658041,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_conflict_profile_with_candidate_is_measured_not_stored",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00019362499006092548,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018099998123943806,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00036112498492002487,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_truth_of_statement_feedback",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026329117827117443,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_part_arguments_remain_unscaled_and_separate_from_luminosity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016353749902918935,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_relational_evaluation_respects_both_argument_positions",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0020799171179533005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_consequents_read_the_native_whole_without_a_predicate_filter",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00217420794069767,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_two_truth_stores.py::test_distinct_wholes_do_not_imply_negative_membership",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002254457911476493,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestOrderPartitions::test_single_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

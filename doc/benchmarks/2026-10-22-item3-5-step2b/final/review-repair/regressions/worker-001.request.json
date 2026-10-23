@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes",
+    "test/test_reference_arrivals.py::test_arrival_bind_refines_and_reads_three_through_the_token",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[before]",
+    "test/test_reference_arrivals.py::test_kept_wrong_equality_neither_binds_nor_reopens_a_token[after]",
+    "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+    "test/test_reference_arrivals.py::test_unary_bind_keeps_the_objectless_word_site",
+    "test/test_reference_arrivals.py::test_bound_use_does_not_assign_a_kind_before_arrival",
+    "test/test_reference_arrivals.py::test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[False]",
+    "test/test_reference_arrivals.py::test_named_trial_plans_only_refine_the_kept_close[True]",
+    "test/test_reference_arrivals.py::test_named_root_can_retain_a_selected_lexical_constituent",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_native_individual_creates_no_pool_entry",
+    "test/test_reference_arrivals.py::test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[False]",
+    "test/test_reference_arrivals.py::test_native_arrival_refines_an_existing_anonymous_token[True]",
+    "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/review-repair/regressions/worker-001.recycle.json"
+}

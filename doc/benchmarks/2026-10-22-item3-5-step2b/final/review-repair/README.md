@@ -107,7 +107,21 @@ The audit covers 63 production, configuration, fixture and test files
 relative to the baseline: 70 changed-check groups, 79 modified existing
 functions, five new regression functions (nine cases), three added fixture
 helpers and exactly three retirements. Development-10 gives 346 passes,
-one existing device skip and 12 failures; development-11 gives 11 passes
+one existing stage3 prerequisite skip and 12 failures; development-11 gives 11 passes
 and the context-storage failure; development-12 passes that final case.
 All are diagnostic only. Large captures are packed losslessly with byte
 hashes in the [parent manifest](../packed-captures.json).
+
+## Frozen source
+
+`9c3899f2f6ee3c8b6878a52220479f150a5ac039` is the source for all three
+expanded groups. Their commands, initial states and reports are recorded
+here as they complete. No production, configuration or test edits follow
+this freeze. Claude reviews only after the complete source-linked gates.
+
+## Additional probe: source withdrawn before publication
+
+The [held-content probe](held-idea.json) found an ordinary stored idea
+raising at the nested thought-signature reader. §62 documents the guard
+and two regression cases for the next source. This source's results remain
+retained and will not be promoted, even if its selected gates pass.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_accessible_mind.py::test_query_retrieves_every_old_cued_frame_without_an_implicit_write",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-14/tests/worker-000.recycle.json"
+}

@@ -48,6 +48,33 @@ def test_stored_question_is_refused_by_kind_without_a_mode_column():
         assert owner.row(ordinary)['kind'] == 'fact'
 
 
+@pytest.mark.parametrize('relation', (False, True))
+def test_held_content_without_a_thought_signature_has_no_expectation_holes(relation):
+    from dataclasses import replace
+    from Queries import QueryWorkBudget
+    from test_negative_expectation import _anticipating_model
+    model, _, meaning = _anticipating_model()
+    registry = model.grammatical_thoughts
+    if relation:
+        # An ordinary concept in the VP slot is not a registered operation.
+        roles = meaning.roles.clone()
+        roles[1] = roles[0]
+        held = replace(meaning, roles=roles,
+            role_refs=(meaning.role_refs[0], meaning.role_refs[0], meaning.role_refs[2]))
+    else:
+        held = ConceptualMeaning.from_description(meaning.roles[0])
+    store = model.symbolSpace.ltm_store
+    index = store.append_meaning(held, kind='observation', sentence_index=len(store))
+    with model._query_boundary_scope((0,)):
+        context = model._thought_grammar_context(meaning, row=0,
+            work=QueryWorkBudget(64), continuation=None)
+        request = registry.form('ask', store.occurrence_of(index), context=context)
+        work = QueryWorkBudget(64)
+        result = model._selected_thought_expectation(request, row=0, work=work)
+    assert result[-4:-1].tolist() == [0., 0., 0.]
+    assert work.spent == 1
+
+
 def test_negative_trust_derived_pair_reverses_only_on_the_relation_edge():
     from dataclasses import replace
     from test_clause_storage import clause_store, part_clause

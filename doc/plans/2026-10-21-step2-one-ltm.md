@@ -3008,7 +3008,7 @@ the module group; “native” describes its production path, not its group.
 
 ## 60. Codex: expanded writer checks and exact retained-value ports — 2026-10-22
 
-Development-10 completes 359 cases: 346 passed, one existing device skip,
+Development-10 completes 359 cases: 346 passed, one existing stage3 prerequisite skip,
 12 failed. The four new closing-mode cases and the unchanged direct/nested
 held-question comparison pass. All failures and initial states remain.
 
@@ -3059,3 +3059,42 @@ the full LTM history or add a detach; this tests the actual predictor view
 for each existing stream. All gradient, parameter-update, loss-weight and
 observation checks remain unchanged. The first failure and this second
 failure stay retained; there is no production or objective change.
+
+## 62. Codex: held content need not be an executable thought — 2026-10-22
+
+The frozen `9c3899f2f` regression and eight-file groups pass. During its
+expanded module run, an additional read-only probe catches an edge case
+in B1's held-description repair: an `ask` may name an ordinary fused LTM
+idea, which has no registered thought VP. Following the address under
+live query intent must not then require that content to have a thought
+signature. The retained `review-repair/held-idea.json` captures the
+`ValueError: thought meaning has no grammatical VP` on this exact source.
+No code changed before that probe; this source will not be published.
+
+Repair the mask reader to follow only a valid nested thought signature.
+For an LTM description without one, stop following and keep the current
+request's existing open-role mask (none for a filled `ask`). This is the
+same signature eligibility the live closing-image path already checks;
+it does not infer a saved mode or execute the description. Non-LTM live
+thoughts retain their prior loud validation and mode guard. Add two cases:
+a fused idea and a relation whose VP is an ordinary concept, each read
+once on the shared meter with no invented open role. The existing
+registered nested-question comparison stays unchanged.
+
+Retain this frozen run and probe. The guarded source gets a new freeze
+and all three scoped groups; no partial result is promoted. There is still
+no full sweep. Identity and derivation-removal contracts are unchanged.
+
+## 63. Codex: held-description fixture admission — 2026-10-22
+
+Development-13 passes 13 of 14 cases. The new ordinary-relation case fails
+before reaching the reader because `append_meaning` defaults to `fact`
+and the catalogue fixture supplies a live interrogative mode. This test
+is about reading retained descriptions, not accepting them as facts.
+Specify `kind='observation'` on its write, matching production observation
+admission and the helper's earlier row. Both assertions stay verbatim;
+no production change. This is the same-round setup correction permitted
+by reconstruction §17 and §39. Preserve the failed run, then rerun both
+cases before freezing. The frozen `9c3899f2f` gates meanwhile completed
+with 1,023 passes and nine existing prerequisite skips; its §62 probe
+still disqualifies that source from publication.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

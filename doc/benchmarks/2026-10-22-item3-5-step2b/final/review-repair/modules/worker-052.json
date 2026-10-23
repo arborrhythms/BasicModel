@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate",
+    "test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth",
+    "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+    "test/test_independent_components.py::test_change_column_admission_requires_recurring_innovation",
+    "test/test_independent_components.py::test_shared_change_features_seed_only_the_unexplained_remainder",
+    "test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns",
+    "test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward",
+    "test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence",
+    "test/test_independent_components.py::test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters",
+    "test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit",
+    "test/test_independent_components.py::test_event_chart_excludes_address_bands_and_preserves_evidence_poles",
+    "test/test_independent_components.py::test_unretained_innovation_cannot_change_population_cost",
+    "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature",
+    "test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity",
+    "test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint",
+    "test/test_independent_components.py::test_known_column_in_new_sentence_witnesses_without_pending_prototype"
+  ],
+  "completed": [
+    "test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate",
+    "test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth",
+    "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+    "test/test_independent_components.py::test_change_column_admission_requires_recurring_innovation",
+    "test/test_independent_components.py::test_shared_change_features_seed_only_the_unexplained_remainder",
+    "test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns",
+    "test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward",
+    "test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence",
+    "test/test_independent_components.py::test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters",
+    "test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit",
+    "test/test_independent_components.py::test_event_chart_excludes_address_bands_and_preserves_evidence_poles",
+    "test/test_independent_components.py::test_unretained_innovation_cannot_change_population_cost",
+    "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature",
+    "test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity",
+    "test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint",
+    "test/test_independent_components.py::test_known_column_in_new_sentence_witnesses_without_pending_prototype"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030371251050382853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015242088120430708,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.024039415875449777,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_change_column_admission_requires_recurring_innovation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013462919741868973,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_shared_change_features_seed_only_the_unexplained_remainder",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00105095817707479,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010133751202374697,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_population_loss_is_batch_partition_invariant_and_has_one_backward",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012004916090518236,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001027541933581233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_dictionary_checkpoint_preserves_pending_recurrence_and_learned_parameters",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015113749541342258,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005062957992777228,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_event_chart_excludes_address_bands_and_preserves_evidence_poles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002530419733375311,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_unretained_innovation_cannot_change_population_cost",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002643333049491048,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_continuity_is_binding_evidence_and_never_a_column_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002011166885495186,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_temporal_shuffle_reports_loss_of_predictability_without_changing_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001153833931311965,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_native_admission_optimizer_ownership_and_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.06505133281461895,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8393/test_native_admission_optimize0/admitted-columns.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-8393/test_native_admission_optimize0/admitted-columns.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_independent_components.py::test_known_column_in_new_sentence_witnesses_without_pending_prototype",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0010816249996423721,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

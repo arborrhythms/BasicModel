@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_clause_acceptance.py::test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_clause_acceptance.py::test_07_equality_is_one_membership_in_a_singleton",
+    "test/test_clause_acceptance.py::test_08_direct_bare_np_rewitnesses_its_address",
+    "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection"
+  ],
+  "completed": [
+    "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+    "test/test_clause_acceptance.py::test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+    "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+    "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+    "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+    "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+    "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+    "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+    "test/test_clause_acceptance.py::test_07_equality_is_one_membership_in_a_singleton",
+    "test/test_clause_acceptance.py::test_08_direct_bare_np_rewitnesses_its_address",
+    "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+    "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_01_compound_vp_has_one_idea_and_readable_cat_chase_mouse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01630599983036518,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_04_absolute_clauses_close_bottom_up_with_their_part_edges",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012609415920451283,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_05_embedded_part_is_unasserted_and_propagates_operator_kind",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010081375017762184,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_12_generic_subject_is_a_relation_with_either_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011514334008097649,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_02_part_uses_object_concepts_and_reassertion_joins_evidence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007751000113785267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[black]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008367792004719377,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_03_particular_subject_ends_an_idea[predicate1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009480624925345182,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_06_implication_keeps_two_unasserted_relation_operands",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008716000011190772,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_implication_closes_bare_np_arguments_as_idea_clauses",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007973749889060855,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_07_equality_is_one_membership_in_a_singleton",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007225499954074621,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_08_direct_bare_np_rewitnesses_its_address",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006670292001217604,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_09_attribution_cannot_assert_its_child_and_negation_is_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01341141713783145,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_clause_acceptance.py::test_end_clause_survives_a_later_head_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00871929107233882,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

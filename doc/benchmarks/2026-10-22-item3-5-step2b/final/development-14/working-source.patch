@@ -1,0 +1,59 @@
+diff --git a/bin/Models.py b/bin/Models.py
+index b085394b8..7eca9f4c5 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -5748,7 +5748,15 @@ class BasicModel(BaseModel):
+                     # as its executor does; stored rows have no mode. Thought
+                     # records still carry their live mode.
+                     break
+-                signature = registry.signature_for(question)
++                try:
++                    nested_signature = registry.signature_for(question)
++                except (TypeError, ValueError):
++                    if reference[0] != 'ltm':
++                        raise
++                    # A held LTM description may be ordinary content rather
++                    # than an executable thought. It adds no expectation holes.
++                    break
++                signature = nested_signature
+             for role in signature.open_roles:
+                 mask[registry._slot_for_operand(role)] = 1
+         discourse = getattr(getattr(self, "symbolSpace", None), "expectation", None)
+diff --git a/test/test_step2b_storage.py b/test/test_step2b_storage.py
+index 4d3282c31..e5957e977 100644
+--- a/test/test_step2b_storage.py
++++ b/test/test_step2b_storage.py
+@@ -48,6 +48,33 @@ def test_stored_question_is_refused_by_kind_without_a_mode_column():
+         assert owner.row(ordinary)['kind'] == 'fact'
+ 
+ 
++@pytest.mark.parametrize('relation', (False, True))
++def test_held_content_without_a_thought_signature_has_no_expectation_holes(relation):
++    from dataclasses import replace
++    from Queries import QueryWorkBudget
++    from test_negative_expectation import _anticipating_model
++    model, _, meaning = _anticipating_model()
++    registry = model.grammatical_thoughts
++    if relation:
++        # An ordinary concept in the VP slot is not a registered operation.
++        roles = meaning.roles.clone()
++        roles[1] = roles[0]
++        held = replace(meaning, roles=roles,
++            role_refs=(meaning.role_refs[0], meaning.role_refs[0], meaning.role_refs[2]))
++    else:
++        held = ConceptualMeaning.from_description(meaning.roles[0])
++    store = model.symbolSpace.ltm_store
++    index = store.append_meaning(held, kind='observation', sentence_index=len(store))
++    with model._query_boundary_scope((0,)):
++        context = model._thought_grammar_context(meaning, row=0,
++            work=QueryWorkBudget(64), continuation=None)
++        request = registry.form('ask', store.occurrence_of(index), context=context)
++        work = QueryWorkBudget(64)
++        result = model._selected_thought_expectation(request, row=0, work=work)
++    assert result[-4:-1].tolist() == [0., 0., 0.]
++    assert work.spent == 1
++
++
+ def test_negative_trust_derived_pair_reverses_only_on_the_relation_edge():
+     from dataclasses import replace
+     from test_clause_storage import clause_store, part_clause

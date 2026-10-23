@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

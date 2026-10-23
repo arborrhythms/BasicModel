@@ -1,0 +1,27 @@
+{
+  "base": "9c3899f2f6ee3c8b6878a52220479f150a5ac039",
+  "patch_sha256": "13b33ea61d69d4af44aa9d0cbcc98325e8ec2649b7591d4cbbb5cd177bbd0c26",
+  "new_test_sha256": "cbfce0490ef5b95097875f99738b34182c2f987e8bedb270f4c2185cf97fdf53",
+  "started": "2026-10-23T05:05:11.220736+00:00",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "3600",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-14/tests"
+  ],
+  "exit": 0,
+  "finished": "2026-10-23T05:05:18.142323+00:00"
+}

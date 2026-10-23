@@ -5748,7 +5748,15 @@ class BasicModel(BaseModel):
                     # as its executor does; stored rows have no mode. Thought
                     # records still carry their live mode.
                     break
-                signature = registry.signature_for(question)
+                try:
+                    nested_signature = registry.signature_for(question)
+                except (TypeError, ValueError):
+                    if reference[0] != 'ltm':
+                        raise
+                    # A held LTM description may be ordinary content rather
+                    # than an executable thought. It adds no expectation holes.
+                    break
+                signature = nested_signature
             for role in signature.open_roles:
                 mask[registry._slot_for_operand(role)] = 1
         discourse = getattr(getattr(self, "symbolSpace", None), "expectation", None)

@@ -1,10 +1,10 @@
 # Step 2b: storage changes before identity threading
 
-**Final-source receipt:** [landing/README.md](landing/README.md). The first
-frozen source `bfa9c94ee` below had one failure in 683 cases; its full
-evidence is retained here. Spec §57 ports that fixture's relative-handle
-lookup. The final source reruns every requested scoped gate; this attempt
-is not promoted or relabelled as passing.
+**Current receipt:** [held-content/README.md](held-content/README.md).
+Earlier freezes remain retained: `bfa9c94ee` failed its relative-handle
+fixture; `3c5cc2a1d` received Claude's HOLD; `9c3899f2f` passed its scoped
+set but the additional held-idea probe found the guard fixed in §62.
+None of those results is promoted to the new guarded source.
 
 2026-10-22. Work is on `main`, starting at `bb0045d7a2b7a7e5be584066ca1ee283fa899d75`
 (Claude's §38 edit, committed unchanged). Published 2a is

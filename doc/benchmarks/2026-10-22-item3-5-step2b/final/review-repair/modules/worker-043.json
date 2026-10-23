@@ -1,0 +1,93 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+  ],
+  "completed": [
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005396416876465082,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003903375007212162,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016488749533891678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030924160964787006,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0014625419862568378,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015533750411123037,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004508249927312136,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

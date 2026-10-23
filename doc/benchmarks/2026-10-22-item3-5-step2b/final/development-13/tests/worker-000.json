@@ -1,0 +1,137 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+  ],
+  "completed": [
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.12891183397732675,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030613329727202654,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002835833001881838,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002692208159714937,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015117090661078691,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013719083974137902,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 0.006719332886859775,
+      "message": "test/test_step2b_storage.py:67: in test_held_content_without_a_thought_signature_has_no_expectation_holes\n    index = store.append_meaning(held, sentence_index=len(store))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9479: in append_meaning\n    raise ValueError(\"a fact requires assertive meaning, not an interrogative question\")\nE   ValueError: a fact requires assertive meaning, not an interrogative question",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030333749018609524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0041548749431967735,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 3, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': False}\r\n[LTM forgetting] {'before': 3, 'after': 2, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014054100029170513,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001366669312119484,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}
