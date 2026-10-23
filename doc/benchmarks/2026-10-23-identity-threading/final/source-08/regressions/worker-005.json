@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+  ],
+  "completed": [
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+    "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[0-1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03039783309213817,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[1-2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.022363957948982716,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[2-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02191004203632474,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_occurrence_views.py::test_occurrence_candidates_use_retained_part_participants[3-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021563125075772405,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

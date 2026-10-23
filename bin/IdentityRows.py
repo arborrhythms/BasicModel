@@ -1,8 +1,7 @@
-"""Identity content lives in native concept rows; occurrences live in LTM.
+"""Read native concept kinds and retained cue regions beside MTM identities.
 
-These functions own no vectors, signatures or witness lists. Allocator flags
-describe which existing concept seats are retained fold caches. Every witness
-read queries the common store's identity column.
+Current identity values live in MTM. These helpers own no working values;
+retained concept caches and membership witnesses keep their existing owners.
 """
 import torch
 
@@ -108,17 +107,8 @@ def witness_count(owner, identity):
     return sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
 
 
-@torch.no_grad()
-def absorb_form(owner, identity, content):
-    row = owner._csw_row_of(identity)
-    if row is None:
-        raise RuntimeError('an individual lost its concept row')
-    value = coordinates(owner, content)
-    owner.similarity_codebook.W[row].copy_(torch.maximum(point(owner, identity), value))
-
-
 def form_identity(owner, cue):
-    """Only an exact native form identifies the region to read or update."""
+    """Only an exact native form identifies a retained region to read."""
     if cue is None or not bool(cue.any()):
         return None
     derived = getattr(owner.similarity_codebook, 'mereology', None)
@@ -153,19 +143,6 @@ def validate_retained(owner):
                 coordinates(owner, meaning.roles[meaning.role_mask])
     for row in cache_rows(owner):
         coordinates(owner, owner.similarity_codebook.W[row])
-
-
-@torch.no_grad()
-def expose_form(owner, cue, content):
-    form = form_identity(owner, cue)
-    if form is None:
-        return
-    alloc = allocator(owner)
-    identity = alloc.form_regions.get(form)
-    if identity is None:
-        mint(owner, content, form=form)
-    else:
-        absorb_form(owner, identity, content)
 
 
 def migrate_checkpoint(model, state, live, drift, transforms):

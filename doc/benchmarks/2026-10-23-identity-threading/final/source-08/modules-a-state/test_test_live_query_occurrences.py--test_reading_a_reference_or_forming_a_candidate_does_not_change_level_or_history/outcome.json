@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_query_occurrences.py::test_reading_a_reference_or_forming_a_candidate_does_not_change_level_or_history",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

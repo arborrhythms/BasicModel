@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestTruthLoss::test_penalty_is_differentiable",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

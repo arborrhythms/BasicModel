@@ -639,3 +639,50 @@ def test_nested_unresolved_operand_keeps_its_resolution_annotation(pending, wrap
         assert marks == ()
         if not pending:
             assert row[0] == 'sym' and store.parts.contains(row[1])
+
+
+@pytest.mark.parametrize('phase', ('commit', 'resolved'))
+@pytest.mark.parametrize('cached', (False, True))
+def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, phase, cached):
+    from ClauseRow import Clause
+    from Meaning import ConceptualMeaning
+    from Layers import Error
+    from test_reference_close import fixture, close, form_exposure
+    from test_medium_term_memory import snapshot, unchanged
+    resolver, store, atoms = fixture()
+    resolver.components.weight = 1.
+    frames = []
+    for index in range(3):
+        frame, _, _ = close(resolver, atoms[index], atoms[index+6], 'mint', frames,
+                            document='bank-isolation', sentence=index)
+        frames.append(frame)
+    owner = resolver.components.owner
+    if cached:
+        form_exposure(resolver, atoms[4], atoms[0])
+    else:
+        word = owner.interpret.lookup_word([101], (), form='fixture-cue')
+        with torch.no_grad():
+            owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(atoms[4])
+    monkeypatch.setattr(resolver, 'select', lambda choices, logits, **kwargs: 1)
+    request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
+    clause = Clause(ConceptualMeaning.from_description(atoms[1]), point=atoms[1],
+                    order=1, reference_request=request)
+    plan = resolver.preview(clause, frames)
+    selected = plan['items'][0]['selected']
+    assert selected == plan['items'][0]['candidates'][1]
+    prepared = resolver.prepare(clause, plan)
+    written = {}
+    row = store.write_clause(prepared, document_key='bank-isolation', sentence_index=3,
+                             written_rows=written)
+    retained = snapshot(resolver)
+    alloc = owner._concept_allocator
+    allocation, regions = alloc.next_id, dict(alloc.form_regions)
+    resolver.commit(plan, row, written, document='bank-isolation', position=3,
+                    training=phase == 'commit')
+    if phase == 'resolved':
+        errors = Error()
+        resolver.resolved(row, 0, ('sym', selected), errors)
+        loss = errors.total(objective='expectation')
+        assert loss is not None and loss.requires_grad
+    assert alloc.next_id == allocation and alloc.form_regions == regions
+    unchanged(resolver, retained)

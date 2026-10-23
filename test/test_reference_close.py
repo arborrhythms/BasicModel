@@ -27,13 +27,13 @@ def fixture():
 
 @torch.no_grad()
 def form_exposure(resolver, cue, content):
-    """A native form and an earlier known exposure, with no optimized fit."""
-    from IdentityRows import expose_form
+    """The fixture supplies a previously known native cue region."""
+    from IdentityRows import mint
     owner = resolver.components.owner
     word = owner.interpret.lookup_word([101], (), form='fixture-cue')
     row = owner._csw_row_of(word)
     owner.similarity_codebook.W[row].copy_(cue)
-    expose_form(owner, cue, content)
+    mint(owner, content, form=word)
 
 
 def close(resolver, point, predicate, mode, frames, *, document, sentence, selected=None):

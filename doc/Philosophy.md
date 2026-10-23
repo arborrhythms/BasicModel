@@ -1802,6 +1802,16 @@ universal, constructed by exclusion and conventionally real; an identity
 is a continuum of moments whose unity is imputed; binding is the
 determination "this is that same one", a judgment that follows
 perception and can err; and memory is reconstruction, not re-perception.
+"Concepts never die" (Alec, 2026-10-23). Nothing that happens in the
+world ends a concept, because events are occurrences and a concept is
+the class they belong to; "Felix dies" ends Felix's continuum and
+completes his class. A concept leaves the model only by forgetting, by
+its own value in the model's economy, which is not an event in the
+world. "Universals are not causally efficacious" (Dharmakīrti,
+*Pramāṇavārttika* III.3, paraphrased: what is capable of causal efficacy
+is ultimately real, the rest is conventionally real; these are the
+particular and the universal). So universals are neither born nor
+destroyed; only particulars are momentary.
 The mapping, with references, is in the
 [identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
 

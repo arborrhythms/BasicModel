@@ -204,6 +204,29 @@ when a mention of it is in STM. A kind is referenced by id without being
 pulled into STM. Recall (`query()`) brings LTM entries into STM, and
 their identities re-enter MTM.
 
+**A known individual changes: "Felix dies" (Alec's question,
+2026-10-23).** Felix is a promoted individual: a concept in the index at
+order 1, the class of his occurrences, with a codebook row whose content
+is the fold over them, a rebuildable cache (Orders §9). When "Felix" is
+read, the word is interpreted as that object (`Interpret.forward`) and
+the mention enters STM; bind gives the mention Felix's identity, an
+occurrence-keyed MTM entry whose kind is the native symbol and whose
+value is working state (§3, point 3); the bank row is not touched. "Dies"
+acts on that value and replaces it, and the close writes the idea as an
+LTM0 occurrence in Felix's history, with its `.when`. The concept is not
+modified by the sentence. It changes only through its occurrences: at the
+next consolidation, promotion or rebuild, the fold over Felix's
+occurrences includes a death, so the invariant that characterizes him
+shrinks (alive is no longer shared by every occurrence) while the set
+grows by one. His current state outlives MTM only as his latest
+occurrence: when he is next recalled, `query()` brings his occurrences
+back into STM and MTM, and his value is re-derived from the most recent
+by `.when`, so "Felix is dead" is read from the history, not from the
+concept. Kind membership is untouched: Felix stays a cat, since kinds do
+not change, members do (Orders §7). An individual is a temporal object
+with a trajectory (Orders §4); after death the trajectory is complete and
+the concept persists as that completed class.
+
 **Lifetime.** `values` and `names` serialize with the pool in
 `ConceptualSpace`'s checkpoint extras (the resolver extra is version-only
 today); document and stream isolation follow the frames; reclamation of
@@ -1068,6 +1091,29 @@ remain live. No assertion, query rank, chooser feature, objective or keep
 rule changes. This is another proof-validity repair under §39, not an
 alternative accepted answer. Every failed run stays in the receipt.
 
+
+`unresolved-03` passes 61 focused cases. The c/e question now correctly
+stays open with nothing minted, but the unchanged operation assertion
+finds a second query before conclude: retrieval still returns the marked
+frame as an answer witness before integration refuses it. Apply the same
+resolution check at `ThoughtLTMCapability.best_match`'s answer boundary.
+For a free equality side, the marked endpoint cannot supply the answer;
+its unmarked reverse endpoint remains usable when the query identifies
+the marked occurrence. Other queries retain their direct role alignment.
+This changes which retrieved evidence can answer a free role, not the
+operation/bind menus. Add both direction checks; retain the recorded scan
+count. No test assertion is ported. The failed run and keep probe remain.
+
+
+`unresolved-04` passes all 72 focused cases, including the c/e certificate
+with every original assertion. Source-07 is complete with 1,442 passes,
+twelve prerequisite/device skips and its one retained c/e failure.
+Source-08 runs the whole scoped selection again. The ten additional direct
+consumers of the changed thought readers join the module selection; the
+114 module files are partitioned into two independent process groups,
+each file run once on the same frozen source. This is still a scoped pass,
+not step 2's deferred full sweep. No previous source supplies evidence.
+
 ## 5. Grounding: the psychological stores and Dharmakīrti (Claude, 2026-10-23, at Alec's request)
 
 **Three stores, three literatures.**
@@ -1160,24 +1206,38 @@ Buddhas, and Believing*; Tillemans, "Dharmakīrti", *Stanford Encyclopedia
 of Philosophy*.
 
 
-`unresolved-03` passes 61 focused cases. The c/e question now correctly
-stays open with nothing minted, but the unchanged operation assertion
-finds a second query before conclude: retrieval still returns the marked
-frame as an answer witness before integration refuses it. Apply the same
-resolution check at `ThoughtLTMCapability.best_match`'s answer boundary.
-For a free equality side, the marked endpoint cannot supply the answer;
-its unmarked reverse endpoint remains usable when the query identifies
-the marked occurrence. Other queries retain their direct role alignment.
-This changes which retrieved evidence can answer a free role, not the
-operation/bind menus. Add both direction checks; retain the recorded scan
-count. No test assertion is ported. The failed run and keep probe remain.
+## 22. Codex: incoming MTM/concept clarification — 2026-10-23
+
+Claude's concurrent §2 clarification explicitly retires a remaining live
+write: `ReferenceClose.commit(training=True)` and `resolved` still call
+`IdentityRows.expose_form`, allocating a cue-region concept or unioning
+bound content into its bank row. This conflicts with the identity value's
+MTM ownership. The incoming text and grounding section were preserved
+verbatim in `248f8f8d7`; Philosophy's companion edit is committed unchanged
+separately. The duplicate numbered §5 grounding heading is Claude's text;
+its named anchor remains distinct from the earlier code review.
+
+Source-08's scoped pass is deliberately interrupted before this repair:
+517 passes and one skip were recorded, no failed assertion; the remaining
+cases are incomplete, not passes. The interruption ledger, logs and all
+partial captures remain; no source-08 result is promoted. The prior full
+source-07 failure and both actual focused Claude diagnoses remain too.
+
+Remove both production exposure calls and retire `expose_form` and
+`absorb_form`. Keep mention loss, answer supervision and score-function
+credit unchanged. Existing native cue regions remain readable for legacy
+state; promotion stays 2c's. The unit helper `form_exposure` now explicitly
+mints its supplied prior cue region, instead of calling a retired learning
+write. This fixture rewrite changes no assertion. Four new cases cover
+kept bind training and delayed mention credit, each with/without an existing
+cue region: no new allocation, no region mutation, no row or bank change;
+the delayed loss still requires gradients. This implements §1's MTM value
+ownership and the incoming §2 clarification without a decision reversal.
 
 
-`unresolved-04` passes all 72 focused cases, including the c/e certificate
-with every original assertion. Source-07 is complete with 1,442 passes,
-twelve prerequisite/device skips and its one retained c/e failure.
-Source-08 runs the whole scoped selection again. The ten additional direct
-consumers of the changed thought readers join the module selection; the
-114 module files are partitioned into two independent process groups,
-each file run once on the same frozen source. This is still a scoped pass,
-not step 2's deferred full sweep. No previous source supplies evidence.
+`bank-isolation-01` passes 123 cases with four existing prerequisite skips.
+The read-ahead's known-individual example reinforces the same separation:
+a VP changes the current MTM value, not its native concept. Promotion,
+consolidation and rebuilding remain their scheduled work. Source-09 will
+run all scoped groups on its own frozen hash, including every direct
+consumer of IdentityRows; the source-08 partial pass supplies no evidence.

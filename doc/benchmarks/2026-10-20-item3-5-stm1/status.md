@@ -2,8 +2,10 @@
 
 **Identity threading continued, 2026-10-23:** source-07 `59b7c8b87` completed
 with 1,442 passes, twelve skips and one c/e failure. The actual Claude
-diagnosis and repair are in the [identity spec §§20–21](../../plans/2026-10-23-identity-threading.md).
-Source-08 is prepared for all scoped gates and final review. Every failed
+diagnosis and repair are in the [identity spec §§20–22](../../plans/2026-10-23-identity-threading.md).
+Source-08 was interrupted for the incoming MTM/concept clarification;
+source-09 includes retirement of the bind-to-bank write and is prepared
+for all scoped gates and final review. Every failed
 capture and port stays in the [receipt](../2026-10-23-identity-threading/README.md).
 Layout-and-removal and shared STM chunks remain item 3.0; 2c follows
 identity on today's storage. No learning claim or full sweep. Item 3.0

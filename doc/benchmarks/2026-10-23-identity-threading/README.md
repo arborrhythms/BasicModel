@@ -2,14 +2,15 @@
 
 Source-07 `59b7c8b87` completed with 1,442 passes, twelve skips and one
 retained c/e failure. Its read-only Claude diagnosis and the completed
-repair are recorded below. Source-08 is prepared for freezing; gates,
-final review and publication remain pending. No earlier result is promoted.
+repair are recorded below. Source-08 was interrupted for the incoming MTM/concept clarification.
+Source-09 is prepared for freezing; gates, final review and publication
+remain pending. No earlier result is promoted.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–21. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–22. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -36,10 +37,10 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-08/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-09/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-08/test-ports.patch)
-is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-08/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
+pre-implementation review. [`test-ports.patch`](final/source-09/test-ports.patch)
+is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-09/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
 
 ## Every existing-test port
 
@@ -49,6 +50,7 @@ All assertions not listed remain unchanged.
 
 | File and test | Exact disposition |
 | --- | --- |
+| `test_reference_close.py`, `form_exposure` helper | Replace the retired `expose_form(owner, cue, content)` call with an explicit `mint(owner, content, form=word)` to supply the fixture's already-known cue region. Each caller supplies it once. Every existing assertion stays verbatim. |
 | `test_medium_term_memory.py`, native individual mint/bind | Rename `test_native_individual_mint_and_bind_make_no_pool_entry` to `test_native_individual_mint_and_bind_share_an_occurrence_keyed_value`. Replace `assert not ...mtm.entries` with `token == store.occurrence_of(row)`, native identity and `count == 2`, and exact current value `a[0]`. Selected native antecedent assertions stay. |
 | `test_reference_arrivals.py`, named native bind | Rename `test_named_bind_to_a_native_individual_creates_no_pool_entry` to `test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value`. Replace empty pool with own occurrence token/native identity and exact value `a[0]`. Bound native reference and no open/forward assertions stay. |
 | `test_reference_arrivals.py`, native arrival, two cases | Read the owner with `pool.token_of(token)`. Kind remains the native symbol; count changes from `2` to `3 if retained_occurrence else 2`; replace last-member equality with membership of both the pending token and selected occurrence; replace `{token}` with `{owner}` for the entry keys. Retained antecedent equality, derivation symbol and closed working read stay. |
@@ -86,7 +88,7 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-08`: the eight
+The required selections and runner are in `final/source-09`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
 arms. The distinct-file scope is 131 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
@@ -101,7 +103,7 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-08
+Source-07 outcomes remain in `final/source-07/gate-summary.json`. Source-09
 runs the complete scoped set, with its 114 module files partitioned between
 two independent process groups and each selection run once.
 No development pass or earlier frozen result substitutes for that source. The long module group and the other groups may run in separate processes on that same unchanged hash; each selection runs once.
@@ -188,6 +190,17 @@ query/equality directions, ordinary fill, unchanged features, direct and
 resolved counterparts, immutable rows/bank and checkpoint round-trip.
 The full source-08 test patch records these additions; no existing test is
 retired or changed for this repair.
+
+- `final/source-08`, `248f8f8d7`: deliberately interrupted when Claude's incoming §2 clarification identified the live form-exposure bank write. Partial result: 517 passes, one skip, no failed assertion; the other cases and decomposition arms are incomplete. Its interruption ledger and every partial capture remain. Nothing is promoted.
+- `bank-isolation-01`: 123 passes, four existing prerequisite skips after retiring the live exposure calls and functions. Four new cases prove kept bind training and delayed mention credit cannot allocate a cue-region concept or alter the bank, with/without a prior region. The delayed loss still requires gradients.
+
+Claude's concurrent §2 concept/current-value clarification and grounding
+text are preserved verbatim. Philosophy's first companion edit is commit
+`738e51e8d`; its further clarification is preserved with the next freeze.
+Current values live in MTM. Legacy cue regions remain readable; bind and
+delayed mention credit no longer write them. Promotion/rebuilding remains
+2c's work. The source-08 diagnostic source was incomplete for this
+clarification and cannot support publication.
 
 Large JSON and tensor captures are losslessly gzipped. `packed-captures.json` records
 each original and compressed SHA-256; new captures write gzip directly

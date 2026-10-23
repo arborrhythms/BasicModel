@@ -1,0 +1,6 @@
+{
+  "node": "test/test_nested_retention.py::test_retained_structure_and_reference_identity_survive_checkpoint_restore",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

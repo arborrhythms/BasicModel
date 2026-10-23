@@ -611,12 +611,6 @@ class ReferenceClose(nn.Module):
                     loss = self.mention_loss(dict(record), correct)
                     if loss is not None:
                         losses.append(loss)
-                        from IdentityRows import expose_form, point
-                        native = reference[1] if isinstance(reference, tuple) and reference[0] == 'sym' else reference
-                        value = point(self.components.owner, native) if isinstance(native, int) else None
-                        if value is not None:
-                            expose_form(self.components.owner,
-                                self.policy.new_tensor(dict(record)['cue']), value)
             if losses:
                 errors.add('expectation.reference_mentions', torch.stack(losses).sum(),
                            category='expectation', weight=self.components.weight)
@@ -1103,7 +1097,7 @@ class ReferenceClose(nn.Module):
     def commit(self, plan, row, written, *, document, position, training):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         from collections import OrderedDict
-        from IdentityRows import expose_form, point
+        from IdentityRows import point
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(self.components.owner)
         mtm = self.components.owner.mtm
@@ -1154,15 +1148,6 @@ class ReferenceClose(nn.Module):
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())
                 mentions[occurrence] = ((item['role'], held),)
                 mentions.move_to_end(occurrence)
-            if training:
-                for target in item.get('correct', (reference,)):
-                    if isinstance(target, int):
-                        value = point(self.components.owner, target)
-                    else:
-                        index = self.store.location(target) if target is not None else None
-                        value = self.store.slots[index, 0] if isinstance(index, int) else None
-                    if value is not None:
-                        expose_form(self.components.owner, item['cue'], value)
             audit.append(dict(leaves=item['leaves'], occurrence=occurrence[-1], reference=reference,
                 operation=item['mode'], candidates=tuple(
                     allocated.get(identity, identity) for identity in item['candidates']),
