@@ -218,3 +218,120 @@ an LTM0 row still calls `mtm.forget`.
    and seeds, the pending-premise certificates, the reference files, the
    eight-file set and the regression files, on one frozen hash. No
    learning claim.
+
+## 5. Codex: code review and implementation decisions — 2026-10-23
+
+Reviewed against main `8799d4b11`, which records Claude's four incoming
+documents unchanged; production is still the reviewed storage source
+`6a36b7cee`. This section precedes implementation. §39 governs the work.
+The following corrections implement §1 and do not reverse a decision in
+it. Every resulting test port will be listed with its exact diff in the
+identity receipt.
+
+1. **Layout is explicitly deferred.** §2's two descriptions of sentence
+   storage mix today's layout with §§71–72. Today `ClauseRows.write_clause`
+   stores an idea's fused point in slot 0 and its derivation reference in
+   role 0; that role is not invariably the subject. A relative close also
+   returns its Part handle, separately from its LTM0 occurrence. Do not
+   replace these layouts or their readers here. Recover the subject,
+   object and verb from the kept grammatical operation journal, and carry
+   their temporary correspondence to the actual written occurrence into
+   MTM. Keep all existing asserted relations and component congruence.
+   The layout-and-removal spec owns the later migration and the recalled
+   binary-chain representation.
+
+2. **The clause journal is not a live boundary callback.**
+   `ClauseJournal.finish_clause` runs after the word bricks and explicitly
+   never executes an operator. Updating an overlay there cannot make an
+   earlier VP's result available to the next VP. The live seams are
+   `LanguageSpace.choose_operation`, `ClauseScope.apply` and the two
+   operation loops in `Models` (ordinary and closing). Carry tensor
+   identity state through those loops and the existing sentence/fork
+   state, and update it when the chosen operation completes a clause.
+   `ClauseJournal` later consumes recorded choices/values, rather than
+   replaying numerical operations. No Python MTM read enters the compiled
+   body. An unresolved object records the event without applying a
+   completed-state replacement.
+
+3. **The menu is one global chooser, not a second resolver.**
+   `ReferenceContext.prepare_operands` currently expands references on
+   determiner and implicit participant operands, with order-one work
+   deferred to `ReferenceClose.preview`. Add the explicit unary compose
+   `bind` face and offer its accessible token locations plus reference
+   zero (dummy). Collapse the lower/definite variants without changing
+   their folds or stamped orders. Bind keeps its operand's grammatical
+   stamp; neither lexical definitions nor a word-order test gates a
+   grammar choice. The kept parse's positions and determination still
+   decide noun sites. A recorded compose bind is authoritative at close:
+   preview reads its choice and scored value and does not select it
+   again. Unbound noun sites become own objects; elided roles and arrival
+   thought operations retain their declared contracts. The thought
+   `bind.thought` face remains distinct from `bind.forward`.
+
+4. **Provisional identity state belongs to the trial.** The current
+   `('new', n)` objects appear only after composition; they cannot serve
+   the new operator. Stage existing frame-accessible tokens at the host
+   boundary, and give newly determined/bound phrases trial-local handles
+   that are disjoint from durable addresses. Include their values,
+   aliases and operation correspondence in the same state that
+   `SentenceFork` snapshots and restores. A later operation reads the
+   latest value through that handle. At kept close, map provisional
+   handles to the writer's actual occurrence addresses once. This adds
+   no conceptual seat, stored parse or LTM identity column.
+
+5. **Current value is not the historical union.**
+   `ReferenceClose.token_value` currently detaches and unions retained
+   occurrences, and `individuals` can union those observations again.
+   Both live reads must use the current MTM value for a pooled identity;
+   historical union remains diagnostic only. Description mentions join;
+   completed VP results replace. Keep the mention's value-at-bind in its
+   plan for `reconstruction.reference`, so later updates cannot change
+   that cost. Overlay values keep the within-sentence graph; only the
+   durable committed pool detaches. A bound native individual now gets
+   the occurrence-keyed working entry specified in §3, without changing
+   its bank row.
+
+6. **Names, events and counting have different ownership.** Preserve
+   occurrence-keyed mention membership and its count, so the settled-join
+   and singleton guards still concern joined mentions. `names` holds a
+   mention's token and reading. Store event history separately on the
+   token, with occurrence, verb and role; a sentence's subject ownership
+   must not turn an event into another joined mention. Record object
+   participation without overwriting that object's value with the
+   subject's VP result. Deduplicate repeated admission of the same event
+   and role, and order new events by the kept operation sequence. Pool
+   eviction/reclamation removes its owned names and events together.
+
+7. **Role evidence changes owner.** `_participants`, `prediction` and
+   `expected_roles` presently read Part pairs and `parts.access_count`.
+   Replace that source with MTM event histories, preserving the existing
+   recurrence threshold and per-role proportion. G1–G3 remain semantic
+   certificates. The test that deletes Part rows to erase role evidence
+   describes the retired owner; port it to pool expiry/forgetting and
+   checkpoint restoration, and disclose every changed check. No Part
+   fallback may conceal missing MTM events.
+
+8. **Checkpoint and provisioning have concrete seams.**
+   `ConceptualSpace.vocab_extras/load_vocab_extras` own the conceptual
+   sidecar; the resolver's extra is version-only. Serialize the pool in
+   that existing owner, validate names, values and event references on
+   restore, and treat a legacy checkpoint without MTM as an empty pool.
+   `_ltm_ingest_truth_texts` already saves/restores caller recall history;
+   its temporary identity context needs the same exception-safe boundary.
+   Frames still bound accessibility by document/stream; expiry and
+   promotion policy remain 2c's work.
+
+9. **The definitions fault is confirmed.** `Interpret.define` does not
+   reject a word object, and `PartClosing._definition` can admit one when
+   a headed phrase retains the operand word's symbol. Add the §2 guard
+   and skip, before any write; remove N1's surface special case. Port
+   its regression to rejection and unchanged native forms, as §2
+   explicitly requires. This is a definition-integrity check, not a
+   lexical part-of-speech decision. Other malformed definitions fail
+   loudly; no fixture or production row is silently relabeled.
+
+Implementation follows these seams, then one frozen source with the
+specified scoped gates and both original decomposition arms. Every
+failed run remains retained. Claude reviews before publication; no
+learning claim and no step-2 full sweep in this line. Item 3.0 has not
+been reached.
