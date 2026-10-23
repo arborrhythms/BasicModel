@@ -1,0 +1,6 @@
+{
+  "node": "test/test_live_references.py::test_operation_runs_on_the_selected_occurrence_eager_and_compiled",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

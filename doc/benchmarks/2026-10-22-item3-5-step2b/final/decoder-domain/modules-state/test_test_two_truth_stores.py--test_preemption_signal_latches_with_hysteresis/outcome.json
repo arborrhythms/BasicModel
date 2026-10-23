@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_truth_stores.py::test_preemption_signal_latches_with_hysteresis",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

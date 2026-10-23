@@ -1,0 +1,6 @@
+{
+  "node": "test/test_echoic_decoder.py::test_generate_chooser_belongs_to_reconstruction",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

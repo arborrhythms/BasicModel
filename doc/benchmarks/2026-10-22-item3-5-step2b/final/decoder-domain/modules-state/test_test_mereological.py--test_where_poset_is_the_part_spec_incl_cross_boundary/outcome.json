@@ -1,0 +1,6 @@
+{
+  "node": "test/test_mereological.py::test_where_poset_is_the_part_spec_incl_cross_boundary",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

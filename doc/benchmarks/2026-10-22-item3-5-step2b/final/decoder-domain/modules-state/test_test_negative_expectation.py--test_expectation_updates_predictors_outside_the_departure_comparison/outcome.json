@@ -1,0 +1,6 @@
+{
+  "node": "test/test_negative_expectation.py::test_expectation_updates_predictors_outside_the_departure_comparison",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

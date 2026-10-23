@@ -3225,3 +3225,39 @@ groups with the same 92-file selection. No result from `85da7c14d` is
 promoted. N1's narrow production repair remains unchanged; Claude reviews
 it and this port together after the new gates. No fresh series or full
 sweep; step 2's one full sweep remains at its end.
+
+## 67. Codex: storage-only 2b passes and Claude says LAND — 2026-10-22
+
+Frozen source `6a36b7ceeb5a5da9ae6019f62c59c16d27f7f1ce` completes all
+92 selected files: 85 regression passes, 123 native passes/seven existing
+skips, and 936 module passes/two existing skips. Total: 1,144 passes,
+nine existing prerequisite skips, all 1,153 selected cases completed.
+The pending-premise certificate records forward 0 bound/7 open and
+reverse 0 bound/16 open. No earlier source's results are promoted; all
+failed runs and reviews remain retained. No fresh series or full sweep.
+
+[The source-bound receipt](../benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
+contains the exact assertion and fixture ledgers, the three P3 test
+retirements, all gate reports and the actual read-only Claude review.
+Claude returns **LAND**, no blocking findings. N1's narrow repair and
+the §66 fixture correction are accepted. The source and tests are
+unchanged since the freeze. Publication is authorized on main, followed
+by the WikiOracle bump; no second sweep.
+
+Two nonblocking review notes are declared. First, the exact domain check
+is `Language.py:13445–13448`: `in_domain` requires finite coordinates in
+`[0,1]` for both operands, and `admissible` combines it with availability.
+The final pair mask at line 13474 requires that value. Thus §66's old
+operands are rejected before recomposition/residual tests. Second, a
+bound word used as another word's object has no emitting surface at that
+object row. The second word has no emitting terminal through it. Carry
+the ownership question into the identity review/spec; no further decoder
+change is part of this storage landing.
+
+The §41 resolutions remain as accepted: a conservative structure-stage
+barrier with `forget_pending` carry, stored-question rejection by record
+kind, and all stored-mode consumers retired or explicitly ported to the
+current clause/query mode. Derivation, its readers, close-time minting
+and MTM working values remain for the decided later rounds. Identity
+threading needs Claude's spec and the requested §§34–35 code review
+next. No learning claim; item 3.0 has not been reached.

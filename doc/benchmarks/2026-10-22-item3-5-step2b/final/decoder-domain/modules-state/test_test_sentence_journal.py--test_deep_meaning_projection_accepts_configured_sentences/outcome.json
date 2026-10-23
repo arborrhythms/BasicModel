@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

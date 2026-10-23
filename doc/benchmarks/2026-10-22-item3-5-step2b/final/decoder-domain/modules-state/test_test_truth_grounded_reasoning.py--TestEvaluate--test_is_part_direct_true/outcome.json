@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_direct_true",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

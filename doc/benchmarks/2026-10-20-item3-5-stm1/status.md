@@ -1,10 +1,20 @@
 # Step 1b: current gates and carry ledger
 
+**Storage-only 2b reviewed, 2026-10-22:** frozen `6a36b7cee` passes all
+scoped gates: 1,144 passes and nine existing prerequisite skips. Claude's
+[actual read-only review](../2026-10-22-item3-5-step2b/final/decoder-domain/claude-review.md)
+returns **LAND**, no blocking findings. §67 records the verdict and the
+two nonblocking notes; publication and the WikiOracle bump follow. No
+source/test change after freeze, no fresh series and no full sweep.
+Identity threading still needs Claude's spec and the §§34–35 code review.
+Item 3.0 has not been reached.
+
 **Storage-only 2b echoic fixture port, 2026-10-22:** `85da7c14d` completes
 1,142 passes, nine existing skips and two failures in the added consumer
 files. §66 corrects only out-of-domain fixture operands, retaining every
 assertion; both captured-state cases then pass. The [current receipt](../2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
-prepares the new freeze and all scoped gates. The N1 production repair is
+records frozen source `6a36b7cee` and 1,144 passes/nine existing skips from
+all scoped gates on that hash. The N1 repair is
 unchanged. No result is promoted; Claude reviews before publication.
 Identity threading still needs its spec. Item 3.0 is not reached.
 

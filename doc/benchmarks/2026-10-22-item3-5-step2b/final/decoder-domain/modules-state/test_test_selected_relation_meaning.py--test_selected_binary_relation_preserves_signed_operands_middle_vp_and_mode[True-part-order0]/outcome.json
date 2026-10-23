@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode[True-part-order0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

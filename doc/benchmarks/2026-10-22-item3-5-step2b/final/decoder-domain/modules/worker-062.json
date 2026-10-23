@@ -1,0 +1,184 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+    "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+    "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+    "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+    "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+    "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+    "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+  ],
+  "completed": [
+    "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+    "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+    "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+    "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+    "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+    "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+    "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+    "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+    "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+    "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+  ],
+  "slow_selected": [
+    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+    "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_joint_objectives.py::test_shared_grammar_operators_belong_to_the_diagnostic_set",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010327875148504972,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_packed_prediction_teardown_records_each_observation_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019078250043094158,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 23.243115667020902,
+      "message": "",
+      "stdout": "ation_layer.chooser.mlp.2.weight\", \"writers\": [\"reconstruction\"]}, {\"elements\": 1, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.mlp.2.bias\", \"writers\": [\"reconstruction\"]}, {\"elements\": 21840, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.reference_choice.weight\", \"writers\": [\"reconstruction\"]}, {\"elements\": 10816, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.operand_order.weight\", \"writers\": [\"reconstruction\"]}, {\"elements\": 10816, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.copy_order.weight\", \"writers\": [\"reconstruction\"]}, {\"elements\": 725, \"owner\": \"reconstruction\", \"parameter\": \"symbolSpace.subspace.layers.0.operation_layer.chooser.what_projection.weight\", \"writers\": [\"reconstruction\"]}, {\"elements\": 8, \"owner\": \"expectation\", \"parameter\": \"conceptualSpaces.0.layers.3.reference_close.policy\", \"writers\": []}, {\"elements\": 26624, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.weight\", \"writers\": []}, {\"elements\": 64, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.0.bias\", \"writers\": []}, {\"elements\": 13312, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.weight\", \"writers\": []}, {\"elements\": 208, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.context.2.bias\", \"writers\": []}, {\"elements\": 8, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.weight\", \"writers\": []}, {\"elements\": 2, \"owner\": \"expectation\", \"parameter\": \"symbolSpace.subspace.layers.2._inter_predictor.local.bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace._readout_bias\", \"writers\": []}, {\"elements\": 13312, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.W\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.0.biasWeight\", \"writers\": []}, {\"elements\": 13312, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.W\", \"writers\": []}, {\"elements\": 832, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.layers.1.biasWeight\", \"writers\": []}, {\"elements\": 6, \"owner\": \"output\", \"parameter\": \"answer_attention.space_bias\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.consume_gate\", \"writers\": []}, {\"elements\": 64, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.weight\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.0.bias\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.weight\", \"writers\": []}, {\"elements\": 1, \"owner\": \"output\", \"parameter\": \"answer_attention.scorer.2.bias\", \"writers\": []}, {\"elements\": 3016, \"owner\": \"output\", \"parameter\": \"question_conditioners.104.weight\", \"writers\": []}, {\"elements\": 53248, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_L\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.d\", \"writers\": []}, {\"elements\": 256, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.raw_U\", \"writers\": []}, {\"elements\": 16, \"owner\": \"output\", \"parameter\": \"inputSpace.outputSpace.percept_adapter.biasWeight\", \"writers\": []}, {\"elements\": 13086720, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.weight\", \"writers\": [\"attention\"]}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.hidden.0.bias\", \"writers\": [\"attention\"]}, {\"elements\": 64, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.weight\", \"writers\": [\"attention\"]}, {\"elements\": 1, \"owner\": \"attention\", \"parameter\": \"candidate_attention.readout.bias\", \"writers\": [\"attention\"]}]}\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_summed_objectives_on_mps",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.050725166918709874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_backward_sums_shared_heads_auxiliaries_and_ties",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004622919950634241,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025925016961991787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024308403953909874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00037704198621213436,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001998748630285263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_model_parameter_ownership_and_backward_dispatch",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038520898669958115,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00038558291271328926,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor.xml-expected0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10969279101118445,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.047s)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_runbatch_steps_sentence_trials_then_batch_only_objectives[MM_xor_loopback.xml-expected1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.3820509170182049,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.195s)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_answer_path_operators_are_independently_owned_and_keep_learning",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10905974986962974,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_joint_objectives.py::test_real_intermediate_and_final_ends_have_same_canonical_roles",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.2159853752236813,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

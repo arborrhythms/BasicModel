@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_truth_stores.py::test_relational_evaluation_respects_both_argument_positions",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

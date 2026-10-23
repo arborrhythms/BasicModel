@@ -1,0 +1,82 @@
+[
+  {
+    "original": "modules-state/test_test_item55_mechanisms.py--test_interleaving/initial-1.pt",
+    "compressed": "modules-state/test_test_item55_mechanisms.py--test_interleaving/initial-1.pt.gz",
+    "original_bytes": 376784961,
+    "original_sha256": "78b4ed1f050fa08b7a858ffbc84eef90ffaae571edbab75d16b03d7c5105aca8",
+    "compressed_bytes": 373925,
+    "compressed_sha256": "dc48e4fccef51eb010cadbc49e69015bf615dccbacedb559a3b12258c66bdab3"
+  },
+  {
+    "original": "modules-state/test_test_item55_mechanisms.py--test_stream_chain/initial-1.pt",
+    "compressed": "modules-state/test_test_item55_mechanisms.py--test_stream_chain/initial-1.pt.gz",
+    "original_bytes": 376741057,
+    "original_sha256": "d167fd0a4a101b03f75cfc2acda5437faf022f2fe2679c9e3431142f5bb2d991",
+    "compressed_bytes": 373695,
+    "compressed_sha256": "d2c560aab771e2ef91d565f91028f5a798e30164453fd5c79fcf2c76f52bb3a1"
+  },
+  {
+    "original": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-1.pt",
+    "compressed": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "b8ecb74c73e67a41e5df5abae1e7e7633872392e73bd81f2d49a6d83e81a26f8",
+    "compressed_bytes": 373757,
+    "compressed_sha256": "37bd0d446279972eeeed81fe7f1d9b25abf5417f33e03d294e317f1c5088527b"
+  },
+  {
+    "original": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-2.pt",
+    "compressed": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-2.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "01311c4fbfa85f799db4c73f54068901ead83a4a0443f16e89ba8ef0ee694eb9",
+    "compressed_bytes": 373756,
+    "compressed_sha256": "f6d4a38d32955da07bf06b0706793deba067de76e941c59c3a2737018b0ded8b"
+  },
+  {
+    "original": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-3.pt",
+    "compressed": "modules-state/test_test_item55_mechanisms.py--test_surface_inverses/initial-3.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "18cdec808ee12b9516b18021cca3e0fc19c4751c0de8072580b60bd02a96ac29",
+    "compressed_bytes": 373831,
+    "compressed_sha256": "93c8617e3020acbeb2ae273498fb9437f3ecae67efa598a2ced4c9bd9cbddc99"
+  },
+  {
+    "original": "modules-state/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt",
+    "compressed": "modules-state/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-1.pt.gz",
+    "original_bytes": 376843521,
+    "original_sha256": "8df15ffced1a44817edb5c8c61ee4feab52bd0b1d5d3d827575cf44f9b173f7b",
+    "compressed_bytes": 374123,
+    "compressed_sha256": "50426d0241e65a12220ade41b43132f20c700842695faafb131975acef246684"
+  },
+  {
+    "original": "modules-state/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt",
+    "compressed": "modules-state/test_test_learning_readiness.py--test_native_progress_and_trained_artifact_evaluation_path/initial-2.pt.gz",
+    "original_bytes": 377367873,
+    "original_sha256": "d5ed761e862336a13b56ce2cd5b6f533ada0dc34e236ba0d931a81203f11f2a5",
+    "compressed_bytes": 375601,
+    "compressed_sha256": "a16189c3423c9c3182e610fc1d5f36c06046b11a555485c0f2f58cba4f144296"
+  },
+  {
+    "original": "modules-state/test_test_negative_expectation.py--test_native_unlabelled_batch_trains_the_same_chooser/initial-1.pt",
+    "compressed": "modules-state/test_test_negative_expectation.py--test_native_unlabelled_batch_trains_the_same_chooser/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "06851773729111cd3fcf850f9c38c920db0b5ace356e336b6b0f215c5b27c7ba",
+    "compressed_bytes": 373753,
+    "compressed_sha256": "145aeefd1cc76f50d6cb4105fd5c78918aff101b1a67a4fd1f8a36f06a367ae4"
+  },
+  {
+    "original": "modules-state/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[False]/initial-1.pt",
+    "compressed": "modules-state/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[False]/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "ca223329cec56acd303dcab9ce072adf8d294e767fcffd9f48dea8f8421b954d",
+    "compressed_bytes": 373786,
+    "compressed_sha256": "3f1a5ff0d3bd4ed657eddcf6110d2dca8b45fc159828b2f7e82cceb734230a40"
+  },
+  {
+    "original": "modules-state/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[True]/initial-1.pt",
+    "compressed": "modules-state/test_test_selected_relation_meaning.py--test_forward_anchor_capture_survives_text_and_grammar_changes[True]/initial-1.pt.gz",
+    "original_bytes": 376755713,
+    "original_sha256": "3aea8056bf210b296534c20aeea572b91fde0de7ca721d22739d8f5629fe7dc5",
+    "compressed_bytes": 373769,
+    "compressed_sha256": "500a6d9fb7b1012218210131880fb824e29a3e5cffb10158f2ea1a812082ee67"
+  }
+]

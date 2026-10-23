@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_nested_meaning.py::test_nested_what_from_a_completed_program_enters_the_same_controller",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

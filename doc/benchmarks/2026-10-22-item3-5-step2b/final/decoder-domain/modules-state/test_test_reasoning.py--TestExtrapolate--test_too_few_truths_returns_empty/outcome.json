@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestExtrapolate::test_too_few_truths_returns_empty",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

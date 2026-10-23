@@ -1,0 +1,6 @@
+{
+  "node": "test/test_concept_forgetting.py::test_component_coordinates_protect_referenced_seats",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

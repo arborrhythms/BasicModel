@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_sentence_identity.py::test_closing_idea_is_narrow_and_the_operation_has_a_native_part",
+    "test/test_sentence_identity.py::test_referenced_phrase_is_minted_as_a_part_argument",
+    "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_sentence_identity.py::test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+    "test/test_sentence_identity.py::test_full_inventory_can_record_part_of_already_seated_arguments"
+  ],
+  "completed": [
+    "test/test_sentence_identity.py::test_closing_idea_is_narrow_and_the_operation_has_a_native_part",
+    "test/test_sentence_identity.py::test_referenced_phrase_is_minted_as_a_part_argument",
+    "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+    "test/test_sentence_identity.py::test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+    "test/test_sentence_identity.py::test_full_inventory_can_record_part_of_already_seated_arguments"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_sentence_identity.py::test_closing_idea_is_narrow_and_the_operation_has_a_native_part",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013858250109478831,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_referenced_phrase_is_minted_as_a_part_argument",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00898287515155971,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_closing_part_and_implies_never_ask_thought_authorization",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00942595792002976,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.041444208938628435,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_sentence_identity.py::test_full_inventory_can_record_part_of_already_seated_arguments",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007131458958610892,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

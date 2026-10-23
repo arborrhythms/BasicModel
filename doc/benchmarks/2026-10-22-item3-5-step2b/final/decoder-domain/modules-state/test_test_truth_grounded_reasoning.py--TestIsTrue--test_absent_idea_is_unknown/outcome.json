@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_absent_idea_is_unknown",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

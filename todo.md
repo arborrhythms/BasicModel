@@ -31,13 +31,13 @@ in step-2 §§33–36:** the scoped storage changes now, identity threading
 specified by Claude next, then derivation removal. Claude's incoming spec,
 bind plan, Architecture and todo edits were committed unchanged at
 `cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **Storage-only 2b is being refrozen under §66.**
+All work stays on main. **Storage-only 2b is frozen at `6a36b7cee`; all scoped gates pass (1,144 passes, nine existing skips), and Claude returns LAND (§67).**
 The narrow N1 production repair stays; the added echoic-decoder cases need
 only operands inside the existing domain, with every assertion preserved.
 Their failed run and passing captured-state diagnosis are retained. The
 [current receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)
 lists every port, declaration, failure and withdrawn source.
-Claude's review precedes publication. The storage round removes
+Publication of main and the WikiOracle bump follows. The storage round removes
 persisted postings, adjacency, mode and unused refs; retains every
 completed S; and stages forgetting before deletion. Identity threading
 requires Claude's next spec and a code review of §§34–35. Metadata
@@ -723,9 +723,9 @@ not by a passing identity lesson.
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
    seven existing skips and Claude's approval. The storage-only 2b round
-   follows §36 and is being refrozen after the §66 echoic fixture port,
-   with scoped gates and review before publication ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
-   §§39–66 retain every fix and port. Tags, mention readings and the
+   follows §36 and is frozen at `6a36b7cee`: 1,144 scoped passes, nine
+   existing skips, Claude verdict LAND; publication follows ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)).
+   §§39–67 retain every fix, port and review. Tags, mention readings and the
    occurrence-only occupation ports await the derivation-removal round;
    identity threading and its spec come first. No step-2 completion is
    claimed. All subsequent work stays on main.

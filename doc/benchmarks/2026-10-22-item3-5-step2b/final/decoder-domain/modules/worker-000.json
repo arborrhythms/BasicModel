@@ -1,0 +1,148 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+  ],
+  "completed": [
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+    "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+    "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+    "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+    "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+    "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.053126417100429535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006555541884154081,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028718330431729555,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024288329295814037,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_live_zero_evidence_question_opens_after_its_row_is_written[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026414161548018456,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015191249549388885,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012026250129565597,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007290249923244119,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_negative_trust_derived_pair_reverses_only_on_the_relation_edge",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002680666046217084,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_pending_forgetting_pressure_survives_restore_below_high_water",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003056708024814725,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 3, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 1, 'target_reached': False}\r\n[LTM forgetting] {'before': 3, 'after': 2, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 1, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012500002048909664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001539168879389763,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

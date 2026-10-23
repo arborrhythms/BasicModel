@@ -1,0 +1,6 @@
+{
+  "node": "test/test_word_store.py::test_word_surface_and_reassociated_object_survive_strict_checkpoint",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

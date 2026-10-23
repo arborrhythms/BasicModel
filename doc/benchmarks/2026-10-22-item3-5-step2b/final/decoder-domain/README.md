@@ -155,9 +155,16 @@ passes both cases with that literal alone; it is not gate evidence.
 uses §39, not the same-round setup exception. No production code changed
 from `85da7c14d`.
 
+**Pointer requested in the final review:** `bin/Language.py:13445–13448`
+computes `in_domain` from finite operands with every coordinate in
+`[0,1]`, then `admissible = available[:, index] & in_domain`. The pair
+mask at `:13474` requires `admissible`. This is the explicit rejection
+of the fixture's old operands, before recomposition or residual checks.
+
 ## Gates, review and publication
 
-Freeze and run all three scoped groups on one new hash: the eight
+Frozen source: `6a36b7ceeb5a5da9ae6019f62c59c16d27f7f1ce`.
+All three scoped groups passed on that hash: the eight
 regression files, the complete eight-file native set and 76 module files.
 This includes the four direct decoder consumers Claude named in N1:
 `radix_layer_reverse`, `active_decode_candidates`, `echoic_decoder`, and
@@ -168,7 +175,35 @@ hashes all modified source, configuration and test files; the runner
 checks those hashes before and after every group. No fresh series and no
 full sweep. Step 2's one full sweep stays at its end.
 
-Claude reviews this hash and its new evidence before publication: push
-BasicModel main and bump WikiOracle main. Then write the requested §§34–35
-code review; Claude's identity spec precedes implementation. No learning
-claim is made. Item 3.0 has not been reached.
+| Group | Passed | Existing skips | Completed |
+| --- | ---: | ---: | ---: |
+| Regression files | 85 | 0 | 85 |
+| Eight-file native set | 123 | 7 | 130 |
+| Changed-module and direct-consumer files | 936 | 2 | 938 |
+| Total | 1,144 | 9 | 1,153 |
+
+[The source-bound summary](gate-summary.json) links all three reports and
+their hashes. The nine existing skips are the copular prerequisite, four
+re-identification cases, two live pending-premise learning cases, the
+FineWeb data prerequisite and stage 3. No case failed or was left
+uncompleted. The pending-premise certificate reports forward 0 bound/7
+open and reverse 0 bound/16 open, with no closure forcing and zero
+attention budget. These are mechanism results, not learning evidence.
+
+[Claude's actual read-only review](claude-review.md) returns **LAND** for
+this hash, with no blocking findings. The request, raw response and run
+metadata are retained beside the report. No source or test changed after
+the freeze, and no further gate or sweep is required.
+
+The review's other nonblocking note carries into the identity spec: when
+a bound word is itself another word's object, that object row has no
+emitting surface under the preserved terminal rule. The second word
+therefore has no emitting terminal through that row. Ownership of this
+dual-role row needs an explicit identity contract; storage-only 2b makes
+no additional decoder change for it.
+
+Publication is the push of BasicModel main and the WikiOracle main
+gitlink bump. The publication record will name both landed commits.
+Then write the requested §§34–35 code review; Claude's identity spec
+precedes implementation. No learning claim is made. Item 3.0 has not
+been reached.
