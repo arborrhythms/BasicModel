@@ -1,0 +1,25 @@
+{
+  "source": "65ab7fbe9d5c67271b0bea7e4853c8ba2b690363",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_decomposition.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-13/decomposition-zero"
+  ],
+  "started": "2026-10-23T17:46:12.750871+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T17:48:12.516369+00:00"
+}

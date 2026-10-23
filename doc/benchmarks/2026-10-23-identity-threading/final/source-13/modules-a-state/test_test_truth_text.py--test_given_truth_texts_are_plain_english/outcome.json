@@ -1,0 +1,6 @@
+{
+  "node": "test/test_truth_text.py::test_given_truth_texts_are_plain_english",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain.py::test_prior_statement_is_a_reference_candidate_before_noun_columns_exist[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

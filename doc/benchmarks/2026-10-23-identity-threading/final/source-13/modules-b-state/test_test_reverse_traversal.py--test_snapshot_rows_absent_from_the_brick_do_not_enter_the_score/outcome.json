@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reverse_traversal.py::test_snapshot_rows_absent_from_the_brick_do_not_enter_the_score",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

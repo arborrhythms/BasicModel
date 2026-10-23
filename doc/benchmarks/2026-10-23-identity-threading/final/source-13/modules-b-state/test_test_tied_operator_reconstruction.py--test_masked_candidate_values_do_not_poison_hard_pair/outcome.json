@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_operator_reconstruction.py::test_masked_candidate_values_do_not_poison_hard_pair",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

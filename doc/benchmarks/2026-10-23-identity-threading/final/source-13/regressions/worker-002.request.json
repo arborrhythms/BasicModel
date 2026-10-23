@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
+    "test/test_reference_arrival_review.py::test_native_arrival_without_synthetic_occurrence_joins_its_working_entry",
+    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token",
+    "test/test_reference_arrival_review.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames",
+    "test/test_reference_arrival_review.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
+    "test/test_reference_arrival_review.py::test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists",
+    "test/test_reference_arrival_review.py::test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-13/regressions/worker-002.recycle.json"
+}

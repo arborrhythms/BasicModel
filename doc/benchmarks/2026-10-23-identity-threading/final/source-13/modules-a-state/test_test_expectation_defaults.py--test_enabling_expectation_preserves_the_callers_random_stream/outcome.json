@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_defaults.py::test_enabling_expectation_preserves_the_callers_random_stream",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_final.py::test_bilattice_rule_survives_operator_rename",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

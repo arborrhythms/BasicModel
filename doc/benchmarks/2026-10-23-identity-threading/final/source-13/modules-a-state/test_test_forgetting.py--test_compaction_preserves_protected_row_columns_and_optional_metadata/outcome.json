@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

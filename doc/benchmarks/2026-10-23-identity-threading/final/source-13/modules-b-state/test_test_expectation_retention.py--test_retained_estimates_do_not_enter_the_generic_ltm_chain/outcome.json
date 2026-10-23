@@ -1,0 +1,6 @@
+{
+  "node": "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

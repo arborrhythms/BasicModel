@@ -1,0 +1,6 @@
+{
+  "node": "test/test_unified_thought_controller.py::test_nested_cutoff_drains_the_actual_depth_without_fresh_work[False-0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

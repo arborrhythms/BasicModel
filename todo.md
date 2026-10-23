@@ -17,12 +17,15 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is finishing the
-source-12 review's typed-reference correspondence repair on main. Its
-new frozen source will own all scoped gates, then go to Alec for mediated
-Claude review before publication. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
-retains every prior source, review, failure and exact port. Published
-storage-only 2b remains BasicModel `39272e7a6`, WikiOracle `ade0399`.
+**Current:** Item 3.5 line 2's identity threading is ready for Alec's
+mediated review on frozen `65ab7fbe9`: all scoped groups pass, 1,627
+passed and twelve existing skips, zero failures. Both original-snapshot
+decomposition arms and the unchanged pending-premise certificates pass.
+The [review hand-off](doc/benchmarks/2026-10-23-identity-threading/final/source-13/review-handoff.md)
+and [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) retain
+every failed run and exact port. No direct review is requested for this
+source. Publication remains pending; published storage-only 2b is still
+BasicModel `39272e7a6`, WikiOracle `ade0399`.
 
 **Next is 2c** after identity lands, carrying the two R10 arrival notes,
 then step 2's one full sweep. The latest §72 decision moves the
@@ -811,7 +814,9 @@ not by a passing identity lesson.
      then 2c and step 2's one sweep. *Identity line specified
      2026-10-23:* [identity threading](doc/plans/2026-10-23-identity-threading.md)
      (bind as a compose-grammar operator listed per accessible location;
-     VP replaces, mention joins; readings and role evidence in MTM). *Layout
+     VP replaces, mention joins; readings and role evidence in MTM). Implementation is frozen at `65ab7fbe9`,
+     with all scoped gates passed; [Alec-mediated review](doc/benchmarks/2026-10-23-identity-threading/final/source-13/review-handoff.md)
+     and publication are pending. *Layout
      decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
      sentence row; **moved to item 3** (Alec, 2026-10-23) with STM's eight

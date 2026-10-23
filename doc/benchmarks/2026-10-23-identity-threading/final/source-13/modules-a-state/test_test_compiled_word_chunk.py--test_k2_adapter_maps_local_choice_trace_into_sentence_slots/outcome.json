@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compiled_word_chunk.py::test_k2_adapter_maps_local_choice_trace_into_sentence_slots",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

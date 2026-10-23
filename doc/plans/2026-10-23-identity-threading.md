@@ -1593,6 +1593,30 @@ Claude review is requested for source-13, and publication waits for that
 mediated review. This does not remove the review requirement.
 
 `typed-journal-02` passes all 78 live-reference, sentence-journal and
-identity-threading cases after the repair, including the eight unchanged
-new assertions that failed before it. This is development evidence only;
+identity-threading cases after the repair, including the eight new cases with
+assertions unchanged from their pre-repair failures. This is development evidence only;
 the frozen source owns every required scoped group anew.
+
+## 33. Codex: source-13 complete; Alec mediates review — 2026-10-23
+
+Frozen `65ab7fbe9d5c67271b0bea7e4853c8ba2b690363` passes every requested
+scoped group: 1,627 passed, twelve existing skips, zero failures; all
+1,639 selected cases complete across 132 distinct files, with no
+compile-cache retry. The audit verifies 886 production/configuration,
+test and measurement files unchanged after freeze. Both decomposition
+arms retain their original snapshots/seeds, direct name checks and
+bitwise surviving parameters. The unchanged pending certificate records
+forward 0 bound / 16 open and reverse 0 / 32, with no wrong binding.
+G1–G3, c/e, the ordinary presentation, gradient logging and multi-stream
+driver pass. The eight new typed-journal cases pass on this hash.
+
+Every failed source and diagnostic remains retained. Nine skips need
+absent phase artifacts and three are opt-in slow MPS/Inductor cases;
+none counts as a pass or learning/GPU evidence. No full sweep ran.
+
+The [review hand-off](../benchmarks/2026-10-23-identity-threading/final/source-13/review-handoff.md)
+and receipt are complete for Alec to mediate with Claude. No direct
+review is requested for this source and no LAND verdict is claimed.
+Publication of BasicModel main and the WikiOracle bump waits for that
+review. No additional gates are scheduled unless review changes source.
+2c follows identity's eventual landing; item 3.0 is not reached.

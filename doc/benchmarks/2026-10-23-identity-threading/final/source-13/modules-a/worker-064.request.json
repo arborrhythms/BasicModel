@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[for-sum]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-conjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-disjunction]",
+    "test/test_item4_step0.py::test_inverse_recovers_each_lane_from_an_against_only_candidate[against-sum]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[2]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[7]",
+    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[2]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[7]",
+    "test/test_item4_step0.py::test_enabled_prime_is_uncapped_for_every_candidate_menu[257]",
+    "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[None]",
+    "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[binding]",
+    "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[referent]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-13/modules-a/worker-064.recycle.json"
+}

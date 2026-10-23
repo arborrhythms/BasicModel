@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_append_defaults_conversation_origin",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

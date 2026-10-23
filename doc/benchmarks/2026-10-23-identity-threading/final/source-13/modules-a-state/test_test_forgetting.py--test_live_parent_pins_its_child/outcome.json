@@ -1,0 +1,6 @@
+{
+  "node": "test/test_forgetting.py::test_live_parent_pins_its_child",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,38 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument"
+  ],
+  "completed": [
+    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005797374993562698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0027337500359863043,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

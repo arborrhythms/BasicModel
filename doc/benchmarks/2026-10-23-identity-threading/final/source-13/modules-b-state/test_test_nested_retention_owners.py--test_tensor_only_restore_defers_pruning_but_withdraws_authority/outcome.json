@@ -1,0 +1,6 @@
+{
+  "node": "test/test_nested_retention_owners.py::test_tensor_only_restore_defers_pruning_but_withdraws_authority",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

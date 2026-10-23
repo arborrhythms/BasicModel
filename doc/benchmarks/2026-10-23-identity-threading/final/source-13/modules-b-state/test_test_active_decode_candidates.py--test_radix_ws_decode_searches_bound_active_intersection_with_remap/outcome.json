@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_decode_candidates.py::test_radix_ws_decode_searches_bound_active_intersection_with_remap",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

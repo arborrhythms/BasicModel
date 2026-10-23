@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

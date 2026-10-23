@@ -1,0 +1,6 @@
+{
+  "node": "test/test_independent_components.py::test_row_definedness_survives_rewitness_and_checkpoint_without_changing_truth",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

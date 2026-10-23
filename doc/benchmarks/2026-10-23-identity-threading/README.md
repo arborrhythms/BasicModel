@@ -1,17 +1,18 @@
 # Identity threading — 2026-10-23
 
-Source-12 `9ccc4911c` completed all scoped gates (1,619 passed, twelve
-skips), but its retained review is **DO NOT LAND**: implicit non-order-one
-operands composed with the typed value while capture retained a raw
-reference. Source-13 repairs that correspondence and reruns the scoped
-groups. The completed source and receipt go to Alec for mediated review;
-publication waits. No earlier evidence is promoted and no learning claim
-is made. Item 3.0 is not reached.
+**Ready for Alec's mediated review.** Frozen source-13 `65ab7fbe9` passes
+all requested scoped groups: **1,627 passed, twelve existing skips, zero
+failures**; all 1,639 selected cases complete across 132 files.
+[Review hand-off](final/source-13/review-handoff.md). No direct Claude
+review is requested for this source, and publication remains pending.
+Every earlier review, failed source and capture is retained; none is
+promoted. This is mechanism evidence, not a learning claim. Item 3.0 has
+not been reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–32. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–33. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -45,10 +46,10 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-12/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-13/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-12/test-ports.patch)
-is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-12/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
+pre-implementation review. [`test-ports.patch`](final/source-13/test-ports.patch)
+is the exact complete test diff, including new certificates and both forced decomposition fixture files. [`assertion-audit.json`](final/source-13/assertion-audit.json) separately records changed existing Python `assert` statements by test; the patch also includes tensor and exception checks.
 
 ## Every existing-test port
 
@@ -408,3 +409,41 @@ handoff; no direct review or publication follows its scoped gates.
 journal and identity threading after the repair. The eight pre-repair
 failures keep all their assertions. No development result substitutes for
 the source-13 gates.
+
+## Completed source-13 gates; waiting for mediated review
+
+Frozen source: `65ab7fbe9d5c67271b0bea7e4853c8ba2b690363`.
+The [summary](final/source-13/gate-summary.json) confirms all 1,639
+selected cases complete: 1,627 passed, twelve existing skips and zero
+failures, with no compile-cache retry. The source audit verifies 886
+production, configuration, test and measurement files. No source, test
+or measurement file changed after freeze. No full sweep or extra fresh
+series ran. No earlier result substitutes for this source.
+
+| Group | Passed | Skipped |
+| --- | ---: | ---: |
+| Regression files | 87 | 0 |
+| Native eight-file set | 123 | 7 |
+| Changed-module files, first partition | 707 | 5 |
+| Changed-module files, second partition | 706 | 0 |
+| Original decomposition, zero gain | 2 | 0 |
+| Original decomposition, enabled gain | 2 | 0 |
+
+The [snapshot ledger](final/source-13/decomposition-snapshots.json) checks
+the two original snapshots and seeds (4199722147 and 2428440506), the
+direct unary-name sequence and every surviving parameter in both arms.
+All four snapshot copies are losslessly packed with original/compressed
+byte hashes. The unchanged pending-premise certificate records forward
+0 bound / 16 open and reverse 0 / 32: no wrong binding, no closure
+forcing and zero attention budget. G1–G3, c/e, ordinary presentation,
+optimizer-gradient logging and the multi-stream driver pass.
+
+Nine skips require absent phase artifacts; three are opt-in slow
+MPS/Inductor cases. Their exact reasons are in the summary. None is a
+pass or learning evidence, and no GPU execution is claimed for them.
+
+The [hand-off](final/source-13/review-handoff.md) is ready for Alec to pass
+to Claude. No direct review of source-13 has been requested; no LAND
+verdict or publication is claimed. BasicModel main remains local pending
+review, with no WikiOracle bump. 2c follows the eventual identity landing;
+item 3.0 is not reached.
