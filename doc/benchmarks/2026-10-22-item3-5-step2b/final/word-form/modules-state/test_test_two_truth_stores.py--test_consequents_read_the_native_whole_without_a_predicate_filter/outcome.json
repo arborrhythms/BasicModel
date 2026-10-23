@@ -1,0 +1,6 @@
+{
+  "node": "test/test_two_truth_stores.py::test_consequents_read_the_native_whole_without_a_predicate_filter",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

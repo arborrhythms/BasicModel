@@ -16658,19 +16658,16 @@ class ConceptualSpace(Space):
         return candidates[0] if len(candidates) == 1 else None
 
     def word_surface_for_row(self, row):
-        """Spell a word's own form, or the word naming a witnessed object."""
+        """Spell a witnessed object or a form still waiting for its object."""
         identity = self.concept_id_at_row(int(row))
         index = self._definition_index()
         if identity is None or index is None:
             return None
-        # A word can also be another word's referent. That association must
-        # not replace the word's own immutable form in its native bank row.
-        description = index.description(identity) or self.interpret._pending.get(identity)
-        if description is not None:
-            forms = description['forms']
-            form = forms[0] if len(forms) == 1 else None
-        else:
-            form = self.interpret.lexical_form(identity)
+        # A bound word is a form reference, not an emitting object. A second
+        # definition naming that word must not replace its native form.
+        if index.objects(identity):
+            return None
+        form = self.interpret.lexical_form(identity)
         return None if form is None else form.encode('utf-8', errors='surrogateescape')
 
     def concept_codebook_row_of_percept(self, pid):

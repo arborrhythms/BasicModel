@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reasoning.py::TestOrderPartitions::test_activation_order",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

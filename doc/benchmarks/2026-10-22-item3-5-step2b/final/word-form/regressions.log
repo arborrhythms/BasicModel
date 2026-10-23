@@ -1,0 +1,20 @@
+[collect] 8 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 3.8s; peak 0.40 GiB
+[worker-000] 14 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 53.4s; peak 1.85 GiB
+[worker-001] 16 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 4.2s; peak 0.51 GiB
+[worker-002] 5 selectors; limit 900s, 8.0 GiB
+[worker-002] exit 0; 3.7s; peak 0.41 GiB
+[worker-003] 6 selectors; limit 900s, 8.0 GiB
+[worker-003] exit 0; 3.6s; peak 0.41 GiB
+[worker-004] 14 selectors; limit 900s, 8.0 GiB
+[worker-004] exit 0; 3.8s; peak 0.41 GiB
+[worker-005] 4 selectors; limit 900s, 8.0 GiB
+[worker-005] exit 0; 3.7s; peak 0.41 GiB
+[worker-006] 10 selectors; limit 900s, 8.0 GiB
+[worker-006] exit 0; 3.8s; peak 0.42 GiB
+[worker-007] 16 selectors; limit 900s, 8.0 GiB
+[worker-007] exit 0; 3.8s; peak 0.42 GiB
+Result: passed, exit 0; 85/85 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/word-form/regressions/result.json

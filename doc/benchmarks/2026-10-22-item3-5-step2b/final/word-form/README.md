@@ -6,6 +6,16 @@ receipt](../review-repair/README.md) records the implementation and all
 previous attempts; [Claude's HOLD](../landing/claude-review.md) remains
 retained. No earlier result is promoted to this source.
 
+## Review: HOLD, source withdrawn
+
+[Claude's review](claude-review.md) accepts the earlier repairs but finds
+that §64 makes every bound word spellable, broadening terminals and
+changing derived form reads. The claim below that conceptual reads were
+unchanged is superseded by that finding and spec §65. This source is
+withdrawn despite its passing scoped set. The narrow repair and next
+receipt are in [narrow-form](../narrow-form/README.md); no result below is
+promoted to it.
+
 ## Word-form repair and retained failed source
 
 The frozen `1f53af50ce5119a8da6b1ea3f01e1d0fbc04d171` completed 1,024 passes,
@@ -117,13 +127,35 @@ receipt. Compressed captures retain original byte hashes.
 
 ## Gates, review and publication
 
+Frozen source: `867452a797cfbdd9536556e8fd53702239754c6d`. The source
+audit records all production, configuration and test file hashes.
+
+
 The [expanded module coverage](module-coverage.json) includes all direct
 clause writers and reading-commit callers. `run_gates.py` records the new
 hash and checks audited source hashes before and after each group: eight
 regression files, the full eight-file native set, and all expanded module
 files, plus the six form/definition and reconstruction files listed in
 `expanded-scope.json`. No fresh series or full sweep; step 2's full sweep remains at its
-end. Results and Claude's review are recorded below when complete.
+end. All 1,109 selected cases completed on that hash: **1,100 passed, nine
+existing prerequisite skips, zero failures** ([machine summary](gate-summary.json)).
+
+| Group | Passed | Existing skips |
+| --- | ---: | ---: |
+| Eight regression files | 85 | 0 |
+| Eight-file native set | 123 | 7 |
+| 72 module files | 892 | 2 |
+
+The existing skips are copular identity (1), MTM re-identification (4),
+live pending-premise learning (2), FineWeb (1), and stage 3 (1). No new
+skip was added. The forced pending-premise certificate records forward
+0 bound/8 open and reverse 0 bound/16 open, with zero attention budget
+and no closure forcing. The previously failed joint-objective test and
+new word-bank regression both pass in this fresh run. Captured diagnostic
+RNG states were never used to initialize these gates.
+
+Claude's read-only review is next; its exact request and raw response
+are retained beside the source audit.
 
 Publication follows a LAND verdict: push BasicModel main and bump
 WikiOracle main. Then write the requested §§34–35 code review; Claude's

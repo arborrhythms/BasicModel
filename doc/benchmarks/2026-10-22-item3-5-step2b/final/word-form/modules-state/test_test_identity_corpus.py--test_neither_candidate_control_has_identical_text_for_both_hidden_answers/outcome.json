@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

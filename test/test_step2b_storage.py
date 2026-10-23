@@ -16,11 +16,13 @@ def test_word_bank_form_survives_use_as_another_words_object():
         identity = model.perceptualSpace.percept_store.identity
         word, obj = admit(model, '12')
         other, _ = admit(model, 'plus')
+        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
         owner.interpret.define(other, word)
         assert owner.definitions.words(word) == (other,)
+        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
+        assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'
         for symbol in (word, obj):
             row = owner._csw_row_of(symbol)
-            assert owner.word_surface_for_row(row) == b'12'
             assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'
         assert owner.definitions.words(obj) == (word,)
     finally:

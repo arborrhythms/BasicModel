@@ -1,13 +1,11 @@
 # Step 1b: current gates and carry ledger
 
-**Storage-only 2b word-form repair, 2026-10-22:** §64 fixes the native
-word-form ownership defect exposed by `1f53af50c`'s failed rung-zero audit.
-That draw and its successful repaired replay are retained. The
-[current receipt](../2026-10-22-item3-5-step2b/final/word-form/README.md)
-prepares the new freeze and complete regression, eight-file and expanded
-module gates. No result is promoted; Claude reviews the new evidence
-before publication. Identity threading still requires its next spec.
-Item 3.0 has not been reached.
+**Storage-only 2b N1 repair, 2026-10-22:** Claude held `867452a79` for
+broadening bound-word terminals. §65 preserves the earlier contract; the
+failed initial RNG and corrected regression pass. The [current receipt](../2026-10-22-item3-5-step2b/final/narrow-form/README.md)
+records every port and prepares the new freeze and complete scoped gates.
+No result is promoted; Claude reviews the new evidence before publication.
+Identity threading still requires its next spec. Item 3.0 is not reached.
 
 **Storage-only 2b continuation, 2026-10-22:** §§39–41 supersede the stop
 below. The §40 port is applied; §42 records the three review notes and

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

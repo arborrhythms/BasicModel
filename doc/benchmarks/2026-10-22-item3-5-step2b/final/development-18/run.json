@@ -1,0 +1,27 @@
+{
+  "base": "867452a797cfbdd9536556e8fd53702239754c6d",
+  "patch_sha256": "2f062564d2c06a2ccef3ae1cb55622e2605a15bb3ba491f39647e5075f7ee35e",
+  "new_test_sha256": "787f799ae562da76a5473b9cd36859116a43e9e5e81f7f1f495f4e1b7125ce87",
+  "started": "2026-10-23T05:59:33.262331+00:00",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "3600",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-18/tests"
+  ],
+  "exit": 0,
+  "finished": "2026-10-23T05:59:40.435811+00:00"
+}

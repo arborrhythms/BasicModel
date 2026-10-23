@@ -1,11 +1,12 @@
 # Step 2b: storage changes before identity threading
 
-**Current receipt:** [word-form/README.md](word-form/README.md).
+**Current receipt:** [narrow-form/README.md](narrow-form/README.md).
 Earlier freezes remain retained: `bfa9c94ee` failed its relative-handle
 fixture; `3c5cc2a1d` received Claude's HOLD; `9c3899f2f` passed its scoped
 set but the additional held-idea probe found the guard fixed in §62.
 `1f53af50c` then failed the rung-zero audit; §64 repairs word-form
-ownership. None of those results is promoted to the new source.
+ownership, but `867452a79` received Claude's N1 HOLD for broadening
+terminals. §65 applies the narrow repair. No earlier result is promoted.
 
 2026-10-22. Work is on `main`, starting at `bb0045d7a2b7a7e5be584066ca1ee283fa899d75`
 (Claude's §38 edit, committed unchanged). Published 2a is

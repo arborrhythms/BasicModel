@@ -1,0 +1,44 @@
+Review the frozen BasicModel main source 867452a797cfbdd9536556e8fd53702239754c6d and its complete storage-only step-2b receipt. You are the explicitly requested Claude reviewer. Read-only: use Read, Grep and Glob; do not edit files, execute commands, run tests, or modify Git. The scoped gates have already run and their source-linked reports are supplied. Return a concrete LAND/HOLD verdict, prioritized findings with file/line evidence, and any nonblocking notes. No learning claim is requested.
+
+Governing source: doc/plans/2026-10-21-step2-one-ltm.md §§36,39–42 and dated fixes §§43–64. Alec's §39 permits documented repairs and ports inside the authorized storage round; only reversing an explicit decision requires stopping. Preserve the derivation, its readers, close-time minting and MTM; identity threading and §§34–35 implementation are next, after their spec.
+
+Receipt: doc/benchmarks/2026-10-22-item3-5-step2b/final/word-form/README.md. Read gate-summary.json, frozen-source.json, source-audit.json, module-coverage.json, expanded-scope.json, assertion-ledger.json/assertion-ports.md and fixture-ledger.json beside it. The whole production/test patch against the unchanged Claude §38 baseline bb0045d7a is source-diff.patch; test-ports.patch and copied-observer-ports.patch give exact test context. The ledger includes loop scope, all new helper bodies, every count port, every retired test and the new regressions. The prior full receipt is one directory up.
+
+Your prior review at final/landing/claude-review.md returned HOLD on 3c5cc2a1d despite 675 passes/eight skips. Recheck these repairs specifically:
+- B1: ThoughtClosing uses the live parsed/clause mode on the committed-reference view. Models._commit_sentence overlays the clause mode on the retained meaning for end-state/answer behavior. The held-description expectation reader treats an LTM description under the current ask's query intent (as Queries._ask already does), while thought records retain the live-mode guard. No stored mode replacement. Four new write-and-close zero-evidence yes/no cases pass, plus the unchanged direct/nested expectation comparison. The receipt declares ThoughtFeatures' stored default and accept_fact's record-kind contract.
+- B2: the module group includes every direct write_clause and commit_reading test file plus the specific taxonomy, replacement and negative-expectation files. Exactly count ports in §60. Every full changed test file belongs to a selected group, including the full bootstrap file in the eight-file set.
+- B3: occurrence end states retain (-1,-1,-1) in the legacy numeric field; no slot/constituent flattening. Semantic typed refs stay in the meaning; Part returns keep their native arguments.
+- Empty native predicate cache removed. Narrow idea now excludes any LTM operand reference; both writers pass the retained same-state diagnostic. The removed where comparison appears as an assertion-scope entry. §46's three reader-binder tests were already failing after §10.4, independent of 2b. The first frozen failure belongs to the module group; “native” referred to its path.
+
+Newly exposed fixture ports: §60's four predicate-argument cases replay identically with the pre-2b writer. Their roots have no bank seat; each port checks the exact source-to-derivation-root link and full original operand content in the retained source occurrence. See ../review-repair/predicate-arguments.json and ../review-repair/diagnose_predicate_arguments.py; production PartClosing and PartRead remain unchanged. The joint-objective fixture checks absence of the retired prediction switch and reads the same bounded predictor context through _read_context before the unchanged not-requires-grad predicate; gradient/loss/update checks stay. See §§60–61 and the exact ledger. Please scrutinize these ports' semantic coverage.
+
+The three §41 notes remain: conservative one-structure-stage barrier with persisted forget_pending and rationale (§42); stored question rejection by kind; all remaining mode consumers declared and ported. You already accepted the forgetting alternative, P5, evidence direction, relative occurrence beside existing Part return and the §46 reader-binder ports. Recheck any concern, but do not treat the deliberate earlier decisions as accidental new architecture.
+
+All failed development and frozen runs remain retained; earlier results are not promoted. Large tensor captures are losslessly compressed with byte hashes. No new skip or retirement beyond the original three adjacency-only P3 tests. No source edits after freezing. No full sweep or fresh twelve-draw series in this storage-only round. After approval publication is main's push and WikiOracle's gitlink bump; the requested §§34–35 review and Claude's identity spec follow.
+
+
+Additional pre-review correction (§§62–63): source 9c3899f2f completed 1,023 passes/nine existing skips but an extra probe found that held plain LTM content raised when it lacked a thought VP. That source was withdrawn without review or publication. The final guard follows only a valid nested signature; an LTM description that is not an executable thought leaves the current request's mask alone. It does not suppress invalid live thought records. Two new cases require an exactly empty mask and one metered read, covering a fused idea and a relation with an ordinary concept in the VP slot. The new test's initial setup failure (default fact kind with live interrogative mode) is retained; its corrected explicit observation kind leaves both assertions verbatim. Read the failure probe at ../review-repair/held-idea.json and its source-linked complete run. No results from that source are promoted; the current source has two additional selected cases. No implementation of identity threading has begun.
+
+
+§64, the new frozen-source failure and repair: the held-content source
+1f53af50c completed 1,024 passes/nine existing skips/one production failure.
+The joint-objective test failed the rung-zero identity audit on its second
+presentation; two captured-RNG replays reproduced it. Its selected object
+was named `2`; that word was also the referent of `plus`, so the bank row
+reader substituted `plus` for the word's own form. Spaces.word_surface_for_row
+now prefers the word's admitted own-form description before following an
+object's definition. Interpret.lexical_form and the definition edges are
+unchanged. The same failed RNG completes all three presentations; this is
+diagnosis, never seeded gate evidence. Read ../held-content/rung0-lexical-replay/capture/definitions.txt,
+../held-content/rung0-replay/capture/failure.json and
+../held-content/rung0-repaired-replay/run.json (its working patch is retained).
+The new test explicitly admits two words, makes one the other's referent,
+and checks exact bank form and bytes for the first word and its named
+object, with both associations retained. The surface helper initially did
+not admit the assumed whole word; both setup failures remain in
+../development-15 and -16, and -17 passes with explicit admission. No
+assertion changed. Review this ownership repair particularly for unwanted
+changes to object emission or ambiguity. The new full gate scope includes
+six additional word/definition/derived-code/reconstruction files. All
+current results belong to 867452a79 only; source 1f53af50c was withdrawn
+without review or publication.

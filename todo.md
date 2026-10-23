@@ -31,12 +31,11 @@ in step-2 §§33–36:** the scoped storage changes now, identity threading
 specified by Claude next, then derivation removal. Claude's incoming spec,
 bind plan, Architecture and todo edits were committed unchanged at
 `cc6407f3b`; the preceding §32 review record is retained at `1db6e011d`.
-All work stays on main. **Storage-only 2b is being refrozen after §64.**
-The retained `1f53af50c` run has 1,024 passes, nine existing skips and a
-rung-zero identity failure. The captured replay now passes with the word's
-own bank form preserved. §§59–64 include Claude's HOLD repairs and the
-held-content guard. The [current receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/word-form/README.md)
-lists every port and retains all withdrawn freezes and failed runs.
+All work stays on main. **Storage-only 2b is being refrozen under §65.**
+Claude accepted the earlier repairs but held `867452a79` for broadening
+word terminals. The narrow repair preserves the prior contract and passes
+the captured failure replay. The [current receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/narrow-form/README.md)
+lists every port, declaration, failure and withdrawn source.
 Claude's review precedes publication. The storage round removes
 persisted postings, adjacency, mode and unused refs; retains every
 completed S; and stages forgetting before deletion. Identity threading
@@ -723,9 +722,9 @@ not by a passing identity lesson.
    Step 2a is complete: separate rename `804d8adcb`, sole cull `0b030e3eb`
    (WikiOracle `baa2e7f`). Frozen cull source `d4f316411` has 223 passes,
    seven existing skips and Claude's approval. The storage-only 2b round
-   follows §36 and is frozen at `1f53af50c`, with scoped gates running and
-   Claude's review before publication ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/held-content/README.md)).
-   §§39–63 retain every fix and port. Tags, mention readings and the
+   follows §36 and is being refrozen after Claude's N1 HOLD, with scoped
+   gates and review before publication ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/narrow-form/README.md)).
+   §§39–65 retain every fix and port. Tags, mention readings and the
    occurrence-only occupation ports await the derivation-removal round;
    identity threading and its spec come first. No step-2 completion is
    claimed. All subsequent work stays on main.

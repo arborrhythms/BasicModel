@@ -3133,3 +3133,58 @@ Withdraw `1f53af50c`; retain its complete gate summary and captures. The
 next freeze reruns all three scoped groups and adds the form/definition,
 word-store, derived-code and reconstruction-bank files for this reader.
 There is no fresh series or full sweep. No earlier result is promoted.
+
+## 65. Codex: preserve the bound-word terminal contract — 2026-10-22
+
+Claude's read-only review of `867452a79` returns **HOLD**, despite its
+1,100 scoped passes and nine existing skips. N1 is correct: §64's claim
+that choices and conceptual reads were unchanged was too broad. Giving
+every defined word its own surface also made ordinary bound-word rows
+terminal candidates and pinned their derived form coordinates. The old
+contract emitted objects and objectless words, not every bound word.
+The full review and that frozen run remain retained; nothing is published.
+
+Take Claude's recommended narrow repair under §39. This preserves the
+existing bound-word terminal rule and reverses no explicit Alec decision;
+it does not choose the alternative broader decoder contract. A word with
+an object has no row surface, including when another definition also
+names that word. Objectless words and ordinary objects keep their prior
+spelling paths. The word's bank form is read from its own perceptual
+parts, so another word's definition cannot substitute a different sparse
+key. No new terminal, masking policy, bind rule or lexical part of speech
+is introduced. The captured failing initial RNG now passes all three
+joint-objective presentations with this narrow implementation. It remains
+a diagnostic replay, never a gate initialization.
+
+**Exact same-round regression port.** In
+`test_word_bank_form_survives_use_as_another_words_object`, replace the
+loop's `assert owner.word_surface_for_row(row) == b'12'` for both word and
+object with `assert owner.word_surface_for_row(owner._csw_row_of(word)) is
+None` and `assert owner.word_surface_for_row(owner._csw_row_of(obj)) ==
+b'12'`. Also check the word surface is `None` before the second definition.
+The exact native-code decode checks for both rows and both definition-link
+assertions stay verbatim. The earlier assertion embodied §64's rejected
+broadening; this is a disclosed contract correction under §39, not a setup
+fix with unchanged assertions. Development-18 passes. No other test
+assertion or fixture changes. Retain the exact patch from `867452a79`.
+
+The next frozen hash reruns all three groups and adds the four direct
+reader consumer files named by Claude: `test_radix_layer_reverse.py`,
+`test_active_decode_candidates.py`, `test_echoic_decoder.py` and
+`test_tied_operator_reconstruction.py`. No fresh series or full sweep.
+
+**Other review declarations.** A completed interrogative Part now keeps
+the live clause mode and is excluded from answer seeds; the previous
+assertive Part readback allowed it through. `closing_question` prefers
+`parsed.mode` when provided, otherwise the clause mode. The current
+held-description signature guard treats invalid thought-shaped LTM
+content as ineligible too; invalid live thought records still fail
+loudly. A future explicit eligibility predicate may make that distinction
+clearer. The predicate ports assert the actual occurrence link and content,
+not uniqueness among all occurrences. The narrow-idea diagnostic tests a
+second sighting of the same row. None is a hidden extra certificate.
+The surface-keyed observer no longer receives ordinary word/object
+duplicates from §64's broadened terminals. The review's five additional
+indirect-consumer files remain covered by step 2's end full sweep; they
+are not claimed as gates of this storage round. B1–B3, the §41 dispositions
+and the earlier port package are accepted in Claude's review.

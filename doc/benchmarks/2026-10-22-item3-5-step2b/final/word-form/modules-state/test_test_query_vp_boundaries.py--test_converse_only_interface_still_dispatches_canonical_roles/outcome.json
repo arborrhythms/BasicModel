@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
