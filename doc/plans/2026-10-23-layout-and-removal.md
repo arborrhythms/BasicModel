@@ -170,7 +170,18 @@ is the fold over its words' forms, lossy, which is what the free decoder
 reconstructs from ("reconstruct from the vector; it will not be exact"),
 with its `.where` and `.when` bands; and the source wording is retained
 beside the row (`_texts`) as the first forgetting stage, the exact
-surface while it lasts. A read sentence's percept part is therefore
+surface while it lasts. Alec asked how a reduce generates the new
+percept fields when the operations describe how concepts combine, and
+whether centroids serve: the grammar operations act on the whole paired
+vector, so a reduce's percept part is the same fold applied to the
+operands' form blocks, the join for a sigma operation and the meet for a
+pi, and the free decoder reverses exactly that, searching word pairs
+whose fold reproduces the parent's form block (`Language.py`, the
+candidate search's form residual). No centroid is involved; the removed
+symbol-centroid nudge placed word forms among neighbours, and Orders §9's
+centroids are caches over classes, not reduce results. The `.where` and
+`.when` bands of a reduce are a bracket from the first owned leaf, not a
+fold (`ClauseJournal.bands`). A read sentence's percept part is therefore
 what was said, where and when; its concept part what it meant. A
 concept pulled from the index
 gets a percept part stamped now, the mental event of thinking it; a
