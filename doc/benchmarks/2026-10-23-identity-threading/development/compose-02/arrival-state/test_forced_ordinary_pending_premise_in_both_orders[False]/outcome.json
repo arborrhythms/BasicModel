@@ -1,0 +1,80 @@
+{
+  "node": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
+  "outcome": "failed",
+  "failure": "test/test_math_chain_section14.py:416: in test_forced_ordinary_pending_premise_in_both_orders\n    rows = train_documents(model, documents, tmp_path, after=after)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-21-item3-5-reference-reconstruction/arrival_capture.py:180: in observed_train\n    return train(model, documents, folder, after=observed_after, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntest/math_chain_ordinary.py:77: in train_documents\n    present(model, split='train', optimizer=optimizer, batch_size=8, after_batch=record)\nbin/MathChainTraining.py:48: in present\n    result, _ = model.runBatch(train=training, batchNum=total,\ntest/forced_math_grammar.py:73: in run_batch\n    return batch(model, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ndoc/benchmarks/2026-10-21-item3-5-reference-reconstruction/arrival_keep_probe.py:98: in batch\n    result = original_batch(model, *args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13587: in runBatch\n    return self._run_sentence_batch(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:13743: in _run_sentence_batch\n    return self._run_batch_once(**call)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:14119: in _run_batch_once\n    _what_answers = self._what_or_think(\nbin/Models.py:8802: in _what_or_think\n    return self.ask(questions, input_data, executor=executor, record=record, score=score)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:10178: in ask\n    execution = self._execute_input_sentence(input_data, executor)\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8487: in _execute_input_sentence\n    return (executor or self.forward)(input_data)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:153: in masked\n    return method(self, *args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:8265: in forward\n    return self._forward_per_stage(inputData)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:23918: in _forward_per_stage\n    body_result = self._forward_body(\nbin/Models.py:17172: in _forward_body\n    return self._forward_body_per_word(\nbin/Models.py:22470: in _forward_body_per_word\n    self._run_tensor_peer_word_pipeline(N_words))\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:22040: in _run_tensor_peer_word_pipeline\n    feedback, trip_count) = self._run_sentence_word_bricks(\nbin/Models.py:21148: in _run_sentence_word_bricks\n    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Models.py:20407: in _commit_sentence\n    resolver.commit(reference_plan, row, written_clauses[b],\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:1143: in commit\n    self._commit_events(plan, written, when=when)\nbin/ReferenceClose.py:1199: in _commit_events\n    raise RuntimeError('a kept identity event has no occurrence')\nE   RuntimeError: a kept identity event has no occurrence",
+  "frames": [
+    {
+      "name": "test_forced_ordinary_pending_premise_in_both_orders",
+      "line": 415,
+      "values": {
+        "reverse": false,
+        "pending": [
+          [
+            0,
+            [
+              "ltm",
+              "address-v1",
+              6487748534033455407
+            ]
+          ],
+          [
+            3,
+            [
+              "ltm",
+              "address-v1",
+              4949538885740305516
+            ]
+          ],
+          [
+            6,
+            [
+              "ltm",
+              "address-v1",
+              5958445083869949598
+            ]
+          ],
+          [
+            9,
+            [
+              "ltm",
+              "address-v1",
+              5169023597514976205
+            ]
+          ],
+          [
+            12,
+            [
+              "ltm",
+              "address-v1",
+              6070050031041744298
+            ]
+          ],
+          [
+            19,
+            [
+              "ltm",
+              "address-v1",
+              -7536922537249343741
+            ]
+          ],
+          [
+            22,
+            [
+              "ltm",
+              "address-v1",
+              -5625513039807830043
+            ]
+          ],
+          [
+            25,
+            [
+              "ltm",
+              "address-v1",
+              -6580576653810898618
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

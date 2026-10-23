@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_definition_rejects_a_word_object_and_keeps_both_forms",
+  "outcome": "failed",
+  "failure": "test/test_step2b_storage.py:19: in test_definition_rejects_a_word_object_and_keeps_both_forms\n    assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'\nE   AssertionError: assert None == b'12'\nE    +  where None = word_surface_for_row(0)\nE    +    where word_surface_for_row = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n).word_surface_for_row\nE    +    and   0 = _csw_row_of(1)\nE    +      where _csw_row_of = ConceptualSpace(\\n  (subspace): SubSpace()\\n  (_owned_bases): ModuleDict(\\n    (event): Tensor()\\n    (what): Tensor()\\n   ...  (concept_parts_layer): ConceptualAttentionLayer(\\n    (conjunctive): SparseLayer()\\n    (features): SparseLayer()\\n  )\\n)._csw_row_of",
+  "records": []
+}

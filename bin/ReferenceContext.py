@@ -193,6 +193,7 @@ class ReferenceBank(NamedTuple):
     close_references: bool = False
     lexical_capacity: int = 0
     literal_ids: object = None
+    exclusions: object = None
 
     def detached(self):
         """Freeze the rebuilt situation at a compose fork, retaining its API."""
@@ -328,7 +329,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
 
 
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
-                     bank, live, active):
+                     bank, live, active, identity_state=None, source=None):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -339,6 +340,10 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     def propose(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
+        if identity_state is not None and order is not None:
+            # Determination supplies an object, never a reference alternative.
+            # Explicit bind is the sole compose operation that chooses one.
+            return [(value, ids, scope.bitwise_and(1) != 0, valid)]
         if order is None:
             if interpreter is not None and bank.associations is not None and bank.associations.numel():
                 from ClauseScope import ClauseScope
@@ -493,6 +498,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         return alternatives(options)
 
     def choice_tag(refs, rule, role, stamp, source):
+        if identity_state is not None:
+            return torch.full_like(refs, -1)
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if order is None:
             if interpreter is not None and bank.associations is not None and bank.associations.numel():
@@ -546,10 +553,32 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 case_weights.append(weights)
                 bvalid.append(valid)
     values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
+    own_values, record_values, identity_choices, bind_dummies = [], [], [], []
     for operation, rule in enumerate(unary_rules):
+        if identity_state is not None and getattr(rule, 'method_name', None) == 'bind':
+            from MTMOverlay import MTMOverlay
+            points, records, handles, refs, available = MTMOverlay.menu(identity_state, window, source,
+                exclusions=getattr(bank, 'exclusions', None))
+            for column in range(points.shape[2]):
+                unary_ops.append(operation)
+                values.append(points[:, :, column])
+                own_values.append(window)
+                record_values.append(records[:, :, column])
+                identity_choices.append(handles[:, :, column])
+                bind_dummies.append(column == 0)
+                urefs.append(torch.stack((refs[:, :, column], torch.full_like(identities, -1)), -1))
+                uchoices.append(torch.stack((handles[:, :, column], torch.full_like(identities, -1)), -1))
+                ufound.append(torch.stack((handles[:, :, column] > 0, torch.zeros_like(active)), -1))
+                urels.append(torch.zeros_like(urefs[-1], dtype=torch.bool))
+                uvalid.append(available[:, :, column] & active)
+            continue
         for operand in propose(window, identities, flags, positions, orders, rule, 'argin1', active):
             unary_ops.append(operation)
             values.append(operand[0])
+            own_values.append(operand[0])
+            record_values.append(torch.zeros_like(operand[0]))
+            identity_choices.append(torch.zeros_like(identities))
+            bind_dummies.append(False)
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
             uchoices.append(torch.stack((choice_tag(operand[1], rule, 'argin1', orders, identities),
                                          torch.full_like(operand[1], -1)), -1))
@@ -560,6 +589,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
     return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
+                unary_own=stack(own_values, N, (D,)), unary_record=stack(record_values, N, (D,)),
+                unary_identity=stack(identity_choices, N, dtype=torch.long),
+                unary_bind_dummy=tuple(bind_dummies),
                 binding_choices=interpreter is not None,
                 case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),

@@ -35,11 +35,11 @@ def participant_terms(roots, rules=()):
         clause = (name in ('lift', 'equal', 'part', 'whole')
                   or getattr(rule, 'clause_form', None) == 'S'
                   or getattr(rule, 'relation_kind', None) is not None)
-        if noun or lower:
+        if noun or lower or name == 'bind':
             eligible[id(term)] = term
         if not children:
             continue
-        if lower:
+        if lower or name == 'bind':
             pending.append((children[(head or len(children))-1], True))
         elif name in ('equal', 'part', 'whole'):
             pending.extend((child, True) for child in reversed(children))

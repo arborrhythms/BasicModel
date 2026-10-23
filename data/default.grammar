@@ -61,6 +61,7 @@
            completed meaning; checked thought execution is boundary-only. -->
       <rule>part_argout1 = part.forward(part_argin1, part_argin2)</rule>
       <rule>equal_argout1 = equal.forward(equal_argin1, equal_argin2)</rule>
+      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
     </compose>
 
     <!-- This model may execute only these explicitly selected relation

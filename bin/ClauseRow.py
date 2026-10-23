@@ -94,6 +94,7 @@ class Clause:
     reference_request: Any = field(default=None, repr=False)
     composition: Composition | None = field(default=None, repr=False)
     minted: bool = False
+    identity: Any = field(default=None, repr=False)
 
     def __post_init__(self):
         import math
@@ -552,10 +553,15 @@ class ClauseRows:
             if origin is not None:
                 self.set_origin(row, origin, text=text if asserted else None)
             rows[id(value)] = ('sym', symbol) if retained_pair(value) else row
+            if written_rows is not None:
+                # The returned handle can be a Part. Identity histories name
+                # the completed occurrence beside it, without changing layout.
+                written_rows[('occurrence', id(value))] = self.occurrence_of(row)
         result = rows[id(clause)]
         if estimate_index is not None:
             self.link_estimate_observation(estimate_index, result)
         if written_rows is not None:
+            written_rows['root_occurrence'] = written_rows[('occurrence', id(clause))]
             written_rows.update(rows)
             written_rows.update({('symbol', id(value)):
                 closing.symbols.get(id(closing._terms.get(id(value))))

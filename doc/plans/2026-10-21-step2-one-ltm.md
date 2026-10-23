@@ -3661,9 +3661,9 @@ opens, with Claude's recommendations, for the layout-and-removal spec:
    chain looks like; no spill structure beyond LTM1.
 4. *Recall and recent rows.* `query()` loads a chain's head reference
    into a chunk and its identities into MTM; recent rows are chunks that
-   outlive their sentence until replaced. Open for Alec: whether the eight
-   are shared between the open sentence's constituents and recalled or
-   recent memory (one working set, Miller's), or kept as separate budgets.
+   outlive their sentence until replaced. **Decided (Alec, 2026-10-23):
+   a shared set.** The eight chunks are one working set for the open
+   sentence's constituents, recalled chains and recent rows together.
 5. *Trials.* Each trial owns its chunks, as the fork owns the stack
    today (`SentenceFork`); the kept trial's chunks are what the close
    writes.

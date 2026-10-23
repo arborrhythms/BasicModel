@@ -263,15 +263,17 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
                                     result.records) if a.semantic_id == 'bind']
 
 
-def test_participant_cache_rebuilds_from_retained_identity_rows(monkeypatch):
+def test_participant_evidence_lasts_with_the_identity_pool(monkeypatch):
     f = native(monkeypatch)
     for _ in range(4):
         occurrence(f, f.atoms[0], f.atoms[4], role=2)
     assert f.resolver.expected_roles(f.atoms[4]) == (2,)
     saved = f.resolver._participants()
-    f.store.parts._participant_cache = None
+    state = f.cs.mtm.state()
+    f.cs.mtm.restore(state)
     assert f.resolver._participants() == saved
-    f.store.parts.retain([])
+    for token in tuple(f.cs.mtm.entries):
+        f.cs.mtm.forget(token)
     assert f.resolver.expected_roles(f.atoms[4]) == ()
 
 

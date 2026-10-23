@@ -8,7 +8,7 @@ from Layers import LTM0
 from Meaning import ConceptualMeaning
 
 
-def test_word_bank_form_survives_use_as_another_words_object():
+def test_definition_rejects_a_word_object_and_keeps_both_forms():
     from test_definition_rows import model as definition_model, admit
     model = definition_model()
     try:
@@ -16,10 +16,12 @@ def test_word_bank_form_survives_use_as_another_words_object():
         identity = model.perceptualSpace.percept_store.identity
         word, obj = admit(model, '12')
         other, _ = admit(model, 'plus')
-        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
-        owner.interpret.define(other, word)
-        assert owner.definitions.words(word) == (other,)
-        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
+        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
+        with pytest.raises(ValueError, match='word as its object'):
+            owner.interpret.define(other, word)
+        assert owner.definitions.words(word) == ()
+        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
+        assert owner.word_surface_for_row(owner._csw_row_of(other)) == b'plus'
         assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'
         for symbol in (word, obj):
             row = owner._csw_row_of(symbol)
@@ -134,8 +136,12 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
     from contextlib import contextmanager, nullcontext
     from types import SimpleNamespace, MethodType
     from Models import BasicModel
+    from MediumTermMemory import MediumTermMemory
     caller = {4: [object()]}
+    caller_pool = MediumTermMemory()
+    owner = SimpleNamespace(mtm=caller_pool)
     model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,
+        _concept_owner=lambda: owner,
         eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,
         conceptualSpaces=(), data=SimpleNamespace(train_input=['source']),
         _runtime_batch=lambda *args, **kwargs: nullcontext(),
@@ -150,6 +156,7 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
     def present(**kwargs):
         assert model._what_recall_sentence_history == {}
         assert model._what_recall_batch_size is None
+        assert owner.mtm is not caller_pool
         model._what_recall_sentence_history[0] = [object()]
         model._what_recall_batch_size = 1
         if failure:
@@ -163,3 +170,4 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
         assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]
     assert model._what_recall_sentence_history is caller
     assert model._what_recall_batch_size == 5
+    assert owner.mtm is caller_pool

@@ -185,6 +185,9 @@ class PartClosing:
     def _definition(self, symbol, word, evidence, *, marker=False):
         if marker or symbol is None or not self._native(word) or word == symbol:
             return
+        if ('word' in self.alloc.symbol_types.get(symbol, ())
+                or symbol in self.owner.definitions.word_ids):
+            return
         interpreter = getattr(self.owner, 'interpret', None)
         description = self.alloc.word_descriptions.get(word)
         if description is None and interpreter is not None:

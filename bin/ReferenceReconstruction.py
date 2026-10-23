@@ -23,7 +23,9 @@ def cost(resolver, plans, like):
             mass = query.sum()
             if not bool(mass > 0):
                 continue
-            record = plan['individuals'][selected]
+            record = item.get('record', plan['individuals'].get(selected))
+            if record is None:
+                raise RuntimeError('a selected bind has no scored record')
             candidate = resolver.coordinates(record['value'] if 'value' in record else record['content'])
             width = min(query.shape[-1], candidate.shape[-1])
             covered = torch.minimum(query[..., :width], candidate[..., :width]).sum()

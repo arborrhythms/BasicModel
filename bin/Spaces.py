@@ -71,8 +71,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order",
-    defaults=(None, None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity",
+    defaults=(None, None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 
@@ -16663,10 +16663,6 @@ class ConceptualSpace(Space):
         index = self._definition_index()
         if identity is None or index is None:
             return None
-        # A bound word is a form reference, not an emitting object. A second
-        # definition naming that word must not replace its native form.
-        if index.objects(identity):
-            return None
         form = self.interpret.lexical_form(identity)
         return None if form is None else form.encode('utf-8', errors='surrogateescape')
 
@@ -18668,6 +18664,7 @@ class ConceptualSpace(Space):
         extras = {
             "version": 2,
             "role": "conceptual_structure",
+            "mtm": self.mtm.state(),
         }
         fold_support = getattr(self, "_concept_fold_support", None)
         if isinstance(fold_support, dict) and fold_support:
@@ -18689,6 +18686,8 @@ class ConceptualSpace(Space):
         """
         if not isinstance(extras, dict):
             return
+
+        self.mtm.restore(extras.get('mtm'), device=self.similarity_codebook.W.device)
 
         reference_state = extras.get("percept_readout_references")
         if reference_state is not None:

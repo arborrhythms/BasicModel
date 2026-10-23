@@ -335,3 +335,182 @@ specified scoped gates and both original decomposition arms. Every
 failed run remains retained. Claude reviews before publication; no
 learning claim and no step-2 full sweep in this line. Item 3.0 has not
 been reached.
+
+## 6. Codex: read-ahead alignment with LTM and STM — 2026-10-23
+
+Read step-2 §§70–72 again after Alec's request, including the new decision
+that the eight chunks are shared by the open sentence, recalled chains
+and recent memory. Also checked `STM.md`, the two-truths specification,
+and todo's sequence. Their older amendment blocks describe superseded
+layouts; §§71–72 govern the upcoming layout-and-removal round.
+
+The identity implementation keeps current values, mention readings and
+role histories in MTM. The tensor overlay is the trial's transaction on
+that pool, not another STM or a larger parse stack. A stack constituent
+carries its correspondence to a transaction identity; the existing
+operation journal carries the choices and events. Today's writer exports
+a temporary mapping to the actual occurrence beside a returned Part
+handle. This mapping is not a stored column and can change when an event
+becomes a compressed LTM0 idea or an LTM1 chain head. No READING row,
+relation-type column, stored sentence derivation, additional chunk budget
+or independent recall store is introduced by the identity implementation.
+The identity owner therefore survives the later replacement of the row
+and chunk representations.
+
+## 7. Codex: implementation checks and ports — 2026-10-23
+
+Development evidence is retained under
+`doc/benchmarks/2026-10-23-identity-threading/development/`, including each
+initial RNG, observed reading and failing state. These checks are not
+promoted to evidence for the final frozen source.
+
+- `foundation-01`: six MTM cases passed before the old native-individual
+  empty-pool assertion failed. §3 now requires an occurrence-keyed working
+  entry. The renamed test keeps both native reference assertions and
+  replaces only the empty-pool check with the introduction key, native
+  symbol, count two and unchanged value checks.
+- The role-evidence owner test now checkpoints/restores MTM and forgets
+  its entries instead of clearing a Part cache and deleting Part rows.
+  Its expected role and participant-content assertions remain verbatim.
+- The N1 test follows §2's explicit replacement: defining a word as
+  another word's object must raise before writing. Its two absent-form
+  checks become the native word's form; the prohibited definition lookup
+  becomes empty, and the other word's native form is checked too. The
+  object and perceptual identity checks remain verbatim.
+- `foundation-02`: 27 passed and four pre-existing skips before a menu
+  compatibility error: a reference-rule fixture need not have
+  `method_name` when no identity overlay is supplied. The explicit-bind
+  dispatch now checks the overlay first and reads that optional field
+  safely. No fixture or assertion change is needed for this error.
+
+The compose bind joins the description into the selected current value
+before a subsequent VP. This follows §1.4's join rule; the pre-join value
+is separately retained in the scored record for reference reconstruction.
+An operation journal, rather than the final value alone, owns event order.
+
+`foundation-03` passed 72 checks with four existing skips, including G1–G3
+and the new eager/compiled overlay derivative checks. `compose-01` was
+interrupted before a certificate outcome: the development runner had not
+enabled the arrival capture plugins. Its log and source are retained and
+it supplies no evidence. The runner now enables full arrival captures and
+both-trial keep probes from the outset; the next draw uses unchanged
+production source.
+
+`compose-02` captured both trials before a commit-time correspondence
+failure. The keep probe records seven R ties retaining greedy and one
+explore win (R 0.03606738 versus 0.03246064); every A was zero. No
+certificate assertion was reached. The cause is the existing model-time
+stamp: `_commit_sentence` copies the prepared root before writing it, so
+its Python identity differs from the plan's root. The writer now exports
+the actual root occurrence explicitly alongside its per-node temporary
+mapping. The identity-event committer uses that mapping for the prepared
+root; no LTM row or test assertion changes.
+
+`compose-03` passed both pending-premise orders with unchanged assertions
+and full captures. The native-symbol isolation audit then found that a
+global `token_of(native)` lookup could cross streams when the same native
+individual appears in both. Frame occurrence membership now selects the
+working token; a bare native id resolves only when unambiguous. A new
+two-stream regression checks distinct current values and empty-frame
+inaccessibility. Provisioning's existing recall-isolation fixture now
+supplies the conceptual owner's MTM and additionally checks temporary
+pool ownership and restoration; all its previous assertions remain.
+
+`reference-01` passed 54 checks with four existing skips before the second
+old native-individual empty-pool assertion, in `test_reference_arrivals`.
+Its reference, resolved meaning and pending-name assertions stay verbatim;
+the renamed test replaces only the empty-pool check with the occurrence
+key, native identity and stored value. The role-history audit also excludes
+a standalone mention from event admission: its cue is not a predicate
+event. Grammar-completed events still use the kept role correspondence.
+
+`reference-02` reached the native-arrival test after thirteen passes. Its
+old single-entry check exposed two independently mutable values for a
+native candidate and the pending name selecting it. The pending singleton
+now joins the native candidate's accessible working entry, preserving the
+settled-site guard. The two fixture arms resolve the old name through
+`token_of`; they check the chosen owner's kind, both retained members and
+counts three (retained mention) or two (bare native candidate). Their
+selected native symbol, derived content and closed-site checks remain.
+`reference-03` caught a misplaced local `reading` assignment in this
+repair; it now belongs to commit, with no test change. `reference-04`
+passed sixteen cases before a thought-bind witness included the subject's
+event as well as its mention. Events locate the current identity but do
+not add mention witnesses: the witness reader now restricts pooled
+mention evidence to the name membership map. The locatable-address
+assertion stays unchanged.
+
+`reference-05` confirms that witness fix, then reaches the analogous
+native-arrival review fixture. Its prohibition on synthetic companion rows
+and all prepare/commit immutability checks stay. The renamed test follows
+the pending mention's `token_of` owner and checks the native introduction
+and pending mention as that owner's two members; its audit reference is
+that owner. The native symbol, count two and successful refinement checks
+remain. The earlier single anonymous entry was superseded by §3's bound
+native working entry, not by a storage-layout change. New captures include
+the pool's serialized names and events as well as its values.
+
+`reference-06` passes thirteen cases before the minimal joined-site guard
+fixture reaches event publication without a clause. A refinement-only
+plan has no grammatical event to publish; event commit now returns for
+that case. No fixture or assertion changes. The compose menu also stages
+the existing observed exclusion pairs from the host: it applies the same
+eight-observation, never-together rule to the mention and each current
+value. This retains the earlier incompatibility decision when binding
+moves into the chooser, without pool reads inside compiled composition.
+
+`reference-07` passes 39 cases before N1's replacement checks expose a
+second spelling assumption: `Interpret.lexical_form` still treated every
+defined identity as an object. It now reads an admitted word's own
+description, and continues to read an object's unique defining word. This
+completes §2's native-form behavior; no additional test port. The menu
+audit also keeps the bind dummy at zero after expectation priming, rather
+than letting that bias price it. New identity correspondence and checkpoint
+fields receive shape, ownership and value validation before publication.
+
+`integration-01` passes eight cases, including the real eager chooser,
+before the new fullgraph fixture constructs a Python namespace inside its
+compiled function. Its bank is now created at the host boundary, as in
+production; every assertion is unchanged (§17's same-round setup rule).
+The raw forward publisher also clears an absent identity transaction so
+it cannot expose a stale preceding sentence's journal.
+
+`integration-02` reaches the AOT-compiled gradient check. AOT materializes
+an unused parameter gradient as zeros, whereas eager leaves it absent.
+The new assertion now accepts absent or exactly zero, still requiring
+no pathwise chooser update; its following nonzero score-function-gradient
+assertion is unchanged. This is recorded as a changed assertion under
+§39. The new bind declaration is appended to each compose catalogue so
+existing operation indices retain their order for snapshot comparison.
+
+`integration-03` passes ten cases before the new journal fixture names a
+connective outside its CS-only test catalogue. It now uses that catalogue's
+`sum` to contain the two completed clauses; every assertion is unchanged.
+The unresolved-object audit adds a resolution bit to trial locations: a
+bind to an anonymous, unresolved token must not turn an unresolved VP into
+a completed state update merely because it selected a location. This bit
+is staged with the value and propagated through the journal; it is neither
+an LTM column nor a noun-class decision.
+
+`integration-04` confirms the real chooser and exclusion checks, then
+finds that a same-close alias of a new token is offered an arrival re-run.
+Only an anonymous own object is a new pending site; a mention already
+joined by compose bind is not. The arrival planner now distinguishes
+them. The new journal fixture introduces its subject through determination,
+then binds the alias, so it isolates the specified two-VP identity path
+from anonymous first-name arrival behavior. Its assertions stay verbatim.
+
+`integration-05` reaches commit and finds a third event for two completed
+VPs. The direct-Clause compatibility adapter was also observing the
+recorded program's containing expression. Captured identity journals now
+publish events only from their recorded completed operations; direct
+Clause fixtures retain their existing grammatical adapter. The event
+count assertion stays two.
+
+`integration-06` passes all 28 identity and storage contract cases. The
+source audit covers the changed modules, five grammar catalogues, existing
+test ports and the new identity certificates. The scoped freeze selects
+the regression and native eight-file sets, all reference files, relevant
+changed-module files and both original decomposition arms. Development
+passes are not promoted to the freeze; every failed source capture stays
+in this receipt. Publication still requires Claude's review.

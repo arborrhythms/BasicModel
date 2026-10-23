@@ -162,6 +162,7 @@
            morphology (surface inflection -> .when). aspect is REPURPOSED as
            rewrite() - a PLANNED surface-inflection MLP (lemma + tense ->
            ran / will run / ...); not a live rule until RewriteLayer exists. -->
+      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
     </compose>
 
     <!-- Boundary thoughts are an explicit model policy. Negation and the

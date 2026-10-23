@@ -17,7 +17,7 @@ def test_occurrence_bind_witness_is_a_locatable_address(monkeypatch):
     assert all(f.store.location(witness) is not None for witness in result.evidence['witnesses'])
 
 
-def test_native_arrival_without_occurrence_does_not_materialize_a_working_vector(monkeypatch):
+def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(monkeypatch):
     from IdentityRows import mint
     resolver, store, atoms, words, _ = world()
     pending, _ = keep(resolver, named(atoms[0], words['x']))
@@ -38,10 +38,11 @@ def test_native_arrival_without_occurrence_does_not_materialize_a_working_vector
     before = snapshot(resolver)
     resolver.commit(plan, row, written, document='mtm', position=1, training=False)
     unchanged(resolver, before)
-    entry = resolver.components.owner.mtm.entries[token]
-    assert entry.kind == individual and entry.occurrences == (token,) and entry.count == 2
+    owner = resolver.components.owner.mtm.token_of(token)
+    entry = resolver.components.owner.mtm.entries[owner]
+    assert entry.kind == individual and entry.occurrences == (owner, token) and entry.count == 2
     assert any(item.get('refinement') and item['selected'] == individual
-               and item['reference'] == token and item['missing_reason'] is None
+               and item['reference'] == owner and item['missing_reason'] is None
                for item in resolver.last_audit)
 
 

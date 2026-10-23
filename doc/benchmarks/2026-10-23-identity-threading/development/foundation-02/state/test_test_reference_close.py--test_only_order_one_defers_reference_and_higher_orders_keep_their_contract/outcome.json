@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+  "outcome": "failed",
+  "failure": "test/test_reference_close.py:295: in test_only_order_one_defers_reference_and_higher_orders_keep_their_contract\n    result = prepare_operands(values, ids, positions, positions, orders=stamps,\nbin/ReferenceContext.py:557: in prepare_operands\n    if rule.method_name == 'bind' and identity_state is not None:\n       ^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute 'method_name'",
+  "records": []
+}

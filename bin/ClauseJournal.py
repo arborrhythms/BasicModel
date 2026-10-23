@@ -93,6 +93,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
                     forward_identity=forward_name(word), leaf=True)
+            if program.identity_leaves is not None:
+                stack[-1]['identity_handle'] = int(program.identity_leaves[word]) if stack[-1]['order'] == 1 else 0
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
@@ -113,7 +115,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             operand['value'] = actual
             if program.operation_relations is not None:
                 operand['has_point'] = not bool(program.operation_relations[action, role])
-            if program.operation_refs is not None:
+            if program.operation_refs is not None and program.identity_actions is None:
                 selected = operand
                 while selected['children']:
                     headed = getattr(selected['rule'], 'head_role', 0)
@@ -196,6 +198,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
                           leaves=tuple(i for child in operands for i in child['leaves']),
                           has_point=not relation_rule and all(child['has_point'] for child in operands))
+        if program.identity_actions is not None:
+            record = program.identity_actions[action]
+            parent['identity_handle'] = int(record[0])
+            parent['identity_event'] = tuple(record.tolist())
+            parent['identity_action'] = action
         if getattr(program, 'close_references', False):
             rule = catalog[local]
             for role in getattr(rule, 'reference_roles', ()):
@@ -208,6 +215,17 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     if content is not None:
                         parent['close_request'] = dict(mode=mode, leaves=description['leaves'],
                             cue=None if cue is None else region(cue), content=content)
+        if program.identity_actions is not None and catalog[local].method_name == 'bind':
+            # The chooser already made this choice while the reading was live.
+            # Retain the own description and the pre-join record independently.
+            source = operands[0]
+            request = dict(source.get('close_request', {}))
+            request.update(mode='bind', leaves=source['leaves'],
+                content=request.get('content', frames[action, 0]),
+                cue=request.get('cue', frames[action, 0]),
+                compose_bind=int(program.identity_actions[action, 4]),
+                record=frames[action, 1])
+            parent['close_request'] = request
         stack.append(parent)
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
@@ -225,6 +243,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
 
     def value(node):
         return node['value']
+
+    def identity_record(node):
+        if program.identity_actions is None:
+            return None
+        action = node.get('identity_action')
+        return dict(handle=node.get('identity_handle', 0),
+            event=node.get('identity_event'), action=action,
+            result=None if action is None else (frames[action, 1] if
+                getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
+            origins=program.identity_origins, values=program.identity_values)
 
     composition_cache = {}
     def composition(node):
@@ -362,6 +390,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 request = current.get('close_request')
             if request is None or item['order'] != 1:
                 return None
+            if program.identity_actions is not None:
+                request = dict(request, compose_bind=request.get('compose_bind', 0))
             if request.get('leaf') and (not referent or id(composition(item)) not in noun_terms):
                 # A predicate's form is an operator operand, not an
                 # participant. A provisional marker likewise
@@ -384,7 +414,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             return Clause(ConceptualMeaning.from_description(point), point=point,
                 subject_word_id=subject_word_id(item), order=1,
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
-                reference_request=request, composition=composition(item))
+                reference_request=request, composition=composition(item), identity=identity_record(item))
         standalone = close_member(root)
         if standalone is not None:
             return standalone
@@ -439,7 +469,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if formation is not None:
                 formed = replace(formed, bindings={'_formation_records': (dict(formation, role=0),)})
             return Clause(formed, point=value(item), composition=composition(item), minted=True,
-                          subject_word_id=subject_word_id(description), **bands(item), **meta)
+                          subject_word_id=subject_word_id(description), identity=identity_record(item), **bands(item), **meta)
 
         def operand(item, *, sentence=False, referent=True):
             ended = close_member(item, referent=referent)
@@ -699,6 +729,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             refs=references, children=tuple(children),
             subject_word_id=subject_word_id(role_nodes[0]),
             factored_refs=factored_refs, composition=composition(root),
+            identity=identity_record(node),
             **evidence,
             **bands(root))
         return field

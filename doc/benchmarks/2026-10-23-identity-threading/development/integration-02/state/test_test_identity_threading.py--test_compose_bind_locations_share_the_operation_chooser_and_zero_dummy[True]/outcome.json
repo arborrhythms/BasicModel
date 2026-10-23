@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[True]",
+  "outcome": "failed",
+  "failure": "test/test_identity_threading.py:192: in test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy\n    assert layer.apply_anchor.grad is None\nE   assert tensor([[0., 0.]]) is None\nE    +  where tensor([[0., 0.]]) = Parameter containing:\\ntensor([[1., 1.]], requires_grad=True).grad\nE    +    where Parameter containing:\\ntensor([[1., 1.]], requires_grad=True) = OperationSelectionLayer(\\n  (ops): ModuleList()\\n  (unary_ops): ModuleList(\\n    (0): BindLayer()\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).apply_anchor",
+  "records": []
+}

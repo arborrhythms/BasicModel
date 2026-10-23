@@ -1,0 +1,176 @@
+diff --git a/test/test_bind_thought.py b/test/test_bind_thought.py
+index d109be179..7741921e0 100644
+--- a/test/test_bind_thought.py
++++ b/test/test_bind_thought.py
+@@ -263,15 +263,17 @@ def test_episode_has_one_bind_per_site_and_kept_write_preserves_np_content(monke
+                                     result.records) if a.semantic_id == 'bind']
+ 
+ 
+-def test_participant_cache_rebuilds_from_retained_identity_rows(monkeypatch):
++def test_participant_evidence_lasts_with_the_identity_pool(monkeypatch):
+     f = native(monkeypatch)
+     for _ in range(4):
+         occurrence(f, f.atoms[0], f.atoms[4], role=2)
+     assert f.resolver.expected_roles(f.atoms[4]) == (2,)
+     saved = f.resolver._participants()
+-    f.store.parts._participant_cache = None
++    state = f.cs.mtm.state()
++    f.cs.mtm.restore(state)
+     assert f.resolver._participants() == saved
+-    f.store.parts.retain([])
++    for token in tuple(f.cs.mtm.entries):
++        f.cs.mtm.forget(token)
+     assert f.resolver.expected_roles(f.atoms[4]) == ()
+ 
+ 
+diff --git a/test/test_medium_term_memory.py b/test/test_medium_term_memory.py
+index d2020eef1..be150416a 100644
+--- a/test/test_medium_term_memory.py
++++ b/test/test_medium_term_memory.py
+@@ -144,7 +144,7 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
+                for use in entry.occurrences)
+ 
+ 
+-def test_native_individual_mint_and_bind_make_no_pool_entry():
++def test_native_individual_mint_and_bind_share_an_occurrence_keyed_value():
+     from IdentityRows import mint
+     resolver, store, a = fixture()
+     native = mint(resolver.components.owner, a[0])
+@@ -154,7 +154,11 @@ def test_native_individual_mint_and_bind_make_no_pool_entry():
+                     activations=((store.occurrence_of(row), native, 0),))
+     _, plan = keep(resolver, mention(a[0], mode='bind'), (frame,), position=1)
+     assert plan['items'][0]['reference'] == native
+-    assert not resolver.components.owner.mtm.entries
++    pool = resolver.components.owner.mtm
++    token = pool.token_of(native)
++    assert token == store.occurrence_of(row)
++    assert pool.entries[token].native == native and pool.entries[token].count == 2
++    torch.testing.assert_close(pool.value_of(native), a[0], rtol=0, atol=0)
+ 
+ 
+ def test_same_close_new_alias_appends_once_to_the_introduction():
+diff --git a/test/test_reference_arrival_review.py b/test/test_reference_arrival_review.py
+index ef58504f4..88881028d 100644
+--- a/test/test_reference_arrival_review.py
++++ b/test/test_reference_arrival_review.py
+@@ -17,7 +17,7 @@ def test_occurrence_bind_witness_is_a_locatable_address(monkeypatch):
+     assert all(f.store.location(witness) is not None for witness in result.evidence['witnesses'])
+ 
+ 
+-def test_native_arrival_without_occurrence_does_not_materialize_a_working_vector(monkeypatch):
++def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(monkeypatch):
+     from IdentityRows import mint
+     resolver, store, atoms, words, _ = world()
+     pending, _ = keep(resolver, named(atoms[0], words['x']))
+@@ -38,10 +38,11 @@ def test_native_arrival_without_occurrence_does_not_materialize_a_working_vector
+     before = snapshot(resolver)
+     resolver.commit(plan, row, written, document='mtm', position=1, training=False)
+     unchanged(resolver, before)
+-    entry = resolver.components.owner.mtm.entries[token]
+-    assert entry.kind == individual and entry.occurrences == (token,) and entry.count == 2
++    owner = resolver.components.owner.mtm.token_of(token)
++    entry = resolver.components.owner.mtm.entries[owner]
++    assert entry.kind == individual and entry.occurrences == (owner, token) and entry.count == 2
+     assert any(item.get('refinement') and item['selected'] == individual
+-               and item['reference'] == token and item['missing_reason'] is None
++               and item['reference'] == owner and item['missing_reason'] is None
+                for item in resolver.last_audit)
+ 
+ 
+diff --git a/test/test_reference_arrivals.py b/test/test_reference_arrivals.py
+index 4f6f8a785..23b0b5e60 100644
+--- a/test/test_reference_arrivals.py
++++ b/test/test_reference_arrivals.py
+@@ -247,7 +247,7 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
+     assert resolver.components.owner.mtm.entries[store.occurrence_of(row)].kind == words['three']
+ 
+ 
+-def test_named_bind_to_a_native_individual_creates_no_pool_entry(monkeypatch):
++def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monkeypatch):
+     from IdentityRows import mint
+     resolver, store, a, words, _ = world()
+     native = mint(resolver.components.owner, a[0])
+@@ -259,7 +259,10 @@ def test_named_bind_to_a_native_individual_creates_no_pool_entry(monkeypatch):
+     value = store.meaning_of(row)
+     assert value.role_refs[0] == ('sym', native) and not open_slots(value)
+     assert not bindings(value).get('_forward_references')
+-    assert not resolver.components.owner.mtm.entries
++    pool = resolver.components.owner.mtm
++    token = store.occurrence_of(row)
++    assert pool.token_of(token) == token and pool.entries[token].native == native
++    torch.testing.assert_close(pool.value_of(token), a[0], rtol=0, atol=0)
+ 
+ 
+ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch):
+@@ -299,11 +302,12 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
+                    (SituationFrame.from_row(store.row(pending)), frame), position=1)
+     refinement = next(item for item in plan['arrivals'] if item['token'] == token)
+     assert refinement['selected'] == native
+-    assert pool.entries[token].kind == native and pool.entries[token].count == 2
+-    assert pool.entries[token].occurrences[-1] == refinement['reference']
++    owner = pool.token_of(token)
++    assert pool.entries[owner].kind == native and pool.entries[owner].count == (3 if retained_occurrence else 2)
++    assert token in pool.entries[owner].occurrences and refinement['reference'] in pool.entries[owner].occurrences
+     if retained_occurrence:
+         assert refinement['reference'] == occurrence
+-    assert set(pool.entries) == {token}
++    assert set(pool.entries) == {owner}
+     assert resolver._derivation_symbol(token) == native
+     assert not open_slots(store.meaning_of(pending))
+ 
+diff --git a/test/test_step2b_storage.py b/test/test_step2b_storage.py
+index d31c56a44..f0a538124 100644
+--- a/test/test_step2b_storage.py
++++ b/test/test_step2b_storage.py
+@@ -8,7 +8,7 @@ from Layers import LTM0
+ from Meaning import ConceptualMeaning
+ 
+ 
+-def test_word_bank_form_survives_use_as_another_words_object():
++def test_definition_rejects_a_word_object_and_keeps_both_forms():
+     from test_definition_rows import model as definition_model, admit
+     model = definition_model()
+     try:
+@@ -16,10 +16,12 @@ def test_word_bank_form_survives_use_as_another_words_object():
+         identity = model.perceptualSpace.percept_store.identity
+         word, obj = admit(model, '12')
+         other, _ = admit(model, 'plus')
+-        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
+-        owner.interpret.define(other, word)
+-        assert owner.definitions.words(word) == (other,)
+-        assert owner.word_surface_for_row(owner._csw_row_of(word)) is None
++        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
++        with pytest.raises(ValueError, match='word as its object'):
++            owner.interpret.define(other, word)
++        assert owner.definitions.words(word) == ()
++        assert owner.word_surface_for_row(owner._csw_row_of(word)) == b'12'
++        assert owner.word_surface_for_row(owner._csw_row_of(other)) == b'plus'
+         assert owner.word_surface_for_row(owner._csw_row_of(obj)) == b'12'
+         for symbol in (word, obj):
+             row = owner._csw_row_of(symbol)
+@@ -134,8 +136,12 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
+     from contextlib import contextmanager, nullcontext
+     from types import SimpleNamespace, MethodType
+     from Models import BasicModel
++    from MediumTermMemory import MediumTermMemory
+     caller = {4: [object()]}
++    caller_pool = MediumTermMemory()
++    owner = SimpleNamespace(mtm=caller_pool)
+     model = SimpleNamespace(_what_recall_sentence_history=caller, _what_recall_batch_size=5,
++        _concept_owner=lambda: owner,
+         eval=lambda: None, set_sigma=lambda value: None, _what_memory=lambda: None,
+         conceptualSpaces=(), data=SimpleNamespace(train_input=['source']),
+         _runtime_batch=lambda *args, **kwargs: nullcontext(),
+@@ -150,6 +156,7 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
+     def present(**kwargs):
+         assert model._what_recall_sentence_history == {}
+         assert model._what_recall_batch_size is None
++        assert owner.mtm is not caller_pool
+         model._what_recall_sentence_history[0] = [object()]
+         model._what_recall_batch_size = 1
+         if failure:
+@@ -163,3 +170,4 @@ def test_truth_ingestion_restores_caller_recall_and_isolates_each_source(failure
+         assert BasicModel._ltm_ingest_truth_texts(model, store, ['first', 'second']) == [(12,), (12,)]
+     assert model._what_recall_sentence_history is caller
+     assert model._what_recall_batch_size == 5
++    assert owner.mtm is caller_pool

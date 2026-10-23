@@ -64,35 +64,17 @@ class ReferenceClose(nn.Module):
         return hashlib.sha256(point.detach().float().cpu().contiguous().numpy().tobytes()).digest()
 
     def _participants(self):
-        """Derived participant cache over the one Part store, never count tables."""
-        from Spaces import _concept_alloc_of
+        """Role observations owned by the retained identities' event histories."""
+        from IdentityRows import point
         owner = self.components.owner
-        alloc = _concept_alloc_of(owner)
-        parts = alloc.parts
-        version = (parts.revision, owner.similarity_codebook.W._version)
-        cache = getattr(parts, '_participant_cache', None)
-        if cache is None or cache[0] != version:
-            rows = {}
-            def add(predicate, edge, role, identity):
-                from IdentityRows import point
-                value = point(owner, predicate)
+        rows = {}
+        for token, entry in owner.mtm.entries.items():
+            for event in entry.events:
+                value = point(owner, event.verb)
                 if value is not None:
                     rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(
-                        (edge, role, identity))
-            for edge in parts.indices().tolist():
-                part, whole = parts.refs[edge].tolist()
-                if 'state' in alloc.symbol_types.get(edge, ()):
-                    add(whole, edge, 2, part)
-                    add(edge, edge, 2, part)
-                if parts.contains(whole) and 'state' in alloc.symbol_types.get(whole, ()):
-                    predicate = int(parts.refs[whole, 1])
-                    add(predicate, edge, 0, part)
-                    add(whole, edge, 0, part)
-                elif 'situation' in alloc.symbol_types.get(edge, ()):
-                    add(whole, edge, 0, part)
-            cache = version, {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
-            parts._participant_cache = cache
-        return cache[1]
+                        (event.occurrence, event.role, token))
+        return {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
 
     def _derivation_symbol(self, reference):
         """Read a token's retained kind/fold without making it an individual."""
@@ -114,7 +96,11 @@ class ReferenceClose(nn.Module):
         return None
 
     def token_value(self, reference):
-        """Compute an anonymous introduction's content from its retained uses."""
+        """Read the identity's current value, never a union of past states."""
+        return self.components.owner.mtm.value_of(reference)
+
+    def history_value(self, reference):
+        """Diagnostic union of historical mentions; no live reader uses this."""
         mtm = self.components.owner.mtm
         token = mtm.token_of(reference)
         if token is None:
@@ -138,23 +124,19 @@ class ReferenceClose(nn.Module):
         return value
 
     def prediction(self, identity, predicate, role):
-        target = self._derivation_symbol(identity)
+        target = self.components.owner.mtm.token_of(identity)
         if target is None:
             return predicate.sum()*0
         rows = [(edge, target) for edge, r, target in
                 self._participants().get(self._predicate_key(predicate), ()) if r == role]
-        from Spaces import _concept_alloc_of
-        parts = _concept_alloc_of(self.components.owner).parts
-        total = sum(int(parts.access_count[edge]) for edge, _ in rows)
-        count = sum(int(parts.access_count[edge]) for edge, candidate in rows if candidate == target)
+        total = len(rows)
+        count = sum(candidate == target for _, candidate in rows)
         return predicate.new_tensor(count/total) if total else predicate.sum()*0
 
     def expected_roles(self, predicate):
         rows = self._participants().get(self._predicate_key(self.predicate_coordinates(predicate)), ())
-        from Spaces import _concept_alloc_of
-        parts = _concept_alloc_of(self.components.owner).parts
-        return tuple(role for role in (0, 2) if sum(int(parts.access_count[edge])
-            for edge, r, _ in rows if r == role) >= self.components.verbs.recurrence)
+        return tuple(role for role in (0, 2) if sum(r == role
+            for _, r, _ in rows) >= self.components.verbs.recurrence)
 
     def prime(self, signature, stream):
         if stream is None:
@@ -274,24 +256,35 @@ class ReferenceClose(nn.Module):
         from IdentityRows import carrier
         return carrier(self.components.owner, value)
 
-    def exclusion_query(self):
-        """Read observed exclusion once, for grouping or a bind's candidates."""
-        def support(value):
-            return set((value >= .3).nonzero().flatten().tolist())
+    def exclusion_pairs(self):
+        """Coordinate exclusions witnessed by eight uses on each side."""
+        from itertools import combinations
         observed = []
         for row in range(len(self.store)):
             if int(self.store.order[row]) != 1 or int(self.store.role_mask[row].sum()) != 1:
                 continue
             value = self.coordinates(self.store.slots[row, 0])
-            observed.append((support(value), int(self.store.witness_count[row])))
+            observed.append((set((value >= .3).nonzero().flatten().tolist()),
+                             int(self.store.witness_count[row])))
+        counts = {}
+        for members, count in observed:
+            for coordinate in members:
+                counts[coordinate] = counts.get(coordinate, 0) + count
+        return tuple((x, y) for x, y in combinations(sorted(
+            coordinate for coordinate, count in counts.items() if count >= 8), 2)
+            if not any(x in members and y in members for members, _ in observed))
+
+    def exclusion_query(self):
+        """Read observed exclusion once, for grouping or a bind's candidates."""
+        pairs = self.exclusion_pairs()
+        def support(value):
+            return set((value >= .3).nonzero().flatten().tolist())
         def contradicts(a, b):
             a, b = support(a), support(b)
             if not a or not b or a <= b or b <= a:
                 return False
-            return any(sum(n for members, n in observed if x in members) >= 8
-                       and sum(n for members, n in observed if y in members) >= 8
-                       and not any(x in members and y in members for members, _ in observed)
-                       for x in a-b for y in b-a)
+            return any((x in a-b and y in b-a) or (y in a-b and x in b-a)
+                       for x, y in pairs)
         return contradicts
 
     def individuals(self, records):
@@ -324,6 +317,10 @@ class ReferenceClose(nn.Module):
             context['location'] = location
             context['address'] = address
             context['native'] = native
+            # A native symbol may be present in two independent streams. Its
+            # working state is reached through this frame's occurrence only.
+            context['token'] = (self.components.owner.mtm.token_of(self.store.occurrence_of(location))
+                                if isinstance(location, int) else None)
             groups.setdefault(identity, []).append(context)
         def predicate(member):
             reference = member.get('predicate')
@@ -380,6 +377,17 @@ class ReferenceClose(nn.Module):
         result = {}
         for identity, members in groups.items():
             native = baseline(identity)
+            current = [self.token_value(x['token']) for x in members if x['token'] is not None]
+            if current:
+                # Revision may group several tokens on read. Join their current
+                # states; a historical occurrence must not resurrect old state.
+                value = torch.stack(current).amax(0)
+                latest = max(members, key=lambda x: x['position'])
+                result[identity] = dict(content=self.coordinates(value), value=value,
+                    role=latest['role'], position=latest['position'],
+                    token=latest['token'],
+                    occurrences=tuple(x['address'] for x in members))
+                continue
             width = native.numel() if native is not None else max(x['content'].numel() for x in members)
             value = native.detach().clone() if native is not None else members[-1]['content'].new_zeros(width)
             for member in members:
@@ -408,7 +416,7 @@ class ReferenceClose(nn.Module):
             form = (content.sum()*0 if region is None else meet_ratios(region.to(value),value)[0])
             recency = sum(other['position'] > candidate['position'] for other in individuals.values())
             features.append(torch.stack((candidate_coverage,request_coverage,
-                self.prediction(candidate.get('kind', identity),predicate,role),self.prime(value,stream),form,
+                self.prediction(candidate.get('token') or candidate.get('kind', identity),predicate,role),self.prime(value,stream),form,
                 content.new_tensor(-recency/max(1,len(individuals))),
                 content.new_tensor(candidate['role']/2),content.new_tensor(role/2))))
             choices.append(identity)
@@ -512,9 +520,13 @@ class ReferenceClose(nn.Module):
         witnesses = tuple(('sym', context['identity']) if isinstance(context.get('identity'), int)
                           else self.store.occurrence_of(location)
                           for location, context in records.values()
-                          if context.get('identity') == identity or
-                          (isinstance(identity, tuple) and location ==
-                           self.store._index_occurrences.get(identity)))
+                          if (context.get('identity') == identity or
+                              (isinstance(identity, tuple) and location ==
+                               self.store._index_occurrences.get(identity)))
+                          and (not isinstance(location, int) or
+                               identity not in self.components.owner.mtm.entries or
+                               self.store.occurrence_of(location) in
+                               self.components.owner.mtm.names))
         evidence = dict(base, reference=identity if isinstance(identity,tuple) else ('sym', identity), binding_value=point,
             witnesses=witnesses,
             support_true=probability, support_false=1-probability,
@@ -757,6 +769,7 @@ class ReferenceClose(nn.Module):
         items, cost = [], self.policy.new_zeros(())
         plan = dict(items=items, records=records, pending_names=pending_names,
                     decisions=[], departure=int(departure))
+        handles = {}
         for site in self.sites(clause, pending_names=pending_names):
             node = site['node']
             request = node.reference_request
@@ -779,6 +792,19 @@ class ReferenceClose(nn.Module):
                 # a determiner word to either operation.
                 if choices:
                     cost = cost + phi[:, 1].amax().clamp(0, 1)
+            elif 'compose_bind' in request:
+                handle = request['compose_bind']
+                if handle > 0:
+                    if node.identity is None:
+                        raise RuntimeError('a recorded bind lost its identity transaction')
+                    tag, address = node.identity['origins'][handle - 1, :2].tolist()
+                    selected = (int(address) if tag == 1 else
+                        ('ltm', self.store.address_domain, int(address)) if tag == 2 else handles.get(handle))
+                    if selected is None:
+                        raise RuntimeError('a compose bind names an unwritten introduction')
+                # The global operation chooser already owns this decision and
+                # its R + A credit. Never choose again at the closing boundary.
+                choices, phi = (), None
             else:
                 index, decision = self.choose(plan, choices, phi, logits,
                     forward_identity=request.get('forward_identity'), individuals=individuals)
@@ -794,11 +820,15 @@ class ReferenceClose(nn.Module):
                 latest = max((other['position'] for other in individuals.values()), default=(-1, -1))
                 individuals[selected] = dict(content=content, value=content,
                     role=role, position=(latest[0]+1, len(items)))
+            if node.identity is not None and node.identity['handle'] > 0:
+                handles.setdefault(node.identity['handle'], selected)
             items.append(dict(**site, mode=mode, content=content, predicate=predicate,
                 role=role, selected=selected, candidates=tuple(choices),
                 features=phi if choices else None, cue=cue,
                 probabilities=probabilities, leaves=request['leaves'], anonymous=anonymous,
                 own_object=own_object))
+            if 'record' in request and selected is not None and not own_object:
+                items[-1]['record'] = dict(value=request['record'])
         plan['cost'] = cost
         plan['individuals'] = individuals
         self._arrival_plan(clause, plan, individuals, stream=stream)
@@ -885,7 +915,7 @@ class ReferenceClose(nn.Module):
             if request.get('forward_identity') is None:
                 continue
             selected = item['selected']
-            if isinstance(selected, tuple) and selected[:1] == ('new',):
+            if item.get('anonymous') and isinstance(selected, tuple) and selected[:1] == ('new',):
                 sites[('site', number)] = selected, ('site', number), request
         plan['arrivals'], plan['arrival_count'] = [], len(candidates)
         if not sites:
@@ -1029,8 +1059,10 @@ class ReferenceClose(nn.Module):
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(self.components.owner)
         mtm = self.components.owner.mtm
+        from RowTime import encoder, stamp
+        when = int(encoder().decode_index(stamp(self.store)))
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
-        allocated, audit, uses, sites = {}, [], [], {}
+        allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
@@ -1046,6 +1078,9 @@ class ReferenceClose(nn.Module):
             elif isinstance(item['selected'], tuple) and item['selected'][:1] == ('new',):
                 reference = allocated.get(item['selected'])
             item['reference'] = reference
+            reading = (node.reference_request or {}).get('forward_identity')
+            if reading is None and node.subject_word_id >= 0:
+                reading = node.subject_word_id
             if isinstance(reference, tuple) and reference[:1] == ('ltm',):
                 from RowTime import encoder, stamp
                 kind = self._derivation_symbol(occurrence)
@@ -1053,9 +1088,18 @@ class ReferenceClose(nn.Module):
                     kind = self._derivation_symbol(reference)
                 if item['mode'] == 'mint' or item.get('own_object'):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
-                             when=int(encoder().decode_index(stamp(self.store))))
+                             when=when, value=node.point, reading=kind if reading is None else reading)
                 else:
-                    uses.append((reference, occurrence, kind))
+                    uses.append((reference, occurrence, kind, node.point, kind if reading is None else reading))
+            elif isinstance(reference, int) and reference in alloc.individuals:
+                kind = self._derivation_symbol(occurrence)
+                token = plan['individuals'].get(reference, {}).get('token')
+                if token is None:
+                    token = mtm.open(occurrence, kind=reference, when=when, reading=kind if reading is None else reading,
+                             native=reference, value=torch.maximum(point(self.components.owner, reference), node.point))
+                else:
+                    uses.append((token, occurrence, kind, node.point, kind if reading is None else reading))
+                native_tokens[reference] = token
             if item['features'] is not None:
                 held = dict(candidates=tuple(allocated.get(identity, identity) for identity in item['candidates']),
                     features=item['features'].detach().cpu().tolist(), cue=item['cue'].detach().cpu().tolist())
@@ -1084,6 +1128,22 @@ class ReferenceClose(nn.Module):
                 item['reference'] = mtm.token_of(token)
                 continue
             selected = item.get('candidate_occurrence') or allocated.get(item['selected'], item['selected'])
+            native = allocated.get(item['selected'], item['selected'])
+            native_token = (native_tokens.get(native) or plan['individuals'].get(native, {}).get('token')
+                            if isinstance(native, int) else None)
+            if native_token is not None and native_token != mtm.token_of(token):
+                # Native individuals now have working entries too. A pending
+                # singleton joins that accessible value rather than creating
+                # a second, independently mutable value for the same choice.
+                if mtm.entries[token].occurrences == (token,):
+                    mtm.merge(token, native_token, when=when)
+                    if isinstance(selected, int):
+                        selected = native_token
+                    elif mtm.token_of(selected) is None:
+                        mtm.bind(native_token, selected, kind=self._derivation_symbol(selected),
+                            value=self.store.point_of_row(selected[-1]), when=when)
+                else:
+                    selected = None
             node = plan.get('arrival_written', {}).get(selected)
             if node is not None:
                 location = written.get(id(node), row if node is plan['prepared_root'] else None)
@@ -1093,22 +1153,23 @@ class ReferenceClose(nn.Module):
                 # working vector. Refine through the existing introduction.
                 from RowTime import encoder, stamp
                 mtm.bind(token, token, kind=selected,
-                         when=int(encoder().decode_index(stamp(self.store))))
+                         when=when, value=point(self.components.owner, selected))
                 selected = token
             if (isinstance(selected, tuple) and selected[:1] == ('ltm',)
                     and selected != token and mtm.token_of(token) is not None):
                 from RowTime import encoder, stamp
                 when = int(encoder().decode_index(stamp(self.store)))
                 if mtm.token_of(selected) not in (None, mtm.token_of(token)):
-                    if mtm.entries[token].occurrences == (token,):
+                    if token in mtm.entries and mtm.entries[token].occurrences == (token,):
                         mtm.merge(token, selected, when=when)
                     else:
                         selected = None
-                elif mtm.token_of(selected) == token:
+                elif mtm.token_of(selected) == mtm.token_of(token):
                     # Re-observing an existing member is no new use.
                     pass
                 else:
-                    mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when)
+                    mtm.bind(token, selected, kind=self._derivation_symbol(selected), when=when,
+                             value=self.store.point_of_row(selected[-1]))
             item['reference'] = selected if selected is not None else token
             audit.append(dict(operation='bind', refinement=True, occurrence=token[-1],
                 reference=item['reference'], selected=item['selected'], candidates=item['candidates'],
@@ -1116,12 +1177,97 @@ class ReferenceClose(nn.Module):
                                 None if mtm.token_of(token) is not None else 'no_accessible_individual')))
         # Refinement may join a pending token to another antecedent. Attach
         # this close's uses to the owner of their chosen occurrence afterwards.
-        for reference, occurrence, kind in uses:
-            mtm.bind(reference, occurrence, kind=kind,
-                     when=int(encoder().decode_index(stamp(self.store))))
+        for reference, occurrence, kind, value, reading in uses:
+            mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
+        self._commit_events(plan, written, when=when)
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)
+
+    def _commit_events(self, plan, written, *, when):
+        """Read the kept role correspondence, never infer roles from a value."""
+        from ClauseRow import ClausePredicate
+        if plan.get('prepared_root') is None:
+            return
+        mtm = self.components.owner.mtm
+        identities = {}
+        def occurrence_of(node):
+            return written.get(('occurrence', id(node)), written.get('root_occurrence')
+                               if node is plan['prepared_root'] else None)
+        for item in plan['items']:
+            node = item['written_node']
+            occurrence = occurrence_of(node)
+            token = mtm.token_of(occurrence)
+            if token is None:
+                continue
+            if node.identity is not None and node.identity['handle']:
+                identities[node.identity['handle']] = token
+            if node.identity is not None:
+                # Captured programs publish their completed events below.
+                # The direct-clause adapter must not add a containing event.
+                continue
+            parent = item.get('parent') or plan['prepared_root']
+            if parent is node:
+                # A standalone mention is not an event of a predicate merely
+                # because its own reading also supplies the reference cue.
+                continue
+            event = occurrence_of(parent) or occurrence
+            verb = None
+            if parent.factored_refs is not None:
+                verb = parent.factored_refs[1]
+                if isinstance(verb, ClausePredicate):
+                    verb = verb.identity
+            if type(verb) is not int or verb in (-1, 0):
+                # Direct clause fixtures carry the same correspondence in
+                # their temporary composition instead of a captured journal.
+                pending = [parent.composition] if parent.composition is not None else []
+                while pending:
+                    term = pending.pop()
+                    if (not term.children and type(term.reference) is int
+                            and term.reference not in (-1, 0)
+                            and torch.equal(self.predicate_coordinates(term.point), item['predicate'])):
+                        verb = term.reference
+                        break
+                    pending.extend(reversed(term.children))
+            if type(verb) is int and verb not in (-1, 0):
+                mtm.event(token, event, verb=verb, role=item['role'], when=when)
+        pending, nodes, seen = [plan['prepared_root']], [], set()
+        while pending:
+            node = pending.pop()
+            if id(node) in seen:
+                continue
+            seen.add(id(node))
+            if node.identity is not None and node.identity.get('event') is not None:
+                nodes.append(node)
+            pending.extend((*node.children, *node.companions))
+        updated = {}
+        for node in sorted(nodes, key=lambda node: node.identity['action']):
+            record = node.identity
+            _, subject, obj, verb, _, changed = record['event']
+            if not subject:
+                continue
+            event = occurrence_of(node)
+            if event is None:
+                raise RuntimeError('a kept identity event has no occurrence')
+            if node.factored_refs is not None:
+                predicate = node.factored_refs[1]
+                if isinstance(predicate, ClausePredicate):
+                    verb = predicate.identity
+            for handle, role in ((subject, 0), (obj, 2)):
+                if not handle:
+                    continue
+                token = identities.get(handle)
+                if token is None:
+                    tag, address = record['origins'][handle-1, :2].tolist()
+                    reference = int(address) if tag == 1 else ('ltm', self.store.address_domain, int(address))
+                    token = mtm.token_of(reference) if tag in (1, 2) else None
+                if token is None:
+                    continue
+                mtm.event(token, event, verb=int(verb), role=role, when=when)
+                if role == 0 and changed:
+                    updated[token] = record['values'][handle-1]
+        for token, value in updated.items():
+            mtm.update(token, value, when=when)
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state

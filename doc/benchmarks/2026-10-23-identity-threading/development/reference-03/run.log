@@ -1,0 +1,29 @@
+F
+=================================== FAILURES ===================================
+_______ test_named_first_bind_opens_anonymous_without_row_or_bank_writes _______
+test/test_reference_arrivals.py:68: in test_named_first_bind_opens_anonymous_without_row_or_bank_writes
+    row, plan = keep(resolver, named(a[0], words['x']))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_medium_term_memory.py:48: in keep
+    resolver.commit(plan, row, written, document='mtm', position=position, training=False)
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/ReferenceClose.py:1076: in commit
+    when=when, value=node.point, reading=kind if reading is None else reading)
+                                                 ^^^^^^^
+E   UnboundLocalError: cannot access local variable 'reading' where it is not associated with a value
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_reference_arrivals.py::test_named_first_bind_opens_anonymous_without_row_or_bank_writes
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 warnings in 1.95s

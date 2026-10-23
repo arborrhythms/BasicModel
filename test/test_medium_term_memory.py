@@ -144,7 +144,7 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
                for use in entry.occurrences)
 
 
-def test_native_individual_mint_and_bind_make_no_pool_entry():
+def test_native_individual_mint_and_bind_share_an_occurrence_keyed_value():
     from IdentityRows import mint
     resolver, store, a = fixture()
     native = mint(resolver.components.owner, a[0])
@@ -154,7 +154,11 @@ def test_native_individual_mint_and_bind_make_no_pool_entry():
                     activations=((store.occurrence_of(row), native, 0),))
     _, plan = keep(resolver, mention(a[0], mode='bind'), (frame,), position=1)
     assert plan['items'][0]['reference'] == native
-    assert not resolver.components.owner.mtm.entries
+    pool = resolver.components.owner.mtm
+    token = pool.token_of(native)
+    assert token == store.occurrence_of(row)
+    assert pool.entries[token].native == native and pool.entries[token].count == 2
+    torch.testing.assert_close(pool.value_of(native), a[0], rtol=0, atol=0)
 
 
 def test_same_close_new_alias_appends_once_to_the_introduction():

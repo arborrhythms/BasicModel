@@ -1,0 +1,30 @@
+..........F
+=================================== FAILURES ===================================
+__ test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences __
+test/test_identity_threading.py:282: in test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences
+    entry, inputs, handle = recorded_identity_reading(f, tree)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_identity_threading.py:225: in recorded_identity_reading
+    entry = f.program(tree)
+            ^^^^^^^^^^^^^^^
+test/test_clause_acceptance.py:92: in program
+    root = visit(tree)
+           ^^^^^^^^^^^
+test/test_clause_acceptance.py:89: in visit
+    local = next(i for i, rule in enumerate(catalog) if rule.method_name == name)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identity_threading.py::test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 10 passed, 2 warnings in 3.10s

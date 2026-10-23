@@ -67,6 +67,8 @@ class InterpretLayer(GrammarLayer):
     def lexical_form(self, identity):
         if self.no_object(identity):
             value = self._pending[int(identity)]
+        elif int(identity) in self.owner.definitions.word_ids:
+            value = self.owner.definitions.description(int(identity))
         else:
             words = self.owner.definitions.words(int(identity))
             if len(words) != 1:
@@ -275,6 +277,8 @@ class InterpretLayer(GrammarLayer):
         cs, word, obj = self.owner, int(word), int(obj)
         alloc, index = _concept_alloc_of(cs), cs.definitions
         store = alloc.parts
+        if 'word' in alloc.symbol_types.get(obj, ()) or obj in index.word_ids:
+            raise ValueError('a definition cannot name a word as its object')
         if getattr(cs, '_online_learning_frozen', False):
             return index.row(word, obj)
         if word == obj or any(cid not in alloc.placement or cid in alloc.retired for cid in (word, obj)):

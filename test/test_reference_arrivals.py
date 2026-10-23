@@ -247,7 +247,7 @@ def test_named_root_can_retain_a_selected_lexical_constituent(monkeypatch):
     assert resolver.components.owner.mtm.entries[store.occurrence_of(row)].kind == words['three']
 
 
-def test_named_bind_to_a_native_individual_creates_no_pool_entry(monkeypatch):
+def test_named_bind_to_a_native_individual_keeps_an_occurrence_keyed_value(monkeypatch):
     from IdentityRows import mint
     resolver, store, a, words, _ = world()
     native = mint(resolver.components.owner, a[0])
@@ -259,7 +259,10 @@ def test_named_bind_to_a_native_individual_creates_no_pool_entry(monkeypatch):
     value = store.meaning_of(row)
     assert value.role_refs[0] == ('sym', native) and not open_slots(value)
     assert not bindings(value).get('_forward_references')
-    assert not resolver.components.owner.mtm.entries
+    pool = resolver.components.owner.mtm
+    token = store.occurrence_of(row)
+    assert pool.token_of(token) == token and pool.entries[token].native == native
+    torch.testing.assert_close(pool.value_of(token), a[0], rtol=0, atol=0)
 
 
 def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch):
@@ -299,11 +302,12 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
                    (SituationFrame.from_row(store.row(pending)), frame), position=1)
     refinement = next(item for item in plan['arrivals'] if item['token'] == token)
     assert refinement['selected'] == native
-    assert pool.entries[token].kind == native and pool.entries[token].count == 2
-    assert pool.entries[token].occurrences[-1] == refinement['reference']
+    owner = pool.token_of(token)
+    assert pool.entries[owner].kind == native and pool.entries[owner].count == (3 if retained_occurrence else 2)
+    assert token in pool.entries[owner].occurrences and refinement['reference'] in pool.entries[owner].occurrences
     if retained_occurrence:
         assert refinement['reference'] == occurrence
-    assert set(pool.entries) == {token}
+    assert set(pool.entries) == {owner}
     assert resolver._derivation_symbol(token) == native
     assert not open_slots(store.meaning_of(pending))
 

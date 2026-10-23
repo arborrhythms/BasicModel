@@ -67,12 +67,18 @@ class AnswerProgram:
     operation_probabilities: Any = None
     leaf_orders: Any = None
     leaf_evidence: Any = None
+    # Trial identity locations and recorded operations; never stored in LTM.
+    identity_origins: Any = None
+    identity_actions: Any = None
+    identity_values: Any = None
+    identity_leaves: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
-                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence")
+                                             "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
+                                             "identity_origins", "identity_actions", "identity_values", "identity_leaves")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -128,6 +134,26 @@ class AnswerProgram:
                 or not bool(torch.isfinite(self.leaf_evidence).all())
                 or bool(((self.leaf_evidence < 0) | (self.leaf_evidence > 1)).any())):
             raise ValueError('leaf evidence requires two finite poles in [0, 1]')
+        identity = (self.identity_origins, self.identity_actions,
+                    self.identity_values, self.identity_leaves)
+        if any(value is not None for value in identity):
+            if not all(torch.is_tensor(value) for value in identity):
+                raise ValueError('identity correspondence requires all four tensor fields')
+            origins, events, values, handles = identity
+            count = values.shape[0] if values.ndim == 2 else 0
+            if (values.shape != (count, self.leaves.shape[-1]) or
+                    not values.is_floating_point() or not bool(torch.isfinite(values).all()) or
+                    origins.shape != (count, 3) or origins.dtype != torch.long or
+                    events.shape != (self.actions.shape[0], 6) or events.dtype != torch.long or
+                    handles.shape != ids.shape or handles.dtype != torch.long):
+                raise ValueError('identity correspondence must align with values, actions and leaves')
+            if (bool(((origins[:, 0] < 0) | (origins[:, 0] > 4)).any()) or
+                    bool(((origins[:, 2] < 0) | (origins[:, 2] > 1)).any()) or
+                    bool(((handles < 0) | (handles > count)).any()) or
+                    bool(((events[:, :3] < 0) | (events[:, :3] > count)).any()) or
+                    bool(((events[:, 4] < -1) | (events[:, 4] > count)).any()) or
+                    bool(((events[:, 5] < 0) | (events[:, 5] > 1)).any())):
+                raise ValueError('identity correspondence contains an invalid location or event')
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())

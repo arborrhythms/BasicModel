@@ -4217,6 +4217,18 @@ class GenericLayer(NullLayer):
     space_role = 'CS'
 
 
+class BindLayer(NullLayer):
+    """Read a chosen identity location supplied by the compose menu.
+
+    The tensor menu supplies the current value joined with this description;
+    the dummy supplies the description itself. No pool or scorer lives here.
+    """
+    rule_name = 'bind'
+    predicate_identity = 'bind'
+    head_role = 1
+    scope_transparent = True
+
+
 class ImpliesLayer(SumLayer):
     meaning_rule = None
     """Structural carrier over two truth operands; the clause closing retains both."""
@@ -4363,6 +4375,7 @@ GRAMMAR_LAYER_CLASSES = {
     'divide': DivideLayer, 'descend': DescendLayer, 'gloss': GlossLayer,
     'and': FieldAndLayer, 'or': FieldOrLayer,
     'interpret':    InterpretLayer,
+    'bind':         BindLayer,
     'not':          NotLayer,
     'non':          NonLayer,
     'intersection': IntersectionLayer,
@@ -6951,6 +6964,10 @@ class OperationSelectionLayer(nn.Module):
         if reference_data is not None:
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
+            dummy = reference_data.get('unary_bind_dummy')
+            if dummy is not None:
+                fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None, None]
+                unary_scores = torch.where(fixed & reference_data['unary_valid'], 0., unary_scores)
         if self.stage_menu is not None:
             allowed = torch.tensor([name in self.stage_menu for name in self.argument_operation_names], device=x.device)
             binary_scores = binary_scores.masked_fill(~allowed[:self.r_reduce].index_select(0, bi)[None,None], -torch.inf)
@@ -6992,6 +7009,13 @@ class OperationSelectionLayer(nn.Module):
         if prime is not None:
             bias = self.prime_bias(candidates, prime)
             logits = logits + bias
+        if reference_data is not None and reference_data.get('unary_bind_dummy') is not None:
+            # The dummy is a fixed zero, including after expectation bias.
+            # Preserve every eligibility/deadline decision already applied.
+            dummy = torch.tensor(reference_data['unary_bind_dummy'], device=x.device,
+                                 dtype=torch.bool).expand(N, -1).reshape(-1)
+            fixed = torch.cat((dummy.new_zeros(nb), dummy, dummy.new_zeros(1)))[None]
+            logits = torch.where(fixed & torch.isfinite(logits), 0., logits)
         greedy = structural_argmax(logits, flags)
         reference = (greedy if masked_action is None else
                      torch.where(masked_action >= 0, masked_action, greedy))
@@ -7054,7 +7078,8 @@ class OperationSelectionLayer(nn.Module):
         if reference_data is not None:
             b_operands = torch.stack((reference_data['left'], reference_data['right']), -2)
             u_operands = torch.stack(
-                (reference_data['unary'], torch.zeros_like(reference_data['unary'])), -2)
+                (reference_data.get('unary_own', reference_data['unary']),
+                 reference_data.get('unary_record', torch.zeros_like(reference_data['unary']))), -2)
             operands = torch.cat((b_operands.reshape(B, nb, 2, D),
                                  u_operands.reshape(B, nu, 2, D), x.new_zeros(B, 1, 2, D)), 1)
             routing['operands'] = operands.gather(
@@ -7065,6 +7090,11 @@ class OperationSelectionLayer(nn.Module):
                 values = torch.cat(
                     (b, u, torch.zeros((B, 1, 2), device=b.device, dtype=b.dtype)), 1)
                 routing[label] = values.gather(1, action[:, None, None].expand(B, 1, 2))[:, 0]
+            if 'unary_identity' in reference_data:
+                identities = torch.cat((torch.zeros(B, nb, device=x.device, dtype=torch.long),
+                    reference_data['unary_identity'].reshape(B, nu),
+                    torch.zeros(B, 1, device=x.device, dtype=torch.long)), -1)
+                routing['identity'] = identities.gather(1, action[:, None])[:, 0]
         return hard, path, routing
 
     def derive(self, x, *, slots=1, rounds, depth=None, exploit=None, greedy=False,
@@ -12168,6 +12198,8 @@ class LanguageSpace(nn.Module):
             self, "_compose_binary_rules", snapshot_compose_rules(binary_ids))
         from ClauseScope import ClauseScope
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
+        from MTMOverlay import MTMOverlay
+        self.identity_overlay = MTMOverlay(self._compose_binary_rules, self._compose_unary_rules)
         from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
         self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
         self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)
@@ -12447,7 +12479,8 @@ class LanguageSpace(nn.Module):
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
-                         previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None):
+                         previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None,
+                         identity_state=None):
         """The shared compose layer with the two newest occupied STM slots."""
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -12455,6 +12488,8 @@ class LanguageSpace(nn.Module):
         window_depth = depth.clamp(0, n)
         source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
         window = buffer.gather(1, source[..., None].expand(B, n, D))
+        if identity_state is not None:
+            window = self.identity_overlay.refresh(identity_state, window, source)
         # Native leaves carry their projection coefficient separately. A wide
         # cube value is a present working identity, not a unit direction:
         # its Euclidean length is not an activation probability.
@@ -12496,6 +12531,7 @@ class LanguageSpace(nn.Module):
                                           orders=orders.gather(1, source),
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=self._reference_bank,
+                                          identity_state=identity_state, source=source,
                                           live=(buffer, reference_scope[..., 1], orders,
                                                 reference_scope[..., 0].bitwise_and(1) != 0, live_positions,
                                                 reference_scope[..., 0].bitwise_and(16) != 0),
@@ -12551,7 +12587,7 @@ class LanguageSpace(nn.Module):
                 torch.log_softmax(torch.where(route['valid'][:, None],
                     route['logits'], torch.zeros_like(route['logits'])), -1)
                 .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
-            route['proposal_inverse'], output_order)
+            route['proposal_inverse'], output_order, route.get('identity'))
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']
