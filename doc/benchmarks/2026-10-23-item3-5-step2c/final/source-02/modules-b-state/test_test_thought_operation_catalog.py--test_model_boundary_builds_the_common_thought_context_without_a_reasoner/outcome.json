@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_model_boundary_builds_the_common_thought_context_without_a_reasoner",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_definition_integrity.py::test_word_definition_survives_identity_resolution_and_pruning",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

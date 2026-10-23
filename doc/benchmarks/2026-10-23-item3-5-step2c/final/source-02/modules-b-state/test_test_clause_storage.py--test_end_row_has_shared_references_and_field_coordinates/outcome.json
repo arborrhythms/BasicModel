@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_end_row_has_shared_references_and_field_coordinates",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

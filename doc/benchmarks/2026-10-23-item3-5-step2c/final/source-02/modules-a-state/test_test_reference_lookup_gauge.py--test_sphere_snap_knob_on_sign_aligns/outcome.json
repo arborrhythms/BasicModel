@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_on_sign_aligns",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

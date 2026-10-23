@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compiled_word_chunk.py::test_tensor_peer_word_loop_rejects_external_full_stm",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

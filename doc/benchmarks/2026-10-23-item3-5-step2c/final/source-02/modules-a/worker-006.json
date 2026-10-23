@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+    "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+    "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+    "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+    "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request"
+  ],
+  "completed": [
+    "test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+    "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+    "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+    "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+    "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+    "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+    "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+    "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_forgetting.py::test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023225208977237344,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 4, 'after': 4, 'target': 2, 'cutoff': 0.0, 'deleted_by_origin': {0: 0, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 1, 'protected': 0, 'target_reached': False}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[True-True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01353508303873241,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024721671361476183,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 2.4987800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016759999562054873,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.334370292024687,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 15, 'after': 8, 'target': 6, 'cutoff': 2.169154405593872, 'deleted_by_origin': {0: 7, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 1, 'protected': 0, 'target_reached': False}\n[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9039/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\nbatch = 0 (\u0394=0.190s)\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9039/test_real_model_forgets_at_doc0/after-forgetting.ckpt\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025767090264707804,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_optional_coverage_separates_both_from_neither",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012714159674942493,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00014337501488626003,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015395903028547764,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001360829919576645,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012766709551215172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001294170506298542,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0055757921654731035,
+      "message": "",
+      "stdout": "[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 1.7487800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n[LTM forgetting] {'before': 8, 'after': 5, 'target': 5, 'cutoff': 1.7487800121307373, 'deleted_by_origin': {0: 3, 1: 0, 2: 0}, 'cascade': 0, 'wording': 0, 'coarsened': 0, 'protected': 0, 'target_reached': True}\r\n"
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0024634578730911016,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006091250106692314,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001277499832212925,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

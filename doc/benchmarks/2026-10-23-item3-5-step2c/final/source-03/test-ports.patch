@@ -1,0 +1,457 @@
+diff --git a/test/reading_fixtures.py b/test/reading_fixtures.py
+index 6605c577b..7b4fb00c0 100644
+--- a/test/reading_fixtures.py
++++ b/test/reading_fixtures.py
+@@ -220,7 +220,7 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
+         language.program_meaning = MethodType(LanguageSpace.program_meaning, language)
+     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
+         _incoming_trust_multiplier=lambda: trust)
+-    owner._concept_owner = lambda: owner.conceptualSpace
++    owner._concept_owner = lambda: registry.space
+     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
+     if discourse is not None:
+         discourse._ltm_store = store
+diff --git a/test/test_medium_term_memory.py b/test/test_medium_term_memory.py
+index be150416a..4103f0286 100644
+--- a/test/test_medium_term_memory.py
++++ b/test/test_medium_term_memory.py
+@@ -18,12 +18,31 @@ def snapshot(resolver):
+             resolver.components.owner.similarity_codebook.W.detach().clone())
+ 
+ 
+-def unchanged(resolver, before):
++def unchanged(resolver, before, *, promoted_rows=()):
+     after = snapshot(resolver)
+-    for actual, expected in zip(after, before):
++    for index, (actual, expected) in enumerate(zip(after, before)):
++        if index == len(before)-1 and promoted_rows:
++            keep = torch.ones(actual.shape[0], dtype=torch.bool, device=actual.device)
++            keep[list(promoted_rows)] = False
++            actual, expected = actual[keep], expected[keep]
+         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+ 
+ 
++def seats(resolver):
++    from Spaces import _concept_alloc_of
++    return set(_concept_alloc_of(resolver.components.owner).layer()._tensor_row_keys)
++
++
++def unchanged_after_consolidation(resolver, before, seated):
++    owner = resolver.components.owner
++    new_rows = seats(resolver) - seated
++    promoted = {owner._csw_row_of(entry.symbol) for entry in owner.mtm.entries.values()
++                if entry.symbol is not None}
++    promoted.update(owner._csw_row_of(symbol) for symbol in owner.__dict__.get('_recurring_readings', {}).values())
++    assert new_rows <= promoted
++    unchanged(resolver, before, promoted_rows=new_rows)
++
++
+ def mention(point, *, mode='mint', reference=-1):
+     # A supplied, identity-preserving lower retains the admitted kind.
+     term = Composition(point, (Composition(point*0), Composition(point, reference=reference)),
+@@ -45,8 +64,9 @@ def keep(resolver, clause, frames=(), *, position=0):
+         sentence_index=position, written_rows=written)
+     assert resolver.components.owner.mtm.entries == before
+     retained = snapshot(resolver)
++    seated = seats(resolver)
+     resolver.commit(plan, row, written, document='mtm', position=position, training=False)
+-    unchanged(resolver, retained)
++    unchanged_after_consolidation(resolver, retained, seated)
+     return row, plan
+ 
+ 
+diff --git a/test/test_memory_consolidation.py b/test/test_memory_consolidation.py
+new file mode 100644
+index 000000000..297dc7db9
+--- /dev/null
++++ b/test/test_memory_consolidation.py
+@@ -0,0 +1,364 @@
++"""Source-addressed recurrence, pool lifetime and retained identity promotion."""
++from dataclasses import replace
++from types import SimpleNamespace
++
++import pytest
++import torch
++
++from ClauseRow import Clause, Composition
++from Meaning import ConceptualMeaning
++from MemoryConsolidation import consolidate
++from MediumTermMemory import MediumTermMemory
++from ReferenceContext import SituationFrame
++from test_reference_close import fixture
++from test_medium_term_memory import mention, snapshot, unchanged
++
++
++def kept(resolver, clause, frames=(), *, document='consolidation', position=0, stream=0):
++    plan = resolver.preview(clause, frames, stream=stream)
++    prepared = resolver.prepare(clause, plan)
++    written = {}
++    row = resolver.store.write_clause(prepared, document_key=document,
++        sentence_index=position, stream=stream, written_rows=written)
++    resolver.commit(plan, row, written, document=document, position=position, training=False)
++    return row, plan
++
++
++def native(owner, point):
++    symbol = owner.new_concept()
++    with torch.no_grad():
++        owner.similarity_codebook.W[owner._csw_concept_row(0, symbol)].copy_(point)
++    return symbol
++
++
++@pytest.mark.parametrize('distinct', (False, True))
++def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinct):
++    resolver, store, atoms = fixture()
++    owner = resolver.components.owner
++    left, right = (native(owner, atoms[n]) for n in (0, 1))
++    value = atoms[0] + atoms[1]
++    tree = Composition(value, (Composition(atoms[0], reference=left),
++        Composition(atoms[1], reference=right)), operation='sum')
++    clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=tree)
++    for n in range(3):
++        row = store.write_clause(clause, document_key=('source', n if distinct else 0), sentence_index=n)
++        reading = store.raw_meaning_of(row).role_refs[0][1]
++        before = store.slots.clone(), store.parts.refs.clone()
++        consolidate(owner, store)
++        if n < 2 or not distinct:
++            assert reading not in owner._recurring_readings
++        torch.testing.assert_close(store.slots, before[0], rtol=0, atol=0)
++        torch.testing.assert_close(store.parts.refs, before[1], rtol=0, atol=0)
++    if distinct:
++        symbol = owner._recurring_readings[reading]
++        assert symbol != reading
++        torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(symbol)], value)
++        before = snapshot(resolver)
++        consolidate(owner, store)
++        unchanged(resolver, before)
++        saved = owner.vocab_extras()
++        owner._recurring_readings.clear()
++        owner.load_vocab_extras(saved)
++        assert owner._recurring_readings[reading] == symbol
++
++
++def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state():
++    resolver, store, atoms = fixture()
++    owner, pool = resolver.components.owner, resolver.components.owner.mtm
++    kind = native(owner, atoms[0])
++    first, _ = kept(resolver, mention(atoms[0], reference=kind))
++    token = store.occurrence_of(first)
++    frame = SituationFrame.from_row(store.row(first))
++    second, _ = kept(resolver, mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
++    assert pool.entries[token].symbol is None
++    # Reclosing the same source sentence increments accesses, not recurrence.
++    kept(resolver, mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
++    assert pool.entries[token].symbol is None
++    third, _ = kept(resolver, mention(atoms[0]+atoms[2], mode='bind'), (frame,), position=2)
++    entry = pool.entries[token]
++    assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))
++    assert entry.kind == kind and entry.symbol is not None and entry.count == 4
++    expected = atoms[0] + atoms[1] + atoms[2]
++    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
++    assert resolver._derivation_symbol(token) == entry.symbol
++    pool.update(token, atoms[3], when=50)
++    consolidate(owner, store)
++    torch.testing.assert_close(pool.value_of(token), atoms[3])
++    torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
++    restored = MediumTermMemory()
++    restored.restore(pool.state())
++    assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names
++    assert restored.closes == pool.closes and restored.accesses == pool.accesses
++
++
++def test_many_mentions_in_one_sentence_do_not_promote():
++    resolver, store, atoms = fixture()
++    owner, pool = resolver.components.owner, resolver.components.owner.mtm
++    rows = [store.write_clause(mention(atoms[n]), document_key='one', sentence_index=0)
++            for n in range(3)]
++    token = store.occurrence_of(rows[0])
++    pool.open(token, kind=None, value=atoms[0], when=1)
++    for row in rows[1:]:
++        pool.bind(token, store.occurrence_of(row), kind=None, value=store.slots[row, 0], when=2)
++    before = snapshot(resolver)
++    consolidate(owner, store)
++    assert pool.entries[token].symbol is None
++    unchanged(resolver, before)
++
++
++def test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows():
++    resolver, store, atoms = fixture()
++    owner, pool = resolver.components.owner, resolver.components.owner.mtm
++    row, _ = kept(resolver, mention(atoms[0]), document='first', stream=0)
++    token = store.occurrence_of(row)
++    before = snapshot(resolver)
++    for _ in range(20):
++        pool.close(store, stream=1)
++    assert token in pool.entries
++    for _ in range(16):
++        pool.close(store, stream=0)
++    assert token in pool.entries
++    pool.close(store, stream=0)
++    assert token not in pool.entries and pool.token_of(token) is None
++    unchanged(resolver, before)
++    row, _ = kept(resolver, mention(atoms[1]), document='second', position=1)
++    token = store.occurrence_of(row)
++    for _ in range(16):
++        pool.close(store, stream=0)
++    pool.close(store, stream=0, references=(token,))
++    assert token in pool.entries
++    before = snapshot(resolver)
++    # The production teardown consumes the cursor's document-end marks.
++    from Models import BasicModel
++    model = SimpleNamespace(_thought_document_ends=(True,), _sentence_sources=((('second', 1),),),
++        _concept_owner=lambda: owner)
++    BasicModel._end_step(model)
++    assert token not in pool.entries and not pool.names
++    unchanged(resolver, before)
++
++
++@pytest.mark.parametrize('operation', ('open', 'bind'))
++def test_reclosing_a_mention_does_not_erase_another_tokens_event(operation):
++    resolver, store, atoms = fixture()
++    pool = resolver.components.owner.mtm
++    first, _ = kept(resolver, mention(atoms[0]), position=0)
++    second, _ = kept(resolver, mention(atoms[1]), position=1)
++    a, b = store.occurrence_of(first), store.occurrence_of(second)
++    pool.event(a, b, verb=1, role=2, when=3)
++    events = pool.entries[a].events
++    before = snapshot(resolver)
++    if operation == 'open':
++        pool.open(b, kind=None, when=4, value=atoms[1])
++    else:
++        pool.bind(a, b, kind=None, when=4, value=atoms[1])
++    assert pool.entries[a].events == events
++    unchanged(resolver, before)
++    pool.forget(b)
++    assert not pool.entries[a].events
++
++
++def test_standalone_order_one_composite_gets_a_site_through_its_head():
++    resolver, store, atoms = fixture()
++    owner = resolver.components.owner
++    word = native(owner, atoms[0])
++    tree = Composition(atoms[0], (Composition(atoms[1]),
++        Composition(atoms[0], reference=word, word_id=word)), operation='surface', head_role=2, order=1)
++    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1, composition=tree)
++    before = snapshot(resolver)
++    plan = resolver.preview(clause, ())
++    assert len(plan['items']) == 1 and plan['items'][0]['own_object']
++    torch.testing.assert_close(plan['items'][0]['cue'], atoms[0])
++    unchanged(resolver, before)
++    row, plan = kept(resolver, clause)
++    token = owner.mtm.token_of(store.occurrence_of(row))
++    assert token == store.occurrence_of(row)
++    torch.testing.assert_close(owner.mtm.value_of(token), atoms[0])
++
++
++def test_definition_cache_rebuilds_after_forgetting_and_restore():
++    from test_definition_rows import model, admit
++    from Definitions import DefinitionIndex
++    m = model()
++    owner = m._concept_owner()
++    word, obj = admit(m, 'sample')
++    parts, index = owner._concept_allocator.parts, owner.definitions
++    saved = {key: value.clone() for key, value in parts.state_dict().items()}
++    edge = index.row(word, obj)
++    parts.retain([row for row in parts.indices().tolist() if row != edge])
++    assert index.objects(word) == () and index.words(obj) == ()
++    parts.load_state_dict(saved)
++    assert index.objects(word) == (obj,) and index.words(obj) == (word,)
++    rebuilt = DefinitionIndex(parts, owner._concept_allocator)
++    assert rebuilt.row(word, obj) == edge and rebuilt.description(word) == index.description(word)
++
++
++def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch):
++    from test_clause_acceptance import SentenceFixture
++    from test_identity_threading import recorded_identity_reading
++    from ClauseJournal import finish_clause
++    f = SentenceFixture(monkeypatch)
++    entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'action'))
++    clause = finish_clause(f.language, entry, registry=f.registry)
++    verb = native(f.cs, torch.ones(8)*.25)
++    from Spaces import _concept_alloc_of
++    alloc = _concept_alloc_of(f.cs)
++    word = alloc.new_concept()
++    alloc.symbol_types[word] = {'word'}
++    alloc.symbol_types[verb] = {'concept', 'object'}
++    alloc.word_descriptions[word] = dict(forms=('event-form',), parts=((901,),), wholes=())
++    alloc.parts.add(verb, word)
++    f.cs.definitions.rebuild()
++    # A captured record can carry the lexical handle when the factored view
++    # is absent; the word has no conceptual seat in this fixture.
++    from Spaces import _concept_alloc_of
++    assert f.cs._csw_row_of(word) is None
++    identity = dict(clause.identity)
++    identity['event'] = tuple(word if index == 3 else value for index, value in enumerate(identity['event']))
++    clause = replace(clause, factored_refs=None, identity=identity)
++    resolver = f.cs.components.reference_close
++    _, plan = kept(resolver, clause)
++    events = [event for token in f.cs.mtm.entries.values() for event in token.events]
++    assert events and events[-1].verb == verb
++    assert resolver._participants()
++
++
++def test_pending_alias_and_later_self_arrival_leave_the_same_token_pending():
++    from test_reference_arrivals import world, named
++    resolver, store, atoms, words, _ = world()
++    def site(leaf):
++        node = named(atoms[0], words['x'])
++        return replace(node, point=atoms[0], meaning=ConceptualMeaning.from_description(atoms[0]),
++            composition=replace(node.composition, point=atoms[0], leaves=(leaf,)),
++            reference_request=dict(node.reference_request, content=atoms[0], cue=atoms[0], leaves=(leaf,)))
++    first, second = site(0), site(1)
++    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
++        children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
++    row, plan = kept(resolver, clause)
++    token = plan['items'][0]['reference']
++    assert plan['items'][1]['reference'] == token
++    assert len(plan['arrivals']) == 1 and plan['arrivals'][0]['reference'] == token
++    assert resolver.components.owner.mtm.entries[token].pending
++    frame = replace(SituationFrame.from_row(store.row(row)), activations=tuple(
++        (use, None, 0) for use in resolver.components.owner.mtm.entries[token].occurrences))
++    before = snapshot(resolver)
++    clocks = dict(resolver.components.owner.mtm.closes)
++    later = resolver.preview(site(2), (frame,))
++    assert later['items'][0]['selected'] == token
++    assert len(later['arrivals']) == 1 and later['arrivals'][0]['selected'] == token
++    assert resolver.components.owner.mtm.closes == clocks
++    unchanged(resolver, before)
++
++
++@pytest.mark.parametrize('corruption', ('clock', 'access', 'document', 'symbol'))
++def test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool(corruption):
++    resolver, store, atoms = fixture()
++    row, _ = kept(resolver, mention(atoms[0]))
++    pool = resolver.components.owner.mtm
++    key = store.occurrence_of(row)
++    saved, bad = pool.state(), pool.state()
++    if corruption == 'clock':
++        bad['closes'] = ((0, -1),)
++    elif corruption == 'access':
++        bad['accesses'] = ((key, ((0, 99),)),)
++    elif corruption == 'document':
++        bad['documents'] = ((key, b'bad'),)
++    else:
++        bad['entries'][0]['symbol'] = 0
++    with pytest.raises(ValueError):
++        pool.restore(bad)
++    assert pool.names == {key: pool.names[key]} and pool.closes == dict(saved['closes'])
++    torch.testing.assert_close(pool.value_of(key), saved['entries'][0]['value'])
++
++
++def test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token():
++    resolver, store, atoms = fixture()
++    store._model_present = lambda: 7
++    pool = resolver.components.owner.mtm
++    first, _ = kept(resolver, mention(atoms[0]), position=0)
++    token = store.occurrence_of(first)
++    for position in range(1, 17):
++        kept(resolver, mention(atoms[1]), position=position)
++    assert token in pool.entries
++    kept(resolver, mention(atoms[1]), position=17)
++    assert token not in pool.entries
++    assert store.location(token) is not None
++
++
++def test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history(monkeypatch):
++    from ClauseJournal import finish_clause
++    from test_clause_acceptance import SentenceFixture
++    from test_identity_threading import recorded_identity_reading
++    f = SentenceFixture(monkeypatch)
++    f.cs.mtm = MediumTermMemory(capacity=2)
++    tree = ('sum',
++        ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'place'))),
++        ('lift', ('lower_unary', 'alias'), ('verb', 'affect', ('lower', 'd', 'target'))))
++    entry, _, _ = recorded_identity_reading(f, tree)
++    resolver = f.cs.components.reference_close
++    clause = finish_clause(f.language, entry, registry=f.registry)
++    plan = resolver.preview(clause, ())
++    prepared = resolver.prepare(clause, plan)
++    written = {}
++    row = f.store.write_clause(prepared, written_rows=written, document_key='capacity-close', sentence_index=0)
++    before = snapshot(resolver)
++    resolver.commit(plan, row, written, document='capacity-close', position=0, training=False)
++    names = [written[('occurrence', id(item['written_node']))] for item in plan['items']]
++    assert len(names) == 4 and len(f.cs.mtm.entries) == 2
++    assert all(f.cs.mtm.token_of(name) is None for name in names[:2])
++    assert all(f.cs.mtm.token_of(name) is not None for name in names[2:])
++    assert all(store_row is not None for store_row in map(f.store.location, names))
++    assert all(f.cs.mtm.entries[f.cs.mtm.token_of(name)].events for name in names[2:])
++    unchanged(resolver, before)
++
++
++def test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged():
++    resolver, store, atoms = fixture()
++    store._model_present = lambda: 7
++    pool = resolver.components.owner.mtm
++    first, _ = kept(resolver, mention(atoms[0]), position=0)
++    token = store.occurrence_of(first)
++    frame = SituationFrame.from_row(store.row(first))
++    for position in range(1, 17):
++        kept(resolver, mention(atoms[1]), position=position)
++    bound, _ = kept(resolver, mention(atoms[0], mode='bind'), (frame,), position=17)
++    assert pool.token_of(store.occurrence_of(bound)) == token
++    for position in range(18, 34):
++        kept(resolver, mention(atoms[1]), position=position)
++    assert token in pool.entries
++    kept(resolver, mention(atoms[1]), position=34)
++    assert token not in pool.entries and store.location(token) is not None
++
++
++def test_surface_wrapped_relation_does_not_add_a_standalone_object():
++    resolver, store, atoms = fixture()
++    relation = Composition(atoms[0], (Composition(atoms[1]), Composition(atoms[2])), operation='equal')
++    wrapped = Composition(atoms[0], (Composition(atoms[3]), relation), operation='surface', head_role=2, order=1)
++    clause = Clause(ConceptualMeaning(atoms[:3], torch.ones(3,dtype=torch.bool)),
++        point=None, order=1, relation='part', composition=wrapped)
++    before = snapshot(resolver)
++    plan = resolver.preview(clause, ())
++    assert plan['items'] == []
++    unchanged(resolver, before)
++
++
++@pytest.mark.parametrize('retirement', ('capacity', 'expiry'))
++def test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation(retirement):
++    resolver, store, atoms = fixture()
++    pool = resolver.components.owner.mtm = MediumTermMemory(capacity=2)
++    arow, _ = kept(resolver, mention(atoms[0]), position=0)
++    brow, _ = kept(resolver, mention(atoms[1]), position=1)
++    crow = store.write_clause(mention(atoms[2]), document_key='consolidation', sentence_index=2)
++    a, b, c = map(store.occurrence_of, (arow, brow, crow))
++    pool.event(a, b, verb=1, role=2, when=50)
++    events = pool.entries[a].events
++    before = snapshot(resolver)
++    if retirement == 'capacity':
++        pool.open(c, kind=None, when=51, value=atoms[2])
++    else:
++        for _ in range(17):
++            pool.close(store, stream=0, references=(a,))
++    assert pool.token_of(b) is None
++    assert pool.entries[a].events == events
++    unchanged(resolver, before)
++    pool.forget(b)
++    assert not pool.entries[a].events
+diff --git a/test/test_reference_review10.py b/test/test_reference_review10.py
+index b0065ba32..079b58dcb 100644
+--- a/test/test_reference_review10.py
++++ b/test/test_reference_review10.py
+@@ -9,7 +9,7 @@ from ClauseRow import Clause, Composition, ClausePredicate, predicate_point
+ from Meaning import ConceptualMeaning
+ from ReferenceContext import SituationFrame
+ from ThoughtReferences import open_slots, with_slots
+-from test_medium_term_memory import keep, mention, snapshot, unchanged
++from test_medium_term_memory import keep, mention, snapshot, unchanged, seats, unchanged_after_consolidation
+ from test_reference_arrivals import equality, named, world
+ from test_reference_choices import noun
+ 
+@@ -32,9 +32,9 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
+         written = {}
+         row = store.write_clause(prepared, document_key='box-ball', sentence_index=position,
+                                  written_rows=written)
+-        before = snapshot(resolver)
++        before, seated = snapshot(resolver), seats(resolver)
+         resolver.commit(plan, row, written, document='box-ball', position=position, training=False)
+-        unchanged(resolver, before)
++        unchanged_after_consolidation(resolver, before, seated)
+         frames.append(replace(SituationFrame.from_row(store.row(row)),
+             activations=written.get(('activations', id(prepared)), ()),
+             symbol_ids=written.get(('symbols', id(prepared)), ())))

@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_live_references.py::test_transparent_operation_preserves_a_vp_with_a_relational_operand",
+    "test/test_live_references.py::test_grammar_order_resolution_survives_the_numerical_journal",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[ordinary]",
+    "test/test_live_references.py::test_existing_kind_point_is_resolved_before_the_operator[identity]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-False-None-7]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[1-False-bind-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[0-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-None-1]",
+    "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-True-generic-7]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[lift-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-0]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[part-2]",
+    "test/test_live_references.py::test_identity_journal_keeps_the_implicit_typed_reference_and_point[whole-0]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-02/modules-b/worker-031.recycle.json"
+}

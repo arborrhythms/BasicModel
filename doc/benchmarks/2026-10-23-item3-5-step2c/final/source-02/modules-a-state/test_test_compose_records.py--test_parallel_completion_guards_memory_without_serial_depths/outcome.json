@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

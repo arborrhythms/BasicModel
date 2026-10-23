@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

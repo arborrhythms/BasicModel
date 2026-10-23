@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

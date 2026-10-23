@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_memory_consolidation.py",
+    "test/test_medium_term_memory.py",
+    "test/test_identity_threading.py",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T19:44:23.219079+00:00",
+  "exit": 0,
+  "finished": "2026-10-23T19:45:17.507059+00:00"
+}

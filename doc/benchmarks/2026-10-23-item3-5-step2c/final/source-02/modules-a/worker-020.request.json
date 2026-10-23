@@ -1,0 +1,21 @@
+{
+  "selectors": [
+    "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
+    "test/test_identity_corpus.py::test_factorial_lessons_and_support_rehearsal_do_not_confuse_missing_factors",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[train]",
+    "test/test_identity_corpus.py::test_two_candidate_pronouns_cross_refresh_recency_with_role_and_report_position_confound[eval]",
+    "test/test_identity_corpus.py::test_counterbalancing_preserves_grammatical_roles_instead_of_passive_agent_labels",
+    "test/test_identity_corpus.py::test_same_kind_later_properties_use_the_original_verb_forms",
+    "test/test_identity_corpus.py::test_imperfect_determiners_and_content_conflicts_have_separate_evidence",
+    "test/test_identity_corpus.py::test_neither_candidate_control_has_identical_text_for_both_hidden_answers",
+    "test/test_identity_corpus.py::test_reversed_recency_control_exposes_position_shortcut",
+    "test/test_identity_corpus.py::test_missing_and_colliding_candidates_cannot_be_counted_as_correct",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[1]",
+    "test/test_identity_corpus.py::test_one_vs_two_measures_semantic_addresses_including_negative_occurrences[2]",
+    "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
+    "test/test_identity_corpus.py::test_native_observer_uses_owned_individual_not_enclosing_sentence",
+    "test/test_identity_corpus.py::test_observer_reports_discarded_mint_and_unadmitted_leaf_by_reason"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-02/modules-a/worker-020.recycle.json"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_section14.py::test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

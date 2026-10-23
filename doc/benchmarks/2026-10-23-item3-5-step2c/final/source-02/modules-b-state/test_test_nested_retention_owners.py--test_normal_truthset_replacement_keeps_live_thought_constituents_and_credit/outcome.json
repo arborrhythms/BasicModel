@@ -1,0 +1,6 @@
+{
+  "node": "test/test_nested_retention_owners.py::test_normal_truthset_replacement_keeps_live_thought_constituents_and_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

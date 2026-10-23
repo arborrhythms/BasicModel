@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_memory_consolidation.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history",
+    "test/test_memory_consolidation.py::test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged",
+    "test/test_memory_consolidation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-02/regressions/worker-009.recycle.json"
+}

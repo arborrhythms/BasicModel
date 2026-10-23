@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tetralemma_leaf.py::test_not_exchange_and_non_withdrawal[pair1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

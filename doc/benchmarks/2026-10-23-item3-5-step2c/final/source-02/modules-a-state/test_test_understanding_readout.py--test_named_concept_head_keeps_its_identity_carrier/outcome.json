@@ -1,0 +1,6 @@
+{
+  "node": "test/test_understanding_readout.py::test_named_concept_head_keeps_its_identity_carrier",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_address_is_full_int64_content_based_and_rng_independent",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

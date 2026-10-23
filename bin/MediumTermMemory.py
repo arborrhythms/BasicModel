@@ -91,7 +91,9 @@ class MediumTermMemory:
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
         if len(self.entries) >= self.capacity:
-            self.forget(min(self.entries, key=lambda key: self.entries[key].when))
+            # Capacity retires an identity, not the occurrence row that may
+            # still witness an event owned by another retained identity.
+            self._detach(min(self.entries, key=lambda key: self.entries[key].when))
         self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native, pending=pending)
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
@@ -207,7 +209,7 @@ class MediumTermMemory:
             if stream in accesses and clock - accesses[stream] > self.horizon:
                 del accesses[stream]
                 if not accesses:
-                    self.forget(key)
+                    self._detach(key)
 
     def end_document(self, document):
         """A document boundary retires the pool, never the retained rows."""
@@ -215,7 +217,7 @@ class MediumTermMemory:
         digest = document_digest(document)
         for key in tuple(self.entries):
             if self.documents.get(key) == digest:
-                self.forget(key)
+                self._detach(key)
 
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""

@@ -7,7 +7,7 @@ Item 3.0 has not been reached. This is mechanism evidence, not a learning
 claim.
 
 The [step-2 specification](../../plans/2026-10-21-step2-one-ltm.md)
-§§73–80 records the code review, decisions and each development repair under
+§§73–81 records the code review, decisions and each development repair under
 §39. The published base is BasicModel `148953f9b` (identity source
 `65ab7fbe9`, Claude LAND in identity §34), WikiOracle `175c101`.
 [Publication record](publication-identity.json). The required identity
@@ -48,7 +48,8 @@ receipt sentence was added; no further identity gates ran.
   reference-term exclusion stay. The original named-alias cases still
   check nonzero features, matching content and zero reference cost.
 - Mention re-closing detaches membership without erasing another retained
-  token's event. Row reclamation still removes its event witnesses. An
+  token's event. Capacity, expiry and document-end retirement do the same;
+  row reclamation alone removes another token's event witnesses. An
   event lacking factored refs uses its captured reading; an unseated verb
   word with one DEF resolves to that object for role evidence. An ambiguous
   unavailable lexical reading supplies no invented role evidence.
@@ -83,7 +84,7 @@ seat reservation, menu masking, fixture resizing or MTM-read detach.
    and compiled-expectation fixtures keep every assertion. No timestamp
    inventory port is needed after the production refresh repair.
 
-No existing test is retired. `final/source-02/test-ports.patch` and
+No existing test is retired. `final/source-03/test-ports.patch` and
 `assertion-audit.json` give the exact changes, including all added tests.
 
 ## Retained development runs
@@ -108,6 +109,8 @@ one. None of these runs substitutes for frozen-source gates.
 | standalone-relation-01 | 0 | 0 | 1 | Direct reproduction of the surface-wrapped relation error. |
 | foundation-07 | 36 | 0 | 0 | Standalone and participant contracts, expiry, capacity, and loud rejection. |
 | capacity-03 | 1 | 0 | 0 | Original driver assertions pass for 1/2/3/8 streams; all paired closes and private generator states retained. |
+| event-retention-01 | 0 | 0 | 2 | Capacity and expiry incorrectly remove another retained token's event while its row survives. |
+| event-retention-02 | 80 | 0 | 0 | Corrected ownership, MTM, consolidation and identity contracts; row reclamation still removes witnesses. |
 
 ## Frozen evidence and review
 
@@ -119,7 +122,12 @@ RNG, but the original private corpus-generator RNG was not saved. Its new
 presentation and both trials are retained; it reproduces the failure class
 and is not claimed as an exact presentation replay.
 
-`final/source-02` holds the corrected source audit and selections: the prior scoped
+`final/source-02` retains `babd4f466`: all scoped cases completed with
+1,678 passes and twelve existing skips. The later ownership diagnostic
+finds the two failures recorded in §81, so this source is superseded.
+No result from it is promoted.
+
+`final/source-03` holds the final source audit and selections: the prior scoped
 groups, both decomposition arms at their original snapshots/seeds, and
 new/direct changed-module files. Gates are run once by source. Every
 failure is retained and diagnosed before source changes. No full sweep

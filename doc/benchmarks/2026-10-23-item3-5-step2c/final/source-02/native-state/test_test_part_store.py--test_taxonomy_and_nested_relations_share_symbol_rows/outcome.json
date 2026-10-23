@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_store.py::test_taxonomy_and_nested_relations_share_symbol_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

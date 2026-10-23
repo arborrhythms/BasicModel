@@ -3951,3 +3951,27 @@ The generic capture now also saves every private corpus-generator RNG.
 Final gates explicitly clear both process and generator replay controls.
 This improves reproducibility without changing a draw; the older capture's
 stated limitation remains in the receipt.
+
+## 81. Retiring a token does not reclaim its occurrence — Codex, 2026-10-23
+
+Source `babd4f466` completes all 1,690 scoped cases: 1,678 passed, twelve
+existing skips, no failures. Before hand-off, the ownership audit finds
+one remaining use of the wrong lifetime operation: capacity, expiry and
+document-end removal still call `forget(address)`. That is the row
+reclamation hook and removes an event at that address from every retained
+token. Retiring an identity leaves its row in LTM, so another identity's
+event at that row must survive.
+
+`event-retention-01` captures both failures, capacity and expiry. Each
+retires B while A remains referenced and owns an event at B's occurrence;
+B's row remains but A's event disappears. Use membership detachment for
+capacity/expiry/document-end retirement. Actual row reclamation still
+calls `forget` and removes the event witnesses. The new regression checks
+both lifetimes, unchanged rows/bank and the later reclamation. No existing
+assertion changes, no capacity changes, and no new history representation.
+There is no paired trial/keep in these direct lifecycle calls.
+
+The earlier green pass remains retained under its source; no result is
+promoted to the final corrected hash. All scoped groups run on that hash
+before mediated review. This closes the event-ownership boundary requested
+by the identity review without changing the bind or keep rules.

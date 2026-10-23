@@ -1,0 +1,8851 @@
+{
+  "forced": true,
+  "successors": 1,
+  "attention_budget": 512,
+  "premise_budget": 0,
+  "episodes": [
+    {
+      "row": 0,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "after": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.3215128481388092,
+          0.0
+        ],
+        "_forward_references": [],
+        "_observed_symbol_activations": [
+          [
+            1,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            2,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            3,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            4,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            5,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            6,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            7,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            8,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            9,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            10,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            11,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            12,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            13,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            14,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            15,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            16,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            17,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            21,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            25,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            28,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            29,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            30,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            37,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            31,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            32,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            33,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            36,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            45,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            44,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            48,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            49,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            50,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            51,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            52,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            55,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            60,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            61,
+            [
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "_open_references": [],
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          3053295129889445700
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_symbol_handles": [
+          -1,
+          -1,
+          -1
+        ],
+        "_thought_witnesses": [
+          [
+            "sym",
+            38
+          ],
+          [
+            "sym",
+            22
+          ],
+          [
+            "sym",
+            56
+          ]
+        ]
+      },
+      "work": 175,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "._walk_previous",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._leaf_postings",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.leaf_complete",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [],
+        "source_row": 24,
+        "added_row_kinds": [
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              37
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                38
+              ],
+              "refs": [
+                [
+                  "sym",
+                  37
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  36
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 37)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 17)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 33)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 34)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 35)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 36)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 38)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  37
+                ],
+                [
+                  "sym",
+                  34
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              17
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                22
+              ],
+              "refs": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  21
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 17)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 22)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  15
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              17
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              17
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                22
+              ],
+              "refs": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  21
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 17)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 22)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  17
+                ],
+                [
+                  "sym",
+                  15
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                56
+              ],
+              "refs": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  55
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 49)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 50)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 51)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 52)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  15
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 48)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 53)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 54)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 55)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 56)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  48
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              55
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              37
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              55
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              37
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                56
+              ],
+              "refs": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  55
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 49)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 50)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 51)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 52)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  15
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 48)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 53)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 54)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 55)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 56)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  48
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "row": 1,
+      "before": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "after": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "open": [],
+      "metadata": {
+        "_bound_roles": [
+          [
+            "referent",
+            0
+          ]
+        ],
+        "_derived_binding": true,
+        "_direct_binding": false,
+        "_equality": true,
+        "_evidence_pair": [
+          0.3215128481388092,
+          0.0
+        ],
+        "_forward_references": [],
+        "_observed_symbol_activations": [
+          [
+            1,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            2,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            3,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            4,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            5,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            6,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            7,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            8,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            9,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            10,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            11,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            12,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            13,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            14,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            15,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            16,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            17,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            21,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            25,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            28,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            29,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            30,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            37,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            31,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            32,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            33,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            36,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            45,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            44,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            48,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            49,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            50,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            51,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            52,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            55,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            60,
+            [
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            61,
+            [
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "_open_references": [],
+        "_producing_operation": "query",
+        "_query_occurrence": [
+          "ltm",
+          "address-v1",
+          -8456239836792304434
+        ],
+        "_reference_sites": [
+          [
+            0,
+            [
+              [
+                "content",
+                [
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "cue",
+                [
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.9872103333473206,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "leaves",
+                [
+                  0
+                ]
+              ],
+              [
+                "predicate",
+                [
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.3419129252433777,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              ],
+              [
+                "role",
+                0
+              ]
+            ]
+          ]
+        ],
+        "_source_evidence": [
+          0.0,
+          0.0
+        ],
+        "_symbol_handles": [
+          -1,
+          -1,
+          -1
+        ],
+        "_thought_witnesses": [
+          [
+            "sym",
+            46
+          ],
+          [
+            "sym",
+            26
+          ],
+          [
+            "sym",
+            56
+          ]
+        ]
+      },
+      "work": 175,
+      "state_diff": {
+        "changed": [
+          "._last_thought_comparison",
+          "._last_thought_score_function",
+          "._thought_ordinals",
+          "._walk_audit",
+          "._walk_observations",
+          "symbolSpace.subspace.layers.2._ltm_store._forward_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._index_occurrences",
+          "symbolSpace.subspace.layers.2._ltm_store._leaf_postings",
+          "symbolSpace.subspace.layers.2._ltm_store._semantic_rows",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index",
+          "symbolSpace.subspace.layers.2._ltm_store._slot_index_source",
+          "symbolSpace.subspace.layers.2._ltm_store._texts",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.address_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.c_plus",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.count",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.document_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.leaf_complete",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.metadata_required",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.order",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.record_kind",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.role_mask",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.row_ids",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.semantic_fingerprint",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_content_keys",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.sentence_index",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.slots",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.stream",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.when",
+          "symbolSpace.subspace.layers.2._ltm_store.buffer.witness_count",
+          "what_memory._address_sources",
+          "what_memory._episode_live",
+          "what_memory._thought_next_id",
+          "what_memory._what_slots"
+        ],
+        "unexpected": [],
+        "changed_old_rows": [],
+        "source_row": 29,
+        "added_row_kinds": [
+          "inference"
+        ]
+      },
+      "trace": [
+        {
+          "kind": "begin",
+          "operation": "",
+          "level": 0,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              45
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                46
+              ],
+              "refs": [
+                [
+                  "sym",
+                  45
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  44
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 45)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 25)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 33)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 42)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 43)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 44)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 46)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  45
+                ],
+                [
+                  "sym",
+                  42
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "ask",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              1
+            ],
+            null
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "descend",
+          "operation": "descend",
+          "level": 1,
+          "refs": [
+            null,
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              25
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 1,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                26
+              ],
+              "refs": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  21
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 25)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 26)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  15
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 1,
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              25
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "return",
+          "operation": "return",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              21
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              25
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                26
+              ],
+              "refs": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  21
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 25)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 26)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  25
+                ],
+                [
+                  "sym",
+                  15
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "query",
+          "level": 0,
+          "refs": [
+            [
+              "constituent",
+              0
+            ],
+            [
+              "sym",
+              2
+            ],
+            null
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                56
+              ],
+              "refs": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  55
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 49)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 50)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 51)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 52)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  15
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 48)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 53)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 54)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 55)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 56)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  48
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        },
+        {
+          "kind": "thought",
+          "operation": "conclude",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              55
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              45
+            ]
+          ],
+          "frames": [],
+          "components": {}
+        },
+        {
+          "kind": "finish",
+          "operation": "finish",
+          "level": 0,
+          "refs": [
+            [
+              "sym",
+              55
+            ],
+            [
+              "sym",
+              4010033338316264258
+            ],
+            [
+              "sym",
+              45
+            ]
+          ],
+          "frames": [
+            {
+              "occurrence": [
+                "sym",
+                56
+              ],
+              "refs": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  4010033338316264258
+                ],
+                [
+                  "sym",
+                  55
+                ]
+              ]
+            }
+          ],
+          "components": {
+            "('sym', 13)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 14)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 18)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 16)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 15)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 19)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 20)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 21)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 29)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 31)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 49)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 30)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 32)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 50)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 51)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 52)": {
+              "kind": "lift",
+              "operands": [
+                [
+                  "sym",
+                  15
+                ],
+                [
+                  "sym",
+                  29
+                ]
+              ],
+              "constructor": null
+            },
+            "('sym', 48)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 53)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 54)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 55)": {
+              "kind": "concept",
+              "operands": [],
+              "constructor": null
+            },
+            "('sym', 56)": {
+              "kind": "equal",
+              "operands": [
+                [
+                  "sym",
+                  52
+                ],
+                [
+                  "sym",
+                  48
+                ]
+              ],
+              "constructor": null
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "menus": [
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          36
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "sym",
+        17
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          17
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        17
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        [
+          "sym",
+          21
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          17
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          36
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          36
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          36
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "sym",
+        17
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          17
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        17
+      ],
+      "env": [
+        0,
+        "x"
+      ],
+      "current": [
+        [
+          "sym",
+          21
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          17
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          36
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        37
+      ],
+      "env": [
+        0,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          37
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          44
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "sym",
+        25
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          25
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        25
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        [
+          "sym",
+          21
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          25
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          44
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          44
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "ask"
+    },
+    {
+      "target": [
+        "sym",
+        25
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        null,
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          25
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        25
+      ],
+      "env": [
+        1,
+        "x"
+      ],
+      "current": [
+        [
+          "sym",
+          21
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          25
+        ]
+      ],
+      "chosen": null
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          44
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": "query"
+    },
+    {
+      "target": [
+        "sym",
+        45
+      ],
+      "env": [
+        1,
+        "y"
+      ],
+      "current": [
+        [
+          "sym",
+          55
+        ],
+        [
+          "sym",
+          4010033338316264258
+        ],
+        [
+          "sym",
+          45
+        ]
+      ],
+      "chosen": null
+    }
+  ],
+  "rows": [
+    {
+      "epoch": 1,
+      "source": 0,
+      "row_id": 22,
+      "address": [
+        "sym",
+        22
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 9,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 4,
+      "row_id": 26,
+      "address": [
+        "sym",
+        26
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 15,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 1,
+      "row_id": 38,
+      "address": [
+        "sym",
+        38
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 26,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 5,
+      "row_id": 46,
+      "address": [
+        "sym",
+        46
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 13,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 2,
+      "row_id": 56,
+      "address": [
+        "sym",
+        56
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 27,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 6,
+      "row_id": 56,
+      "address": [
+        "sym",
+        56
+      ],
+      "open": [],
+      "forward": [],
+      "episode": false,
+      "departure": 14,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 3,
+      "row_id": 3053295129889445700,
+      "address": [
+        "ltm",
+        "address-v1",
+        3053295129889445700
+      ],
+      "open": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "forward": [
+        [
+          0,
+          60
+        ]
+      ],
+      "episode": true,
+      "departure": -1,
+      "query_open": []
+    },
+    {
+      "epoch": 1,
+      "source": 7,
+      "row_id": -8456239836792304434,
+      "address": [
+        "ltm",
+        "address-v1",
+        -8456239836792304434
+      ],
+      "open": [
+        [
+          "referent",
+          0
+        ]
+      ],
+      "forward": [
+        [
+          0,
+          60
+        ]
+      ],
+      "episode": true,
+      "departure": -1,
+      "query_open": []
+    }
+  ],
+  "grammar_choices": [
+    {
+      "row": 0,
+      "word": 0,
+      "operation": "lower_unary",
+      "action": 23,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": "lower_unary",
+      "action": 23,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "transpose",
+      "action": 17,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "transpose",
+      "action": 17,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "transpose",
+      "action": 17,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "surface",
+      "action": 16,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          15
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          32,
+          12
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 148,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -19
+        ]
+      ],
+      "left": [],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": "lower_unary",
+      "action": 133,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": "lower_unary",
+      "action": 133,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "bind",
+      "action": 239,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "bind",
+      "action": 239,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          12
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "verb",
+      "action": 53,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "verb",
+      "action": 53,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          29
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          29
+        ],
+        [
+          0,
+          2460536198732137298
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "verb",
+      "action": 53,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          30
+        ],
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          8,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          29
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          29
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "x"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          4,
+          -1
+        ],
+        [
+          32,
+          28
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 320,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -51
+        ]
+      ],
+      "left": [],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 1,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 1,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 3,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 3,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          32
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          32
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "verb",
+      "action": 53,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          32
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "verb",
+      "action": 53,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          32
+        ],
+        [
+          0,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "plus"
+      ],
+      "right": [
+        "one"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "lift",
+      "action": 50,
+      "forced_departure": false,
+      "scope": [
+        [
+          8,
+          31
+        ],
+        [
+          0,
+          21
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "plus"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 5,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 7,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 8,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "three"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "three"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 5,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 7,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        " "
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          13
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        " "
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 8,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        "four"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "four",
+        "x"
+      ],
+      "right": [
+        "."
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          48
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "left": [],
+      "right": [
+        "four"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 9,
+      "operation": null,
+      "action": 322,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": []
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 9,
+      "operation": "bind",
+      "action": 240,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          2181798911819191731
+        ],
+        [
+          0,
+          16
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          4,
+          -1
+        ]
+      ],
+      "left": [
+        "."
+      ],
+      "right": [
+        "four",
+        "x"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": "bind",
+      "action": 141,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          60
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": "bind",
+      "action": 141,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          60
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 0,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 2,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "bind",
+      "action": 217,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          28
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": "bind",
+      "action": 217,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          28
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 4,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -7818285214150444318
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          -7818285214150444318
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "?"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -7818285214150444318
+        ],
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "?"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -7818285214150444318
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -7818285214150444318
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 129,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": "ask",
+      "action": 129,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 1,
+      "word": 6,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": "bind",
+      "action": 141,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          60
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 0,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 2,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "is"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": "bind",
+      "action": 217,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          28
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 4,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "transpose",
+      "action": 107,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "y"
+      ],
+      "right": [
+        "?"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          61
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "?"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "surface",
+      "action": 98,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          14
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "is"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "equal",
+      "action": 2,
+      "forced_departure": false,
+      "scope": [
+        [
+          0,
+          -8103427264903310700
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "left": [
+        "what"
+      ],
+      "right": [
+        "y"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": "ask",
+      "action": 129,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    },
+    {
+      "row": 0,
+      "word": 6,
+      "operation": null,
+      "action": 274,
+      "forced_departure": false,
+      "scope": [
+        [
+          21,
+          -50
+        ]
+      ],
+      "left": [],
+      "right": [
+        "what"
+      ]
+    }
+  ]
+}

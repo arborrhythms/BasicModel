@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

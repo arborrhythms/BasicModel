@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

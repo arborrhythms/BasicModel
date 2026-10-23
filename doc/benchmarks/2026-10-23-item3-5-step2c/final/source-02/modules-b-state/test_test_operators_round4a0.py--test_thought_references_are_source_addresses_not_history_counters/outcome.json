@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_thought_references_are_source_addresses_not_history_counters",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
