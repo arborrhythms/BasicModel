@@ -227,6 +227,31 @@ not change, members do (Orders §7). An individual is a temporal object
 with a trajectory (Orders §4); after death the trajectory is complete and
 the concept persists as that completed class.
 
+**MTM is the identity relation over percept parts (Alec, 2026-10-23).**
+"Since MTM is basically stitching together identities from other places,
+is it possible that it is just the percepts that correspond to the
+concepts of STM?" Yes. A token's content is occurrences, each a located
+percept part (address, `.where`, `.when`); bind stitches a new mention's
+location to earlier ones, which is spatiotemporal continuity, the object
+file. The meanings stay in the concept parts of STM's chunks and LTM0's
+rows; MTM holds no meaning of its own. The current value is a read over
+the stitched chain, the latest event's idea joined with the description
+mentions after it, so the stored `value` of §35 is a cache of that read,
+kept for working speed. This is why MTM never writes into a concept. The
+chain outlives the eight chunks because its occurrences are LTM0 entries;
+expiry bounds the stitching, and promotion makes a stitched chain a
+concept, the class of its occurrences.
+Alec: "Or does it need its own concepts?" No. The cached value is the
+identity's *state*, the latest event's idea joined with later
+descriptions, a working vector that changes with every verb; the
+individual's *concept* is its character, the fold over all its
+occurrences, minted at promotion as an order-1 class with a row in the
+index. MTM holds state, kind, events and stitched percepts, and no
+entry in the index or on the priming surface; before promotion there
+is continuity only, and an expired unpromoted chain is gone
+(re-identification is future work). The continuum before the
+designation, in Dharmakīrti's terms.
+
 **Lifetime.** `values` and `names` serialize with the pool in
 `ConceptualSpace`'s checkpoint extras (the resolver extra is version-only
 today); document and stream isolation follow the frames; reclamation of

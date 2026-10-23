@@ -1799,7 +1799,9 @@ parts of every entry (Alec, 2026-10-23): the percept part, located by
 its `.where` and `.when`, is episodic, and the concept part is semantic;
 the concept index with LTM1's edges is the semantic store proper, with
 promotion by recurrence as consolidation. Every mental event has both
-parts, which is why a thought and a perception share one form. In Dharmakīrti's terms, an LTM0 idea is the
+parts, which is why a thought and a perception share one form. Identity is the
+stitching of percept parts: MTM threads located occurrences together
+and holds no concept of its own (Alec, 2026-10-23). In Dharmakīrti's terms, an LTM0 idea is the
 unique particular, grasped directly and ultimately real; a concept is the
 universal, constructed by exclusion and conventionally real; an identity
 is a continuum of moments whose unity is imputed; binding is the
