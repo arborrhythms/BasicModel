@@ -17,21 +17,18 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 line 2's identity threading is ready for Alec's
-mediated review on frozen `65ab7fbe9`: all scoped groups pass, 1,627
-passed and twelve existing skips, zero failures. Both original-snapshot
-decomposition arms and the unchanged pending-premise certificates pass.
-The [review hand-off](doc/benchmarks/2026-10-23-identity-threading/final/source-13/review-handoff.md)
-and [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md) retain
-every failed run and exact port. No direct review is requested for this
-source. Publication remains pending; published storage-only 2b is still
-BasicModel `39272e7a6`, WikiOracle `ade0399`.
+**Current:** Item 3.5 line 2's identity threading is reviewed LAND through
+Alec at `65ab7fbe9` (identity spec §34): 1,627 scoped passes and twelve
+existing skips, no failures. The [receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)
+retains all evidence and the declared legacy alias bypass. Publication of
+main and the WikiOracle bump are authorized without further gates.
 
-**Next is 2c** after identity lands, carrying the two R10 arrival notes,
-then step 2's one full sweep. The latest §72 decision moves the
-layout-and-removal spec and shared eight STM chunks to item 3.0. This
-line retains derivation, its readers, close-time minting and three-slot rows.
-All work stays on main. Item 3.0 has not been reached.
+**Next is 2c** on today's storage: recurrence across three documents,
+sixteen-close/document-end MTM expiry, promotion at three sentences,
+the definitions cache, the standalone-composite fix, and the two arrival
+and two event-history notes. Review through Alec precedes publication;
+step 2's one full sweep follows. Layout/removal and shared eight STM
+chunks stay in item 3.0. All work stays on main. Item 3.0 is not reached.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -807,16 +804,10 @@ not by a passing identity lesson.
      *Sequence decided 2026-10-22 (Alec; [step-2 spec §36](doc/plans/2026-10-21-step2-one-ltm.md#36-decided-alec-2026-10-22-identity-first-the-3-5-sequence)):*
      no sentence derivation in LTM (§30), MTM stores working content
      (§35), identity first. Storage-only **2b** is Done at `39272e7a6`;
-     next **the identity line** (Claude specs it
-     first): MTM values, a sentence as an occurrence of its subject's
-     identity, substitution and role evidence through identities, the
-     subject resolved at determination; then **derivation removal**;
-     then 2c and step 2's one sweep. *Identity line specified
-     2026-10-23:* [identity threading](doc/plans/2026-10-23-identity-threading.md)
-     (bind as a compose-grammar operator listed per accessible location;
-     VP replaces, mention joins; readings and role evidence in MTM). Implementation is frozen at `65ab7fbe9`,
-     with all scoped gates passed; [Alec-mediated review](doc/benchmarks/2026-10-23-identity-threading/final/source-13/review-handoff.md)
-     and publication are pending. *Layout
+     **identity threading** is Done at reviewed source `65ab7fbe9`
+     ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md));
+     next **2c** on today's storage, then step 2's one full sweep.
+     *Layout
      decided 2026-10-23 ([step-2 §§71–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row)):*
      LTM0 one slot (ideas), LTM1 two tagged references that chain, no
      sentence row; **moved to item 3** (Alec, 2026-10-23) with STM's eight
@@ -1535,6 +1526,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 step 2 identity threading:** reviewed landing source `65ab7fbe9`, Claude LAND through Alec; 1,627 scoped passes and twelve existing skips ([receipt](doc/benchmarks/2026-10-23-identity-threading/README.md)).
 
 - **Item 3.5 step 2b — storage-only round:** landing `39272e7a6` (WikiOracle `ade0399`), reviewed source `6a36b7cee`; 1,144 scoped passes, nine existing skips, Claude LAND, every failure and port retained ([receipt](doc/benchmarks/2026-10-22-item3-5-step2b/final/decoder-domain/README.md)). Identity, derivation removal and 2c remain open.
 

@@ -1,10 +1,10 @@
 # Identity threading — 2026-10-23
 
-**Ready for Alec's mediated review.** Frozen source-13 `65ab7fbe9` passes
+**Reviewed LAND through Alec (identity spec §34).** Frozen source-13 `65ab7fbe9` passes
 all requested scoped groups: **1,627 passed, twelve existing skips, zero
 failures**; all 1,639 selected cases complete across 132 files.
 [Review hand-off](final/source-13/review-handoff.md). No direct Claude
-review is requested for this source, and publication remains pending.
+review was requested for this source; Alec authorized publication on both mains.
 Every earlier review, failed source and capture is retained; none is
 promoted. This is mechanism evidence, not a learning claim. Item 3.0 has
 not been reached.
@@ -410,7 +410,7 @@ journal and identity threading after the repair. The eight pre-repair
 failures keep all their assertions. No development result substitutes for
 the source-13 gates.
 
-## Completed source-13 gates; waiting for mediated review
+## Completed source-13 gates; mediated LAND
 
 Frozen source: `65ab7fbe9d5c67271b0bea7e4853c8ba2b690363`.
 The [summary](final/source-13/gate-summary.json) confirms all 1,639
@@ -442,8 +442,11 @@ Nine skips require absent phase artifacts; three are opt-in slow
 MPS/Inductor cases. Their exact reasons are in the summary. None is a
 pass or learning evidence, and no GPU execution is claimed for them.
 
-The [hand-off](final/source-13/review-handoff.md) is ready for Alec to pass
-to Claude. No direct review of source-13 has been requested; no LAND
-verdict or publication is claimed. BasicModel main remains local pending
-review, with no WikiOracle bump. 2c follows the eventual identity landing;
-item 3.0 is not reached.
+Claude reviewed the [hand-off](final/source-13/review-handoff.md) through
+Alec and returned **LAND `65ab7fbe9`** in identity spec §34. Alec authorized
+publication of main and the WikiOracle bump. No further gates run.
+The identity branch in `ClauseJournal.finish_clause` also skips the legacy
+`pending_order` alias resolution through `reference_orders`, which ends
+with close-time minting in item 3.
+Next is 2c on today's storage, including both arrival and event-history
+notes; item 3.0 is not reached.

@@ -1,14 +1,14 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading ready for mediated review, 2026-10-23:** frozen
+**Identity threading reviewed LAND through Alec, 2026-10-23:** frozen
 `65ab7fbe9` passes all scoped groups: 1,627 passed, twelve existing skips,
 zero failures; all 1,639 selected cases complete. Both decomposition arms,
 unchanged pending-premise orders, G1–G3, c/e and the multi-stream driver
 pass. The [receipt](../2026-10-23-identity-threading/README.md) retains every
 failed source, review and port. The [hand-off](../2026-10-23-identity-threading/final/source-13/review-handoff.md)
-is for Alec to mediate with Claude; no direct source-13 review is
-requested. Publication and the WikiOracle bump remain pending. No full
-sweep or learning claim. Layout/STM changes stay item 3.0; 2c follows
+was reviewed by Claude in identity spec §34. Alec authorized publication
+and the WikiOracle bump without further gates. The receipt records the
+legacy `pending_order` bypass. No full sweep or learning claim. Layout/STM changes stay item 3.0; 2c follows
 identity. Item 3.0 is not reached.
 
 **Storage-only 2b published, 2026-10-22:** BasicModel main `39272e7a6`,
