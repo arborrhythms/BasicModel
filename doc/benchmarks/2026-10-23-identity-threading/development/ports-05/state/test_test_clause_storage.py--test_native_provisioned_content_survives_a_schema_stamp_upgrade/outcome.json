@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_native_provisioned_content_survives_a_schema_stamp_upgrade",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

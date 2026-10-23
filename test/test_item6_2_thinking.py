@@ -354,6 +354,11 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
         close(model,fields,sentence=0,ready=(0,))
     assert store.row(0)['kind']=='question'
     assert len(model._last_closing_thoughts)==1
+    # This boundary fixture bypasses compose/ReferenceClose. Supply the
+    # kept anonymous token explicitly; a bare equality is never a binder.
+    pool = model.conceptualSpace.mtm
+    pool.open(store.occurrence_of(0), kind=None, when=0,
+              value=source.roles[0], reading=a[1])
     # A new occurrence can fill the earlier null. Its source address remains
     # distinct from the question's address and from the new inference.
     supplied=with_slots(replace(source,role_refs=(b,None,None)),(),pair=(1.,0.))
@@ -363,6 +368,8 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
         (('referent',0),),pair=(1.,0.))
     index=store.append_meaning(copular,kind='observation',evidence=(1.,0.),
         stream=0,sentence_index=1)
+    pool.bind(store.occurrence_of(0), store.occurrence_of(index),
+              kind=b[1], when=1, value=supplied.roles[0], reading=b[1])
     address=store.occurrence_of(0)
     assert store.occurrence_of(0)==address
     assert not open_slots(store.meaning_of(0))

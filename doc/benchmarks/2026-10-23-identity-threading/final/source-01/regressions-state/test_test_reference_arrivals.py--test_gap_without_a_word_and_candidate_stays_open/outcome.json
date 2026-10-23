@@ -1,0 +1,100 @@
+{
+  "node": "test/test_reference_arrivals.py::test_gap_without_a_word_and_candidate_stays_open",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "pronoun",
+            "content": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": null,
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "leaves": [
+              0
+            ],
+            "anonymous": false,
+            "own_object": false
+          }
+        ],
+        "individuals": {},
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null
+            ],
+            "features": [],
+            "logits": [
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "greedy": 0,
+            "selected": 0,
+            "next": 0,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": 1.0
+      }
+    }
+  ]
+}

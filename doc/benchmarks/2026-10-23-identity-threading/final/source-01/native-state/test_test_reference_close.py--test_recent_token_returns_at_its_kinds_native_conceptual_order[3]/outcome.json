@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_close.py::test_recent_token_returns_at_its_kinds_native_conceptual_order[3]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -77,7 +77,7 @@ def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
     assert observation.grad[:, 6].abs().sum() > 0
 
 
-def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
+def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     resolver, store, a = fixture()
     frame, address, _ = native_close(resolver,a[0],a[6],document='one',sentence=0)
     cid = resolver.last_audit[0]['reference']
@@ -90,7 +90,7 @@ def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
     with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
     candidates = resolver.individuals(resolver.accessible((frame,)))
     torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
-    torch.testing.assert_close(candidates[cid]['content'],a[0]+a[1],rtol=0,atol=0)
+    torch.testing.assert_close(candidates[cid]['content'],a[0],rtol=0,atol=0)
     store.parts.remove_symbol(cid)
     assert witness_count(owner,cid) == 0
 

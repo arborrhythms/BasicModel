@@ -514,3 +514,100 @@ the regression and native eight-file sets, all reference files, relevant
 changed-module files and both original decomposition arms. Development
 passes are not promoted to the freeze; every failed source capture stays
 in this receipt. Publication still requires Claude's review.
+
+## 8. Codex: first frozen checks and their ports — 2026-10-23
+
+Frozen `9623fa959` passes the regression eight-file set (85 cases) and both
+pending-premise orders unchanged. The native eight-file set has two
+failures; its complete results and captures remain under
+`final/source-01`. Nothing from this hash substitutes for the next
+frozen source's gates.
+
+1. `test_native_row_is_the_only_content_and_witnesses_are_live_queries`
+   edits a native bank row after opening its token and expects the old
+   bank/history union. §1.1 and §1.4 instead retain the token's current
+   value. Rename the test to that contract and change its one candidate
+   content assertion from `a[0]+a[1]` to `a[0]`. Its changed-bank check,
+   live witness counts and no-chart assertions remain verbatim.
+2. The c/e closing fixture records every leaf at order zero and has no
+   noun site. Its former implicit formation variant supplied an open x;
+   collapsing those variants removes that accident. Apply the already
+   authorized §13 mechanism-fixture port: set x's reading through
+   `reference_orders` to one before presentation, exactly as the forced
+   pending-premise certificate does. No rule, forced choice, keep law,
+   assertion or learning certificate changes.
+
+Before either port, `c-e-probe-01` reproduced the failure from its retained
+initial RNG; every captured initial conceptual-owner parameter is equal.
+Both trials and costs are retained. The declarative row ties at R
+0.2335897386 and keeps greedy; the question keeps greedy at R 0.1626923084
+versus 0.1726922989. A is zero throughout. Both declarative readings have
+zero reference sites, so this is a missing fixture order, not a wrong
+binding or a keep-law dispute. The original private presentation generator
+was not captured for this c/e run; the probe claims equality of the
+captured numerical initialization, not identity of source addresses.
+
+The original decomposition snapshots gain a measurement-only catalogue
+adapter: restore all surviving parameter rows by grammar rule/category
+identity, preserving the prior retired-predictor mapping. Only the added
+bind action/role rows keep their original-seed initialization. The replay
+ledger records every mapped row, input hash and original seed; no parameter
+snapshot, test assertion or production checkpoint loader is rewritten.
+
+## 9. Codex: nested closing query repair — 2026-10-23
+
+`ports-01` and its retained-initialization replay `c-e-probe-02` reach the
+c/e fixture's mint assertion after the x reading port. The query answers
+the unresolved inner x from its own enclosing equality's subject. This is
+a mechanism defect, not a failed mint assertion to port. `ports-02`, with
+ancestor exclusion in place, instead chooses an unrelated retained row:
+masking the only open role leaves an entirely unconstrained query. Its
+captured thought readings, both trial costs and kept choice are retained.
+
+The closing now carries enclosing occurrences in the existing
+`_query_exclude` list, including the actual occurrence beside a returned
+Part handle. The write boundary carries that occurrence through its root
+copy. `best_match` returns no witness when no constrained role remains;
+an arbitrary held or primed row cannot answer a bare free name. Bind's
+location menu remains the operation for selecting an antecedent. A new
+executor regression supplies a held row and verifies that an entirely
+open name obtains no witness or evidence from it.
+
+The nested query also inherits the enclosing close's source evidence and
+live mode. Its leaf's identification poles are not independent authority
+to mint an answer to a question. The c/e fixture supplies the order-one
+reading for `what` as well as `x`, under the same §13 mechanism-fixture
+authorization. All c/e assertions, query/conclude preferences, live
+departures and ForcedGrammar remain unchanged. No learning certificate
+gets fixture orders. These repairs preserve the derivation layout and
+readers; they correct the closing/query boundary exposed by moving noun
+binding into composition. No decision in §1 is reversed.
+
+`ports-03` passes the mint and open-question semantics and reaches the
+retained-row kind assertion: the now-explicit pending child is stored as
+`unverified`. `ClauseRows.write_clause` now assigns `question` to an open
+child as it already does for an open root; this adds no assertion authority
+or evidence. Admission preflight and the write use the same kind. The
+original row remains open at its occurrence, with no rewrite or change to
+the certificate's kind assertion.
+
+`ports-04` passes c/e and 105 further cases, then the newly included
+`test_item6_2_thinking.py` reaches four old boundary-fixture cases that
+expect a bare equality append to bind a prior name. That expectation was
+retired by the accepted §10.4 core before this line, and no live resolver
+is exercised in that fixture. Supply its anonymous token and selected
+refinement explicitly in MTM, as the kept close would do. The four cases'
+existing assertions, including the native antecedent, open raw row,
+question kind, witness address and successful working read, stay verbatim.
+This is a fixture rewrite under §39, not a return of reader-side binding.
+
+`ports-05` passes all 60 selected thinking/storage cases. Source
+`2331c11b0` then passes the 85 regression cases; its native group is
+interrupted for artifact packaging, not a test result. One full capture
+is 167 MiB, beyond the publication host's per-file limit. Captures above
+2 MiB are compressed losslessly, with original and compressed SHA-256
+hashes in `packed-captures.json`; subsequent captures use the same format.
+The unpublished freeze is retained in `source-02/withdrawn-freeze.bundle`
+and replaced before publication. Production and tests are unchanged by
+this packaging correction. `source-03` runs all scoped groups on its
+replacement hash; nothing is promoted from either earlier source.

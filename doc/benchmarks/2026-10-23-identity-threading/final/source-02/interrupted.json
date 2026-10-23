@@ -1,0 +1,6 @@
+{
+  "source": "2331c11b02a61bf26a1d71aed724b16d9f0ff92a",
+  "reason": "Lossless capture packaging before publication: one JSON exceeded the host per-file limit.",
+  "interruption": "Regression group completed; native group interrupted. No group promoted to source-03.",
+  "production_changed": false
+}

@@ -285,6 +285,15 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     from math_chain_ordinary import ordinary_model, train_documents
     from math_chain_corpus import ChainDocument
     model = ordinary_model(tmp_path)
+    # This mechanism fixture supplies the noun reading, as the pending-premise
+    # certificate does. Formation choices do not assign a word's order.
+    from Spaces import _concept_alloc_of
+    owner = model._concept_owner()
+    for word in ('x', 'what'):
+        if not owner.word_concepts(word):
+            owner.interpret.lookup_word(tuple(map(ord, word)), (), form=word)
+        for identity in owner.word_concepts(word):
+            _concept_alloc_of(owner).reference_orders[identity] = 1
     chooser = model._selected_thought_chooser(None)
     logits = chooser.thought_logits
     def query_then_conclude(active, requests):

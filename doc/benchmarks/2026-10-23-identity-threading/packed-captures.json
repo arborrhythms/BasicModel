@@ -1,0 +1,58 @@
+[
+  {
+    "original": "development/c-e-probe-02/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json",
+    "compressed": "development/c-e-probe-02/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json.gz",
+    "bytes": 2171093,
+    "gzip_bytes": 32974,
+    "sha256": "d4cc43e0d4137618042ae2ff0eb074d4ac95578cf359a78f89e0937300980d19",
+    "gzip_sha256": "f5bf31a99ee96db00e144e9ef3488a78da82cc0b0267b61262c9586b336c2dea"
+  },
+  {
+    "original": "development/ports-02/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json",
+    "compressed": "development/ports-02/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json.gz",
+    "bytes": 2319111,
+    "gzip_bytes": 34652,
+    "sha256": "dff86b16e7a31df9b573ef76d3b890fbc8d080dcfa440a3fc3d3eb84e56237df",
+    "gzip_sha256": "a2154f300549b20380341e61784007b7300e388ac520447bf715e772055e73fe"
+  },
+  {
+    "original": "development/ports-03/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json",
+    "compressed": "development/ports-03/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json.gz",
+    "bytes": 2244373,
+    "gzip_bytes": 30598,
+    "sha256": "50e2ecd27e40edee2f7d10c0c1bac8c09c7622ae772cdeda927ba8f0aa0c397f",
+    "gzip_sha256": "af4b3329881084a78c0ed0faa8c91af4b1a5d8ea1d9f2d2289f82ed0bdd02826"
+  },
+  {
+    "original": "development/ports-04/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json",
+    "compressed": "development/ports-04/state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/outcome.json.gz",
+    "bytes": 2408318,
+    "gzip_bytes": 32013,
+    "sha256": "43bd3f1699e557afafad7da61b3dc5768666ab7522dc075f8e41b6aa84cc0dda",
+    "gzip_sha256": "d526cbc3e17ff1990f3c1615b6bee834b60f5cd7754ebeb9108333847f8f9cd1"
+  },
+  {
+    "original": "final/source-01/native-state/test_test_math_chain_section14.py--test_ordinary_initial_binding_distribution_includes_every_retained_candidate/outcome.json",
+    "compressed": "final/source-01/native-state/test_test_math_chain_section14.py--test_ordinary_initial_binding_distribution_includes_every_retained_candidate/outcome.json.gz",
+    "bytes": 174753902,
+    "gzip_bytes": 1524340,
+    "sha256": "ddf08f6ee97b07688408404328964ac8afbbb4a3a4ee40cf2e23b8ad25433cfa",
+    "gzip_sha256": "99d8bccd68e98a01294e7c5f19717c4ea4b867a5548478b5d8418ccccc254f6b"
+  },
+  {
+    "original": "final/source-01/native-state/test_test_operators_final_b.py--test_both_training_trials_share_bootstrap_snapshot/outcome.json",
+    "compressed": "final/source-01/native-state/test_test_operators_final_b.py--test_both_training_trials_share_bootstrap_snapshot/outcome.json.gz",
+    "bytes": 10887127,
+    "gzip_bytes": 83444,
+    "sha256": "f929e995869813a23318f76a815af8e94af3b9e2d9b1f663bf14326c3b6d8128",
+    "gzip_sha256": "95cf752436b5b6d64acd156b56db73de9c9a91a899a775e13425233610dd2578"
+  },
+  {
+    "original": "final/source-01/native-state/test_test_operators_final_b.py--test_forced_not_and_or_descend_and_snapshot_certificate/outcome.json",
+    "compressed": "final/source-01/native-state/test_test_operators_final_b.py--test_forced_not_and_or_descend_and_snapshot_certificate/outcome.json.gz",
+    "bytes": 5458661,
+    "gzip_bytes": 44522,
+    "sha256": "1009ccbf3701c61f5272b49f45498fadaad0ed58c85a3e0bb162f00ea46a324f",
+    "gzip_sha256": "3e30ecef49ce43885fd96d8826fd5ed4c2af87a4c95369a4d13cc7acb71694a1"
+  }
+]

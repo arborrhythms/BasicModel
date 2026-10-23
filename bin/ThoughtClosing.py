@@ -33,6 +33,26 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         for child in clause.children:
             nested = closing_question(child.meaning, child, store=store, written_rows=written_rows)
             if nested is not None:
+                # An enclosing assertion contains the unresolved operand; it
+                # is not independent evidence for that operand's referent.
+                # Keep both current handles when a relation also has an
+                # occurrence beside its Part edge.
+                data = bindings(nested)
+                excluded = list(data.get('_query_exclude', ()))
+                if committed is not None:
+                    excluded.append(store.occurrence_of(index))
+                occurrence = (None if written_rows is None else
+                    written_rows.get(('occurrence', id(clause))))
+                if occurrence is not None:
+                    excluded.append(occurrence)
+                # The inner operand does not carry independent source
+                # authority. Its enclosing close supplies that authority and
+                # the live question mode, just as for a direct root hole.
+                source = parsed if parsed is not None else clause.meaning
+                data.update(_query_exclude=tuple(dict.fromkeys(excluded)),
+                            _source_evidence=tuple(clause.evidence))
+                nested = with_slots(replace(nested, mode=source.mode, bindings=data),
+                    open_slots(nested), pair=clause.evidence)
                 return nested
     source = parsed if parsed is not None else meaning
     if committed is not None:

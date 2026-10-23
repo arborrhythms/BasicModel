@@ -451,6 +451,10 @@ class ClauseRows:
                 and any(value.refs[role] in (-1, 0) for role in (0, 2)))
         def incomplete(value):
             return pending(value) or any(incomplete(child) for child in value.children)
+        def row_kind(value):
+            if pending(value):
+                return 'question'
+            return kind if value is clause or value in clause.companions else 'unverified'
         def retained_pair(value):
             term = closing._terms.get(id(value))
             return (value.relation is not None and term is not None
@@ -477,7 +481,7 @@ class ClauseRows:
                      ('embedded', context[0], context[1]), sentence_index=position,
                      content_key=native_content_key(value.meaning)))
             previous = self._address_for_write(value.meaning,
-                kind=kind if asserted else 'unverified', **kwargs)[-1]
+                kind=row_kind(value), **kwargs)[-1]
             required += previous is None
             addresses[id(value)] = kwargs
         if len(self) + required > self.capacity:
@@ -544,7 +548,7 @@ class ClauseRows:
                 sentence_kind=stored.sentence_kind if retain_open else 'idea',
                 bindings=retained), open_slots(stored), pair=pair)
             before_count = len(self)
-            row = self.append_meaning(stored, kind=kind if asserted else 'unverified',
+            row = self.append_meaning(stored, kind=row_kind(value),
                 trust=0. if trust is None or not asserted else float(trust), stream=stream,
                 surprise=surprise if asserted else -1., evidence=pair, order=value.order,
                 **addresses[id(value)])

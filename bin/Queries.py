@@ -956,6 +956,12 @@ class ThoughtLTMCapability:
         mask = pattern.role_mask.clone()
         for _kind, role in open_slots(pattern):
             mask[role] = False
+        if not bool(mask.any()):
+            # A lone unfilled name supplies no retained role to match. A
+            # primed row is not evidence for an unconstrained wildcard;
+            # selecting an antecedent belongs to bind's location menu.
+            return dict(value=(), frames=(), result_kind='set', support_true=0.,
+                support_false=0., witnesses=(), records_scanned=0, incomplete=())
         clean = replace(pattern, bindings={key: value for key, value in data.items()
                                            if not key.startswith('_')})
         found = self._cued(clean, max_records=max_records, work=work, references=references,

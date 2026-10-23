@@ -1,0 +1,6 @@
+{
+  "node": "test/test_step2b_storage.py::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

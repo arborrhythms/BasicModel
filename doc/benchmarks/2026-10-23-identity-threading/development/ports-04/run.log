@@ -1,0 +1,24 @@
+........................................................................ [ 51%]
+..................................F
+=================================== FAILURES ===================================
+_________ test_open_closing_and_later_binding_are_reference_driven[?] __________
+test/test_item6_2_thinking.py:368: in test_open_closing_and_later_binding_are_reference_driven
+    assert not open_slots(store.meaning_of(0))
+E   AssertionError: assert not (('referent', 0),)
+E    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....s', (('referent', 0),)), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', ())), scope=(), sentence_kind='idea'))
+E    +    where ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....s', (('referent', 0),)), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', ())), scope=(), sentence_kind='idea') = meaning_of(0)
+E    +      where meaning_of = LTM0().meaning_of
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 106 passed, 2 warnings in 16.97s

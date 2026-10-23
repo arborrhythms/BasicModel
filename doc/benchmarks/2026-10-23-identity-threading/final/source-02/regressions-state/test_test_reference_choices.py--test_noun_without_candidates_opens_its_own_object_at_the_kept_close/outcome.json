@@ -1,0 +1,139 @@
+{
+  "node": "test/test_reference_choices.py::test_noun_without_candidates_opens_its_own_object_at_the_kept_close",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=2, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "leaves": [
+              1
+            ],
+            "anonymous": false,
+            "own_object": true
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null
+            ],
+            "features": [],
+            "logits": [
+              0.0
+            ],
+            "probabilities": [
+              1.0
+            ],
+            "greedy": 0,
+            "selected": 0,
+            "next": 0,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": 1.0
+      }
+    }
+  ]
+}

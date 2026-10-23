@@ -174,7 +174,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
         evidence=clause.evidence, expectation=expectation, written_rows=written_rows)
     if written_rows is not None:
         written_rows[id(source_clause)] = result
-        for name in ('symbol', 'symbols', 'activations'):
+        for name in ('symbol', 'symbols', 'activations', 'occurrence'):
             key = (name, id(clause))
             if key in written_rows:
                 written_rows[name, id(source_clause)] = written_rows[key]

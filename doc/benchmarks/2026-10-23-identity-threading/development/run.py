@@ -28,7 +28,7 @@ for name in untracked:
     shutil.copy2(ROOT/name, copied)
 env = dict(os.environ, BASICMODEL_DEVICE='cpu', RUN_SLOW='1',
     DEVELOPER_DIR='/Library/Developer/CommandLineTools',
-    CONTRACT_CAPTURE=str(target/'state'), PYTEST_PLUGINS='identity_capture,arrival_capture,arrival_keep_probe',
+    CONTRACT_CAPTURE=str(target/'state'), PYTEST_PLUGINS='identity_capture,arrival_capture,identity_keep_probe',
     ARRIVAL_CAPTURE=str(target/'arrival-state'), ARRIVAL_KEEP_DIR=str(target/'arrival-keep'),
     ARRIVAL_KEEP_SOURCE=source,
     PYTHONPATH=os.pathsep.join(map(str, (HERE, BASE/'2026-10-21-item3-5-reference-reconstruction',

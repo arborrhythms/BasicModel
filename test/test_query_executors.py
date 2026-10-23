@@ -85,6 +85,21 @@ def test_removed_quantize_raises_without_symbol_snapping():
     assert cs._concept_allocator.placement==before
 
 
+def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
+    from ThoughtReferences import question
+    cs = _cs()
+    store = LTM0(8)
+    retained = ConceptualMeaning.from_description(torch.ones(8))
+    row = store.append_meaning(retained, kind='observation', evidence=(1., 0.))
+    memory = SimpleNamespace(retrieved_frames=lambda **kwargs: (store.row(row),))
+    context = _context(cs, store=store, memory=memory)
+    pending = question(retained, (('referent', 0),))
+    result = _signature('query', 'argin1').invoke(context, pending)
+    assert result['frames'] == () and result['witnesses'] == ()
+    assert result['support_true'] == result['support_false'] == 0.
+    assert len(store) == 1
+
+
 def test_ask_preserves_the_complete_open_question_and_schedules_same_controller():
     from ThoughtReferences import question as opened
     question=opened(_meaning(),(('evidence',-1),))

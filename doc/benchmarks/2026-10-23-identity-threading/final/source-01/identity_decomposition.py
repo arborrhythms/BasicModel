@@ -1,7 +1,7 @@
 # Measurement protocol inherited from the review-three bind gate.
 # Restores its original snapshots/seeds with the recorded retired-predictor
 # parameter-name mapping; writes metrics only in this source receipt.
-"""Pair the changed bind catalogue across gains at the original measurement seeds."""
+"""Restore surviving parameters by grammar identity at the original measurement seeds."""
 import hashlib
 import json
 import os
@@ -77,15 +77,46 @@ def constructor(model, *args, **kwargs):
     assert params.keys() == mapped.keys(), dict(missing=sorted(params.keys()-mapped.keys()),
                                                retired=sorted(mapped.keys()-params.keys()))
     parameters = dict(model.named_parameters())
+    # The compose bind face adds one action and two grammatical roles. Keep
+    # every original action/category row by its name; only the new rows retain
+    # their initialization from this original-seed construction.
+    from Language import Grammar, TheGrammar
+    old = Grammar()
+    old.load_from_grammar_file(str(receipt/'original-complete.grammar'))
+    categories = list(TheGrammar.categories)
+    rule_keys = list(TheGrammar.rule_table.values())
+    assert len(set(rule_keys)) == len(rule_keys)
+    rows = {
+        'symbolSpace.subspace.category_embedding.weight': [categories.index(name) for name in old.categories],
+        'symbolSpace.subspace.rule_predictor.2.weight': [rule_keys.index(name) for name in old.rule_table.values()],
+        'symbolSpace.subspace.rule_predictor.2.bias': [rule_keys.index(name) for name in old.rule_table.values()],
+    }
+    layer = model.symbolSpace.subspace.layers[0].operation_layer
+    insertion = 1 + layer.r_reduce + layer.r_apply - 1
+    prefix = 'symbolSpace.subspace.layers.0.operation_layer.'
+    rows[prefix+'apply_anchor'] = list(range(layer.r_apply-1))
+    for suffix in ('chooser.tool_embedding', 'chooser.what_projection.weight'):
+        rows[prefix+suffix] = list(range(insertion)) + list(range(insertion+1, insertion+7))
+    migrated = {}
     with torch.no_grad():
         for name, value in mapped.items():
-            assert parameters[name].shape == value.shape, name
-            parameters[name].copy_(value.to(parameters[name]))
-    assert all(torch.equal(value.detach().cpu(),mapped[name]) for name,value in parameters.items())
+            destination = parameters[name]
+            if destination.shape == value.shape:
+                destination.copy_(value.to(destination))
+            else:
+                indices = rows[name]
+                assert len(indices) == len(value) and destination.shape[1:] == value.shape[1:], name
+                destination.index_copy_(0, torch.tensor(indices, device=destination.device), value.to(destination))
+                migrated[name] = dict(old_shape=list(value.shape), new_shape=list(destination.shape), rows=indices)
+    assert all(torch.equal((value if name not in migrated else value[migrated[name]['rows']]).detach().cpu(),
+                           mapped[name]) for name,value in parameters.items())
     comparison = dict(original_snapshot=str(path.relative_to(root)),
         snapshot_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         original_parameters=len(baseline), retired_predictor_parameters=retired,
-        name_mapping=names, equal_to_original_surviving_parameters=True)
+        name_mapping=names, catalogue_rows=migrated, equal_to_original_surviving_parameters=True)
+    torch.save(dict(torch=torch.get_rng_state(), numpy=np.random.get_state(), python=random.getstate(),
+                    parameters={name: value.detach().cpu() for name,value in parameters.items()}),
+               receipt/f'decomposition-{arm}-{token}-{index}-initial.pt')
     params = {name:value.detach().cpu().clone() for name,value in parameters.items()}
     previous = root/'output/item3-5-bind-initial'/token/f'{index}.pt'
     if previous.exists():

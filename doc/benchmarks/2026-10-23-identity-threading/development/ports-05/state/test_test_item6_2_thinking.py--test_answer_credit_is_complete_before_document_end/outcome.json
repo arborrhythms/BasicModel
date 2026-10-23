@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,162 @@
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index 080acb550..7ecf19088 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -451,6 +451,10 @@ class ClauseRows:
+                 and any(value.refs[role] in (-1, 0) for role in (0, 2)))
+         def incomplete(value):
+             return pending(value) or any(incomplete(child) for child in value.children)
++        def row_kind(value):
++            if pending(value):
++                return 'question'
++            return kind if value is clause or value in clause.companions else 'unverified'
+         def retained_pair(value):
+             term = closing._terms.get(id(value))
+             return (value.relation is not None and term is not None
+@@ -477,7 +481,7 @@ class ClauseRows:
+                      ('embedded', context[0], context[1]), sentence_index=position,
+                      content_key=native_content_key(value.meaning)))
+             previous = self._address_for_write(value.meaning,
+-                kind=kind if asserted else 'unverified', **kwargs)[-1]
++                kind=row_kind(value), **kwargs)[-1]
+             required += previous is None
+             addresses[id(value)] = kwargs
+         if len(self) + required > self.capacity:
+@@ -544,7 +548,7 @@ class ClauseRows:
+                 sentence_kind=stored.sentence_kind if retain_open else 'idea',
+                 bindings=retained), open_slots(stored), pair=pair)
+             before_count = len(self)
+-            row = self.append_meaning(stored, kind=kind if asserted else 'unverified',
++            row = self.append_meaning(stored, kind=row_kind(value),
+                 trust=0. if trust is None or not asserted else float(trust), stream=stream,
+                 surprise=surprise if asserted else -1., evidence=pair, order=value.order,
+                 **addresses[id(value)])
+diff --git a/bin/Models.py b/bin/Models.py
+index 361545bf5..1f108c4dc 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -174,7 +174,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
+         evidence=clause.evidence, expectation=expectation, written_rows=written_rows)
+     if written_rows is not None:
+         written_rows[id(source_clause)] = result
+-        for name in ('symbol', 'symbols', 'activations'):
++        for name in ('symbol', 'symbols', 'activations', 'occurrence'):
+             key = (name, id(clause))
+             if key in written_rows:
+                 written_rows[name, id(source_clause)] = written_rows[key]
+diff --git a/bin/Queries.py b/bin/Queries.py
+index 6b94f3edc..b6b372a6d 100644
+--- a/bin/Queries.py
++++ b/bin/Queries.py
+@@ -956,6 +956,12 @@ class ThoughtLTMCapability:
+         mask = pattern.role_mask.clone()
+         for _kind, role in open_slots(pattern):
+             mask[role] = False
++        if not bool(mask.any()):
++            # A lone unfilled name supplies no retained role to match. A
++            # primed row is not evidence for an unconstrained wildcard;
++            # selecting an antecedent belongs to bind's location menu.
++            return dict(value=(), frames=(), result_kind='set', support_true=0.,
++                support_false=0., witnesses=(), records_scanned=0, incomplete=())
+         clean = replace(pattern, bindings={key: value for key, value in data.items()
+                                            if not key.startswith('_')})
+         found = self._cued(clean, max_records=max_records, work=work, references=references,
+diff --git a/bin/ThoughtClosing.py b/bin/ThoughtClosing.py
+index 6816b8a92..b30f4cb9d 100644
+--- a/bin/ThoughtClosing.py
++++ b/bin/ThoughtClosing.py
+@@ -33,6 +33,26 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None,
+         for child in clause.children:
+             nested = closing_question(child.meaning, child, store=store, written_rows=written_rows)
+             if nested is not None:
++                # An enclosing assertion contains the unresolved operand; it
++                # is not independent evidence for that operand's referent.
++                # Keep both current handles when a relation also has an
++                # occurrence beside its Part edge.
++                data = bindings(nested)
++                excluded = list(data.get('_query_exclude', ()))
++                if committed is not None:
++                    excluded.append(store.occurrence_of(index))
++                occurrence = (None if written_rows is None else
++                    written_rows.get(('occurrence', id(clause))))
++                if occurrence is not None:
++                    excluded.append(occurrence)
++                # The inner operand does not carry independent source
++                # authority. Its enclosing close supplies that authority and
++                # the live question mode, just as for a direct root hole.
++                source = parsed if parsed is not None else clause.meaning
++                data.update(_query_exclude=tuple(dict.fromkeys(excluded)),
++                            _source_evidence=tuple(clause.evidence))
++                nested = with_slots(replace(nested, mode=source.mode, bindings=data),
++                    open_slots(nested), pair=clause.evidence)
+                 return nested
+     source = parsed if parsed is not None else meaning
+     if committed is not None:
+diff --git a/test/test_identity_rows.py b/test/test_identity_rows.py
+index 857529936..be9f874b6 100644
+--- a/test/test_identity_rows.py
++++ b/test/test_identity_rows.py
+@@ -77,7 +77,7 @@ def test_individual_axes_in_the_change_residual_exclude_form_and_its_gradient():
+     assert observation.grad[:, 6].abs().sum() > 0
+ 
+ 
+-def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
++def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
+     resolver, store, a = fixture()
+     frame, address, _ = native_close(resolver,a[0],a[6],document='one',sentence=0)
+     cid = resolver.last_audit[0]['reference']
+@@ -90,7 +90,7 @@ def test_native_row_is_the_only_content_and_witnesses_are_live_queries():
+     with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
+     candidates = resolver.individuals(resolver.accessible((frame,)))
+     torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
+-    torch.testing.assert_close(candidates[cid]['content'],a[0]+a[1],rtol=0,atol=0)
++    torch.testing.assert_close(candidates[cid]['content'],a[0],rtol=0,atol=0)
+     store.parts.remove_symbol(cid)
+     assert witness_count(owner,cid) == 0
+ 
+diff --git a/test/test_math_chain_section14.py b/test/test_math_chain_section14.py
+index 052e23dc4..b48b433e5 100644
+--- a/test/test_math_chain_section14.py
++++ b/test/test_math_chain_section14.py
+@@ -285,6 +285,15 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
+     from math_chain_ordinary import ordinary_model, train_documents
+     from math_chain_corpus import ChainDocument
+     model = ordinary_model(tmp_path)
++    # This mechanism fixture supplies the noun reading, as the pending-premise
++    # certificate does. Formation choices do not assign a word's order.
++    from Spaces import _concept_alloc_of
++    owner = model._concept_owner()
++    for word in ('x', 'what'):
++        if not owner.word_concepts(word):
++            owner.interpret.lookup_word(tuple(map(ord, word)), (), form=word)
++        for identity in owner.word_concepts(word):
++            _concept_alloc_of(owner).reference_orders[identity] = 1
+     chooser = model._selected_thought_chooser(None)
+     logits = chooser.thought_logits
+     def query_then_conclude(active, requests):
+diff --git a/test/test_query_executors.py b/test/test_query_executors.py
+index 8fcd7ab42..ae89cea1f 100644
+--- a/test/test_query_executors.py
++++ b/test/test_query_executors.py
+@@ -85,6 +85,21 @@ def test_removed_quantize_raises_without_symbol_snapping():
+     assert cs._concept_allocator.placement==before
+ 
+ 
++def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
++    from ThoughtReferences import question
++    cs = _cs()
++    store = LTM0(8)
++    retained = ConceptualMeaning.from_description(torch.ones(8))
++    row = store.append_meaning(retained, kind='observation', evidence=(1., 0.))
++    memory = SimpleNamespace(retrieved_frames=lambda **kwargs: (store.row(row),))
++    context = _context(cs, store=store, memory=memory)
++    pending = question(retained, (('referent', 0),))
++    result = _signature('query', 'argin1').invoke(context, pending)
++    assert result['frames'] == () and result['witnesses'] == ()
++    assert result['support_true'] == result['support_false'] == 0.
++    assert len(store) == 1
++
++
+ def test_ask_preserves_the_complete_open_question_and_schedules_same_controller():
+     from ThoughtReferences import question as opened
+     question=opened(_meaning(),(('evidence',-1),))

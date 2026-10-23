@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+  "outcome": "failed",
+  "failure": "test/test_item6_2_thinking.py:368: in test_open_closing_and_later_binding_are_reference_driven\n    assert not open_slots(store.meaning_of(0))\nE   AssertionError: assert not (('referent', 0),)\nE    +  where (('referent', 0),) = open_slots(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....s', (('referent', 0),)), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', ())), scope=(), sentence_kind='idea'))\nE    +    where ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(('_evidence_pair', (0.0, 0....s', (('referent', 0),)), ('_source_evidence', (0.0, 0.0)), ('_thought_witnesses', ())), scope=(), sentence_kind='idea') = meaning_of(0)\nE    +      where meaning_of = LTM0().meaning_of",
+  "records": []
+}
