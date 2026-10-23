@@ -1786,6 +1786,25 @@ finds classes; explicit learning names them; a word learned for a class
 already found is where they meet. The mechanism is
 [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3).
 
+## Object Files, File Cards and Dharmakīrti's Particulars: STM, MTM and LTM (2026-10-23)
+
+The three stores answer to three literatures, and to Dharmakīrti. STM's
+eight shared chunks are Miller's and Cowan's chunks held in Baddeley's
+episodic buffer, with Ericsson and Kintsch's long-term working memory as
+recall by cue. MTM is Kahneman, Treisman and Gibbs's object file, a
+temporary record keyed by continuity and updated as the object changes,
+distinct from its type; in discourse it is Heim's file card and Kamp's
+discourse referent. LTM0's dated ideas and the concept index with LTM1's
+edges are Tulving's episodic and semantic memory, with promotion by
+recurrence as consolidation. In Dharmakīrti's terms, an LTM0 idea is the
+unique particular, grasped directly and ultimately real; a concept is the
+universal, constructed by exclusion and conventionally real; an identity
+is a continuum of moments whose unity is imputed; binding is the
+determination "this is that same one", a judgment that follows
+perception and can err; and memory is reconstruction, not re-perception.
+The mapping, with references, is in the
+[identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |
