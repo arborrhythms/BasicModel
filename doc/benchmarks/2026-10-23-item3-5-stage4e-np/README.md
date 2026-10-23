@@ -120,7 +120,23 @@ The scoped files gain PartClosing's closing/reference/bind consumers.
 
 The original-budget warm-up on source 03 completed 76 presentations and
 38 paired updates. Stage3 completed 512 presentations, 256 paired updates
-and 16 evaluations; free order is 2/4 plus 3/4, and the original CE bar
-fails. Both artifacts are retained and ineligible for continuation due
+and 16 evaluations. Source order passes 8/8; the original CE bar fails.
+Free decoder output is 2/4 plus 3/4, a separate measure. Both artifacts are retained and ineligible for continuation due
 to the production defect. Regenerate the original schedules on the
 repaired source; no seed rescue, added lesson budget or relaxed gate.
+
+## Source 04: captured failure repaired; new fixture correction
+
+Frozen `9623961f8a4aac29c3e87f023811009d61fc7990` passes the
+[captured initial-RNG replay](source-04/occupation-replay/run.log).
+The [expanded scoped files](source-04/gates/run.log) give 191 passed,
+seven existing phase skips and one failure in the new regression. Its
+fixture selected `universal`, the last rule whose method is `lower`,
+while its Composition and assertions specify the `lower` formal face.
+[Declared-field diagnosis](source-04/fixture-diagnosis.json).
+
+Source 05 selects the rule by `PartsOfSpeech.operation_name`, matching
+production and the existing Composition. Every assertion stays verbatim;
+no test is retired and production is unchanged. This same-round setup
+correction follows reconstruction §17's exception and §39. No lessons
+ran on source 04.

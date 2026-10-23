@@ -164,6 +164,7 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
     from types import SimpleNamespace
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
+    from PartsOfSpeech import operation_name
     f = SentenceFixture(monkeypatch)
     words = [f.cs.interpret.lookup_word([91+i], [], form=f'leaf-{i}') for i in range(3)]
     leaves = [Composition(f.registry._payload(('sym', word)), reference=word,
@@ -172,7 +173,7 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
                         formal_name='lower', head_role=2, order=1)
     root = Composition(torch.maximum(lower.point, leaves[2].point), (lower, leaves[2]),
                        operation='intersection', formal_name='intersection')
-    operations = {rule.method_name: i for i, rule in enumerate(f.binary)}
+    operations = {operation_name(rule): i for i, rule in enumerate(f.binary)}
     program = SimpleNamespace(word_ids=torch.tensor(words), actions=torch.tensor([
         (0, -1, 0), (0, -1, 1), (1, operations['lower'], 0),
         (0, -1, 2), (1, operations['intersection'], 0)]))

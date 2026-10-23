@@ -1,0 +1,6 @@
+{
+  "node": "test/test_part_closing.py::test_lower_word_alias_does_not_double_count_kept_occupations",
+  "outcome": "failed",
+  "failure": "test/test_part_closing.py:189: in test_lower_word_alias_does_not_double_count_kept_occupations\n    assert parts.counts[words[1]]['lower_argout1'] == 1\nE   assert 0 == 1",
+  "records": []
+}

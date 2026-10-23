@@ -540,7 +540,7 @@
     "test/test_packed_reconstruction_parity.py": "6282a31344a71b6f931ae92edd7b82ef65adc71f96d1d54cc9b85ca189722ace",
     "test/test_padded_rows_no_op.py": "98bbc87c2163c6a3054d8f386d6cfb8da5840baf93950636612aec2138c4a63e",
     "test/test_parse_buffer.py": "bca9243f134a69f881d6271651763069d39791fb1c54f538a929eadfcde3fc46",
-    "test/test_part_closing.py": "5cfe93f8c8b242745d6715c3dd2b8b6f7588887d31e0346134568ad7860fbae2",
+    "test/test_part_closing.py": "57c1a8a365074efb6ad7718c9d6bd55169ba408aecfe2a74372d0a97b4cab9ca",
     "test/test_part_expectation.py": "6de7c5e7f87904fc49ba9068dfed9e7ecc341f433cda6bcb2a494b3079392a27",
     "test/test_part_read.py": "00c0e97f1d25f734284ada5949ef41991c1ec836bf58de98b521f5abb7b6fd58",
     "test/test_part_store.py": "d0ddcaf8fd5f1cfa4e80854136566f29a316302d4e552bbde4c3b97bdb2e842c",
@@ -846,5 +846,5 @@
     "doc/benchmarks/2026-10-23-item3-5-stage4e-np/warmup.py": "f5e2beb97c26c0af72c1e13b46b2fa0267445464bfccb267af8603ff4be6811f"
   },
   "warmup_schedule_ast_matches_original": true,
-  "review": "Source 04: word occupations remain owned by the kept program; closing retains nonword occupations. No existing assertion changed."
+  "review": "Source 05: source-04 production unchanged; new fixture uses declared formal face. All assertions preserved."
 }
