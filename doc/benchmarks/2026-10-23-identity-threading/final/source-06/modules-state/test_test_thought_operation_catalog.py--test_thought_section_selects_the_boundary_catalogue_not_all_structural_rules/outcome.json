@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_thought_section_selects_the_boundary_catalogue_not_all_structural_rules",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

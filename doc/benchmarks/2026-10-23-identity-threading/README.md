@@ -1,13 +1,14 @@
 # Identity threading — 2026-10-23
 
-The next source freeze on main runs its scoped gates in
-[`final/source-06`](final/source-06). Review and publication are pending.
+Frozen source `6da7938e6` completed its scoped gates in
+[`final/source-06`](final/source-06), with nine retained failures. The repaired source is frozen next as `final/source-07`; its gates, final
+review and publication are pending. No earlier evidence is promoted.
 This is a mechanism receipt, not learning evidence. Item 3.0 is not reached.
 
 The governing [identity spec](../../plans/2026-10-23-identity-threading.md)
 records Alec's decisions in §1, the code review before implementation in
 §5, the read-ahead alignment with LTM0/LTM1 and STM in §6, and every
-implementation repair and port in §§7–14. Step-2 §39 authorizes continuing
+implementation repair and port in §§7–19. Step-2 §39 authorizes continuing
 with documented repairs and ports unless a decision in §1 must reverse.
 No such reversal is made.
 
@@ -34,9 +35,9 @@ to any retained row. A nested query inherits the close's authority and
 mode, and an open child is stored as a question. This preserves the
 certificate's existing mint, question, raw-row and witness assertions.
 
-[`source-audit.json`](final/source-06/source-audit.json) hashes every source,
+[`source-audit.json`](final/source-07/source-audit.json) hashes every source,
 test and grammar/config file and lists changes from `b38889eb7`, the
-pre-implementation review. [`test-ports.patch`](final/source-06/test-ports.patch)
+pre-implementation review. [`test-ports.patch`](final/source-07/test-ports.patch)
 is the exact complete test diff, including new certificates.
 
 ## Every existing-test port
@@ -61,6 +62,10 @@ All assertions not listed remain unchanged.
 | `fixtures/when-readers-round4a0.json` | Add `MediumTermMemory.state` and `.restore` to the reader inventory with attribute `when`, as checkpoint readers. All inventory assertions stay. |
 | `test_live_references.py`, public binding/capture | Replace the lift reference variant with a declared S (`clause_form='S', head_role=1, order_delta=0`) and an explicit compose bind, forced only in this unit fixture. The held occurrence and alpha reading are order one; stage its real MTM value through a `SituationAddress` frame. The operand equality changes from exact `prior` to exact `maximum(entry.leaves[0], prior)`. Replace `entry.operation_refs[actions][-1, 0] == cid` with `entry.identity_actions[actions][-1, 1] == 1`; replace `clause.composition.children[0].reference == cid` with `clause.children[0].identity['handle'] == 1`. All other capture, reconstruction and gradient assertions stay. |
 
+| `test_thought_operation_catalog.py`, live router structural context | Change only the unary test stub from `value + 1.0` to `1.0 - value`, so every selected application stays in the identity cube. Both assertions that the unary and binary faces receive the identical owner context remain verbatim. |
+| `test_math_chain_repair.py`, pending relation, both orders | Retain the appended arrival index, then explicitly `mtm.open` the pending occurrence and `mtm.bind` its selected native symbol after both rows exist. All assertions remain verbatim: no open/forward slot, native symbol 1, unchanged occurrence address, document, position and raw meaning/roles. This supplies the kept bind that the storage-only fixture bypasses; equality never selects it. |
+| `decomposition_certificate.py` and `forced_decomposition_grammar.py` | Port the existing mint/reference/open fixture choices to determination and compose bind; declare the fixture's noun readings via `reference_orders` (x/y/what for one successor, plus z for two; constants retain their original readings). Preserve the preferred source references and the question-only open `what`, with no closure forcing. Read MTM mention labels and normalize its token handles at this fixture seam. Retire the stale unused `store.refs` read, keeping its +6 occurrence rank. Correct unary action indexing for the top operand at depth two, and tolerate an actually open preferred source. Guard these fixture NP actions with the bare pushed-word producing-action column, preserving the original scope. Attach trailing markers by transpose then surface, whose declared marker position preserves the bound noun head, instead of using verb. All certificate assertions, original snapshots/seeds, budgets, objective and live keep remain unchanged. The exact fixture diff is in the final test-port patch. |
+
 ## New certificates and development corrections
 
 `test_identity_threading.py` covers the second VP reading the first VP's
@@ -82,7 +87,7 @@ two completed events. No production choice is forced by those fixtures.
 
 ## Gates by source
 
-The required selections and runner are in `final/source-06`: the eight
+The required selections and runner are in `final/source-07`: the eight
 regression files, the native eight-file set, all reference files, bind and
 thought files, direct changed-module consumers, and both decomposition
 arms. The distinct-file scope is 121 files, including the interleaving, lexical-order and copied-index consumers. This is not step 2's full sweep.
@@ -97,7 +102,8 @@ retain their initialization at that original seed. Per-arm ledgers record
 the input hashes, seed and row mappings. No production checkpoint loader
 or original test assertion is changed.
 
-Final outcomes will be written in `final/source-06/gate-summary.json`.
+Source-06 outcomes are in `final/source-06/gate-summary.json`. The next
+frozen hash will run its own complete scoped set.
 No development pass or earlier frozen result substitutes for that source. The long module group and the other groups may run in separate processes on that same unchanged hash; each selection runs once.
 
 ## Retained unsuccessful attempts
@@ -144,6 +150,27 @@ The dated spec sections give the diagnosis and fix for each attempt:
 - `final/source-05`, `4763623e6`: 85 regression passes; native 122 passes, seven existing skips and one recursive-alias failure. Both pending-premise orders and c/e pass unchanged. Spec §14 diagnoses preview/admission site ordering from the retained journal and plan. No result is promoted.
 - `site-order-01`: 22 focused passes after all callers share chronological `sites()` order. The new wrapped-introduction regression now also repeats production's admission zip before commit; no existing assertion changes.
 - `scoped-compiled-03`: the original compiled parity certificate passes after the copied-owner repair, with every parity assertion unchanged.
+
+- `final/source-06`, `6da7938e6`: every requested group completes: 1,423 passes, twelve skips, nine failures (one native, four module, four decomposition). Full results and keep probes are retained. §§15–16 diagnose the lost nested determination, cube-invalid router stub, two stale equality-only storage fixtures, nested question eligibility, and the decomposition fixture seam. Nothing is promoted.
+- `boundary-01`: 54 focused passes after the boundary repairs and fixture ports. `retained-menu-01`: the live initial-menu case passes from source-06's retained initial RNG.
+- `decomposition-01`: the first port used the dummy for former mints, leaving genuinely open preferred source slots. `decomposition-02`: the explicit determination exposed the fixture's stale unary position index at depth two. Both failed states, original parameter mappings and keep probes remain retained; no proof assertion changes.
+
+- `decomposition-03` and `decomposition-04`: the fixture's explicit NP operation must retain its original bare-operand guard; the remaining capture exposes a direct pending child losing its root relation context. Both proof assertions fail; both trials and keep probes remain.
+- `direct-role-01`: 55 focused identity, arrival and math-repair cases pass after propagating only the direct child's pending name to its actual parent role, including two new subject/complement regression cases.
+- `decomposition-05`: explicit determination of constants delayed lift beyond the unchanged three operations per word. `decomposition-06` stamps only the fixture's named references; it still fails the unchanged proof assertion. Its retained questions have both referents open; this is a mechanism/fixture diagnosis in progress, not a pass or a learning claim.
+- `capture-sidecars-01`: the two direct-role cases pass with the expanded capture format. `capture-check.json` verifies that semantic sidecars and Part state are present; earlier captures are not relabeled as containing them.
+- `claude-decomposition-diagnosis`: actual read-only Claude diagnosis completed on the failing source and exact retained diff. Its four findings and response are in spec §18; this is not the final frozen-source review.
+
+- `decomposition-07`: the questions have only `what` open and premise relations are stored, but the forced punctuation attachment changes the bound noun to a predicate. The unchanged proof assertion fails; both trials and keep probes are retained.
+- `decomposition-08`: after the documented fixture marker-position port, both zero-arm cases pass and all four companion questions are correct. This is diagnostic only, not a substitute for either frozen arm.
+- `resolved-01`: 101 passes, four prerequisite skips, one existing R10 alias failure: direct-role propagation incorrectly treated fused structural children as relative roles. Restrict it to present participant roles of relative clauses. `resolved-02` passes all 102 cases, four skips, every R10 assertion unchanged.
+
+New resolution certificates distinguish a completed unminted value from an
+anonymous pending name without using content magnitude or a seat; cover
+working reads, staged resolution, versioned/atomic checkpoint migration,
+refinement and merge; and verify that resolved direct compose binds retain
+the current Part relation and selected identity. Checkpoint v1 migration
+preserves its old kind-based convention; v2 records explicit pending state.
 
 Large JSON and tensor captures are losslessly gzipped. `packed-captures.json` records
 each original and compressed SHA-256; new captures write gzip directly

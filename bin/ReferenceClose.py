@@ -976,23 +976,35 @@ class ReferenceClose(nn.Module):
             request = node.reference_request
             token = self.components.owner.mtm.token_of(reference)
             unresolved = (selected in anonymous or (token is not None
-                          and self.components.owner.mtm.entries[token].kind is None))
+                          and self.components.owner.mtm.entries[token].pending))
             if unresolved and request.get('forward_identity') is None and node.subject_word_id >= 0:
                 request = dict(request, forward_identity=node.subject_word_id)
+            alias = minted.get(selected) if isinstance(selected, tuple) else None
+            kind = self._derivation_symbol(reference)
+            resolved_bind = (request.get('compose_bind', 0) > 0 and not unresolved
+                             and (kind is not None or alias is not None or token is not None))
             site = dict(role=item['role'], leaves=item['leaves'],
                 cue=None if request.get('cue') is None else request['cue'].detach().cpu().tolist(),
                 content=None if request.get('content') is None else request['content'].detach().cpu().tolist(),
                 predicate=None if request.get('predicate') is None else request['predicate'].detach().cpu().tolist())
             meaning = replace(node.meaning, bindings=dict(bindings(node.meaning), _reference_sites=((0, site),)))
-            named = request.get('forward_identity') is not None
+            named = request.get('forward_identity') is not None and not resolved_bind
+            if resolved_bind:
+                # The chooser has already supplied this resolved identity.
+                # Its lexical name is not an open reference. Today's Part
+                # writer still consumes the retained kind/alias of that bind.
+                data = bindings(meaning)
+                data['_forward_references'] = tuple(item for item in
+                    data.get('_forward_references', ()) if item[0] != 0)
+                meaning = with_slots(replace(meaning, bindings=data),
+                    (slot for slot in data.get('_open_references', ()) if slot[1] != 0))
             if selected is None or named or unresolved:
                 meaning = with_slots(meaning, (('referent', 0),), pair=node.evidence)
                 if request.get('forward_identity') is not None:
                     meaning = replace(meaning, bindings=dict(bindings(meaning),
                         _forward_references=((0, request['forward_identity']),)))
             term = node.composition or Composition(node.point, order=node.order)
-            native = self.address(reference)
-            alias = minted.get(selected) if isinstance(selected, tuple) else None
+            native = kind if resolved_bind and kind is not None else self.address(reference)
             source = (term.reference if item.get('own_object') and not item.get('anonymous')
                       else -1)
             updated = replace(term, reference=source if native is None else native,
@@ -1026,9 +1038,41 @@ class ReferenceClose(nn.Module):
                 for role, site in attached.get(id(node), ()):
                     refs[role] = ('clause', len(children))
                     children.append(site)
+                children = tuple(rewrite(c) for c in children)
+                # An explicit compose bind owns a child occurrence. If that
+                # child is a direct role, its pending name belongs to the
+                # enclosing relation's same role as well. Preserve the
+                # predicate/complement when thought asks for that referent.
+                meaning = value.meaning
+                data = bindings(meaning)
+                forwards = dict(data.get('_forward_references', ()))
+                sites = dict(data.get('_reference_sites', ()))
+                opened = list(data.get('_open_references', ()))
+                for role, ref in enumerate(refs):
+                    if (value.relation is None or role not in (0, 2)
+                            or not bool(meaning.role_mask[role])
+                            or not (isinstance(ref, tuple) and ref[:1] == ('clause',))):
+                        continue
+                    child = children[ref[1]].meaning
+                    if int(child.role_mask.sum()) != 1 or not bool(child.role_mask[0]):
+                        continue
+                    marks = bindings(child)
+                    name = dict(marks.get('_forward_references', ())).get(0)
+                    if name is None:
+                        continue
+                    forwards[role] = name
+                    opened.append(('referent', role))
+                    site = dict(marks.get('_reference_sites', ())).get(0)
+                    if site is not None:
+                        sites[role] = dict(site, role=role)
+                if forwards:
+                    data.update(_forward_references=tuple(forwards.items()),
+                                _reference_sites=tuple(sites.items()))
+                    meaning = with_slots(replace(meaning, bindings=data), opened)
                 rebuilt[id(node)] = replace(value,
+                    meaning=meaning,
                     composition=rewrite_term(node.composition) if node.composition is not None else value.composition,
-                    refs=tuple(refs), children=tuple(rewrite(c) for c in children),
+                    refs=tuple(refs), children=children,
                     companions=tuple(rewrite(c) for c in value.companions))
             return rebuilt[id(node)]
         result = rewrite(clause)
@@ -1092,7 +1136,8 @@ class ReferenceClose(nn.Module):
                     kind = self._derivation_symbol(reference)
                 if item['mode'] == 'mint' or item.get('own_object'):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
-                             when=when, value=node.point, reading=kind if reading is None else reading)
+                             when=when, value=node.point, reading=kind if reading is None else reading,
+                             pending=bool(item.get('anonymous')))
                 else:
                     uses.append((reference, occurrence, kind, node.point, kind if reading is None else reading))
             elif isinstance(reference, int) and reference in alloc.individuals:

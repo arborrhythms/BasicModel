@@ -342,13 +342,14 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
 
 
 @pytest.mark.parametrize('readmit', (False, True))
-def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit):
+@pytest.mark.parametrize('wrapper', ('sum', 'lower'))
+def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit, wrapper):
     from ClauseJournal import finish_clause
     from test_clause_acceptance import SentenceFixture
     from test_medium_term_memory import snapshot, unchanged
     f = SentenceFixture(monkeypatch)
     entry, _, handle = recorded_identity_reading(f,
-        ('bind', ('sum', ('lower_unary', 'subject'), 'tail')))
+        ('bind', (wrapper, ('lower_unary', 'subject'), 'tail')))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
     plan = resolver.preview(clause, ())
@@ -387,6 +388,65 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
     assert closing._plan_term(bound, True) == reference
     assert not any(record['seat'] for record in closing._plan)
     assert closing._next == closing.alloc.next_id
+
+
+@pytest.mark.parametrize('open_sibling', (False, True))
+def test_source_authority_closes_a_nested_region_without_hiding_a_free_role(open_sibling):
+    from dataclasses import replace
+    from ClauseRow import Clause
+    from Meaning import ConceptualMeaning
+    from ThoughtClosing import closing_question
+    from ThoughtReferences import needs_episode, open_slots, with_slots
+    value = replace(ConceptualMeaning.from_description(torch.ones(4)),
+                    role_refs=(('sym', 1), None, None))
+    child = Clause(replace(value, mode='interrogative'), point=value.roles[0],
+                   refs=(1, -1, -1), evidence=(0., 0.))
+    children = (child,)
+    if open_sibling:
+        pending = with_slots(replace(value, role_refs=(None, None, None)),
+                             (('referent', 0),), pair=(0., 0.))
+        children += (Clause(pending, point=pending.roles[0], evidence=(0., 0.)),)
+    parent = Clause(value, point=value.roles[0], refs=(1, -1, -1),
+                    children=children, evidence=(1., 0.))
+    query = closing_question(value, parent)
+    if open_sibling:
+        assert query is not None and needs_episode(query)
+        assert open_slots(query) == (('referent', 0),)
+    else:
+        assert query is None
+
+
+@pytest.mark.parametrize('role', (0, 2))
+def test_compose_bind_pending_child_keeps_the_direct_question_role(monkeypatch, role):
+    from dataclasses import replace
+    from ClauseRow import Clause, ClausePredicate, predicate_point
+    from Meaning import ConceptualMeaning
+    from ThoughtClosing import closing_question
+    from ThoughtReferences import bindings, open_slots
+    from test_reference_arrivals import world, named, force_named
+    resolver, store, atoms, words, _ = world()
+    force_named(resolver, monkeypatch, None)
+    child = named(atoms[0], words['x'])
+    child = replace(child, reference_request=dict(child.reference_request, compose_bind=0))
+    pred = predicate_point('equal', atoms[0])
+    value = ConceptualMeaning(torch.stack((atoms[0], pred, atoms[0])),
+        torch.ones(3, dtype=torch.bool), mode='interrogative', bindings={'_equality': True})
+    refs = [words['three'], ClausePredicate(pred, 'equal'), words['three']]
+    refs[role] = ('clause', 0)
+    parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(0., 0.))
+    plan = resolver.preview(parent, ())
+    prepared = resolver.prepare(parent, plan)
+    written = {}
+    row = store.write_clause(prepared, document_key='direct-question', written_rows=written)
+    resolver.commit(plan, row, written, document='direct-question', position=0, training=False)
+    raw = store.raw_meaning_of(row)
+    query = closing_question(store.meaning_of(row), prepared, store=store, written_rows=written)
+    assert raw.role_refs[role][0] == 'ltm'
+    assert bindings(raw)['_forward_references'] == ((role, words['x']),)
+    assert query is not None and open_slots(query) == (('referent', role),)
+    assert bindings(query)['_query_occurrence'] == store.occurrence_of(row)
+    assert query.role_refs[2-role] == ('sym', words['three'])
+    torch.testing.assert_close(query.roles[1], pred)
 
 
 def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
@@ -431,3 +491,99 @@ def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
     events = {event.occurrence for token in f.cs.mtm.entries.values() for event in token.events}
     assert events == {written[('occurrence', id(prepared))]}
     assert len(f.store) == 3
+
+
+@pytest.mark.parametrize('role', (0, 2))
+def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, role):
+    from dataclasses import replace
+    from ClauseRow import Clause, ClausePredicate, predicate_point
+    from Meaning import ConceptualMeaning
+    from ReferenceContext import SituationFrame
+    from ThoughtClosing import closing_question
+    from ThoughtReferences import open_slots
+    from test_reference_arrivals import world, named, force_named
+    from test_medium_term_memory import keep, mention, snapshot, unchanged
+    resolver, store, atoms, words, _ = world()
+    force_named(resolver, monkeypatch, None)
+    first, _ = keep(resolver, mention(atoms[0], reference=words['three']))
+    token = store.occurrence_of(first)
+    child = named(atoms[0], words['x'])
+    child = replace(child, reference_request=dict(child.reference_request, compose_bind=1),
+        identity=dict(handle=1, origins=torch.tensor([[2, token[-1], 1]])))
+    pred = predicate_point('equal', atoms[0])
+    value = ConceptualMeaning(torch.stack((atoms[0], pred, atoms[1])),
+        torch.ones(3, dtype=torch.bool), bindings={'_equality': True})
+    refs = [words['wrong'], ClausePredicate(pred, 'equal'), words['wrong']]
+    refs[role] = ('clause', 0)
+    parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(1., 0.))
+    plan = resolver.preview(parent, (SituationFrame.from_row(store.row(first)),))
+    prepared = resolver.prepare(parent, plan)
+    written = {}
+    row = store.write_clause(prepared, document_key='resolved-question', written_rows=written)
+    retained = snapshot(resolver)
+    resolver.commit(plan, row, written, document='resolved-question', position=1, training=False)
+    assert plan['items'][0]['reference'] == token
+    assert row[0] == 'sym' and store.parts.contains(row[1])
+    assert store.meaning_of(row).role_refs[role] == ('sym', words['three'])
+    assert not open_slots(store.meaning_of(row))
+    assert closing_question(store.meaning_of(row), prepared, store=store, written_rows=written) is None
+    unchanged(resolver, retained)
+
+
+@pytest.mark.parametrize('pending', (False, True))
+def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from ReferenceContext import SituationFrame
+    from ThoughtReferences import open_slots, with_slots
+    from test_reference_close import fixture
+    from test_medium_term_memory import snapshot, unchanged
+    resolver, store, atoms = fixture()
+    row = store.append_meaning(ConceptualMeaning.from_description(atoms[0]), order=1,
+                               document_key='unminted', sentence_index=0, evidence=(1., 0.))
+    token = store.occurrence_of(row)
+    pool = resolver.components.owner.mtm
+    pool.open(token, kind=None, pending=pending, when=1, value=atoms[0])
+    raw = with_slots(replace(store.raw_meaning_of(row), bindings={'_forward_references': ((0, 101),)}),
+                     (('referent', 0),))
+    retained = snapshot(resolver)
+    read = store.read_reference_bindings(row, raw)
+    staged = MTMOverlay.stage(resolver, [(SituationFrame.from_row(store.row(row)),)],
+        atoms[0][None, None], words=1, journal=1)
+    assert bool(staged[3][0, 0, 2]) == (not pending)
+    assert bool(open_slots(read)) == pending
+    if not pending:
+        assert read.role_refs[0] == token
+        torch.testing.assert_close(read.roles[0], atoms[0])
+    restored = MediumTermMemory()
+    restored.restore(pool.state())
+    assert restored.entries[token].pending == pending and restored.entries[token].kind is None
+    torch.testing.assert_close(restored.value_of(token), atoms[0])
+    unchanged(resolver, retained)
+
+
+def test_pending_checkpoint_migration_and_validation_are_atomic():
+    import copy
+    pool = MediumTermMemory()
+    first, second = address(1), address(2)
+    pool.open(first, kind=None, pending=False, when=1, value=torch.ones(3))
+    pool.open(second, kind=101, when=2, value=torch.zeros(3))
+    state = pool.state()
+    legacy = copy.deepcopy(state)
+    legacy['version'] = 1
+    for entry in legacy['entries']:
+        del entry['pending']
+    restored = MediumTermMemory()
+    restored.restore(legacy)
+    assert restored.entries[first].pending and not restored.entries[second].pending
+    previous = restored.entries
+    malformed = copy.deepcopy(state)
+    malformed['entries'][0]['pending'] = 'false'
+    with pytest.raises(ValueError, match='pending state'):
+        restored.restore(malformed)
+    assert restored.entries is previous
+    pool.bind(first, address(3), kind=102, when=3)
+    assert not pool.entries[first].pending
+    pool.open(address(4), kind=None, when=4, value=torch.zeros(3))
+    pool.merge(first, address(4), when=5)
+    assert not pool.entries[address(4)].pending and pool.entries[address(4)].kind == 102

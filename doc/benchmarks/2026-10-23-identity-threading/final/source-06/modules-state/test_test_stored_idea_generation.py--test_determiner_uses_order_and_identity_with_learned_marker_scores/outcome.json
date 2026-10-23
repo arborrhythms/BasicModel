@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

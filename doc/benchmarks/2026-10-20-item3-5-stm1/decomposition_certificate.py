@@ -54,11 +54,11 @@ def run(folder, successors=1):
         doc = grammar.documents[row]
         for name, index in assignments.items():
             source = sources.get((doc, index))
-            if name in labels and source is not None:
+            if name in labels and source is not None and source.role_refs[0] is not None:
                 return source.role_refs[0][-1]
         for word, index in [('three', assignments['x']), ('four', min(licenses.values()))]:
             source = sources.get((doc, index))
-            if word in labels and source is not None:
+            if word in labels and source is not None and source.role_refs[2] is not None:
                 return source.role_refs[2][-1]
         return None
 
@@ -153,7 +153,8 @@ def run(folder, successors=1):
 
     try:
         with ForcedDecompositionGrammar(model, open_names=('what',), question_budget=question_budget,
-                preferred_references=preferred_references) as grammar, \
+                preferred_references=preferred_references,
+                reference_orders=(*assignments, 'what')) as grammar, \
                 patch.object(ThoughtStream, 'candidates', candidates), \
                 patch.object(chooser, 'thought_logits', logits):
             rows = train_documents(model, documents, folder, after=after, episode=episode)

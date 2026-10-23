@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[True]",
+    "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+    "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event"
+  ],
+  "completed": [
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[False]",
+    "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[True]",
+    "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+    "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+    "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03171004191972315,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_later_bind_keeps_its_earlier_determination_under_a_wrapper[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011781249893829226,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_dummy_bind_preserves_a_carried_object_with_different_working_content",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0062747912015765905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010054500075057149,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01462283288128674,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

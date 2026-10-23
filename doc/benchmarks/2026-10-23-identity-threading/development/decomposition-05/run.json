@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "-m",
+    "pytest",
+    "-q",
+    "test/test_math_chain_decomposition.py",
+    "-x",
+    "--tb=short"
+  ],
+  "started": "2026-10-23T13:55:33.337389+00:00",
+  "exit": 1,
+  "finished": "2026-10-23T13:56:04.634714+00:00"
+}

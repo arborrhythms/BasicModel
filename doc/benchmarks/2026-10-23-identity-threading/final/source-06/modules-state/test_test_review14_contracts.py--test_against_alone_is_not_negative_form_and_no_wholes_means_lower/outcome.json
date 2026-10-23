@@ -1,0 +1,6 @@
+{
+  "node": "test/test_review14_contracts.py::test_against_alone_is_not_negative_form_and_no_wholes_means_lower",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

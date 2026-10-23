@@ -1,0 +1,121 @@
+{
+  "counts": {
+    "equality_loss_trial_acts": 14,
+    "equality_trials_with_verb_shift_gradient": 6,
+    "episodes": 7,
+    "sentences": 8
+  },
+  "operations": {
+    "bind": 2,
+    "query": 1,
+    "conclude": 2
+  },
+  "credit": {
+    "reconstruction_and_answer": 7,
+    "nonzero_graph": 1,
+    "ties": 6,
+    "nonzero_chooser_gradients": 1
+  },
+  "credit_sample": [
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "category": "reconstruction",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 1,
+      "category": "reconstruction",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "category": "reconstruction",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 1,
+      "category": "reconstruction",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 1,
+      "category": "reconstruction",
+      "costs": [
+        0.0,
+        0.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 0,
+      "category": "reconstruction",
+      "costs": [
+        1.0,
+        1.0
+      ],
+      "graph": false,
+      "surrogate": null,
+      "raw_chooser_gradient_l2": 0.0
+    },
+    {
+      "epoch": 1,
+      "phase": "ordinary_certificate",
+      "source": "reconstruction_and_answer",
+      "row": 1,
+      "category": "expectation",
+      "costs": [
+        1.0,
+        0.5181714296340942
+      ],
+      "graph": true,
+      "surrogate": -0.4205670654773712,
+      "raw_chooser_gradient_l2": 0.16554711053493754
+    }
+  ],
+  "raw_chooser_gradient_l2_sum": 0.16554711053493754,
+  "raw_chooser_gradient_l2_max": 0.16554711053493754
+}

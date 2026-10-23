@@ -1,0 +1,93 @@
+...FF......F                                                             [100%]
+=================================== FAILURES ===================================
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[True] _______
+test/test_math_chain_repair.py:116: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert ('referent', 0) not in open_slots(resolved)
+E   AssertionError: assert ('referent', 0) not in (('referent', 0),)
+E    +  where (('referent', 0),) = <function open_slots at 0x10e35e7a0>(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 3), ('sym', 2)), bindings=(('_evidence_pai...)), ('_forward_references', ((0, 17),)), ('_open_references', (('referent', 0),))), scope=(), sentence_kind='relation'))
+______ test_pending_relation_fills_in_place_in_both_arrival_orders[False] ______
+test/test_math_chain_repair.py:116: in test_pending_relation_fills_in_place_in_both_arrival_orders
+    assert ('referent', 0) not in open_slots(resolved)
+E   AssertionError: assert ('referent', 0) not in (('referent', 0),)
+E    +  where (('referent', 0),) = <function open_slots at 0x10e35e7a0>(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 3), ('sym', 2)), bindings=(('_evidence_pai...)), ('_forward_references', ((0, 17),)), ('_open_references', (('referent', 0),))), scope=(), sentence_kind='relation'))
+____ test_ordinary_driver_two_three_eight_stream_groups_after_single_write _____
+test/test_math_chain_repair.py:220: in test_ordinary_driver_two_three_eight_stream_groups_after_single_write
+    assert present(model, split='train', after_batch=after)['sentences'] == len(texts)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MathChainTraining.py:48: in present
+    result, _ = model.runBatch(train=training, batchNum=total,
+bin/Models.py:13587: in runBatch
+    return self._run_sentence_batch(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:13743: in _run_sentence_batch
+    return self._run_batch_once(**call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:14119: in _run_batch_once
+    _what_answers = self._what_or_think(
+bin/Models.py:8802: in _what_or_think
+    return self.ask(questions, input_data, executor=executor, record=record, score=score)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:10178: in ask
+    execution = self._execute_input_sentence(input_data, executor)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8487: in _execute_input_sentence
+    return (executor or self.forward)(input_data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:153: in masked
+    return method(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:8265: in forward
+    return self._forward_per_stage(inputData)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:23921: in _forward_per_stage
+    body_result = self._forward_body(
+bin/Models.py:17172: in _forward_body
+    return self._forward_body_per_word(
+bin/Models.py:22473: in _forward_body_per_word
+    self._run_tensor_peer_word_pipeline(N_words))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:22042: in _run_tensor_peer_word_pipeline
+    feedback, trip_count) = self._run_sentence_word_bricks(
+bin/Models.py:21150: in _run_sentence_word_bricks
+    chosen = self._commit_sentence(chosen, sid, present, observations, predictions, wins)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Models.py:20449: in _commit_sentence
+    fields.append(SentenceEndState(meaning, refs, row_ids[b], clause.where, clause.when, query,
+<string>:13: in __init__
+    ???
+bin/Understanding.py:248: in __post_init__
+    raise ValueError('a completed question requires a free variable or an unsupported region')
+E   ValueError: a completed question requires a free variable or an unsupported region
+----------------------------- Captured stdout call -----------------------------
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+batch = 0 (Δ=0.398s)
+batch = 2 (Δ=1.480s)
+batch = 4 (Δ=1.300s)
+batch = 6 (Δ=0.734s)
+batch = 8 (Δ=1.463s)
+batch = 10 (Δ=1.705s)
+batch = 12 (Δ=1.715s)
+batch = 14 (Δ=1.798s)
+batch = 16 (Δ=1.743s)
+batch = 18 (Δ=1.668s)
+batch = 0 (Δ=1.866s)
+batch = 3 (Δ=2.295s)
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+test/test_math_chain_repair.py::test_driver_batch_groups_resize_priming_before_reads_without_broadcast
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]
+FAILED test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[False]
+FAILED test/test_math_chain_repair.py::test_ordinary_driver_two_three_eight_stream_groups_after_single_write
+3 failed, 9 passed, 2 warnings in 25.02s

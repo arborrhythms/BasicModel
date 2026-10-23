@@ -53,7 +53,11 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
                             _source_evidence=tuple(clause.evidence))
                 nested = with_slots(replace(nested, mode=source.mode, bindings=data),
                     open_slots(nested), pair=clause.evidence)
-                return nested
+                # Inheriting the source's authority can close an unsupported
+                # region without filling any role. Only a remaining question
+                # belongs in the completed field; inspect other children too.
+                if needs_episode(nested):
+                    return nested
     source = parsed if parsed is not None else meaning
     if committed is not None:
         # Storage does not retain grammatical mode. The live closing still

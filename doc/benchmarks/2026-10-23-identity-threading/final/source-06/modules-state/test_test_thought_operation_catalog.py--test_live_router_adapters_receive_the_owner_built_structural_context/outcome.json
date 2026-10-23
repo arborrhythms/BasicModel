@@ -1,0 +1,6 @@
+{
+  "node": "test/test_thought_operation_catalog.py::test_live_router_adapters_receive_the_owner_built_structural_context",
+  "outcome": "failed",
+  "failure": "test/test_thought_operation_catalog.py:648: in test_live_router_adapters_receive_the_owner_built_structural_context\n    router.compose(torch.rand(1, 2, 4), word_space=None,\nbin/Language.py:5019: in compose\n    derivation = self.operation_layer.derive(\nbin/Language.py:7126: in derive\n    _, next_x, route = self(\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1783: in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1794: in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:6867: in forward\n    binary = self._stacked_reduced(x, grammar_context, reference_data, operand_activations)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:7242: in _stacked_reduced\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
+  "records": []
+}

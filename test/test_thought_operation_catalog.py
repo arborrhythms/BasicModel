@@ -613,7 +613,7 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
             self.contexts = []
 
         def compose(self, value):
-            return value + 1.0
+            return 1.0 - value
 
         def compose_from_grammar_context(self, operands, *, context):
             self.contexts.append(context)

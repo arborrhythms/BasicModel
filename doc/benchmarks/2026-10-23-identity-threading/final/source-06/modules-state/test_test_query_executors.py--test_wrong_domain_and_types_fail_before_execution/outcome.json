@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

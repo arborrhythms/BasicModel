@@ -748,3 +748,221 @@ live initial binding-distribution test and both admission paths. The
 original compiled parity case also passes in `scoped-compiled-03` after
 §13's ownership repair. These are diagnosis checks; source-06 runs every
 required scoped gate again on its own frozen hash.
+
+## 15. Codex: a determination inside a later non-head branch — 2026-10-23
+
+Frozen `6da7938e6` passes all 85 regression cases. Its native set completes
+122 passes, seven existing prerequisite skips and one live initial-menu
+failure: a compose bind names an unwritten introduction. The captured
+journal is authoritative: it introduces tokens in earlier determinations,
+then references them after another determination has used their phrases
+in its non-head operand. `participant_terms` walks only that later head,
+so it never inspects the earlier determining operation. The transaction
+owns the token, but closing loses its introduction. This differs from
+§14's scoring/admission order mismatch, which remains repaired.
+
+The fix is to inspect every operation subtree, assigning noun status only
+at that operation's declared positions. An unselected non-head operand
+is visited with `noun=False`; its bare word stays excluded, but any
+nested determining operation still has its own description position.
+This retains the already selected identity, without selecting a different
+antecedent, making a marker into a noun, or changing a chooser menu. The
+retained `participant-probe.json` verifies the skipped subtree, and
+`participant-proposed-result.json` reproduces the same failure in a fixed
+journal and then gets the same two own/use records with the proposed
+walk installed only in that diagnostic process. The frozen source remains
+unchanged while its other scoped groups finish.
+
+Extend the same-round wrapped-introduction regression to place the first
+determination in a later determination's non-head branch, with both direct
+and re-admitted paths. All existing assertions remain. The marker and
+predicate exclusion certificates run unchanged beside it. The proposed
+walk and probe are retained under `final/source-06`; every new source gets
+its own scoped gates.
+
+## 16. Codex: completed scoped pass and boundary fixtures — 2026-10-23
+
+All requested groups finish on `6da7938e6`: 1,423 passes, twelve skips and
+nine failures, retained in `final/source-06/gate-summary.json`. The skips
+include five module prerequisites/device cases and the seven native
+prerequisites; they are not claimed as passes. No result is promoted.
+
+- The live initial-menu failure is §15. The retained initial RNG passes
+  after the traversal repair in `retained-menu-01`; its captured-state
+  certificate is a diagnosis check, not another frozen gate.
+- The router-context fixture's unary stub returns `value + 1`, which can
+  leave the identity cube before the binary face reads it. Make the stub
+  `1 - value`, which is bounded through any number of selected unary
+  applications. Both structural-context assertions stay verbatim. No
+  production bound or numerical operator changes.
+- The two pending-relation storage fixtures still expect a bare equality
+  append to bind a name. That reader was retired at §10.4. As with the
+  four direct item-6 boundary fixtures in §7, explicitly supply the kept
+  MTM introduction and its selected `bind` after both rows are present.
+  The asserted symbol, null removal, source address, document, position
+  and immutable raw row all stay verbatim, in both orders.
+- The production completed-question failure comes from the nested branch
+  of `closing_question`: after inheriting its parent's authority, an
+  unsupported region can cease to need an episode, but the branch returns
+  it unconditionally. Recheck `needs_episode` after that inheritance and
+  continue to other children when it is false. A new certificate checks
+  both the closed region and a later sibling that still has a free role;
+  the latter must remain a question. `boundary-01` passes all 54 focused
+  identity, participant, router and math-repair cases after these fixes.
+
+Both original-snapshot decomposition arms fail their unchanged proof
+assertion in both successor cases. The keep probes retain both trials,
+their R/A components and the unchanged tie decision. Their fixture still
+requests mint/reference/open alternatives on ordinary operations, but
+§1.3 gives those reference choices to explicit compose `bind`. Its words
+also all have order zero: its old open-name rank no longer creates an
+order-one site. Port the fixture's existing choices, not its conclusions:
+record the declared noun readings through `reference_orders` under the
+same unit-fixture rule as reconstruction §13; express the former mint
+choice through determination and a retained reference/open choice through
+`bind`. Use the same preferred source references and question-only open
+name. The question's `what` stays open; no closure is forced, no answer is
+supplied to a premise, and no assertion, snapshot, seed or budget changes.
+All exact fixture edits ride in the receipt's test-port diff.
+
+`decomposition-01` retains the first port attempt: merely stamping every
+noun and always binding makes first mentions anonymous, so the legacy
+fixture's preferred-source callback encounters a genuinely open reference.
+The callback now tolerates an open source; the port preserves the original
+mint fallback via `lower_unary` instead of replacing it with the dummy.
+The former `store.refs` ranking read is also removed: its occurrence-only
+column was always unfilled, so the same +6 occurrence rank is retained.
+Every attempt remains captured for review.
+
+`decomposition-02` retains the next fixture failure. The old fixture's
+unary choices only ran at a one-slot root; its offset therefore named the
+first operation window column. The newly explicit NP operations also run
+at depth two, where the top stack operand is the second window column.
+Use `min(depth, 2) - 1` for their reference slice and unary action offset.
+This changes which operand the fixture requests, not the requested bind,
+mint or dummy, and adds no production mask.
+
+## 17. Codex: direct pending roles after explicit compose bind — 2026-10-23
+
+`decomposition-03` and `decomposition-04` retain both trial readings and
+keep probes. The fixture first needed its original bare-operand guard on
+the explicit NP operations too: a completed S or VP can carry a head's
+word, but that does not request another bind of the entire phrase.
+
+The remaining production failure is a lost role correspondence. The old
+operation reference path wrote `open_reference` on the operand and its
+parent role. Explicit compose bind instead owns a child site, and prepare
+marks only that child's pending name. The root still points to its child
+but has no pending-role annotation, so `closing_question` asks about the
+anonymous child alone, dropping the equality predicate and complement.
+Carry a one-slot child's pending name and site record to the direct role
+that references it during prepare. The existing MTM working reader then
+clears a resolved role or keeps the actual pending role open. This is not
+an equality-derived bind or a nested-position redesign: only the direct
+`('clause', n)` correspondence is used. Add a direct-root regression and
+leave all existing decomposition assertions and thought forcing unchanged.
+
+**Further retained diagnostics.** `direct-role-01` passes 55 identity,
+arrival and math-repair cases, including the new direct subject/complement
+question cases. `decomposition-05` still fails: forcing determination on
+all constants consumes a fourth operation before lift in the unchanged
+three-round word loop. `decomposition-06` restricts the reading stamps and
+explicit NP operations to the fixture's named references (x/y/what, plus
+z for two successors), leaving constants at their original readings. The
+proof assertion still fails; both trial captures and keep probes remain.
+A focused read-only Claude diagnosis is requested before further changes
+to resolution semantics. It is not the final frozen-source review.
+
+The diagnosis also exposed a capture limitation: the contract observer
+saved tensor states and MTM plus complete journals, but not LTM0's separate
+semantic sidecar. Future captures add `semantic_extras`, Part state,
+ConceptualSpace extras and the model's structural sidecar. Existing captures
+remain unchanged and are not claimed to contain that missing sidecar.
+
+## 18. Codex: Claude's focused decomposition diagnosis — 2026-10-23
+
+The actual [read-only report](../benchmarks/2026-10-23-identity-threading/development/claude-decomposition-diagnosis/report.md)
+is retained with its request, exact source diff and tool stream. It is a
+diagnosis of the failed working source, not a landing verdict.
+
+1. **Fixture A.** A surface wrapper drops the predicate scope flag, while
+   preserving the overlay's producing-action column. The fixture's scope
+   test therefore repeatedly bound a completed phrase and exhausted the
+   unchanged closing budget. A bare pushed word has source column zero;
+   any opened NP, VP or S has its producing action. Use that column only
+   in the forced fixture to preserve its original bare-operand scope.
+   No production menu, repetition rule, forced conclusion or budget changes.
+2. **Production B.** `git show b38889eb7` confirms both the order-one
+   leaf's `forward_identity` and prepare's unconditional named-open path
+   predate this line. Explicit compose bind now supplies a resolved token
+   before the close. Keeping that child pending stops preparation of the
+   entire enclosing relation, so its retained Part readers never receive
+   the relation this round promises to preserve. For a recorded compose
+   bind to a resolved kind/native reference or a completed same-close
+   alias, attach that existing kind/alias and do not mark its name open.
+   The numerical point remains the selected current value; the actual
+   chosen token is retained in the plan and MTM commit. Anonymous and
+   unresolved references keep the pending path. This implements §1.3 and
+   preserves §1.7's current storage, without replacing the readers.
+3. **Direct role repair D.** Restrict the §17 correspondence to participant
+   roles 0 and 2. `with_slots` already deduplicates its open annotations.
+   Add a resolved-compose-bind counterpart to the pending-child tests.
+4. **Remaining audit C.** An unminted completed object and an anonymous
+   pending name can both lack a kind. The final source must distinguish
+   those cases without inferring resolution from a seat or from content
+   magnitude. The focused report proposes explicit pending metadata on
+   MTM and a versioned checkpoint migration; this is audited below before
+   the next freeze, alongside the staged and committed readers.
+
+Claude flags possible decisions about order-zero binds and repeated binds.
+This round preserves the existing no-order-gate and no-menu-mask rules:
+only stamped order-one participant sites create an identity object under
+the settled grammar contract, and the operation budget bounds repeated
+choices. No exclusion or new grammar rule is introduced. The future order
+and layout designs remain deferred. Using a resolved token's kind in the
+current Part writer is the compatibility bridge explicitly required by
+§1.7, not an early migration to a different stored layout.
+
+`decomposition-07` retains the next failure and its keep probes: both
+questions now have only `what` open, and the premise Part relations are
+present. The fixture still attaches trailing punctuation with `verb`,
+turning the bound noun into a predicate head. Its old operation-level
+reference variant subsequently discarded that wrapper; compose bind now
+correctly precedes it. Port that marker attachment to the existing surface
+operation's declared marker position: transpose the top pair, then surface.
+This keeps the bound noun as the head instead of asking a verb operation
+to carry punctuation. It changes only this forced grammar fixture; the
+same operators, original budgets, snapshots, seeds, assertions and live
+keep apply. The concrete action port is listed in the receipt.
+
+
+## 19. Codex: resolved values without a minted kind — 2026-10-23
+
+Claude's §18C distinction is explicit `Token.pending` metadata. It describes
+resolution, not nounhood or an individual seat. Named own objects are
+pending; completed own objects and mints are not, even without a minted
+kind. Staging and the working reference reader use this bit. Refinement
+with a kind clears it; merging a pending token into a resolved token also
+clears it, without overwriting the antecedent's kind. VP value updates do
+not by themselves resolve a pending name. No identity or new column is
+written to LTM0.
+
+Checkpoint version 2 stores the bit and validates it before replacing the
+pool. Version 1 migrates using its historical `kind is None` convention;
+that old format cannot retrospectively distinguish an unminted value.
+New certificates cover both states at the host stage and working reader,
+round-trip state, atomic malformed-state rejection, migration, and merge.
+The resolved-compose-bind direct subject/complement certificate checks the
+current Part relation, no open role, actual selected token and immutable
+rows/bank after commit. No existing assertion changes.
+
+`decomposition-08` passes both zero-arm successor cases with all four
+companion questions correct at the original snapshots and seeds. It is a
+diagnosis pass only; both arms run on the next frozen source. `resolved-01`
+passes 101 cases with four prerequisite skips and exposes an overbroad
+§17 propagation in the existing R10 alias certificate. A fused value's
+structural children are not relative-clause roles. Restrict propagation to
+present participant slots of a relative clause. `resolved-02` then passes
+all 102 cases with the same four skips; every R10 assertion stays verbatim.
+The failed capture remains retained. Source-07 will run the complete scoped
+selection, including both decomposition arms, with no earlier result promoted.

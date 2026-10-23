@@ -40,26 +40,24 @@ def participant_terms(roots, rules=()):
         if not children:
             continue
         if lower or name == 'bind':
-            pending.append((children[(head or len(children))-1], True))
+            positions = {(head or len(children))-1: True}
         elif name in ('equal', 'part', 'whole'):
-            pending.extend((child, True) for child in reversed(children))
+            positions = {i: True for i in range(len(children))}
         elif name == 'lift' and len(children) == 2:
-            pending.extend((child, role != head) for role, child in reversed(tuple(enumerate(children, 1))))
+            positions = {i: i+1 != head for i in range(len(children))}
         elif noun and head and not clause:
-            # A headed attachment inside an NP retains that noun. In
-            # particular verb(noun, punctuation) does not introduce a noun
-            # for the punctuation, or turn the noun into a predicate.
-            pending.append((children[head-1], True))
+            positions = {head-1: True}
         elif name == 'verb' and len(children) == 2:
-            for role, child in reversed(tuple(enumerate(children, 1))):
-                if role != head:
-                    pending.append((child, True))
+            positions = {i: i+1 != head for i in range(len(children))}
         elif head:
-            pending.append((children[head-1], noun))
+            positions = {head-1: noun}
         else:
-            pending.extend((child, noun) for child in reversed(children))
+            positions = {i: noun for i in range(len(children))}
+        # Inspect every subtree for its own declared positions. A non-head
+        # operand is not itself a noun, but can contain a prior determination.
+        pending.extend((child, positions.get(i, False))
+                       for i, child in reversed(tuple(enumerate(children))))
     return eligible, inspected
-
 
 def clause_participants(clause, rules=()):
     """Read both the operation journal and already factored semantic roles.

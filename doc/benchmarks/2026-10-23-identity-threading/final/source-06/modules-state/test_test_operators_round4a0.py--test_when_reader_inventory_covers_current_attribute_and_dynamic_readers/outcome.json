@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round4a0.py::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_storage.py::test_retired_relation_columns_are_rejected_without_dropping_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

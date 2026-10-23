@@ -636,11 +636,12 @@ class ClauseRows:
                 point = self._concept_point(kind)
                 target, uses = reference, (site,)
             else:
-                kind = mtm.entries[token].kind
-                point = None if kind is None else resolver.token_value(token)
+                entry = mtm.entries[token]
+                kind = entry.kind
+                point = None if entry.pending else resolver.token_value(token)
                 # A token's own one-slot read exposes its derivation,
                 # terminating the address walk. A parent keeps its token.
-                target = ('sym', kind) if site == occurrence else token
+                target = ('sym', kind) if site == occurrence and kind is not None else token
                 uses = mtm.entries[token].occurrences
             # The retained parent already points at its anonymous child. That
             # structural pointer is not the pending role's bound content.

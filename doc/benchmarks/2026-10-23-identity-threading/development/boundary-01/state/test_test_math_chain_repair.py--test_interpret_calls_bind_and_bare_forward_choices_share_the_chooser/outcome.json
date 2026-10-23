@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

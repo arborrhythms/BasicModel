@@ -53,7 +53,7 @@ class MTMOverlay(nn.Module):
                 values[batch, index, :value.numel()] = value
                 valid[batch, index] = True
                 entry = resolver.components.owner.mtm.entries.get(identity)
-                resolved = (entry.kind is not None if entry is not None else
+                resolved = (not entry.pending if entry is not None else
                             resolver._derivation_symbol(identity) is not None)
                 origins[batch, index] = origins.new_tensor(
                     (1, identity, resolved) if isinstance(identity, int) else (2, identity[-1], resolved))

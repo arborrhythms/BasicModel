@@ -1,0 +1,6 @@
+{
+  "node": "test/test_selected_relation_meaning.py::test_owned_local_rule_meaning_survives_global_grammar_reconfiguration",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -27,6 +27,7 @@ class Token:
     value: torch.Tensor
     events: tuple = ()
     native: int | None = None
+    pending: bool = False
 
 
 class MediumTermMemory:
@@ -70,19 +71,23 @@ class MediumTermMemory:
         token = self.token_of(reference)
         return None if token is None else self.entries[token].value
 
-    def open(self, occurrence, *, kind, when, value, reading=None, native=None):
+    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None):
         value = self._value(value)
+        pending = kind is None if pending is None else pending
+        if type(pending) is not bool or (pending and kind is not None):
+            raise ValueError('a pending identity has no resolved kind')
         if self.token_of(occurrence) != occurrence:
             self.forget(occurrence)
         if occurrence in self.entries:
             entry = self.entries[occurrence]
             self.entries[occurrence] = replace(entry, count=entry.count + 1,
-                when=when, value=torch.maximum(entry.value.to(value), value))
+                when=when, value=torch.maximum(entry.value.to(value), value),
+                pending=entry.pending and pending)
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
         if len(self.entries) >= self.capacity:
             self.forget(min(self.entries, key=lambda key: self.entries[key].when))
-        self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native)
+        self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native, pending=pending)
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
 
@@ -100,6 +105,7 @@ class MediumTermMemory:
         joined = entry.value if value is None else torch.maximum(entry.value.to(value), self._value(value))
         self.entries[token] = replace(entry, occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
+            pending=entry.pending and kind is None,
             count=entry.count + 1, when=when, value=joined)
         previous = self.names.get(occurrence)
         self.names[occurrence] = Name(token, previous.reading if reading is None and previous else reading)
@@ -156,6 +162,7 @@ class MediumTermMemory:
             occurrences=antecedent.occurrences + previous.occurrences,
             count=antecedent.count + previous.count, when=when,
             kind=previous.kind if antecedent.kind is None else antecedent.kind,
+            pending=antecedent.pending and previous.pending,
             value=torch.maximum(antecedent.value, previous.value.to(antecedent.value)),
             events=antecedent.events + tuple(event for event in previous.events
                 if not any((other.occurrence, other.role) == (event.occurrence, event.role)
@@ -167,9 +174,9 @@ class MediumTermMemory:
 
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
-        return dict(version=1, entries=tuple(dict(key=key, occurrences=entry.occurrences,
+        return dict(version=2, entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
-            native=entry.native, events=tuple((event.occurrence, event.verb, event.role, event.when)
+            native=entry.native, pending=entry.pending, events=tuple((event.occurrence, event.verb, event.role, event.when)
                                              for event in entry.events))
             for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
@@ -179,7 +186,7 @@ class MediumTermMemory:
         if state is None:
             self.entries, self.names = {}, {}
             return
-        if not isinstance(state, dict) or state.get('version') != 1:
+        if not isinstance(state, dict) or state.get('version') not in (1, 2):
             raise ValueError('unsupported identity checkpoint')
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
@@ -201,6 +208,9 @@ class MediumTermMemory:
                     type(record['count']) is not int or record['count'] < len(uses) or
                     type(record['when']) is not int):
                 raise ValueError('invalid identity checkpoint metadata')
+            pending = record['kind'] is None if state['version'] == 1 else record.get('pending')
+            if type(pending) is not bool or (pending and record['kind'] is not None):
+                raise ValueError('invalid identity checkpoint pending state')
             value = self._value(record['value'])
             if entries and value.shape != next(iter(entries.values())).value.shape:
                 raise ValueError('identity checkpoint values have different widths')
@@ -214,7 +224,7 @@ class MediumTermMemory:
                     for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
                 raise ValueError('invalid identity checkpoint event')
             entries[key] = Token(uses, record['kind'], record['count'], record['when'], value,
-                                 events, record['native'])
+                                 events, record['native'], pending)
         for mention, token, reading in state['names']:
             if (not address(mention) or not address(token) or not symbol(reading) or
                     mention in names or token not in entries or mention not in entries[token].occurrences):

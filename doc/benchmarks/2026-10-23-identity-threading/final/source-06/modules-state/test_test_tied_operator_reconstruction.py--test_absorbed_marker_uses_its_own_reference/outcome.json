@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_operator_reconstruction.py::test_absorbed_marker_uses_its_own_reference",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,7 @@
+{
+  "source": "6da7938e6a36b56557f4fbbd621635faf1c4e191",
+  "introduced_eligible": false,
+  "introduced_inspected": false,
+  "outer_eligible": true,
+  "diagnosis": "The determined object is behind a later operation's non-head operand, which traversal never inspects."
+}

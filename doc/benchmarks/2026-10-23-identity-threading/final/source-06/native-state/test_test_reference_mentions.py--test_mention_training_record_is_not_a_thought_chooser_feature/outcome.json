@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

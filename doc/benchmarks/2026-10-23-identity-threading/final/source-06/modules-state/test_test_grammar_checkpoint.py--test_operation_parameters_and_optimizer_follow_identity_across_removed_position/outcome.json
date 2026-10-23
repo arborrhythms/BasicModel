@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

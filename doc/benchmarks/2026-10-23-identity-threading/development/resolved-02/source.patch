@@ -1,0 +1,697 @@
+diff --git a/bin/ClauseRow.py b/bin/ClauseRow.py
+index a9b8762fe..08cc68ef7 100644
+--- a/bin/ClauseRow.py
++++ b/bin/ClauseRow.py
+@@ -636,11 +636,12 @@ class ClauseRows:
+                 point = self._concept_point(kind)
+                 target, uses = reference, (site,)
+             else:
+-                kind = mtm.entries[token].kind
+-                point = None if kind is None else resolver.token_value(token)
++                entry = mtm.entries[token]
++                kind = entry.kind
++                point = None if entry.pending else resolver.token_value(token)
+                 # A token's own one-slot read exposes its derivation,
+                 # terminating the address walk. A parent keeps its token.
+-                target = ('sym', kind) if site == occurrence else token
++                target = ('sym', kind) if site == occurrence and kind is not None else token
+                 uses = mtm.entries[token].occurrences
+             # The retained parent already points at its anonymous child. That
+             # structural pointer is not the pending role's bound content.
+diff --git a/bin/MTMOverlay.py b/bin/MTMOverlay.py
+index 610afa1d7..0313ef4ef 100644
+--- a/bin/MTMOverlay.py
++++ b/bin/MTMOverlay.py
+@@ -53,7 +53,7 @@ class MTMOverlay(nn.Module):
+                 values[batch, index, :value.numel()] = value
+                 valid[batch, index] = True
+                 entry = resolver.components.owner.mtm.entries.get(identity)
+-                resolved = (entry.kind is not None if entry is not None else
++                resolved = (not entry.pending if entry is not None else
+                             resolver._derivation_symbol(identity) is not None)
+                 origins[batch, index] = origins.new_tensor(
+                     (1, identity, resolved) if isinstance(identity, int) else (2, identity[-1], resolved))
+diff --git a/bin/MediumTermMemory.py b/bin/MediumTermMemory.py
+index ed27b68cf..7bbbd2d8a 100644
+--- a/bin/MediumTermMemory.py
++++ b/bin/MediumTermMemory.py
+@@ -27,6 +27,7 @@ class Token:
+     value: torch.Tensor
+     events: tuple = ()
+     native: int | None = None
++    pending: bool = False
+ 
+ 
+ class MediumTermMemory:
+@@ -70,19 +71,23 @@ class MediumTermMemory:
+         token = self.token_of(reference)
+         return None if token is None else self.entries[token].value
+ 
+-    def open(self, occurrence, *, kind, when, value, reading=None, native=None):
++    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None):
+         value = self._value(value)
++        pending = kind is None if pending is None else pending
++        if type(pending) is not bool or (pending and kind is not None):
++            raise ValueError('a pending identity has no resolved kind')
+         if self.token_of(occurrence) != occurrence:
+             self.forget(occurrence)
+         if occurrence in self.entries:
+             entry = self.entries[occurrence]
+             self.entries[occurrence] = replace(entry, count=entry.count + 1,
+-                when=when, value=torch.maximum(entry.value.to(value), value))
++                when=when, value=torch.maximum(entry.value.to(value), value),
++                pending=entry.pending and pending)
+             self.names[occurrence] = Name(occurrence, reading)
+             return occurrence
+         if len(self.entries) >= self.capacity:
+             self.forget(min(self.entries, key=lambda key: self.entries[key].when))
+-        self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native)
++        self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native, pending=pending)
+         self.names[occurrence] = Name(occurrence, reading)
+         return occurrence
+ 
+@@ -100,6 +105,7 @@ class MediumTermMemory:
+         joined = entry.value if value is None else torch.maximum(entry.value.to(value), self._value(value))
+         self.entries[token] = replace(entry, occurrences=uses,
+             kind=kind if entry.kind is None else entry.kind,
++            pending=entry.pending and kind is None,
+             count=entry.count + 1, when=when, value=joined)
+         previous = self.names.get(occurrence)
+         self.names[occurrence] = Name(token, previous.reading if reading is None and previous else reading)
+@@ -156,6 +162,7 @@ class MediumTermMemory:
+             occurrences=antecedent.occurrences + previous.occurrences,
+             count=antecedent.count + previous.count, when=when,
+             kind=previous.kind if antecedent.kind is None else antecedent.kind,
++            pending=antecedent.pending and previous.pending,
+             value=torch.maximum(antecedent.value, previous.value.to(antecedent.value)),
+             events=antecedent.events + tuple(event for event in previous.events
+                 if not any((other.occurrence, other.role) == (event.occurrence, event.role)
+@@ -167,9 +174,9 @@ class MediumTermMemory:
+ 
+     def state(self):
+         """Checkpoint only committed values; export owns every tensor copy."""
+-        return dict(version=1, entries=tuple(dict(key=key, occurrences=entry.occurrences,
++        return dict(version=2, entries=tuple(dict(key=key, occurrences=entry.occurrences,
+             kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
+-            native=entry.native, events=tuple((event.occurrence, event.verb, event.role, event.when)
++            native=entry.native, pending=entry.pending, events=tuple((event.occurrence, event.verb, event.role, event.when)
+                                              for event in entry.events))
+             for key, entry in self.entries.items()),
+             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
+@@ -179,7 +186,7 @@ class MediumTermMemory:
+         if state is None:
+             self.entries, self.names = {}, {}
+             return
+-        if not isinstance(state, dict) or state.get('version') != 1:
++        if not isinstance(state, dict) or state.get('version') not in (1, 2):
+             raise ValueError('unsupported identity checkpoint')
+         def address(value):
+             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
+@@ -201,6 +208,9 @@ class MediumTermMemory:
+                     type(record['count']) is not int or record['count'] < len(uses) or
+                     type(record['when']) is not int):
+                 raise ValueError('invalid identity checkpoint metadata')
++            pending = record['kind'] is None if state['version'] == 1 else record.get('pending')
++            if type(pending) is not bool or (pending and record['kind'] is not None):
++                raise ValueError('invalid identity checkpoint pending state')
+             value = self._value(record['value'])
+             if entries and value.shape != next(iter(entries.values())).value.shape:
+                 raise ValueError('identity checkpoint values have different widths')
+@@ -214,7 +224,7 @@ class MediumTermMemory:
+                     for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
+                 raise ValueError('invalid identity checkpoint event')
+             entries[key] = Token(uses, record['kind'], record['count'], record['when'], value,
+-                                 events, record['native'])
++                                 events, record['native'], pending)
+         for mention, token, reading in state['names']:
+             if (not address(mention) or not address(token) or not symbol(reading) or
+                     mention in names or token not in entries or mention not in entries[token].occurrences):
+diff --git a/bin/ReferenceClose.py b/bin/ReferenceClose.py
+index cda0f4311..2da5959e5 100644
+--- a/bin/ReferenceClose.py
++++ b/bin/ReferenceClose.py
+@@ -976,23 +976,35 @@ class ReferenceClose(nn.Module):
+             request = node.reference_request
+             token = self.components.owner.mtm.token_of(reference)
+             unresolved = (selected in anonymous or (token is not None
+-                          and self.components.owner.mtm.entries[token].kind is None))
++                          and self.components.owner.mtm.entries[token].pending))
+             if unresolved and request.get('forward_identity') is None and node.subject_word_id >= 0:
+                 request = dict(request, forward_identity=node.subject_word_id)
++            alias = minted.get(selected) if isinstance(selected, tuple) else None
++            kind = self._derivation_symbol(reference)
++            resolved_bind = (request.get('compose_bind', 0) > 0 and not unresolved
++                             and (kind is not None or alias is not None or token is not None))
+             site = dict(role=item['role'], leaves=item['leaves'],
+                 cue=None if request.get('cue') is None else request['cue'].detach().cpu().tolist(),
+                 content=None if request.get('content') is None else request['content'].detach().cpu().tolist(),
+                 predicate=None if request.get('predicate') is None else request['predicate'].detach().cpu().tolist())
+             meaning = replace(node.meaning, bindings=dict(bindings(node.meaning), _reference_sites=((0, site),)))
+-            named = request.get('forward_identity') is not None
++            named = request.get('forward_identity') is not None and not resolved_bind
++            if resolved_bind:
++                # The chooser has already supplied this resolved identity.
++                # Its lexical name is not an open reference. Today's Part
++                # writer still consumes the retained kind/alias of that bind.
++                data = bindings(meaning)
++                data['_forward_references'] = tuple(item for item in
++                    data.get('_forward_references', ()) if item[0] != 0)
++                meaning = with_slots(replace(meaning, bindings=data),
++                    (slot for slot in data.get('_open_references', ()) if slot[1] != 0))
+             if selected is None or named or unresolved:
+                 meaning = with_slots(meaning, (('referent', 0),), pair=node.evidence)
+                 if request.get('forward_identity') is not None:
+                     meaning = replace(meaning, bindings=dict(bindings(meaning),
+                         _forward_references=((0, request['forward_identity']),)))
+             term = node.composition or Composition(node.point, order=node.order)
+-            native = self.address(reference)
+-            alias = minted.get(selected) if isinstance(selected, tuple) else None
++            native = kind if resolved_bind and kind is not None else self.address(reference)
+             source = (term.reference if item.get('own_object') and not item.get('anonymous')
+                       else -1)
+             updated = replace(term, reference=source if native is None else native,
+@@ -1026,9 +1038,41 @@ class ReferenceClose(nn.Module):
+                 for role, site in attached.get(id(node), ()):
+                     refs[role] = ('clause', len(children))
+                     children.append(site)
++                children = tuple(rewrite(c) for c in children)
++                # An explicit compose bind owns a child occurrence. If that
++                # child is a direct role, its pending name belongs to the
++                # enclosing relation's same role as well. Preserve the
++                # predicate/complement when thought asks for that referent.
++                meaning = value.meaning
++                data = bindings(meaning)
++                forwards = dict(data.get('_forward_references', ()))
++                sites = dict(data.get('_reference_sites', ()))
++                opened = list(data.get('_open_references', ()))
++                for role, ref in enumerate(refs):
++                    if (value.relation is None or role not in (0, 2)
++                            or not bool(meaning.role_mask[role])
++                            or not (isinstance(ref, tuple) and ref[:1] == ('clause',))):
++                        continue
++                    child = children[ref[1]].meaning
++                    if int(child.role_mask.sum()) != 1 or not bool(child.role_mask[0]):
++                        continue
++                    marks = bindings(child)
++                    name = dict(marks.get('_forward_references', ())).get(0)
++                    if name is None:
++                        continue
++                    forwards[role] = name
++                    opened.append(('referent', role))
++                    site = dict(marks.get('_reference_sites', ())).get(0)
++                    if site is not None:
++                        sites[role] = dict(site, role=role)
++                if forwards:
++                    data.update(_forward_references=tuple(forwards.items()),
++                                _reference_sites=tuple(sites.items()))
++                    meaning = with_slots(replace(meaning, bindings=data), opened)
+                 rebuilt[id(node)] = replace(value,
++                    meaning=meaning,
+                     composition=rewrite_term(node.composition) if node.composition is not None else value.composition,
+-                    refs=tuple(refs), children=tuple(rewrite(c) for c in children),
++                    refs=tuple(refs), children=children,
+                     companions=tuple(rewrite(c) for c in value.companions))
+             return rebuilt[id(node)]
+         result = rewrite(clause)
+@@ -1092,7 +1136,8 @@ class ReferenceClose(nn.Module):
+                     kind = self._derivation_symbol(reference)
+                 if item['mode'] == 'mint' or item.get('own_object'):
+                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
+-                             when=when, value=node.point, reading=kind if reading is None else reading)
++                             when=when, value=node.point, reading=kind if reading is None else reading,
++                             pending=bool(item.get('anonymous')))
+                 else:
+                     uses.append((reference, occurrence, kind, node.point, kind if reading is None else reading))
+             elif isinstance(reference, int) and reference in alloc.individuals:
+diff --git a/bin/ReferenceParticipants.py b/bin/ReferenceParticipants.py
+index d38fe5d69..e17d80bd0 100644
+--- a/bin/ReferenceParticipants.py
++++ b/bin/ReferenceParticipants.py
+@@ -40,27 +40,25 @@ def participant_terms(roots, rules=()):
+         if not children:
+             continue
+         if lower or name == 'bind':
+-            pending.append((children[(head or len(children))-1], True))
++            positions = {(head or len(children))-1: True}
+         elif name in ('equal', 'part', 'whole'):
+-            pending.extend((child, True) for child in reversed(children))
++            positions = {i: True for i in range(len(children))}
+         elif name == 'lift' and len(children) == 2:
+-            pending.extend((child, role != head) for role, child in reversed(tuple(enumerate(children, 1))))
++            positions = {i: i+1 != head for i in range(len(children))}
+         elif noun and head and not clause:
+-            # A headed attachment inside an NP retains that noun. In
+-            # particular verb(noun, punctuation) does not introduce a noun
+-            # for the punctuation, or turn the noun into a predicate.
+-            pending.append((children[head-1], True))
++            positions = {head-1: True}
+         elif name == 'verb' and len(children) == 2:
+-            for role, child in reversed(tuple(enumerate(children, 1))):
+-                if role != head:
+-                    pending.append((child, True))
++            positions = {i: i+1 != head for i in range(len(children))}
+         elif head:
+-            pending.append((children[head-1], noun))
++            positions = {head-1: noun}
+         else:
+-            pending.extend((child, noun) for child in reversed(children))
++            positions = {i: noun for i in range(len(children))}
++        # Inspect every subtree for its own declared positions. A non-head
++        # operand is not itself a noun, but can contain a prior determination.
++        pending.extend((child, positions.get(i, False))
++                       for i, child in reversed(tuple(enumerate(children))))
+     return eligible, inspected
+ 
+-
+ def clause_participants(clause, rules=()):
+     """Read both the operation journal and already factored semantic roles.
+ 
+diff --git a/bin/ThoughtClosing.py b/bin/ThoughtClosing.py
+index b30f4cb9d..070a1cbff 100644
+--- a/bin/ThoughtClosing.py
++++ b/bin/ThoughtClosing.py
+@@ -53,7 +53,11 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None,
+                             _source_evidence=tuple(clause.evidence))
+                 nested = with_slots(replace(nested, mode=source.mode, bindings=data),
+                     open_slots(nested), pair=clause.evidence)
+-                return nested
++                # Inheriting the source's authority can close an unsupported
++                # region without filling any role. Only a remaining question
++                # belongs in the completed field; inspect other children too.
++                if needs_episode(nested):
++                    return nested
+     source = parsed if parsed is not None else meaning
+     if committed is not None:
+         # Storage does not retain grammatical mode. The live closing still
+diff --git a/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py b/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py
+index bee50aa77..5fea12e05 100644
+--- a/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py
++++ b/doc/benchmarks/2026-10-20-item3-5-stm1/decomposition_certificate.py
+@@ -54,11 +54,11 @@ def run(folder, successors=1):
+         doc = grammar.documents[row]
+         for name, index in assignments.items():
+             source = sources.get((doc, index))
+-            if name in labels and source is not None:
++            if name in labels and source is not None and source.role_refs[0] is not None:
+                 return source.role_refs[0][-1]
+         for word, index in [('three', assignments['x']), ('four', min(licenses.values()))]:
+             source = sources.get((doc, index))
+-            if word in labels and source is not None:
++            if word in labels and source is not None and source.role_refs[2] is not None:
+                 return source.role_refs[2][-1]
+         return None
+ 
+@@ -153,7 +153,8 @@ def run(folder, successors=1):
+ 
+     try:
+         with ForcedDecompositionGrammar(model, open_names=('what',), question_budget=question_budget,
+-                preferred_references=preferred_references) as grammar, \
++                preferred_references=preferred_references,
++                reference_orders=(*assignments, 'what')) as grammar, \
+                 patch.object(ThoughtStream, 'candidates', candidates), \
+                 patch.object(chooser, 'thought_logits', logits):
+             rows = train_documents(model, documents, folder, after=after, episode=episode)
+diff --git a/doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py b/doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py
+index 53c10fb70..6f75e03ad 100644
+--- a/doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py
++++ b/doc/benchmarks/2026-10-20-item3-5-stm1/forced_decomposition_grammar.py
+@@ -11,12 +11,13 @@ import torch
+ 
+ class ForcedDecompositionGrammar:
+     def __init__(self, model, *, open_names=(), named_bindings=None, generic_subjects=(), question_budget=None,
+-                 preferred_references=None):
++                 preferred_references=None, reference_orders=()):
+         self.model, self.open_names = model, set(open_names)
+         self.named_bindings = dict(named_bindings or {})
+         self.generic_subjects = set(generic_subjects)
+         self.question_budget = question_budget
+         self.preferred_references = preferred_references
++        self.reference_orders = set(reference_orders)
+         self.word, self.current, self.data, self.texts = 0, None, None, ()
+         self.records = []
+ 
+@@ -30,6 +31,22 @@ class ForcedDecompositionGrammar:
+         choose, forward, select = language.choose_operation, layer.forward, layer.select_logits
+         resolver = self.model._concept_owner().components.reference_close
+         select_reference = resolver.select
++        owner = self.model._concept_owner()
++        from Spaces import _concept_alloc_of
++        allocation = _concept_alloc_of(owner)
++        lookup = owner.interpret.lookup_word
++        def lookup_word(*args, **kwargs):
++            word = lookup(*args, **kwargs)
++            form = kwargs.get('form')
++            form = form.decode() if isinstance(form, bytes) else form
++            if form in self.reference_orders:
++                allocation.reference_orders[word] = 1
++            return word
++        for form, words in allocation.word_forms.items():
++            form = form.decode() if isinstance(form, bytes) else form
++            if form in self.reference_orders:
++                for word in words:
++                    allocation.reference_orders[word] = 1
+         def reference_choice(choices, logits, *, forward_identity=None, individuals=None):
+             # The same declared open-name choice applies when the closing
+             # owner calls bind. In particular, the question's "what" must
+@@ -87,6 +104,10 @@ class ForcedDecompositionGrammar:
+                 word = word.decode() if isinstance(word, bytes) else str(word)
+                 for identity in ids:
+                     names.setdefault(int(identity), set()).add(word.lower())
++            # The same forced references now name compose-bind locations.
++            # Mention readings live with those locations in MTM.
++            for occurrence, mention in owner.mtm.names.items():
++                names.setdefault(mention.token[-1], set()).update(names.get(mention.reading, ()))
+             nb, nu = len(data['binary_ops']), len(data['unary_ops'])
+             for b in range(len(chosen)):
+                 if not bool(active[b]):
+@@ -94,12 +115,33 @@ class ForcedDecompositionGrammar:
+                 excluded = kwargs.get('masked_action')
+                 departure = excluded is not None and int(excluded[b]) >= 0
+                 depth = int(state[1][b])
++                unary_position = min(depth, 2) - 1
+                 right = names.get(int(scope[b,0,1]), set())
+                 left = names.get(int(scope[b,1,1]), set()) if depth > 1 else set()
++                identity_state = context.get('identity_state')
++                bare = True
++                if identity_state is not None:
++                    identity_stack = identity_state[2]
++                    right = right | names.get(int(identity_stack[b, 0, 4]), set())
++                    if depth > 1:
++                        left = left | names.get(int(identity_stack[b, 1, 4]), set())
++                    # Transparent surface wrappers can drop scope flags. The
++                    # overlay's producing action still distinguishes a bare
++                    # pushed word from an already bound NP, VP or sentence.
++                    bare = int(identity_stack[b, 0, 5]) == 0
+                 last = int(self.model.inputSpace._word_active_mask[b].nonzero()[-1])
+                 question = self.texts[b].rstrip().endswith('?')
+                 operation = None
+-                if depth > 1 and any(word.isspace() for word in left):
++                if identity_state is not None and right.intersection(self.reference_orders) and bare:
++                    candidates = [i for i, op in enumerate(data['unary_ops'])
++                        if language._compose_unary_rules[op].method_name == 'bind'
++                        and bool(data['unary_valid'][b, unary_position, i])]
++                    known = any(names.get(int(data['unary_refs'][b, unary_position, i, 0]), set()).intersection(right)
++                                for i in candidates)
++                    # Preserve the fixture's former mint/reference/open choices
++                    # at their explicit grammatical operations.
++                    operation = 'bind' if known or right.intersection(self.open_names) else 'lower_unary'
++                elif depth > 1 and (any(word.isspace() for word in left) or left.intersection({'.', '?'})):
+                     # Zero attention presents the whitespace units too.
+                     # Force their ordinary surface attachment; leaving them
+                     # on the stack would fabricate extra equality operands.
+@@ -116,7 +158,10 @@ class ForcedDecompositionGrammar:
+                 elif depth > 1 and 'plus' in right and (int(scope[b,0,0]) & 8) and not left.intersection({'is', 'plus'}):
+                     operation = 'lift'
+                 elif self.word >= last and depth > 1:
+-                    if right.intersection({'.','?'}): operation = 'verb'
++                    # Surface markers occupy the surface operation's first
++                    # role. Reverse the two stack operands before attaching a
++                    # trailing marker, preserving the noun's recorded bind.
++                    if right.intersection({'.','?'}): operation = 'transpose'
+                     elif 'is' in left: operation = 'surface'
+                     elif 'plus' in left: operation = 'verb'
+                     elif 'plus' in right: operation = 'lift'
+@@ -136,11 +181,11 @@ class ForcedDecompositionGrammar:
+                 if operation is None:
+                     candidates = [len(logits[b])-1] if bool(allowed[-1]) else []
+                 else:
+-                    unary = operation in ('ask', 'generic')
++                    unary = operation in ('ask', 'generic', 'bind', 'lower_unary')
+                     rules = language._compose_unary_rules if unary else language._compose_binary_rules
+                     ops = data['unary_ops' if unary else 'binary_ops']
+-                    refs = data['unary_refs' if unary else 'binary_refs'][b,0]
+-                    offset = nb if unary else 0
++                    refs = data['unary_refs' if unary else 'binary_refs'][b,unary_position if unary else 0]
++                    offset = nb + unary_position * nu if unary else 0
+                     def name(rule):
+                         return 'definite' if getattr(rule,'determiner_mode',None)=='bind' else rule.method_name
+                     candidates = [offset+i for i,op in enumerate(ops)
+@@ -154,21 +199,26 @@ class ForcedDecompositionGrammar:
+                             # A completed phrase may retain its head's name.
+                             # Rebinding that whole phrase to the bare head
+                             # would erase its operands (four plus one -> four).
+-                            bare = not (int(scope[b,position,0]) & (1 | 4 | 8))
++                            bare = operation == 'bind' or not (int(scope[b,position,0]) & (1 | 4 | 8))
+                             if not bare:
+                                 score += 100 * (identity == -1)
+                                 continue
+                             if self.preferred_references is not None:
+                                 preferred = self.preferred_references(b, labels)
++                                if preferred is not None and operation == 'bind':
++                                    token = owner.mtm.token_of(('ltm', resolver.store.address_domain, preferred))
++                                    if token is not None:
++                                        preferred = token[-1]
+                                 score += 1000 * (preferred is not None and identity == preferred)
+-                            if identity == -1: score += 1  # mint when there is no retained bond
++                            if identity == (-1 if operation != 'bind' else 0): score += 1  # own object without a retained bond
+                             if names.get(identity,set()).intersection(labels):
+                                 score += 3
+                                 store = self.model.symbolSpace.ltm_store
+                                 index = store.index_of_row(identity)
+                                 if index is not None:
+-                                    cached = store.refs[index]
+-                                    score += 6 if bool((cached == -1).all()) else -20
++                                    # The retired refs column was unused on
++                                    # occurrences; its all--1 branch was +6.
++                                    score += 6
+                             if labels.intersection(self.open_names): score += 10 * (identity == 0)
+                             for source, target in self.named_bindings.items():
+                                 if source in labels and target in names.get(identity, set()):
+@@ -190,7 +240,8 @@ class ForcedDecompositionGrammar:
+                                  (BasicModel,'runBatch',run_batch),
+                                  (language,'choose_operation',choose_operation),
+                                  (layer,'forward',operation), (layer,'select_logits',choose_logits),
+-                                 (resolver,'select',reference_choice)):
++                                 (resolver,'select',reference_choice),
++                                 (owner.interpret,'lookup_word',lookup_word)):
+             self.stack.enter_context(patch.object(owner,name,value))
+         return self
+ 
+diff --git a/test/test_identity_threading.py b/test/test_identity_threading.py
+index 2dd86918d..dd7656d1f 100644
+--- a/test/test_identity_threading.py
++++ b/test/test_identity_threading.py
+@@ -342,13 +342,14 @@ def test_binding_an_unresolved_object_does_not_complete_its_verb():
+ 
+ 
+ @pytest.mark.parametrize('readmit', (False, True))
+-def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit):
++@pytest.mark.parametrize('wrapper', ('sum', 'lower'))
++def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch, readmit, wrapper):
+     from ClauseJournal import finish_clause
+     from test_clause_acceptance import SentenceFixture
+     from test_medium_term_memory import snapshot, unchanged
+     f = SentenceFixture(monkeypatch)
+     entry, _, handle = recorded_identity_reading(f,
+-        ('bind', ('sum', ('lower_unary', 'subject'), 'tail')))
++        ('bind', (wrapper, ('lower_unary', 'subject'), 'tail')))
+     clause = finish_clause(f.language, entry, registry=f.registry)
+     resolver = f.cs.components.reference_close
+     plan = resolver.preview(clause, ())
+@@ -389,6 +390,65 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
+     assert closing._next == closing.alloc.next_id
+ 
+ 
++@pytest.mark.parametrize('open_sibling', (False, True))
++def test_source_authority_closes_a_nested_region_without_hiding_a_free_role(open_sibling):
++    from dataclasses import replace
++    from ClauseRow import Clause
++    from Meaning import ConceptualMeaning
++    from ThoughtClosing import closing_question
++    from ThoughtReferences import needs_episode, open_slots, with_slots
++    value = replace(ConceptualMeaning.from_description(torch.ones(4)),
++                    role_refs=(('sym', 1), None, None))
++    child = Clause(replace(value, mode='interrogative'), point=value.roles[0],
++                   refs=(1, -1, -1), evidence=(0., 0.))
++    children = (child,)
++    if open_sibling:
++        pending = with_slots(replace(value, role_refs=(None, None, None)),
++                             (('referent', 0),), pair=(0., 0.))
++        children += (Clause(pending, point=pending.roles[0], evidence=(0., 0.)),)
++    parent = Clause(value, point=value.roles[0], refs=(1, -1, -1),
++                    children=children, evidence=(1., 0.))
++    query = closing_question(value, parent)
++    if open_sibling:
++        assert query is not None and needs_episode(query)
++        assert open_slots(query) == (('referent', 0),)
++    else:
++        assert query is None
++
++
++@pytest.mark.parametrize('role', (0, 2))
++def test_compose_bind_pending_child_keeps_the_direct_question_role(monkeypatch, role):
++    from dataclasses import replace
++    from ClauseRow import Clause, ClausePredicate, predicate_point
++    from Meaning import ConceptualMeaning
++    from ThoughtClosing import closing_question
++    from ThoughtReferences import bindings, open_slots
++    from test_reference_arrivals import world, named, force_named
++    resolver, store, atoms, words, _ = world()
++    force_named(resolver, monkeypatch, None)
++    child = named(atoms[0], words['x'])
++    child = replace(child, reference_request=dict(child.reference_request, compose_bind=0))
++    pred = predicate_point('equal', atoms[0])
++    value = ConceptualMeaning(torch.stack((atoms[0], pred, atoms[0])),
++        torch.ones(3, dtype=torch.bool), mode='interrogative', bindings={'_equality': True})
++    refs = [words['three'], ClausePredicate(pred, 'equal'), words['three']]
++    refs[role] = ('clause', 0)
++    parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(0., 0.))
++    plan = resolver.preview(parent, ())
++    prepared = resolver.prepare(parent, plan)
++    written = {}
++    row = store.write_clause(prepared, document_key='direct-question', written_rows=written)
++    resolver.commit(plan, row, written, document='direct-question', position=0, training=False)
++    raw = store.raw_meaning_of(row)
++    query = closing_question(store.meaning_of(row), prepared, store=store, written_rows=written)
++    assert raw.role_refs[role][0] == 'ltm'
++    assert bindings(raw)['_forward_references'] == ((role, words['x']),)
++    assert query is not None and open_slots(query) == (('referent', role),)
++    assert bindings(query)['_query_occurrence'] == store.occurrence_of(row)
++    assert query.role_refs[2-role] == ('sym', words['three'])
++    torch.testing.assert_close(query.roles[1], pred)
++
++
+ def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
+     import copy
+     from MemoryIndex import configure_model_index, RowRemapObserver
+@@ -431,3 +491,99 @@ def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
+     events = {event.occurrence for token in f.cs.mtm.entries.values() for event in token.events}
+     assert events == {written[('occurrence', id(prepared))]}
+     assert len(f.store) == 3
++
++
++@pytest.mark.parametrize('role', (0, 2))
++def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, role):
++    from dataclasses import replace
++    from ClauseRow import Clause, ClausePredicate, predicate_point
++    from Meaning import ConceptualMeaning
++    from ReferenceContext import SituationFrame
++    from ThoughtClosing import closing_question
++    from ThoughtReferences import open_slots
++    from test_reference_arrivals import world, named, force_named
++    from test_medium_term_memory import keep, mention, snapshot, unchanged
++    resolver, store, atoms, words, _ = world()
++    force_named(resolver, monkeypatch, None)
++    first, _ = keep(resolver, mention(atoms[0], reference=words['three']))
++    token = store.occurrence_of(first)
++    child = named(atoms[0], words['x'])
++    child = replace(child, reference_request=dict(child.reference_request, compose_bind=1),
++        identity=dict(handle=1, origins=torch.tensor([[2, token[-1], 1]])))
++    pred = predicate_point('equal', atoms[0])
++    value = ConceptualMeaning(torch.stack((atoms[0], pred, atoms[1])),
++        torch.ones(3, dtype=torch.bool), bindings={'_equality': True})
++    refs = [words['wrong'], ClausePredicate(pred, 'equal'), words['wrong']]
++    refs[role] = ('clause', 0)
++    parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(1., 0.))
++    plan = resolver.preview(parent, (SituationFrame.from_row(store.row(first)),))
++    prepared = resolver.prepare(parent, plan)
++    written = {}
++    row = store.write_clause(prepared, document_key='resolved-question', written_rows=written)
++    retained = snapshot(resolver)
++    resolver.commit(plan, row, written, document='resolved-question', position=1, training=False)
++    assert plan['items'][0]['reference'] == token
++    assert row[0] == 'sym' and store.parts.contains(row[1])
++    assert store.meaning_of(row).role_refs[role] == ('sym', words['three'])
++    assert not open_slots(store.meaning_of(row))
++    assert closing_question(store.meaning_of(row), prepared, store=store, written_rows=written) is None
++    unchanged(resolver, retained)
++
++
++@pytest.mark.parametrize('pending', (False, True))
++def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
++    from dataclasses import replace
++    from Meaning import ConceptualMeaning
++    from ReferenceContext import SituationFrame
++    from ThoughtReferences import open_slots, with_slots
++    from test_reference_close import fixture
++    from test_medium_term_memory import snapshot, unchanged
++    resolver, store, atoms = fixture()
++    row = store.append_meaning(ConceptualMeaning.from_description(atoms[0]), order=1,
++                               document_key='unminted', sentence_index=0, evidence=(1., 0.))
++    token = store.occurrence_of(row)
++    pool = resolver.components.owner.mtm
++    pool.open(token, kind=None, pending=pending, when=1, value=atoms[0])
++    raw = with_slots(replace(store.raw_meaning_of(row), bindings={'_forward_references': ((0, 101),)}),
++                     (('referent', 0),))
++    retained = snapshot(resolver)
++    read = store.read_reference_bindings(row, raw)
++    staged = MTMOverlay.stage(resolver, [(SituationFrame.from_row(store.row(row)),)],
++        atoms[0][None, None], words=1, journal=1)
++    assert bool(staged[3][0, 0, 2]) == (not pending)
++    assert bool(open_slots(read)) == pending
++    if not pending:
++        assert read.role_refs[0] == token
++        torch.testing.assert_close(read.roles[0], atoms[0])
++    restored = MediumTermMemory()
++    restored.restore(pool.state())
++    assert restored.entries[token].pending == pending and restored.entries[token].kind is None
++    torch.testing.assert_close(restored.value_of(token), atoms[0])
++    unchanged(resolver, retained)
++
++
++def test_pending_checkpoint_migration_and_validation_are_atomic():
++    import copy
++    pool = MediumTermMemory()
++    first, second = address(1), address(2)
++    pool.open(first, kind=None, pending=False, when=1, value=torch.ones(3))
++    pool.open(second, kind=101, when=2, value=torch.zeros(3))
++    state = pool.state()
++    legacy = copy.deepcopy(state)
++    legacy['version'] = 1
++    for entry in legacy['entries']:
++        del entry['pending']
++    restored = MediumTermMemory()
++    restored.restore(legacy)
++    assert restored.entries[first].pending and not restored.entries[second].pending
++    previous = restored.entries
++    malformed = copy.deepcopy(state)
++    malformed['entries'][0]['pending'] = 'false'
++    with pytest.raises(ValueError, match='pending state'):
++        restored.restore(malformed)
++    assert restored.entries is previous
++    pool.bind(first, address(3), kind=102, when=3)
++    assert not pool.entries[first].pending
++    pool.open(address(4), kind=None, when=4, value=torch.zeros(3))
++    pool.merge(first, address(4), when=5)
++    assert not pool.entries[address(4)].pending and pool.entries[address(4)].kind == 102
+diff --git a/test/test_math_chain_repair.py b/test/test_math_chain_repair.py
+index 529ecf162..89098e765 100644
+--- a/test/test_math_chain_repair.py
++++ b/test/test_math_chain_repair.py
+@@ -98,7 +98,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
+     premise = replace(meaning, role_refs=(None, ('sym', 3), ('sym', 1)),
+         bindings=dict(data, _equality=True))
+     if not forward_first:
+-        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
++        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+     row = store.append_meaning(meaning, document_key='pending', evidence=(1.,0.))
+     address = store.occurrence_of(row)
+     raw = store.raw_meaning_of(row)
+@@ -111,7 +111,13 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
+         extras = store.semantic_extras()
+         store.load_state_dict(store.state_dict())
+         store.load_semantic_extras(extras)
+-        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
++        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
++    # This direct storage fixture supplies the kept bind explicitly. Equality
++    # rows alone stopped being a binder at §10.4; source rows stay immutable.
++    pool = store._concept_owner().mtm
++    pool.open(address, kind=None, when=0, value=meaning.roles[0], reading=17)
++    pool.bind(address, store.occurrence_of(arrival), kind=1, when=1,
++              value=store._concept_point(1), reading=17)
+     resolved = store.meaning_of(row)
+     assert ('referent', 0) not in open_slots(resolved)
+     assert not bindings(resolved).get('_forward_references')
+diff --git a/test/test_thought_operation_catalog.py b/test/test_thought_operation_catalog.py
+index 3e22d8964..c7da0c6fc 100644
+--- a/test/test_thought_operation_catalog.py
++++ b/test/test_thought_operation_catalog.py
+@@ -613,7 +613,7 @@ def test_live_router_adapters_receive_the_owner_built_structural_context():
+             self.contexts = []
+ 
+         def compose(self, value):
+-            return value + 1.0
++            return 1.0 - value
+ 
+         def compose_from_grammar_context(self, operands, *, context):
+             self.contexts.append(context)

@@ -12,6 +12,25 @@ from arrival_capture import plain
 from pack_capture import save
 
 
+def memory_state(resolver):
+    owner = resolver.components.owner
+    model = getattr(owner, '_model', None)
+    structural = getattr(model, '_collect_structural_extras', None)
+    from Spaces import _concept_alloc_of
+    def optional(read):
+        try:
+            return None if read is None else read()
+        except Exception as error:
+            # A corruption fixture may deliberately make a checkpoint invalid.
+            # Record that limitation without changing the call under test.
+            return dict(capture_error=type(error).__name__, message=str(error))
+    return dict(parameters=owner.state_dict(), store=resolver.store.state_dict(),
+        store_semantics=optional(resolver.store.semantic_extras),
+        parts=_concept_alloc_of(owner).parts.state_dict(),
+        owner_extras=optional(owner.vocab_extras), mtm_state=owner.mtm.state(),
+        model_structural=optional(structural))
+
+
 @pytest.fixture(autouse=True)
 def capture_contract(request, monkeypatch):
     if 'test_forced_ordinary_pending_premise' in request.node.name:
@@ -41,9 +60,7 @@ def capture_contract(request, monkeypatch):
     def close(resolver, *args, **kwargs):
         if all(resolver is not previous for previous in resolvers):
             resolvers.append(resolver)
-            save(dict(parameters=resolver.components.owner.state_dict(),
-                            store=resolver.store.state_dict(), mtm_state=resolver.components.owner.mtm.state()),
-                       root/f'initial-{len(resolvers)}.pt')
+            save(memory_state(resolver), root/f'initial-{len(resolvers)}.pt')
         result = preview(resolver, *args, **kwargs)
         records.append(dict(call='preview', plan=plain({
             key: result.get(key) for key in ('items', 'individuals', 'arrivals', 'decisions', 'cost')})))
@@ -102,7 +119,5 @@ def pytest_runtest_makereport(item, call):
         if temporary is not None:
             shutil.copytree(temporary, root/'artifacts', dirs_exist_ok=False)
         for index, resolver in enumerate(item._contract_resolvers, 1):
-            save(dict(parameters=resolver.components.owner.state_dict(),
-                store=resolver.store.state_dict(), mtm=resolver.components.owner.mtm.entries,
-                mtm_state=resolver.components.owner.mtm.state(),
+            save(dict(memory_state(resolver), mtm=resolver.components.owner.mtm.entries,
                 audit=resolver.last_audit), root/f'failure-{index}.pt')

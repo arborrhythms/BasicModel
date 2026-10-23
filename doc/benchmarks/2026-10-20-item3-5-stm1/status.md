@@ -1,10 +1,11 @@
 # Step 1b: current gates and carry ledger
 
-**Identity threading continued, 2026-10-23:** the next freeze implements the
-[identity spec](../../plans/2026-10-23-identity-threading.md) on main.
-The retained inference-kind and changed-module failures are diagnosed and
-repaired under step-2 §39; the next frozen hash gets all scoped gates,
-then Claude's review and publication. The
+**Identity threading continued, 2026-10-23:** frozen `6da7938e6` completed
+the scoped pass with 1,423 passes, twelve skips and nine retained failures.
+The [identity spec §§15–19](../../plans/2026-10-23-identity-threading.md)
+records the boundary/resolution repairs and fixture ports under step-2 §39.
+Claude’s focused diagnosis is completed and retained;
+the next frozen hash gets all scoped gates, final review and publication. The
 [receipt](../2026-10-23-identity-threading/README.md) lists every port and
 failed source. The latest §72 decision moves layout-and-removal and
 shared STM chunks to item 3.0; 2c follows identity on today's storage.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_repair.py::test_pending_relation_fills_in_place_in_both_arrival_orders[True]",
+  "outcome": "failed",
+  "failure": "test/test_math_chain_repair.py:116: in test_pending_relation_fills_in_place_in_both_arrival_orders\n    assert ('referent', 0) not in open_slots(resolved)\nE   AssertionError: assert ('referent', 0) not in (('referent', 0),)\nE    +  where (('referent', 0),) = <function open_slots at 0x10e35e7a0>(ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, ('sym', 3), ('sym', 2)), bindings=(('_evidence_pai...)), ('_forward_references', ((0, 17),)), ('_open_references', (('referent', 0),))), scope=(), sentence_kind='relation'))",
+  "records": []
+}

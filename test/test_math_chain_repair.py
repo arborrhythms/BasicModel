@@ -98,7 +98,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     premise = replace(meaning, role_refs=(None, ('sym', 3), ('sym', 1)),
         bindings=dict(data, _equality=True))
     if not forward_first:
-        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
     row = store.append_meaning(meaning, document_key='pending', evidence=(1.,0.))
     address = store.occurrence_of(row)
     raw = store.raw_meaning_of(row)
@@ -111,7 +111,13 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
         extras = store.semantic_extras()
         store.load_state_dict(store.state_dict())
         store.load_semantic_extras(extras)
-        store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+    # This direct storage fixture supplies the kept bind explicitly. Equality
+    # rows alone stopped being a binder at §10.4; source rows stay immutable.
+    pool = store._concept_owner().mtm
+    pool.open(address, kind=None, when=0, value=meaning.roles[0], reading=17)
+    pool.bind(address, store.occurrence_of(arrival), kind=1, when=1,
+              value=store._concept_point(1), reading=17)
     resolved = store.meaning_of(row)
     assert ('referent', 0) not in open_slots(resolved)
     assert not bindings(resolved).get('_forward_references')

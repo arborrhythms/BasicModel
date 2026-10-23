@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_rows.py::test_form_region_is_a_concept_and_known_exposure_changes_containment",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
