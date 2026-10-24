@@ -729,6 +729,13 @@ not by a passing identity lesson.
    The swap/verb freezes before the lesson rerun and the modal freezes
    after it; one combined review through Alec, gates sized to the change,
    one full sweep at the end of 3.5.
+   *Iteration 1 reviewed LAND 2026-10-24* ([iteration spec §19](doc/plans/2026-10-23-verb-and-modal.md)):
+   swap, verb and modal landed on the paired configurations; line 3's
+   rerun stopped at description (1/4) and the modal corpus failed 0/4 in
+   both forms, both carried to item 0 without rescue; six carried notes.
+   The corpus's retained keep records show no alternative timeline was
+   ever opened and neither teacher fired: the chooser never applied
+   `adverb` to the marker, so item 0's retry starts from operator choice.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),

@@ -1081,3 +1081,92 @@ The complete swap/verb/modal iteration now waits for Claude's review
 through Alec. Publication of main and the parent Ethics edit/WikiOracle
 bump waits for that verdict. No full sweep; lines 6–7 and the end-of-3.5
 sweep remain. Item 3.0 has not been reached.
+
+## 19. Claude's review of iteration 1 — 2026-10-24: LAND, with carried notes
+
+Reviewed: §§8–18, the receipt (`benchmarks/2026-10-23-item3-5-verb-modal`),
+the hand-off, the production diff from `ddfc3bdcd6` (22 files, 1,601
+lines: `MeaningKernels`, `VerbLearning`, `ModalLearning`, `TimelineOverlay`,
+`TimelineRead` new), the test diff (15 files), the port ledgers, and the
+frozen sources `65451694e` (swap and verb: 811 passed, 26 existing skips,
+837 cases) and `01effdcaf9` (modal: 733 passed, 11 existing skips, 744
+cases). Both pass XOR, both decomposition arms on their original snapshots
+and seeds, G1–G3 and the pending-premise certificates; no test is retired
+(the two removed names are the two declared renames) and no skip is added.
+
+**Each §1 decision is implemented as decided, on the paired configurations.**
+`compose_blocks` makes the form a leaf-weighted centroid and gives the
+meaning block to the operation: exact rules where declared, `MeaningAction`
+for `lift` and `adverb`, a lane-preserving `LaneKernel` for the other
+grammatical faces, all exact at initialization through `exact_initial`
+while keeping the derivative. The verb acts as `Q diag(e^w) Qᵀ` on each
+lane in the cube chart, never mixing lanes, with absent coordinates kept
+exactly absent and the inverse as the restricted SPD solve; a transitive
+VP takes `Q` from the object's meaning through Householder reflections
+confined to the object's support, an intransitive one from its verb's
+group, groups minted by a third distinct failed fit up to `verbGroups`.
+Copular `part` and `whole` join; equality replaces. `verb_teacher` and
+`modal_teacher` compare detached snapshots on defined coordinates, fire
+once per event, enter the Error registry under reconstruction after the
+paired steps, and reach no concept row. `Token.timelines` owns the actual
+and alternative branches; a modal clause keeps its order above 0
+(`TimelineOverlay.choice`: lift lowers to `left_order − 1`, the modifier
+withholds it), writes only its idea, updates only the branch, and a post-S
+modifier restores the covered actual write only while it is the latest
+writer. Promotion folds order-0 occurrences only; `some` and `every` fold
+timelines with both lanes and `every` fails on an incomplete read; a
+question asserts nothing. Certificate 16 holds both MTM channels. The
+configurations without a meaning block are untouched, as corrected in §2.
+No marker is named anywhere in `bin`.
+
+**Learning results, correctly handled.** Line 3's rerun on the swapped
+source stops at description (answers 1/4) after stage 3 (order 8/8, CE
+bars failed) and lower and definite (1/1 each); certificate 15's two
+corpus forms score 0/4 on answers and histories. Both move to item 0 with
+no rescue, as the protocol fixed in advance. These are the measurements
+3.5 owes, not its mechanism gates.
+
+**Carried notes, none blocking.**
+
+1. *A new derivation reader.* `TimelineRead.read`'s fallback after a
+   token expires reads subject and predicate through `PartRead.
+   argument_reader`. It joins the removal round's list (layout spec §2):
+   after removal it reads the chain's references instead.
+2. *Two paths by layout.* `Language.py` now carries 33 `meaning_layout`
+   guards: the unpaired configurations keep the form kernels by decision,
+   and that path is the legacy one once every configuration carries a
+   meaning block. Retire it then, not before.
+3. *Indistinguishable at initialization.* With parameter-free centroids
+   and identity-initialized kernels, two grammatical faces with the same
+   head operand compute the same output until their kernels learn; the
+   round2c port records it. Operator choice therefore learns from the
+   chooser's priors and close-time credit, not from forward differences,
+   at the start of every lesson.
+4. *Equal `when`.* `modal_teacher` pairs an alternative event with an
+   actual one at equal model time. Model time is the close's tick, not
+   narrated time, and 2c found several closes can share one tick while
+   consecutive sentences usually do not. The intended pairing is by branch
+   point: the actual event the alternative was opened from (its recorded
+   `before`). *Checked in the retained keep records (`corpus/*/keep.jsonl.gz`,
+   21 batches per form): no pool entry ever held an alternative timeline,
+   and no event carries `taught` or `modal_taught`, so neither teacher
+   fired in either form.* The corpus failure is therefore upstream of the
+   teachers: the chooser never applied `adverb` to the modifier marker,
+   so no branch opened, and with note 3's identical forward values at
+   initialization nothing but answer credit could have favored it within
+   36 paired updates. Item 0's retry should start from operator choice,
+   and the teacher's pairing should be by branch point before then.
+   `verb_teacher` had no target by design: the corpus observes no identity
+   after its event.
+5. *Performance.* Stage 3 reached 33 GiB and 150 s per batch before the
+   stationary-walk stop (§12) brought the first batch to 2.3 s; the eager
+   decoder's selected-inverse change (§13) is the second saving. Item 1's
+   measurement should include both paths.
+6. *Six freezes for one line.* Each repair re-froze because the lessons
+   need a frozen source. For iteration 2, run a short lesson smoke before
+   the freeze so the freeze count returns to §6's one per line.
+
+**Verdict: LAND `01effdcaf9`** (production identical to `45513baca6`).
+Publish BasicModel main, include the parent `doc/Ethics.md` edit with the
+WikiOracle bump, and push the parent main. Lines 6 and 7 follow as
+iteration 2, after Claude's context-wholes spec.

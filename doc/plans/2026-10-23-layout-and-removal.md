@@ -333,6 +333,10 @@ the same chunks hold all three, so thought ranges over them with one
 form; tense (5.5) is the relation between a sentence's stamp and now,
 and the modal (step 5) ranges over possibilities at a time.
 
+- `TimelineRead.read`'s expired-branch fallback (iteration 1, §19 note 1)
+  reads subject and predicate through `PartRead.argument_reader`; after
+  removal it reads the chain's references.
+
 **Readers that stay.** Semantic bindings in `_semantic_rows`
 (`bind_constituents`, `read_structure` for those bindings), the pending
 name index (`_forward_addresses`), MTM, the identity line's overlay and
