@@ -274,11 +274,24 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         if program.identity_actions is None:
             return None
         action = node.get('identity_action')
+        basis = None
+        if action is not None and getattr(node['rule'], 'clause_form', None) == 'S':
+            vp = node['children'][1]
+            while vp['children'] and getattr(vp['rule'], 'clause_form', None) != 'VP':
+                head_role = getattr(vp['rule'], 'head_role', 0)
+                if not head_role:
+                    break
+                vp = vp['children'][head_role-1]
+            if getattr(vp.get('rule'), 'clause_form', None) == 'VP':
+                basis = vp['children'][1]['value']
         return dict(handle=node.get('identity_handle', 0),
             event=node.get('identity_event'), action=action,
             introduction=introductions.get(node.get('identity_handle', 0)) is node,
             result=None if action is None else (frames[action, 1] if
                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
+            before=None if action is None else frames[action, 0], basis=basis,
+            operation=None if node['rule'] is None else node['rule'].method_name,
+            leaf_count=len(node['leaves']),
             origins=program.identity_origins, values=program.identity_values)
 
     composition_cache = {}

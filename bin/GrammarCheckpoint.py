@@ -9,7 +9,7 @@ import torch
 
 def catalog(model):
     from Language import TheGrammar, SyntacticLayer, OperationSelectionLayer
-    return dict(rule_keys=list(TheGrammar.rule_table.values()),
+    return dict(meaning_kernel_schema=1, rule_keys=list(TheGrammar.rule_table.values()),
         roles=[], chooser_role_context=0, occupation_schema=1, categories=list(TheGrammar.categories),
         syntactic={name:list(module._by_name) for name,module in model.named_modules()
                    if isinstance(module,SyntacticLayer)},
@@ -31,6 +31,29 @@ def align(model, state, old):
     """Return migrated tensors, explicit drift, and optimizer transformations."""
     live, new = model.state_dict(), catalog(model)
     result, drift, transforms = dict(state), {}, {}
+    def meaning_migration():
+        from Layers import GrammarLayer
+        version = 0 if old is None else old.get('meaning_kernel_schema', 0)
+        if version not in (0, 1):
+            raise ValueError('unsupported meaning-kernel checkpoint schema')
+        if version == 1:
+            return
+        prefixes = tuple(name+'.' for name, module in model.named_modules(remove_duplicate=False)
+                         if isinstance(module, GrammarLayer) and module.meaning_layout is not None
+                         and (hasattr(module, 'meaning_kernel') or hasattr(module, 'meaning_action')))
+        for key in tuple(result):
+            if key not in live and key.startswith(prefixes):
+                result.pop(key)
+                drift[key] = dict(action='retired form kernel', schema=1, artifacts='regenerate')
+                transforms[key] = None
+                for source, transform in tuple(transforms.items()):
+                    if transform is not None and transform[0] == key:
+                        transforms[source] = None
+        for key, value in live.items():
+            if key.startswith(prefixes) and any(part in key.split('.') for part in ('meaning_kernel', 'meaning_action')):
+                result[key] = value.detach().clone() if torch.is_tensor(value) else copy.deepcopy(value)
+                drift[key] = dict(action='initialized meaning kernel', schema=1)
+                transforms[key] = None
     from IdentityRows import migrate_checkpoint
     migrate_checkpoint(model, result, live, drift, transforms)
     from Layers import LTM0
@@ -92,6 +115,7 @@ def align(model, state, old):
             drift[key] = dict(action='initialized empty occupation counts; old categories are not evidence')
     if old is None:
         retire_markers()
+        meaning_migration()
         return result, drift, transforms
 
     # ModuleList positions are storage locations, never operator identities.
@@ -198,6 +222,7 @@ def align(model, state, old):
         drift[key]=dict(action='aligned grammar axis',axis=axis,retained=sum(i>=0 for i in indices),
                         initialized=sum(i<0 for i in indices))
         transforms[key]=(key,axis,indices)
+    meaning_migration()
     return result,drift,transforms
 
 

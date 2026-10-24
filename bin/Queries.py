@@ -84,6 +84,9 @@ class StructuralGrammarContext(GrammarContext):
     """Pure compose/generate context; it has no memory or controller access."""
     phase: str
     selected_cases: object = None
+    leaf_counts: object = None
+    action_context: object = None
+    reference: object = None
 
     def __post_init__(self):
         super().__post_init__()

@@ -2413,6 +2413,9 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training('reconstructionReferenceWeight', .1))
         if not math.isfinite(self.reconstruction_reference_weight) or self.reconstruction_reference_weight < 0:
             raise ValueError('reconstructionReferenceWeight must be finite and nonnegative')
+        self.verb_teacher_weight = float(TheXMLConfig.training('verbTeacherWeight', .1))
+        if not math.isfinite(self.verb_teacher_weight) or self.verb_teacher_weight < 0:
+            raise ValueError('verbTeacherWeight must be finite and nonnegative')
         # Slice 3: the answer realisation's generate walk as the second
         # compiled loop (its own state, policy and termination).
         self.output_in_loop = bool(
@@ -20422,7 +20425,10 @@ class BasicModel(BaseModel):
                     if getattr(self, '_component_reading', False):
                         resolver.commit(reference_plan, row, written_clauses[b],
                             document=document, position=position,
-                            training=bool(self._sentence_training))
+                            training=bool(self._sentence_training),
+                            verb_action=self.languageSpace.verb_action(), errors=self.errors,
+                            verb_teacher_weight=getattr(self, 'verb_teacher_weight', .1),
+                            teacher_records=getattr(self, '_verb_teacher_records', None))
                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
                         self._concept_owner().components.commit(row, view['meanings'][b],
                             None if comparison is None else comparison.estimate)
@@ -20691,6 +20697,7 @@ class BasicModel(BaseModel):
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word):
         from SentenceCompose import sentence_pair, fork_perception
+        self._verb_teacher_records = []
         # Raw forward enters here without runBatch's eager setup. Compiled
         # reconstruction must find its autograd anchors already allocated.
         _ensure_grad_anchors(words.device)
@@ -20733,6 +20740,7 @@ class BasicModel(BaseModel):
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank
             from MTMOverlay import MTMOverlay
             resolver = self._concept_owner().components.reference_close
+            self.languageSpace.stage_verb_groups(resolver, self.inputSpace._ar_word_concept_ids, stm[0])
             frames = [() if disc is None or not bool(present[b]) else tuple(disc.situation_references(b))
                       for b in range(B)]
             overlay = MTMOverlay.stage(resolver, frames, stm[0], journal=lang[19].shape[1], words=W)
@@ -21209,6 +21217,8 @@ class BasicModel(BaseModel):
             self._recon_cost = self._recon_sentence_costs.sum(-1) / count
             self._recon_truncated = torch.stack([v[3] for v in values]).any(0)
             self._recon_completed = True
+        from VerbLearning import register
+        register(self._verb_teacher_records, self.errors)
         return stm, sub, sym, lang, feedback, words.new_tensor(W, dtype=torch.long)
 
     def _run_tensor_peer_word_pipeline(self, width):

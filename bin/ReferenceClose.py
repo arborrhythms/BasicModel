@@ -1127,13 +1127,16 @@ class ReferenceClose(nn.Module):
         return result
 
     @torch.no_grad()
-    def commit(self, plan, row, written, *, document, position, training):
+    def commit(self, plan, row, written, *, document, position, training,
+               verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         from collections import OrderedDict
         from IdentityRows import point
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(self.components.owner)
         mtm = self.components.owner.mtm
+        previous = dict(mtm.entries) if verb_action is not None else {}
+        observed = set()
         from RowTime import encoder, stamp
         when = int(encoder().decode_index(stamp(self.store)))
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
@@ -1250,9 +1253,16 @@ class ReferenceClose(nn.Module):
         # Refinement may join a pending token to another antecedent. Attach
         # this close's uses to the owner of their chosen occurrence afterwards.
         for reference, occurrence, kind, value, reading in uses:
-            mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
+            token = mtm.bind(reference, occurrence, kind=kind, value=value, reading=reading, when=when)
+            if verb_action is not None and bool(self.coordinates(value).ne(0).any()):
+                observed.add(token)
             closed_mentions.add(occurrence)
-        events = self._commit_events(plan, written, when=when, closed_mentions=closed_mentions)
+        events = self._commit_events(plan, written, when=when, closed_mentions=closed_mentions,
+                                    observed=observed, verb_action=verb_action)
+        from VerbLearning import observe
+        self.last_verb_teacher = observe(verb_action, mtm, previous, observed,
+            lambda symbol: point(self.components.owner, symbol), errors=errors,
+            weight=verb_teacher_weight, training=training, deferred=teacher_records)
         # Several kept closes can share one model-present tick. Actual
         # mention/refinement/event references, not equal timestamps, refresh
         # the pool's independent kept-close access counter.
@@ -1265,7 +1275,7 @@ class ReferenceClose(nn.Module):
             mentions.popitem(last=False)
         self.last_audit = tuple(audit)
 
-    def _commit_events(self, plan, written, *, when, closed_mentions=()):
+    def _commit_events(self, plan, written, *, when, closed_mentions=(), observed=None, verb_action=None):
         """Read the kept role correspondence, never infer roles from a value."""
         from ClauseRow import ClausePredicate
         if plan.get('prepared_root') is None:
@@ -1363,10 +1373,18 @@ class ReferenceClose(nn.Module):
                     if int(record['origins'][handle-1, 0]) == 3 and handle not in introduced:
                         raise RuntimeError('a kept identity event lost its determined introduction')
                     continue
-                mtm.event(token, event, verb=int(verb), role=role, when=when)
+                is_action = role == 0 and record.get('operation') == 'lift'
+                basis = record.get('basis')
+                if is_action and basis is None and verb_action is not None:
+                    basis = verb_action.groups.assignments.get(int(verb), -1)
+                mtm.event(token, event, verb=int(verb), role=role, when=when,
+                    before=record.get('before') if is_action and verb_action is not None else None,
+                    basis=basis if is_action and verb_action is not None else None)
                 referenced.add(token)
                 if role == 0 and changed:
                     updated[token] = record['values'][handle-1]
+                    if observed is not None and record.get('operation') in ('part', 'whole', 'equal'):
+                        observed.add(token)
         for token, value in updated.items():
             mtm.update(token, value, when=when)
         return referenced

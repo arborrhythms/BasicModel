@@ -2489,26 +2489,55 @@ class GrammarLayer(Layer):
     substrate = False
     mandatory = False
 
-    def compose_blocks(self, kernel, *operands, **kwargs):
-        """Apply the form kernel and the independent declared meaning rule."""
+    def compose_blocks(self, kernel, *operands, counts=None, action_context=None, **kwargs):
+        """Compose meaning; carry the leaf-weighted form centroid alongside it."""
         layout = self.meaning_layout
         if layout is None or operands[0].shape[-1] != layout[1]:
             return kernel(*operands, **kwargs)
         form_width, _ = layout
-        forms = tuple(value[..., :form_width] for value in operands)
-        # Preserve direct tensor alias idempotence in the original form kernel.
-        if len(operands) == 2 and operands[0] is operands[1]:
-            forms = (forms[0], forms[0])
-        # Legacy parameterized maps keep their checkpoint geometry. Feed
-        # zero in the reserved complement so it cannot influence the form.
-        if self.meaning_rule is None and self.nInput == layout[1]:
-            forms = tuple(F.pad(value, (0, layout[1] - form_width)) for value in forms)
-        form = kernel(*forms, **kwargs)[..., :form_width]
+        from MeaningKernels import centroid
+        form = centroid(tuple(value[..., :form_width] for value in operands), counts)
         meanings = tuple(value[..., form_width:] for value in operands)
         from MeaningCodes import compose
-        meaning = (meanings[self.meaning_head_role] if self.meaning_rule is None else
-                   compose(self.meaning_rule, *meanings))
+        if self.meaning_rule is not None:
+            meaning = compose(self.meaning_rule, *meanings)
+        elif getattr(self, 'meaning_action', None) is not None:
+            context = {} if action_context is None or self.rule_name == 'adverb' else dict(action_context)
+            if context.get('object_value') is not None:
+                context['object_value'] = context['object_value'][..., form_width:]
+            meaning = self.meaning_action(meanings[0], meanings[1], **context)
+        elif getattr(self, 'meaning_kernel', None) is not None:
+            head = self.meaning_head_role
+            meaning = self.meaning_kernel(meanings[head], None if len(meanings) == 1 else meanings[1-head])
+        else:
+            meaning = meanings[self.meaning_head_role]
         return assert_cube(torch.cat((form, meaning), -1))
+
+    def reverse_blocks(self, parent, reference, *, counts=(1, 1), reference_right=True,
+                       action_context=None):
+        """Undo a meaning kernel given its context and split the form centroid."""
+        from MeaningKernels import split_centroid
+        form_width, _ = self.meaning_layout
+        if getattr(self, 'meaning_action', None) is not None:
+            if not reference_right:
+                self.raise_no_inverse('an action requires its operator as the known operand')
+            context = {} if action_context is None else dict(action_context)
+            if context.get('object_value') is not None:
+                context['object_value'] = context['object_value'][..., form_width:]
+            meaning = self.meaning_action(parent[..., form_width:], reference[..., form_width:],
+                                          inverse=True, **context)
+        elif getattr(self, 'meaning_kernel', None) is not None:
+            if reference_right != (self.meaning_head_role == 0):
+                self.raise_no_inverse('a head kernel requires the other operand')
+            meaning = self.meaning_kernel(parent[..., form_width:], reference[..., form_width:], inverse=True)
+        elif self.meaning_rule == 'sum':
+            meaning = parent[..., form_width:] * 2 - reference[..., form_width:]
+        else:
+            self.raise_no_inverse('this exact rule requires a candidate search')
+        form = split_centroid(parent[..., :form_width], reference[..., :form_width:], counts,
+                              known_right=reference_right)
+        missing = torch.cat((form, meaning), -1)
+        return (missing, reference) if reference_right else (reference, missing)
 
     def compose_from_grammar_context(self, operands, *, context):
         """Adapt this legacy tensor layer to the public structural-face call.
@@ -2524,10 +2553,20 @@ class GrammarLayer(Layer):
             raise ValueError(
                 f"{type(self).__name__} expects {self.arity} structural operands, "
                 f"got {len(operands)}")
-        return self.compose_blocks(self.compose, *operands)
+        return self.compose_blocks(self.compose, *operands,
+            counts=getattr(context, 'leaf_counts', None),
+            action_context=getattr(context, 'action_context', None))
 
     def generate_from_grammar_context(self, result, *, context):
         """Adapt legacy ``generate`` kernels to the public reverse-face call."""
+        if self.meaning_layout is not None and result.shape[-1] == self.meaning_layout[1]:
+            witness = getattr(context, 'reference', None)
+            if witness is not None:
+                return self.reverse_blocks(result, witness,
+                    counts=getattr(context, 'leaf_counts', None) or (1, 1),
+                    action_context=getattr(context, 'action_context', None))
+            if self.arity == 2:
+                self.raise_no_inverse('a meaning fold needs a reference or the candidate search')
         return self.generate(result)
 
     def raise_no_inverse(self, why=""):
@@ -2598,8 +2637,21 @@ class GrammarLayer(Layer):
         if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
             form_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
             code_width = int(TheXMLConfig.space('ConceptualSpace', 'nDim'))
-            if code_width > form_width:
+            if code_width > form_width and nInput in (0, code_width):
                 self.meaning_layout = (form_width, code_width)
+                width = code_width - form_width
+                if self.rule_name in ('lift', 'adverb'):
+                    from MeaningKernels import MeaningAction
+                    self.meaning_action = MeaningAction(width,
+                        capacity=int(TheXMLConfig.space('ConceptualSpace', 'verbGroups', 24)),
+                        reflections=int(TheXMLConfig.space('ConceptualSpace', 'verbBasisReflections', 4)),
+                        fit=float(TheXMLConfig.space('ConceptualSpace', 'verbGroupFit', .1)),
+                        modifier=self.rule_name == 'adverb')
+                elif (self.rule_name and self.meaning_rule is None and
+                      self.rule_name not in ('interpret', 'bind', 'transpose', 'divide', 'descend',
+                                             'gloss', 'and', 'or')):
+                    from MeaningKernels import LaneKernel
+                    self.meaning_kernel = LaneKernel(width)
         # -- Butterfly cascade state (Stage 5, 2026-05-27 revision) --
         # FFT-style element-pair cascade over a flattened element axis.
         # Each node is a 2-element op with a 2x2 LDU block (4 scalars).
@@ -3752,6 +3804,8 @@ class EqualLayer(GrammarLayer):
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return self.forward(left, right)
 
     def generate(self, parent):

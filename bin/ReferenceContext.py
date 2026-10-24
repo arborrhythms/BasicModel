@@ -329,7 +329,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
 
 
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
-                     bank, live, active, identity_state=None, source=None):
+                     bank, live, active, identity_state=None, source=None, meaning_blocks=False):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -549,7 +549,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 valid = left[3] & right[3]
                 weights = window.new_zeros(B, N-1, case_count, 2)
                 case_head = getattr(rule, 'case_head_role', 0)
-                if case_head:
+                if case_head and not meaning_blocks:
                     if case_bank is None:
                         valid = torch.zeros_like(valid)
                     else:

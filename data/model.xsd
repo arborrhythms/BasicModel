@@ -858,6 +858,7 @@
            it does not subtract from the answer's priority. -->
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="verbTeacherWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Every N batches, log weighted reconstruction/output/expectation
            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -1191,6 +1192,9 @@
       <!-- Host-only medium-term token identity pool. Default 64. -->
       <xs:element name="mtmCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="mtmHorizon" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="verbGroups" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="verbBasisReflections" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="verbGroupFit" type="nonNegativeFloat" minOccurs="0"/>
       <!-- <definitionFreeSize> (snap contract sec 5, 2026-07-06): symbols a
            concept definition may use for free (genus + differentia = 2);
            the rank-ordered L0 penalty shrinks only the surplus past this.

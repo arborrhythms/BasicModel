@@ -34,8 +34,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
     original_record=SentenceFork.record
     def numeric_fork(fork,choice,*args,**kwargs):
         if walk=='compose' and not fork.explore:
-            # This fixture witnesses a numerical change of binary face.
-            # A legal bind departure can leave the working value unchanged.
+            # This fixture witnesses a change of binary face. With zero
+            # meaning, both faces now carry the same form centroid.
             choice=choice._replace(alternative_count=torch.where(
                 (choice.kind==1)&choice.applied,choice.alternative_count,0.))
         return original_record(fork,choice,*args,**kwargs)
@@ -70,9 +70,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         unary=tuple(range(module.r_apply)) if refs is None else refs['unary_ops']
         stop=(x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
         depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
-        # A sparse cube meet treats zero as unspecified, so meet and join
-        # coincide on these binary form codes. Force the declared product
-        # and probabilistic-sum faces to exercise a numerical departure.
+        # The exact faces differ on meaning. Zero meaning keeps both the
+        # meaning and the parameter-free form centroid unchanged.
         product = module.op_names.index('conjunction')
         disjoin = module.op_names.index('disjunction')
         op=torch.full_like(depth,binary.index(disjoin))
@@ -123,8 +122,13 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
             assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4
         else:
             torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
-            assert not torch.equal(first['root'],second['root'])
-            assert model._sentence_comparison_reader_weights.tolist()==[[.5,.5]]*4
+            torch.testing.assert_close(first['root'],second['root'],rtol=0,atol=0)
+            # A zero-meaning centroid can leave no eligible binary fork.
+            # Compare both readings only on rows that actually departed.
+            departed=model._sentence_departure['compose_round']>=0
+            expected=torch.where(departed[:,None],torch.tensor([.5,.5]),
+                                 torch.stack((~audit['wins'],audit['wins']),-1).float())
+            torch.testing.assert_close(model._sentence_comparison_reader_weights,expected,rtol=0,atol=0)
         kept=torch.stack((~audit['wins'],audit['wins']),-1).to(model._sentence_reader_weights)
         torch.testing.assert_close(model._sentence_reader_weights,kept)
         assert model._sentence_reader_updates==1

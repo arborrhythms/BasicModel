@@ -391,3 +391,172 @@ The modal:
   identity; the modal withholds the lowering ("Good correction");
   continuation default noted ("Ok, but make a note"); lifetime through
   promotion (§4).
+
+## 8. Code review before implementation (Codex, 2026-10-23)
+
+Claude's supplied five-document edit is committed unchanged at
+`40c541fb53`. A subsequent concurrent edit withdrew §4's commit-time
+possible identities and marked line 5 held. Alec has been asked which
+version governs that line; the independent swap, verb and lesson work
+continues. The earlier lesson stop remains evidence on its own source.
+
+1. **The corrected configuration scope agrees with the code.**
+   `GrammarLayer.__init__` records `meaning_layout` only for embedding
+   configurations with conceptual width greater than PartSpace width.
+   Keep that boundary. The numeric configurations and their random draws
+   do not acquire new modules. The versioned grammar catalogue, rather
+   than a global tensor-width heuristic at restore, identifies the swapped
+   operators and reports retired form parameters and initialized meaning
+   parameters, including optimizer disposition.
+2. **A compose adapter alone is insufficient.** `compose_blocks` is used
+   by the live chooser, but bounded pair reconstruction and its eligibility
+   test call `compose` directly and score only the form slice. The binary
+   inverse dispatch also reads the old `_sigma`/`_pi` implementation.
+   All three paths must use the same swapped fold and its inverse.
+   `readback_scores` continues to identify terminal words by form.
+3. **Leaf counts are missing.** The six-column identity stack carries
+   identity, predicate, object, resolved, word and source; none is a leaf
+   count. Carry counts beside that stack and through the operation journal;
+   unary operations preserve them, binary reductions add them, and
+   transpose moves them with the value. A bare operator call defaults to
+   two single constituents. A reverse with supplied counts solves the
+   centroid equation; free candidate search must account for its proposed
+   children's counts instead of borrowing a retained derivation.
+4. **The actual meaning-head contract is narrower than the prose.**
+   Today's meaning passthrough is `meaning_head_role`, default left,
+   independent of grammatical `head_role`; lower explicitly selects the
+   right meaning. Preserve this exact initial meaning, including the
+   relation faces, unless §3 explicitly replaces it. The grammatical
+   catalogue includes synthesize, product, lift, verb, compound, adverb,
+   lower (its definite/universal faces), surface, preposition, their unary
+   faces, min/max, isEqual/isPart, equal, part/whole/assertPart, implies
+   and the identity/wrapper faces. Structural bracket actions and
+   transpose are not reductions. Interpret and bind retain their declared
+   reading/value behavior. The logical rules remain exact.
+5. **Support and the inverse need an explicit construction.** Merely
+   rotating a sparse vector then masking absent coordinates loses the
+   inverse: the inverse of a restricted matrix is not the restriction of
+   its inverse. Use the positive-definite action
+   `Q diag(exp(w)) Qᵀ` restricted to each lane's defined coordinates;
+   `unapply` solves that same restricted system. Q and w are shared by
+   the two lanes, and a transitive action is identity outside the object's
+   support. Zero w uses an exact passthrough with the action's derivative;
+   it must not cut the zero-initialized readout's training path. This
+   reconciles §1's invertibility with §5's exact absence requirement
+   without mixing lanes or inventing evidence at an absent coordinate.
+6. **The object handle is already available; the group is not.**
+   `MTMOverlay` stages values before the numerical loop and carries the
+   VP object in stack column 2. Stage group assignments with the word
+   readings at the same host boundary; never read the pool or a Python
+   assignment dictionary inside the compiled body. Group bases use
+   Householder pairs, initialized to the identity. Membership and fit
+   witnesses are host checkpoint state; bases and readouts are parameters.
+7. **Copular updates and across-sentence teaching are new code.** The
+   overlay currently updates lift/equality, not part/whole, and
+   `MediumTermMemory.Event` contains only occurrence, verb, role and time.
+   Add detached before/basis snapshots at kept commit, and consume each
+   later observation once. Register the teacher through the existing
+   Error registry and reconstruction parameter owner; no private optimizer
+   or backpropagation into retained concept rows. `part(A,B)` joins B into
+   A's identity; `whole(A,B)` is its converse and joins B into A's identity
+   when A is the whole participant. Equality keeps replacement semantics.
+8. **Gate and evidence boundaries.** Development runs retain logs only.
+   The swap/verb freeze starts its receipt and precedes lesson generation;
+   lessons retain their original schedules and stop at the first failed
+   behavior. The old-source results are not promoted. The modal freeze,
+   if authorized after the concurrent §4 revision, has its own scoped
+   evidence. No full sweep is run in this iteration.
+
+## 9. Swap and verb implementation decisions (Codex, 2026-10-23)
+
+The development runs below are logs, not frozen-source receipts. The
+concurrent modal edits now specify alternative timelines, replacing both
+of the earlier mechanisms. Alec has been asked to reconcile that change
+with the explicit p(m) hand-off; no modal implementation is included in
+the swap/verb work.
+
+- **Catalogue and call paths.** `MeaningKernels` owns the parameter-free
+  centroid, a shared-lane chart-affine head map, and the diagonal action.
+  The grammatical catalogue's direct compose calls, structural adapters,
+  unary faces, free pair search and reverse dispatcher use these maps.
+  Compound's paired face no longer requires the retired form-side case
+  fold to be available. Its unpaired face still does. Duck-typed numerical
+  operators without a `meaning_layout` remain on their existing path;
+  development 12 exposed this missing optional-attribute guard.
+- **Inversion.** A paired binary action needs a context witness or a
+  candidate bank. No balanced pseudo-split replaces its missing argument.
+  Free search fits the centroid mixture from each candidate pair, scores
+  both the meaning and form residuals, and recovers the selected head's
+  meaning through the inverse. Selected symbols supply exact forms;
+  this avoids a floating-point centroid round trip changing terminal
+  identity. Known-context inversion solves the centroid with supplied
+  counts. The generation owner and reconstruction parameter group are
+  unchanged; their shared modules now contain the meaning parameters.
+- **Versioned retirement.** Grammar catalogue `meaning_kernel_schema=1`
+  reports every retired paired form parameter and every initialized
+  meaning parameter. Positional grammar alignment runs first, including
+  aliases; optimizer moments for retired or newly initialized parameters
+  are discarded. A schema-1 checkpoint is never silently reinitialized.
+  The configurations without a meaning block acquire no new module.
+- **Verb observations and optimization.** Event checkpoint version 4 adds
+  detached before/basis snapshots and a once-only teacher mark, accepting
+  legacy four-field events. Re-observing an event preserves that mark.
+  The observation is admitted at the kept close. The existing paired
+  sentence optimizer has already stepped at that boundary, and further
+  sentence steps may follow in the batch. Consequently the close retains
+  only detached teacher inputs; after those paired steps the ordinary
+  batch Error registry builds the teacher graphs at one parameter version.
+  There is no extra optimizer, update or graph crossing a close. The
+  teacher is an explicitly weighted reconstruction term (default 0.1),
+  and neither its before/after observations nor its verb row learns from
+  it. An evaluation close can retain history and fit witnesses but creates
+  no teacher gradient. Group assignments and distinct recurrence witnesses
+  are checkpointed host state, staged as tensors before composition.
+- **Copular content.** `part` and `whole` join the other participant into
+  their left participant's working identity; equality keeps replacement.
+  The event journal and kept commit carry that same state. The new
+  two-sentence certificate uses frame staging, fixed operations, the real
+  journal, preview, writer and commit: a subsequent copular observation
+  teaches the previous verb once. Separate tests cover the absence mask,
+  object support, group capacity, inverse and deferred graph boundary.
+
+**Existing-test ports under step-2 §39.** No test is retired. In
+`test_operators_round2c.test_zero_meaning_departures_and_one_reader_step`,
+for both paired configurations, replace the compose arm's unequal-root
+assertion by exact equality: their zero meanings remain zero and both
+exact operations now carry the same centroid. Replace its unconditional
+comparison weights `[.5,.5]` by those weights on an actually selected
+compose departure, and kept-only weights otherwise. The retained probe
+shows XOR's four rows have zero eligible binary forks, `compose_round=-1`,
+tied R+A and kept-only exposure; MM still has compose departures. All
+activation, evidence, keep, update-count and optimizer-step checks stay.
+In `test_mind_generativity`, the training fixture supplies the known right
+operand to `reverse_blocks` instead of calling the retired form inverse
+without a witness. Its free stored reads still receive only the bank,
+and every assertion stays.
+
+**Development failures retained.** Runs 01/06 corrected new fixture API
+uses (read-only config property; Error's objective keyword). Run 08's
+new inverse-gradient fixture had both a zero chart context and a live
+forward/inverse cancellation; use a nonzero context and an independently
+supplied parent, preserving its assertions. Run 10 collected no tests
+because a selector did not exist. Run 12 exposed the reverse dispatch
+compatibility defect and the two ports above; 13/14 retained the
+no-departure comparison exposure before its port. All development logs
+will ride with the frozen receipt; none substitutes for its gates.
+
+**Resumed after Alec's pause (2026-10-23).** The updated hand-off releases
+§4's alternative timelines after this freeze and line 3's rerun. Claude's
+ten-document update is committed unchanged at `82191630d6`; the parent's
+Ethics amendment stays for the publication bump. Development 18 was
+interrupted at Alec's pause (ten passed); its log remains. Resumption 19
+passes both previously failing exact-lane assertions unchanged. Their fix
+is to recover the independent stance of each signless candidate before
+scoring the exact logical fold, not only after choosing the pair. Invalid
+out-of-cube inverse solutions are not valid candidate decompositions.
+A direct numerical `LiftLayer(3,3)` in that run exposed a width mismatch:
+an explicitly smaller numerical operator must not inherit its enclosing
+configuration's wider meaning block. The layout is now admitted only for
+the configured conceptual width (or a width-free grammatical face).
+Run 20 passes that repair and the stored-generation file, with no assertion
+port. The source audit retains the unchanged four out-of-scope XML files.

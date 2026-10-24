@@ -16,6 +16,9 @@ class Event:
     verb: int
     role: int
     when: int
+    before: torch.Tensor | None = None
+    basis: torch.Tensor | int | None = None
+    taught: bool = False
 
 
 @dataclass(frozen=True)
@@ -124,16 +127,20 @@ class MediumTermMemory:
             raise ValueError('cannot update an unretained identity')
         self.entries[key] = replace(self.entries[key], value=self._value(value), when=when)
 
-    def event(self, token, occurrence, *, verb, role, when):
+    def event(self, token, occurrence, *, verb, role, when, before=None, basis=None):
         key = self.token_of(token)
         if key is None or role not in (0, 2) or type(verb) is not int:
             raise ValueError('an event requires a retained identity, verb and participant role')
         entry = self.entries[key]
-        event = Event(occurrence, verb, role, when)
+        event = Event(occurrence, verb, role, when,
+            None if before is None else self._value(before),
+            self._value(basis) if torch.is_tensor(basis) else basis)
         previous = tuple(item for item in entry.events
                          if (item.occurrence, item.role) != (occurrence, role))
         if previous != entry.events:
             # Re-observation updates evidence at its existing history position.
+            event = replace(event, taught=next(item.taught for item in entry.events
+                if (item.occurrence, item.role) == (occurrence, role)))
             events = tuple(event if (item.occurrence, item.role) == (occurrence, role)
                            else item for item in entry.events)
         else:
@@ -221,11 +228,13 @@ class MediumTermMemory:
 
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
-        return dict(version=3, closes=tuple(self.closes.items()),
+        return dict(version=4, closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
             documents=tuple(self.documents.items()), entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
-            native=entry.native, pending=entry.pending, symbol=entry.symbol, events=tuple((event.occurrence, event.verb, event.role, event.when)
+            native=entry.native, pending=entry.pending, symbol=entry.symbol, events=tuple((event.occurrence, event.verb, event.role, event.when,
+                None if event.before is None else event.before.detach().cpu().clone(),
+                event.basis.detach().cpu().clone() if torch.is_tensor(event.basis) else event.basis, event.taught)
                                              for event in entry.events))
             for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
@@ -236,7 +245,7 @@ class MediumTermMemory:
             self.entries, self.names = {}, {}
             self.closes, self.accesses, self.documents = {}, {}, {}
             return
-        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3):
+        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4):
             raise ValueError('unsupported identity checkpoint')
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
@@ -266,9 +275,20 @@ class MediumTermMemory:
                 raise ValueError('identity checkpoint values have different widths')
             if device is not None:
                 value = value.to(device)
-            if any(not isinstance(event, (tuple, list)) or len(event) != 4 for event in record['events']):
+            if any(not isinstance(event, (tuple, list)) or len(event) != (7 if state['version'] >= 4 else 4) for event in record['events']):
                 raise ValueError('invalid identity checkpoint event')
             events = tuple(Event(*event) for event in record['events'])
+            for event in events:
+                if type(event.taught) is not bool or (event.basis is not None and not torch.is_tensor(event.basis)
+                        and (type(event.basis) is not int or event.basis < -1)):
+                    raise ValueError('invalid identity event basis')
+                for snapshot in (event.before, event.basis):
+                    if torch.is_tensor(snapshot) and self._value(snapshot).shape != value.shape:
+                        raise ValueError('invalid identity event snapshot')
+            events = tuple(replace(event,
+                before=None if event.before is None else self._value(event.before).to(value),
+                basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
+                for event in events)
             if (any(not address(event.occurrence) or event.role not in (0, 2) or
                     type(event.verb) is not int or event.verb <= 0 or type(event.when) is not int
                     for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):

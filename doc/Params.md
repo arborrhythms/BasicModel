@@ -403,6 +403,15 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
 | `mtmCapacity` | positive int | `64` | Capacity of `ConceptualSpace.mtm`. Kept closes retain current identity values, mention readings and event histories; oldest access is evicted at capacity without changing LTM rows. No parameters; pool reads stay outside the compiled body. |
 | `mtmHorizon` | positive int | `16` | Maximum intervening kept closes in a stream since the last reference. Entries expire when age exceeds 16 or their document ends. Promotion counts three distinct sentences, independently of access count. |
+| `verbGroups` | positive int | `24` | Maximum learned intransitive bases on paired meaning configurations. A third distinct failed-fit occurrence joins the best fitting group or opens one; capacity is reported. |
+| `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
+| `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
+
+`training.verbTeacherWeight` defaults to `0.1`. It weights the explicit
+across-close `verb_teacher` term in the reconstruction owner. The term trains
+the action's readouts and bases from detached retained observations. These
+defaults are read only by paired meaning configurations; `model.xml` and
+the numeric configurations retain their existing behavior.
 
 > `ConceptualSpace` owns definitions, evidence and STM/event state. The
 > former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer

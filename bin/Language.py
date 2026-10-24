@@ -2655,6 +2655,8 @@ class SynthesizeLayer(GrammarLayer):
 
     def forward(self, left, right=None):
         """Binary ``left + right``; butterfly mode runs the cascade."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1] and right is not None:
+            return self.compose_blocks(None, left, right)
         if self.butterfly:
             return self._butterfly_forward(left)
         if self.identity_cube:
@@ -2843,11 +2845,13 @@ class ProductLayer(GrammarLayer):
 
     def forward(self, left, right=None):
         """Binary ``left * right`` (Hadamard)."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return left * right
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
-        return left * right
+        return self.forward(left, right)
 
     def reverse(self, parent, basis=None,
                 left_rows=None, right_rows=None,
@@ -3028,7 +3032,7 @@ class LiftLayer(GrammarLayer):
         # The inner sigma is used both for the binary forward(left, right)
         # path and (via its ``_butterfly_pair_op`` method) for the
         # butterfly per-pair op when the cascade is enabled.
-        if int(nInput) > 0:
+        if int(nInput) > 0 and self.meaning_layout is None:
             self._sigma = SigmaLayer(
                 nInput=int(nInput), nOutput=int(nOutput),
                 invertible=invertible, nonlinear=nonlinear, unit_interval=True)
@@ -3194,6 +3198,8 @@ class LiftLayer(GrammarLayer):
         slice of the shared operator; ``None`` is byte-identical to
         the un-gated baseline.
         """
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         if self._sigma is None:
             raise RuntimeError(
                 "LiftLayer was constructed without operand-width "
@@ -3310,6 +3316,8 @@ class LiftLayer(GrammarLayer):
         children and ``.when`` retracted (exact). ``gate``: the forward gate; the
         LDU inverse uses ``1/(d * gate)`` automatically.
         """
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('a meaning action needs its operator or the candidate search')
         if self._sigma is None:
             raise RuntimeError(
                 "LiftLayer was constructed without operand-width "
@@ -3355,13 +3363,16 @@ class CompoundLayer(GrammarLayer):
     lossy = True
 
     def compose(self, modifier, head, *, selected_cases=None):
+        if self.meaning_layout is not None and modifier.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, modifier, head)
         if selected_cases is None:
             raise ValueError('compound requires the owner-staged native cases')
         from CaseSelection import fold_cases
         return fold_cases(selected_cases)
 
     def compose_from_grammar_context(self, operands, *, context):
-        return self.compose_blocks(self.compose, *operands, selected_cases=context.selected_cases)
+        return self.compose_blocks(self.compose, *operands, selected_cases=context.selected_cases,
+                                   counts=getattr(context, 'leaf_counts', None))
 
     def reverse(self, parent, *, case_bank=None):
         if case_bank is None:
@@ -3404,6 +3415,8 @@ class VerbLayer(LiftLayer):
         super().__init__(*args, **kwargs)
 
     def forward(self, left, right, gate=None):
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         if self._sigma is None:
             raise RuntimeError(
                 "VerbLayer was constructed without operand-width "
@@ -3422,6 +3435,8 @@ class VerbLayer(LiftLayer):
         cannot supply the operand must not invoke reverse -- the unreduce
         dispatcher gates on ``reverse_required_kwargs``.
         """
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('the verb head alone cannot recover its object; supply the candidate search')
         if self._sigma is None:
             raise RuntimeError(
                 "VerbLayer was constructed without operand-width "
@@ -3454,6 +3469,8 @@ class AdverbLayer(LiftLayer):
         super().__init__(*args, **kwargs)
 
     def forward(self, left, right, gate=None):
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         if self._sigma is None:
             raise RuntimeError(
                 "AdverbLayer was constructed without operand-width "
@@ -3465,6 +3482,8 @@ class AdverbLayer(LiftLayer):
     def reverse(self, parent, adverb_what=None, basis=None, gate=None, **kwargs):
         if adverb_what is None:
             self.raise_no_inverse('adverb reverse requires its modifier operand')
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            return self.reverse_blocks(parent, adverb_what, counts=kwargs.get('counts', (1, 1)))
         return self.unapply_adverb(parent, adverb_what), adverb_what
 
 
@@ -3493,6 +3512,8 @@ class LowerLayer(GrammarLayer):
         super().__init__(int(nInput or 0), int(nOutput or nInput or 0))
 
     def forward(self, marker, description, gate=None):
+        if self.meaning_layout is not None and marker.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, marker, description)
         return assert_cube(description)
 
     def compose(self, marker, description, gate=None):
@@ -3501,6 +3522,8 @@ class LowerLayer(GrammarLayer):
     def reverse(self, parent, *, marker=None, **kwargs):
         if marker is None:
             self.raise_no_inverse('a determiner reverses by selecting a kind and marker from references')
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            return self.reverse_blocks(parent, marker, reference_right=False, counts=kwargs.get('counts', (1, 1)))
         return marker, parent
 
     def generate(self, parent, **kwargs):
@@ -3533,6 +3556,8 @@ class SurfaceLayer(GrammarLayer):
         width = int(nInput)
         if width <= 0 or int(nOutput) != width:
             raise ValueError("surface requires one positive full conceptual width")
+        if self.meaning_layout is not None:
+            return
         self.marker_map = nn.Linear(width, width)
         self.marker_prior = nn.Sequential(
             nn.Linear(width, width), nn.Tanh(), nn.Linear(width, width))
@@ -3546,6 +3571,8 @@ class SurfaceLayer(GrammarLayer):
         # Marker translation acts inside the content chart. An unrestricted
         # learned affine map may move chart coordinates either way without
         # sending the resulting concept outside its membership cube.
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         marker = cube_chart(left)
         delta = self.marker_map(marker)
         return cube_unchart((delta + cube_chart(right)) / self.chart_scale(delta))
@@ -3562,6 +3589,8 @@ class SurfaceLayer(GrammarLayer):
     forward = compose
 
     def generate(self, parent):
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('a meaning fold generates through the candidate search')
         proposed = cube_chart(cube_unchart(self.marker_prior(parent)))
         delta = self.marker_map(proposed)
         rail = cube_chart(parent.new_ones(()))
@@ -3581,6 +3610,10 @@ class SurfaceLayer(GrammarLayer):
     reverse = generate
 
     def reconstruct(self, parent, reference, side):
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            if side not in ('left', 'right'):
+                raise ValueError('surface witness side must be left or right')
+            return self.reverse_blocks(parent, reference, reference_right=side == 'right')
         if side == "left":
             delta = self.marker_map(cube_chart(reference))
             return reference, cube_unchart(cube_chart(parent) * self.chart_scale(delta) - delta)
@@ -3613,6 +3646,8 @@ class PrepositionLayer(GrammarLayer):
         super().__init__(nInput, nOutput, butterfly=butterfly, N=N)
         object.__setattr__(self, '_content_width', int(nInput))
     def forward(self, left, right):
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         # P (left) is the marker (absorbed); X (right) is the phrase. On a
         # muxed CS-space_role event, PREPOSITION modifies X's .where (the spatial /
         # relational extent the marker imposes), leaving .what / .when. With
@@ -3623,6 +3658,8 @@ class PrepositionLayer(GrammarLayer):
     def reverse(self, parent, *, marker=None):
         if marker is None:
             self.raise_no_inverse('preposition reverse requires its marker witness')
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            return self.reverse_blocks(parent, marker, reference_right=False)
         return marker, parent
     def compose(self, left, right):
         return self.forward(left, right)
@@ -3649,6 +3686,10 @@ class MarkerUnaryLayer(GrammarLayer):
         # The host owns the binary implementation once. Only the missing
         # marker belongs to this face; no second implementation is trained.
         object.__setattr__(self, 'base', base)
+        if self.meaning_layout is not None:
+            # The same operation owns its binary and absent-marker faces.
+            self.meaning_kernel = base.meaning_kernel
+            return
         identity = getattr(base, 'left_identity', None)
         if identity is None:
             self.marker = nn.Parameter(torch.zeros(width))
@@ -3656,12 +3697,17 @@ class MarkerUnaryLayer(GrammarLayer):
             self.register_buffer('marker', torch.full((width,), identity), persistent=False)
 
     def compose(self, value):
+        if self.meaning_layout is not None and value.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, value)
         marker = cube_unchart(self.marker) if isinstance(self.base, SurfaceLayer) else self.marker
         return self.base.compose(marker.expand_as(value), value)
 
     forward = compose
 
     def reverse(self, parent):
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            width = self.meaning_layout[0]
+            return torch.cat((parent[..., :width], self.meaning_kernel(parent[..., width:], inverse=True)), -1)
         marker = (cube_unchart(self.marker) if isinstance(self.base, SurfaceLayer) else self.marker).expand_as(parent)
         if isinstance(self.base, SurfaceLayer):
             return self.base.reconstruct(parent, marker, 'left')[1]
@@ -3749,7 +3795,7 @@ class _SearchedBinaryLayer(GrammarLayer):
     def compose(self, left, right, **activation):
         if self.butterfly:
             return self._butterfly_forward(torch.cat((left, right), -2))
-        if self.meaning_rule is not None and getattr(self, 'representation', 'code') == 'code':
+        if (self.meaning_rule is not None or self.meaning_layout is not None) and getattr(self, 'representation', 'code') == 'code':
             return self.compose_blocks(self.kernel, left, right, **activation)
         return self.kernel(left, right, **activation)
 
@@ -3952,6 +3998,8 @@ class IsEqualLayer(GrammarLayer):
 
     def forward(self, left, right):
         """Lattice join on the bivector cone (max element-wise)."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return torch.maximum(left, right)
 
     def reverse(self, parent):
@@ -4007,6 +4055,8 @@ class IsPartLayer(GrammarLayer):
     def forward(self, left, right):
         """Pass the encompassing parent ``right`` through to the CKY
         consumer (the parthood geometry is learned in the codebook)."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return right
 
     def reverse(self, parent):
@@ -4071,6 +4121,8 @@ class PartLayer(GrammarLayer):
         and ``right`` is captured by the codebook geometry that
         learns under training -- no explicit tree write.
         """
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return right
 
     def reverse(self, parent):
@@ -4085,6 +4137,8 @@ class PartLayer(GrammarLayer):
 
     def compose(self, left, right):
         """Compose the input via this layer's parse contract."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return self.forward(left, right)
 
     def generate(self, parent):
@@ -4120,6 +4174,8 @@ class WholeLayer(PartLayer):
     def forward(self, left, right):
         """Pass the encompassing whole ``left`` through to the CKY consumer
         (the converse of ``part``, which passes ``right``)."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return left
 
     def reverse(self, parent):
@@ -4168,9 +4224,15 @@ class NullLayer(GrammarLayer):
         super().__init__(0, 0)
 
     def forward(self, x):
+        if self.meaning_layout is not None and x.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, x)
         return x
 
     def reverse(self, parent):
+        if (self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]
+                and getattr(self, 'meaning_kernel', None) is not None):
+            width = self.meaning_layout[0]
+            return torch.cat((parent[..., :width], self.meaning_kernel(parent[..., width:], inverse=True)), -1)
         return parent
 
     def compose(self, x):
@@ -4818,6 +4880,8 @@ class _BinaryGrammarOpAdapter(nn.Module):
         # Keep that established tensor kernel (and its selected-op gradient
         # path) intact; a layer that actually consumes a grammar context
         # overrides the base method and is routed through the public call.
+        if self.gl.meaning_layout is not None:
+            return invoke_structural_face(self.gl, (left, right), context=context, phase='compose')
         if (getattr(type(self.gl), 'compose_from_grammar_context', None)
                 is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
             return self.forward_with_context(left, right, slab)
@@ -4850,6 +4914,8 @@ class _UnaryGrammarOpAdapter(nn.Module):
     def forward_with_grammar_context(self, value, *, context):
         _structural_face_phase(
             self.gl, (value,), context=context, phase='compose')
+        if self.gl.meaning_layout is not None:
+            return invoke_structural_face(self.gl, (value,), context=context, phase='compose')
         if (getattr(type(self.gl), 'compose_from_grammar_context', None)
                 is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
             return self.forward(value)
@@ -5679,17 +5745,28 @@ class LanguageLayer(Layer):
         _missing = [k for k in _required if k not in reverse_kwargs]
         if not getattr(layer, 'reverse_dispatchable', True):
             _no_inverse("reverse_dispatchable=False")
-        if _missing:
-            _no_inverse(f"reverse needs operands this path cannot "
-                        f"recover: {_missing}")
-        try:
-            child = layer.reverse(parent, basis=space_role_basis,
-                                  **reverse_kwargs)
-        except TypeError:
-            # Backward-compat for layer reverses that don't accept the
-            # basis kwarg (NotLayer, NonLayer, ...): a real inverse may
-            # still run bare; anything it raises propagates (fail loud).
-            child = layer.reverse(parent)
+        if arity == 2 and getattr(layer, 'meaning_layout', None) is not None:
+            bank = _active_basis_prototypes(space_role_basis)
+            if bank is None:
+                _no_inverse('a meaning fold requires the symbol bank')
+            if bank.ndim == 2:
+                bank = bank[None].expand(parent.shape[0], -1, -1)
+            left, right, available = LanguageSpace._bounded_binary_reconstruction(layer, parent,
+                torch.zeros_like(parent), torch.ones(len(parent), dtype=torch.bool, device=parent.device),
+                torch.zeros(len(parent), dtype=torch.bool, device=parent.device), bank,
+                torch.ones(bank.shape[:2], dtype=torch.bool, device=parent.device), 16)
+            torch._assert_async(available.all(), 'a meaning fold has no admissible symbol pair')
+            child = left, right
+        else:
+            if _missing:
+                _no_inverse(f"reverse needs operands this path cannot "
+                            f"recover: {_missing}")
+            try:
+                child = layer.reverse(parent, basis=space_role_basis,
+                                      **reverse_kwargs)
+            except TypeError:
+                # Legacy unary reverses may not accept a basis keyword.
+                child = layer.reverse(parent)
         if arity == 2 and (not isinstance(child, tuple)
                             or len(child) != 2):
             _no_inverse(f"reverse returned "
@@ -7203,7 +7280,8 @@ class OperationSelectionLayer(nn.Module):
             left = x[:, :-1] if reference_data is None else reference_data['left'][:, :, i]
             right = x[:, 1:] if reference_data is None else reference_data['right'][:, :, i]
             selected_context = grammar_context
-            if getattr(getattr(op, 'gl', op), 'case_head_role', 0):
+            if (getattr(getattr(op, 'gl', op), 'case_head_role', 0)
+                    and getattr(getattr(op, 'gl', op), 'meaning_layout', None) is None):
                 if (reference_data is None or grammar_context is None
                         or reference_data.get('case_bank') is None):
                     result.append(torch.zeros_like(left))
@@ -7215,7 +7293,8 @@ class OperationSelectionLayer(nn.Module):
                     reference_data['case_weights'][:, :, i],
                     reference_data['binary_valid'][:, :, i]))
             implementation = getattr(op, 'gl', op)
-            if getattr(implementation, 'uses_operand_activation', False):
+            if (getattr(implementation, 'uses_operand_activation', False)
+                    and getattr(implementation, 'meaning_layout', None) is None):
                 if selected_context is not None:
                     _structural_face_phase(implementation, (left, right), context=selected_context, phase='compose')
                 value = implementation.compose(left, right,
@@ -7229,7 +7308,8 @@ class OperationSelectionLayer(nn.Module):
                           else op.forward_with_context(left, right, x) if hasattr(op, 'forward_with_context')
                           else op(left, right))
             if (reference_data is not None
-                    and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)):
+                    and getattr(getattr(op, 'gl', op), 'same_reference_idempotent', False)
+                    and getattr(getattr(op, 'gl', op), 'meaning_layout', None) is None):
                 refs = reference_data['binary_refs'][:, :, i]
                 same = (refs[..., 0] == refs[..., 1]) & (refs[..., 0] != -1) & (refs[..., 0] != 0)
                 from MeaningCodes import repeated_symbol
@@ -12476,6 +12556,27 @@ class LanguageSpace(nn.Module):
     def _tree_layer(self, arity):
         return self.language_layer.operation_layer
 
+    def verb_action(self):
+        layer = self._tree_layer(2)
+        for wrapped in (() if layer is None else layer.ops):
+            op = getattr(wrapped, 'gl', wrapped)
+            if op.rule_name == 'lift':
+                return getattr(op, 'meaning_action', None)
+        return None
+
+    def stage_verb_groups(self, resolver, words, like):
+        """Freeze host assignments before composition; the loop reads tensors."""
+        action = self.verb_action()
+        if action is None:
+            self._verb_group_table = None
+            return
+        assignments = action.groups.assignments
+        entries = dict(assignments)
+        for word in words.detach().flatten().unique().tolist():
+            entries[int(word)] = assignments.get(resolver._event_symbol(int(word)), -1)
+        self._verb_group_table = (torch.tensor(tuple(entries) or (-1,), device=like.device),
+            torch.tensor(tuple(entries.values()) or (-1,), device=like.device))
+
     def choose_operation(self, state, row_gate, *, slots=1, op_prior=None,
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
@@ -12532,10 +12633,29 @@ class LanguageSpace(nn.Module):
                                           rules=self._compose_binary_rules, unary_rules=self._compose_unary_rules,
                                           bank=self._reference_bank,
                                           identity_state=identity_state, source=source,
+                                          meaning_blocks=any(getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
+                                              for op in self._tree_layer(2).ops),
                                           live=(buffer, reference_scope[..., 1], orders,
                                                 reference_scope[..., 0].bitwise_and(1) != 0, live_positions,
                                                 reference_scope[..., 0].bitwise_and(16) != 0),
                                           active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
+        structural_context = self._structural_context(phase='compose', input_stream=buffer)
+        if structural_context is not None and identity_state is not None:
+            from dataclasses import replace
+            from MTMOverlay import MTMOverlay
+            stack = identity_state[2].gather(1, source[..., None].expand(B, n, 7))
+            counts = (stack[:, :-1, 6].clamp_min(1), stack[:, 1:, 6].clamp_min(1))
+            right = stack[:, 1:]
+            obj = right[..., 2]
+            groups = torch.full_like(right[..., 1], -1)
+            group_table = getattr(self, '_verb_group_table', None)
+            if group_table is not None:
+                keys, assigned = group_table
+                matches = right[..., 1, None] == keys
+                groups = torch.where(matches, assigned, -1).amax(-1)
+            structural_context = replace(structural_context, leaf_counts=counts,
+                action_context=dict(object_value=MTMOverlay.read(identity_state[0], obj),
+                                    object_present=obj > 0, group=groups))
         layer = self.language_layer.operation_layer
         content_activations = None
         symbol_read = getattr(layer, '_symbol_expectation_read', None)
@@ -12556,8 +12676,7 @@ class LanguageSpace(nn.Module):
             operand_activations=window_activations,
             operand_content_activations=content_activations, operand_identities=state[4].gather(1, source), policy_grad=policy_grad,
             previous_unary=(None if previous_unary is None else previous_unary.gather(1, source)),
-            op_prior=op_prior, grammar_context=self._structural_context(
-                phase='compose', input_stream=buffer), reference_data=references)
+            op_prior=op_prior, grammar_context=structural_context, reference_data=references)
         _, _, route = layer(window, **arguments)
         lesson = getattr(self, '_compose_lesson_states', None)
         if lesson is not None:
@@ -13187,6 +13306,23 @@ class LanguageSpace(nn.Module):
         on_right, known = reference_side
         ref = reference if reference is not None else torch.zeros_like(parent)
 
+        if getattr(op, 'meaning_layout', None) is not None and parent.shape[-1] == op.meaning_layout[1]:
+            # The old form-side inverse cannot invert a meaning-side map.
+            if basis is None and left_basis is None and right_basis is None:
+                has_kernel = getattr(op, 'meaning_kernel', None) is not None
+                has_action = getattr(op, 'meaning_action', None) is not None
+                if reference is not None and (has_kernel or has_action or op.meaning_rule == 'sum'):
+                    right_known = has_action or op.meaning_head_role == 0
+                    left, right = op.reverse_blocks(parent, ref, reference_right=right_known)
+                    valid = known & (on_right == right_known)
+                    valid = valid & ((left >= 0) & (left <= 1) & (right >= 0) & (right <= 1)).all(-1)
+                    return torch.where(valid[:, None], left, 0.), torch.where(valid[:, None], right, 0.), valid
+            return self._bounded_binary_reconstruction(op, parent, ref, on_right, known,
+                basis, basis_valid, candidate_limit, left_priming=basis_priming,
+                right_priming=basis_priming, left_basis=left_basis, right_basis=right_basis,
+                left_valid=left_valid, right_valid=right_valid,
+                chooser=self.decomposition_chooser, require_progress=free)
+
         if inverse == 'case_search':
             if case_bank is None:
                 return torch.zeros_like(parent), torch.zeros_like(parent), ~yes
@@ -13372,8 +13508,31 @@ class LanguageSpace(nn.Module):
             # Reject self-reproducing pairs before ranking, so a live whole
             # cannot hide a supported lexical split with the same residual.
             allowed = allowed & progressing
-        folded = older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer)
-        if getattr(op, 'same_reference_idempotent', False):
+        counts = None
+        if form_width is not None:
+            # A symbol bank is signless. Solve each candidate's two evidence
+            # lanes before judging an exact logical fold, as the selected
+            # inverse has always done. Its stored stance is not this reading.
+            from MeaningCodes import recover_lanes
+            recovered_left, recovered_right = recover_lanes(getattr(op, 'meaning_rule', None),
+                parent[:, None, None], older, newer, form_width)
+            older = torch.where((known & ~on_right)[:, None, None, None], older, recovered_left)
+            newer = torch.where((known & on_right)[:, None, None, None], newer, recovered_right)
+            domain = ((older >= 0) & (older <= 1) & (newer >= 0) & (newer <= 1)).all(-1)
+            allowed = allowed & domain
+            older, newer = (torch.where(domain[..., None], value, 0.) for value in (older, newer))
+            # Free generation proposes two contents, not a saved tree. Fit the
+            # centroid mixture from their forms; this is the count ratio.
+            delta = older[..., :form_width] - newer[..., :form_width]
+            length = delta.square().sum(-1)
+            ratio = ((parent[:, None, None, :form_width] - newer[..., :form_width]) * delta).sum(-1)
+            ratio = torch.where(length > 0, ratio / torch.where(length > 0, length, 1.), .5).clamp(0, 1)
+            # A child occupies at least one leaf; endpoints are not splits.
+            allowed = allowed & (ratio > 0) & (ratio < 1)
+            counts = (ratio, 1-ratio)
+        folded = (op.compose_blocks(op.compose, older, newer, counts=counts) if form_width is not None else
+                  older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer))
+        if form_width is None and getattr(op, 'same_reference_idempotent', False):
             same = left_indices[:, :, None] == right_indices[:, None, :]
             # A known occurrence is not identified by an unrelated basis row.
             same = same & ~known[:, None, None] & (older == newer).all(-1)
@@ -13386,6 +13545,11 @@ class LanguageSpace(nn.Module):
         # Exact zero origins use the existing Error squared-penalty convention;
         # no floor changes any positive parent scale.
         residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+        if form_width is not None:
+            meaning = parent[..., form_width:]
+            meaning_energy = meaning.square().mean(-1)[:, None, None]
+            residual = residual + (folded[..., form_width:] - meaning[:, None, None]).square().mean(-1) / torch.where(
+                meaning_energy > 0, meaning_energy, 1.)
         # The shortlist and eligibility are unchanged. Context learns only
         # through the separate teacher loss, never through candidate codes.
         def candidate_features(candidates, indices, priming, active):
@@ -13426,11 +13590,23 @@ class LanguageSpace(nn.Module):
         if form_width is not None:
             from MeaningCodes import recover_lanes
             hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
-                parent.detach(), hard_left, hard_right, form_width)
+                parent, hard_left, hard_right, form_width)
+            if getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None:
+                fraction = ratio.flatten(1).gather(1, selected[:, None])[:, 0]
+                right_known = op.meaning_head_role == 0 or getattr(op, 'meaning_action', None) is not None
+                left, right = op.reverse_blocks(parent, hard_right if right_known else hard_left,
+                    counts=(fraction, 1-fraction), reference_right=right_known)
+                # The inverse recovers meaning; the selected symbol supplies
+                # its exact form. No parameter lives on the centroid side.
+                left = torch.cat((hard_left[..., :form_width], left[..., form_width:]), -1)
+                right = torch.cat((hard_right[..., :form_width], right[..., form_width:]), -1)
+                domain = ((left >= 0) & (left <= 1) & (right >= 0) & (right <= 1)).all(-1)
+                hard_left = torch.where(domain[:, None], left, hard_left)
+                hard_right = torch.where(domain[:, None], right, hard_right)
         available = allowed.flatten(1).any(-1)
         hard_left = torch.where(available[:, None], hard_left, 0.)
         hard_right = torch.where(available[:, None], hard_right, 0.)
-        result = (hard_left.detach(), hard_right.detach(), available)
+        result = (hard_left.detach(), hard_right.detach(), available) if form_width is None else (hard_left, hard_right, available)
         if return_details:
             return (*result, dict(logits=logits, selected=selected, allowed=allowed,
                 left_indices=left_indices, right_indices=right_indices, features=features,
@@ -13498,7 +13674,16 @@ class LanguageSpace(nn.Module):
             right_readable = (valid & (bank == rf[:, None]).all(-1)).any(-1)
             progress = (((lf - value).square().mean(-1) > tolerance)
                         & ((rf - value).square().mean(-1) > tolerance))
-            if getattr(op, 'inverse_kind', None) == 'case_search':
+            if form_width is not None:
+                delta = lf - rf
+                length = delta.square().sum(-1)
+                ratio = ((value-rf)*delta).sum(-1) / torch.where(length > 0, length, 1.)
+                ratio = torch.where(length > 0, ratio, .5).clamp(0, 1)
+                folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio))
+                meaning_error = (folded[..., form_width:]-parent[..., form_width:]).square().mean(-1)
+                meaning_scale = parent[..., form_width:].square().mean(-1).clamp_min(1. / (parent.shape[-1]-form_width))
+                admissible = admissible & (meaning_error <= 1e-8*meaning_scale)
+            elif getattr(op, 'inverse_kind', None) == 'case_search':
                 if case_bank is None:
                     pair_masks.append(torch.zeros_like(singular))
                     continue
@@ -13533,7 +13718,11 @@ class LanguageSpace(nn.Module):
             op = getattr(wrapped, 'gl', wrapped)
             if not getattr(op, 'reverse_dispatchable', True):
                 continue
-            value = op.generate(x)
+            if getattr(op, 'meaning_layout', None) is not None and x.shape[-1] == op.meaning_layout[1] and getattr(op, 'meaning_kernel', None) is not None:
+                width = op.meaning_layout[0]
+                value = torch.cat((x[..., :width], op.meaning_kernel(x[..., width:], inverse=True)), -1)
+            else:
+                value = op.generate(x)
             result = torch.where(selected[:, None], value, result)
             available = available | selected
         return (result, valid.bool() & ~available) if return_status else result

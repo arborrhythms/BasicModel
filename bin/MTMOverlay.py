@@ -9,7 +9,7 @@ from torch import nn
 
 
 class MTMOverlay(nn.Module):
-    # Stack columns: identity, predicate, object, resolved, word, source.
+    # Stack columns: identity, predicate, object, resolved, word, source, leaves.
     # Journal columns: result identity, subject, object, predicate, bind, event.
     def __init__(self, binary, unary):
         super().__init__()
@@ -22,7 +22,8 @@ class MTMOverlay(nn.Module):
                 getattr(rule, 'clause_form', None) == 'S',
                 getattr(rule, 'relation_kind', None) == 'equal',
                 getattr(rule, 'relation_kind', None) in ('part', 'whole', 'equal'),
-            ) for rule in rules] or [(0,) * 7], dtype=torch.long)
+                getattr(rule, 'relation_kind', None) in ('part', 'whole'),
+            ) for rule in rules] or [(0,) * 8], dtype=torch.long)
         self.register_buffer('binary', table(binary), persistent=False)
         self.register_buffer('unary', table(unary), persistent=False)
 
@@ -34,7 +35,7 @@ class MTMOverlay(nn.Module):
         count = words + journal
         return (like.new_zeros(batch, count, width),
                 torch.zeros(batch, count, dtype=torch.bool, device=like.device),
-                torch.zeros(batch, stack, 6, dtype=torch.long, device=like.device),
+                torch.zeros(batch, stack, 7, dtype=torch.long, device=like.device),
                 torch.zeros(batch, count, 3, dtype=torch.long, device=like.device),
                 torch.zeros(batch, journal, 6, dtype=torch.long, device=like.device))
 
@@ -82,7 +83,7 @@ class MTMOverlay(nn.Module):
         origin = torch.stack((torch.full_like(handle, 4), index.expand_as(handle), resolved.long()), -1)
         origins = MTMOverlay.write(origins, handle, origin, named)
         member = torch.stack((torch.where(named, handle, 0), word, torch.zeros_like(word),
-                              resolved.long(), word, torch.zeros_like(word)), -1)
+                              resolved.long(), word, torch.zeros_like(word), torch.ones_like(word)), -1)
         stack = torch.where(active[:, None, None],
             torch.cat((member[:, None], stack[:, :-1]), 1), stack)
         return values, valid, stack, origins, journal
@@ -131,7 +132,7 @@ class MTMOverlay(nn.Module):
         applied = choice.applied & (binary | unary)
         rule = torch.where(binary[:, None], self.binary[choice.local_op.clamp(0, len(self.binary)-1)],
                            self.unary[choice.local_op.clamp(0, len(self.unary)-1)])
-        selected = stack.gather(1, choice.position.clamp(0, size-1)[:, None, None].expand(batch, 1, 6))[:, 0]
+        selected = stack.gather(1, choice.position.clamp(0, size-1)[:, None, None].expand(batch, 1, 7))[:, 0]
         left = torch.where(binary[:, None], stack[:, min(1, size-1)], selected)
         right = torch.where(binary[:, None], stack[:, 0], selected)
         head = torch.where((rule[:, 0] == 2)[:, None], right, left)
@@ -153,7 +154,8 @@ class MTMOverlay(nn.Module):
             opening & (handle == fresh))
         resolved = origins[:, :, 2].gather(1, (handle-1).clamp_min(0)[:, None])[:, 0]
         parent = torch.where(opening[:, None], torch.stack((handle, head[:, 1], head[:, 2],
-            torch.where(bind & (selected_identity > 0), resolved, head[:, 3]), head[:, 4], column.expand(batch)+1), -1), parent)
+            torch.where(bind & (selected_identity > 0), resolved, head[:, 3]), head[:, 4], column.expand(batch)+1,
+            head[:, 6]), -1), parent)
         # A participant without an explicit bind remains its own object.
         for member, content, participant in (
                 (left, operands[:, 0], rule[:, 4].bool() | rule[:, 6].bool()),
@@ -164,19 +166,22 @@ class MTMOverlay(nn.Module):
             valid |= new[:, None] & (positions == h[:, None]-1)
         vp = applied & rule[:, 3].bool()
         parent = torch.where(vp[:, None], torch.stack((torch.zeros_like(fresh), left[:, 1], right[:, 0],
-            left[:, 3] & right[:, 3], left[:, 4], column.expand(batch)+1), -1), parent)
-        sentence = applied & (rule[:, 4].bool() | rule[:, 5].bool())
+            left[:, 3] & right[:, 3], left[:, 4], column.expand(batch)+1, left[:, 6]+right[:, 6]), -1), parent)
+        sentence = applied & (rule[:, 4].bool() | rule[:, 5].bool() | rule[:, 7].bool())
         subject, obj, verb = left[:, 0], right[:, 2], right[:, 1]
         obj = torch.where(rule[:, 5].bool(), right[:, 0], obj)
         # Equality's complement is its new state; its mutual-parthood result
         # remains the ordinary grammatical result in the operation journal.
         result = torch.where(rule[:, 5, None].bool(), operands[:, 1], choice.candidate)
+        result = torch.where(rule[:, 7, None].bool(), torch.maximum(operands[:, 0], operands[:, 1]), result)
         update = sentence & (subject > 0) & right[:, 3].bool()
         values = self.write(values, subject, result, update)
         origins = torch.cat((origins[:, :, :2], torch.where(
             update[:, None] & (positions == subject[:, None]-1), 1, origins[:, :, 2])[:, :, None]), -1)
         parent = torch.where(sentence[:, None], torch.stack((subject, verb, obj,
-            right[:, 3], left[:, 4], column.expand(batch)+1), -1), parent)
+            right[:, 3], left[:, 4], column.expand(batch)+1, left[:, 6]+right[:, 6]), -1), parent)
+        parent = torch.cat((parent[:, :6], torch.where(binary, left[:, 6]+right[:, 6],
+                                                    left[:, 6])[:, None]), -1)
         event = torch.stack((parent[:, 0], torch.where(sentence, subject, 0),
             torch.where(sentence, obj, 0), torch.where(sentence, verb, 0),
             torch.where(bind, selected_identity, -1), update.long()), -1)
