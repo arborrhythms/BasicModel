@@ -2079,3 +2079,82 @@ invalidated invocation remains retained. The repaired source receives a new
 frozen hash; the first freeze remains failed. All scoped groups and the six
 corpus placements run on the repair hash, with no promoted pass and the
 corpus's same captured first draw. Line 7 follows before review through Alec.
+
+## 38. Repair-gate scope and corpus runner interruption (Codex, 2026-10-24)
+
+The final module-to-test audit adds three direct-reader files once on
+`04c1132797`: `test_understanding_readout.py`,
+`test_live_query_occurrences.py` and `test_reference_index.py`. All twelve
+cases pass. No completed group repeats; `supplemental-scope.json` records
+why these files were added to the original selector list. No source or
+assertion changes accompany this scope correction.
+
+The preallocation receipt also traces the legacy `grow_inventory` call:
+`Spaces._concept_alloc_of` constructs these native stores with all
+`nVectors` rows, so admission asks for at most the existing size and that
+helper returns without growth. The three field values remain construction-
+time capacities; the receipt gives each required inventory and unused
+partition or chosen headroom.
+
+The six corpus placements were initially queued three at a time. With
+several presentations taking minutes, Codex attempted to replace only the
+queue controller and run all six independent placements concurrently on
+the 14-core, 36-GiB host. Terminating the controller also caused its tool
+execution session to terminate the three active descendants. This was an
+orchestration error: verb-form, separate-leaf and noun-form stopped after
+7, 7 and 22 completed batches. Their logs, keeps, initial states, last
+batch-start states and interruption records remain under source-02/corpus.
+They are interrupted evidence, not passes or production failures.
+
+The three previously queued placements continue from their original first
+starts. The interrupted three replay from the exact same captured initial
+RNG and the full original budget in source-02/corpus-replay; no trained
+checkpoint, new draw, source change or learning rescue is used. The replay
+protocol retains the initial-state checksum. The new controller cannot know
+the exit code of a process it did not parent, so its records leave that code
+null and report the missing completion files explicitly. The original
+controller's exit 143 and the actual interruption are retained. The
+read-only process and tensor samples are timing diagnostics only; no
+execution setting or model parameter was changed.
+
+
+The end-of-3.5 default sweep follows line 7's freeze and scoped gates, as
+§6 requires, before the combined review through Alec. It uses the preceding
+step-2 sweep's resource limits. The two subprocess-harness files run once
+in a clean measurement environment, separately from the otherwise default
+collection with capture plugins: their intentional replacement of
+PYTHONPATH made inherited PYTEST_PLUGINS fail five child probes in the
+preceding sweep. This is a disjoint execution grouping, not an omitted
+file, new skip, test port or repeated sweep. The prepared protocol records
+it before collection; no full sweep has run yet.
+
+
+## 39. Completed line-6 evidence and line-7 admission (Codex, 2026-10-24)
+
+On `04c1132797`, all fourteen scoped groups finish: 1,250 passed, twelve
+existing prerequisite skips and no failures. All six corpus placements
+complete their original budgets from the captured first draw; all answer
+and exact-reconstruction scores are 0/6, and selection counts are 6/6 only
+for the unmarked form, 0/6 otherwise. Their full captures and keep audit
+are in the line-6 receipt. All six learning gates move to item 0. Some
+kept programs carry selected-output flags and two forms have limited
+verb-teacher activity, but no retained event carries a case value; no modal
+teacher or alternative timeline appears. No learning claim follows.
+
+Line 7 installs the repeated-occurrence certificate prepared under §28,
+unchanged, after all line-6 source guards close. It adds no production code,
+capacity or parameter. Its eager/fullgraph cases independently specify the
+carrier and exact occupation-count deltas through symmetric composition,
+a headed binary, the absent-marker unary and clause completion. Every
+existing assertion stays. The short kept-only paired native lesson precedes
+its freeze. The first smoke command omitted the capture helper's directory
+from PYTHONPATH and failed at collection before any test ran; that log is
+retained. The corrected runner supplies the same complete observer paths
+already used by line 6, with no test or production change.
+
+The corrected smoke passes all three cases: two new eager/fullgraph cases
+and one existing paired native lesson. Line 7 now freezes the test-only
+change. No existing assertion changes and no test is retired. Its six
+scoped files run once by hash, followed by the one default end-of-3.5 sweep
+under §38's disjoint harness protocol. Both lines wait for review through
+Alec; no publication or item-3.0 start is implied by this freeze.

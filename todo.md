@@ -22,10 +22,13 @@ lines below keep the numbers their items had when they landed.
 lines 6–7. Line 6's first frozen source `e9c53252aa` completed 1,185 scoped
 cases with five failures, and retained the corpus runtime stops. The
 [receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/README.md) documents the
-repairs, exact ports and all three construction-time preallocations. Repair
-verification and the short lesson smoke precede its new frozen hash; every
-gate will identify that source. Line 7 follows, then the iteration review
-through Alec before publication. The single end-of-3.5 sweep remains;
+repairs, exact ports and all three construction-time preallocations. The
+repair and its short lesson smoke are complete; the new frozen source
+`04c1132797` passes all scoped groups (1,250 passed, 12 prerequisite skips);
+all six fixed-budget corpus placements complete and fail their learning
+gates, carried to item 0. The three same-draw replays and original launcher
+interruptions remain retained. Line 7 is in its pre-freeze smoke, then the
+single end-of-3.5 sweep and iteration review through Alec before publication;
 layout/removal and STM stay item 3.0, which has not been reached. Work stays
 on main.
 
@@ -1613,6 +1616,21 @@ not by a passing identity lesson.
    the verb teacher by design.
    The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
    retains every run and state; no learning claim is made.
+
+   **Iteration 2 learning carry, 2026-10-24:** on repaired source
+   `04c1132797`, all six occurrence §13.2 placements complete the original
+   three epochs / 18 training documents / 162 paired updates and six
+   held-out documents. Every placement scores answers 0/6 and exact
+   reverses 0/6; selection counts are 6/6 only for the unmarked form,
+   0/6 otherwise. Retained selected-output flags occur in three forms,
+   but no event retains a case value; two forms show limited verb-teacher
+   activity, and none shows a modal teacher or alternative timeline.
+   Carry the learned phase selection, phase answers, surface recovery and
+   word-class generalization here, with the original budgets and gates,
+   no new draw or extra training. The mechanism tests do not satisfy
+   these learning gates. All original failures, interrupted runs and
+   same-draw complete replays remain in the
+   [line-6 receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/line6/README.md).
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
    stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate
