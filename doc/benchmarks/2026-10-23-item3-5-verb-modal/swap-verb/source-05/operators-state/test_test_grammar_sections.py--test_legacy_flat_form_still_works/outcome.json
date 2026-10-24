@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_sections.py::test_legacy_flat_form_still_works",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

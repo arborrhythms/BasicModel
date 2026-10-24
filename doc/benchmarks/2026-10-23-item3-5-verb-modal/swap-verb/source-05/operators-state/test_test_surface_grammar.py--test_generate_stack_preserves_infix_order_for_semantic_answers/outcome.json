@@ -1,0 +1,6 @@
+{
+  "node": "test/test_surface_grammar.py::test_generate_stack_preserves_infix_order_for_semantic_answers",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,195 @@
+{
+  "exit_code": 1,
+  "selected": [
+    "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+    "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+    "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+    "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+    "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+    "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+    "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+    "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+    "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit",
+    "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
+    "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly"
+  ],
+  "completed": [
+    "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+    "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+    "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+    "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+    "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+    "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+    "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+    "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+    "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+    "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+    "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit",
+    "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
+    "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly"
+  ],
+  "slow_selected": [
+    "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+    "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots"
+  ],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.977395499823615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.3107039590831846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+      "phase": "call",
+      "outcome": "failed",
+      "certificate_phase": null,
+      "duration": 3.338986749993637,
+      "message": "test/test_output_walk.py:131: in test_walk_reports_truncation_when_work_is_pending\n    assert bool(truncated.all()) and n_emitted.tolist()==[0]\nE   assert (True and [1] == [0]\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method all of Tensor object at 0x14ace2530>()\nE    +      where <built-in method all of Tensor object at 0x14ace2530> = tensor([True]).all\nE     \nE     At index 0 diff: 1 != 0\nE     Use -v to get more diff)",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.3851064168848097,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.3854151251725852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.488533250056207,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.3462629581335932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 3.089362083002925,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4322530839126557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 20.09402049984783,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.1728200421202928,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_trains_generate_policy_from_reconstruction[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.9187974999658763,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_answer_availability_never_reassigns_the_decoder",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 2.834523207973689,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\nbatch = 0 (\u0394=0.719s)\r\nbatch = 0 (\u0394=0.711s)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_runbatch_output_masks_rows_without_reassigning_decoder_credit",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.9582607918418944,
+      "message": "",
+      "stdout": "batch = 0 (warm-up)\r\n"
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.1894325001630932,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_output_walk.py::test_question_conditioner_checkpoint_reloads_both_widths_strictly",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4742820418905467,
+      "message": "",
+      "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9539/test_question_conditioner_chec0/conditioners.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9539/test_question_conditioner_chec0/conditioners.ckpt\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

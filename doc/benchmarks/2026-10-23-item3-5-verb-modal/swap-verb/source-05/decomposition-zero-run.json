@@ -1,0 +1,25 @@
+{
+  "source": "d37ee18249699604c876179b647f4442f9237cb7",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_decomposition.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/decomposition-zero"
+  ],
+  "started": "2026-10-24T03:30:16.266091+00:00",
+  "exit": 0,
+  "finished": "2026-10-24T03:31:35.293281+00:00"
+}

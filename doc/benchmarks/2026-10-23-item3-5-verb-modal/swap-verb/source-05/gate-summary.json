@@ -1,0 +1,58 @@
+{
+  "native": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 130,
+    "completed": 130,
+    "counts": {}
+  },
+  "operators": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 192,
+    "completed": 192,
+    "counts": {}
+  },
+  "certificates": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 23,
+    "completed": 23,
+    "counts": {}
+  },
+  "decomposition-enabled": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 2,
+    "completed": 2,
+    "counts": {}
+  },
+  "decomposition-zero": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 2,
+    "completed": 2,
+    "counts": {}
+  },
+  "reconstruction": {
+    "exit": 1,
+    "reason": "test_failure",
+    "selected": 162,
+    "completed": 162,
+    "counts": {}
+  },
+  "regressions": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 110,
+    "completed": 110,
+    "counts": {}
+  },
+  "xor-standing": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 8,
+    "completed": 8,
+    "counts": {}
+  }
+}

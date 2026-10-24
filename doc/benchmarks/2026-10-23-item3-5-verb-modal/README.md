@@ -105,3 +105,24 @@ unused-gradient materialization difference) remain in logs 50–51; the
 assertions are unchanged. Log 52 passes all 46 focused cases with one
 existing skip. The timing diagnostic's JSON serialization failure is
 retained separately and supplies no pass or timing claim.
+
+## Fifth swap/verb source — pending-walk fixture failure before lessons
+
+Source `d37ee18249699604c876179b647f4442f9237cb7`:
+[source audit](swap-verb/source-05/source-audit.json),
+[scoped results](swap-verb/source-05/gate-summary.json).
+Seven groups pass: certificates, native, reference regressions, operators,
+XOR and both original decomposition arms. Reconstruction completes 162
+cases with one failure, in the newly included output-walk file. The
+identity/driver and legacy loss groups have not run; the lesson runner
+stopped before warm-up. None is claimed from an earlier source.
+
+The captured replay reproduces the old fixture's two identical codes
+being treated as one supported terminal. STOP is the sole legal move; one
+word is emitted while the lower slot remains pending. Spec §14 ports only
+that fixture to two distinct, tied candidates, retaining its assertion,
+width, bank size, validity, budget and policy. The replay then passes.
+Development 53–56 retains two failed probe setups (import path, then
+instrumentation inside a compiled loop), the read-only semantic replay
+and the passing port. No production code or other assertion changes;
+no retired test. Large states use the same lossless compression inventory.

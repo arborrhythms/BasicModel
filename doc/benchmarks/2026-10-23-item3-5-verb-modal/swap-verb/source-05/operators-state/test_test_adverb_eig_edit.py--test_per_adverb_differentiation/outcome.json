@@ -1,0 +1,6 @@
+{
+  "node": "test/test_adverb_eig_edit.py::test_per_adverb_differentiation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

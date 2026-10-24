@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/operators/worker-006.recycle.json"
+}

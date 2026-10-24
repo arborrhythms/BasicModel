@@ -118,14 +118,18 @@ def test_walk_emits_terminals_in_order_and_reports_no_truncation():
 
 
 def test_walk_reports_truncation_when_work_is_pending():
-    """A legal unary rewrite can spend all three trips without emitting."""
+    """An unresolved top stays pending without an implicit terminal emit."""
     m = _model()
     event,gl,cw,live=_stamped_event(m,'lift',N=2)
     language=m.languageSpace
     _prefer(m,len(language._generate_binary_ops)+list(language._generate_unary_names).index('null'))
-    # Two supported identities with the same code are ambiguous, so the
-    # null unary can remain eligible without an unsupported implicit emit.
-    bank = event[:, 1:2].expand(-1, 2, -1)
+    # Identical copies are one explanation. These distinct, equally poor
+    # candidates supply neither a terminal nor a supported decomposition.
+    event[0, 1].zero_()
+    event[0, 1, :2] = .8
+    bank = torch.zeros_like(event[:, :2])
+    bank[0, 0, :2] = bank.new_tensor([.1, .2])
+    bank[0, 1, :2] = bank.new_tensor([.2, .1])
     out,n_emitted,truncated,_cost=m._output_generate_walk(event,budget=3,
         basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool))
     assert bool(truncated.all()) and n_emitted.tolist()==[0]

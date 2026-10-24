@@ -24,3 +24,11 @@ lower closing (standalone and relation operand), selected inverse
 pullbacks, and full-menu versus selected inverse optimizer participation
 (terminal and compound). Their setup corrections and failed development
 runs are retained in logs 46, 50 and 51; every semantic assertion remains.
+
+After source05 (spec §14), test_output_walk.test_walk_reports_truncation_when_work_is_pending:
+the duplicate-code bank becomes two distinct tied codes (.1,.2)/(.2,.1),
+with the pending top (.8,.8); remaining coordinates are zero. The same
+shape, validity mask, budget and policy are retained. Its one assertion is
+verbatim; the docstring/comment now describes unresolved pending work.
+No production change and no retired test. Captured failure and corrected
+replay are development 55 and 56; failed probe setups are 53 and 54.

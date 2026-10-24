@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerForwardReverseShape::test_lift_forward_two_operands_one_result",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+  ],
+  "completed": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009249333990737796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009825750021263957,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004534207982942462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014597958885133266,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016100418288260698,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005923791090026498,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004341375082731247,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4578791670501232,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006423329468816519,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001772542018443346,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005104167154058814,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016719999257475138,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009745419956743717,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0881670000962913,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07681979099288583,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.11442333296872675,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

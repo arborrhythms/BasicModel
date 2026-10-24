@@ -1,0 +1,451 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+    "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+  ],
+  "completed": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+    "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-000.json"
+      ],
+      "pid": 52665,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 620807632,
+      "elapsed_seconds": 4.918304749997333,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+      ],
+      "completed": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009249333990737796,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009825750021263957,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004534207982942462,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.014597958885133266,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016100418288260698,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005923791090026498,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004341375082731247,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.4578791670501232,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006423329468816519,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001772542018443346,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005104167154058814,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016719999257475138,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009745419956743717,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0881670000962913,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.07681979099288583,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.11442333296872675,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-001.json"
+      ],
+      "pid": 52715,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435045672,
+      "elapsed_seconds": 4.045110250124708,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]"
+      ],
+      "completed": [
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017234749859198928,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01840195804834366,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01757275010459125,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-002.json"
+      ],
+      "pid": 52726,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438699304,
+      "elapsed_seconds": 4.200253666145727,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+      ],
+      "completed": [
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013400874799117446,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.04651266592554748,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00098341703414917,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017887583933770657,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates",
+  "elapsed_seconds": 20.257336542010307,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 620807632,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/collect.json"
+    ],
+    "pid": 52654,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 266208120,
+    "elapsed_seconds": 3.340064791031182,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

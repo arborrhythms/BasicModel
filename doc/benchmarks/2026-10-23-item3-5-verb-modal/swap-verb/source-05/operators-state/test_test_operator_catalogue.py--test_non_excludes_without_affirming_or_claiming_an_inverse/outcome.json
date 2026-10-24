@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

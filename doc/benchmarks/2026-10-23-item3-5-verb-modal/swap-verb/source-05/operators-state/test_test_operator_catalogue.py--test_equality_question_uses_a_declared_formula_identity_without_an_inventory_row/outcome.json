@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_equality_question_uses_a_declared_formula_identity_without_an_inventory_row",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_reconstruction_migration.py::test_traced_verb_reverse_uses_the_actual_verb_operand",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

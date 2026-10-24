@@ -1,0 +1,6 @@
+{
+  "node": "test/test_active_decode_candidates.py::test_impenetrable_trust_slices_physical_ema_to_active_prefix",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

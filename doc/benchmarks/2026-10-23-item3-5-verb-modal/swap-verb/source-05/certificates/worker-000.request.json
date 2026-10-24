@@ -1,0 +1,22 @@
+{
+  "selectors": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-05/certificates/worker-000.recycle.json"
+}

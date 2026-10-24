@@ -1,0 +1,6 @@
+{
+  "node": "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

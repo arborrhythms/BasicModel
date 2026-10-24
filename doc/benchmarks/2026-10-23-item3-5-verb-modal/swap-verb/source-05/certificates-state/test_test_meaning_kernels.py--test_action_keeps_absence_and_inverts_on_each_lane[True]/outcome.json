@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

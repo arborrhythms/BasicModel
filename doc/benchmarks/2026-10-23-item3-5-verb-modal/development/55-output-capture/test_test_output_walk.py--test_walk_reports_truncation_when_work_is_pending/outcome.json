@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_walk.py::test_walk_reports_truncation_when_work_is_pending",
+  "outcome": "failed",
+  "failure": "test/test_output_walk.py:131: in test_walk_reports_truncation_when_work_is_pending\n    assert bool(truncated.all()) and n_emitted.tolist()==[0]\nE   assert (True and [1] == [0]\nE    +  where True = bool(tensor(True))\nE    +    where tensor(True) = <built-in method all of Tensor object at 0x147d08cd0>()\nE    +      where <built-in method all of Tensor object at 0x147d08cd0> = tensor([True]).all\nE     \nE     At index 0 diff: 1 != 0\nE     Use -v to get more diff)",
+  "records": []
+}

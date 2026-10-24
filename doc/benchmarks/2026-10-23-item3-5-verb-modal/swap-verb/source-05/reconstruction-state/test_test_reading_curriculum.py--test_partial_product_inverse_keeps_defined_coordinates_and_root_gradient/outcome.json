@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_curriculum.py::test_partial_product_inverse_keeps_defined_coordinates_and_root_gradient",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

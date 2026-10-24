@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

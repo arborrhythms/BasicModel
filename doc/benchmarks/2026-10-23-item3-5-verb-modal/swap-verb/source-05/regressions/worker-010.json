@@ -1,0 +1,71 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_memory_consolidation.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history",
+    "test/test_memory_consolidation.py::test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged",
+    "test/test_memory_consolidation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[capacity]",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[expiry]"
+  ],
+  "completed": [
+    "test/test_memory_consolidation.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history",
+    "test/test_memory_consolidation.py::test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged",
+    "test/test_memory_consolidation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[capacity]",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[expiry]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.030964832985773683,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.07907254179008305,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004279624903574586,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[capacity]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006549249868839979,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[expiry]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006467832950875163,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

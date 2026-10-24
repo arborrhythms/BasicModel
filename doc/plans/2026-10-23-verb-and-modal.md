@@ -783,3 +783,30 @@ assertions stay; the earlier failed setup checks are retained. Final
 focused development check: 46 passed, one existing prerequisite skip.
 The optional timing diagnostic completed the model call but failed while
 serializing its report; it supplies no timing or learning claim.
+
+## 14. The pending-walk fixture's duplicate codes (Codex, 2026-10-23)
+
+Frozen source `d37ee1824` passes certificates, native, reference regressions,
+operators, XOR and both original decomposition arms. Reconstruction
+completes 162 cases with one failure in the newly included output-walk
+file. Identity/driver, legacy loss smoke and the lessons have not started
+on this hash; no earlier source supplies them.
+
+`test_walk_reports_truncation_when_work_is_pending` supplies two copies
+of exactly the same terminal code and expects no emit. That setup predates
+§10's correction: duplicate WORD/OBJECT copies are one explanation, not
+an ambiguous pair. Its captured replay confirms that STOP is the sole
+legal first move, with one emit and the lower slot still pending. The
+writer and selected-inverse repair are not involved.
+
+Port the fixture to two distinct, equally poor candidate codes: the top's
+first two coordinates are (.8, .8), and the two bank codes' first two
+coordinates are (.1, .2) and (.2, .1), with their remaining coordinates
+zero. Neither is a terminal explanation or a supported decomposition.
+Keep its width, two bank rows, validity mask, budget, policy preference and
+`assert bool(truncated.all()) and n_emitted.tolist()==[0]` verbatim. The
+comment now describes unresolved work, rather than claiming an identity
+unary must consume three trips. The captured replay passes after this
+fixture-only port; no production code or other assertion changes. Failed
+probe setup attempts and both semantic replays are retained in development
+53–56. The next hash runs the scoped groups and original lessons afresh.
