@@ -180,9 +180,10 @@ order; what raises order is symbolization, not sigma
 > grammar is written; orders live in the concepts
 > ([Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
 > Definitions raise: several "is" rows that share a side, with distinct
-> other sides, make an equivalence class one order up. Three compositions
-> lower one order, stopping at 0: the determiner, `lift` as NP + VP, and
-> VP + MP. So `lift` will lower rather than keep the subject's order.
+> other sides, make an equivalence class one order up. One composition
+> lowers one order, stopping at 0: `lift` as NP + VP (amended 2026-10-22
+> and 2026-10-23: the determiner selects, the modal withholds the
+> lowering). So `lift` will lower rather than keep the subject's order.
 > Parts of speech come only from positions and occupations, never from
 > definitions ([reconstruction spec §10](plans/2026-10-21-reconstruction-reads-the-bind.md#10-decided-alec-2026-10-21-later-parts-of-speech-only-from-the-grammar)).
 

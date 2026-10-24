@@ -240,7 +240,13 @@ mentions after it, so the stored `value` of §35 is a cache of that read,
 kept for working speed. This is why MTM never writes into a concept. The
 chain outlives the eight chunks because its occurrences are LTM0 entries;
 expiry bounds the stitching, and promotion makes a stitched chain a
-concept, the class of its occurrences.
+concept, the class of its occurrences. *Amended the same day (Alec): MTM
+also holds timelines, the connected VPs happening to one identity, with
+working state for each; and conceptual space has access to MTM
+identities, through bind's value and the stored reference, which is the
+witnessing that plants the seeds of attachment
+([iteration spec §4](2026-10-23-verb-and-modal.md); Philosophy,
+"Buddhist Epistemology").*
 Alec: "Or does it need its own concepts?" No. The cached value is the
 identity's *state*, the latest event's idea joined with later
 descriptions, a working vector that changes with every verb; the
@@ -251,6 +257,59 @@ entry in the index or on the priming surface; before promotion there
 is continuity only, and an expired unpromoted chain is gone
 (re-identification is future work). The continuum before the
 designation, in Dharmakīrti's terms.
+
+**Integration by prepending (Alec, 2026-10-23): "One way to integrate is
+to prepend MTM symbols to the symbol array that is read by conceptual
+space."** The array is the input space's per-word symbol arrays
+(`isp._ar_word_concept_ids`, `_ar_word_concept_rows`,
+`_ar_word_concept_orders`, `_ar_word_symbol_where`, `_ar_word_symbol_when`,
+written per word by `symbolize`), which the compose loop reads as its
+window (`stm[0]`, `identities`, `positions`, `orders` in `prepare_operands`).
+Today `MTMOverlay.stage` puts the accessible identities' values at indices
+0 to *base* of a separate values tensor attached to the language state
+(`lang[26:]`), and the bind menu enumerates those indices as locations.
+Prepending moves that block into the symbol array: the accessible
+identities become the leading entries of the window, each a symbol like a
+word, so that
+
+- **bind is a compose over two field positions**, the mention and a
+  prepended identity, through the existing reference-expanded menu
+  (`binary_refs`), which is the "two locations instead of one" Alec asked
+  for; the dummy is the mention composed with nothing;
+- **conceptual space reads MTM as it reads words**: the identity's content
+  is its current value (the meaning block), the same two channels as
+  before, value and reference, with no separate overlay;
+- **attention, the mask over `.where`, covers identities**, priming primes
+  and is primed by them, and expectation over the window sees them;
+- **STM's eight shared chunks** (step-2 §72) are realized: identities,
+  recalled chains and the open sentence's words occupy one array.
+
+A prepended identity needs the symbol's two parts: its percept part is
+the centroid of its mentions' forms (or its name's form) with `.where`
+the last mention's bracket and `.when` stamped now, as a concept entering
+STM is (layout spec); its concept part is the token's current value. Its
+symbol id is the token key, a reserved transient id, until promotion gives
+it `symbol`. Working values are never placed on the priming surface
+before promotion. An alternative timeline (iteration spec §4) is a second
+prepended entry for the same identity with that timeline's value, so a
+modal clause's continuation is a bind to that entry. The overlay's tensor
+state retires into the array.
+
+Alec, asked when: "The overlay is a transition implementation. Prepending
+was just a suggestion since the symbolic array used to be divided by
+order, so prepending would make the MTM symbols available to all orders."
+Recorded as two facts and one constraint. The overlay is transitional and
+is not deepened beyond what the modal needs. The concept row inventory is
+still divided by order (`_order_caps`: one pool of rows per rung, which
+`MemoryConsolidation._preflight` and `PartClosing` allocate from), and the
+overlay opens a bind only at order 1 (`MTMOverlay.apply`: `opening =
+(bind & (choice.order == 1)) | determined`), so an identity is today
+reachable only from an order-1 composition. **Constraint: MTM symbols are
+available to compositions at every order.** Prepending them before the
+order rungs is the way that satisfies it, and it lands when the overlay
+retires, in item 3's STM round, unless Alec pulls it forward; the modal's
+timelines live in `Token` and are mirrored by the overlay, so they migrate
+without a second design.
 
 **Lifetime.** `values` and `names` serialize with the pool in
 `ConceptualSpace`'s checkpoint extras (the resolver extra is version-only

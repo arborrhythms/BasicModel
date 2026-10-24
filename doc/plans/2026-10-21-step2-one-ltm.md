@@ -3651,6 +3651,12 @@ opens, with Claude's recommendations, for the layout-and-removal spec:
    idea vector, its composition's two references, its bound identity, its
    order stamp and `.where`/`.when`), and the stack is the chunks in
    reduce order; the journal is their history.
+   *Mechanism (Alec, 2026-10-23): prepend MTM symbols to the symbol array
+   that conceptual space reads*, before the order rungs, so identities and
+   recalled chains are leading entries of the compose window beside the
+   words, available to compositions at every order; bind composes two
+   field positions and the transitional identity overlay retires
+   ([identity spec §2, "Integration by prepending"](2026-10-23-identity-threading.md)).
 2. *Compression during the parse.* Recommended: at every reduce, as
    composition already produces a value, a chunk whose operands are both
    existing concepts compresses to its idea and keeps no references;

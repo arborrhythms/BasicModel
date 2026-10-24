@@ -14,7 +14,8 @@ iteration. The order within it:
    order 8/8 with both CE bars failed; the NP lower lesson's order-1
    occurrence 0/1, the chooser preferring `product`). The swap changes
    what composes, so its artifacts are regenerated after it.
-4. **Line 5, the modal** (§4), differencing over possible identities.
+4. **Line 5, the modal** (§4): an alternative timeline of the one
+   identity; the modal withholds the lowering.
 
 Under step-2 §39 Codex reviews this spec against the code, fixes what the
 code contradicts and continues, documenting each decision; only reversing
@@ -50,8 +51,9 @@ a decision in §1 comes back to Alec. §6 is the iteration's gate rule.
    identity's state, a description joins it, values live in MTM, event
    histories record verb and role, the graph ends at the kept close.
 6. **Modals are of the same order as verbs and nouns; an MP is a
-   difference of NP-VPs across an identity's possible identities, as a VP
-   is a difference of NPs across time; its form is the adverb** (Alec,
+   difference of VPs as a VP is of NPs; its form is the adverb; a
+   counterfactual is an alternative timeline of the one identity, an
+   abstraction kept above order 0 by withholding the lowering** (Alec,
    2026-10-22 and 2026-10-23; §4).
 7. No language in code: no marker is named as possibility or necessity.
 
@@ -192,76 +194,118 @@ identity ("the box contains apples").
 w = W_m(ADV.meaning), Q_m)`, with `Q_m` one shared learned basis,
 identity-initialized, so a modifier starts as `e`.
 
-## 4. The modal (line 5): differencing over possible identities
+## 4. The modal (line 5): an alternative timeline of the one identity
 
-Alec (2026-10-23): "The question of modals is exemplified by 'what is the
-meaning of possible vs necessary'. The multiple different timelines
-approach as a fifth dimensional ordinate over events seems great; I had
-previously envisioned two NP creating a VP as a difference, and two NPVP
-creating a MP as a difference. But perhaps that is about learning the MP,
-and the form of the MP can be as an adverb?" Asked where the timeline
-ordinate is stored: "Since identities are used for verb differencing, it
-would make sense to collect 'possible identities' for modal differencing."
-Asked what the modal learns from: the same.
+**The discussion, in Alec's words (2026-10-23).** "The question of modals
+is exemplified by 'what is the meaning of possible vs necessary'. The
+multiple different timelines approach as a fifth dimensional ordinate
+over events seems great; I had previously envisioned two NP creating a VP
+as a difference, and two NPVP creating a MP as a difference. But perhaps
+that is about learning the MP, and the form of the MP can be as an
+adverb?" Then, on Claude's first mechanism: "we seem to be baking
+counterfactuals into MTM. Do they exist in other places? I would assume
+they are created naturally in concepts higher than order 0, since they
+are abstract." Then: "So it would take recombination of abstraction to
+create something not present in reality." Then: "MTM still holds
+identities, which are connected NPs or things. But it also holds
+timelines, which are connected VPs happening to a single identity."
 
-**Decided, as read by Claude.**
+**Withdrawn:** Claude's "possible identity" mechanisms (a bind-menu entry;
+then a learned actuality `p(m)` with a `possible` record kind). They put
+the branch in the wrong unit. The unit of a counterfactual is a timeline,
+not an identity. Claude's claim that MTM holds only stitched percept parts
+is corrected: MTM stitches perceived occurrences, NP mentions into an
+identity and VP events into a timeline, and holds working state for each,
+while holding no concept row.
 
-- **A VP is a difference across time, an MP a difference across possible
-  identities.** The verb's teacher compares one identity's states before
-  and after (§3); the modal's compares an identity's actual state with the
-  state of one of its possible identities at the same time ("Joe walked;
-  he could have run"). The timelines of the fifth ordinate are an
-  identity's possible identities.
-- **Possible and necessary.** The indicative is about the actual identity;
-  *possible* is true of some possible identity; *necessary* of the actual
-  and every possible one, the dual. So a necessary modal learns a small
-  difference between actual and possible states on what it asserts, and a
-  possible modal a larger one: the two are told apart by what they learn,
-  not by name.
-- **Form.** The `adverb` rule: `adverb(VP, M)` the *de re* reading,
-  `adverb(S, M)` the *de dicto*; occurrence §14.3's `position` with minted
-  worlds is withdrawn.
+**Decided (Alec, 2026-10-23).**
 
-**In code names (Claude's reading, corrected on checking, 2026-10-23).**
-The first version put a "new possible identity" entry beside every
-accessible identity in the bind menu. Checking found three gaps: it
-changed binding at initialization (more options, so G1–G3 and the
-twelve-draw series would move); the actual-or-possible choice had no
-credit, since the evidence arrives in later sentences, after the kept
-close where credit ends; and nothing in LTM recorded possibility once MTM
-let the token go. The corrected mechanism:
-
-- **The modifier carries actuality.** `AdverbLayer`'s meaning rule gains
-  `p(m)`, a learned readout of the modifier's meaning, soft-thresholded
-  and clamped to [0, 1], zero-initialized, so every modifier starts actual
-  and nothing changes until it is learned; binding is unchanged.
-- **Possible identities.** `MediumTermMemory.Token` gains `actual`, the
-  token it is a possible identity of. At the kept close, an event carrying
-  a modifier with `p(m) > ½` is written to a possible identity of its
-  subject, opened with the subject's current value and `actual` naming it;
-  the VP replaces the possible identity's state, never the actual's
-  ("Joe could have run" does not make Joe tired). A possible identity is an
-  ordinary entry for capacity, expiry and checkpointing.
-- **Durable mark.** The event's LTM0 rows get a new record kind,
-  `possible`: queries for what happened skip it, as they skip questions
-  and estimates, and a question whose own modifier reads as possible
-  reads it. "Did Joe run?" and "could Joe run?" are then answered from
-  different rows after MTM has expired.
-- **`modal_teacher`, the difference of two NP-VPs.** When a later kept
-  close observes the actual identity A (an event, a description, a copular
-  property or an equality) after an event e carrying modifier m, the
-  observation is compared with A's state with e applied and without it,
-  all detached; the closer one is the target for `p(m)` (possible when
-  "without" fits better), a binary cross-entropy term. "Joe could have run.
-  Joe walked." teaches the modifier toward possible; "Joe ran quickly. Joe
-  is tired." teaches it toward actual. Nothing names a marker.
-- **The modifier's diagonal** (`W_m`, `Q_m`) trains through the derivative
-  within the sentence, like the other kernels.
-- **Possible versus necessary.** The definitions above stand. This
-  iteration builds one possible identity per modal event, which separates
-  the actual from the possible; telling necessity from possibility needs
-  the actual and several possibles to be compared, and stays this line's
-  recorded open point.
+1. **One identity, several timelines.** A counterfactual is an alternative
+   timeline of the one actual identity: Joe stays Joe, with his connected
+   NPs, names, kind and promotion; what branches is the chain of VPs on
+   him. `Token` gains `timelines`, a tuple of (events, value); today's
+   `events` and `value` become timeline 0, the actual, whose value is the
+   identity's current state; an alternative timeline's value is the
+   identity's state along that branch, which "he would have been tired"
+   reads.
+2. **Recombination, kept above order 0** ("Good correction"). A modal
+   clause is the ordinary composition, the same `lift`, `verb` and `lower`
+   kernels on the identity's state, with the lowering to order 0 withheld,
+   so its result is an idea at order 1 or above: an abstraction of a
+   possible event, created in concepts higher than order 0 and not present
+   in reality. It is written as an idea at that order and never as an
+   order-0 occurrence of the subject. The order is the mark; there is no
+   record kind. "Did Joe run?" reads order-0 occurrences; "could Joe run?"
+   reads the abstractions and the alternative timelines. Only NP + VP
+   lowers; Orders §10 is amended, reversing 2026-10-22's "VP + MP lowers".
+3. **Which timeline a clause extends.** A lowered event (order 0) extends
+   the actual timeline and updates the actual state. An unlowered event
+   extends an alternative timeline of its subject and updates that
+   timeline's value, never the actual. Whether the modal applies is the
+   chooser's choice of the `adverb` operation, learned by exposure like
+   any attachment; nothing names a marker.
+4. **Continuation (Alec: "Ok, but make a note in the doc that we are doing
+   this instead of creating a new timeline for every 'could have'").** A
+   modal clause continues its subject's most recent open alternative
+   timeline, and opens a new one only when none is open. So "Joe could
+   have run. He would have been tired." is one branch, and so is "Joe
+   could have run. Joe could have swum." unless the chooser separates
+   them. **This is a default adopted for simplicity, not a claim about
+   discourse: the alternative, a new timeline for every "could have", was
+   considered and not taken.** If exposure shows two counterfactuals of
+   one identity must be kept apart, the chooser gains the choice to open a
+   new timeline (an action, credited like the others), and this note is
+   the record of why it did not have it first.
+5. **Possible and necessary.** Possible: the event holds on some timeline.
+   Necessary: on every timeline of the identity, the actual included; in
+   the limit over a kind, the generic ("cats breathe"), two truths'
+   relative truth at the kind level. The dual holds in the lanes.
+6. **The second difference, as a teacher.** Two NP-VPs of one identity at
+   one time on different timelines: "Joe walked" (actual) and "he could
+   have run" (alternative). The MP's diagonal (`W_m`, `Q_m` of §3) maps
+   the actual event to the alternative; across sentences `modal_teacher`
+   compares them at equal `when`, as `verb_teacher` compares before and
+   after; within a sentence the derivative reaches it as it reaches the
+   other kernels.
+7. **Lifetime.** Alec: "Psychologically, we get attached to identities,
+   which suggests some identities (like self) rarely if ever go away. But
+   perhaps there is a path from MTM to concepts of LTM?" There is, and 2c
+   built it: three distinct sentences promote a token to an order-1
+   concept in the index (`MemoryConsolidation.consolidate`), whose row
+   persists under forgetting by value, and a recalled or re-mentioned
+   native individual re-enters MTM keyed by its occurrence with the
+   concept as its `native` (`ReferenceClose`, the identity line). So an
+   MTM entry expires while its identity persists as a concept, and
+   attachment is re-witnessing: an identity mentioned in nearly every
+   sentence, the self the limiting case, is promoted at once, has its
+   value refreshed at every close, and is never selected by forgetting.
+   Alternative timelines expire with their token and at the document's
+   end (2c's teardown); their events persist as ideas at order 1 or above
+   in LTM0, composed over the identity's symbol, so a recalled identity's
+   counterfactuals are reachable by reference. Promotion folds only
+   order-0 occurrences into the concept's content; the abstractions are
+   attached by reference, not folded in.
+8. **MTM is a source for conceptual space, and stays one** (Alec,
+   2026-10-23: "composed over the identity's symbol means that the mind or
+   conceptual space has access to MTM symbols. In Yogācāra terms, that is
+   what creates the bījas in the ālaya: without that witnessing, we would
+   not become attached to identity"). Two channels, both present today and
+   both required of every later layout: a bound mention composes over the
+   identity's current value (`BindLayer` reads it from the menu staged by
+   `MTMOverlay.stage` from `ReferenceClose.token_value`), and the idea the
+   close writes keeps a reference to the identity (the mention occurrence
+   that `names` maps to the token, or the promoted `symbol`), while the
+   kept close writes back into MTM (`mtm.open`, `bind`, `update`, `event`
+   in `ReferenceClose.commit`). An alternative timeline's ideas are
+   composed over the identity in the same two ways. The layout round
+   keeps both when it compresses a sentence to one idea.
+   *Integration (Alec, 2026-10-23): the overlay is a transition
+   implementation; the target is to prepend MTM symbols to the symbol array
+   conceptual space reads, before the order rungs, so identities are
+   available to compositions at every order and bind composes two field
+   positions (identity spec §2, "Integration by prepending"). Built in
+   item 3's STM round unless pulled forward; this iteration keeps
+   timelines in `Token`, mirrored by the overlay, so they migrate.*
 
 ## 5. Certificates
 
@@ -293,23 +337,36 @@ The verb:
 
 The modal:
 
-9. With every `p(m)` at zero, binding, identity values and every existing
-   assertion are unchanged.
-10. A modifier with `p(m) > ½` opens a possible identity whose `actual`
-    names the subject's token and whose value starts at its state; the VP
-    replaces the possible identity's state; the actual state is unchanged;
-    the rows are written with kind `possible` and skipped by queries for
-    what happened.
-11. A modifier whose event the actual identity's later observation
-    contradicts fires `modal_teacher` once and moves its `p` toward
-    possible; one whose event the observation bears out moves toward
-    actual. The fixture's markers are corpus tokens, never named in code.
-12. A modal marker reaches both bracketings through `adverb` in a
-    fixed-operation fixture.
-13. Line 5's learning gate (todo): generated corpora with a modal marker
+9. With no `adverb` application, timelines, identity values and every
+   existing assertion are unchanged; `Token.timelines` has one timeline
+   whose events and value equal today's.
+10. A modal clause writes its idea at order 1 or above and no order-0
+    occurrence of its subject; the actual state and timeline 0 are
+    unchanged; the subject's alternative timeline gains the event and its
+    value is the VP applied to the state it branched from.
+11. A second modal clause about the same subject continues the open
+    alternative timeline (§4 item 4), and its VP acts on that timeline's
+    value: "X could have run; X would have been tired" leaves X's actual
+    state untouched and the alternative's state changed twice.
+12. "X walked" (actual) and "X could have run" (alternative) at equal
+    `when` fire `modal_teacher` once, moving the modifier's diagonal toward
+    the map from the actual event to the alternative on defined coordinates
+    only; a modifier with no alternative event teaches nothing.
+13. A modal marker reaches both bracketings through `adverb` in a
+    fixed-operation fixture; "did" reads order 0 and "could" reads the
+    abstractions in a fixed-operation query.
+14. Lifetime: an alternative timeline expires with its token and at the
+    document's end; its ideas remain in LTM0 at their order; a promoted
+    identity's concept folds order-0 occurrences only.
+15. Line 5's learning gate (todo): generated corpora with a modal marker
     as a free leaf and as a verb affix; "did" and "could" questions
-    answered from the actual and the `possible` rows; budgets and seeds
+    answered from order 0 and from the abstractions; budgets and seeds
     fixed in advance; reported, not rescued.
+16. Source: an idea written from a clause with a bound subject has the
+    identity's value in its content (the bind's operand equals
+    `token_value` at the bind) and a reference to the identity (its
+    mention's occurrence maps to the token, or its promoted symbol);
+    an alternative timeline's idea has both as well.
 
 ## 6. The iteration's gate rule (Alec, 2026-10-23: two iterations)
 
@@ -330,6 +387,7 @@ The modal:
 - *Intransitive basis* (Alec, 2026-10-23): "Keep verb groups for
   intransitives."
 - *Copular state* (Alec, 2026-10-23): it joins like a description.
-- *The modal* (Alec, 2026-10-23): collect possible identities for modal
-  differencing; the MP is learned as a difference of two NP-VPs; its form
-  is the adverb (§4).
+- *The modal* (Alec, 2026-10-23): an alternative timeline of the one
+  identity; the modal withholds the lowering ("Good correction");
+  continuation default noted ("Ok, but make a note"); lifetime through
+  promotion (§4).

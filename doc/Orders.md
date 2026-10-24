@@ -6,7 +6,7 @@
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - **One conceptual space (Alec, 2026-10-22; §10):** §9's per-order spaces and stratified read are reversed; one surface places every concept at every order; strata stay in LTM.
-> - **Orders are learned (Alec, 2026-10-21; [§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).** No ordered grammar is written and parts of speech stay order-free. Definitions raise, through equivalence classes; the determiner, NP + VP and VP + MP lower, returning to S0. Definitions are kept both as LTM1 rows (explicit) and as folds (implicit), which supersedes "folds, not rows" above; the rows train the fold, and their match or mismatch is judged. Built in todo item 3.
+> - **Orders are learned (Alec, 2026-10-21; [§10](#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).** No ordered grammar is written and parts of speech stay order-free. Definitions raise, through equivalence classes; NP + VP lowers, returning to S0 (amended 2026-10-22 and 2026-10-23: the determiner selects and the modal withholds the lowering). Definitions are kept both as LTM1 rows (explicit) and as folds (implicit), which supersedes "folds, not rows" above; the rows train the fold, and their match or mismatch is judged. Built in todo item 3.
 
 
 *Alec, 2026-10-15, in dialogue with Claude; recorded as decided theory.
@@ -317,12 +317,19 @@ modal". Each lowers one order and stops at 0:
   difference; a verb phrase under it holds in some of them, one order
   down.
 
+  *Reversed (Alec, 2026-10-23, "Good correction"): the modal does not lower;
+  it withholds the lowering. A modal clause is the ordinary composition
+  kept above order 0, an abstraction of a possible event that extends
+  an alternative timeline of the one identity, never an order-0
+  occurrence ([iteration spec §4](plans/2026-10-23-verb-and-modal.md)).
+  Only NP + VP lowers.*
+
 IS raises by collecting members, and these three lower by landing among
 them. This supersedes §5's count for predications, under which a
 sentence about individuals was order 2.
 
 **Amended (Alec, 2026-10-22): determiners select; only NP + VP and VP + MP
-lower.** "Determiners might not even be dropping the order: they might just
+lower** *(and 2026-10-23: only NP + VP; the modal withholds lowering)*. "Determiners might not even be dropping the order: they might just
 be selecting one of a plurality, and leaving the order untouched. Which
 means only NP VP and VP MP combinations are dropping the order." A
 determiner picks one of a plurality, and the phrase's order is the order

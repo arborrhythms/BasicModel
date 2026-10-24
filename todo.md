@@ -860,10 +860,13 @@ not by a passing identity lesson.
      shared basis. This answers occurrence §14.5's possible situation:
      an alternative VP, neither a minted world nor a lane.
    - *Superseded 2026-10-23 (Alec; [iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)):*
-     the modal is a difference across an identity's **possible
-     identities**, collected in MTM, as the verb is across time; its form
-     is the `adverb` rule; minted worlds and `position` are withdrawn. The
-     bullet below is the record.
+     a counterfactual is an alternative **timeline** of the one identity
+     (MTM holds identities, connected NPs, and timelines, connected VPs on
+     one identity); a modal clause is the ordinary composition with the
+     lowering withheld, an abstraction above order 0, never an order-0
+     occurrence; form is the `adverb` rule; minted worlds and `position`
+     are withdrawn; continuation default and lifetime through promotion
+     in the spec. The bullet below is the record.
    - **The second difference: the modal as the verb phrase's preposition
      over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
@@ -952,8 +955,11 @@ not by a passing identity lesson.
      individuals ("this is Felix, that is Felix": 0 to 1) and kinds
      ("Felix is a cat, Ciao is a cat": 1 to 2).
    - **Return to S0 by lowering** (amended 2026-10-22, [Orders §10](doc/Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)).
-     Two compositions lower one order: NP + VP, predication, and VP + MP,
-     the modal over possibilities. A determiner does not: it selects one
+     One composition lowers one order: NP + VP, predication. The modal
+     does not (Alec, 2026-10-23, reversing 2026-10-22): it withholds the
+     lowering, so a modal clause stays above order 0 as an abstraction on
+     an alternative timeline of its identity ([iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)).
+     A determiner does not: it selects one
      of a plurality, and the phrase's order is that of what it selects,
      by lookup (a member of a kind, or a shaped portion of a mass, is an
      individual; "the water" is order 1). Order assignment is by lookup

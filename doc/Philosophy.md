@@ -106,6 +106,39 @@ analyzes top-down — intersection/division of the presented unity into parts
 characterized at large scale — so meaning- and term-generalities never
 masquerade as particulars.
 
+**Yogācāra: witnessing plants the seeds (Alec, 2026-10-23).** The three
+stores map onto the Yogācāra account of mind as well as onto Dharmakīrti's
+epistemology. The active consciousnesses (*pravṛtti-vijñāna*) witness; their
+activity perfumes (*vāsanā*) the store consciousness (*ālaya-vijñāna*),
+depositing seeds (*bīja*) that ripen (*vipāka*) into later cognition and
+disposition; and the afflicted mind (*kliṣṭa-manas*) takes the ālaya's
+continuity as a self, which is the root of self-grasping (*ātma-grāha*)
+and its four afflictions, self-view, self-delusion, self-pride and
+self-love (Vasubandhu, *Triṃśikā* 2–7, 19; Asaṅga, *Mahāyānasaṃgraha* I;
+Xuanzang, *Cheng Weishi Lun*; Schmithausen 1987; Waldron 2003; Lusthaus
+2002). In the architecture: perception and STM witness; MTM is the
+continuity the manas grasps, an identity as the connected noun phrases of
+one thing and its timelines as the connected verb phrases that happen to
+it; LTM0, LTM1 and the concept index are the ālaya. Alec: "Composed over
+the identity's symbol means that the mind or conceptual space has access
+to MTM symbols. In Yogācāra terms, that is what creates the bījas in the
+ālaya: without that witnessing, we would not become attached to identity."
+Conceptual space has that access on two channels: a sentence that binds a
+mention to an identity composes over the identity's current value, read
+from MTM, and the idea it writes keeps a reference to the identity, so
+every kept close perfumes LTM with that identity. Promotion by recurrence
+is a seed ripening into a disposition, a concept that persists under
+forgetting by value; recall is a seed ripening into a cognition, the
+concept re-entering MTM; and attachment is re-witnessing, the identity
+mentioned at nearly every close, the self in the limit, never selected by
+forgetting. In the three-natures terms, the stitched continuum is the
+dependent nature (*paratantra*); taking it as an essence is the imagined
+(*parikalpita*), which the architecture does not build, since identity is
+imputed by binding and its concept is the class of its occurrences; and
+the dependent seen without the imagined is the perfected
+(*pariniṣpanna*), which forgetting by value and MTM's expiry leave open.
+The ethical reading is in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-of-identity-alec-2026-10-23).
+
 The remainder of this document is the original pramana-theory mapping of
 the truth ontology.
 
@@ -1800,8 +1833,9 @@ its `.where` and `.when`, is episodic, and the concept part is semantic;
 the concept index with LTM1's edges is the semantic store proper, with
 promotion by recurrence as consolidation. Every mental event has both
 parts, which is why a thought and a perception share one form. Identity is the
-stitching of percept parts: MTM threads located occurrences together
-and holds no concept of its own (Alec, 2026-10-23). In Dharmakīrti's terms, an LTM0 idea is the
+stitching of perceived occurrences: MTM threads noun-phrase mentions into
+an identity and verb-phrase events into its timelines, holds working
+state for each, and holds no concept row of its own (Alec, 2026-10-23). In Dharmakīrti's terms, an LTM0 idea is the
 unique particular, grasped directly and ultimately real; a concept is the
 universal, constructed by exclusion and conventionally real; an identity
 is a continuum of moments whose unity is imputed; binding is the
@@ -1817,6 +1851,12 @@ world. "Universals are not causally efficacious" (Dharmakīrti,
 is ultimately real, the rest is conventionally real; these are the
 particular and the universal). So universals are neither born nor
 destroyed; only particulars are momentary.
+**MTM is a source for conceptual space** (Alec, 2026-10-23): a sentence
+that binds a mention to an identity composes over the identity's current
+value and writes an idea that keeps a reference to it, and that
+witnessing is what plants the seeds of attachment to identity, the
+Yogācāra reading under [Buddhist Epistemology](#buddhist-epistemology)
+and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-of-identity-alec-2026-10-23).
 The mapping, with references, is in the
 [identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
 

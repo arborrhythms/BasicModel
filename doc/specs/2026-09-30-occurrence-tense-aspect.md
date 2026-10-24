@@ -1033,13 +1033,16 @@ Necessity as the dual stays Claude's recommendation. The section moves to
 its own spec when step 5 starts (last bullet).
 
 **The modal, settled (Alec, 2026-10-23; [iteration spec §4](../plans/2026-10-23-verb-and-modal.md)).**
-Timelines as a fifth ordinate over events, realized as an identity's
-*possible identities* collected in MTM: the indicative is about the
-actual identity, *possible* is true of some possible identity,
-*necessary* of every one; an MP is learned as a difference of two
-NP-VPs, the actual and a possible identity's states, as a VP is learned
-across time; its form is the `adverb` rule. This answers this section's
-second and third bullets and withdraws §14.3's minted worlds.
+Timelines as a fifth ordinate over events, realized as alternative
+timelines of the one identity in MTM (which holds identities, connected
+NPs, and timelines, connected VPs on one identity): a modal clause is the
+ordinary composition with the lowering withheld, an abstraction above
+order 0 created by recombination and never an order-0 occurrence;
+*possible* holds on some timeline, *necessary* on every one, the generic
+in the limit over a kind; an MP is learned as the difference of two
+NP-VPs at one time on different timelines, as a VP is learned across
+time; its form is the `adverb` rule. This withdraws §14.3's minted worlds
+and reverses "VP + MP lowers" ([iteration spec §4](../plans/2026-10-23-verb-and-modal.md)).
 
 **Transitive verbs (Alec, 2026-10-23; direction for step 4's spec).** "If
 we have 'plus 2', we have a transitive verb. If 'two' is already a

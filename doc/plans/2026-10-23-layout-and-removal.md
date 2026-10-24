@@ -105,6 +105,11 @@ operations) never become rows: a chain row's operands are its semantic
 operands, as `ClauseJournal.region` already picks the semantic operand of
 a headed operation. The identity line's `mtm.event` records the sentence
 in its subject's history with the idea's address or the chain's handle.
+A compressed idea keeps its reference to the identity it was composed
+over (the token's key or promoted symbol, in its semantic bindings), as
+a chain's OCC reference does: conceptual space's access to MTM
+identities is the witnessing that plants the seeds of attachment and
+must survive compression (Alec, 2026-10-23; iteration spec §4 item 8).
 
 **Derivation removal.** `PartClosing._plan_term` no longer writes
 composing Part edges; `_word_origins`, `_definition` and `_reserve` for
