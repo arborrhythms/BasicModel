@@ -30,6 +30,9 @@ unchanged first; the latest preserved Philosophy edit is `bc9ae646f`.
   checkpoint access paths/malformed fixtures, explicit legacy-v1 layout,
   and actual closes in the promotion fixture. Two expected-value assertion
   expressions change path; all semantic checks remain. No retired tests.
+  The correction freeze also names the store in two identity-row fixtures
+  so reuse of `_` cannot discard its only strong owner. No assertion changes
+  in that repair. Production remains byte-identical to `45513baca6`.
 - Development logs retain every failure and repair. New setup corrections
   use the prepared close and compare string/tensor metadata recursively.
   The later-independent-event check excludes that event from the earlier

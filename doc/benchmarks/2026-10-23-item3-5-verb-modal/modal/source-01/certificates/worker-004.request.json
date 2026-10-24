@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+    "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-004.recycle.json"
+}

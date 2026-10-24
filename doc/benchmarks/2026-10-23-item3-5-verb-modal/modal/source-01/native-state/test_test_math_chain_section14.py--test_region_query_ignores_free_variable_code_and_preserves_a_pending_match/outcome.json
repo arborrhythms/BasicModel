@@ -1,0 +1,6 @@
+{
+  "node": "test/test_math_chain_section14.py::test_region_query_ignores_free_variable_code_and_preserves_a_pending_match",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

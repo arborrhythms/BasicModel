@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

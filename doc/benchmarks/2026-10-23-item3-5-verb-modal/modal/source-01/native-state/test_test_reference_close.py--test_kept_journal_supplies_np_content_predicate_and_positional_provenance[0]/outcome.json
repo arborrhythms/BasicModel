@@ -1,0 +1,621 @@
+{
+  "node": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          12,
+          14,
+          16
+        ],
+        "word_rows": [
+          12,
+          14,
+          16
+        ],
+        "activations": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "leaves": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            1,
+            8,
+            -1
+          ]
+        ],
+        "targets": [
+          8,
+          34,
+          12,
+          34,
+          34
+        ],
+        "end_state": [
+          [
+            0.0,
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          13,
+          16,
+          19
+        ],
+        "word_ids": [
+          12,
+          15,
+          18
+        ],
+        "lexical_forms": [
+          null,
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": [
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "symbol_when": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            13,
+            16
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            16,
+            19
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": true,
+        "operation_probabilities": null,
+        "leaf_orders": [
+          0,
+          0,
+          1
+        ],
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null,
+        "timeline_actions": null,
+        "timeline_values": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": null,
+            "refs": [
+              [
+                "clause",
+                0
+              ],
+              19,
+              -1
+            ],
+            "order": 1,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                false
+              ]
+            },
+            "subject_word_id": 15,
+            "request": null,
+            "children": [
+              1
+            ],
+            "companions": [],
+            "composition": 0
+          },
+          {
+            "relation": null,
+            "refs": [
+              -1,
+              -1,
+              -1
+            ],
+            "order": 1,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 15,
+            "request": {
+              "mode": "mint",
+              "role": 0,
+              "leaves": [
+                1
+              ],
+              "forward_identity": null
+            },
+            "children": [],
+            "companions": [],
+            "composition": 1
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "lift",
+            "formal_name": "lift",
+            "head_role": 2,
+            "order": 1,
+            "leaves": [
+              0,
+              1,
+              2
+            ],
+            "children": [
+              1,
+              4
+            ],
+            "binding": null
+          },
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "lower",
+            "formal_name": "lower",
+            "head_role": 2,
+            "order": 1,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              2,
+              3
+            ],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": 12,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 16,
+            "word_id": 15,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 19,
+            "word_id": 18,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 1,
+            "leaves": [
+              2
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=15, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "mint",
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": null,
+            "leaves": [
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [],
+        "cost": 0.0
+      }
+    }
+  ]
+}

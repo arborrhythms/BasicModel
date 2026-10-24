@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+    "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+  ],
+  "completed": [
+    "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+    "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.036418958101421595,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01905079185962677,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01977658295072615,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01832804107107222,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

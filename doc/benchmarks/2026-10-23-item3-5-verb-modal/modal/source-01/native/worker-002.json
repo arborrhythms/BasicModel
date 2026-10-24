@@ -1,0 +1,126 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "completed": [
+    "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+    "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+    "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+    "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_close.py::test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cues",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.027802875032648444,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009206670802086592,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00046437489800155163,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[False-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003144580405205488,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004691248759627342,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004485419485718012,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_deferred_reference_request_survives_kept_trial_detachment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01273279101587832,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_objectless_marker_stays_literal_under_an_implicit_reference_read",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006171248387545347,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012990041868761182,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012451708083972335,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

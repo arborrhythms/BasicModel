@@ -1,0 +1,115 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice",
+    "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[False]",
+    "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[True]",
+    "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+    "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+    "test/test_part_read.py::test_answer_read_checks_a_named_composite_before_descending_its_head",
+    "test/test_part_read.py::test_answer_read_follows_admitted_surface_with_a_composed_marker"
+  ],
+  "completed": [
+    "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+    "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+    "test/test_part_read.py::test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice",
+    "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[False]",
+    "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[True]",
+    "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+    "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+    "test/test_part_read.py::test_answer_read_checks_a_named_composite_before_descending_its_head",
+    "test/test_part_read.py::test_answer_read_follows_admitted_surface_with_a_composed_marker"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_part_read.py::test_postings_rebuild_from_part_without_inverting_the_narrowed_point",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.016215457813814282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_part_membership_terminates_on_cycles_and_retains_reachable_leaves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00034766714088618755,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_closing_and_reads_keep_a_name_pending_without_a_resolver_choice",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0031164998654276133,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0025014160200953484,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_forward_name_stays_pending_beside_a_witnessed_occurrence_complement[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0026191670913249254,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_typed_part_read_follows_attachments_and_keeps_the_clause_subject",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01004262501373887,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_a_later_word_definition_does_not_retype_a_retained_marker",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.007031582994386554,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_answer_read_checks_a_named_composite_before_descending_its_head",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009778582956641912,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_part_read.py::test_answer_read_follows_admitted_surface_with_a_composed_marker",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010046208975836635,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children"
+  ],
+  "completed": [
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+    "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+    "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+    "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+    "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00028283405117690563,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003216660115867853,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007476250175386667,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000278000021353364,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002607919741421938,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_generate_roundtrip_invertible",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033466704189777374,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_compose_shape_and_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002072090283036232,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestSigmaLayerBinary::test_generate_yields_equal_halves",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002914590295404196,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018187519162893295,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_decompose_pseudo_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013087503612041473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_layer_is_CS_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011058407835662365,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00017141690477728844,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_decompose_pseudo_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012662517838180065,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011204206384718418,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.010907833930104971,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_binary_ops.py::TestComposeGradients::test_union_grad_flows_to_both_children",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00021725008264183998,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

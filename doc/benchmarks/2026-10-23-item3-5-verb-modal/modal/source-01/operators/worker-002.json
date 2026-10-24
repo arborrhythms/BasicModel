@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+    "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+    "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+    "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+    "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+    "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+    "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+    "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]"
+  ],
+  "completed": [
+    "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+    "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+    "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+    "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+    "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+    "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+    "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+    "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+    "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011229166993871331,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_non_excludes_without_affirming_or_claiming_an_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002967079635709524,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005345419049263,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001192124793305993,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_declared_implementation_and_predicate_survive_rule_rename",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016592501197010279,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024308310821652412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004074589814990759,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005359208909794688,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[complete.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0034694999922066927,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[ladder.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0028167080599814653,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operators_are_absent_from_shipped_grammars[tied_reconstruction_output_benchmark.grammar]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002160124946385622,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[what]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016125012189149857,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[true]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00013145804405212402,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012533296830952168,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[quantize]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012374995276331902,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[arma]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012308289296925068,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

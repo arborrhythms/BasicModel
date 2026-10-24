@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
+  "outcome": "failed",
+  "failure": "test/test_identity_rows.py:32: in test_meet_ties_kind_requests_and_excludes_missing_defining_content\n    _, _, specific = resolver.score(q+atoms[1], q*0, q*0, 0, candidates)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:423: in score\n    contradicts = self.exclusion_query()\n                  ^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:294: in exclusion_query\n    pairs = self.exclusion_pairs()\n            ^^^^^^^^^^^^^^^^^^^^^^\nbin/ReferenceClose.py:278: in exclusion_pairs\n    for row in range(len(self.store)):\n                     ^^^^^^^^^^^^^^^\nE   TypeError: object of type 'NoneType' has no len()",
+  "records": []
+}

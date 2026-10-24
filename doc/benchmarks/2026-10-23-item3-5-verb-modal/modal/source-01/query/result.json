@@ -1,0 +1,972 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+    "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+    "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+    "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+    "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+    "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+    "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+    "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+    "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+  ],
+  "completed": [
+    "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+    "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+    "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+    "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+    "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+    "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+    "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+    "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+    "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+    "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+    "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+    "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+    "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+    "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+    "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+    "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+    "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+    "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+    "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+    "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+    "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+    "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+    "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+    "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]",
+    "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+    "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+    "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+    "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+    "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+    "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+    "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+    "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+    "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+    "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+    "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+    "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+    "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+    "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+    "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+    "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+    "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+    "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+    "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+    "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+    "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+    "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+    "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-000.json"
+      ],
+      "pid": 71045,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 439731544,
+      "elapsed_seconds": 3.814302457962185,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+        "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+        "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+        "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+        "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+        "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+        "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+        "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown"
+      ],
+      "completed": [
+        "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+        "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+        "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+        "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+        "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+        "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+        "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+        "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01128470804542303,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.002257667016237974,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015944916987791657,
+          "message": "",
+          "stdout": "[GrammaticalVPCheckpoint] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9583/test_registry_installation_reu0/query-vps.ckpt\r\n[GrammaticalVPCheckpoint] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9583/test_registry_installation_reu0/query-vps.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006698374869301915,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005905542057007551,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006351625081151724,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.016142165986821055,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006205333163961768,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-001.json"
+      ],
+      "pid": 71055,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 438830424,
+      "elapsed_seconds": 3.815084874862805,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "completed": [
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004536041058599949,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0023617499973624945,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015848330222070217,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003490542061626911,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001864708960056305,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00011079199612140656,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-002.json"
+      ],
+      "pid": 71066,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440337704,
+      "elapsed_seconds": 3.7849488749634475,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]"
+      ],
+      "completed": [
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006243334151804447,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004004999995231628,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017238750588148832,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001961041009053588,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0031401249580085278,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0019460830371826887,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016817920841276646,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004896875005215406,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00314325001090765,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016974168829619884,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-003.json"
+      ],
+      "pid": 71077,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 443549040,
+      "elapsed_seconds": 4.362195916939527,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+        "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+        "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+        "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+        "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+        "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+        "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+        "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+        "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+        "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+        "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+        "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+        "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+        "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]"
+      ],
+      "completed": [
+        "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+        "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+        "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+        "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+        "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+        "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+        "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+        "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+        "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+        "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+        "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+        "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+        "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+        "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027003291063010693,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007665542187169194,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009097708156332374,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08702808408997953,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01089241704903543,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008102125022560358,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015535829588770866,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017463749973103404,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008680458879098296,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0163735409732908,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006767666200175881,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03430125000886619,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027238208102062345,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0074212499894201756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0092011250089854,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00911895907483995,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-004.json"
+      ],
+      "pid": 71130,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 443352384,
+      "elapsed_seconds": 4.23239183309488,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+        "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+        "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+        "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+        "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
+      ],
+      "completed": [
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+        "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+        "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+        "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+        "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0165548340883106,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009063042001798749,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017903042025864124,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01516566681675613,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01766749983653426,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007560542086139321,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007723167072981596,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005923958029597998,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010640830732882023,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007930499967187643,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-005.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-005.json"
+      ],
+      "pid": 71175,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 1542981768,
+      "elapsed_seconds": 8.284934459021315,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/worker-005.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+        "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "completed": [
+        "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+        "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09016154194250703,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013011374976485968,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.7081180419772863,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.6892797499895096,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 2.564350917004049,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query",
+  "elapsed_seconds": 35.1471491670236,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 1542981768,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/collect.json"
+    ],
+    "pid": 71038,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434291936,
+    "elapsed_seconds": 3.8063690839335322,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/query/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_query_vp_boundaries.py::test_foreign_width_query_fails_before_the_taxonomy_executor",
+        "test/test_query_vp_boundaries.py::test_what_cannot_turn_assertive_content_into_an_executed_subgoal",
+        "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
+        "test/test_query_vp_boundaries.py::test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row",
+        "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
+        "test/test_query_vp_boundaries.py::test_converse_only_interface_still_dispatches_canonical_roles",
+        "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
+        "test/test_query_vp_boundaries.py::test_unknown_negated_query_remains_unknown",
+        "test/test_query_work_budget.py::test_taxonomy_capture_and_expansion_share_one_meter",
+        "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
+        "test/test_query_work_budget.py::test_invalid_call_spends_no_work_and_never_executes",
+        "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
+        "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
+        "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
+        "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
+        "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+        "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
+        "test/test_query_executors.py::test_query_does_not_fill_an_unconstrained_name_from_a_held_row",
+        "test/test_query_executors.py::test_ask_preserves_the_complete_open_question_and_schedules_same_controller",
+        "test/test_query_executors.py::test_wrong_domain_and_types_fail_before_execution",
+        "test/test_query_executors.py::test_equality_executor_rejects_width_truncation_and_nonfinite_values",
+        "test/test_query_executors.py::test_global_expectation_retains_all_roles_without_a_thought_operation",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[False]",
+        "test/test_query_executors.py::test_query_returns_only_the_completed_direction_of_an_unresolved_equality[True]",
+        "test/test_item6_2_thinking.py::test_chain_two_queries_one_conclusion_and_both_witnesses",
+        "test/test_item6_2_thinking.py::test_open_reference_modes_and_bound_surface",
+        "test/test_item6_2_thinking.py::test_conclude_gate_and_exhaustion_question",
+        "test/test_item6_2_thinking.py::test_thought_uses_existing_compose_scorer_and_owner_credit",
+        "test/test_item6_2_thinking.py::test_credit_sign_and_exact_tie",
+        "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+        "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
+        "test/test_item6_2_thinking.py::test_nested_ask_returns_the_binding_and_shares_budget",
+        "test/test_item6_2_thinking.py::test_omission_lane_concludes_absence_without_negative_content",
+        "test/test_item6_2_thinking.py::test_modus_ponens_requires_premise_and_implication_witnesses",
+        "test/test_item6_2_thinking.py::test_expectation_only_credit_does_not_enter_departure_comparison",
+        "test/test_item6_2_thinking.py::test_answer_credit_moves_shared_chooser_toward_the_completed_chain",
+        "test/test_item6_2_thinking.py::test_expectation_trains_predictor_without_moving_departure_chooser",
+        "test/test_item6_2_thinking.py::test_pair_argument_and_conceptual_extent_keep_both_lanes",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[?]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[who]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[which]",
+        "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
+        "test/test_item6_2_thinking.py::test_answer_credit_is_complete_before_document_end",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions0-True]",
+        "test/test_item6_2_thinking.py::test_event_implication_reads_endpoint_when_order[positions1-False]",
+        "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
+        "test/test_item6_2_thinking.py::test_symbolic_open_neighbor_binds_its_reference_and_conceptual_face_cannot_read",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[bind]",
+        "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
+        "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
+        "test/test_arithmetic_isolation.py::test_arbitrary_symbol_query_and_native_renaming_do_not_call_arithmetic",
+        "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts0]",
+        "test/test_arithmetic_isolation.py::test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]",
+        "test/test_arithmetic_isolation.py::test_supervised_update_cannot_use_exact_arithmetic_or_fallback_codes"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

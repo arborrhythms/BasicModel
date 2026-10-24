@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-resolved]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-resolved]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-True]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-True]",
+    "test/test_identity_threading.py::test_two_relative_determinations_keep_distinct_objects",
+    "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly"
+  ],
+  "completed": [
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
+    "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-resolved]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-commit]",
+    "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-resolved]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-True]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-False]",
+    "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-True]",
+    "test/test_identity_threading.py::test_two_relative_determinations_keep_distinct_objects",
+    "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023302500136196613,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0036436670925468206,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003230458125472069,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-commit]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.013024792075157166,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[False-resolved]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012394832912832499,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-commit]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.011940333060920238,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_bind_training_never_updates_or_creates_a_concept_region[True-resolved]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012179292039945722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021057874895632267,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[False-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01926700002513826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.019005124922841787,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_relative_determination_keeps_its_introduction_and_later_bind[True-True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.020067041972652078,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_two_relative_determinations_keep_distinct_objects",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015703583136200905,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.002305584028363228,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

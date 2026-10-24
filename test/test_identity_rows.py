@@ -21,7 +21,7 @@ def native_close(resolver, content, predicate, *, document, sentence):
 
 
 def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
-    resolver, _, atoms = fixture()
+    resolver, store, atoms = fixture()
     q = atoms[0]
     candidates = {1:dict(content=q+atoms[1],role=0,position=(0,0)),
                   2:dict(content=q+atoms[2]+atoms[3],role=0,position=(0,0))}
@@ -37,7 +37,7 @@ def test_meet_ties_kind_requests_and_excludes_missing_defining_content():
 
 def test_content_meet_cannot_read_form_while_form_can_identify_its_region():
     from types import SimpleNamespace
-    resolver, _, atoms = fixture()
+    resolver, store, atoms = fixture()
     owner = resolver.components.owner
     # The same paired layout as the production owner: form, band, meaning.
     object.__setattr__(owner.similarity_codebook, 'mereology',

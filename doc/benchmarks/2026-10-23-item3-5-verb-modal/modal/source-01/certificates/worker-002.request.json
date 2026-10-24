@@ -1,0 +1,10 @@
+{
+  "selectors": [
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-002.recycle.json"
+}

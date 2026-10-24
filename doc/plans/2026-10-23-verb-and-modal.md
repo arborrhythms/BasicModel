@@ -933,8 +933,9 @@ separate from the receipt that starts at the modal freeze.
   existing operation. Form coordinates, bind menus, dummy, validity and
   credit are unchanged. A post-S modifier restores the covered actual
   value and its unresolved flag only if no later actual writer has
-  superseded it. No reference choice is rerun. Both bracketings and their
-  pathwise derivatives are checked in eager and compiled execution.
+  superseded it. No reference choice is rerun. Both bracketings are checked;
+  post-attachment rollback and its pathwise derivatives are checked in
+  eager and compiled execution.
 - The temporary journal records the event order and covered-event
   suppression. The writer keeps the outer idea and the subject reference;
   it does not write the covered S as an actual occurrence. Event admission
@@ -1010,3 +1011,40 @@ certificates once in the scoped groups, not a twelve-draw series. There is
 no full sweep in this iteration. The all-order MTM-prepending integration
 and retirement of the transition overlay remain item 3; no test pins the
 current order-1 bind limitation.
+
+## 17. Frozen-run fixture and harness repairs (Codex, 2026-10-24)
+
+Frozen modal source `45513baca6` passes all 43 certificates, 191 operator
+cases with one existing skip, 55 query cases, 180 identity/driver cases
+with three existing skips, and the unchanged XOR standing gate. The
+eight-file group completes with one fixture-lifetime failure; the
+regression and checkpoint groups do not start after it. Decomposition
+collection and the corpus setup expose two missing diagnostic imports;
+neither starts a model or provides behavioral evidence. Every run remains.
+
+1. `test_meet_ties_kind_requests_and_excludes_missing_defining_content`
+   binds the fixture's store to `_`, then overwrites `_` with `score`'s
+   output. The resolver intentionally holds the production store weakly.
+   The captured-RNG diagnostic forces collection between score calls:
+   the first sees a store and the second sees `None`. Keep the store in
+   a named local for this test and the adjacent
+   `test_content_meet_cannot_read_form_while_form_can_identify_its_region`,
+   which has the same two-score lifetime defect. Every assertion stays
+   verbatim. This is a fixture ownership repair, not a changed resolver
+   fallback or binding score.
+2. The corpus runner's import search omitted the directory containing
+   `identity_keep_probe`. Add that existing diagnostic directory. Its
+   failed run retained the initial RNG but created no model and presented
+   no data; the protocol seed, corpus, budgets and gates do not change.
+3. The new gate directory omitted `identity_decomposition.py` and its
+   `original-complete.grammar`. Copy both byte-for-byte from the prior
+   measured protocol, so both arms use the same original snapshots,
+   seeds and parameter-name maps. The collection failure is retained;
+   it supplies no decomposition pass. Preflight every plugin's location
+   before the corrected run.
+
+No production file changes after `45513baca6`. The correction freeze
+contains these fixtures, the harness path and the retained receipt. The
+full declared scoped groups run on that hash, with no earlier result
+promoted; there is still no full sweep and no corpus rescue. These are
+§39 repairs, not a reversal of §1.

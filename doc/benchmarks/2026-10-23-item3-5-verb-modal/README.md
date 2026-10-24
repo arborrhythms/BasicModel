@@ -179,3 +179,35 @@ or failed lesson into a pass. The exact swap/verb test ports remain in
 The modal follows this stop, under the released §4. The combined iteration
 awaits Claude's review through Alec before publication. Item 3.0 has not
 been reached.
+
+## First modal freeze — retained fixture and harness failures
+
+Source `45513baca6f15a61fb00d94e6395600a86bc895b`:
+[audit](modal/source-01/source-audit.json),
+[worker totals](modal/source-01/gate-summary.json),
+[diagnosis](modal/source-01/retained-failures.json).
+Completed cases total **599 passed, 11 existing skips and one failure**.
+All 43 certificates, the operator/query/identity-driver groups and XOR
+pass. The native eight-file group completes at 122 passed, seven skipped
+and one fixture-lifetime failure. Regression and checkpoint groups do not
+start after that failure; no earlier source supplies them.
+
+The captured-RNG [probe](modal/development/modal-12-store-lifetime-probe.log)
+reproduces loss of the fixture's weakly held store after `_` is reused for
+score output. Keeping a named store local in that test and its adjacent
+two-score case preserves every assertion and passes with garbage
+collection forced between calls
+([repair probe](modal/development/modal-13-store-lifetime-repair.log)).
+The exact fixture ports are added to [test-ports.patch](modal/test-ports.patch).
+
+Decomposition stops during collection because the new receipt directory
+lacks its existing plugin; the enabled arm is not started. The corpus
+stops before model creation because its diagnostic helper directory is
+missing from the import path. It saves the initial RNG, but presents zero
+examples and supplies no learning result. The original decomposition
+plugin/grammar are copied unchanged; the corpus path is corrected without
+changing its seed, budget, data or assertions. Spec §17 records these
+§39 repairs. No production file changes. The next correction hash runs
+the declared scoped groups and both corpus forms afresh; no earlier
+result is promoted. All raw failures remain, with large captures covered
+by [the lossless inventory](modal/source-01/compressed-files.json).

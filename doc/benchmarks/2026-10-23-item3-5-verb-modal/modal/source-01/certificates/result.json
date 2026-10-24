@@ -1,0 +1,777 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+    "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+    "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+    "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+    "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+    "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+    "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+    "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+    "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+    "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+    "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+    "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+    "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+    "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+    "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+    "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+    "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+    "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write",
+    "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+    "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+  ],
+  "completed": [
+    "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+    "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+    "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+    "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+    "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+    "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+    "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+    "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+    "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+    "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+    "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+    "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+    "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+    "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+    "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+    "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+    "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+    "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+    "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+    "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+    "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+    "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+    "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+    "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+    "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+    "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+    "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+    "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+    "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+    "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+    "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write",
+    "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+    "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+    "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-000.json"
+      ],
+      "pid": 70564,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 617743824,
+      "elapsed_seconds": 4.710222582798451,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+      ],
+      "completed": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.008700332837179303,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.010187666164711118,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.005038958974182606,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.016507208114489913,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0017937079537659883,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.007123416056856513,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00515254121273756,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.46632262505590916,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006132919806987047,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0016736250836402178,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0049207089468836784,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001843750011175871,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0009445829782634974,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08898233296349645,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.08164504216983914,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.11478341603651643,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-001.json"
+      ],
+      "pid": 70579,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 433079592,
+      "elapsed_seconds": 3.8609579580370337,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]"
+      ],
+      "completed": [
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01741275005042553,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01821554102934897,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.015916666015982628,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-002.json"
+      ],
+      "pid": 70594,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 439682416,
+      "elapsed_seconds": 5.555244791088626,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+      ],
+      "completed": [
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.025348457973450422,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0731668749358505,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001008292194455862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.02452945802360773,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-003.json"
+      ],
+      "pid": 70634,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 615516080,
+      "elapsed_seconds": 7.533317666966468,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+        "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+        "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+        "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+        "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+        "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+        "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+        "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write"
+      ],
+      "completed": [
+        "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+        "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+        "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+        "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+        "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+        "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+        "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+        "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008514579385519028,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00021833390928804874,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0005759999621659517,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.011589666130021214,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00022683385759592056,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0369188750628382,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01636379212141037,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021899707848206162,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.022586582927033305,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03488720813766122,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.03468549996614456,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.013365000020712614,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.027941917069256306,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.003462666878476739,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 3.065303249983117,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.021243624854832888,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-004.json"
+      ],
+      "pid": 70653,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 440124808,
+      "elapsed_seconds": 3.8432917918544263,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+        "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+      ],
+      "completed": [
+        "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+        "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.036418958101421595,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01905079185962677,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01977658295072615,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.01832804107107222,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates",
+  "elapsed_seconds": 32.41417929204181,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 617743824,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/collect.json"
+    ],
+    "pid": 70552,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 263062440,
+    "elapsed_seconds": 3.3021052500698715,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/certificates/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
+        "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
+        "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
+        "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
+        "test/test_meaning_kernels.py::test_other_catalogue_faces_use_the_same_centroid_contract",
+        "test/test_meaning_kernels.py::test_journal_leaf_counts_drive_the_structural_face",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[False]",
+        "test/test_meaning_kernels.py::test_action_keeps_absence_and_inverts_on_each_lane[True]",
+        "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
+        "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
+        "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
+        "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
+        "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
+        "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[False]",
+        "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
+        "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+        "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]",
+        "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+        "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+        "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+        "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+        "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
+        "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
+        "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
+        "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
+        "test/test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]",
+        "test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[True]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[False]",
+        "test/test_modal_timelines.py::test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual[True]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]",
+        "test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]",
+        "test/test_modal_timelines.py::test_some_every_include_actual_and_use_both_lanes",
+        "test/test_modal_timelines.py::test_promotion_folds_only_actual_events_and_document_end_keeps_ideas",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+        "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[True]",
+        "test/test_modal_timelines.py::test_post_attachment_preserves_a_later_independent_actual_write",
+        "test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]",
+        "test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[True]",
+        "test/test_modal_timelines.py::test_modal_object_role_keeps_its_own_state"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

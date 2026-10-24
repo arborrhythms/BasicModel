@@ -1,0 +1,25 @@
+{
+  "source": "45513baca6f15a61fb00d94e6395600a86bc895b",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_decomposition.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/decomposition-zero"
+  ],
+  "started": "2026-10-24T07:28:09.859492+00:00",
+  "exit": 1,
+  "finished": "2026-10-24T07:28:14.232172+00:00"
+}

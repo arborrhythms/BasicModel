@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_preposition.py::TestPrepositionLayer::test_class_contract",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

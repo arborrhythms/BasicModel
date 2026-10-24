@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_sigma_instance_is_grammarlayer",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

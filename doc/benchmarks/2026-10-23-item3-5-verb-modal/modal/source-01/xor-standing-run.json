@@ -1,0 +1,26 @@
+{
+  "source": "45513baca6f15a61fb00d94e6395600a86bc895b",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_grounded_xor.py",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-01/xor-standing"
+  ],
+  "started": "2026-10-24T07:26:42.351549+00:00",
+  "exit": 0,
+  "finished": "2026-10-24T07:28:09.671248+00:00"
+}

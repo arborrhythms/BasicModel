@@ -1,0 +1,1312 @@
+{
+  "node": "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[1-False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [],
+            "asserted": [],
+            "mode": "mint",
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "probabilities": null,
+            "leaves": [
+              0,
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "position": [
+              0,
+              0
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [],
+        "cost": 0.0
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "selected": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "candidates": [
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.5,
+                1.0,
+                1.0
+              ]
+            ],
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "probabilities": [
+              0.09003057330846786,
+              0.2447284758090973,
+              0.6652409434318542
+            ],
+            "leaves": [
+              0,
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('ltm', 'address-v1', -1425517380650652402)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              1
+            ],
+            "occurrences": [
+              -1425517380650652402
+            ]
+          },
+          "('ltm', 'address-v1', 1535895573449137220)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "position": [
+              0,
+              0
+            ],
+            "token": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "occurrences": [
+              1535895573449137220
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null,
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.5,
+                1.0,
+                1.0
+              ]
+            ],
+            "logits": [
+              0.0,
+              1.0,
+              2.0
+            ],
+            "probabilities": [
+              0.09003057330846786,
+              0.2447284758090973,
+              0.6652409434318542
+            ],
+            "greedy": 2,
+            "selected": 2,
+            "next": 1,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": -0.41779690980911255
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "selected": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "candidates": [
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -3349739761792142917
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.6666666865348816,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.3333333432674408,
+                1.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "probabilities": [
+              0.07232949137687683,
+              0.1966119408607483,
+              0.534446656703949,
+              0.1966119408607483
+            ],
+            "leaves": [
+              0,
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('ltm', 'address-v1', -1425517380650652402)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              1
+            ],
+            "occurrences": [
+              -1425517380650652402
+            ]
+          },
+          "('ltm', 'address-v1', 1535895573449137220)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "position": [
+              1,
+              2
+            ],
+            "token": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "occurrences": [
+              1535895573449137220,
+              -7736706037958214635
+            ]
+          },
+          "('ltm', 'address-v1', -3349739761792142917)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              1,
+              3
+            ],
+            "occurrences": [
+              -3349739761792142917
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null,
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -3349739761792142917
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.6666666865348816,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.3333333432674408,
+                1.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "logits": [
+              0.0,
+              1.0,
+              2.0,
+              1.0
+            ],
+            "probabilities": [
+              0.07232949137687683,
+              0.1966119408607483,
+              0.534446656703949,
+              0.1966119408607483
+            ],
+            "greedy": 2,
+            "selected": 2,
+            "next": 1,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": -0.02467215061187744
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "selected": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "candidates": [
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -3349739761792142917
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -6106455193955235491
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.75,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.25,
+                1.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.5,
+                0.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0
+            ],
+            "probabilities": [
+              0.060445234179496765,
+              0.16430717706680298,
+              0.4466332197189331,
+              0.16430717706680298,
+              0.16430717706680298
+            ],
+            "leaves": [
+              0,
+              1
+            ],
+            "anonymous": false,
+            "own_object": false,
+            "compose_dummy": false
+          }
+        ],
+        "individuals": {
+          "('ltm', 'address-v1', -1425517380650652402)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              1
+            ],
+            "occurrences": [
+              -1425517380650652402
+            ]
+          },
+          "('ltm', 'address-v1', 1535895573449137220)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "position": [
+              2,
+              4
+            ],
+            "token": [
+              "ltm",
+              "address-v1",
+              1535895573449137220
+            ],
+            "occurrences": [
+              1535895573449137220,
+              -7736706037958214635,
+              -5992617491023594776
+            ]
+          },
+          "('ltm', 'address-v1', -3349739761792142917)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              1,
+              3
+            ],
+            "occurrences": [
+              -3349739761792142917
+            ]
+          },
+          "('ltm', 'address-v1', -6106455193955235491)": {
+            "content": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              2,
+              5
+            ],
+            "occurrences": [
+              -6106455193955235491
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [
+          {
+            "candidates": [
+              null,
+              [
+                "ltm",
+                "address-v1",
+                -1425517380650652402
+              ],
+              [
+                "ltm",
+                "address-v1",
+                1535895573449137220
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -3349739761792142917
+              ],
+              [
+                "ltm",
+                "address-v1",
+                -6106455193955235491
+              ]
+            ],
+            "features": [
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.75,
+                0.0,
+                1.0
+              ],
+              [
+                1.0,
+                1.0,
+                1.0,
+                0.0,
+                0.0,
+                -0.25,
+                1.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.5,
+                0.0,
+                1.0
+              ],
+              [
+                0.5,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            ],
+            "logits": [
+              0.0,
+              1.0,
+              2.0,
+              1.0,
+              1.0
+            ],
+            "probabilities": [
+              0.060445234179496765,
+              0.16430717706680298,
+              0.4466332197189331,
+              0.16430717706680298,
+              0.16430717706680298
+            ],
+            "greedy": 2,
+            "selected": 2,
+            "next": 1,
+            "departed": false,
+            "forward_identity": null
+          }
+        ],
+        "cost": 0.2683016061782837
+      }
+    },
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          13,
+          15
+        ],
+        "word_rows": [
+          13,
+          15
+        ],
+        "activations": [
+          1.0,
+          1.0
+        ],
+        "leaves": [
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            8,
+            -1
+          ]
+        ],
+        "targets": [
+          8,
+          34,
+          34
+        ],
+        "end_state": [
+          [
+            0.0,
+            0.0,
+            0.5,
+            0.0,
+            0.5,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          16,
+          19
+        ],
+        "word_ids": [
+          15,
+          18
+        ],
+        "lexical_forms": [
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": [
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "symbol_when": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.5,
+              0.0,
+              0.5,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            16,
+            19
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": false,
+        "operation_probabilities": null,
+        "leaf_orders": [
+          0,
+          0
+        ],
+        "leaf_evidence": null,
+        "identity_origins": null,
+        "identity_actions": null,
+        "identity_values": null,
+        "identity_leaves": null,
+        "timeline_actions": null,
+        "timeline_values": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "operator",
+            "refs": [
+              16,
+              19,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  2
+                ],
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ]
+              ],
+              "bindings": {
+                "_evidence_pair": [
+                  0.0,
+                  0.0
+                ],
+                "_forward_references": [],
+                "_open_references": [
+                  [
+                    "referent",
+                    2
+                  ]
+                ]
+              },
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": 15,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 0
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "lift",
+            "formal_name": "lift",
+            "head_role": 2,
+            "order": 0,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              1,
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": 16,
+            "word_id": 15,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 19,
+            "word_id": 18,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    }
+  ]
+}
