@@ -1,0 +1,33 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+    "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+    "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+    "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+    "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+    "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+    "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+    "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+    "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact",
+    "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+    "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+    "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+    "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+  ],
+  "completed": [],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

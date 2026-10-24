@@ -1,0 +1,6 @@
+{
+  "node": "test/test_item6_2_thinking.py::test_not_exchanges_both_poles_and_preserves_content",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

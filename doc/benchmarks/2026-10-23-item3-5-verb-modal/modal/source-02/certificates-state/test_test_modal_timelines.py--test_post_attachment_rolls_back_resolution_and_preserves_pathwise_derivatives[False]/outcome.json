@@ -1,0 +1,6 @@
+{
+  "node": "test/test_modal_timelines.py::test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

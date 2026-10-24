@@ -25,9 +25,12 @@ at description: brackets 4/4, answers 1/4. The [iteration receipt](doc/benchmark
 retains all states, failed sources and test ports. Description learning
 and the unrun adjective, definite-adjective, final and copular continuation
 move to item 0; no later artifact is passed. The released modal follows
-that stop, with one identity's actual and alternative timelines. Its
-frozen scoped gates and generated-corpus report precede one combined
-review through Alec; publication is still pending. Lines 6–7 and their
+that stop, with one identity's actual and alternative timelines. Modal
+source `01effdcaf9` completes 733 scoped passes and 11 existing skips;
+both fixed-budget corpus forms fail answers 0/4 and required timeline
+histories 0/4. That learning gate moves to item 0 without rescue. The
+[combined review hand-off](doc/benchmarks/2026-10-23-item3-5-verb-modal/review-handoff.md)
+is ready for Claude through Alec; publication is still pending. Lines 6–7 and their
 final sweep follow this iteration. Layout/removal and STM chunks stay
 item 3.0, which has not been reached. All work stays on main.
 
@@ -1540,16 +1543,21 @@ not by a passing identity lesson.
    regraded or extended. The mechanism and controlled carrier certificates
    do not satisfy these learning gates ([receipt](doc/benchmarks/2026-10-19-item4-repair/README.md)).
 
-   **Line 3 carry, 2026-10-23:** the regenerated stage3 source `3b34b3f38`
-   passes source order 8/8 but not its original CE/decoder learning bars.
-   The original NP lower lesson fails the occurrence gate (0/1), with
-   bracket 1/1, after six presentations/four paired updates. Carry the
-   remaining lower → definite → description → adjective → definite-adjective
-   → final evaluation → copular identity chain here with the existing
-   budgets, gates and artifact prerequisites. Do not extend the failed run
-   or promote its lower checkpoint. No later lesson ran. The [receipt](doc/benchmarks/2026-10-23-item3-5-stage4e-np/README.md)
-   preserves both readings, costs and reachable target menus; mediated
-   review is pending and no learning claim is made.
+   **Iteration 1 learning carry, 2026-10-24:** swap/verb source `65451694e`
+   passes source order 8/8 but fails both original CE bars; the original
+   lower and definite budgets each pass bracket/occurrence 1/1. Description
+   stops at answers 1/4 with brackets 4/4. Carry description → adjective →
+   definite-adjective → final evaluation → copular identity here, with
+   the existing budgets, gates and prerequisites. Nothing after the stop
+   ran; no copular prerequisite is lifted or artifact promoted. The older
+   source `3b34b3f38` lower failure (occurrence 0/1, bracket 1/1) stays in
+   its [receipt](doc/benchmarks/2026-10-23-item3-5-stage4e-np/README.md).
+   On modal source `01effdcaf9`, both the free-leaf and affix corpora
+   complete their fixed 24 training examples / 36 paired updates, then
+   fail held-out answers 0/4 and required timeline histories 0/4. Carry
+   certificate 15's learning here; no seed, budget, forcing or menu rescue.
+   The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
+   retains every run and state; no learning claim is made.
 
    **Item 6's learning gates** remain prerequisites at this checkpoint:
    stage 4e's ≥90% free-bracket and ≥95% NP-occurrence gates, zero duplicate
@@ -1559,7 +1567,8 @@ not by a passing identity lesson.
    fixed semantics and same-kind revision; VP temporal-difference prediction;
    direct-operand word classes; and deferred order-2 kind recovery. The stage 4e
    candidate and measurement exist, but its [gate fails](doc/benchmarks/2026-10-17-stage4e/).
-   The VP teacher and order-2 kinds are not built. Do not start another native
+   The VP teacher mechanism awaits iteration 1's review; order-2 kinds are
+   not built. Do not start another native
    identity run before stage 4e passes. Retain stored-idea recovery beyond two
    words, order CE, relation trace 2/4, free readback 0/4, MM grammar recovery,
    compiled retention and c's marker-headed `five` as named gates, not

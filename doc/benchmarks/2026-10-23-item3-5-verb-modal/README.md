@@ -1,9 +1,11 @@
 # Swap, verb and modal — 2026-10-23
 
-Work in progress under the verb/modal specification §§1–6 and step-2 §39.
-No publication or learning claim. One combined review goes through Alec.
-The modal follows the repaired swap/verb freeze and the original lesson
-rerun; no modal source has been frozen yet.
+Ready for one combined review through Alec under the verb/modal
+specification §§1–6 and step-2 §39. Swap/verb source `65451694e` passes
+811 scoped cases with 26 existing skips. Modal source `01effdcaf9` passes
+733 with 11 existing skips. The line-3 lesson stop and both failed modal
+corpus forms remain failed learning evidence. No publication or learning
+claim. [Review hand-off](review-handoff.md).
 
 ## First frozen swap/verb source — retained failure
 
@@ -211,3 +213,118 @@ changing its seed, budget, data or assertions. Spec §17 records these
 the declared scoped groups and both corpus forms afresh; no earlier
 result is promoted. All raw failures remain, with large captures covered
 by [the lossless inventory](modal/source-01/compressed-files.json).
+
+## Modal correction freeze — scoped pass and two failed learning forms
+
+Frozen source `01effdcaf9dd9adfbc460a791e06feb06b38b940`:
+[source audit](modal/source-02/source-audit.json),
+[worker totals](modal/source-02/gate-summary.json),
+[source check](modal/source-02/source-check-after-groups.json),
+[corpus totals](modal/source-02/corpus-summary.json).
+Production is byte-identical to `45513baca6`; the correction contains the
+fixture ownership and diagnostic import repairs recorded in spec §17.
+Every declared group runs on the correction hash. None is supplied by an
+earlier source.
+
+| Scoped group | Passed | Existing skips |
+| --- | ---: | ---: |
+| Swap, verb and modal certificates | 43 | 0 |
+| Native eight-file set | 123 | 7 |
+| Reference/MTM/Part/consolidation regressions | 110 | 0 |
+| Operators | 191 | 1 |
+| Checkpoint/reconstruction | 19 | 0 |
+| Identity and driver | 180 | 3 |
+| Unchanged XOR standing gate | 8 | 0 |
+| Original decomposition, zero gain | 2 | 0 |
+| Original decomposition, enabled gain | 2 | 0 |
+| Bounded queries | 55 | 0 |
+| **Total** | **733** | **11** |
+
+All 744 selected cases complete, with no failed case. Counts come from
+worker outcomes, including setup skips, rather than the selector count.
+The selectors and commands are retained in `modal/source-02`; both
+decomposition arms use the original snapshots/seeds and the unchanged
+measurement adapter. G1–G3 and both pending-premise orders pass. The
+forward certificate records **0 bound / 16 open**, the reverse **0 bound /
+32 open**; no wrong binding. Their initial states, full arrival captures
+and both trials' keep probes remain in the source directory. Bind menus,
+dummy, scores and credit are unchanged, so no twelve-draw series is added.
+There is no full sweep.
+
+The modal certificates map to these checks in
+[`test_modal_timelines.py`](../../../test/test_modal_timelines.py):
+
+| Spec certificate | Evidence |
+| --- | --- |
+| 9: actual timeline remains the default | No-modifier case; checkpoint versions 1–4 migrate to actual timeline 0; existing native and identity groups |
+| 10: idea only, actual unchanged | Both modal bracketings; post-attachment rollback and derivatives in eager/compiled execution; later actual writer retained |
+| 11: continue the open alternative | Second modal in both bracketings, using the branch value; ordinary bind continues to read actual |
+| 12: equal-time teacher | One deferred modifier update on defined coordinates; no matching alternative/equal-time event gives no update |
+| 13: attachment and query | Both bracketings and both query orders; question does not assert an event; some/every include actual and both lanes |
+| 14: lifetime and promotion | Token/document expiry, retained idea reference, actual-only promotion fold, canonical checkpoint validation |
+| 15: generated corpus | Both fixed-budget forms completed and **failed**, as below; learning carried to item 0 |
+| 16: both MTM channels | Bound actual and alternative ideas retain the value operand and the identity reference |
+
+The fixed [corpus protocol](modal/corpus-protocol.json) uses the same fresh
+draw, seed **394616477**, for both forms. Each completes two epochs,
+24 training examples / 72 sentence presentations / 36 paired updates,
+then four held-out examples / twelve sentences without updates. Premises
+receive no answer target. Parsing, binding, segmentation and attachment
+are live; no grammar lesson or prerequisite artifact supplies a result.
+
+| Form | Exact held-out answers | Correct subject/event/order histories | Outcome |
+| --- | ---: | ---: | --- |
+| Free modifier leaf | 0/4 | 0/4 | Failed |
+| Verb affix | 0/4 | 0/4 | Failed |
+
+The required actual/alternative histories were not found for the held-out
+subjects. This is the fixed-budget learning result; the controlled
+mechanism certificates do not replace it. Both raw result files remain
+(`corpus/free/results.json`, `corpus/affix/results.json`), together with
+initial models and RNGs, every batch RNG, last-batch and trained states,
+complete keep readings/costs/pools, source audits and logs. No retry,
+extra budget, seed selection, forcing or menu rescue. The learning gate
+moves to item 0, alongside the failed description lesson and its unrun
+continuation. No trained artifact is promoted.
+
+### Exact modal test ports
+
+The complete [test diff](modal/test-ports.patch) and spec §§16–17 are the
+ledger; **no existing test is retired**.
+
+| Existing case | Fixture or assertion change |
+| --- | --- |
+| `test_invalid_identity_checkpoint_does_not_replace_the_pool` | Malformed value/event are placed in canonical timeline 0; invalid event role 1 is retained in the v5 tuple. The expected-value expression changes from `before['entries'][0]['value']` to `before['entries'][0]['timelines'][0][1]`. Other assertions stay. |
+| `test_pending_checkpoint_migration_and_validation_are_atomic` | Build the actual v1 flat `events`/`value` layout, including its four-field events, before the legacy restore. All assertions stay. |
+| `test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool` | Expected value changes from `saved['entries'][0]['value']` to `saved['entries'][0]['timelines'][0][1]`. Other assertions stay. |
+| `test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state` | Each of four mention presentations is wrapped in an actual order-0 close with the same native verb. Returned mention addresses still drive the count, membership and value checks; every assertion stays. |
+| `test_meet_ties_kind_requests_and_excludes_missing_defining_content` | Retain the fixture store in a named local instead of `_`, which is subsequently overwritten by score output. Every assertion stays. |
+| `test_content_meet_cannot_read_form_while_form_can_identify_its_region` | Same strong-store fixture ownership repair; every assertion stays. |
+
+The new modal tests' setup repairs are retained in the development logs:
+metadata comparison handles strings and tensors, and the close helper
+returns the prepared clause as production does. These do not weaken a
+semantic assertion. The separate swap/verb ledger above covers that
+source's ports and names; no modal result replaces its lesson evidence.
+
+### Review and publication boundary
+
+The [source audit notes](modal/source-audit-notes.md) describe the transition
+overlay, Token ownership, teacher graph boundary, reference-preserving
+queries, actual-only promotion and unchanged binding. No possible
+identity, extra record kind, lexical marker rule, premise target, or
+all-order overlay limitation is made a contract. The all-order MTM symbol
+integration, layout/removal and STM chunks remain item 3.
+
+The archived correction run contains 2,250 files, with 16 large files
+losslessly compressed. [archive-inventory.json](modal/source-02/archive-inventory.json)
+authenticates every original byte count and SHA-256;
+[compressed-files.json](modal/source-02/compressed-files.json) identifies
+the gzip paths. Decompress those paths to their recorded original names
+when replaying. Earlier frozen and development failures remain untouched.
+
+Claude reviews the complete iteration through Alec before publication.
+Main has not been pushed for this iteration. The parent Ethics edit goes
+with the eventual WikiOracle bump; unrelated parent changes remain alone.
+Lines 6–7 and the single end-of-3.5 sweep remain. **Item 3.0 has not been
+reached.**

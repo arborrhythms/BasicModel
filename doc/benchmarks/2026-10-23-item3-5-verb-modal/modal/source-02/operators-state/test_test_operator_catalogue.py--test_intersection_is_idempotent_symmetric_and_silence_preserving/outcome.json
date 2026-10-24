@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_intersection_is_idempotent_symmetric_and_silence_preserving",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,29 @@
+{
+  "source": "01effdcaf9dd9adfbc460a791e06feb06b38b940",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_query_vp_boundaries.py",
+    "test/test_query_work_budget.py",
+    "test/test_query_executors.py",
+    "test/test_item6_2_thinking.py",
+    "test/test_arithmetic_isolation.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/query"
+  ],
+  "started": "2026-10-24T07:37:09.702308+00:00",
+  "exit": 0,
+  "finished": "2026-10-24T07:37:48.703163+00:00"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

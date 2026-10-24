@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "created": "2026-10-24",
+  "seed": 394616477,
+  "seed_policy": "one fresh first draw, fixed before any corpus run; same draw for both forms",
+  "forms": [
+    "free",
+    "affix"
+  ],
+  "subjects": [
+    "ava",
+    "oro",
+    "emi",
+    "ulu"
+  ],
+  "verbs": [
+    "dak",
+    "fep"
+  ],
+  "modifier": "za",
+  "prompts": {
+    "actual": "di {subject} ?",
+    "alternative": "co {subject} ?"
+  },
+  "epochs": 2,
+  "batch_size": 4,
+  "learning_rate": 0.003,
+  "train_partition": "(subject_index + actual_verb_index) % 4 != 3",
+  "evaluation_partition": "(subject_index + actual_verb_index) % 4 == 3",
+  "training_documents_per_form": 6,
+  "heldout_documents_per_form": 2,
+  "questions_per_document": 2,
+  "training_examples_per_form": 24,
+  "training_sentence_presentations_per_form": 72,
+  "paired_updates_per_form": 36,
+  "evaluation_examples_per_form": 4,
+  "evaluation_sentence_presentations_per_form": 12,
+  "menu": "complete production menu; no stage mask",
+  "grammar_lessons": false,
+  "reference_orders": false,
+  "segmentation_hints": false,
+  "premise_answer_targets": false,
+  "answer_supervision": "training questions only",
+  "initialization": "native identity_experiment.make_model paired configuration, fresh; no prerequisite checkpoint",
+  "gates": {
+    "exact_answers": 1.0,
+    "actual_and_alternative_same_identity": 1.0,
+    "actual_order": 0,
+    "alternative_min_order": 1
+  },
+  "failure": "report and carry learning remainder to item 0; no retries, alternate seeds, budget extension or forcing",
+  "presentation": "two unlabelled premises, then one separate question closing; no supplied answer reaches either premise",
+  "source": "01effdcaf9dd9adfbc460a791e06feb06b38b940",
+  "form": "free"
+}

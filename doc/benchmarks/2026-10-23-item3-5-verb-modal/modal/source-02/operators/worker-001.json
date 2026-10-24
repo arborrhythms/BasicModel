@@ -1,0 +1,181 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+    "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+    "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube",
+    "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]",
+    "test/test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-True-expected0]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-True-expected1]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-False-expected2]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-False-expected3]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.0-True-expected4]",
+    "test/test_operators_round3a.py::test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0"
+  ],
+  "completed": [
+    "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+    "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+    "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube",
+    "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+    "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+    "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]",
+    "test/test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-True-expected0]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-True-expected1]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-False-expected2]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-False-expected3]",
+    "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.0-True-expected4]",
+    "test/test_operators_round3a.py::test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_operators_round3a.py::test_forms_anagrams_length_and_nontrivial_containment",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.021480583818629384,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_mint_rekeys_existing_word_and_checkpoints_without_global_rng",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00860716705210507,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.02084145904518664,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008209625026211143,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004530624952167273,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008124875137582421,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.045483916997909546,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_live_mint_rekeys_pending_and_completed_definitions[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.023475375026464462,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.026564375031739473,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-True-expected0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008993330411612988,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-True-expected1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005532088689506054,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.7-False-expected2]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008457500953227282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[-0.4-False-expected3]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00046900007873773575,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_trust_to_pair_and_negation[0.0-True-expected4]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004964580293744802,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_operators_round3a.py::test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 49.02350945887156,
+      "message": "",
+      "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 100.00%)\r\nTraining throughput: 1 batches in 48.994s; word units 100.0% of 8 words (letters-only 100.0% of 8).\r\n"
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

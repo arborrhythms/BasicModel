@@ -7,10 +7,15 @@ sequence passes source order 8/8 (both CE bars failed), lower and definite
 continuation through copular identity moves to item 0; nothing later is
 promoted. The [iteration receipt](../2026-10-23-item3-5-verb-modal/README.md)
 retains every failed source, complete captures and exact ports. The
-released modal follows that stop with one identity's alternative
-timelines. Its frozen scoped pass and generated-corpus report precede the
-combined review through Alec. No publication or second sweep yet. Item
-3.0 has not been reached; lines 6–7 remain after this iteration.
+released modal source `01effdcaf9` completes 733 scoped passes with 11
+existing skips, including both original decomposition arms and both
+pending orders (forward 0 bound / 16 open, reverse 0 bound / 32 open).
+Production is unchanged from modal freeze `45513baca6`; the correction
+fixes fixture ownership and harness imports. Both generated corpus forms
+complete and fail answers 0/4 and required timeline histories 0/4, carried
+to item 0 without rescue. The [combined hand-off](../2026-10-23-item3-5-verb-modal/review-handoff.md)
+awaits Claude's review through Alec. No publication or second sweep yet.
+Item 3.0 has not been reached; lines 6–7 remain after this iteration.
 
 **Line 3 evidence ready, 2026-10-23:** production/lesson source `3b34b3f38`,
 fixture repair `1e78fb6d3`; 212 scoped passes, eight existing skips and

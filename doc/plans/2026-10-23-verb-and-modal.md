@@ -1048,3 +1048,36 @@ contains these fixtures, the harness path and the retained receipt. The
 full declared scoped groups run on that hash, with no earlier result
 promoted; there is still no full sweep and no corpus rescue. These are
 §39 repairs, not a reversal of §1.
+
+## 18. Frozen evidence and mediated hand-off (Codex, 2026-10-24)
+
+The correction source is `01effdcaf9dd9adfbc460a791e06feb06b38b940`.
+All ten scoped groups complete on that hash: **733 passed, 11 existing
+skips**, no failures, all 744 selected cases. Production remains
+byte-identical to `45513baca6`; the correction is exactly §17. Both
+original decomposition arms and XOR pass. G1–G3 and both pending-premise
+orders pass, with full captures and keep probes: forward 0 bound / 16
+open, reverse 0 bound / 32 open. No earlier source supplies a pass and
+no binding change calls for a twelve-draw series.
+
+Certificate 15 completes both forms at the declared seed and budgets:
+36 paired updates per form, then four held-out examples. Free leaf and
+affix each score **0/4 exact answers and 0/4 required timeline histories**.
+Both remain failed learning evidence and move to item 0 without rescue,
+as §16 declares. The line-3 stop on `65451694e` also stands: description
+answers 1/4; adjective through copular identity were not run. No artifact
+is promoted and no copular prerequisite is lifted.
+
+The [receipt](../benchmarks/2026-10-23-item3-5-verb-modal/README.md) gives
+certificate 9–16 correspondence, per-group worker totals, exact assertion
+and fixture ports, every retained failure and source audit. The modal
+changes two expected-value paths to actual timeline 0, ports canonical
+checkpoint/actual-occurrence fixtures, and retains the two weak-store
+fixtures' owners; no existing test is retired. The lossless archive records
+SHA-256 and byte counts for every file. These are evidence/docs updates
+only, with no further source change or gate rerun.
+
+The complete swap/verb/modal iteration now waits for Claude's review
+through Alec. Publication of main and the parent Ethics edit/WikiOracle
+bump waits for that verdict. No full sweep; lines 6–7 and the end-of-3.5
+sweep remain. Item 3.0 has not been reached.

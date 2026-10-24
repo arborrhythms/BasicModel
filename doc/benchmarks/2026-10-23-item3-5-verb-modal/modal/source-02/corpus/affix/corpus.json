@@ -1,0 +1,194 @@
+[
+  {
+    "id": "affix-0-0-actual",
+    "subject": "ava",
+    "sentences": [
+      "ava dak",
+      "ava fepza"
+    ],
+    "view": "actual",
+    "prompt": "di ava ?",
+    "answer": "dak",
+    "heldout": false
+  },
+  {
+    "id": "affix-0-0-alternative",
+    "subject": "ava",
+    "sentences": [
+      "ava dak",
+      "ava fepza"
+    ],
+    "view": "alternative",
+    "prompt": "co ava ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-0-1-actual",
+    "subject": "ava",
+    "sentences": [
+      "ava fep",
+      "ava dakza"
+    ],
+    "view": "actual",
+    "prompt": "di ava ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-0-1-alternative",
+    "subject": "ava",
+    "sentences": [
+      "ava fep",
+      "ava dakza"
+    ],
+    "view": "alternative",
+    "prompt": "co ava ?",
+    "answer": "dak",
+    "heldout": false
+  },
+  {
+    "id": "affix-1-0-actual",
+    "subject": "oro",
+    "sentences": [
+      "oro dak",
+      "oro fepza"
+    ],
+    "view": "actual",
+    "prompt": "di oro ?",
+    "answer": "dak",
+    "heldout": false
+  },
+  {
+    "id": "affix-1-0-alternative",
+    "subject": "oro",
+    "sentences": [
+      "oro dak",
+      "oro fepza"
+    ],
+    "view": "alternative",
+    "prompt": "co oro ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-1-1-actual",
+    "subject": "oro",
+    "sentences": [
+      "oro fep",
+      "oro dakza"
+    ],
+    "view": "actual",
+    "prompt": "di oro ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-1-1-alternative",
+    "subject": "oro",
+    "sentences": [
+      "oro fep",
+      "oro dakza"
+    ],
+    "view": "alternative",
+    "prompt": "co oro ?",
+    "answer": "dak",
+    "heldout": false
+  },
+  {
+    "id": "affix-2-0-actual",
+    "subject": "emi",
+    "sentences": [
+      "emi dak",
+      "emi fepza"
+    ],
+    "view": "actual",
+    "prompt": "di emi ?",
+    "answer": "dak",
+    "heldout": false
+  },
+  {
+    "id": "affix-2-0-alternative",
+    "subject": "emi",
+    "sentences": [
+      "emi dak",
+      "emi fepza"
+    ],
+    "view": "alternative",
+    "prompt": "co emi ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-2-1-actual",
+    "subject": "emi",
+    "sentences": [
+      "emi fep",
+      "emi dakza"
+    ],
+    "view": "actual",
+    "prompt": "di emi ?",
+    "answer": "fep",
+    "heldout": true
+  },
+  {
+    "id": "affix-2-1-alternative",
+    "subject": "emi",
+    "sentences": [
+      "emi fep",
+      "emi dakza"
+    ],
+    "view": "alternative",
+    "prompt": "co emi ?",
+    "answer": "dak",
+    "heldout": true
+  },
+  {
+    "id": "affix-3-0-actual",
+    "subject": "ulu",
+    "sentences": [
+      "ulu dak",
+      "ulu fepza"
+    ],
+    "view": "actual",
+    "prompt": "di ulu ?",
+    "answer": "dak",
+    "heldout": true
+  },
+  {
+    "id": "affix-3-0-alternative",
+    "subject": "ulu",
+    "sentences": [
+      "ulu dak",
+      "ulu fepza"
+    ],
+    "view": "alternative",
+    "prompt": "co ulu ?",
+    "answer": "fep",
+    "heldout": true
+  },
+  {
+    "id": "affix-3-1-actual",
+    "subject": "ulu",
+    "sentences": [
+      "ulu fep",
+      "ulu dakza"
+    ],
+    "view": "actual",
+    "prompt": "di ulu ?",
+    "answer": "fep",
+    "heldout": false
+  },
+  {
+    "id": "affix-3-1-alternative",
+    "subject": "ulu",
+    "sentences": [
+      "ulu fep",
+      "ulu dakza"
+    ],
+    "view": "alternative",
+    "prompt": "co ulu ?",
+    "answer": "dak",
+    "heldout": false
+  }
+]

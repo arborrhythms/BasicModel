@@ -1,0 +1,441 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+    "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+    "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+    "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+    "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+    "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+    "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+    "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+    "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact",
+    "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+    "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+    "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+    "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+  ],
+  "completed": [
+    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+    "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+    "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+    "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+    "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+    "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+    "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+    "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+    "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+    "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+    "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+    "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+    "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact",
+    "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+    "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+    "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+    "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-000.json"
+      ],
+      "pid": 73624,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 430228800,
+      "elapsed_seconds": 4.227078666910529,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+        "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument"
+      ],
+      "completed": [
+        "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+        "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006205999990925193,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021268748678267,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-001.json"
+      ],
+      "pid": 73636,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 442910040,
+      "elapsed_seconds": 4.306336167035624,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+        "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore"
+      ],
+      "completed": [
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+        "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.006432417081668973,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_integrated_checkpoint_res0/structure.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_integrated_checkpoint_res0/structure.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_integrated_checkpoint_res0/structure.ckpt\r\n"
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00012566708028316498,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0006130828987807035,
+          "message": "",
+          "stdout": "Training wall-clock cap armed: 15s (checked between completed batches).\r\nBaseline test pass skipped (--test not specified). Re-invoke train.py with --test to include baseline + post-epoch evaluation.\r\nEpoch [1/3]\r\nTrain Loss: output=1.0000, reconstruction=2.0000\r\nTraining wall-clock cap reached; finishing normally for final reporting/checkpoint save.\r\nFinal Stats:\r\n"
+        },
+        {
+          "nodeid": "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0050900839269161224,
+          "message": "",
+          "stdout": "[StructuralCheckpointTest] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_verb_group_metadata_survi0/verb-groups.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_verb_group_metadata_survi0/verb-groups.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_verb_group_metadata_survi0/verb-groups.ckpt\r\n[StructuralCheckpointTest] Legacy checkpoint at /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_verb_group_metadata_survi0/verb-groups.ckpt has no embedding bundle; embeddings stay at random init.\r\n[StructuralCheckpointTest] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9604/test_verb_group_metadata_survi0/verb-groups.ckpt\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-002.json"
+      ],
+      "pid": 73646,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 524699016,
+      "elapsed_seconds": 5.132522084051743,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+        "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+        "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+        "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+        "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding"
+      ],
+      "completed": [
+        "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+        "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+        "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+        "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+        "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00022695795632898808,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.04638791596516967,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.09545637504197657,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.05100966594181955,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.5165127499494702,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up)\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-003.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-003.json"
+      ],
+      "pid": 73658,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 431621416,
+      "elapsed_seconds": 4.154606000054628,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-003.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+        "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+        "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact"
+      ],
+      "completed": [
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+        "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+        "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.017404000042006373,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021447499748319387,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0008525000885128975,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007363329641520977,
+          "message": "",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-004.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-004.json"
+      ],
+      "pid": 73670,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 581944736,
+      "elapsed_seconds": 4.514596041990444,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/worker-004.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+        "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+        "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+        "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+      ],
+      "completed": [
+        "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+        "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+        "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+        "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.004075249889865518,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0021830000914633274,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0010880830232053995,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.38226250000298023,
+          "message": "",
+          "stdout": "[BasicModel] Weights saved to /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9605/test_warmup_restore_keeps_the_0/warm.ckpt\r\n[BasicModel] Weights loaded from /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9605/test_warmup_restore_keeps_the_0/warm.ckpt\r\n"
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction",
+  "elapsed_seconds": 30.16575629101135,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 581944736,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/collect.json"
+    ],
+    "pid": 73582,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 432735432,
+    "elapsed_seconds": 4.341102583799511,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
+        "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
+        "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
+        "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
+        "test/test_structural_checkpoint.py::test_wall_clock_cap_returns_through_normal_trial_tail",
+        "test/test_structural_checkpoint.py::test_verb_group_metadata_survives_native_weight_restore",
+        "test/test_understanding_reconstruct.py::test_understanding_value_type_rejects_answer_carriers",
+        "test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding",
+        "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
+        "test/test_understanding_reconstruct.py::test_reconstruct_returns_input_reconstruction_and_named_cost",
+        "test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding",
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
+        "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[5]",
+        "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
+        "test/test_tied_operator_gradient.py::test_inverse_stays_conditioned_and_exact",
+        "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
+        "test/test_identity_experiment.py::test_recovery_scores_the_completed_idea_including_its_fused_predicate",
+        "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
+        "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors"
+      ],
+      "completed": [],
+      "slow_selected": [],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

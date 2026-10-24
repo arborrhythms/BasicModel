@@ -1,0 +1,13 @@
+{
+  "selectors": [
+    "test/test_grammar_checkpoint.py",
+    "test/test_structural_checkpoint.py",
+    "test/test_understanding_reconstruct.py",
+    "test/test_tied_operator_gradient.py",
+    "test/test_identity_experiment.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

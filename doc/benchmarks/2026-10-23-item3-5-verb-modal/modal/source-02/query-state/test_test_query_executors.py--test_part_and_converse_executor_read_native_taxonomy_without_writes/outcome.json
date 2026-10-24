@@ -1,0 +1,6 @@
+{
+  "node": "test/test_query_executors.py::test_part_and_converse_executor_read_native_taxonomy_without_writes",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

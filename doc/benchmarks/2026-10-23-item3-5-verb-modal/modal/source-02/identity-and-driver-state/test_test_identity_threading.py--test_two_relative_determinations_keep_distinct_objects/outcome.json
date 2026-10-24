@@ -1,0 +1,1526 @@
+{
+  "node": "test/test_identity_threading.py::test_two_relative_determinations_keep_distinct_objects",
+  "outcome": "passed",
+  "failure": "None",
+  "records": [
+    {
+      "call": "journal",
+      "program": {
+        "rows": [
+          12,
+          14,
+          12,
+          14
+        ],
+        "word_rows": [
+          12,
+          14,
+          12,
+          14
+        ],
+        "activations": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "leaves": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "actions": [
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            -1,
+            1
+          ],
+          [
+            1,
+            3,
+            -1
+          ],
+          [
+            2,
+            12,
+            -1
+          ],
+          [
+            0,
+            -1,
+            2
+          ],
+          [
+            0,
+            -1,
+            3
+          ],
+          [
+            1,
+            3,
+            -1
+          ],
+          [
+            2,
+            12,
+            -1
+          ],
+          [
+            1,
+            6,
+            -1
+          ]
+        ],
+        "targets": [
+          6,
+          30,
+          3,
+          34,
+          34,
+          30,
+          3,
+          34,
+          34
+        ],
+        "end_state": [
+          [
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "concept_ids": [
+          13,
+          16,
+          13,
+          16
+        ],
+        "word_ids": [
+          12,
+          15,
+          12,
+          15
+        ],
+        "lexical_forms": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "reference_ids": null,
+        "reference_orders": null,
+        "symbol_where": [
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "symbol_when": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "reference_values": null,
+        "reference_relations": null,
+        "operation_values": [
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          [
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        ],
+        "operation_refs": [
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ]
+        ],
+        "operation_relations": null,
+        "binding_choices": false,
+        "close_references": true,
+        "operation_probabilities": null,
+        "leaf_orders": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "leaf_evidence": null,
+        "identity_origins": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            3,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "identity_actions": [
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            -1,
+            0
+          ],
+          [
+            8,
+            0,
+            0,
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            -1,
+            0
+          ],
+          [
+            12,
+            0,
+            0,
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            -1,
+            0
+          ]
+        ],
+        "identity_values": [
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.5,
+            0.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "identity_leaves": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "timeline_actions": null,
+        "timeline_values": null
+      }
+    },
+    {
+      "call": "finished",
+      "clause": {
+        "root": 0,
+        "nodes": [
+          {
+            "relation": "operator",
+            "refs": [
+              [
+                "clause",
+                0
+              ],
+              "ClausePredicate(name='sum')",
+              [
+                "clause",
+                1
+              ]
+            ],
+            "order": 1,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [
+              1,
+              2
+            ],
+            "companions": [],
+            "composition": 0
+          },
+          {
+            "relation": null,
+            "refs": [
+              -1,
+              -1,
+              -1
+            ],
+            "order": 1,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": -1,
+            "request": {
+              "mode": "bind",
+              "role": 0,
+              "leaves": [
+                0,
+                1
+              ],
+              "forward_identity": null
+            },
+            "children": [
+              6
+            ],
+            "companions": [],
+            "composition": 5
+          },
+          {
+            "relation": null,
+            "refs": [
+              -1,
+              -1,
+              -1
+            ],
+            "order": 1,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": -1,
+            "request": {
+              "mode": "bind",
+              "role": 2,
+              "leaves": [
+                2,
+                3
+              ],
+              "forward_identity": null
+            },
+            "children": [
+              3
+            ],
+            "companions": [],
+            "composition": 1
+          },
+          {
+            "relation": "implies",
+            "refs": [
+              [
+                "clause",
+                0
+              ],
+              "ClausePredicate(name='implies')",
+              [
+                "clause",
+                1
+              ]
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [
+              4,
+              5
+            ],
+            "companions": [],
+            "composition": 2
+          },
+          {
+            "relation": null,
+            "refs": [
+              13,
+              -1,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 4
+          },
+          {
+            "relation": null,
+            "refs": [
+              16,
+              -1,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 15,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 3
+          },
+          {
+            "relation": "implies",
+            "refs": [
+              [
+                "clause",
+                0
+              ],
+              "ClausePredicate(name='implies')",
+              [
+                "clause",
+                1
+              ]
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [
+                [
+                  "referent",
+                  0
+                ],
+                [
+                  "relation",
+                  1
+                ],
+                [
+                  "referent",
+                  2
+                ]
+              ],
+              "bindings": {},
+              "mask": [
+                true,
+                true,
+                true
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [
+              7,
+              8
+            ],
+            "companions": [],
+            "composition": 6
+          },
+          {
+            "relation": null,
+            "refs": [
+              13,
+              -1,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 12,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 8
+          },
+          {
+            "relation": null,
+            "refs": [
+              16,
+              -1,
+              -1
+            ],
+            "order": 0,
+            "minted": false,
+            "meaning": {
+              "refs": [
+                null,
+                null,
+                null
+              ],
+              "open": [],
+              "bindings": {},
+              "mask": [
+                true,
+                false,
+                false
+              ]
+            },
+            "subject_word_id": 15,
+            "request": null,
+            "children": [],
+            "companions": [],
+            "composition": 7
+          }
+        ],
+        "compositions": [
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "sum",
+            "formal_name": "sum",
+            "head_role": 0,
+            "order": 1,
+            "leaves": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "children": [
+              5,
+              1
+            ],
+            "binding": null
+          },
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "definite_unary",
+            "formal_name": "definite_unary",
+            "head_role": 1,
+            "order": 1,
+            "leaves": [
+              2,
+              3
+            ],
+            "children": [
+              2
+            ],
+            "binding": null
+          },
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "implies",
+            "formal_name": "implies",
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              2,
+              3
+            ],
+            "children": [
+              4,
+              3
+            ],
+            "binding": null
+          },
+          {
+            "reference": 16,
+            "word_id": 15,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              3
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": 12,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              2
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "definite_unary",
+            "formal_name": "definite_unary",
+            "head_role": 1,
+            "order": 1,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              6
+            ],
+            "binding": null
+          },
+          {
+            "reference": -1,
+            "word_id": -1,
+            "operation": "implies",
+            "formal_name": "implies",
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0,
+              1
+            ],
+            "children": [
+              8,
+              7
+            ],
+            "binding": null
+          },
+          {
+            "reference": 16,
+            "word_id": 15,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              1
+            ],
+            "children": [],
+            "binding": null
+          },
+          {
+            "reference": 13,
+            "word_id": 12,
+            "operation": null,
+            "formal_name": null,
+            "head_role": 0,
+            "order": 0,
+            "leaves": [
+              0
+            ],
+            "children": [],
+            "binding": null
+          }
+        ]
+      }
+    },
+    {
+      "call": "preview",
+      "plan": {
+        "items": [
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='relation'), relation='implies', refs=(('clause', 0), ClausePredicate(name='implies'), ('clause', 1)), children=(Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(13, -1, -1), children=(), companions=(), subject_word_id=12, factored_refs=None, order=0, evidence=(0.0, 0.0), minted=False), Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(16, -1, -1), children=(), companions=(), subject_word_id=15, factored_refs=None, order=0, evidence=(0.0, 0.0), minted=False)), companions=(), subject_word_id=12, factored_refs=(('clause', 0), ClausePredicate(name='implies'), ('clause', 1)), order=0, evidence=(0.0, 0.0), minted=False),), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              0
+            ],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.09438344091176987,
+              0.28230664134025574,
+              0.5558011531829834,
+              0.1949094533920288,
+              0.0689300149679184,
+              0.43052488565444946,
+              0.5975585579872131,
+              0.1315709352493286
+            ],
+            "role": 0,
+            "selected": [
+              "new",
+              0
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": null,
+            "leaves": [
+              0,
+              1
+            ],
+            "anonymous": false,
+            "own_object": true,
+            "compose_dummy": true
+          },
+          {
+            "node": "Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(-1, -1, -1), children=(Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='relation'), relation='implies', refs=(('clause', 0), ClausePredicate(name='implies'), ('clause', 1)), children=(Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(13, -1, -1), children=(), companions=(), subject_word_id=12, factored_refs=None, order=0, evidence=(0.0, 0.0), minted=False), Clause(meaning=ConceptualMeaning(mode='assertive', polarity=True, role_refs=(None, None, None), bindings=(), scope=(), sentence_kind='idea'), relation=None, refs=(16, -1, -1), children=(), companions=(), subject_word_id=15, factored_refs=None, order=0, evidence=(0.0, 0.0), minted=False)), companions=(), subject_word_id=12, factored_refs=(('clause', 0), ClausePredicate(name='implies'), ('clause', 1)), order=0, evidence=(0.0, 0.0), minted=False),), companions=(), subject_word_id=-1, factored_refs=None, order=1, evidence=(0.0, 0.0), minted=False)",
+            "parent": null,
+            "site_role": null,
+            "root_roles": [
+              2
+            ],
+            "asserted": [],
+            "mode": "bind",
+            "content": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "predicate": [
+              0.09438344091176987,
+              0.28230664134025574,
+              0.5558011531829834,
+              0.1949094533920288,
+              0.0689300149679184,
+              0.43052488565444946,
+              0.5975585579872131,
+              0.1315709352493286
+            ],
+            "role": 2,
+            "selected": [
+              "new",
+              1
+            ],
+            "candidates": [],
+            "features": null,
+            "cue": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "probabilities": null,
+            "leaves": [
+              2,
+              3
+            ],
+            "anonymous": false,
+            "own_object": true,
+            "compose_dummy": true
+          }
+        ],
+        "individuals": {
+          "('new', 0)": {
+            "content": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 0,
+            "position": [
+              0,
+              0
+            ]
+          },
+          "('new', 1)": {
+            "content": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "value": [
+              0.5,
+              0.5,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "role": 2,
+            "position": [
+              1,
+              1
+            ]
+          }
+        },
+        "arrivals": [],
+        "decisions": [],
+        "cost": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_end_state.py::test_closing_discards_operations_without_changing_other_live_rows",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

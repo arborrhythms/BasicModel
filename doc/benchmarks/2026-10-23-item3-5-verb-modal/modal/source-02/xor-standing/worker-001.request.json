@@ -1,0 +1,8 @@
+{
+  "selectors": [
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
+    "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_output_mse_is_crisp"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/xor-standing/worker-001.recycle.json"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_preposition.py::TestPrepositionLayer::test_permissive_arguments",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

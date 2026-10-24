@@ -1,0 +1,114 @@
+[
+  {
+    "batch": 0,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "affix-0-0-actual",
+      "affix-0-0-alternative",
+      "affix-0-1-actual",
+      "affix-0-1-alternative"
+    ],
+    "updates": {
+      "paired": 6,
+      "batch_end_disabled": 1
+    },
+    "elapsed": 17.211462292121723
+  },
+  {
+    "batch": 1,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "affix-1-0-actual",
+      "affix-1-0-alternative",
+      "affix-1-1-actual",
+      "affix-1-1-alternative"
+    ],
+    "updates": {
+      "paired": 12,
+      "batch_end_disabled": 2
+    },
+    "elapsed": 32.593902208143845
+  },
+  {
+    "batch": 2,
+    "training": true,
+    "epoch": 0,
+    "ids": [
+      "affix-2-0-actual",
+      "affix-2-0-alternative",
+      "affix-3-1-actual",
+      "affix-3-1-alternative"
+    ],
+    "updates": {
+      "paired": 18,
+      "batch_end_disabled": 3
+    },
+    "elapsed": 123.1601772501599
+  },
+  {
+    "batch": 3,
+    "training": true,
+    "epoch": 1,
+    "ids": [
+      "affix-0-0-actual",
+      "affix-0-0-alternative",
+      "affix-0-1-actual",
+      "affix-0-1-alternative"
+    ],
+    "updates": {
+      "paired": 24,
+      "batch_end_disabled": 4
+    },
+    "elapsed": 216.0599875000771
+  },
+  {
+    "batch": 4,
+    "training": true,
+    "epoch": 1,
+    "ids": [
+      "affix-1-0-actual",
+      "affix-1-0-alternative",
+      "affix-1-1-actual",
+      "affix-1-1-alternative"
+    ],
+    "updates": {
+      "paired": 30,
+      "batch_end_disabled": 5
+    },
+    "elapsed": 423.13870150013827
+  },
+  {
+    "batch": 5,
+    "training": true,
+    "epoch": 1,
+    "ids": [
+      "affix-2-0-actual",
+      "affix-2-0-alternative",
+      "affix-3-1-actual",
+      "affix-3-1-alternative"
+    ],
+    "updates": {
+      "paired": 36,
+      "batch_end_disabled": 6
+    },
+    "elapsed": 702.1145670830738
+  },
+  {
+    "batch": 6,
+    "training": false,
+    "epoch": null,
+    "ids": [
+      "affix-2-1-actual",
+      "affix-2-1-alternative",
+      "affix-3-0-actual",
+      "affix-3-0-alternative"
+    ],
+    "updates": {
+      "paired": 36,
+      "batch_end_disabled": 6
+    },
+    "elapsed": 758.142746708123
+  }
+]

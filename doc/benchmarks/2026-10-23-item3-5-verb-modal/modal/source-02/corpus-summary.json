@@ -1,0 +1,29 @@
+{
+  "source": "01effdcaf9dd9adfbc460a791e06feb06b38b940",
+  "forms": {
+    "free": {
+      "completed": true,
+      "updates": {
+        "paired": 36,
+        "batch_end_disabled": 6
+      },
+      "exact_answers": 0,
+      "exact_timelines": 0,
+      "total": 4,
+      "passed": false,
+      "elapsed_seconds": 91.47363050002605
+    },
+    "affix": {
+      "completed": true,
+      "updates": {
+        "paired": 36,
+        "batch_end_disabled": 6
+      },
+      "exact_answers": 0,
+      "exact_timelines": 0,
+      "total": 4,
+      "passed": false,
+      "elapsed_seconds": 758.1463149581105
+    }
+  }
+}

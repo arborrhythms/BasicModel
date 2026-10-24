@@ -1,0 +1,29 @@
+{
+  "source": "01effdcaf9dd9adfbc460a791e06feb06b38b940",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_grammar_checkpoint.py",
+    "test/test_structural_checkpoint.py",
+    "test/test_understanding_reconstruct.py",
+    "test/test_tied_operator_gradient.py",
+    "test/test_identity_experiment.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/reconstruction"
+  ],
+  "started": "2026-10-24T07:40:35.330200+00:00",
+  "exit": 0,
+  "finished": "2026-10-24T07:41:05.538732+00:00"
+}

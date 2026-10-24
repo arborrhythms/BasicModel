@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compound_cases.py::test_case_selector_and_fold_compile_as_one_tensor_body",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/xor-standing/worker-001.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/xor-standing/worker-001.json"
+  ],
+  "pid": 74288,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1223871656,
+  "elapsed_seconds": 56.4654425829649,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/modal/final/source-02/xor-standing/worker-001.log"
+}
