@@ -65,6 +65,9 @@ read the existing journal as the chunk record.
     meaning composition and reaches forms through the symbol index (§2,
     "Decided: operations on meaning, centroids on form", with the audit of
     today's form-side kernels and their side effects).
+    *Moved to item 3.5 the same day* (Alec: "The whole swap now"): it
+    is built in 3.5's first remaining iteration
+    ([spec](2026-10-23-verb-and-modal.md) §2), before line 4's verb.
 13. **The object supplies its own Q basis** for a transitive verb; the
     verb is the diagonal (occurrence spec §14.5; step 4's spec).
 
@@ -277,6 +280,16 @@ does affect:
 
 Everything else, MTM, STM, LTM0 and LTM1, bind, forgetting, priming and
 the orders, is unaffected by which block the kernel acts on.
+
+*Corrected on checking (Claude, 2026-10-23).* The split exists only where
+the conceptual space is wider than the form: `BasicModel`,
+`BasicModel_answers_tied_benchmark`, `MM_grammar`, `XOR_grammar` and the
+fixtures that widen it. `XOR_exact`, `MM_xor`, `MM_math_chain` and the
+default `model.xml` have no meaning block; their kernels act on the whole
+vector. So point 4 is wrong (the XOR standing gate runs on `XOR_exact` and
+`MM_xor` and does not move), and points 1 and 2 hold only on the paired
+configurations: on `MM_math_chain`, which the decomposition arms use,
+"x plus two" composes on the whole vector.
 
 **A contiguous event takes its actual mereology.** Alec: "Hopefully it will
 take on the actual mereology of the event if the event is contiguous?"

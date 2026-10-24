@@ -715,6 +715,16 @@ not by a passing identity lesson.
    identity threading and its spec come first. No step-2 completion is
    claimed. All subsequent work stays on main.
 
+   *Step 2 closed 2026-10-23* (identity line, 2c, one sweep; BasicModel
+   `3624f6204`, WikiOracle `c9b19d4`). **The rest of 3.5 runs as two
+   iterations** (Alec, 2026-10-23): lines 3, 4 and 5, with the swap to
+   operations on meaning and centroids on form brought forward from item 3
+   ("The whole swap now"), in the order swap, verb, line 3's lessons rerun,
+   modal ([spec](doc/plans/2026-10-23-verb-and-modal.md)); then lines 6 and 7
+   (the 5.5 remainder with context wholes; direct-operand word classes).
+   One freeze and one review per iteration, gates sized to the change,
+   one full sweep at the end of 3.5.
+
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
    described below by origin; the first-pass order above supersedes the older sequencing:
@@ -849,6 +859,11 @@ not by a passing identity lesson.
      a noun phrase's alternative verb phrases, a diagonal per modal in a
      shared basis. This answers occurrence §14.5's possible situation:
      an alternative VP, neither a minted world nor a lane.
+   - *Superseded 2026-10-23 (Alec; [iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)):*
+     the modal is a difference across an identity's **possible
+     identities**, collected in MTM, as the verb is across time; its form
+     is the `adverb` rule; minted worlds and `position` are withdrawn. The
+     bullet below is the record.
    - **The second difference: the modal as the verb phrase's preposition
      over worlds** (Alec, 2026-10-19; [occurrence spec §14.3](doc/specs/2026-09-30-occurrence-tense-aspect.md#143-the-minimal-mechanism-the-modal-is-the-verb-phrases-preposition-over-worlds-alec-and-claude-2026-10-19-decided)),
      after the tense pass: `position` called with a world as object,
@@ -996,6 +1011,8 @@ not by a passing identity lesson.
      random and are moved by the priming surface; generation reverses
      meaning composition and reaches forms through the symbol index
      ([layout spec](doc/plans/2026-10-23-layout-and-removal.md)).
+     *Moved to 3.5 the same day* (Alec: "The whole swap now"): built in
+     3.5's first remaining iteration ([spec](doc/plans/2026-10-23-verb-and-modal.md) §2).
    - **Retire mode** (Alec, 2026-10-22: "Removing mode should be a part
      of 3.0"; moved from FutureWork).
 
