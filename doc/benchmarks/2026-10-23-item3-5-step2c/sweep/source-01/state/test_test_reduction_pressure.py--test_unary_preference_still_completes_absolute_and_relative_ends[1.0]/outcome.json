@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reduction_pressure.py::test_unary_preference_still_completes_absolute_and_relative_ends[1.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

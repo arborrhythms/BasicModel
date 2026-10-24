@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_requires_power_of_two",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

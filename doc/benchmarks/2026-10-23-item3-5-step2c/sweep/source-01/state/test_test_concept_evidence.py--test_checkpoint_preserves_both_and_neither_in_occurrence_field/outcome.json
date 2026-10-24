@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_checkpoint_preserves_both_and_neither_in_occurrence_field",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

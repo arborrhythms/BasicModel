@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_end_state.py::test_numerical_journal_is_fullgraph_and_keeps_the_gradient_path",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

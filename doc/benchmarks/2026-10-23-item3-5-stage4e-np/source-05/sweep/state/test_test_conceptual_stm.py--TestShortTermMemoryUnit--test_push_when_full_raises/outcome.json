@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_when_full_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

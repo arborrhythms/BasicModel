@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_base_mereology.py::test_concept_evidence_matches_identified_codes_after_complete_part_union[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

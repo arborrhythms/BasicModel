@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_policy.py::test_observe_qe_runs_leader_clustering",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

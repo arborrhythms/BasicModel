@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_cs_alone_commits_symbolic_and_language_peer_results",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

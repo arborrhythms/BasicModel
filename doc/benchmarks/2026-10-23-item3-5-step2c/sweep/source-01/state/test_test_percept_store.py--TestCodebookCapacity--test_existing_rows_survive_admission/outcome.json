@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestCodebookCapacity::test_existing_rows_survive_admission",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

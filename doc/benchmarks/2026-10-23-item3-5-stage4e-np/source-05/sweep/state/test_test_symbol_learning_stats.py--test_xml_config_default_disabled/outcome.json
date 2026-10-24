@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_stats.py::test_xml_config_default_disabled",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

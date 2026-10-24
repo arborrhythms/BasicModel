@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_lexicon_codebook.py::TestSSCodebookPairedInsertRetired::test_lexicon_insert_leaves_ws_codebook_untouched",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

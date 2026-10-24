@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase2_subspace_empty.py::test_is_empty_true_for_zero_n",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

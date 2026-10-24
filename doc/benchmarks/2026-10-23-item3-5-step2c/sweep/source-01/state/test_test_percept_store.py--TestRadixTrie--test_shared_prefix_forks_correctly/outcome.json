@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestRadixTrie::test_shared_prefix_forks_correctly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

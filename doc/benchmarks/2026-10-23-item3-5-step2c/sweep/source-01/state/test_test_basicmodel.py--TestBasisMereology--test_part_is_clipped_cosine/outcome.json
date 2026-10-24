@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereology::test_part_is_clipped_cosine",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

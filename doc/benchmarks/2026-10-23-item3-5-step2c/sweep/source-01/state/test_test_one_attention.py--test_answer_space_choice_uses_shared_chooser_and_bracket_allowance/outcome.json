@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_answer_space_choice_uses_shared_chooser_and_bracket_allowance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

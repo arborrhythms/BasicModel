@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py::test_g3_four_role_witnesses_open_elision_then_bind_or_remain_open[3-False]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-049.recycle.json"
-}

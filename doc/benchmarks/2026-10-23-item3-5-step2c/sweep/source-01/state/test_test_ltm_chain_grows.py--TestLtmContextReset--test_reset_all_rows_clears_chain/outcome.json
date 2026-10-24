@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_reset_all_rows_clears_chain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

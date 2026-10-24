@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review14_contracts.py::test_repeated_part_address_does_not_multiply_its_11b_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

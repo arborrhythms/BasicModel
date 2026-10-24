@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

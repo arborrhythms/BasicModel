@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_output_space_carries_symbolSpace",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

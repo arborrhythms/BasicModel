@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_boundary_rebuilds_truth_and_preserves_predictor_tensors",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

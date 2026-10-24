@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning_cde_model.py::TestReasoningCDEModel::test_reason_about_returns_honest_posture",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

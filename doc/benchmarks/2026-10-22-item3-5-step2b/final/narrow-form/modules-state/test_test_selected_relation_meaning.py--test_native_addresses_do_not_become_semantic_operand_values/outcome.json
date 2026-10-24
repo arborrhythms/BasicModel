@@ -1,6 +1,0 @@
-{
-  "node": "test/test_selected_relation_meaning.py::test_native_addresses_do_not_become_semantic_operand_values",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_lower_radial_matches_pre_step2_radmin",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

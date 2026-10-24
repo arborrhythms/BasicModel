@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sigmapi.py::TestSigmaLayerForward::test_output_bounded_by_tanh",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

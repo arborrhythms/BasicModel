@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_sigma_pi.py::test_negated_disjunct_and_mixed_parts_on_one_concept",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

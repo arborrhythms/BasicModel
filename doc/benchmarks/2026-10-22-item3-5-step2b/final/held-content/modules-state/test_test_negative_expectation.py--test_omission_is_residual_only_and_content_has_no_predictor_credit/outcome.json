@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_omission_is_residual_only_and_content_has_no_predictor_credit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

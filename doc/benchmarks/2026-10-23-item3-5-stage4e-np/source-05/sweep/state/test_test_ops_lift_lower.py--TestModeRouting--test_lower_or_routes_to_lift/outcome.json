@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestModeRouting::test_lower_or_routes_to_lift",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

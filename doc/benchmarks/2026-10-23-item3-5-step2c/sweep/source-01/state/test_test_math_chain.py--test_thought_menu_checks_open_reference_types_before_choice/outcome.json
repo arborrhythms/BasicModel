@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_thought_menu_checks_open_reference_types_before_choice",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

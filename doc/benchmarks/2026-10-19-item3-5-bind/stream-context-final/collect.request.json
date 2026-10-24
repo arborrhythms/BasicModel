@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_item55_mechanisms.py::test_stream_chain"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

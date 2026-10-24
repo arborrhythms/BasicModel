@@ -1,6 +1,0 @@
-{
-  "node": "test/test_codebook_update_law.py::test_dead_code_revival_respects_the_freeze",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

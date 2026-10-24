@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_both_evidence_poles_survive_checkpoint_separately_from_neither",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

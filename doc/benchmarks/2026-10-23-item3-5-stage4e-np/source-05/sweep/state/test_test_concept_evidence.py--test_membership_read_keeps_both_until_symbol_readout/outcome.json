@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_membership_read_keeps_both_until_symbol_readout",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

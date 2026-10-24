@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parse_buffer.py::TestParseSentences::test_punctuation_variants",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mlp_transform_chooser.py::test_degenerate_shapes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

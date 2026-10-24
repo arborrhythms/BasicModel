@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_word_table_initial_returns_csr_plus_ref_ids",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

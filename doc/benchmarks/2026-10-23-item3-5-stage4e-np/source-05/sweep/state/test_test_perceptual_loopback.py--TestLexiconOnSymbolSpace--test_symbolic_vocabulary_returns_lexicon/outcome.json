@@ -1,6 +1,0 @@
-{
-  "node": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_vocabulary_returns_lexicon",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

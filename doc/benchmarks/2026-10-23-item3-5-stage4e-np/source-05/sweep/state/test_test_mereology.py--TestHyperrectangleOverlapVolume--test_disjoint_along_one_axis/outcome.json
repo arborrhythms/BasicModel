@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_disjoint_along_one_axis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

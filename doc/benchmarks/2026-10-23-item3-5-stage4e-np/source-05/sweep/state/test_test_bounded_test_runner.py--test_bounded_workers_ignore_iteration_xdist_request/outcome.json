@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_bounded_workers_ignore_iteration_xdist_request",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_word_reference_commit_does_not_keep_old_order_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

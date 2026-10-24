@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestTruthLoss::test_unknown_proposition_zero_penalty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

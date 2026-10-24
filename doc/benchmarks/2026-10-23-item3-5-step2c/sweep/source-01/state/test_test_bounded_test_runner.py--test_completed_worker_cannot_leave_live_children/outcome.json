@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_completed_worker_cannot_leave_live_children",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

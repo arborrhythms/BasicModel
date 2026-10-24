@@ -1,6 +1,0 @@
-{
-  "node": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_constructor_accepts_new_arg_names",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

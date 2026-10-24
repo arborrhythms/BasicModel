@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_definition_boundary_preserves_gradient_owned_codes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

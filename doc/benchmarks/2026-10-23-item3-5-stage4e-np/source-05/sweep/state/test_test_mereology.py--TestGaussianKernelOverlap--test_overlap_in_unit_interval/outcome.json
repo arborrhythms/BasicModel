@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestGaussianKernelOverlap::test_overlap_in_unit_interval",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_math_chain_repair.py::test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/invariant-checks/worker-020.recycle.json"
-}

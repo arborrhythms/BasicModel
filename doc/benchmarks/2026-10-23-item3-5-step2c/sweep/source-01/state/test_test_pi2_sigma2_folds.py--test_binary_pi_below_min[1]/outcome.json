@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_binary_pi_below_min[1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

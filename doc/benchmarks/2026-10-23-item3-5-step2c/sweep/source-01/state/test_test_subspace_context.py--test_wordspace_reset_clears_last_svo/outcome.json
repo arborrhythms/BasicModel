@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_wordspace_reset_clears_last_svo",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

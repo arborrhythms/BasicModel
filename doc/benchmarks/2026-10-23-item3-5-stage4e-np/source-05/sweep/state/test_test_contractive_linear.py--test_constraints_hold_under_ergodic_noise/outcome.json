@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_constraints_hold_under_ergodic_noise",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

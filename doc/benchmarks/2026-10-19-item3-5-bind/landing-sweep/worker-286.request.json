@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
-    "test/test_forgetting.py::test_compaction_preserves_protected_row_columns_and_optional_metadata"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-286.recycle.json"
-}

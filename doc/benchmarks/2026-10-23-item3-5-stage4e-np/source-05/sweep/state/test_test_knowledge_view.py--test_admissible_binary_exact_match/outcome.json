@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_view.py::test_admissible_binary_exact_match",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_synthesis.py::test_cold_memory_resolution_is_flagged_unresolved",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

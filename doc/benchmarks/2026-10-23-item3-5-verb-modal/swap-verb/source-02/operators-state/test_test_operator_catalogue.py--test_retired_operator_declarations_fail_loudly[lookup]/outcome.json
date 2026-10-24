@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_retired_operator_declarations_fail_loudly[lookup]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

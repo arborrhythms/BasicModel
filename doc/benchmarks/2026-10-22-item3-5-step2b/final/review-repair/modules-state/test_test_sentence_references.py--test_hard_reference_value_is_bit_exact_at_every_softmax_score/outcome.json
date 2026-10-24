@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_references.py::test_hard_reference_value_is_bit_exact_at_every_softmax_score",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

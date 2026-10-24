@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_arrivals.py::test_cached_word_mention_still_binds_to_its_accessible_token"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-review11/participants-dev-02/worker-001.recycle.json"
-}

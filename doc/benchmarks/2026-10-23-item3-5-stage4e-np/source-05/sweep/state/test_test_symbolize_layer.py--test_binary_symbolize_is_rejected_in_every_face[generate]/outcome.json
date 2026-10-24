@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolize_layer.py::test_binary_symbolize_is_rejected_in_every_face[generate]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

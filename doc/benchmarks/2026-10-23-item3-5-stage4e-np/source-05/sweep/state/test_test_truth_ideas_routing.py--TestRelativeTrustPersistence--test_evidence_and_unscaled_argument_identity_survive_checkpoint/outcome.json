@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestRelativeTrustPersistence::test_evidence_and_unscaled_argument_identity_survive_checkpoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestSurviveResetAndPersistence::test_survives_every_reset",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase2_sequential_integration.py::test_sequential_unrolls_subsymbolic_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

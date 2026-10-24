@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_lookup_gauge.py::test_gauge_orient_quotient_consistency",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

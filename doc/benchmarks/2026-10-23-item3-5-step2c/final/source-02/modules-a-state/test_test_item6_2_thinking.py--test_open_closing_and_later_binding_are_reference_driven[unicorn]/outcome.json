@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_thinking.py::test_open_closing_and_later_binding_are_reference_driven[unicorn]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_thinking.py::test_event_implication_cannot_invent_an_order_for_unknown_legacy_time",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

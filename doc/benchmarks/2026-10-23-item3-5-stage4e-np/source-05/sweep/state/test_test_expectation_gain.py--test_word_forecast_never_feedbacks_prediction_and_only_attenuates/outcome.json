@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_gain.py::test_word_forecast_never_feedbacks_prediction_and_only_attenuates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

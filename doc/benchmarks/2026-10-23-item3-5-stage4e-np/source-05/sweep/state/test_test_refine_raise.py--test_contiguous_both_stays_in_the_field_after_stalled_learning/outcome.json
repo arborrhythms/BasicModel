@@ -1,6 +1,0 @@
-{
-  "node": "test/test_refine_raise.py::test_contiguous_both_stays_in_the_field_after_stalled_learning",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

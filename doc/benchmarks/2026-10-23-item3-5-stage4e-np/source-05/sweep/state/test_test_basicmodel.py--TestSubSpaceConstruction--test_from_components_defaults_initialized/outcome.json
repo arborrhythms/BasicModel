@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceConstruction::test_from_components_defaults_initialized",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

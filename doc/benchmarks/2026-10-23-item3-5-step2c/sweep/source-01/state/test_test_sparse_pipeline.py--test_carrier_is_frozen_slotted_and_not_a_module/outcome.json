@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_carrier_is_frozen_slotted_and_not_a_module",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

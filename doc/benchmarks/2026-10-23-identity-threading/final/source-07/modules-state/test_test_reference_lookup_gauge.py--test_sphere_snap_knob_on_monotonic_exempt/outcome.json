@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_lookup_gauge.py::test_sphere_snap_knob_on_monotonic_exempt",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_old_sentence_expectation_checkpoint_keeps_sentence_weights",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

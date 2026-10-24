@@ -1,6 +1,0 @@
-{
-  "node": "test/test_priming_energy.py::test_edges_exposed_undirected",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_candidate_attention.py::test_shared_context_magnitude_cannot_saturate_the_retained_scorer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_admission.py::test_26_full_row_inventory_leaves_no_word_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

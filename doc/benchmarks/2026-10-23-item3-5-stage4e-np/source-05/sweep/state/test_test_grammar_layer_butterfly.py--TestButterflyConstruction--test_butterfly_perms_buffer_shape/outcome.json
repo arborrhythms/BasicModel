@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_layer_butterfly.py::TestButterflyConstruction::test_butterfly_perms_buffer_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

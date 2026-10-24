@@ -1,6 +1,0 @@
-{
-  "node": "test/test_abstraction_order_canonical.py::test_lbg_split_inherits_fold_provenance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

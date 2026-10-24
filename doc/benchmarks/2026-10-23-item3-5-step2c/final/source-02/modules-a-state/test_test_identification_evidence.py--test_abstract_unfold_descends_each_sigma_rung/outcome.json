@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identification_evidence.py::test_abstract_unfold_descends_each_sigma_rung",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

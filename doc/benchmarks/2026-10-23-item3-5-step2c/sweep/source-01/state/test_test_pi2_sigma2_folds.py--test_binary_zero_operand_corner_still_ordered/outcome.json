@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_binary_zero_operand_corner_still_ordered",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

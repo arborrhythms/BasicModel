@@ -1,6 +1,0 @@
-{
-  "node": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_is_side_lexer_rejected_loudly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

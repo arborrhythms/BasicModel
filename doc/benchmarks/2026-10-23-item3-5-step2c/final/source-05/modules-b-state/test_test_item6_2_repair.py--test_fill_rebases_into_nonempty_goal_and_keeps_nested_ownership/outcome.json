@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_repair.py::test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

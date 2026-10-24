@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_rewrite.py::test_per_operator_position_categories_present",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

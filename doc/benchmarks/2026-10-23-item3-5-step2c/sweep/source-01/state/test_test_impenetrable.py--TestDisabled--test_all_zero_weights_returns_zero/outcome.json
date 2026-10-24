@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestDisabled::test_all_zero_weights_returns_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

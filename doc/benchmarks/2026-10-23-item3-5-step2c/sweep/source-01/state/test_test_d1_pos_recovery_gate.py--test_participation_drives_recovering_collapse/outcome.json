@@ -1,6 +1,0 @@
-{
-  "node": "test/test_d1_pos_recovery_gate.py::test_participation_drives_recovering_collapse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

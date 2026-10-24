@@ -1,7 +1,0 @@
-/Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5404: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
-  self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
-retained failure: {'line': 145, 'message': '', 'function': 'test_named_token_keeps_its_content_before_and_after_the_close'}
-bare frame activations: 0
-production frame activations: 2
-complete frame selects introduction: True
-same / next registered cost: [0.0] [0.0]

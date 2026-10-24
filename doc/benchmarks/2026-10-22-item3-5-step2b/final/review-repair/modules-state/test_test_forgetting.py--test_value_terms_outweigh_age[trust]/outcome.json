@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_value_terms_outweigh_age[trust]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

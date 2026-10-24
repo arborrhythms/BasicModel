@@ -1,6 +1,0 @@
-{
-  "node": "test/test_training_diagnostic_contracts.py::test_diagnostic_failure_does_not_abort_real_training",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

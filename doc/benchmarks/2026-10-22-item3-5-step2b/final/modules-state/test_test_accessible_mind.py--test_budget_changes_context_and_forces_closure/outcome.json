@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_budget_changes_context_and_forces_closure",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_complete_grammar_exposes_its_declared_canonical_thought_operations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_bracket.py::test_bracket_is_retired",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
-    "test/test_expectation_migration.py::test_migration_does_not_bless_corrupt_historical_estimates"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-269.recycle.json"
-}

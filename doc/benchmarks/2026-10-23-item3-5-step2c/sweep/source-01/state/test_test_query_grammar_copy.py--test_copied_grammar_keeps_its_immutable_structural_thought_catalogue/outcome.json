@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_grammar_copy.py::test_copied_grammar_keeps_its_immutable_structural_thought_catalogue",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

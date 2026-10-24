@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compound_cases.py::test_compound_structural_face_reads_only_the_selected_cases",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

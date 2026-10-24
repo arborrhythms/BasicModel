@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review14_contracts.py::test_zero_parent_relative_search_with_large_valid_codes_stays_finite",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

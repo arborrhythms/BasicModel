@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_basis_unit_ball_dispatch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

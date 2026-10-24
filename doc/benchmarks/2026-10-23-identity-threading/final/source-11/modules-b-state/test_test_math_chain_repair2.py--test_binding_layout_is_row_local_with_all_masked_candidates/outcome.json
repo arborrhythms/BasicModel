@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair2.py::test_binding_layout_is_row_local_with_all_masked_candidates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

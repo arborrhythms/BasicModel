@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_substrate.py::test_typed_stack_to_moves_all_tensors",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

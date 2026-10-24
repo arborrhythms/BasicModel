@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_concept_not.py::test_not_preserves_a_full_concept_code",
-    "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-123.recycle.json"
-}

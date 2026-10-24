@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_property_tiling.py::test_property_spans_none_passthrough"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-639.recycle.json"
-}

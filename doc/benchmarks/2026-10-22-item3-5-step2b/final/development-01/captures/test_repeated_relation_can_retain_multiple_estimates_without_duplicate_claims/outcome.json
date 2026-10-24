@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_retention.py::test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims",
-  "outcome": "failed",
-  "failure": "test/test_sentence_retention.py:43: in test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims\n    assert len(store) == 2\nE   assert 3 == 2\nE    +  where 3 = len(LTM0())",
-  "records": []
-}

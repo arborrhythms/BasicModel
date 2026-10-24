@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_withdrawal_preserves_occurrences_in_retained_semantic_context[scope]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

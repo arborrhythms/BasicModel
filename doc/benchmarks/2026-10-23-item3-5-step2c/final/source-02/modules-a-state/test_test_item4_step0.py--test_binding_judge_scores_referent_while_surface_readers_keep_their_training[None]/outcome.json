@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_step0.py::test_binding_judge_scores_referent_while_surface_readers_keep_their_training[None]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

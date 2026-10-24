@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

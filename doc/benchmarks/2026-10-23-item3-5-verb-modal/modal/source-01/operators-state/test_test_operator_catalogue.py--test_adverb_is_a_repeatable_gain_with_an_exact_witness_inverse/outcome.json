@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_adverb_is_a_repeatable_gain_with_an_exact_witness_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

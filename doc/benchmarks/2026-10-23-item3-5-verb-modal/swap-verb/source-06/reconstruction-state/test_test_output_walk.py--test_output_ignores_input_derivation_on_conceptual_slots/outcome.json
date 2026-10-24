@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_output_ignores_input_derivation_on_conceptual_slots",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

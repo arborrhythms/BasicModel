@@ -1,6 +1,0 @@
-{
-  "node": "test/test_recon_bench.py::test_run_record_schema_smoke",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

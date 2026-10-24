@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_single_optimizer_closure_is_preflighted_after_it_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

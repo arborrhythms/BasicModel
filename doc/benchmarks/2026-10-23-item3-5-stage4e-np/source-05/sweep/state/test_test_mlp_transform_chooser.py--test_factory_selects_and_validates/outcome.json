@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mlp_transform_chooser.py::test_factory_selects_and_validates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

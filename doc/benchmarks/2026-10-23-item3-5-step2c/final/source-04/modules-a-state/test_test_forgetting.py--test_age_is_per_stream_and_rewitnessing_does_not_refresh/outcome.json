@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_age_is_per_stream_and_rewitnessing_does_not_refresh",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

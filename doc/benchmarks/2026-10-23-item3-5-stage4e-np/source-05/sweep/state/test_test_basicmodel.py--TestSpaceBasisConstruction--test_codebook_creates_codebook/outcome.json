@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSpaceBasisConstruction::test_codebook_creates_codebook",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

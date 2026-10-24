@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_rule_detection_collapsed.py::test_relative_relation_kinds_are_canonical_structural_forms",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

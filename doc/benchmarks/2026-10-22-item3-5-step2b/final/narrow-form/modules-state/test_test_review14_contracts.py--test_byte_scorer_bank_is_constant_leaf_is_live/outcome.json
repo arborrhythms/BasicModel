@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review14_contracts.py::test_byte_scorer_bank_is_constant_leaf_is_live",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

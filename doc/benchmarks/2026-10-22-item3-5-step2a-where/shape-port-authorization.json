@@ -1,7 +1,0 @@
-{
-  "date": "2026-10-22",
-  "answer": "Authorize this shape-check port (Recommended)",
-  "before": "assert store.where.shape == store.when.shape == (8, 4)",
-  "after": "assert store.when.shape == (8, 4)",
-  "question_id": "call_e20d363d61534c1bb0a24d78de5450e5:0"
-}

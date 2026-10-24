@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_loop_buckets_and_orders.py::test_single_dynamic_capacity_accepts_short_and_long_complete_sentences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

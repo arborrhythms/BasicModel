@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exact_primitives.py::test_verifier_accepts_solver_trace_and_rejects_edits[2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cursor_universal.py::test_trial_cursor_no_dataloader_iteration",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

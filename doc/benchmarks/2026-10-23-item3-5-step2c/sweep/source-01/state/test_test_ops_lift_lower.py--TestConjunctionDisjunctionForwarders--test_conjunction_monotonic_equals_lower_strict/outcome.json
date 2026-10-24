@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_conjunction_monotonic_equals_lower_strict",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

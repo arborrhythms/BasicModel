@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_concept_identity_slabs.py::test_wholesale_buffer_replacement_invalidates_identity_metadata",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

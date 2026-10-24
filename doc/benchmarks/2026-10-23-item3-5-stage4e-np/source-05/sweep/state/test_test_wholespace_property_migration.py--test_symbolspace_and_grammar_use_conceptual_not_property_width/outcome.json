@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_symbolspace_and_grammar_use_conceptual_not_property_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

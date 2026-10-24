@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_policy_off_bypasses_fused_scan",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

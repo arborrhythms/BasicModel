@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_change_dictionary_is_one_sparse_per_sentence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

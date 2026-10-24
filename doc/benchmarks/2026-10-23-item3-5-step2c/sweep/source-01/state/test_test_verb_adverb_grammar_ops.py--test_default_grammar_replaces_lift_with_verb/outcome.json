@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_adverb_grammar_ops.py::test_default_grammar_replaces_lift_with_verb",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

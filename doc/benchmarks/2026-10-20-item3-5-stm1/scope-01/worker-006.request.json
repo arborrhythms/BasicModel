@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_phase_artifacts.py::test_registry_round_trip",
-    "test/test_phase_artifacts.py::test_absent_phase_skips_wrong_hash_fails_and_restoration_is_required"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/scope-01/worker-006.recycle.json"
-}

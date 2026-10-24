@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_thought_controller.py::test_policy_masks_other_rows_and_drops_failed_episode_graphs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

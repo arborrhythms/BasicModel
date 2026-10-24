@@ -1,6 +1,0 @@
-{
-  "node": "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

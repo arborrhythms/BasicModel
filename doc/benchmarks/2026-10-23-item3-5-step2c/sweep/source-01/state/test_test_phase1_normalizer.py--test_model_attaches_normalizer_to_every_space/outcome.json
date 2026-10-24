@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase1_normalizer.py::test_model_attaches_normalizer_to_every_space",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

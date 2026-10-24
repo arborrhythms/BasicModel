@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exact_primitives.py::test_execute_rejects_unknown_primitive",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

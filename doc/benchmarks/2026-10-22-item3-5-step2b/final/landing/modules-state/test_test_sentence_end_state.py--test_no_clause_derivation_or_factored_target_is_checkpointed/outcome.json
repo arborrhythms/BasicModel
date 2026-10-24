@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_end_state.py::test_no_clause_derivation_or_factored_target_is_checkpointed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

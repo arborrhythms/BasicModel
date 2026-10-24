@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_fold_binding.py::test_aligned_provenance_preserves_prior_bearing_forward_event",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

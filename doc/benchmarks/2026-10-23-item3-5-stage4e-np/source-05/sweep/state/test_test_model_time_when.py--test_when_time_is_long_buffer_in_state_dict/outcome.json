@@ -1,6 +1,0 @@
-{
-  "node": "test/test_model_time_when.py::test_when_time_is_long_buffer_in_state_dict",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

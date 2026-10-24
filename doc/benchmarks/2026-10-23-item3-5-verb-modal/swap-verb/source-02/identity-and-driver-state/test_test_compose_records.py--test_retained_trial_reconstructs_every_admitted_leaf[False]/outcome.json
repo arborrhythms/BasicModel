@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

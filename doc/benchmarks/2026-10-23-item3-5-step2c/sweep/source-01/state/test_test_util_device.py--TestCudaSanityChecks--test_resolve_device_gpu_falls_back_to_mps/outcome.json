@@ -1,6 +1,0 @@
-{
-  "node": "test/test_util_device.py::TestCudaSanityChecks::test_resolve_device_gpu_falls_back_to_mps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

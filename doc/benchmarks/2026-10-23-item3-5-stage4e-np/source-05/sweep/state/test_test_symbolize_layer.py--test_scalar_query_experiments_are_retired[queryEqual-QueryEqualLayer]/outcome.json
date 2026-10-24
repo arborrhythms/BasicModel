@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolize_layer.py::test_scalar_query_experiments_are_retired[queryEqual-QueryEqualLayer]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

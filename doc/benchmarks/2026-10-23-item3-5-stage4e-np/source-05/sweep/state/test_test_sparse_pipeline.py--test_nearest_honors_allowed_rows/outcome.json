@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_nearest_honors_allowed_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

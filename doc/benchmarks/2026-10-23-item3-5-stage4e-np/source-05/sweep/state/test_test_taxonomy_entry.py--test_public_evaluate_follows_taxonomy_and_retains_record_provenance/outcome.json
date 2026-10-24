@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_entry.py::test_public_evaluate_follows_taxonomy_and_retains_record_provenance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

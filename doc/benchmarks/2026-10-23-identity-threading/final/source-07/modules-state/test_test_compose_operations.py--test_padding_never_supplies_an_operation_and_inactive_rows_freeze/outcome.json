@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_operations.py::test_padding_never_supplies_an_operation_and_inactive_rows_freeze",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

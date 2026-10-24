@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_arbitrary_leading_dimensions_and_named_entry_point[shape0-GatedConceptsFromPercepts]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

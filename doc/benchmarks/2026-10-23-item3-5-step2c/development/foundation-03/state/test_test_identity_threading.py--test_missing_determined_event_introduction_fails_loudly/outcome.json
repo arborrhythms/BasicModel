@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_missing_determined_event_introduction_fails_loudly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

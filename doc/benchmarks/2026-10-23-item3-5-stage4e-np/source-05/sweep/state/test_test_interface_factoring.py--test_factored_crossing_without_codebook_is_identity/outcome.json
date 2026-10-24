@@ -1,6 +1,0 @@
-{
-  "node": "test/test_interface_factoring.py::test_factored_crossing_without_codebook_is_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

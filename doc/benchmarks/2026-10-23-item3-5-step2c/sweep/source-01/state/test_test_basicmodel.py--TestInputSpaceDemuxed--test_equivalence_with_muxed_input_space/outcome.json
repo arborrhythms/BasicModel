@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestInputSpaceDemuxed::test_equivalence_with_muxed_input_space",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

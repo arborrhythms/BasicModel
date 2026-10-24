@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_codebook_reference_is_immutable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

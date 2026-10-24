@@ -1,7 +1,0 @@
-<!doctype html><html><head><meta charset='utf-8'><title>BasicModel tests</title><style>body{font:14px system-ui;margin:2em}td,th{border:1px solid #ccc;padding:.5em}table{border-collapse:collapse}pre{white-space:pre-wrap;max-width:50em}</style></head><body><h1>Tests: test_failure</h1><p>Exit 1; 1/1 selected cases completed.</p><p>Collection, worker logs, process limits and complete coverage are recorded in result.json.</p><h2>Skipped phase certificates</h2><table><tr><th>Test</th><th>Phase</th><th>Outcome</th><th>Seconds</th><th>Details</th><th>Output</th></tr><tr><td><pre>test/test_step2b_storage.py::test_word_bank_form_survives_use_as_another_words_object</pre></td><td><pre>call</pre></td><td><pre>failed</pre></td><td><pre>0.411917916033417</pre></td><td><pre>test/test_step2b_storage.py:19: in test_word_bank_form_survives_use_as_another_words_object
-    obj = owner.definitions.objects(word)[0]
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-bin/Definitions.py:101: in objects
-    return self._objects.get(int(word), ())
-                             ^^^^^^^^^
-E   TypeError: int() argument must be a string, a bytes-like object or a real number, not &#x27;NoneType&#x27;</pre></td><td><pre></pre></td></tr></table></body></html>

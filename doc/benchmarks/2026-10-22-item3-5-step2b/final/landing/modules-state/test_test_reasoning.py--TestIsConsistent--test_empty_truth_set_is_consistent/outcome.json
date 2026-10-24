@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestIsConsistent::test_empty_truth_set_is_consistent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

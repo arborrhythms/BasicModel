@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_reverse_errors.py::test_syntactic_reverse_raises_on_non_invertible_hosted_rule",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

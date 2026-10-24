@@ -1,6 +1,0 @@
-[collect] 1 selectors; limit 900s, 8.0 GiB
-[collect] exit 0; 2.3s; peak 0.24 GiB
-[worker-000] 1 selectors; limit 900s, 8.0 GiB
-[worker-000] exit 1; 4.1s; peak 0.68 GiB
-Result: test_failure, exit 1; 1/1 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-16/tests/result.json

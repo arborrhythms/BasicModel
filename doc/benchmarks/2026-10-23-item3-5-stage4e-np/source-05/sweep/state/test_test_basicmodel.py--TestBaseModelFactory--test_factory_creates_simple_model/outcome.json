@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBaseModelFactory::test_factory_creates_simple_model",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

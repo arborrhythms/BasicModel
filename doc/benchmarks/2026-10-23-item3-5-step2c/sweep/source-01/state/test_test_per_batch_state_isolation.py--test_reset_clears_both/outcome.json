@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_state_isolation.py::test_reset_clears_both",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

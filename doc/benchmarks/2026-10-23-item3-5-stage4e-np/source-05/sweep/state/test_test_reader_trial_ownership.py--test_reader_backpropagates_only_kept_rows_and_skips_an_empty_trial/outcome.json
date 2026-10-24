@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reader_trial_ownership.py::test_reader_backpropagates_only_kept_rows_and_skips_an_empty_trial",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

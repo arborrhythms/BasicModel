@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_centroid_is_leaf_weighted_and_splits_exactly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

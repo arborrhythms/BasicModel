@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_binding_operators.py::test_conjunction_same_reference_is_identity_but_equal_codes_are_distinct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

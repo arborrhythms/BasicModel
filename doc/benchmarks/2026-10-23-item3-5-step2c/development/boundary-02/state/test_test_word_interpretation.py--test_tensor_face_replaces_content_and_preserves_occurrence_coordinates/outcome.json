@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_interpretation.py::test_tensor_face_replaces_content_and_preserves_occurrence_coordinates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

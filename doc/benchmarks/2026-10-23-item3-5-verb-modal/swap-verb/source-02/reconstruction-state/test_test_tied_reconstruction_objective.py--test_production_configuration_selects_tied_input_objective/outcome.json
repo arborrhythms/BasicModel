@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_reconstruction_objective.py::test_production_configuration_selects_tied_input_objective",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

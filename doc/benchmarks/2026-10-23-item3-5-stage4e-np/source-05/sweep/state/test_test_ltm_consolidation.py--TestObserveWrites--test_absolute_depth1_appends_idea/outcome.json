@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestObserveWrites::test_absolute_depth1_appends_idea",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

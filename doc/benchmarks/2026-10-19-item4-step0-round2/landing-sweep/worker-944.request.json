@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_union_difference_ops.py::test_registry_and_fixity",
-    "test/test_union_difference_ops.py::test_class_contract_pins",
-    "test/test_union_difference_ops.py::test_grammar_config_declares_sum_product"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-944.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_teacher_reconstruction.py::test_packed_lesson_keeps_exact_rows_and_clean_teacher_targets",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubspaceNormalize::test_percept_event_preserves_signed_auxiliary_band",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

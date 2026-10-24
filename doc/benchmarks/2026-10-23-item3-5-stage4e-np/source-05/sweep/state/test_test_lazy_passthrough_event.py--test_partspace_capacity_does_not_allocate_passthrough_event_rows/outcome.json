@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lazy_passthrough_event.py::test_partspace_capacity_does_not_allocate_passthrough_event_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

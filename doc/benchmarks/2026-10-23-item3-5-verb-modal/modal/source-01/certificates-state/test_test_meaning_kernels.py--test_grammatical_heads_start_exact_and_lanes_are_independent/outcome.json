@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_hierarchical.py::TestWordEncoding::test_7tuple_layout",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

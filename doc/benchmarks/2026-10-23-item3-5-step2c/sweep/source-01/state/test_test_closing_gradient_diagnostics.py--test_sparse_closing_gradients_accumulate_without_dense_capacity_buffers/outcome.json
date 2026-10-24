@@ -1,6 +1,0 @@
-{
-  "node": "test/test_closing_gradient_diagnostics.py::test_sparse_closing_gradients_accumulate_without_dense_capacity_buffers",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

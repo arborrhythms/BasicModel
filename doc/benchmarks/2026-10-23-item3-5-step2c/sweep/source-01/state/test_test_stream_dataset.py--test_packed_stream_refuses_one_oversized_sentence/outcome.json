@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_dataset.py::test_packed_stream_refuses_one_oversized_sentence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

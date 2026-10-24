@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[value]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

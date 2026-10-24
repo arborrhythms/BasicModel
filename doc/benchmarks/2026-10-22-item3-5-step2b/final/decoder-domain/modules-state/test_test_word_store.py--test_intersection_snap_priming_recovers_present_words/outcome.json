@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_intersection_snap_priming_recovers_present_words",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

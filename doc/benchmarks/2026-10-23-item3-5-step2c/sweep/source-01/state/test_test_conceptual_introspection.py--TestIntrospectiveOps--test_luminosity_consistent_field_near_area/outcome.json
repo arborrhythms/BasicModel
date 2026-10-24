@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_consistent_field_near_area",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_counts_alone_do_not_request_refinement",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

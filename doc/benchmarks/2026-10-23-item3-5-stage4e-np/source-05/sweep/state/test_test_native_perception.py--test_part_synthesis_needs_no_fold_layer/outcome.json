@@ -1,6 +1,0 @@
-{
-  "node": "test/test_native_perception.py::test_part_synthesis_needs_no_fold_layer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

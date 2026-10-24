@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_shape_property_none",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

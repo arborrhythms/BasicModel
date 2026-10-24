@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_grammar_rewrite.py::test_retired_golden_rule_is_rejected[what(S)]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

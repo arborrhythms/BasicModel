@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_utf8.py::test_split_multibyte_witness_keeps_raw_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

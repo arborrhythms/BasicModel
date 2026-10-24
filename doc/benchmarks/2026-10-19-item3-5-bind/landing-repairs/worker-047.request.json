@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
-    "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate",
-    "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-repairs/worker-047.recycle.json"
-}

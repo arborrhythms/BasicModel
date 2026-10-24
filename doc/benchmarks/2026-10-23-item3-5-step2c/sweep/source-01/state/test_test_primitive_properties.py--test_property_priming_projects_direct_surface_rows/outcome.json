@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_property_priming_projects_direct_surface_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

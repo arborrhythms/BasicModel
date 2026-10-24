@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_parallel_unit_axes_preserves_direction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

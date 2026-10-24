@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

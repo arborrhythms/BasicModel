@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reference_grammar.py::test_binary_shifts_surviving_reference_and_updates_orders",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

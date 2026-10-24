@@ -1,6 +1,0 @@
-[BasicModel] Weight file partial -- output/item6-orders-paired-accepted-code-20261015/warmup.ckpt
-  Keys in model but missing from file: 24 (initialized fresh)
-[BasicModel] Weights loaded from output/item6-orders-paired-accepted-code-20261015/warmup.ckpt
-[AMP] off (fp32, MODEL_AMP unset or =off)
-batch = 0 (warm-up)
-{"optimizer_steps": 2, "before": 3, "after": 4}

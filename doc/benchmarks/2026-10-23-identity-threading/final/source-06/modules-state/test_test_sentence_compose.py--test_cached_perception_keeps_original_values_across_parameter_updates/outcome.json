@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_compose.py::test_cached_perception_keeps_original_values_across_parameter_updates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

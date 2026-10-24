@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

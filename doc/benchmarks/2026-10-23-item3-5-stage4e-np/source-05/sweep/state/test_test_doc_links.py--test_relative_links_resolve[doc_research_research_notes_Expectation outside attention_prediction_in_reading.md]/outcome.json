@@ -1,6 +1,0 @@
-{
-  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/research/research_notes/Expectation outside attention/prediction_in_reading.md]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

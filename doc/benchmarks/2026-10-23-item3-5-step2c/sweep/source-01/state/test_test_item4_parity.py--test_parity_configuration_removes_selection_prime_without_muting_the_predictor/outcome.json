@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_parity.py::test_parity_configuration_removes_selection_prime_without_muting_the_predictor",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

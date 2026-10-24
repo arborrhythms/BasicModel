@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_binding.py::test_explicit_reflexive_equality_remains_a_direct_witness",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase2_sequential_integration.py::test_sequential_non_ar_forward_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_identity_rule.py::test_id_SS_resolves_to_identity_rule",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

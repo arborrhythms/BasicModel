@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_compose_observer.py::test_observer_counts_detached_compose_calls"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-03/modules-a/worker-050.recycle.json"
-}

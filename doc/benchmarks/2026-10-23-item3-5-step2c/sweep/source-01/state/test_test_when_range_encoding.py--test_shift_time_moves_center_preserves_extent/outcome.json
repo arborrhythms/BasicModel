@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_shift_time_moves_center_preserves_extent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

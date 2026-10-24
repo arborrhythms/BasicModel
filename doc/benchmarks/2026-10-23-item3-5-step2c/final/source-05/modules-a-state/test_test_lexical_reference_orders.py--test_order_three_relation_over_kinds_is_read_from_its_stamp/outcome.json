@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexical_reference_orders.py::test_order_three_relation_over_kinds_is_read_from_its_stamp",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

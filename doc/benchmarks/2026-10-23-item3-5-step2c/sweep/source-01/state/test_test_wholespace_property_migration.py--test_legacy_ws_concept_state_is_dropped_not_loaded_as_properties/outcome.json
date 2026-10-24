@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_legacy_ws_concept_state_is_dropped_not_loaded_as_properties",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

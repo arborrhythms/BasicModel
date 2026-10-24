@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_when_is_unit_bracket_with_coarse_fine_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

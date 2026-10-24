@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestReason::test_no_fire_below_parthood_threshold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

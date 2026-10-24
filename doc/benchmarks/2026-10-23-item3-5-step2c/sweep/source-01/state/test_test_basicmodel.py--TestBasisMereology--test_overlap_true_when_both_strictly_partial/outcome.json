@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereology::test_overlap_true_when_both_strictly_partial",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

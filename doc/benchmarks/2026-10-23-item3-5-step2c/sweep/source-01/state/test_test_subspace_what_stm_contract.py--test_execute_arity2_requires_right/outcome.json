@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_execute_arity2_requires_right",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

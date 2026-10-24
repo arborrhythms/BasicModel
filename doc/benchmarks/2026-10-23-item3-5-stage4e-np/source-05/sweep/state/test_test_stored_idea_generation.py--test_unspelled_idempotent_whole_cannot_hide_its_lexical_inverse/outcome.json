@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

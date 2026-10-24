@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestDiscourseConsolidationWiring::test_off_path_discourse_uses_deque",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

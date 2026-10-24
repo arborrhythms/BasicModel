@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ruledef_typed.py::TestRuleDefTyped::test_bare_symbol_form_parses_to_merge",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

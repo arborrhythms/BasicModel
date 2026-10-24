@@ -1,6 +1,0 @@
-{
-  "node": "test/test_selected_query_compose.py::test_language_owns_rule_meaning_for_each_local_compose_action",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

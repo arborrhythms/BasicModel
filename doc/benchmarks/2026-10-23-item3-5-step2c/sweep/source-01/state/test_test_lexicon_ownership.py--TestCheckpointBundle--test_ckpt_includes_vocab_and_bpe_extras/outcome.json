@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_ownership.py::TestCheckpointBundle::test_ckpt_includes_vocab_and_bpe_extras",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

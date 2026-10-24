@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reset_at_batch_boundary.py::test_per_row_state_clears_between_batches",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

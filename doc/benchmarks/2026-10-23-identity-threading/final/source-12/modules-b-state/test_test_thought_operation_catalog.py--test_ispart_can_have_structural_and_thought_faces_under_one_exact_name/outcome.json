@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_ispart_can_have_structural_and_thought_faces_under_one_exact_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

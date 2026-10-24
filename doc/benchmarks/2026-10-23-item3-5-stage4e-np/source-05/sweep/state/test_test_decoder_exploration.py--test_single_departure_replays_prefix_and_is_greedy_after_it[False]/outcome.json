@@ -1,6 +1,0 @@
-{
-  "node": "test/test_decoder_exploration.py::test_single_departure_replays_prefix_and_is_greedy_after_it[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

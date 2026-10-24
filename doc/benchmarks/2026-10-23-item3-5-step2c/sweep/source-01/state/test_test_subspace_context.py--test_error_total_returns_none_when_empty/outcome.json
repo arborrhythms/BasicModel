@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_error_total_returns_none_when_empty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

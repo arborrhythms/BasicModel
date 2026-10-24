@@ -1,8 +1,0 @@
-{
-  "base_commit": "06f6e2b88811a107fbf7dff505cc8b2af189c34b",
-  "source_files": 771,
-  "corpus_files": 12,
-  "sha256": "c0e1741f52a64a533aba32558f10881794ad9d343f9b4ec0303fbef179c07916",
-  "status": "uncommitted first experiment candidate; one fixed seed; no retirement",
-  "auxiliary_measurement": "bisect/learned_probe.py; frozen artifact, chooser-only reachability check; no production source change"
-}

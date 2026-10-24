@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestWhereEncodingRoundTrip::test_forward_decode_round_trip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

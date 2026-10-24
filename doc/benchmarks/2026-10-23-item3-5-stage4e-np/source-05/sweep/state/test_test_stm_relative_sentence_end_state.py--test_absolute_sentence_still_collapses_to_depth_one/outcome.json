@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_relative_sentence_end_state.py::test_absolute_sentence_still_collapses_to_depth_one",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

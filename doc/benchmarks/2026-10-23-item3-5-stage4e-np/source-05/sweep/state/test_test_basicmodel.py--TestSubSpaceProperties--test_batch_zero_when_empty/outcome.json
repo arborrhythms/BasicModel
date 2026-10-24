@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceProperties::test_batch_zero_when_empty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_layer.py::test_self_edge_forbidden_when_flagged",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

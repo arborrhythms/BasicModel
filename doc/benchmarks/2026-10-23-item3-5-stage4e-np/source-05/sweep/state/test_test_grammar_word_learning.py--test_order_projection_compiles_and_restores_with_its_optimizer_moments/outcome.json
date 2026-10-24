@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_word_learning.py::test_order_projection_compiles_and_restores_with_its_optimizer_moments",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

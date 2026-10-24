@@ -1,5 +1,0 @@
-
-no tests collected in 0.85s
-ERROR: not found: /Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py::test_occurrence_candidates_use_retained_part_participants
-(no match in any of [<Module test_reference_close.py>])
-

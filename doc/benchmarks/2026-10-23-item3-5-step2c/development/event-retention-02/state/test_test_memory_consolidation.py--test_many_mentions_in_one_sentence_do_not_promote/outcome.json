@@ -1,6 +1,0 @@
-{
-  "node": "test/test_memory_consolidation.py::test_many_mentions_in_one_sentence_do_not_promote",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

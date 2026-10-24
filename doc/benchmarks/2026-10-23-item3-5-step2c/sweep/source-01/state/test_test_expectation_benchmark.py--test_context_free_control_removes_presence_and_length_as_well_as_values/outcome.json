@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_benchmark.py::test_context_free_control_removes_presence_and_length_as_well_as_values",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

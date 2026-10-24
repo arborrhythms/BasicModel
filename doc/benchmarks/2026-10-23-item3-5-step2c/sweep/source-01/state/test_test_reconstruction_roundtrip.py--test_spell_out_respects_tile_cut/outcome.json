@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

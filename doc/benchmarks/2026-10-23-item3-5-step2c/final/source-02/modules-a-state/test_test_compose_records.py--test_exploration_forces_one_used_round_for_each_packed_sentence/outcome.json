@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

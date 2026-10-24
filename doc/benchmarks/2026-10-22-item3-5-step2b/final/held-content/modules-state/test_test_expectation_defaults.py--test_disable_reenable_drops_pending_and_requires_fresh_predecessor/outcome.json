@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_defaults.py::test_disable_reenable_drops_pending_and_requires_fresh_predecessor",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_what_training.py::test_past_and_future_text_answers_are_scored_in_input_space"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-repairs-1/worker-041.recycle.json"
-}

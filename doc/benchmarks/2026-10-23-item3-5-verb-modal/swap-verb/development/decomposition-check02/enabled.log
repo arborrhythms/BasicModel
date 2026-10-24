@@ -1,6 +1,0 @@
-[collect] 1 selectors; limit 900s, 8.0 GiB
-[collect] exit 0; 4.0s; peak 0.41 GiB
-[worker-000] 2 selectors; limit 900s, 8.0 GiB
-[worker-000] exit 1; 8.6s; peak 1.31 GiB
-Result: test_failure, exit 1; 2/2 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check02/enabled/result.json

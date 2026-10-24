@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_retired_expectation_surfaces_are_absent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

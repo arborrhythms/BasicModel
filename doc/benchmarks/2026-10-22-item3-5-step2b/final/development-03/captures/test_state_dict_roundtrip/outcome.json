@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestPersistence::test_state_dict_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

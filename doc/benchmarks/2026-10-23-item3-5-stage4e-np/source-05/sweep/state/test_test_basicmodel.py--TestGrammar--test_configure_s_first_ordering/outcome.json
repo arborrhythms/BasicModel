@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestGrammar::test_configure_s_first_ordering",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

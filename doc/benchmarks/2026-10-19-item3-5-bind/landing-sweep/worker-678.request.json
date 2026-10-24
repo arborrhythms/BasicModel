@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_reading_curriculum.py::test_curriculum_gate_counts_one_word_only_for_active_rows",
-    "test/test_reading_curriculum.py::test_order_lesson_gate_reports_list_inverse_separately",
-    "test/test_reading_curriculum.py::test_prompt_need_reaches_existing_input_without_an_answer_or_action_target"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-678.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_work_budget.py::test_selected_operation_is_charged_before_its_executor",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

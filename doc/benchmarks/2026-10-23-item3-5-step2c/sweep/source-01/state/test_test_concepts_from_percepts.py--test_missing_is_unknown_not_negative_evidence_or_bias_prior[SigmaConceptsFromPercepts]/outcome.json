@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_missing_is_unknown_not_negative_evidence_or_bias_prior[SigmaConceptsFromPercepts]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

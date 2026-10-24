@@ -1,6 +1,0 @@
-{
-  "node": "test/test_predicate_storage.py::test_compact_predicates_preserve_spans_and_global_columns[cold]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

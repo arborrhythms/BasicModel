@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review14_addendum.py::test_identical_empty_meanings_do_not_require_identical_forms",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_normal_thought_controller.py::test_normal_controller_policy_sees_all_mandatory_roles_and_gets_credit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

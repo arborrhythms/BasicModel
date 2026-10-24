@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_part_values_have_only_one_checkpoint_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

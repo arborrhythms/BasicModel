@@ -1,6 +1,0 @@
-{
-  "node": "test/test_active_codebook_reads.py::test_membership_read_is_independent_of_active_and_inactive_codes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

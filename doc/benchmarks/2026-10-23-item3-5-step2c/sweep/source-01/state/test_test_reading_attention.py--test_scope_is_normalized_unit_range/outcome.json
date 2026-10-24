@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reading_attention.py::test_scope_is_normalized_unit_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_property_alternatives_use_max_min_for_graded_primitive_inputs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

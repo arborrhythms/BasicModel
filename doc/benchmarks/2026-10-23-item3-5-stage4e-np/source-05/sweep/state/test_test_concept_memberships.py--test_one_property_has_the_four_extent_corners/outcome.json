@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_one_property_has_the_four_extent_corners",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

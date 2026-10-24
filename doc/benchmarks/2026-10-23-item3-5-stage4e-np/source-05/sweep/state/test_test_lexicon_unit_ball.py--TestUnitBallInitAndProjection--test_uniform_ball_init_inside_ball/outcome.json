@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestUnitBallInitAndProjection::test_uniform_ball_init_inside_ball",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

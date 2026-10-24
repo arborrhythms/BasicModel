@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_review.py::test_semantic_metadata_changes_the_controller_input[change3]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

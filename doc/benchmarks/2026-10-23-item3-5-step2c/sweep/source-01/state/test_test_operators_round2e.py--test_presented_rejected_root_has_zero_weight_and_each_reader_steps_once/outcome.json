@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2e.py::test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_copart_scalar_is_complement_of_part",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_refine_raise.py::test_scattered_both_requires_completed_updates_before_a_raise",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

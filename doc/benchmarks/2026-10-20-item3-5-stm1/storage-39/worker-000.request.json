@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_forgetting.py::test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads",
-    "test/test_operators_round4a.py::test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/storage-39/worker-000.recycle.json"
-}

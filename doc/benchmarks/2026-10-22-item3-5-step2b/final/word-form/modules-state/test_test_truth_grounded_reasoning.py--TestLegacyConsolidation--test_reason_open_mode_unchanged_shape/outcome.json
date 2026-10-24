@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_grounded_reasoning.py::TestLegacyConsolidation::test_reason_open_mode_unchanged_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

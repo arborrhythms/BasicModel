@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair.py::test_answer_rendering_does_not_reopen_a_completed_closing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

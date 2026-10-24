@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_source_authority_closes_a_nested_region_without_hiding_a_free_role[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

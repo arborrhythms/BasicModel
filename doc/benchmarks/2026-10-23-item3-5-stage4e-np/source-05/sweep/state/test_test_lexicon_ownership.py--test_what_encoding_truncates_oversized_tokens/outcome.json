@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_ownership.py::test_what_encoding_truncates_oversized_tokens",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

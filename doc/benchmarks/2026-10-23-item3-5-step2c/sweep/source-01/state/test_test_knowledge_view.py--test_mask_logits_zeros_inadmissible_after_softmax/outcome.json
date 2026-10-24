@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_view.py::test_mask_logits_zeros_inadmissible_after_softmax",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

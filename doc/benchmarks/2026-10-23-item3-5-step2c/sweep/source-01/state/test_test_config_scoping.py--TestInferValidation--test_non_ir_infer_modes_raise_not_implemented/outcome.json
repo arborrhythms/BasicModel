@@ -1,6 +1,0 @@
-{
-  "node": "test/test_config_scoping.py::TestInferValidation::test_non_ir_infer_modes_raise_not_implemented",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

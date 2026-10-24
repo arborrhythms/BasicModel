@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_error_terms_shape_is_five_tuples",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

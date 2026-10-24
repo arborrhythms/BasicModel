@@ -1,6 +1,0 @@
-[collect] 3 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 2.6s; peak 0.28 GiB
-[worker-000] 11 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 1; 4.6s; peak 0.54 GiB
-Result: test_failure, exit 1; 11/11 cases completed.
-doc/benchmarks/2026-10-21-item3-5-mtm/grouping-01/result.json

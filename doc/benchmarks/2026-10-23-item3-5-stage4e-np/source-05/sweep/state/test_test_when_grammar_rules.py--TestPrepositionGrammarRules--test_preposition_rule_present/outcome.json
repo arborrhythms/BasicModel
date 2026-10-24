@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_grammar_rules.py::TestPrepositionGrammarRules::test_preposition_rule_present",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

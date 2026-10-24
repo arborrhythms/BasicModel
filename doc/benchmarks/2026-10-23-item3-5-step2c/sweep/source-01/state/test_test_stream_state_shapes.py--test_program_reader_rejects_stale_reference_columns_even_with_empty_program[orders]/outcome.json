@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_program_reader_rejects_stale_reference_columns_even_with_empty_program[orders]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

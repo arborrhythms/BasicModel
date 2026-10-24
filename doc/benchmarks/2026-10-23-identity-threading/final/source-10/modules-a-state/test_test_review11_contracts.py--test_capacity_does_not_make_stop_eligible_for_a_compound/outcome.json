@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_capacity_does_not_make_stop_eligible_for_a_compound",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

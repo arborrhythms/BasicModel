@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_instant_at_t0_is_unit_cos_axis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

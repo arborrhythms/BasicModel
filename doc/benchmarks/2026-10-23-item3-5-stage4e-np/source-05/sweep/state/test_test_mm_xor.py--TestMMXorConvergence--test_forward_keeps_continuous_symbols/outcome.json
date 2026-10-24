@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mm_xor.py::TestMMXorConvergence::test_forward_keeps_continuous_symbols",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

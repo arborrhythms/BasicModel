@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inter_sentence_prediction_shape.py::TestActivationShape::test_retired_contrastive_objective_is_rejected",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

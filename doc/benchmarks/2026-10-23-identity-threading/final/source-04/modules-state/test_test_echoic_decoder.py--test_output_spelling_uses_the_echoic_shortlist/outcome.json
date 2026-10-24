@@ -1,6 +1,0 @@
-{
-  "node": "test/test_echoic_decoder.py::test_output_spelling_uses_the_echoic_shortlist",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

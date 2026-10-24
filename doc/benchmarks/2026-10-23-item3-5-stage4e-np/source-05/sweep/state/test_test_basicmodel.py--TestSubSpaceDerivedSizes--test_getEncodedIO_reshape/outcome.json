@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_getEncodedIO_reshape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

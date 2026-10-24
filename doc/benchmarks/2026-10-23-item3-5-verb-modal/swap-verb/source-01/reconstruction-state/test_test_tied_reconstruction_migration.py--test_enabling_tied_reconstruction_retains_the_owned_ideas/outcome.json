@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_reconstruction_migration.py::test_enabling_tied_reconstruction_retains_the_owned_ideas",
-  "outcome": "failed",
-  "failure": "test/test_tied_reconstruction_migration.py:313: in test_enabling_tied_reconstruction_retains_the_owned_ideas\n    assert not model.reconstruct_in_loop\nE   assert not True\nE    +  where True = BasicModel(\\n  (loss): ModelLoss(\\n    (output_criterion): MSELoss()\\n  )\\n  (inputSpace): InputSpace(\\n    (subspace): Sub..._features=64, bias=True)\\n      (1): Tanh()\\n    )\\n    (readout): Linear(in_features=64, out_features=1, bias=True)\\n  )\\n).reconstruct_in_loop",
-  "records": []
-}

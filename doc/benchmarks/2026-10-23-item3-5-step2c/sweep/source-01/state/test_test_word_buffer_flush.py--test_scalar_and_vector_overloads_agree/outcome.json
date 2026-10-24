@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_buffer_flush.py::test_scalar_and_vector_overloads_agree",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

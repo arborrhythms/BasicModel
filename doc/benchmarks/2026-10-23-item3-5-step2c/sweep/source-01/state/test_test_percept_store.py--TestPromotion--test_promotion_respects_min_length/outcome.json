@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestPromotion::test_promotion_respects_min_length",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

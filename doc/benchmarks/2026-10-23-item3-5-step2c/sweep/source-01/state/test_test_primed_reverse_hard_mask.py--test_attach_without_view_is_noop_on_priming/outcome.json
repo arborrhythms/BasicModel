@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_hard_mask.py::test_attach_without_view_is_noop_on_priming",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

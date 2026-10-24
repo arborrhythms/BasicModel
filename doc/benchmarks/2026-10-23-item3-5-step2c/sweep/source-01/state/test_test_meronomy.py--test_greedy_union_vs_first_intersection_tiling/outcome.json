@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_greedy_union_vs_first_intersection_tiling",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

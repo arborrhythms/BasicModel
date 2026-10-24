@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_base_mereology.py::test_base_set_aggregation_preserves_zero_union_identity[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

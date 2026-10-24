@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_object_meta.py::test_word_span_window_is_hard_not_soft",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

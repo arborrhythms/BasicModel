@@ -1,2 +1,0 @@
-item11-publish-xor
-test_failure: 3/3 completed; exit 1

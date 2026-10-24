@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_tiling.py::test_layer_matches_function",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

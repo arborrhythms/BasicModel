@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_journal.py::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

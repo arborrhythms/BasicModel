@@ -1,6 +1,0 @@
-{
-  "node": "test/test_replacement_kernel_contracts.py::test_direct_and_depth_one_two_chains_keep_native_premises[2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

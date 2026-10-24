@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_fold_binding.py::test_aligned_serial_forward_rejects_native_width_before_legacy_adapter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

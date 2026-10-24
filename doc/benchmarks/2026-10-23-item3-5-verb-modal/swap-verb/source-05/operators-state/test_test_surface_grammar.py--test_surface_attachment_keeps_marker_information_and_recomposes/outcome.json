@@ -1,6 +1,0 @@
-{
-  "node": "test/test_surface_grammar.py::test_surface_attachment_keeps_marker_information_and_recomposes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

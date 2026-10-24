@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order0_attended_field.py::test_containment_reads_canonical_ids_without_expanding_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

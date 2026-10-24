@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_vp_boundaries.py::test_registry_installation_reuses_native_bindings_and_checkpoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

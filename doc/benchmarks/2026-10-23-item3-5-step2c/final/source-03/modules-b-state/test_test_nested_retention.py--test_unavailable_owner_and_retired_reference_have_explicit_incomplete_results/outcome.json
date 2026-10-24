@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_unavailable_owner_and_retired_reference_have_explicit_incomplete_results",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

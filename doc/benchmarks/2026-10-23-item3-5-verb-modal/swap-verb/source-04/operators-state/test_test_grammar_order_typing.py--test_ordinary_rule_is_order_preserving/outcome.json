@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

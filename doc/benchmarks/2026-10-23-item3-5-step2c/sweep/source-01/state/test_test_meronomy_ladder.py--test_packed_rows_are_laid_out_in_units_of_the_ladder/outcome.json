@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_packed_rows_are_laid_out_in_units_of_the_ladder",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

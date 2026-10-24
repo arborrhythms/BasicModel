@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_data_what_present_temporal_supervised_and_inference",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

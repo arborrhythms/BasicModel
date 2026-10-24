@@ -1,4 +1,0 @@
-{
-  "outcome": "failed",
-  "failure": "test/test_operators_final_b.py:165: in test_both_training_trials_share_bootstrap_snapshot\n    assert not audit['components'][..., 0].any()\nE   assert not tensor(True)\nE    +  where tensor(True) = <built-in method any of Tensor object at 0x14e2df840>()\nE    +    where <built-in method any of Tensor object at 0x14e2df840> = tensor([[0.0070, 0.0070],\\n        [0.0000, 0.0000],\\n        [0.0070, 0.0070],\\n        [0.0000, 0.0000]]).any"
-}

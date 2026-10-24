@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestMonotonePreconditions::test_zero_preservation_is_the_terminate_invariant",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_stm_fold.py::test_compose_single_reduction_space_role",
-  "outcome": "failed",
-  "failure": "test/test_bounded_stm_fold.py:61: in test_compose_single_reduction_space_role\n    assert layer.r_apply == 0  # not belongs to the field, not unary grammar\n    ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 1 == 0\nE    +  where 1 = OperationSelectionLayer(\\n  (ops): ModuleList(\\n    (0): _BinaryGrammarOpAdapter(\\n      (gl): UnionLayer()\\n    )\\n    (1)...duleList(\\n    (0): _UnaryGrammarOpAdapter(\\n      (gl): BindLayer()\\n    )\\n  )\\n  (chooser): AnchorDotTransformChooser()\\n).r_apply",
-  "records": []
-}

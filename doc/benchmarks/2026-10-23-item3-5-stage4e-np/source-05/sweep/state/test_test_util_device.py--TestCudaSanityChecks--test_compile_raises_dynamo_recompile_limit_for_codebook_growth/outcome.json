@@ -1,6 +1,0 @@
-{
-  "node": "test/test_util_device.py::TestCudaSanityChecks::test_compile_raises_dynamo_recompile_limit_for_codebook_growth",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

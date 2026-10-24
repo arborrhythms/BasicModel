@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_reads_stream_oldest_first",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_smoke.py::test_stream_slot_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

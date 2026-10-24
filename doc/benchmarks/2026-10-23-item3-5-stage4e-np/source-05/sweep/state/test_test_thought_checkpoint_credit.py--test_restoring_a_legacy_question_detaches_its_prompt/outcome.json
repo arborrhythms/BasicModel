@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_checkpoint_credit.py::test_restoring_a_legacy_question_detaches_its_prompt",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

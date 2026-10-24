@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_objective_conflicts_slow.py::test_native_production_objective_measurements"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-511.recycle.json"
-}

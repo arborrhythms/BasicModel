@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_classical_penalizes_N_and_B",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

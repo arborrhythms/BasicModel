@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forward_discard.py::test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

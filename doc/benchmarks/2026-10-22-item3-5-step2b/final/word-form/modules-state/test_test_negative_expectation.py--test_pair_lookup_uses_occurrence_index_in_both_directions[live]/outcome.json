@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_pair_lookup_uses_occurrence_index_in_both_directions[live]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

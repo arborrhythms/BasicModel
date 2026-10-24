@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_integrity.py::test_object_resolution_does_not_treat_its_word_as_a_second_object",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

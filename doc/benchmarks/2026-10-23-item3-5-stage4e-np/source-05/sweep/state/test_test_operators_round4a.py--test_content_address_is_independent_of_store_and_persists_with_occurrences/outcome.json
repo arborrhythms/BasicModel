@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_content_address_is_independent_of_store_and_persists_with_occurrences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

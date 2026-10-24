@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestTypedMaskExcludesHotInadmissible::test_inadmissible_hot_excluded_from_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

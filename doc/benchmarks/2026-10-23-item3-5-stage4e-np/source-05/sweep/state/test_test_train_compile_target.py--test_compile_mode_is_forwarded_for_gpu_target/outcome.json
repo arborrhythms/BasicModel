@@ -1,6 +1,0 @@
-{
-  "node": "test/test_train_compile_target.py::test_compile_mode_is_forwarded_for_gpu_target",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

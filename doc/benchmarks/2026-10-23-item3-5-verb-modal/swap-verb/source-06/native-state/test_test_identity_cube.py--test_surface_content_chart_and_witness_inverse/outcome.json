@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_cube.py::test_surface_content_chart_and_witness_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

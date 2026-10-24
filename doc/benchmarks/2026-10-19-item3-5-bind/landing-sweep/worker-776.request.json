@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_signal_router_layer.py::test_layer_forward_shapes",
-    "test/test_signal_router_layer.py::test_chosen_operator_has_full_gradient_and_separate_probability_credit",
-    "test/test_signal_router_layer.py::test_layer_n_one_stops_without_unary_ops"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-776.recycle.json"
-}

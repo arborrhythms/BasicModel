@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_retired_relation_checkpoint_is_rejected_with_dependents_intact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

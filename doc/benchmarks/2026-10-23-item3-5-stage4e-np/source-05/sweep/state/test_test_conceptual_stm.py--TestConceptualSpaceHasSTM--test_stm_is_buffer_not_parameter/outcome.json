@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm.py::TestConceptualSpaceHasSTM::test_stm_is_buffer_not_parameter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

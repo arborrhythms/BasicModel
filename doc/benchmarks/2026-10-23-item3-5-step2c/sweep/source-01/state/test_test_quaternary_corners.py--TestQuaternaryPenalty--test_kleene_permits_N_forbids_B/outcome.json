@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_kleene_permits_N_forbids_B",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

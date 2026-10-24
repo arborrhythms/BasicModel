@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_previous_chooser_checkpoint_preserves_logits_with_zero_new_columns",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

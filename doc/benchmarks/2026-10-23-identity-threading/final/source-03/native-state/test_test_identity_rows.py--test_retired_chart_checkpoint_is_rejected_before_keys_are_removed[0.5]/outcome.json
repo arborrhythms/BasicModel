@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_rows.py::test_retired_chart_checkpoint_is_rejected_before_keys_are_removed[0.5]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

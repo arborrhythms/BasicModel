@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_two_empty_concepts_are_not_redundant",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

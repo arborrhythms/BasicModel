@@ -1,6 +1,0 @@
-{
-  "node": "test/test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

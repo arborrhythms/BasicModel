@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_optimizer_moments_follow_surviving_edges_and_reused_code_seat_is_clean",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_factorization.py::TestRawGateRetired::test_lower_layer_no_raw_gate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

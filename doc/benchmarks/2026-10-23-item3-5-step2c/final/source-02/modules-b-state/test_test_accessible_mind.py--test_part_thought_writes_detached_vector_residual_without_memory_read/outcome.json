@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_part_thought_writes_detached_vector_residual_without_memory_read",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestTaxonomy::test_taxonomy_add_and_walk_by_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_numeric_head_does_not_call_learned_retrieval",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-repairs/worker-021.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_mode_perceptual.py::test_serial_mode_matches_non_serial",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

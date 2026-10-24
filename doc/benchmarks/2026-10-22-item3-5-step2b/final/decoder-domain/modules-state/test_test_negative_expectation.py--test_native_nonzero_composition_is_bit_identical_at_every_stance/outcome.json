@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_native_nonzero_composition_is_bit_identical_at_every_stance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

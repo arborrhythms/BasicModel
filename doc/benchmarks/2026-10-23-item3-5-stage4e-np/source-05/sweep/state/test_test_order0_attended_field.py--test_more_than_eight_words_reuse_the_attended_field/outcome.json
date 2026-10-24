@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order0_attended_field.py::test_more_than_eight_words_reuse_the_attended_field",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

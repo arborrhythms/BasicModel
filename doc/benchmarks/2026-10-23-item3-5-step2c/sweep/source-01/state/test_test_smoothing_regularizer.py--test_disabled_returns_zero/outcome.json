@@ -1,6 +1,0 @@
-{
-  "node": "test/test_smoothing_regularizer.py::test_disabled_returns_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

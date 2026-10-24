@@ -1,8 +1,0 @@
-[collect] 1 selectors; limit 300s, 8.0 GiB
-[collect] exit 0; 3.6s; peak 0.40 GiB
-[worker-000] 1 selectors; limit 300s, 8.0 GiB
-[worker-001] 1 selectors; limit 300s, 8.0 GiB
-[worker-000] memory 137; 26.8s; peak 8.04 GiB
-[worker-001] aborted 125; 27.8s; peak 1.28 GiB
-Result: memory, exit 137; 0/2 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-eager-zero/result.json

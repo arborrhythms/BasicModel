@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestPeaceful::test_in_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

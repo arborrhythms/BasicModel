@@ -1,5 +1,0 @@
-test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
-test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[0]
-test/test_reference_close.py::test_recent_minted_symbol_returns_at_its_native_conceptual_order[3]
-
-3 tests collected in 0.47s

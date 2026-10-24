@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_index_checkpoint_compaction_and_codebook_remap",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

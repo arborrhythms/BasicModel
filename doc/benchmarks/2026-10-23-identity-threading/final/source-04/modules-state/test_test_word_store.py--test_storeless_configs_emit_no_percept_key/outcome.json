@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_storeless_configs_emit_no_percept_key",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

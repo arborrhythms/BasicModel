@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bivector_retirement_state.py::test_symbolic_activation_carries_bivector",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

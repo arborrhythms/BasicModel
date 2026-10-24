@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_grammar_loader.py::test_full_file_loading_preserves_structural_thought_contracts[complete.grammar]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

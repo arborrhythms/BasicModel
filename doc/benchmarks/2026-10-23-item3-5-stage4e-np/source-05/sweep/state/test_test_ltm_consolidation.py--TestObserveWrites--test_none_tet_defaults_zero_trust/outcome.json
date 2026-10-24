@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestObserveWrites::test_none_tet_defaults_zero_trust",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

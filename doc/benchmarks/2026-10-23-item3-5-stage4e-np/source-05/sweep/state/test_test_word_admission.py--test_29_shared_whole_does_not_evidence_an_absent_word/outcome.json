@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_admission.py::test_29_shared_whole_does_not_evidence_an_absent_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

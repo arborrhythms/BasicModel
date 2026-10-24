@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_word_read_starts_from_factual_previous_context_and_never_forecasts_itself",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_charts.py::test_space_level_layers_keep_the_exact_chart",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_public_helpers.py::test_public_part_helpers_cannot_accept_geometric_or_world_row_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

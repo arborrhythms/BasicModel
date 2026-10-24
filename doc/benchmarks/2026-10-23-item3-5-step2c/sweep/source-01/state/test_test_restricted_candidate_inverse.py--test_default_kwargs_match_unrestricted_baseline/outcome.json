@@ -1,6 +1,0 @@
-{
-  "node": "test/test_restricted_candidate_inverse.py::test_default_kwargs_match_unrestricted_baseline",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

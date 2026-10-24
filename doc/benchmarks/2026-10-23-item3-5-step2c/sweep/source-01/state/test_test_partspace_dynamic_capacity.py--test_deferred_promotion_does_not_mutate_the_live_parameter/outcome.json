@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_deferred_promotion_does_not_mutate_the_live_parameter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

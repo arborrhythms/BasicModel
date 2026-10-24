@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_review.py::test_expectation_names_and_production_defaults",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

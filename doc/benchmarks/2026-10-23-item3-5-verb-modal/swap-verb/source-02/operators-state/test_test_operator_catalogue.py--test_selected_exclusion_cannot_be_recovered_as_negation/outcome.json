@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_selected_exclusion_cannot_be_recovered_as_negation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

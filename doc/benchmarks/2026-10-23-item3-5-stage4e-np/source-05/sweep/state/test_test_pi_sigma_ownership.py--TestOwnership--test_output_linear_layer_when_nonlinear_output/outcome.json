@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi_sigma_ownership.py::TestOwnership::test_output_linear_layer_when_nonlinear_output",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

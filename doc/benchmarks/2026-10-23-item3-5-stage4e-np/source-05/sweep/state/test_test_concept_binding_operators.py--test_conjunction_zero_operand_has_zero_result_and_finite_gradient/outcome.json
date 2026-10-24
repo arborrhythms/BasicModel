@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_binding_operators.py::test_conjunction_zero_operand_has_zero_result_and_finite_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

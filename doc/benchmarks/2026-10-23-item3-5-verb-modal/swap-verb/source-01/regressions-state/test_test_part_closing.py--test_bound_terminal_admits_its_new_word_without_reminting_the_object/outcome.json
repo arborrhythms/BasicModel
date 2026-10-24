@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_closing.py::test_bound_terminal_admits_its_new_word_without_reminting_the_object",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

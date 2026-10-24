@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-136.recycle.json"
-}

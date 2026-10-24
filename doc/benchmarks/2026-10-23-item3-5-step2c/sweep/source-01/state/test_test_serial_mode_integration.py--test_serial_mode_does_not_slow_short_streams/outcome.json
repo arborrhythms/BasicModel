@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_mode_integration.py::test_serial_mode_does_not_slow_short_streams",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

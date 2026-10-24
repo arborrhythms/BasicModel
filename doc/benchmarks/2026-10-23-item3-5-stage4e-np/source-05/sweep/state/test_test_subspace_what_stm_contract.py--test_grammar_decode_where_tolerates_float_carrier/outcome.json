@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_grammar_decode_where_tolerates_float_carrier",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

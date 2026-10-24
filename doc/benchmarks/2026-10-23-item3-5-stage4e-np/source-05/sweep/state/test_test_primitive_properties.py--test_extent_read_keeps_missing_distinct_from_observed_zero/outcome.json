@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_extent_read_keeps_missing_distinct_from_observed_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

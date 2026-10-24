@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_round_trip_exact_when_V_basis_geq_D",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_protocol.py::test_open_read_precedes_every_native_word[MM_xor.xml]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

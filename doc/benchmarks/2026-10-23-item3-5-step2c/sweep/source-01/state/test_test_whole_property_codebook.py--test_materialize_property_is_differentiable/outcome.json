@@ -1,6 +1,0 @@
-{
-  "node": "test/test_whole_property_codebook.py::test_materialize_property_is_differentiable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

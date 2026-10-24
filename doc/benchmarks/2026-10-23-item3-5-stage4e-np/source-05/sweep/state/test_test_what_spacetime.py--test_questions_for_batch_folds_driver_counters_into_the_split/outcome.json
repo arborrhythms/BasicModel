@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_questions_for_batch_folds_driver_counters_into_the_split",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

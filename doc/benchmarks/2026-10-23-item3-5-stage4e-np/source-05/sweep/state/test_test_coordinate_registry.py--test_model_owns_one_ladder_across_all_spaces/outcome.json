@@ -1,6 +1,0 @@
-{
-  "node": "test/test_coordinate_registry.py::test_model_owns_one_ladder_across_all_spaces",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

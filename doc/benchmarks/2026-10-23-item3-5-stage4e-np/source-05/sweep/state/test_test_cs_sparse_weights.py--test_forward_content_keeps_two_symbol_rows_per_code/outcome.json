@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_forward_content_keeps_two_symbol_rows_per_code",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

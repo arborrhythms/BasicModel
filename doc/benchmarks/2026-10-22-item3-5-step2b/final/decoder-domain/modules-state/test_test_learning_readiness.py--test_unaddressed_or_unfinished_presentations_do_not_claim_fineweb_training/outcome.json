@@ -1,6 +1,0 @@
-{
-  "node": "test/test_learning_readiness.py::test_unaddressed_or_unfinished_presentations_do_not_claim_fineweb_training",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

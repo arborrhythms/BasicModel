@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review16_score_function.py::test_uniform_endpoint_is_independent_of_logits_and_credits_the_original_probability",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

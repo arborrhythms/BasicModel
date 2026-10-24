@@ -1,6 +1,0 @@
-{
-  "node": "test/test_byte_reconstruction.py::test_compiled_byte_reconstruction_handles_lookahead_and_nul",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

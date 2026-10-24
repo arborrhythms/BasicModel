@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_context_allocation_is_sparse_over_the_shared_inventory",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

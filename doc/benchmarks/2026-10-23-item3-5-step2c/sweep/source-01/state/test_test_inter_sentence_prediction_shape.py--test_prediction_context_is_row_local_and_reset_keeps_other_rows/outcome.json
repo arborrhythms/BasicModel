@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inter_sentence_prediction_shape.py::test_prediction_context_is_row_local_and_reset_keeps_other_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

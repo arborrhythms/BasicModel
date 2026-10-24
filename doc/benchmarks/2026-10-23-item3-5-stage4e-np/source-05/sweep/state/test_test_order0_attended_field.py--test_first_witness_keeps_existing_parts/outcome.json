@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order0_attended_field.py::test_first_witness_keeps_existing_parts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

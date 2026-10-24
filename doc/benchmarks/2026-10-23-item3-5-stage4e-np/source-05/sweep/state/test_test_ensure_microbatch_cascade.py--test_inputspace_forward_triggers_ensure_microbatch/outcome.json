@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ensure_microbatch_cascade.py::test_inputspace_forward_triggers_ensure_microbatch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

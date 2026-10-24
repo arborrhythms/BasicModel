@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_relative_sentence_end_state.py::test_actual_operation_trace_supplies_relative_capacity_without_a_reparse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

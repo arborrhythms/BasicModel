@@ -1,6 +1,0 @@
-{
-  "node": "test/test_objective_ownership.py::test_reconstruction_pullback_cannot_credit_an_answer_parameter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

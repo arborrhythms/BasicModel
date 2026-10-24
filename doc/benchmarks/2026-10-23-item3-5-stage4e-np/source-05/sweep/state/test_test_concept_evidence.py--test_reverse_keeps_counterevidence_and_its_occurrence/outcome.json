@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_reverse_keeps_counterevidence_and_its_occurrence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

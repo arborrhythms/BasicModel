@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_record_and_fold_sequence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

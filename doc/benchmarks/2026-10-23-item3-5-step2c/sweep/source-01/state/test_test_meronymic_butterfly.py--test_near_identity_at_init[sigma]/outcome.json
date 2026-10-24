@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronymic_butterfly.py::test_near_identity_at_init[sigma]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_nested_read_limits_are_separate_and_explicit[limit1-depth_limit]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

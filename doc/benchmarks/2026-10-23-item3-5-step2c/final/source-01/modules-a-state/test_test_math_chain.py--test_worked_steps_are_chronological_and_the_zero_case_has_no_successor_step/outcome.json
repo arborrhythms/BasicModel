@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_worked_steps_are_chronological_and_the_zero_case_has_no_successor_step",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_util_device.py::TestCudaSanityChecks::test_cpu_default_does_not_interpose_a_python_device_mode",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

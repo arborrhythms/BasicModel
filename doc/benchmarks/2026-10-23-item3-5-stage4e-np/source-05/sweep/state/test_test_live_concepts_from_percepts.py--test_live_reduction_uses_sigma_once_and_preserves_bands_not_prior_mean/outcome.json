@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_concepts_from_percepts.py::test_live_reduction_uses_sigma_once_and_preserves_bands_not_prior_mean",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

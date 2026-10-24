@@ -1,6 +1,0 @@
-{
-  "node": "test/test_codebook_update_law.py::test_law_truth_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

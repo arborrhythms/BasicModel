@@ -1,6 +1,0 @@
-{
-  "node": "test/test_normal_thought_controller.py::test_selected_controller_requires_the_completed_boundary_before_any_read",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

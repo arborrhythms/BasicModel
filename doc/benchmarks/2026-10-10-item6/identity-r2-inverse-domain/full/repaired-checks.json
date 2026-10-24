@@ -1,9 +1,0 @@
-{
-  "test/test_compose_observer.py::test_observer_counts_detached_compose_calls": "passed",
-  "test/test_forward_discard.py::test_retained_four_clauses_keep_the_trial_skipping_one_meaning_removing_non": "passed",
-  "test/test_forward_discard.py::test_exact_or_reading_pays_zero_forward_discard": "passed",
-  "test/test_reading_curriculum.py::test_lossy_derivation_has_no_inverse_or_search_and_reports_every_coordinate": "passed",
-  "test/test_operators_final_b.py::test_forced_not_and_or_descend_and_snapshot_certificate": "passed",
-  "test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot": "passed",
-  "test/test_review14_contracts.py::test_review17_measurement_wiring_on_one_ordinary_batch": "passed"
-}

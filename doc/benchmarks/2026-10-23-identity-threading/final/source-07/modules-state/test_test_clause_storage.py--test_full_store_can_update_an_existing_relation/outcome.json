@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_full_store_can_update_an_existing_relation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

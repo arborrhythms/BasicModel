@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_invalid_parent_never_partially_writes_its_child",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

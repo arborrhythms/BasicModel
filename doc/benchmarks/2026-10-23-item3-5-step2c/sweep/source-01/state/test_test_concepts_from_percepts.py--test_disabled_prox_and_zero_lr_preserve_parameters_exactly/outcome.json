@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_disabled_prox_and_zero_lr_preserve_parameters_exactly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

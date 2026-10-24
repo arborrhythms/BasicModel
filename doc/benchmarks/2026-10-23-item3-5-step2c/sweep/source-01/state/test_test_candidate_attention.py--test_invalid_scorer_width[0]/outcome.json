@@ -1,6 +1,0 @@
-{
-  "node": "test/test_candidate_attention.py::test_invalid_scorer_width[0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

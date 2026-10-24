@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_only_refactor.py::TestXsdRejectsRetiredElements::test_rejects_maskedPrediction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

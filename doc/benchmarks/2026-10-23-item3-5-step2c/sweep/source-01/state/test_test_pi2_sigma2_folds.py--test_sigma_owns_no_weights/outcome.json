@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_sigma_owns_no_weights",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

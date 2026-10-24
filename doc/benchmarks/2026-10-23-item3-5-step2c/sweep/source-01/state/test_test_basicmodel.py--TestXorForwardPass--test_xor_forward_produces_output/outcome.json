@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestXorForwardPass::test_xor_forward_produces_output",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_operations.py::test_one_binary_operation_across_all_locations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

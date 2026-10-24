@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_signal_router_init_sets_layer_attributes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

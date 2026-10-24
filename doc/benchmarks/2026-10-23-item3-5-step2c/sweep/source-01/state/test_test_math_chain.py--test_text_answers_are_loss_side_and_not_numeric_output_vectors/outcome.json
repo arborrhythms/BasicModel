@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_text_answers_are_loss_side_and_not_numeric_output_vectors",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

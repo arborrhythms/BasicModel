@@ -1,6 +1,0 @@
-{
-  "node": "test/test_chooser_architecture.py::test_xml_schema_rejects_invalid_capacity[architecture/whatThinkingDepth-0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

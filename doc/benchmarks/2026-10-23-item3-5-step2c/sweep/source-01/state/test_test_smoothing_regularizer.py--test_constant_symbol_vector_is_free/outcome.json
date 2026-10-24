@@ -1,6 +1,0 @@
-{
-  "node": "test/test_smoothing_regularizer.py::test_constant_symbol_vector_is_free",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

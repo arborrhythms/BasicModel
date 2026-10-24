@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_pool_parameter_controls_reservation_and_gate_off_is_inert",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

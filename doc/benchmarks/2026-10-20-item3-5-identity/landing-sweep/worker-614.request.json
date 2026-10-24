@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_phase2_pipeline_primitives.py::test_build_pipelines_creates_body_stages"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-614.recycle.json"
-}

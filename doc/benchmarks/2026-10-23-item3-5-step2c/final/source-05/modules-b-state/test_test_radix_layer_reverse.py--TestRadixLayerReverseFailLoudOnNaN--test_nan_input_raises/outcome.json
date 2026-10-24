@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_layer_reverse.py::TestRadixLayerReverseFailLoudOnNaN::test_nan_input_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

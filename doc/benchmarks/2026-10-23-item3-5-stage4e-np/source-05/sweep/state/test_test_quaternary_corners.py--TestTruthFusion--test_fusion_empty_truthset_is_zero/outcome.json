@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestTruthFusion::test_fusion_empty_truthset_is_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

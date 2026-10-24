@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_punct_only_run",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

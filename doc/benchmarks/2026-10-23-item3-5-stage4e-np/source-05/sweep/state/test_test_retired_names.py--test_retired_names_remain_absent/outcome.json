@@ -1,6 +1,0 @@
-{
-  "node": "test/test_retired_names.py::test_retired_names_remain_absent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

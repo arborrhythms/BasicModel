@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_taxonomy_resize_cannot_reassign_live_priming_to_new_batch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

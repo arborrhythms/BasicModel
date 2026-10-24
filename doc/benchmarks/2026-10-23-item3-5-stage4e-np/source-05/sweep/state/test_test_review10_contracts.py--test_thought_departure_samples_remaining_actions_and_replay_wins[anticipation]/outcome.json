@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review10_contracts.py::test_thought_departure_samples_remaining_actions_and_replay_wins[anticipation]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

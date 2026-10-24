@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestMapppingLayer::test_expand",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

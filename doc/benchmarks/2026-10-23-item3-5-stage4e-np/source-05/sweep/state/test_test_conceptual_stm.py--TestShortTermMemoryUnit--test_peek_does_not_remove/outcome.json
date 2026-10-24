@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_peek_does_not_remove",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

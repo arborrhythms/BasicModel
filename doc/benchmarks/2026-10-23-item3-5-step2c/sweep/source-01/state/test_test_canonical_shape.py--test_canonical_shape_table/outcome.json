@@ -1,6 +1,0 @@
-{
-  "node": "test/test_canonical_shape.py::test_canonical_shape_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

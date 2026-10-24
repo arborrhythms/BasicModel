@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review12_contracts.py::test_probabilistic_disjunction_combines_certainty_and_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

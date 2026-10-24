@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_policy.py::test_unrelated_true_episode_cannot_establish_the_next_parent_relation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-468.recycle.json"
-}

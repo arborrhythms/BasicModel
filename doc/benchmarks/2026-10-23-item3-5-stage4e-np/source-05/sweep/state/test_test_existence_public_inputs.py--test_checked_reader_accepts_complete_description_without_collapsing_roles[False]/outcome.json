@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_public_inputs.py::test_checked_reader_accepts_complete_description_without_collapsing_roles[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

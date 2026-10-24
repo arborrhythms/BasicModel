@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_separator.py::test_missing_word_text_row_uses_observed_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

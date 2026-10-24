@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_wording_is_one_stage_and_checkpoint_preserves_the_result",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

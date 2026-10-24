@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_start_rule.py::test_start_symbol_default_without_xml_tag",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestPeaceful::test_empty_truthset_is_unknown",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

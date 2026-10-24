@@ -1,6 +1,0 @@
-{
-  "node": "test/test_teacher_reconstruction.py::test_runtime_context_restores_data_and_answers_runtime_query",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

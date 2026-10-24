@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_table.py::test_symbol_codes_are_mereologically_inert",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

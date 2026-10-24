@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_index.py::test_named_compound_indexes_its_part_read_instead_of_its_whole_bank_seat",
-    "test/test_reference_index.py::test_inverted_index_is_derived_after_checkpoint_restore",
-    "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-07/modules/worker-051.recycle.json"
-}

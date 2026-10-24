@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_part_containment_belongs_to_the_subject_extent[literal1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_live_ws_has_one_property_basis_with_canonical_teaching_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

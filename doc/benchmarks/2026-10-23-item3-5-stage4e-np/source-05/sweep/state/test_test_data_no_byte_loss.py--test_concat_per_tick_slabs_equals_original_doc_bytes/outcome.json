@@ -1,6 +1,0 @@
-{
-  "node": "test/test_data_no_byte_loss.py::test_concat_per_tick_slabs_equals_original_doc_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

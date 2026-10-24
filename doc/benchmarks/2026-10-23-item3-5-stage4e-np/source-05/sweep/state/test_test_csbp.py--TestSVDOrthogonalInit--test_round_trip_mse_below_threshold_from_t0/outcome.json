@@ -1,6 +1,0 @@
-{
-  "node": "test/test_csbp.py::TestSVDOrthogonalInit::test_round_trip_mse_below_threshold_from_t0",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

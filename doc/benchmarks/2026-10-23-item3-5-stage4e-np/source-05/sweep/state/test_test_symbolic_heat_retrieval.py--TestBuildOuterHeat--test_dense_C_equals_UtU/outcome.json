@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestBuildOuterHeat::test_dense_C_equals_UtU",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

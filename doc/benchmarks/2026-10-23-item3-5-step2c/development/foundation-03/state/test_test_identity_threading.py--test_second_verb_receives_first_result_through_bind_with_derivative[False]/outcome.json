@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

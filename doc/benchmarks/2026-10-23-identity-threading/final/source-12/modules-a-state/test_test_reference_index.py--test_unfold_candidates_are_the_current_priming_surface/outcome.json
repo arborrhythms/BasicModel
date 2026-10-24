@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_index.py::test_unfold_candidates_are_the_current_priming_surface",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_concept_identity_slabs.py::test_capacity_growth_preserves_prefix_and_full_push_fails_atomically",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_missing_or_zero_gradients_are_not_reported_as_agreement",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

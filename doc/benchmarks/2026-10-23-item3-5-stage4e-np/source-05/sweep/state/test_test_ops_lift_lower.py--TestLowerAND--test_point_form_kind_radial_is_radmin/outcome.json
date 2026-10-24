@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestLowerAND::test_point_form_kind_radial_is_radmin",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_protocol.py::test_open_read_has_no_optimizer_or_parameter_write",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

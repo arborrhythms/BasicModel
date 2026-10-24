@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestMonotonePreconditions::test_monotone_sigma_preserves_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

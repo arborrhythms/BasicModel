@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

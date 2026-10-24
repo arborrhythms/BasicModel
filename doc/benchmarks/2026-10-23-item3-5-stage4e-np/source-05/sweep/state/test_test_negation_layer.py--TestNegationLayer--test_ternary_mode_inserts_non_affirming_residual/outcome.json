@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negation_layer.py::TestNegationLayer::test_ternary_mode_inserts_non_affirming_residual",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

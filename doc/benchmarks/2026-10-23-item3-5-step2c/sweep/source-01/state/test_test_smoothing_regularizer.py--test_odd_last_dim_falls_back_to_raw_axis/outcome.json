@@ -1,6 +1,0 @@
-{
-  "node": "test/test_smoothing_regularizer.py::test_odd_last_dim_falls_back_to_raw_axis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

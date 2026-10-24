@@ -1,1 +1,0 @@
-test/test_mm_xor.py::TestMMXorConvergence::test_mm_grammar_learns_xor_signal

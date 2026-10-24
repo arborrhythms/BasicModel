@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_generate_walk_with_no_declared_rules_only_emits",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

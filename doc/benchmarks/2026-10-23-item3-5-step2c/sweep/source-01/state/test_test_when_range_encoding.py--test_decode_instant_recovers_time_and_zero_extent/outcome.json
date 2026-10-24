@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_decode_instant_recovers_time_and_zero_extent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

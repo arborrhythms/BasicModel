@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_policy.py::test_numeric_world_evidence_cannot_establish_taxonomic_inclusion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

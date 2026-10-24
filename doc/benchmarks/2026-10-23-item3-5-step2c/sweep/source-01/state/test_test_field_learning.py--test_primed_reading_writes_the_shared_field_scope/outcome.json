@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_learning.py::test_primed_reading_writes_the_shared_field_scope",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

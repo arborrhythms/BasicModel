@@ -1,6 +1,0 @@
-{
-  "node": "test/test_chunk_layer_bpe.py::TestChunkLayerBPE::test_hard_merge_spans_bpe_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_null_word_pathway.py::test_terminator_bounds_length_and_drops_content_past_end",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

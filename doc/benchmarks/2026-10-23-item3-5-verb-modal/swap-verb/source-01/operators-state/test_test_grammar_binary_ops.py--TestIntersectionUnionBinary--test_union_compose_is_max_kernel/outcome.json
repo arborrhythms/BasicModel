@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_compose_is_max_kernel",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

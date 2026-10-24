@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereology::test_part_satisfies_boole_contrapositive",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

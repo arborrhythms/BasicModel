@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_shipped_rule_footprints_and_alias_are_exhaustive",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

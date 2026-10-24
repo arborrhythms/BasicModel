@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_grain_attention.py::test_attention_off_is_plain_reverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

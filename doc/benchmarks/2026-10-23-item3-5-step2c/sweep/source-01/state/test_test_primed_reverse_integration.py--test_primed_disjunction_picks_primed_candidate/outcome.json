@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_integration.py::test_primed_disjunction_picks_primed_candidate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

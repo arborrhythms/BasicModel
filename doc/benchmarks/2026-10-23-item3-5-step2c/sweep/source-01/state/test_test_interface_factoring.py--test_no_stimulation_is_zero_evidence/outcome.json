@@ -1,6 +1,0 @@
-{
-  "node": "test/test_interface_factoring.py::test_no_stimulation_is_zero_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

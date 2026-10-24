@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_relate_is_idempotent_per_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

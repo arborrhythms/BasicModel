@@ -1,9 +1,0 @@
-{
-  "checkpoint_sha256": "a44de2c4f2b1d3c635d458fe66909910c0a407c5cad22a9480d852d2e0089ca4",
-  "saved_tensors": 874,
-  "differing_tensors": [],
-  "extra_tensors": [],
-  "native_loader_drift": {},
-  "comparison_weights": 16,
-  "noun_columns": 0
-}

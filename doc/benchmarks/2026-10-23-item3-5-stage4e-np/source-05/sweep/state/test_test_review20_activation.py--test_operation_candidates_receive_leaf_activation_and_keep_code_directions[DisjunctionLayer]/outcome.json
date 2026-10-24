@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review20_activation.py::test_operation_candidates_receive_leaf_activation_and_keep_code_directions[DisjunctionLayer]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

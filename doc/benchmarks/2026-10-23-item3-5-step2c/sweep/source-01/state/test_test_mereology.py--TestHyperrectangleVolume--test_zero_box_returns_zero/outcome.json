@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestHyperrectangleVolume::test_zero_box_returns_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

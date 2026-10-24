@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestLoadEmbeddingsEnwiki::test_load_missing_file",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

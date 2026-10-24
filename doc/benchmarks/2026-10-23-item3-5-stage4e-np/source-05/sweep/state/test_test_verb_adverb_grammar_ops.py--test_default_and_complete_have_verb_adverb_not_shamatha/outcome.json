@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_adverb_grammar_ops.py::test_default_and_complete_have_verb_adverb_not_shamatha",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

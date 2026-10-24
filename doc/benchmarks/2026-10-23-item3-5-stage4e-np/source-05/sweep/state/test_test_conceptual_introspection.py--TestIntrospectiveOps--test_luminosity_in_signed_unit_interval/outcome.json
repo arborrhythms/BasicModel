@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_luminosity_in_signed_unit_interval",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

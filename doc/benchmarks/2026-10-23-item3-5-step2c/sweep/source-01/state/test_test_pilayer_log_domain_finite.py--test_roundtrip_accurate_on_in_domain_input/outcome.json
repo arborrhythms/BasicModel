@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pilayer_log_domain_finite.py::test_roundtrip_accurate_on_in_domain_input",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

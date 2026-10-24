@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestPrimerModeByteIdentical::test_primer_equals_reference_formula",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

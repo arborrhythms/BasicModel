@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_rows_of_origin_filters_in_row_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

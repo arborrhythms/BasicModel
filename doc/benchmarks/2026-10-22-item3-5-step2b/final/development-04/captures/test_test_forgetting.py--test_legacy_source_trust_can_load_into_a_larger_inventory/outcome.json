@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_legacy_source_trust_can_load_into_a_larger_inventory",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

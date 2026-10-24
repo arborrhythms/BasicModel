@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_tokenize_splits_sentence_ending_punctuation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

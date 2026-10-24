@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_rows.py::test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

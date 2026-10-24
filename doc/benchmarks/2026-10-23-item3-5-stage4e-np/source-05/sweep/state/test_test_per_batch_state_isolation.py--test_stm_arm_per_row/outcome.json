@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_state_isolation.py::test_stm_arm_per_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

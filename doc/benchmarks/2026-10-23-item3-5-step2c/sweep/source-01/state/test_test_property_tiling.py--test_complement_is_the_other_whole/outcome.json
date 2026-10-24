@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_tiling.py::test_complement_is_the_other_whole",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

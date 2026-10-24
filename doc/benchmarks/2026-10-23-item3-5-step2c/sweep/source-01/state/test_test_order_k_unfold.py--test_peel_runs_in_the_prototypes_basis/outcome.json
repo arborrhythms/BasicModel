@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order_k_unfold.py::test_peel_runs_in_the_prototypes_basis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

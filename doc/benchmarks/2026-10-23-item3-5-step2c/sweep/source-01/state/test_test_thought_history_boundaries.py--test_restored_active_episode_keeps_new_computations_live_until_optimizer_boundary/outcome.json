@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_history_boundaries.py::test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

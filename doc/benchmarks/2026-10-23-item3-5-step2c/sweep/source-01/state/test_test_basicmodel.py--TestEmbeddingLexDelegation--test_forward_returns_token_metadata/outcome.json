@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestEmbeddingLexDelegation::test_forward_returns_token_metadata",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

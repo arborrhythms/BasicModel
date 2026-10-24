@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compound_cases.py::test_compound_choice_runs_in_the_shared_compiled_chooser",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

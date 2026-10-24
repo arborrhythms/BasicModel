@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_tightest_container_sentence_over_words",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

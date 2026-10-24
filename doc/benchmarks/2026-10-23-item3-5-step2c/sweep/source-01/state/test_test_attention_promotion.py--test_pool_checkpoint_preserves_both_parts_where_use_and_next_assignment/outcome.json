@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

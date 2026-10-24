@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_close.py::test_kept_journal_supplies_np_content_predicate_and_positional_provenance[2]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-55/worker-010.recycle.json"
-}

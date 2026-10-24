@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_31_read_forms_wait_for_object_testimony_without_changing_the_configuration[MM_xor.xml]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

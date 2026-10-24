@@ -1,1 +1,0 @@
-test/test_output_path_supervised.py::test_output_path_memorizes_supervised_labels_on_the_parallel_topology

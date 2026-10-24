@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_deterministic_same_train_eval",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

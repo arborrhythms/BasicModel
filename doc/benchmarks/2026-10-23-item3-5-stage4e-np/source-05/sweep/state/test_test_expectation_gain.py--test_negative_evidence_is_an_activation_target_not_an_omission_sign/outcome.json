@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_gain.py::test_negative_evidence_is_an_activation_target_not_an_omission_sign",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

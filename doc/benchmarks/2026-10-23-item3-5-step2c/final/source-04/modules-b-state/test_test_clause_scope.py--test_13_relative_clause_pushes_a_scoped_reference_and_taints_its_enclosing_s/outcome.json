@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_scope.py::test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

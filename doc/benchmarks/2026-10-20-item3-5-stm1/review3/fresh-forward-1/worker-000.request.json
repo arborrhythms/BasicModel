@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/review3/fresh-forward-1/worker-000.recycle.json"
-}

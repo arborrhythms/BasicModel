@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_view.py::test_reified_relation_is_visible_without_endpoint_mutation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

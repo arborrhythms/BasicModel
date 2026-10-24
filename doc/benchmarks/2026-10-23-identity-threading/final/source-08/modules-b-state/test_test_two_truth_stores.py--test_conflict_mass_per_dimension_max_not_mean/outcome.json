@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_truth_stores.py::test_conflict_mass_per_dimension_max_not_mean",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serve_thinking.py::test_thought_free_request_opens_no_dialogue",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

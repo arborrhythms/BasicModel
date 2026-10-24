@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_layer.py::test_forward_differentiable_in_values_and_input",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_closing_confidence_multiplies_gain_and_open_role_keeps_prime[1.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

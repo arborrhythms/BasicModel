@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_grammar.py::test_complete_grammar_declares_sentence_predicate_generic_and_implication",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

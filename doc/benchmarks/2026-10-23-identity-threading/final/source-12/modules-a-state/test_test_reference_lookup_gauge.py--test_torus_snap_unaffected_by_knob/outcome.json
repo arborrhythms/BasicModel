@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_lookup_gauge.py::test_torus_snap_unaffected_by_knob",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_known_column_in_new_sentence_witnesses_without_pending_prototype",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_constituent_lesson.py::test_constituent_grader_rejects_missing_duplicate_and_unlowered_occurrences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

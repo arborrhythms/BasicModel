@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubspaceWords::test_words_default_empty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

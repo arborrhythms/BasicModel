@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_reconstruction_stack.py::test_activation_predictor_parameter_width_does_not_scale_with_bank",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

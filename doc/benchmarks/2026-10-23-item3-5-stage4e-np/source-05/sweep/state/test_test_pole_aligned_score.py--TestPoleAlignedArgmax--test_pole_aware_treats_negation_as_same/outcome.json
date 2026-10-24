@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pole_aligned_score.py::TestPoleAlignedArgmax::test_pole_aware_treats_negation_as_same",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

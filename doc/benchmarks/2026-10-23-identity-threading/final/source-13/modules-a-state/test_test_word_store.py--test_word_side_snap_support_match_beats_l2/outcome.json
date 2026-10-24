@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_word_side_snap_support_match_beats_l2",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

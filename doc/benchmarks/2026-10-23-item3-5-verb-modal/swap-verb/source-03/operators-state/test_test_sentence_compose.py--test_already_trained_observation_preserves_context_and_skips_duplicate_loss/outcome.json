@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_compose.py::test_already_trained_observation_preserves_context_and_skips_duplicate_loss",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

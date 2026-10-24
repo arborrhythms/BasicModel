@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_owner_built_structural_context_freezes_only_owned_stream_and_priming",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

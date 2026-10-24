@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestWeightShapeMismatch::test_load_ignores_unexpected_keys_when_all_current_keys_match",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

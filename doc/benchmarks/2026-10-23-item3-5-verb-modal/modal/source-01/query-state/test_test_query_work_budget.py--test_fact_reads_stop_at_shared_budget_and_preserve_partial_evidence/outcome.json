@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_work_budget.py::test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

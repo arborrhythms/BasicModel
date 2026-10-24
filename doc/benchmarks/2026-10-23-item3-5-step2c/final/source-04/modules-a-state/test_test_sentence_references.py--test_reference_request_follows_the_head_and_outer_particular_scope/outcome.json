@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_references.py::test_reference_request_follows_the_head_and_outer_particular_scope",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

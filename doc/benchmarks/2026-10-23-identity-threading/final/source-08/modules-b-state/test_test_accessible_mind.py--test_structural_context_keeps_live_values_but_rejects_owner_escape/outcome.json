@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_structural_context_keeps_live_values_but_rejects_owner_escape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

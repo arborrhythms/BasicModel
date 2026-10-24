@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_scope_prevents_false_deduction_or_dissonance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

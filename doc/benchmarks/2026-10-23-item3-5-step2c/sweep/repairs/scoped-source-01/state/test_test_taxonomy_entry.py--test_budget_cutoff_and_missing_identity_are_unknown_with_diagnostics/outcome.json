@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_entry.py::test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

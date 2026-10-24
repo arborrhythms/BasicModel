@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_disabled_when_zero_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

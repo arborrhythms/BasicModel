@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_higher_order_missing_edge_keeps_content_with_zero_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

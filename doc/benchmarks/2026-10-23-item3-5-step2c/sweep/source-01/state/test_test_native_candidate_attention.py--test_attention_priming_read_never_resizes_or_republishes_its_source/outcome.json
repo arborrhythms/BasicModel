@@ -1,6 +1,0 @@
-{
-  "node": "test/test_native_candidate_attention.py::test_attention_priming_read_never_resizes_or_republishes_its_source",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

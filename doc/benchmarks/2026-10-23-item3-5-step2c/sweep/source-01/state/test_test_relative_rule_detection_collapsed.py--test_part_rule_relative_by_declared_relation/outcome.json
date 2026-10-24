@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_rule_detection_collapsed.py::test_part_rule_relative_by_declared_relation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_store.py::test_definition_cannot_answer_identity_query_with_its_singleton_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

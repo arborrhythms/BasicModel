@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

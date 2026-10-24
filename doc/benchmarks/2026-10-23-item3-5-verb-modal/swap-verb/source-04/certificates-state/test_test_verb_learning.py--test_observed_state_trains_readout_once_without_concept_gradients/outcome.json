@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

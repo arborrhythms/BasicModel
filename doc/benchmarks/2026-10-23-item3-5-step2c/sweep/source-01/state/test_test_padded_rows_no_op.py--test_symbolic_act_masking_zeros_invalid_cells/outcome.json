@@ -1,6 +1,0 @@
-{
-  "node": "test/test_padded_rows_no_op.py::test_symbolic_act_masking_zeros_invalid_cells",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

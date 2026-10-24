@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestInputSpaceDemuxed::test_materialize_produces_muxed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

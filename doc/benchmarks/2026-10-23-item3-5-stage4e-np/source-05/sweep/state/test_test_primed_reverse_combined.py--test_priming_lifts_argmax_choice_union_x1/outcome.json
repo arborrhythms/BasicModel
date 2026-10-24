@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_combined.py::test_priming_lifts_argmax_choice_union_x1",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

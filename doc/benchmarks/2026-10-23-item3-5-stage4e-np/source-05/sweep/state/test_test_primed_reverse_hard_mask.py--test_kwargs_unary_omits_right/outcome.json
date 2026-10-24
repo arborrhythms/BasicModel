@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_hard_mask.py::test_kwargs_unary_omits_right",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

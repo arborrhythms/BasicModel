@@ -1,6 +1,0 @@
-{
-  "node": "test/test_free_reconstruction.py::test_readback_uses_signed_activation_cosine_and_priming",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

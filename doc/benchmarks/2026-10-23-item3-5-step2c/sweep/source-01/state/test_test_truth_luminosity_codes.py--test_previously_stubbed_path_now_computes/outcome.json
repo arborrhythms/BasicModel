@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_luminosity_codes.py::test_previously_stubbed_path_now_computes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

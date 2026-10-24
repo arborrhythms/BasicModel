@@ -1,6 +1,0 @@
-{
-  "node": "test/test_discourse_space.py::TestActivationOwner::test_one_shared_head_without_legacy_comprehension_cast",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

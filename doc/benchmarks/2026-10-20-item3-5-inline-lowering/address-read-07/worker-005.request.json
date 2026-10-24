@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_operators_final.py::test_determiner_kept_closing_is_the_only_mint_and_lowers_once"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/address-read-07/worker-005.recycle.json"
-}

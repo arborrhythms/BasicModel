@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology_word_binding.py::test_word_spelling_is_ordered_and_binding_is_idempotent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

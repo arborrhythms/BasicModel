@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_repair.py::test_carried_constituent_keeps_its_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

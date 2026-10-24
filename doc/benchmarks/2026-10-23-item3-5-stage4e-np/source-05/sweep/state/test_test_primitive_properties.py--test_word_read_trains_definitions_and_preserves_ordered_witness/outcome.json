@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_word_read_trains_definitions_and_preserves_ordered_witness",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

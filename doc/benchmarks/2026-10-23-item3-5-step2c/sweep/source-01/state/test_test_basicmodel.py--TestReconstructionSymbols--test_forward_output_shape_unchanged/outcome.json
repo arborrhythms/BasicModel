@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestReconstructionSymbols::test_forward_output_shape_unchanged",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

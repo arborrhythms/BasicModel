@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_gradient.py::test_both_derivative_paths_are_live",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

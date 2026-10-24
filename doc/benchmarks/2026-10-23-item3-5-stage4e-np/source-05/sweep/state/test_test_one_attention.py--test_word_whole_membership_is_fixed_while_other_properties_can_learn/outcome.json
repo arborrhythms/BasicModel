@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_word_whole_membership_is_fixed_while_other_properties_can_learn",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

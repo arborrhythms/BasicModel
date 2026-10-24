@@ -1,7 +1,0 @@
-{
-  "signal": "SIGTERM",
-  "sweep_pids": [
-    88596
-  ],
-  "purpose": "stop the receipt continuation after detecting lost peer records and duplicate attempts"
-}

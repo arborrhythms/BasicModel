@@ -1,6 +1,0 @@
-{
-  "node": "test/test_candidate_attention.py::test_retained_two_word_scorer_preserves_candidate_differences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

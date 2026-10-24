@@ -1,6 +1,0 @@
-{
-  "node": "test/test_padded_rows_no_op.py::test_valid_mask_cleared_on_subspace_reset",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

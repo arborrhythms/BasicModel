@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestLowRankCarrierMatchesDense::test_lowrank_delta_equals_dense_delta",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

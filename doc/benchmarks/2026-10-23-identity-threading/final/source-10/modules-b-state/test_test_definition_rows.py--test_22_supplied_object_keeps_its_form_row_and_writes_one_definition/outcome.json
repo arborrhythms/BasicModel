@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_22_supplied_object_keeps_its_form_row_and_writes_one_definition",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

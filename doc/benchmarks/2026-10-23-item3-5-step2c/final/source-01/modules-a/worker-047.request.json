@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_compose_pair_driver.py::test_pair_trains_twice_and_commits_once",
-    "test/test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-01/modules-a/worker-047.recycle.json"
-}

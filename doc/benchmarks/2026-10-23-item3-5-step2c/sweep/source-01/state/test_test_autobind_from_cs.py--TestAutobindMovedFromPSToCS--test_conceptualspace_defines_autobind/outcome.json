@@ -1,6 +1,0 @@
-{
-  "node": "test/test_autobind_from_cs.py::TestAutobindMovedFromPSToCS::test_conceptualspace_defines_autobind",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

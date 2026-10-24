@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_review.py::test_evaluation_ignores_sampling_temperature_and_does_not_explore",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

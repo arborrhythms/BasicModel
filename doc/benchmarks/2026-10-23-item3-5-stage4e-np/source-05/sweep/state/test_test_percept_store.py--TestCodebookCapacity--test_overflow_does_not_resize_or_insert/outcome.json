@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestCodebookCapacity::test_overflow_does_not_resize_or_insert",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

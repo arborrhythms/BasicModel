@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_property_model_stm_grammar_resolves_from_symbolspace",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

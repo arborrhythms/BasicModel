@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_reconstruction.py::test_missing_absorbed_operand_uses_bounded_compose_candidates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

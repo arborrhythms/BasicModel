@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_lexical_reference_orders.py::test_resolved_reference_supplies_meaning_but_keeps_input_provenance",
-    "test/test_lexical_reference_orders.py::test_ambiguous_particular_requires_a_carried_reference"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-418.recycle.json"
-}

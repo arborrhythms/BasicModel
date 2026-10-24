@@ -1,6 +1,0 @@
-{
-  "node": "test/test_replacement_kernel_contracts.py::test_concluding_without_evidence_is_illegal_while_work_remains",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

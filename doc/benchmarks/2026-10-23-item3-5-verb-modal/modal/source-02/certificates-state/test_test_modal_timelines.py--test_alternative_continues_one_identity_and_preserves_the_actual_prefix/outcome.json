@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modal_timelines.py::test_alternative_continues_one_identity_and_preserves_the_actual_prefix",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

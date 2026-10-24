@@ -1,6 +1,0 @@
-{
-  "node": "test/test_perceptual_loopback.py::TestPerceptStoreIntegration::test_radix_config_builds_percept_store",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

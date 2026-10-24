@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_recommender_row_restriction_recovers_stored_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

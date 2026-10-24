@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_fractional_feature_weights_use_per_pole_min_and_max_extent_union",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

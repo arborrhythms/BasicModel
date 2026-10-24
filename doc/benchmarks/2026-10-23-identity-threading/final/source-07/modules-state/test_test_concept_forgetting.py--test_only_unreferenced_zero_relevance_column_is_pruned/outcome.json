@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_only_unreferenced_zero_relevance_column_is_pruned",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

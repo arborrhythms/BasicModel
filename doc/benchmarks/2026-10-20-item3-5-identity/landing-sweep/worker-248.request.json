@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-248.recycle.json"
-}

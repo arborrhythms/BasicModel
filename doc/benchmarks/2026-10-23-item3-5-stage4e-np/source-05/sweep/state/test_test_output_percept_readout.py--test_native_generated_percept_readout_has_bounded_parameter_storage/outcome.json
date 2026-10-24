@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_percept_readout.py::test_native_generated_percept_readout_has_bounded_parameter_storage",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

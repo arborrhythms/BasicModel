@@ -1,6 +1,0 @@
-{
-  "node": "test/test_adverb_eig_edit.py::test_lift_forward_is_plain_sigma_fold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

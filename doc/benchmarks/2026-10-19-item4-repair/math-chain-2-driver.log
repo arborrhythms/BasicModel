@@ -1,9 +1,0 @@
-[collect] 2 selectors; limit 300s, 8.0 GiB
-[collect] exit 0; 2.0s; peak 0.17 GiB
-[worker-000] 1 selectors; limit 300s, 8.0 GiB
-[worker-000] exit 1; 225.6s; peak 4.10 GiB
-[worker-001] 1 selectors; limit 300s, 8.0 GiB
-[worker-001] exit 0; 2.4s; peak 0.24 GiB
-Result: test_failure, exit 1; 2/2 cases completed.
-doc/benchmarks/2026-10-19-item4-repair/math-chain-2/result.json
-Skipped phase certificates: copular_identity: 1

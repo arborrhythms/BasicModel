@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_loop_buckets_and_orders.py::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

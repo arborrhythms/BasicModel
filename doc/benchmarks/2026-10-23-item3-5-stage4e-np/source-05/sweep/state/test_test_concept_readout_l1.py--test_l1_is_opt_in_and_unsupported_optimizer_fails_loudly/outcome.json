@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_readout_l1.py::test_l1_is_opt_in_and_unsupported_optimizer_fails_loudly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

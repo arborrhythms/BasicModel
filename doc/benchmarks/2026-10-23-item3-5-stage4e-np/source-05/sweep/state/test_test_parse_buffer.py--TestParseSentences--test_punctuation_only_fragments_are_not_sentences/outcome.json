@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parse_buffer.py::TestParseSentences::test_punctuation_only_fragments_are_not_sentences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

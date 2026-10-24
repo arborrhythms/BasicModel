@@ -1,6 +1,0 @@
-{
-  "node": "test/test_init_scale.py::test_init_scale_shrinks_rows_generic_branch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

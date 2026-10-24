@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestOrderConvention::test_order_zero_is_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

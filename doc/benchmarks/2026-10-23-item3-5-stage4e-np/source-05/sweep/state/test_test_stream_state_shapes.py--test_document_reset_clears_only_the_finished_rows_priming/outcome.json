@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_document_reset_clears_only_the_finished_rows_priming",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

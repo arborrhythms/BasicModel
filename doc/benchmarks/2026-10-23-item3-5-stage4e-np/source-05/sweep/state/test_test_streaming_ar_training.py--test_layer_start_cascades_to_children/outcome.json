@@ -1,6 +1,0 @@
-{
-  "node": "test/test_streaming_ar_training.py::test_layer_start_cascades_to_children",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

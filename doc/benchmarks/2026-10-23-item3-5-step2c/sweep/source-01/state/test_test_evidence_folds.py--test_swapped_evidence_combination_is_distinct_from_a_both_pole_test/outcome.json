@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_swapped_evidence_combination_is_distinct_from_a_both_pole_test",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_row_local_concept_optimizer.py::test_pre_moment_dtype_checkpoint_adopts_configured_bfloat16_storage",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

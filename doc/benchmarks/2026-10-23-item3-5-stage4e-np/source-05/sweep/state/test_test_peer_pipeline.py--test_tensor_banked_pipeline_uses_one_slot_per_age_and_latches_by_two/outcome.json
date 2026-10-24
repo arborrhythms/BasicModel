@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_tensor_banked_pipeline_uses_one_slot_per_age_and_latches_by_two",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

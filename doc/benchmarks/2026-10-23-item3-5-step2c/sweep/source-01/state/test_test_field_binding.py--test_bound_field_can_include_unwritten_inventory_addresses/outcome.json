@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_binding.py::test_bound_field_can_include_unwritten_inventory_addresses",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

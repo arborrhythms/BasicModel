@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_field_operation_changes_the_next_mask_and_children_read_native_poles",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

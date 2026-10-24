@@ -1,8 +1,0 @@
-[collect] 1 selectors; limit 300s, 8.0 GiB
-[collect] exit 0; 4.0s; peak 0.40 GiB
-[worker-000] 1 selectors; limit 300s, 8.0 GiB
-[worker-001] 1 selectors; limit 300s, 8.0 GiB
-[worker-000] memory 137; 29.1s; peak 8.01 GiB
-[worker-001] aborted 125; 30.0s; peak 1.32 GiB
-Result: memory, exit 137; 0/2 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/decomposition-eager-enabled/result.json

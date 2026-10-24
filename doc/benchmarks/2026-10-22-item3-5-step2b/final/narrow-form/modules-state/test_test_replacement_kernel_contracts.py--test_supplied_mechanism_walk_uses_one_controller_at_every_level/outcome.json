@@ -1,6 +1,0 @@
-{
-  "node": "test/test_replacement_kernel_contracts.py::test_supplied_mechanism_walk_uses_one_controller_at_every_level",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_frozen_concepts.py::test_frozen_weights_no_grad",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

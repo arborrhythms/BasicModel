@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_class_dichotomy_is_or_of_char_basis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

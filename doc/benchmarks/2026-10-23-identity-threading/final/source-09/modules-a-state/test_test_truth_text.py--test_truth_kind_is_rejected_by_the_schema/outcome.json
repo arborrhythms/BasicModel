@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

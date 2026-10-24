@@ -1,6 +1,0 @@
-{
-  "node": "test/test_input_word_cursor.py::test_full_buffer_walks_all_T_then_ends",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_utf8.py::test_unfamiliar_word_keeps_every_nonzero_byte_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

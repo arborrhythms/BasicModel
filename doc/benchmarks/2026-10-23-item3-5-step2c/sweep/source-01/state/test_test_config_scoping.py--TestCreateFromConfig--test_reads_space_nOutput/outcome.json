@@ -1,6 +1,0 @@
-{
-  "node": "test/test_config_scoping.py::TestCreateFromConfig::test_reads_space_nOutput",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_objective.py::test_floor_must_be_strictly_between_zero_and_one[nan]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

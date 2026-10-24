@@ -1,6 +1,0 @@
-{
-  "node": "test/test_util_device.py::TestCudaSanityChecks::test_warns_when_nvidia_visible_but_cuda_unavailable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

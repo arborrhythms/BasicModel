@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasicModelDemuxed::test_create_from_config",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

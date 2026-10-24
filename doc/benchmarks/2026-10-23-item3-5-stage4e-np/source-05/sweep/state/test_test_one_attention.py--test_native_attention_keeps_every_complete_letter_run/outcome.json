@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_native_attention_keeps_every_complete_letter_run",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

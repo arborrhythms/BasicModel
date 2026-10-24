@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

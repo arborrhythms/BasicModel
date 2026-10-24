@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lies_can_be_learned.py::test_conflicting_claim_preserves_support_and_counterevidence",
-  "outcome": "failed",
-  "failure": "test/test_lies_can_be_learned.py:10: in test_conflicting_claim_preserves_support_and_counterevidence\n    assert len(store) == 1 and len(store.parts) == 1\nE   assert (2 == 1)\nE    +  where 2 = len(LTM0())",
-  "records": []
-}

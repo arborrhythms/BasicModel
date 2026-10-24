@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lazy_passthrough_event.py::test_tensor_eager_default_is_unchanged",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

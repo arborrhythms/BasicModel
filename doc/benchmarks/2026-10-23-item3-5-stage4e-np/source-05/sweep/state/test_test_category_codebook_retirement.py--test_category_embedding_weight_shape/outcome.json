@@ -1,6 +1,0 @@
-{
-  "node": "test/test_category_codebook_retirement.py::test_category_embedding_weight_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_reset_clears_origin_and_texts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

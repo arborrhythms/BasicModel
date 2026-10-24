@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_review.py::test_zero_temperature_keeps_the_score_function_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

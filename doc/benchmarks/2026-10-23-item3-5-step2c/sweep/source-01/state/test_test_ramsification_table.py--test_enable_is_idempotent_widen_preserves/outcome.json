@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_enable_is_idempotent_widen_preserves",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

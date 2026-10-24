@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_abstraction_order_counts_folds",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_divergent_old_stage_tables_choose_stage_zero_for_shared_dictionary",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestPeaceful::test_balanced_uniform_is_peaceful",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

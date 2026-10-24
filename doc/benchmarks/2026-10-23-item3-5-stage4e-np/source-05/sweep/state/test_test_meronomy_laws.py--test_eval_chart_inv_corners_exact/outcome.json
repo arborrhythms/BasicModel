@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_laws.py::test_eval_chart_inv_corners_exact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

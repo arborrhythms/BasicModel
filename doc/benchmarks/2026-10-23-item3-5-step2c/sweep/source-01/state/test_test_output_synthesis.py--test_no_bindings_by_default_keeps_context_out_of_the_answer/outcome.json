@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_synthesis.py::test_no_bindings_by_default_keeps_context_out_of_the_answer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

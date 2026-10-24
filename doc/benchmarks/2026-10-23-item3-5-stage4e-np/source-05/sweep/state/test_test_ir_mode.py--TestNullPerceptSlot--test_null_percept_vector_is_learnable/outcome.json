@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_mode.py::TestNullPerceptSlot::test_null_percept_vector_is_learnable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_chain_grows.py::TestLtmChainGrows::test_chain_is_time_ordered_oldest_first",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

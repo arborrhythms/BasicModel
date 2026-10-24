@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_detached_reconstruction_leaves_output_head_trainable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

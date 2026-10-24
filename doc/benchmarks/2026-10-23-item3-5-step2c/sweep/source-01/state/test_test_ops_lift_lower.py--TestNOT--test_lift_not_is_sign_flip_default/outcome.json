@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestNOT::test_lift_not_is_sign_flip_default",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

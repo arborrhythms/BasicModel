@@ -1,6 +1,0 @@
-{
-  "node": "test/test_active_decode_candidates.py::test_chunk_reverse_and_peel_preserve_active_prefix_row_ids",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

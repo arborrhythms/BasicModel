@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compiled_word_chunk.py::test_functional_soft_reset_clears_only_selected_owner_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

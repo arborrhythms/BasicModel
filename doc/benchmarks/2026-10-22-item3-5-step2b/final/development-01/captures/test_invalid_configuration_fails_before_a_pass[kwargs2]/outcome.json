@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_invalid_configuration_fails_before_a_pass[kwargs2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

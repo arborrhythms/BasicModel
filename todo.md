@@ -935,6 +935,9 @@ not by a passing identity lesson.
    - The **nested-admission criterion** and its performance: the landed
      shared-run criterion carves 7 of the 17 4e words at shared letter
      pairs (plan, "Before the 4e pass"); scoped to one named marker today.
+   - *Specified 2026-10-24:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
+     (MTM identities keyed by context address, prepended first to the field;
+     stream-column and sidecar readers replaced; columns stay until item 3).
    - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after. *Added (Alec, 2026-10-22):* word adjacency is removed
      in step 2b with no replacement here: neighbours are distributional
      information, already carried into a word's meaning by the sentences it

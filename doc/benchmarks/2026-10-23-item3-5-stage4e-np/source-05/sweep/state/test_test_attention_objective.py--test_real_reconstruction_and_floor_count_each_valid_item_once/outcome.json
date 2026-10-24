@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_objective.py::test_real_reconstruction_and_floor_count_each_valid_item_once",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

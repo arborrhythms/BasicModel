@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review12_contracts.py::test_disjunction_free_inverse_recovers_a_pair_without_operand_witnesses[reverse]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

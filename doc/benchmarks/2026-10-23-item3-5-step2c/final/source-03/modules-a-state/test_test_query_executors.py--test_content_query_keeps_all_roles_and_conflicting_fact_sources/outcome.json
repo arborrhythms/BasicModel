@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_executors.py::test_content_query_keeps_all_roles_and_conflicting_fact_sources",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_c_prior_slotwise.py::test_staged_expectation_never_enters_conceptual_forward[True-0.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

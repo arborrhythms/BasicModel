@@ -1,6 +1,0 @@
-{
-  "node": "test/test_occurrence_coordinates.py::test_native_percepts_encode_input_starts_and_share_time",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

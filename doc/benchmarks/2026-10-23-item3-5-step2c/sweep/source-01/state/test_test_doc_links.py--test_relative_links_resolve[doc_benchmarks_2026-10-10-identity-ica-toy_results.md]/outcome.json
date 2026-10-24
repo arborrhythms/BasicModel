@@ -1,6 +1,0 @@
-{
-  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/benchmarks/2026-10-10-identity-ica-toy/results.md]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

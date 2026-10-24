@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_path_supervised.py::test_question_conditions_the_first_occupied_answer_role",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

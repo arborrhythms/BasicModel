@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_small_width_false_membership_certificate_matches_literal_all_pairs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_odd_dim_returns_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

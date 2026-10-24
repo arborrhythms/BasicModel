@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestHashMapCache::test_hash_map_mirrors_trie_after_insert",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

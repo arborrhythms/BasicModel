@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_attention.py::test_large_shared_codebook_is_memory_safe",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

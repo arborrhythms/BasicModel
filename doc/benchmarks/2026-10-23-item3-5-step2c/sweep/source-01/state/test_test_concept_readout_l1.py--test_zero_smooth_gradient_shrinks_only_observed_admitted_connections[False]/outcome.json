@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_readout_l1.py::test_zero_smooth_gradient_shrinks_only_observed_admitted_connections[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

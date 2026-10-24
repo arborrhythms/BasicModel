@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_missing_local_context_reference_rejects_append_before_mutation[scope]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

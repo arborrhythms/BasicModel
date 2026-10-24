@@ -1,6 +1,0 @@
-{
-  "node": "test/test_native_attention_field.py::test_rereading_cannot_bind_the_occurrence_or_embedded_rows_it_replaces",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

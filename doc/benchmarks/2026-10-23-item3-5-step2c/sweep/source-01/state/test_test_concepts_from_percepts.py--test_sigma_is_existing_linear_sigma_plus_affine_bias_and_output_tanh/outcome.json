@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_sigma_is_existing_linear_sigma_plus_affine_bias_and_output_tanh",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

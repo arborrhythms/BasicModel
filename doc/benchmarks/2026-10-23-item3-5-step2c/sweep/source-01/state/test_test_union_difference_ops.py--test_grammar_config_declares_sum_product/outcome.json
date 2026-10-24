@@ -1,6 +1,0 @@
-{
-  "node": "test/test_union_difference_ops.py::test_grammar_config_declares_sum_product",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

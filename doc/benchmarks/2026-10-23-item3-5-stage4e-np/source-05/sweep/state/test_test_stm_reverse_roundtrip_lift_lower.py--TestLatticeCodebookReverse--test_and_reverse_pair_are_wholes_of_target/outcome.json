@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestLatticeCodebookReverse::test_and_reverse_pair_are_wholes_of_target",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

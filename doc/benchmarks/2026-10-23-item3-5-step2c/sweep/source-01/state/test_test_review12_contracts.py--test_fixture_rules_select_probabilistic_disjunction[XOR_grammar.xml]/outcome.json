@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review12_contracts.py::test_fixture_rules_select_probabilistic_disjunction[XOR_grammar.xml]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

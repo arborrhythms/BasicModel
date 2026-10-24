@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_sections.py::test_complete_grammar_canonical_sections",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

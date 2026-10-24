@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_activation_boundary.py::test_membership_activations_decode_to_signed_bounded_concepts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

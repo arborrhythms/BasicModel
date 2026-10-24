@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_preference.py::test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-[collect] 1 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 2.0s; peak 0.17 GiB
-[worker-000] 1 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 1; 35.9s; peak 3.36 GiB
-Result: test_failure, exit 1; 1/1 cases completed.
-doc/benchmarks/2026-10-20-item3-5-stm1/review3/arrival-08/result.json

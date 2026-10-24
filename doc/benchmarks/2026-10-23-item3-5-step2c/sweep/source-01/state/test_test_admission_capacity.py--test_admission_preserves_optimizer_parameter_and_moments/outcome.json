@@ -1,6 +1,0 @@
-{
-  "node": "test/test_admission_capacity.py::test_admission_preserves_optimizer_parameter_and_moments",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

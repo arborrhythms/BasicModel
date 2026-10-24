@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_benchmark.py::test_counts_one_joint_step_for_native_dense_and_sparse_optimizer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

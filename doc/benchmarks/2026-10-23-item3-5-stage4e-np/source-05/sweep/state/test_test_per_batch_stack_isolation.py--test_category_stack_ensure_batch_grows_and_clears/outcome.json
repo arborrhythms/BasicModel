@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_stack_isolation.py::test_category_stack_ensure_batch_grows_and_clears",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

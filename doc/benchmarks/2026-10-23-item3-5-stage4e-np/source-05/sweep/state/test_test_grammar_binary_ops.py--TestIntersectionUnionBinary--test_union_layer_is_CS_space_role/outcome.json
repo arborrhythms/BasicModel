@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_union_layer_is_CS_space_role",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

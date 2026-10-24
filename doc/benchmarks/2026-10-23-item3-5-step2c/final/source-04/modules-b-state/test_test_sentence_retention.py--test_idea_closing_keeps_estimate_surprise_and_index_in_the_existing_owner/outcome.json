@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_retention.py::test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

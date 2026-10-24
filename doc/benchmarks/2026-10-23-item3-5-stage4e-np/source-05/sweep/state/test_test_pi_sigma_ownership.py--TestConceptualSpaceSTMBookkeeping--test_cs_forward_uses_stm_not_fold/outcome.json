@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi_sigma_ownership.py::TestConceptualSpaceSTMBookkeeping::test_cs_forward_uses_stm_not_fold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

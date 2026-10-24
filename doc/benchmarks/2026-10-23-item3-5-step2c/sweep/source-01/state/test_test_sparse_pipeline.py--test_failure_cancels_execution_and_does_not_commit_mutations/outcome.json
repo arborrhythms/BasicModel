@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_failure_cancels_execution_and_does_not_commit_mutations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

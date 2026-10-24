@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_source_code_activation_matches_dotproduct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_off_path_records_no_selection",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

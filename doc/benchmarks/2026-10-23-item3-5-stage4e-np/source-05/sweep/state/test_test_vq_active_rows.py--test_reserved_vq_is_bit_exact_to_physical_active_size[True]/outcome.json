@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_reserved_vq_is_bit_exact_to_physical_active_size[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

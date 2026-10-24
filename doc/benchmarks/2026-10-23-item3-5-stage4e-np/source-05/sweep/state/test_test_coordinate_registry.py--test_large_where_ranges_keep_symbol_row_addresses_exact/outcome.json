@@ -1,6 +1,0 @@
-{
-  "node": "test/test_coordinate_registry.py::test_large_where_ranges_keep_symbol_row_addresses_exact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

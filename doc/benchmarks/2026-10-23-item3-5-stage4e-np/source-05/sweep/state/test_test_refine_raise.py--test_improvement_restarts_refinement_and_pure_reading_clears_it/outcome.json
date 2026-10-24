@@ -1,6 +1,0 @@
-{
-  "node": "test/test_refine_raise.py::test_improvement_restarts_refinement_and_pure_reading_clears_it",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

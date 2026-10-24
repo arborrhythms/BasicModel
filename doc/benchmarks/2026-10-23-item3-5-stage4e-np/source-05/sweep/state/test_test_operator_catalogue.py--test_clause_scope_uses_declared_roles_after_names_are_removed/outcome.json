@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_clause_scope_uses_declared_roles_after_names_are_removed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

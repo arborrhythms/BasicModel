@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
-    "test/test_expectation_retention.py::test_estimate_pair_overflow_raises_without_publishing_half_a_pair",
-    "test/test_expectation_retention.py::test_retained_estimates_do_not_enter_the_generic_ltm_chain"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-item3-5-step2c/final/source-01/modules-b/worker-018.recycle.json"
-}

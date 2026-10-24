@@ -1,5 +1,0 @@
-test/test_math_chain_section14.py::test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage
-test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate
-test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode
-
-3 tests collected in 0.54s

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestL2Scores::test_score_sort_matches_brute_force_distance_sort",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

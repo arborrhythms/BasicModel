@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reduction_pressure.py::test_pressure_is_zero_when_empty_and_increases_with_load_and_urgency",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

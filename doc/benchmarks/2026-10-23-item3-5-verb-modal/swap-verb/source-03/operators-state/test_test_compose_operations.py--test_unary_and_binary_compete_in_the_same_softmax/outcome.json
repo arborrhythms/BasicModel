@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_operations.py::test_unary_and_binary_compete_in_the_same_softmax",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

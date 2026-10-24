@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_integrity.py::test_objectless_form_can_generate_and_supply_a_target_without_inventing_a_definition",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

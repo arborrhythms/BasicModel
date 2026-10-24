@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_fullgraph_compile.py::test_idempotent_forward_compiles_fullgraph_eager",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

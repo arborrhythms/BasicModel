@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestComposeGradients::test_intersection_grad_flows_to_both_children",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_transform_chooser_parity.py::test_base_chooser_is_abstract",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

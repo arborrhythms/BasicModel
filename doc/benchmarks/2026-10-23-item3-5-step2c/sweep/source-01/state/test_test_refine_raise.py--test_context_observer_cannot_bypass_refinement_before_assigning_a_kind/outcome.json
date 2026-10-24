@@ -1,6 +1,0 @@
-{
-  "node": "test/test_refine_raise.py::test_context_observer_cannot_bypass_refinement_before_assigning_a_kind",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

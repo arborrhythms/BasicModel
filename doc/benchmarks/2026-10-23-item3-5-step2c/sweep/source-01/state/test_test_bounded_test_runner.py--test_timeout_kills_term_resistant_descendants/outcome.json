@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_timeout_kills_term_resistant_descendants",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

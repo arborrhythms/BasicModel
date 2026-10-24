@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

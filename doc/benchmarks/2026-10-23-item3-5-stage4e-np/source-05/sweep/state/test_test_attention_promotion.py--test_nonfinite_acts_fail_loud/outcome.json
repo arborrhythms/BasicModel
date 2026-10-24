@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_nonfinite_acts_fail_loud",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_walk_unreduces_an_independently_selected_parent_and_emits_its_constituents",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

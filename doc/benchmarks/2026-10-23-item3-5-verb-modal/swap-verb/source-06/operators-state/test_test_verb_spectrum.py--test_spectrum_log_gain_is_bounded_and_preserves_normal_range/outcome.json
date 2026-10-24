@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

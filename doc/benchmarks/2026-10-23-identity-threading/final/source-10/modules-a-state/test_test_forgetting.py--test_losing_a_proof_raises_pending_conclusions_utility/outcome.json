@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_losing_a_proof_raises_pending_conclusions_utility",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

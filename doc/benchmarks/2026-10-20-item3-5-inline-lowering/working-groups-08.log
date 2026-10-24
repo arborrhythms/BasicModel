@@ -1,6 +1,0 @@
-[collect] 2 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 2.4s; peak 0.25 GiB
-[worker-000] 2 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 1; 3.9s; peak 0.41 GiB
-Result: test_failure, exit 1; 2/2 cases completed.
-doc/benchmarks/2026-10-20-item3-5-inline-lowering/working-groups-08/result.json

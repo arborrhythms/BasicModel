@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_unsorted_input_handled",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

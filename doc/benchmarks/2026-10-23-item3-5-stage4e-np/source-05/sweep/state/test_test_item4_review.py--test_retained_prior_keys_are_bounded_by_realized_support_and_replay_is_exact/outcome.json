@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_review.py::test_retained_prior_keys_are_bounded_by_realized_support_and_replay_is_exact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

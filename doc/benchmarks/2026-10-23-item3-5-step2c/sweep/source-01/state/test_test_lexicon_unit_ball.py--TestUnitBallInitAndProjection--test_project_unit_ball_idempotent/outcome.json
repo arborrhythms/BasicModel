@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestUnitBallInitAndProjection::test_project_unit_ball_idempotent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

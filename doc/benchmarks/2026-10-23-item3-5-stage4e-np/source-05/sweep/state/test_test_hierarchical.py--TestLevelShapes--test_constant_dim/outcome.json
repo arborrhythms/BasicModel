@@ -1,6 +1,0 @@
-{
-  "node": "test/test_hierarchical.py::TestLevelShapes::test_constant_dim",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_references.py::test_identity_operand_keeps_order_one_and_implicit_literals[2-False-None-7]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

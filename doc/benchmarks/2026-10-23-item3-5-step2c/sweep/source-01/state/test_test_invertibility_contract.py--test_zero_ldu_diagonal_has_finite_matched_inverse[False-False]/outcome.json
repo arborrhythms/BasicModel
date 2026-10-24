@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility_contract.py::test_zero_ldu_diagonal_has_finite_matched_inverse[False-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

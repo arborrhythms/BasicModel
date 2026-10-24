@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_old_attention_controls_are_rejected_at_ingestion[subsymbolicLoop]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

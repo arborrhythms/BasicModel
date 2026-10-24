@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_normal_narrowing_omits_padding_and_preserves_the_complete_walk",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

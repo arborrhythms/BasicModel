@@ -1,6 +1,0 @@
-{
-  "node": "test/test_frozen_concepts.py::test_others_can_reference_frozen",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

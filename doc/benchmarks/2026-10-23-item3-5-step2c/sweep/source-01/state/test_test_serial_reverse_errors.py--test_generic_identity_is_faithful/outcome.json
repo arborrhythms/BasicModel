@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_reverse_errors.py::test_generic_identity_is_faithful",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

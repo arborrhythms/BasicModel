@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_final_b.py::test_priming_has_neutral_one_and_configured_ceiling",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

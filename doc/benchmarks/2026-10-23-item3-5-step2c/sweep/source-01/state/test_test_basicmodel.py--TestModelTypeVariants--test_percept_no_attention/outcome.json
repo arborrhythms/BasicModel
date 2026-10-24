@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestModelTypeVariants::test_percept_no_attention",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammatical_query_vps.py::test_assertive_or_unrecognized_vp_does_not_execute_a_query",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

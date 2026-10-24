@@ -1,6 +1,0 @@
-{
-  "node": "test/test_usegrammar_tristate.py::test_parse_non_string_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

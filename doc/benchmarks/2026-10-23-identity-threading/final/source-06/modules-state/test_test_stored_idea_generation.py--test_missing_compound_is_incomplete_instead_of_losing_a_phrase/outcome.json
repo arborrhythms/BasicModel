@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

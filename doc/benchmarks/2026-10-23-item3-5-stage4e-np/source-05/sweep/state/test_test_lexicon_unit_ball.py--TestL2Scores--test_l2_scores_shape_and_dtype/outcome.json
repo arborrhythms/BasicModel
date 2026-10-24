@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestL2Scores::test_l2_scores_shape_and_dtype",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

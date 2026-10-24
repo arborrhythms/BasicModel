@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_not.py::test_not_keeps_the_explicit_pole_exchange",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

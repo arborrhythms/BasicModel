@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modification_lessons.py::test_modification_target_accepts_either_operator_and_keeps_reference_choice_free",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

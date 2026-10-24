@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_automatic_hook_runs_after_backward_and_honors_serving_mode[False-False-True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

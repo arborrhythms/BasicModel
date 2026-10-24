@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_layer_reverse.py::TestRadixLayerReverseEmptyCodebook::test_empty_codebook_returns_empty_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,8 +1,0 @@
-{
-  "scope": "Static document and source checks; not runtime evidence",
-  "claude_commit_matches_incoming_hashes": true,
-  "historical_manifest_entries_verified": 39,
-  "receipt_links_resolve": true,
-  "production_test_config_changes": [],
-  "proposal_applied": false
-}

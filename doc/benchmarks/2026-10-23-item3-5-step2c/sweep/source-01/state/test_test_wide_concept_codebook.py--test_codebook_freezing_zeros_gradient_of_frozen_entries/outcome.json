@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wide_concept_codebook.py::test_codebook_freezing_zeros_gradient_of_frozen_entries",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

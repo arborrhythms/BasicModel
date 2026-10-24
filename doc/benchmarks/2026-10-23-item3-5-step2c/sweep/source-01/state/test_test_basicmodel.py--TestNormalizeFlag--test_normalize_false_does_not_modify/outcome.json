@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestNormalizeFlag::test_normalize_false_does_not_modify",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

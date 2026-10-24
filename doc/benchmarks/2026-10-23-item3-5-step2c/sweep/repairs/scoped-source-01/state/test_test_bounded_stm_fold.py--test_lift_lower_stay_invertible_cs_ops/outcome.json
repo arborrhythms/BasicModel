@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_stm_fold.py::test_lift_lower_stay_invertible_cs_ops",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_error.py::test_row_costs_train_one_ratio_without_amplifying_small_target_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

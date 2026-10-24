@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_stats.py::test_observe_qe_stats_are_detached",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_migration.py::test_role_estimate_migrates_after_authentication_and_roundtrips_once",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

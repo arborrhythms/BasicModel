@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows",
-  "outcome": "failed",
-  "failure": "test/test_aligned_capacity_checkpoint_growth.py:535: in test_legacy_mixing_relation_ids_are_not_capped_by_dense_cs_rows\n    assert [ConceptualSpace.new_concept(owner) for _ in range(n + 2)] == [\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Spaces.py:14394: in new_concept\n    return ConceptualSpace._new_concepts(\nbin/Spaces.py:14337: in _new_concepts\n    warn_capacity(self)\nbin/ConceptForgetting.py:15: in warn_capacity\n    _, reserved, limit = owner._concept_capacity_window(0)\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AttributeError: 'types.SimpleNamespace' object has no attribute '_concept_capacity_window'",
-  "records": []
-}

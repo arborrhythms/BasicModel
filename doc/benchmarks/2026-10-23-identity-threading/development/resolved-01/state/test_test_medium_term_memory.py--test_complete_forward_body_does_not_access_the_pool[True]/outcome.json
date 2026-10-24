@@ -1,6 +1,0 @@
-{
-  "node": "test/test_medium_term_memory.py::test_complete_forward_body_does_not_access_the_pool[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

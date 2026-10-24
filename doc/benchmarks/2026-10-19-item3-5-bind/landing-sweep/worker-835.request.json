@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_surface_schema.py::test_default_schema_is_bare_juxtapose",
-    "test/test_surface_schema.py::test_conj_disj_isequal_share_one_template",
-    "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-835.recycle.json"
-}

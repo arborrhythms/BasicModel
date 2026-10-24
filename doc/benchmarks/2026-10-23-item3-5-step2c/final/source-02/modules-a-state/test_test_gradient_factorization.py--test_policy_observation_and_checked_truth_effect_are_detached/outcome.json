@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_policy_observation_and_checked_truth_effect_are_detached",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

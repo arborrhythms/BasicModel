@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_output.py::test_concept_output_resolves_each_batch_identity_and_preserves_unknown",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_summed_objectives_on_mps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

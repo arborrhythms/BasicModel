@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestMereologyMixinShape::test_basemodel_inherits_mereology",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

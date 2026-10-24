@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_registry.py::test_checked_operations_share_grammar_owned_identity_and_explicit_roles",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

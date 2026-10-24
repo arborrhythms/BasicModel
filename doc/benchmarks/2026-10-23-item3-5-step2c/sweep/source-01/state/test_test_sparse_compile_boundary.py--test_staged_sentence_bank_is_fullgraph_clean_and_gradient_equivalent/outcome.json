@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_compile_boundary.py::test_staged_sentence_bank_is_fullgraph_clean_and_gradient_equivalent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

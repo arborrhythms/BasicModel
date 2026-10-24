@@ -1,6 +1,0 @@
-{
-  "node": "test/test_echoic_decoder.py::test_sentence_cost_is_not_diluted_by_other_packed_sentences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

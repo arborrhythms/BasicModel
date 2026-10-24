@@ -1,6 +1,0 @@
-{
-  "node": "test/test_teacher_reconstruction.py::test_cursor_reports_source_indices_for_trial_and_packed_ticks",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

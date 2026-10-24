@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_bracket.py::test_origin_shift_clears_the_seam",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

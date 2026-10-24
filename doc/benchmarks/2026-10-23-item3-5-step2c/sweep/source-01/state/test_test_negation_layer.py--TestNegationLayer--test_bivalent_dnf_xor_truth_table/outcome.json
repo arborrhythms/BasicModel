@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negation_layer.py::TestNegationLayer::test_bivalent_dnf_xor_truth_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

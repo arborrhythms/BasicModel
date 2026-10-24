@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_row_pool_prunes_weak_edges_when_use_discovers_it",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

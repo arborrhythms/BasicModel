@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair2.py::test_expectation_cannot_change_departure_or_keep",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

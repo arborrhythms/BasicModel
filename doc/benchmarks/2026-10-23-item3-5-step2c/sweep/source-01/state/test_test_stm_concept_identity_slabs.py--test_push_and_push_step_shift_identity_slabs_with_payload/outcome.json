@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_concept_identity_slabs.py::test_push_and_push_step_shift_identity_slabs_with_payload",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

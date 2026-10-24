@@ -1,6 +1,0 @@
-{
-  "node": "test/test_surface_schema.py::test_unary_ops_use_unary_affix_template",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

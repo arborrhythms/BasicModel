@@ -1,6 +1,0 @@
-{
-  "node": "test/test_intent_priming.py::test_space_set_intent_and_install",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

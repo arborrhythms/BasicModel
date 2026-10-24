@@ -1,6 +1,0 @@
-{
-  "exit_code": 0,
-  "original_assertion": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-07-operators-final/observer_probe.py",
-  "seed_pinned": false,
-  "interpretation": "A diagnostic rerun never replaces the failed full-sweep result."
-}

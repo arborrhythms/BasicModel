@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology_word_binding.py::test_two_words_do_not_create_a_sentence_concept",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_selected_materialization_is_pure_sparse_and_differentiable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

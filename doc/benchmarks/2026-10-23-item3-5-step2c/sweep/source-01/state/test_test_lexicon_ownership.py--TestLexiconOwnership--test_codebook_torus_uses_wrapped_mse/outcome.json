@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_codebook_torus_uses_wrapped_mse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

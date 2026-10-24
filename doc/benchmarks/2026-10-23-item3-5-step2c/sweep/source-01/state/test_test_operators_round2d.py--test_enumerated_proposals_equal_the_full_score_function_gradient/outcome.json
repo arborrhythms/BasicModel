@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2d.py::test_enumerated_proposals_equal_the_full_score_function_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_unminted_value_and_anonymous_name_have_distinct_pending_state[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

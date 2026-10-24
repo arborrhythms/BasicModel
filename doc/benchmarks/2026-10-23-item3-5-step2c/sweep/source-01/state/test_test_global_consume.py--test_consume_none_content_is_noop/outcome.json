@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_consume.py::test_consume_none_content_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

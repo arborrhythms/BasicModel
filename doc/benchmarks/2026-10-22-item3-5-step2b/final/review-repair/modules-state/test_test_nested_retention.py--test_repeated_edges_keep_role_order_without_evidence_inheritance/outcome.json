@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_repeated_edges_keep_role_order_without_evidence_inheritance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

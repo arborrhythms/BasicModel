@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_provenance.py::test_checked_result_retains_matching_fact_occurrences_and_both_degrees",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

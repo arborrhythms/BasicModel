@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_thought_role_contract_must_match_its_structural_operator",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

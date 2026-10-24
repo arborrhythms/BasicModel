@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_grammar_layer_reverse_snap_is_op_respecting",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

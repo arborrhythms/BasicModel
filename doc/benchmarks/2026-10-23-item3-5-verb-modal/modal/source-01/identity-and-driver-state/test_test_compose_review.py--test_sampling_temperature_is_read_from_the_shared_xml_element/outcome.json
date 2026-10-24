@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_review.py::test_sampling_temperature_is_read_from_the_shared_xml_element",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

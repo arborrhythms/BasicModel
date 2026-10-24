@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_index.py::test_inverted_index_is_derived_after_checkpoint_restore",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_fde_permits_all_corners",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

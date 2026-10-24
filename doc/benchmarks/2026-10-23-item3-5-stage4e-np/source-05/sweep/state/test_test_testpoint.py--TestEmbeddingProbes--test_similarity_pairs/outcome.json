@@ -1,6 +1,0 @@
-{
-  "node": "test/test_testpoint.py::TestEmbeddingProbes::test_similarity_pairs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

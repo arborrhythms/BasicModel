@@ -1,6 +1,0 @@
-{
-  "node": "test/test_config_scoping.py::TestGetSpaceParam::test_space_section_missing_entirely",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

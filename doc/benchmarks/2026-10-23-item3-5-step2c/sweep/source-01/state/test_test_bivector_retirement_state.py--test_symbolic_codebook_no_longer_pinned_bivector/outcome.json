@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bivector_retirement_state.py::test_symbolic_codebook_no_longer_pinned_bivector",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

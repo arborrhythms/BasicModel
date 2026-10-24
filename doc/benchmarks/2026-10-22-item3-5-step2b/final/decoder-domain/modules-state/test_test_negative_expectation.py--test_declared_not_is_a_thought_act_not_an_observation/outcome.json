@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_declared_not_is_a_thought_act_not_an_observation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

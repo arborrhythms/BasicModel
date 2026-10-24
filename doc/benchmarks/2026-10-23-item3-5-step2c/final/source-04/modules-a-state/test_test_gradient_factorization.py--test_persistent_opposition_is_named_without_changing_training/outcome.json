@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_persistent_opposition_is_named_without_changing_training",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

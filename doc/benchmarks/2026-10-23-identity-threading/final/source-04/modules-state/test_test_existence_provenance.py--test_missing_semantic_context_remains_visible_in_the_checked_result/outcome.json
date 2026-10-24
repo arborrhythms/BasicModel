@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_provenance.py::test_missing_semantic_context_remains_visible_in_the_checked_result",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

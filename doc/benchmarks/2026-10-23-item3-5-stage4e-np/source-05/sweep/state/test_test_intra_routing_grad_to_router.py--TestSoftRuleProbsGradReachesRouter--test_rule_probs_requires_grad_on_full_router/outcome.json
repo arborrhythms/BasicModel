@@ -1,6 +1,0 @@
-{
-  "node": "test/test_intra_routing_grad_to_router.py::TestSoftRuleProbsGradReachesRouter::test_rule_probs_requires_grad_on_full_router",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

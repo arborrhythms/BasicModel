@@ -1,6 +1,0 @@
-{
-  "node": "test/test_levelled_thought_history.py::test_episode_gradients_reach_earlier_roles_then_detach_after_step",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_static_certificate_on_each_configured_gate_vocabulary[MM_grammar]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

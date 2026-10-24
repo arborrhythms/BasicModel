@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_rule_predictor.py::test_rule_predictor_softmax_sums_to_one",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

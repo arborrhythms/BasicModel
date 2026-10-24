@@ -1,6 +1,0 @@
-{
-  "node": "test/test_levelled_thought_history.py::test_return_underflow_and_new_episode_do_not_corrupt_history",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

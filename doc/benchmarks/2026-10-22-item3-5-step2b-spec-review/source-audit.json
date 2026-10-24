@@ -1,8 +1,0 @@
-{
-  "production_base": "0b030e3ebdeca87f9ebf80739237437c3c75ea8f",
-  "wiki_oracle": "baa2e7fd130434cf619fb061d9035e853016b80c",
-  "code_test_data_diff": [],
-  "scope": "specification questions and review only",
-  "implementation_started": false,
-  "gates_run": false
-}

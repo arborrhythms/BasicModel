@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_ps_ss_sections.py::test_grammar_loads_ps_and_ws_sections",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

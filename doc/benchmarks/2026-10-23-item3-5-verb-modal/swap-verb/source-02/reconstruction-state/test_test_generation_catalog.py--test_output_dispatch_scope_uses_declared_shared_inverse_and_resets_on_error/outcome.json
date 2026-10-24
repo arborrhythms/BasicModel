@@ -1,6 +1,0 @@
-{
-  "node": "test/test_generation_catalog.py::test_output_dispatch_scope_uses_declared_shared_inverse_and_resets_on_error",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_contract_boundaries.py::test_zero_budget_does_not_fetch_a_named_concept_payload",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

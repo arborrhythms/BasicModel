@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_property_pervasion_is_min_over_observed_values_not_their_counts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

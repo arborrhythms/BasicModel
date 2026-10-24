@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_input_space_has_symbolSpace_after_set",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

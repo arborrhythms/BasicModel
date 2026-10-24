@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_final.py::test_membership_priming_shares_degree_budget_and_is_detached",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestTorusLegacyMode::test_torus_init_inside_canonical_cell",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

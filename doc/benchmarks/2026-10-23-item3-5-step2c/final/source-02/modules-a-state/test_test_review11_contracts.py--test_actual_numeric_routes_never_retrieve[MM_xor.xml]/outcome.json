@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_actual_numeric_routes_never_retrieve[MM_xor.xml]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

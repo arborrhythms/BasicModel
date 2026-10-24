@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereology::test_underlap_true_when_disjoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

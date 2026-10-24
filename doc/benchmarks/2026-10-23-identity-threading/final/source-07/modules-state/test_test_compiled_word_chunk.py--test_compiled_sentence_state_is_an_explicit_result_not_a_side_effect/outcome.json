@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compiled_word_chunk.py::test_compiled_sentence_state_is_an_explicit_result_not_a_side_effect",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

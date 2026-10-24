@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_shared_untyped_square_store",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

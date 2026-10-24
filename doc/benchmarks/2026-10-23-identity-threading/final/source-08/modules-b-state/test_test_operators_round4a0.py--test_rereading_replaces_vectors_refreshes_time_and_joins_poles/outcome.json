@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_rereading_replaces_vectors_refreshes_time_and_joins_poles",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

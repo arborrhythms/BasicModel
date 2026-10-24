@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_smaller_codebook_checkpoint_prefix_expands_all_aliases",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

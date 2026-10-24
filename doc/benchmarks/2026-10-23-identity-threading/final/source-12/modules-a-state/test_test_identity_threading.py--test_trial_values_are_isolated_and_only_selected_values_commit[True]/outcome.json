@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

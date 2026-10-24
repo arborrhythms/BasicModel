@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ruledef_typed.py::TestRuleDefTyped::test_epsilon_rule_has_empty_rhs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

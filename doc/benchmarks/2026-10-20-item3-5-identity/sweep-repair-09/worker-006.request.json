@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_item6_2_thinking.py::test_null_binder_candidate_survives_native_journal_and_closing[pronoun]",
-    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/sweep-repair-09/worker-006.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_analyze_multiclass_cuts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

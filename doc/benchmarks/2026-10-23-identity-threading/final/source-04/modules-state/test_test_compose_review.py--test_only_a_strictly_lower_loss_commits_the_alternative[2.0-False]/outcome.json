@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_review.py::test_only_a_strictly_lower_loss_commits_the_alternative[2.0-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

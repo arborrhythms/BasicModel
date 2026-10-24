@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_resolution_exception_cannot_leave_permission_open",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

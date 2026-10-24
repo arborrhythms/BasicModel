@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_work_budget.py::test_taxonomy_executor_cannot_renew_node_record_and_expansion_allowances",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

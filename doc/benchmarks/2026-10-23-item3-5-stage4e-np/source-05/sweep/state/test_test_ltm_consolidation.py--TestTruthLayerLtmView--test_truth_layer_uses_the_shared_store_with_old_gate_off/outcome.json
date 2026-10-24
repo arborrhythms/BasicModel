@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_truth_layer_uses_the_shared_store_with_old_gate_off",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

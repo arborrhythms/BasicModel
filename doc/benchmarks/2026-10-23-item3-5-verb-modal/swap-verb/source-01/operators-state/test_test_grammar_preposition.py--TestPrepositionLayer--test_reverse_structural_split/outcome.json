@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_preposition.py::TestPrepositionLayer::test_reverse_structural_split",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

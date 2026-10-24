@@ -1,6 +1,0 @@
-{
-  "node": "test/test_replacement_kernel_contracts.py::test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

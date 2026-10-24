@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestOverlapPenalty::test_disjoint_codebook_zero_loss",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

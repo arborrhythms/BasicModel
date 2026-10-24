@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_priming.py::test_priming_initial_shape_and_value",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

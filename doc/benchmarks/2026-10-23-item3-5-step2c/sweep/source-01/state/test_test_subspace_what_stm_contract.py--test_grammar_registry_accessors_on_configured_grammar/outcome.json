@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_grammar_registry_accessors_on_configured_grammar",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

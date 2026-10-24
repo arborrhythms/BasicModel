@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tetralemma_leaf.py::test_path_ast_rejects_injected_collapses[pair[0] >= pair[1]]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

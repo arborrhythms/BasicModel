@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_boundary_predicates_reproduce_the_priors_tiling",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

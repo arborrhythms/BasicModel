@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_source_document_addresses_follow_each_packed_sentence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

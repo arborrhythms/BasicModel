@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSpaceBasisConstruction::test_no_codebook_creates_tensor_basis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

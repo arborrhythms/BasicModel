@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_direct_paired_reverses_reject_a_retired_split",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

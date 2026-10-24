@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_nested_unresolved_operand_keeps_its_resolution_annotation[False-True]",
-  "outcome": "failed",
-  "failure": "test/test_identity_threading.py:624: in test_nested_unresolved_operand_keeps_its_resolution_annotation\n    row = store.write_clause(parent, document_key='unresolved-operand', written_rows=written)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:377: in write_clause\n    return self.write_clause(clause, trust=trust, origin=origin, stream=stream,\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/ClauseRow.py:594: in write_clause\n    source = (bytes(self.document_keys[source_row].tolist()), int(self.sentence_index[source_row]))\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: new(): invalid data type 'str'",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_production_snap_background_is_neither[4-True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

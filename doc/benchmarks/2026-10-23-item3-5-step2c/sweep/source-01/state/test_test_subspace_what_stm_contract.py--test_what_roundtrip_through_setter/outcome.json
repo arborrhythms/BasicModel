@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_what_roundtrip_through_setter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

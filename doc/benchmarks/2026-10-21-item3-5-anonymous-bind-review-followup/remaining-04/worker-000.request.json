@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content",
-    "doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/diagnostics/test_remaining_findings.py::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/remaining-04/worker-000.recycle.json"
-}

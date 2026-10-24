@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_gain.py::test_symbol_gain_keeps_native_identity_and_inactive_row_context",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

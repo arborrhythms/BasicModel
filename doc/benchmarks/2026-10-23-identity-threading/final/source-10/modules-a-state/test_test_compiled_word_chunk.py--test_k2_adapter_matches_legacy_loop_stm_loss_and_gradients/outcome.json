@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compiled_word_chunk.py::test_k2_adapter_matches_legacy_loop_stm_loss_and_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

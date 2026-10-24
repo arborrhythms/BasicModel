@@ -1,6 +1,0 @@
-{
-  "node": "test/test_signal_router_wordspace.py::test_language_layer_compose_without_ops_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

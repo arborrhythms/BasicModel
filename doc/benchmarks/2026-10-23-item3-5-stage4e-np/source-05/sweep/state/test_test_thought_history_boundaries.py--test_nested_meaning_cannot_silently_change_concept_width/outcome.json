@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_history_boundaries.py::test_nested_meaning_cannot_silently_change_concept_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

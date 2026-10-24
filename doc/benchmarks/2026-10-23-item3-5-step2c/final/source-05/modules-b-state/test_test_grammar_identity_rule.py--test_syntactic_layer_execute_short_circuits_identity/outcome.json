@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_identity_rule.py::test_syntactic_layer_execute_short_circuits_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

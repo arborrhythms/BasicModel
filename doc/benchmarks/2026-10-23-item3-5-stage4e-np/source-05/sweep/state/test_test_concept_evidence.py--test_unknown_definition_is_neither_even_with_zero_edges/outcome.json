@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_unknown_definition_is_neither_even_with_zero_edges",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

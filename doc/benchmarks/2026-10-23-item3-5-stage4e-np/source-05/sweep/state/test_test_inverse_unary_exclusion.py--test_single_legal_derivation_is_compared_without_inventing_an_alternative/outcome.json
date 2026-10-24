@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inverse_unary_exclusion.py::test_single_legal_derivation_is_compared_without_inventing_an_alternative",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

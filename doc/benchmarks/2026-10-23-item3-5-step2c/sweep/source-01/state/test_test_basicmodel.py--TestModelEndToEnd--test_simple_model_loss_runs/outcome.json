@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestModelEndToEnd::test_simple_model_loss_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

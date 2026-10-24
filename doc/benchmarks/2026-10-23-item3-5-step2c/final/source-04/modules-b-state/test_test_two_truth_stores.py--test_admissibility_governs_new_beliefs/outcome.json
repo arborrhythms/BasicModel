@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_truth_stores.py::test_admissibility_governs_new_beliefs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

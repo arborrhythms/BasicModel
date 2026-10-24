@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_priming.py::test_decay_pulls_primed_toward_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

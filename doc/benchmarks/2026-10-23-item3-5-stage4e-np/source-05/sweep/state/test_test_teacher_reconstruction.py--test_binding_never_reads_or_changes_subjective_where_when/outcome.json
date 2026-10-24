@@ -1,6 +1,0 @@
-{
-  "node": "test/test_teacher_reconstruction.py::test_binding_never_reads_or_changes_subjective_where_when",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

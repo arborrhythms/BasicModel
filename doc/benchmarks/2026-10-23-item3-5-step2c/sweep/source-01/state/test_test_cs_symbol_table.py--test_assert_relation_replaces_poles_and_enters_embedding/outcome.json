@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_assert_relation_replaces_poles_and_enters_embedding",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

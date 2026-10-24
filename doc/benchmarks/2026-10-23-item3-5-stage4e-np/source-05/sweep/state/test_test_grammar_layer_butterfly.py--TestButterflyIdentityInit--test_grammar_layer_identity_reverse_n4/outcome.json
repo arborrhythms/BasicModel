@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_layer_butterfly.py::TestButterflyIdentityInit::test_grammar_layer_identity_reverse_n4",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_intersection_recovers_cat",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

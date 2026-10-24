@@ -1,6 +1,0 @@
-{
-  "node": "test/test_surface_grammar.py::test_surface_generation_learns_distinct_children_from_full_width_values",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reduction_pressure.py::test_full_stack_arrival_is_an_assertion_instead_of_dropping_the_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

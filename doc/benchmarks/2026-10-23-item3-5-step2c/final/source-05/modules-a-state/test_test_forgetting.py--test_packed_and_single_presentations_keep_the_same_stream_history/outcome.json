@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_packed_and_single_presentations_keep_the_same_stream_history",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

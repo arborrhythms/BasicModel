@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_compile_boundary.py::test_compile_none_preserves_legacy_sentence_loop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

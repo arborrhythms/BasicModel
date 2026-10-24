@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_complex_gradients_are_scanned_through_real_views[dense]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

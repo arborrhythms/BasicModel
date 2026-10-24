@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_item4_native.py::test_three_role_relation_uses_symbol_confidence_through_native_close_and_store[0.5-0.5]",
-    "test/test_item4_native.py::test_sentence_prime_is_cleared_before_thought_and_next_peer_input"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/review-repairs-9/worker-011.recycle.json"
-}

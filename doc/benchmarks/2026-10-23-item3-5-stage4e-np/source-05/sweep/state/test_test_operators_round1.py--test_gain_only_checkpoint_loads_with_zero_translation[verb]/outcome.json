@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_gain_only_checkpoint_loads_with_zero_translation[verb]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

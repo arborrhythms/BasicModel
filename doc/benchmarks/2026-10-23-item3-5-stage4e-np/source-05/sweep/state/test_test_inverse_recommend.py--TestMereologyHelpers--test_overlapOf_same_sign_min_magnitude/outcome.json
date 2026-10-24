@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inverse_recommend.py::TestMereologyHelpers::test_overlapOf_same_sign_min_magnitude",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_pipeline_requires_canonical_static_buckets[8]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

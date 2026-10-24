@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_retention.py::test_capacity_requires_room_for_new_estimate_and_observation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_refine_raise.py::test_convergence_state_roundtrips_with_definition_inventory",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

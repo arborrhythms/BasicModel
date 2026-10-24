@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_dataset.py::test_stage_zero_split_holds_out_unseen_pairs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inverse_recommend.py::TestEmptyCodebook::test_intersection_inverse_empty_W_falls_back_to_identity_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

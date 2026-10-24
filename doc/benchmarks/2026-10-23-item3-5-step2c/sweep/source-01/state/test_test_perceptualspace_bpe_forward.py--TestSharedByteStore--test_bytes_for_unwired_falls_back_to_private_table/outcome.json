@@ -1,6 +1,0 @@
-{
-  "node": "test/test_perceptualspace_bpe_forward.py::TestSharedByteStore::test_bytes_for_unwired_falls_back_to_private_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

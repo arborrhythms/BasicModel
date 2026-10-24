@@ -1,6 +1,0 @@
-{
-  "node": "test/test_semantic_categories_pipeline.py::test_recovers_on_transitional_grammar_participation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

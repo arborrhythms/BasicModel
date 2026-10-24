@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_stage_meronomy_type_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

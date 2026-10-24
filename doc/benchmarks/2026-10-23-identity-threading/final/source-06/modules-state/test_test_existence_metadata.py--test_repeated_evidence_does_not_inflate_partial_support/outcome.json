@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_metadata.py::test_repeated_evidence_does_not_inflate_partial_support",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_native_ids.py::test_fractional_staged_identity_is_not_silently_truncated_into_a_referent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

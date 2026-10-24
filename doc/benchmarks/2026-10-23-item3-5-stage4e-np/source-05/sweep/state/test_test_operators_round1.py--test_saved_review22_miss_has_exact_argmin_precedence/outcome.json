@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_saved_review22_miss_has_exact_argmin_precedence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

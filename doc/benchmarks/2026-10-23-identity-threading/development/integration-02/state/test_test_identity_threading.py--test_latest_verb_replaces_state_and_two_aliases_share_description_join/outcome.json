@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_latest_verb_replaces_state_and_two_aliases_share_description_join",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

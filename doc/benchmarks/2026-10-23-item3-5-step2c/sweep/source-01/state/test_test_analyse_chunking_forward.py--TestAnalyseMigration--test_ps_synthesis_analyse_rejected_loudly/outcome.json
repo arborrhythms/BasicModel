@@ -1,6 +1,0 @@
-{
-  "node": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_ps_synthesis_analyse_rejected_loudly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

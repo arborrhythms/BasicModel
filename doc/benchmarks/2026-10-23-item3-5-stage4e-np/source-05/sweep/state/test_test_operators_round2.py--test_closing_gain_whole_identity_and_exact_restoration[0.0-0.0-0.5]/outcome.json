@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2.py::test_closing_gain_whole_identity_and_exact_restoration[0.0-0.0-0.5]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

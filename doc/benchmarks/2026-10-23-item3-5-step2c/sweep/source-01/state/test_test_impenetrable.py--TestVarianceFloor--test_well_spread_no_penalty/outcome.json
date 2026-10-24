@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestVarianceFloor::test_well_spread_no_penalty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

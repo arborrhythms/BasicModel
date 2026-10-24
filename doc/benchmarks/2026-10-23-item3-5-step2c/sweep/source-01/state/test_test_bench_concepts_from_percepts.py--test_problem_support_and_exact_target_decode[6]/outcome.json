@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bench_concepts_from_percepts.py::test_problem_support_and_exact_target_decode[6]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

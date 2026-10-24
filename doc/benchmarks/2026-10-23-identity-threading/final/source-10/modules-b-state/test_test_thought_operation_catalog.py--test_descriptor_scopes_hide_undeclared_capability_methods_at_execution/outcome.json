@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_descriptor_scopes_hide_undeclared_capability_methods_at_execution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

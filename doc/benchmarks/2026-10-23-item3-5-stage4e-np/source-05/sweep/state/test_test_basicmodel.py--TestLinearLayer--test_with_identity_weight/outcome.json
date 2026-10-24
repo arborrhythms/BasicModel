@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestLinearLayer::test_with_identity_weight",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

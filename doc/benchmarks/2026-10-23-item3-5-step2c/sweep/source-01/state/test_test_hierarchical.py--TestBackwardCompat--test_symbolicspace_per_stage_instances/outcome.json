@@ -1,6 +1,0 @@
-{
-  "node": "test/test_hierarchical.py::TestBackwardCompat::test_symbolicspace_per_stage_instances",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -310,6 +310,10 @@ order rungs is the way that satisfies it, and it lands when the overlay
 retires, in item 3's STM round, unless Alec pulls it forward; the modal's
 timelines live in `Token` and are mirrored by the overlay, so they migrate
 without a second design.
+*First consumer (Claude, 2026-10-24):* line 6's context wholes, the
+document and the stream, are prepended now as two entries per stream
+([context-wholes spec](2026-10-24-context-wholes.md) §2); the ordinary
+identities follow in item 3.
 
 **Lifetime.** `values` and `names` serialize with the pool in
 `ConceptualSpace`'s checkpoint extras (the resolver extra is version-only

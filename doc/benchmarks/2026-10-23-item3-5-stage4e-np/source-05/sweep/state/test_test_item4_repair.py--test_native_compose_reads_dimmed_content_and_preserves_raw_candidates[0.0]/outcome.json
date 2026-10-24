@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_native_compose_reads_dimmed_content_and_preserves_raw_candidates[0.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

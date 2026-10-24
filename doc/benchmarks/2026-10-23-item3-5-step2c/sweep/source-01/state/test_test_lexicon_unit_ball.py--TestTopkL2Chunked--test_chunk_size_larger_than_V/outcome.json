@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestTopkL2Chunked::test_chunk_size_larger_than_V",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_phrase_wholes_of_words",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

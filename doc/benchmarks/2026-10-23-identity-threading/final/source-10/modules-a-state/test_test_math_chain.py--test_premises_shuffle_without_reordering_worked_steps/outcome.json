@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_premises_shuffle_without_reordering_worked_steps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

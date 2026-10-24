@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_close.py::test_reference_evidence_credits_the_departure_without_changing_exact_reconstruction",
-  "outcome": "passed",
-  "failure": "None",
-  "reads": []
-}

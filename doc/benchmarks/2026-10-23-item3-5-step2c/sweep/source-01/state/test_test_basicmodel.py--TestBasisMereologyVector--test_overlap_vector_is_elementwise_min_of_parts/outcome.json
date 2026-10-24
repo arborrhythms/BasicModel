@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_overlap_vector_is_elementwise_min_of_parts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

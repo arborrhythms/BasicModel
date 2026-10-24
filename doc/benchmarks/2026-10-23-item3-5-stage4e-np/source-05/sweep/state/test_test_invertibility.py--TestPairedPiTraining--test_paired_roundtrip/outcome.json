@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestPairedPiTraining::test_paired_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

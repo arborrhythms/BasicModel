@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_combined.py::test_identity_priming_matches_unprimed_conjunction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

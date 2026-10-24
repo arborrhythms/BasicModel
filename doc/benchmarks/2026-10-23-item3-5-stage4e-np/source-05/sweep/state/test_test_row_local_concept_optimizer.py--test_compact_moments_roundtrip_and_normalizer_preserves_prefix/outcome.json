@@ -1,6 +1,0 @@
-{
-  "node": "test/test_row_local_concept_optimizer.py::test_compact_moments_roundtrip_and_normalizer_preserves_prefix",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

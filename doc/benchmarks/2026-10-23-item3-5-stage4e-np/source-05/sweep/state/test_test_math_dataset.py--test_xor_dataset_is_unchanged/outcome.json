@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_dataset.py::test_xor_dataset_is_unchanged",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

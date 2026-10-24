@@ -1,6 +1,0 @@
-[collect] 3 selectors; limit 180s, 8.0 GiB
-[collect] exit 0; 3.8s; peak 0.40 GiB
-[worker-000] 67 selectors; limit 180s, 8.0 GiB
-[worker-000] exit 0; 5.2s; peak 0.43 GiB
-Result: passed, exit 0; 67/67 cases completed.
-doc/benchmarks/2026-10-19-item3-5-bind/predicate-role/result.json

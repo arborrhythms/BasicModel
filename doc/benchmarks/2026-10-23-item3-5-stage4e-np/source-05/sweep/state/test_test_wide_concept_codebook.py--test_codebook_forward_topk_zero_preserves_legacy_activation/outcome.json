@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wide_concept_codebook.py::test_codebook_forward_topk_zero_preserves_legacy_activation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

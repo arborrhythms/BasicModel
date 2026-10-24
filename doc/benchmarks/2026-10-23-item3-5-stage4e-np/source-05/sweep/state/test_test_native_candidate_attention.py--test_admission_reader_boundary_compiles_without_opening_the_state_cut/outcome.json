@@ -1,6 +1,0 @@
-{
-  "node": "test/test_native_candidate_attention.py::test_admission_reader_boundary_compiles_without_opening_the_state_cut",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

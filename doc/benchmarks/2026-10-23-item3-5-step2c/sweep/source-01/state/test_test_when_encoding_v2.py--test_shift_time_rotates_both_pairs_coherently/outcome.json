@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_encoding_v2.py::test_shift_time_rotates_both_pairs_coherently",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

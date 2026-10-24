@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_tiling.py::test_materialize_property_or_union_over_index",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

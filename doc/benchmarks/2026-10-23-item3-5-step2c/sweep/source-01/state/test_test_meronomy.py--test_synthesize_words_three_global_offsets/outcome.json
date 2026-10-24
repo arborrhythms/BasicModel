@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_synthesize_words_three_global_offsets",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

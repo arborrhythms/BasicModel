@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_store.py::test_pair_rewitnesses_both_lanes_without_a_relation_kind",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

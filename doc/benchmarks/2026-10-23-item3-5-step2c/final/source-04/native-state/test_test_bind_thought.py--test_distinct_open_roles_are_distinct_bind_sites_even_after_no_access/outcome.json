@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bind_thought.py::test_distinct_open_roles_are_distinct_bind_sites_even_after_no_access",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

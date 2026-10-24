@@ -1,6 +1,0 @@
-{
-  "node": "test/test_idempotent_loop.py::TestIdempotentLoop::test_iterative_snap_distance_reduces_to_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

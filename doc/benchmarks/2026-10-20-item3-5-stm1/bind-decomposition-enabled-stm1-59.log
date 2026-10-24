@@ -1,6 +1,0 @@
-[collect] 1 selectors; limit 900s, 8.0 GiB
-[collect] exit 0; 4.1s; peak 0.40 GiB
-[worker-000] 2 selectors; limit 900s, 8.0 GiB
-[worker-000] exit 1; 117.5s; peak 1.87 GiB
-Result: test_failure, exit 1; 2/2 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/bind-decomposition-enabled-stm1-59/result.json

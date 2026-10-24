@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

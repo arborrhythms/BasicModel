@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_row_hard_reset.py::test_dispatch_per_row_reset_skips_rows_without_hard_eos",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

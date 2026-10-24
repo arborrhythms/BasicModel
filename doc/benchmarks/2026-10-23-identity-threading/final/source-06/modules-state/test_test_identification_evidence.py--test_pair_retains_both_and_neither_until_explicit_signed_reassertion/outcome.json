@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identification_evidence.py::test_pair_retains_both_and_neither_until_explicit_signed_reassertion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

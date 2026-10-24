@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_live_property_membership_is_a_learned_byte_definition",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

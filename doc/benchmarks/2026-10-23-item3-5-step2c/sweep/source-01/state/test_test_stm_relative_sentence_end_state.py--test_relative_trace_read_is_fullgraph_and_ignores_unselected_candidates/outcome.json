@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_relative_sentence_end_state.py::test_relative_trace_read_is_fullgraph_and_ignores_unselected_candidates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

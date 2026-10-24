@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestInverseTableRoundtrip::test_inverse_table_indexing_is_exact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

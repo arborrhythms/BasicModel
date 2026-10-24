@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_is_run_start_flags",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

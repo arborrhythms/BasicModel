@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_legacy_checkpoint_rekeys_native_and_typed_edges",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

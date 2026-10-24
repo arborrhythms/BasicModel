@@ -1,6 +1,0 @@
-{
-  "node": "test/test_oov_reserve_no_resize.py::test_stage_oov_activates_keys_visible_via_lookup",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

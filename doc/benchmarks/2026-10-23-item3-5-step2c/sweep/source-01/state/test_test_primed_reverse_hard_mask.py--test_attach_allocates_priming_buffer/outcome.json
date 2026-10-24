@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_hard_mask.py::test_attach_allocates_priming_buffer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

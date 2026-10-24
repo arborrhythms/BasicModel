@@ -1,6 +1,0 @@
-{
-  "node": "test/test_predicate_identity.py::test_full_inventory_still_installs_and_forms_part_question",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

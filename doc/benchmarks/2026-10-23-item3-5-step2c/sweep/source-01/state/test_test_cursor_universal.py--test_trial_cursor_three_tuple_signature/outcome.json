@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cursor_universal.py::test_trial_cursor_three_tuple_signature",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

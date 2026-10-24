@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
-    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
-    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-101.recycle.json"
-}

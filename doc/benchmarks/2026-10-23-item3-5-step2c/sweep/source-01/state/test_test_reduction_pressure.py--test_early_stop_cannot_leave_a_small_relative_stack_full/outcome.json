@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reduction_pressure.py::test_early_stop_cannot_leave_a_small_relative_stack_full",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

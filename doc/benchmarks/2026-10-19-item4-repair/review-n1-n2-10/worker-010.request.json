@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/review-n1-n2-10/worker-010.recycle.json"
-}

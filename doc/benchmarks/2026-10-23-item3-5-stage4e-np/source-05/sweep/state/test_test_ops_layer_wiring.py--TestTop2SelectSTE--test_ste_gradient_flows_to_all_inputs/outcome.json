@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_layer_wiring.py::TestTop2SelectSTE::test_ste_gradient_flows_to_all_inputs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

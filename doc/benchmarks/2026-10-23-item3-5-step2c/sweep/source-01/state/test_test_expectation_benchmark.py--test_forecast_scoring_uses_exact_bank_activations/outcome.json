@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_benchmark.py::test_forecast_scoring_uses_exact_bank_activations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
-    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-763.recycle.json"
-}

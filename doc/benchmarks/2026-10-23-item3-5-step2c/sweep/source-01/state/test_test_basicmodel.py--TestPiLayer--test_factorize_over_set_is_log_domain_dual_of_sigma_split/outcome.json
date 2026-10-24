@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestPiLayer::test_factorize_over_set_is_log_domain_dual_of_sigma_split",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

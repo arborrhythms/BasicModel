@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_vector_and_row_readers_keep_both_poles_and_weight_substitution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

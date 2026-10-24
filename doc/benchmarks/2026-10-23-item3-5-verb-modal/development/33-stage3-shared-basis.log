@@ -1,5 +1,0 @@
-[BasicModel] Weights loaded from output/item3-5-verb-modal-20261023/swap-verb/final/source-03/lessons/warmup/warmup.ckpt
-[AMP] off (fp32, MODEL_AMP unset or =off)
-batch = 0 (warm-up)
-batch = 0 (Δ=120.279s)
-{"eval_seconds": 19.576440166914836, "train_seconds": 120.2836282919161, "ce": [0.3465735912322998, 0.3465735912322998, 0.3465735912322998, 0.3465735912322998], "updates": {"paired": 2, "batch_end_disabled": 0}, "diagnostic_only": true}

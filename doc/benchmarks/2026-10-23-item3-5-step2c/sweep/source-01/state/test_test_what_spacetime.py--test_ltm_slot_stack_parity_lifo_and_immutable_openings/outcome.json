@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_ltm_slot_stack_parity_lifo_and_immutable_openings",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

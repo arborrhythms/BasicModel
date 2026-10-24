@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_word_ids_index_the_shared_basis_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammatical_query_vps.py::test_forming_candidates_does_not_mint_or_write_memory_after_setup",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

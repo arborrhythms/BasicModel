@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestBasisMereologyVector::test_part_vector_equals_x_times_yhat",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

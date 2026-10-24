@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_verb_declares_first_operand_as_head",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

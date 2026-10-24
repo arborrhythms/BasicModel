@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestReason::test_negative_trust_lie_not_illuminating",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

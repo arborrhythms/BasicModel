@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_admission.py::test_33_grounded_xor_with_word_boundary[4-0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

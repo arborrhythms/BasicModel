@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_complete_grammar_relation_ops_registered_and_mirrored",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_native_attention_field.py::test_native_reads_one_supported_word_and_charges_only_kept_trial"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-118/worker-007.recycle.json"
-}

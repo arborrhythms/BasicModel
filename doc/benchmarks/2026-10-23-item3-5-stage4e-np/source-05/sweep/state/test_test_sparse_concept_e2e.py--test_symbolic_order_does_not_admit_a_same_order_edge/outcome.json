@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_e2e.py::test_symbolic_order_does_not_admit_a_same_order_edge",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

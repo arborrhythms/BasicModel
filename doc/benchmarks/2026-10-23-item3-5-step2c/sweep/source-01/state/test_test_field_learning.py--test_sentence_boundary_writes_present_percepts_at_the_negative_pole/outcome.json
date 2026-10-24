@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_learning.py::test_sentence_boundary_writes_present_percepts_at_the_negative_pole",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

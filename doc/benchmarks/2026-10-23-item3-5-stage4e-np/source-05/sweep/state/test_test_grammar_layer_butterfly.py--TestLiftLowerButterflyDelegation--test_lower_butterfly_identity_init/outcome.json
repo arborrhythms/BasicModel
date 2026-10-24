@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_layer_butterfly.py::TestLiftLowerButterflyDelegation::test_lower_butterfly_identity_init",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

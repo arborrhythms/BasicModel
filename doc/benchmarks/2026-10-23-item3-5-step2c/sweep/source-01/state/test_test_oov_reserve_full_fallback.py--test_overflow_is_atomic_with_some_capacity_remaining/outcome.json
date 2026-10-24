@@ -1,6 +1,0 @@
-{
-  "node": "test/test_oov_reserve_full_fallback.py::test_overflow_is_atomic_with_some_capacity_remaining",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

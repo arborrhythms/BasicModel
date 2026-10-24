@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_introspection.py::TestSTEWrapper::test_backward_routes_to_query",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

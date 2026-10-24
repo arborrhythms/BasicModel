@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_adverb_grammar_ops.py::test_verb_and_adverb_registered",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

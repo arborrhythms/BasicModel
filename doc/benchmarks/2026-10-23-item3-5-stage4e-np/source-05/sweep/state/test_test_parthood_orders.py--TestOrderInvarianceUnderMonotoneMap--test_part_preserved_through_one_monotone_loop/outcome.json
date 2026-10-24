@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestOrderInvarianceUnderMonotoneMap::test_part_preserved_through_one_monotone_loop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

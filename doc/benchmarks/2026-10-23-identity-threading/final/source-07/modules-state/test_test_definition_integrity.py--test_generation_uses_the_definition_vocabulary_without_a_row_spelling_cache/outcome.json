@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_integrity.py::test_generation_uses_the_definition_vocabulary_without_a_row_spelling_cache",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

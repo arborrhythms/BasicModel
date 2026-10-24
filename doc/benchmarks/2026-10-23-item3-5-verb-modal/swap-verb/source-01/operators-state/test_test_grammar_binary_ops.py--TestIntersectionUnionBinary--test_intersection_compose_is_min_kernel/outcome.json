@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestIntersectionUnionBinary::test_intersection_compose_is_min_kernel",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_predictor_loss_and_gradients_are_identical_at_every_gain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestInvertibleSigmaLayer::test_reverse_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

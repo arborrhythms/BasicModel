@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_invalid_survivor_closure_cannot_partly_withdraw_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

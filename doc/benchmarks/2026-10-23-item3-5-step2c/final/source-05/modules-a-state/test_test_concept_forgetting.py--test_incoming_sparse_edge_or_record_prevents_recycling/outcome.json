@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_incoming_sparse_edge_or_record_prevents_recycling",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

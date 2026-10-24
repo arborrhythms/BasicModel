@@ -1,6 +1,0 @@
-{
-  "node": "test/test_arithmetic_isolation.py::test_renamed_native_vocabulary_preserves_checked_relation_answers",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_an_explicit_numerical_width_does_not_inherit_a_paired_layout",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

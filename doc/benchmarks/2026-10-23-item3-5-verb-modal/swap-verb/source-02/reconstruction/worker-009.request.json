@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_grammar_lesson_context.py::test_teacher_state_uses_neutral_context_without_mutating_the_reading"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-02/reconstruction/worker-009.recycle.json"
-}

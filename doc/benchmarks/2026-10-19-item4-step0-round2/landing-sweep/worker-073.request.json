@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_chooser_architecture.py::test_thought_uses_existing_grammar_capacity",
-    "test/test_chooser_architecture.py::test_legacy_step_checkpoint_is_discarded_without_replacing_grammar"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-073.recycle.json"
-}

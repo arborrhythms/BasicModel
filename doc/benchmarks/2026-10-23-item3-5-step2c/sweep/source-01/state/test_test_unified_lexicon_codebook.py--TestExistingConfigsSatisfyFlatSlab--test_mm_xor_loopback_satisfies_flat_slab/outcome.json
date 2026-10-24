@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_lexicon_codebook.py::TestExistingConfigsSatisfyFlatSlab::test_mm_xor_loopback_satisfies_flat_slab",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

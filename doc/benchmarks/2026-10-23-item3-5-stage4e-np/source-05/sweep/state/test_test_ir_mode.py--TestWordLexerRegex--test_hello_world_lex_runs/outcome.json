@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_mode.py::TestWordLexerRegex::test_hello_world_lex_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

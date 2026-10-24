@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

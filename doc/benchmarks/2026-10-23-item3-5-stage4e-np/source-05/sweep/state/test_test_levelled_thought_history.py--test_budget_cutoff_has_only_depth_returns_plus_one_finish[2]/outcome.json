@@ -1,6 +1,0 @@
-{
-  "node": "test/test_levelled_thought_history.py::test_budget_cutoff_has_only_depth_returns_plus_one_finish[2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,2 +1,0 @@
-(command, *, cwd, env, log_path, memory_bytes, timeout, poll_seconds=0.25, terminate_grace=1, recycle_file=None)
-{"command": ["/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python", "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/seed23_diagnostic.py", "--worker", "--reviewed-gains", "--full-replay"], "pid": 19666, "exit_code": 0, "reason": "exit", "peak_memory_bytes": 1314916392, "elapsed_seconds": 139.22947858390398, "log": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/full-replay/run.log"}

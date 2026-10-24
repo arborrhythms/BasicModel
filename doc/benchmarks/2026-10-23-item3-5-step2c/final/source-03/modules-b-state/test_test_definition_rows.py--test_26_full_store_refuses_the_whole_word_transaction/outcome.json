@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_26_full_store_refuses_the_whole_word_transaction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

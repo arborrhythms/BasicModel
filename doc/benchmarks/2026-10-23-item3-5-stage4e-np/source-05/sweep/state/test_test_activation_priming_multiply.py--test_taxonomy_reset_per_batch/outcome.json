@@ -1,6 +1,0 @@
-{
-  "node": "test/test_activation_priming_multiply.py::test_taxonomy_reset_per_batch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

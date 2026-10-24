@@ -1,6 +1,0 @@
-{
-  "node": "test/test_train_compile_target.py::test_venv_python_honors_basicmodel_python",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

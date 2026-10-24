@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestHeatMask::test_returns_only_live_slice",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

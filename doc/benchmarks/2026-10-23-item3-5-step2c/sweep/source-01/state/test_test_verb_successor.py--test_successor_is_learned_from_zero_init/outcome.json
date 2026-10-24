@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_successor.py::test_successor_is_learned_from_zero_init",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

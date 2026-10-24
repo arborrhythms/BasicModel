@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestStoreBackedChain::test_get_stm_chain_respects_n_window",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

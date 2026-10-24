@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_union_is_max_including_empty_and_repeated_support",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

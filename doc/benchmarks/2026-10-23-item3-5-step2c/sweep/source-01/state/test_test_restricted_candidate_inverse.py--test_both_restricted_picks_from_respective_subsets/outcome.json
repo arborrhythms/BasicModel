@@ -1,6 +1,0 @@
-{
-  "node": "test/test_restricted_candidate_inverse.py::test_both_restricted_picks_from_respective_subsets",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_word_unit_fraction_is_one_on_plain_text",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

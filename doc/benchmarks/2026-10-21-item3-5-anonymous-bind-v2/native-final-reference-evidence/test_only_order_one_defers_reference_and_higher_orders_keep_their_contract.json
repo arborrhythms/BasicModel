@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract",
-  "outcome": "passed",
-  "failure": "None",
-  "reads": []
-}

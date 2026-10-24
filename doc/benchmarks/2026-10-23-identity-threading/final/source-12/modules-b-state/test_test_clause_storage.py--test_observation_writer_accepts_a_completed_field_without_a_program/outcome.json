@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_observation_writer_accepts_a_completed_field_without_a_program",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

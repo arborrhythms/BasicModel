@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_spectrum.py::test_per_verb_differentiation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_item4_step0.py::test_initial_reference_candidates_are_uniform_and_the_difference_can_learn[33]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/invariant-checks/worker-001.recycle.json"
-}

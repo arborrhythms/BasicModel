@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_resolve_identities_zeros_out_1to1",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

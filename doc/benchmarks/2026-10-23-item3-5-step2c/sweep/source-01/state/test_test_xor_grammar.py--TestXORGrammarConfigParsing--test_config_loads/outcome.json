@@ -1,6 +1,0 @@
-{
-  "node": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_config_loads",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

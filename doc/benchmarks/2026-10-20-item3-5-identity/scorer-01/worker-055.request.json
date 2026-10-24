@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py::test_selected_open_formation_keeps_one_site_and_its_objectless_cue"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-055.recycle.json"
-}

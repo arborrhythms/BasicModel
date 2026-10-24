@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_review.py::test_metadata_preserves_binding_identity_without_allocator_magnitudes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

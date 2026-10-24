@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestDataScaling::test_normalize_denormalize_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

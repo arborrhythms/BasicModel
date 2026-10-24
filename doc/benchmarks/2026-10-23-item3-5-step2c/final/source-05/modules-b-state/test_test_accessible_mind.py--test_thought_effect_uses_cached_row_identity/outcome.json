@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_thought_effect_uses_cached_row_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

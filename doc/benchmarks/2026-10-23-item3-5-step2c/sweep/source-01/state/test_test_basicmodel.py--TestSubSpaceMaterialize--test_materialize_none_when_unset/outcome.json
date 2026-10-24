@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceMaterialize::test_materialize_none_when_unset",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

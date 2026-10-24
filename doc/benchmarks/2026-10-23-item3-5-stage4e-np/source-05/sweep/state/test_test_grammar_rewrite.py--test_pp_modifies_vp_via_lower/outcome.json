@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_rewrite.py::test_pp_modifies_vp_via_lower",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

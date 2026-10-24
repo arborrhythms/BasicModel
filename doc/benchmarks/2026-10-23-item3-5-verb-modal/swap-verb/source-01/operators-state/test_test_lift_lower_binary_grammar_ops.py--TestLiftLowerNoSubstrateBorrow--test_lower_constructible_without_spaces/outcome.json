@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

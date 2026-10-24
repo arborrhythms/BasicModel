@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_word_side_snap_minimal_residual",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

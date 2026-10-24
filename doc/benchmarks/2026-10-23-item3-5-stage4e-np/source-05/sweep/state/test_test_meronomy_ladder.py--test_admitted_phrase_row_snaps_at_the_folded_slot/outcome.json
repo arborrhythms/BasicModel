@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_admitted_phrase_row_snaps_at_the_folded_slot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

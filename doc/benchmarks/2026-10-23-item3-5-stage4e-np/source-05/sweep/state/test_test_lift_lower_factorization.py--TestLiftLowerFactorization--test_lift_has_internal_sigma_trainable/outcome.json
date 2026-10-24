@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_has_internal_sigma_trainable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

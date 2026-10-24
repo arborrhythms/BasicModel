@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_mlp_grammar_chooser_consumes_target_free_what_context",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

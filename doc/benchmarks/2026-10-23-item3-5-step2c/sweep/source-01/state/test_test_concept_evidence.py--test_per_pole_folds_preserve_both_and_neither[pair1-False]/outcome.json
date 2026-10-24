@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_evidence.py::test_per_pole_folds_preserve_both_and_neither[pair1-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_optimizer_remap_keeps_cs_moments_and_resets_both_old_ws_tables",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

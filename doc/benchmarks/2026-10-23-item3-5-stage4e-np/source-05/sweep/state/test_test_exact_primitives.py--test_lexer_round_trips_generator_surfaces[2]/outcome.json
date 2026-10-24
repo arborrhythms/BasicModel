@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exact_primitives.py::test_lexer_round_trips_generator_surfaces[2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

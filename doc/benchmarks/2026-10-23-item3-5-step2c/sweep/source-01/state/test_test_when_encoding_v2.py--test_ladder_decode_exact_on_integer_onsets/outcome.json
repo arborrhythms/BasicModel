@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_encoding_v2.py::test_ladder_decode_exact_on_integer_onsets",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

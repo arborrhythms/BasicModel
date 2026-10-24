@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_preference.py::test_coverage_counts_only_committed_rules_and_refuses_missing_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

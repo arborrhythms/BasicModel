@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_code_ownership.py::test_promoting_an_identity_does_not_rewrite_its_code",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

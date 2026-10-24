@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_empty_word_bracket_is_a_masked_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

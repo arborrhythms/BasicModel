@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modality_codebook.py::TestCodebookTiering::test_ws_codebook_none_opt_out_honored",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_autobind_from_cs.py::TestAutobindFiresFromCS::test_autobind_creates_meta_taxonomy_entry",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

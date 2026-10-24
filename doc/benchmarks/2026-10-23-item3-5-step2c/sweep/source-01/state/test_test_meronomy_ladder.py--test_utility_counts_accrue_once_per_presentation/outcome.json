@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_utility_counts_accrue_once_per_presentation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

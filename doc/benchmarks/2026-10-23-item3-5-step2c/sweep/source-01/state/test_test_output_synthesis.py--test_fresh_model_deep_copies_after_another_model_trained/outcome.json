@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_synthesis.py::test_fresh_model_deep_copies_after_another_model_trained",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

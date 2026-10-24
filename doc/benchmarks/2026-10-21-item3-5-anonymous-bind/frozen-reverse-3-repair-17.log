@@ -1,6 +1,0 @@
-[collect] 2 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 2.3s; peak 0.25 GiB
-[worker-000] 14 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 0; 35.9s; peak 3.29 GiB
-Result: passed, exit 0; 14/14 cases completed.
-doc/benchmarks/2026-10-21-item3-5-anonymous-bind/frozen-reverse-3-repair-17/result.json

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_event_compose.py::TestLiftLowerWhen::test_lift_and_lower_treat_the_event_as_opaque",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

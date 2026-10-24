@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_constraints_hold_at_init_binary_blocks",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

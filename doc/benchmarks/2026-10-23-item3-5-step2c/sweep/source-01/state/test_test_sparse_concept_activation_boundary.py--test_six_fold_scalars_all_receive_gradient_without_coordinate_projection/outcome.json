@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_activation_boundary.py::test_six_fold_scalars_all_receive_gradient_without_coordinate_projection",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

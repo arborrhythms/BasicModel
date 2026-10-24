@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_chunked_oom.py::test_dead_code_refresh_replaces_multiple_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

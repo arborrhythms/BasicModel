@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_operators_round2b.py::test_reader_mean_for_compose_kept_for_narrowing_and_one_owned_step",
-    "test/test_operators_round2b.py::test_pole_handoff_preserves_both_magnitudes_independently_of_presence",
-    "test/test_operators_round2b.py::test_inherited_parts_form_partial_order_and_before_after_audit"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-541.recycle.json"
-}

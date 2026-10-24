@@ -1,6 +1,0 @@
-{
-  "node": "test/test_understanding_reconstruct.py::test_second_forward_does_not_mutate_the_first_understanding",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

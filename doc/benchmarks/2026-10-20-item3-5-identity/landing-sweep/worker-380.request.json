@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
-    "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-380.recycle.json"
-}

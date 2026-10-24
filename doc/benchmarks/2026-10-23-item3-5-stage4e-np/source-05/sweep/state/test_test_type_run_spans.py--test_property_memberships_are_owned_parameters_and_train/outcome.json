@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_property_memberships_are_owned_parameters_and_train",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

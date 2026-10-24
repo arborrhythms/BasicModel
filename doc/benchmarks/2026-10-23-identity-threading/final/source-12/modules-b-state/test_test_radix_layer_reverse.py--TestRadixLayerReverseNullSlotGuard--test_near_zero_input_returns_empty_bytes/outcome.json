@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_layer_reverse.py::TestRadixLayerReverseNullSlotGuard::test_near_zero_input_returns_empty_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

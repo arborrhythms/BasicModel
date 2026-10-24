@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_layer_reverse.py::TestRadixLayerReverseBatchShape::test_2d_input_returns_list_of_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

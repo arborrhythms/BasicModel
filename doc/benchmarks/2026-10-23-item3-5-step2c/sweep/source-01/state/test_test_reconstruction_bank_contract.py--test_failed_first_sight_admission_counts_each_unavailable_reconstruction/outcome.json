@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reconstruction_bank_contract.py::test_failed_first_sight_admission_counts_each_unavailable_reconstruction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

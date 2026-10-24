@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_journal.py::test_unresolved_typed_admission_keeps_the_scored_source_reference",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

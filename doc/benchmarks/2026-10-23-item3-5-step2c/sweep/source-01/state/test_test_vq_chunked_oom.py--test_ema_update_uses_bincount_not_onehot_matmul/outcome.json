@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_chunked_oom.py::test_ema_update_uses_bincount_not_onehot_matmul",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

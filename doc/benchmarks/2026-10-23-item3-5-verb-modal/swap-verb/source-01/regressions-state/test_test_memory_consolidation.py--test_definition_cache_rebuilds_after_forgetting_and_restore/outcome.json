@@ -1,6 +1,0 @@
-{
-  "node": "test/test_memory_consolidation.py::test_definition_cache_rebuilds_after_forgetting_and_restore",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

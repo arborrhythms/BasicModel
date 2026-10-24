@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestOutputSpaceTextReconstruction::test_reconstruct_to_buffer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

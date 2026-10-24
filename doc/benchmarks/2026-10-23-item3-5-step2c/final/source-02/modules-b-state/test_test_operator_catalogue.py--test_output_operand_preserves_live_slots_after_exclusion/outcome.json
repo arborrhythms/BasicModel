@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_output_operand_preserves_live_slots_after_exclusion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

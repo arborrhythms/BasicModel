@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_contract_boundaries.py::test_retired_query_catalogue_is_rejected_without_mutating_grammar[declarations2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

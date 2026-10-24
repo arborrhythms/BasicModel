@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_synthesize_whole_dominates_all_parts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_stm_bookkeeping.py::TestSTMShiftAtCapacity::test_shift_drops_oldest",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_native_ids.py::test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

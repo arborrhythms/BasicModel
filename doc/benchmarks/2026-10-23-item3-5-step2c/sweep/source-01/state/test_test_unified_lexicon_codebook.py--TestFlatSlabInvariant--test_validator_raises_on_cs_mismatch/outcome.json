@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_raises_on_cs_mismatch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

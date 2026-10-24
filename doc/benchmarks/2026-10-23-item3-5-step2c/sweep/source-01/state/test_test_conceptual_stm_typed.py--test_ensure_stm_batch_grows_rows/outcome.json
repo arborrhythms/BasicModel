@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm_typed.py::test_ensure_stm_batch_grows_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

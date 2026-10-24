@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestConjunctionDisjunctionForwarders::test_disjunction_monotonic_matches_torch_max",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

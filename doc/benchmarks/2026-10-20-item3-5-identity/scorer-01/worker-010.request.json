@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_close.py::test_only_order_one_defers_reference_and_higher_orders_keep_their_contract"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-010.recycle.json"
-}

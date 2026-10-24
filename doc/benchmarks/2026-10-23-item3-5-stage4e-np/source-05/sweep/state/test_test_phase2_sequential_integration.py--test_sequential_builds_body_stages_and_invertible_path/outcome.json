@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase2_sequential_integration.py::test_sequential_builds_body_stages_and_invertible_path",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

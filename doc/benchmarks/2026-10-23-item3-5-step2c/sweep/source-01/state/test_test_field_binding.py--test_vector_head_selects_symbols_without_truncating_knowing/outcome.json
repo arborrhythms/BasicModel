@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_binding.py::test_vector_head_selects_symbols_without_truncating_knowing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

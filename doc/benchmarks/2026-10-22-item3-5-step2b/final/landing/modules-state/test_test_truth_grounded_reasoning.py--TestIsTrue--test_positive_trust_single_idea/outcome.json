@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_grounded_reasoning.py::TestIsTrue::test_positive_trust_single_idea",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

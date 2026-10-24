@@ -1,6 +1,0 @@
-{
-  "node": "test/test_active_codebook_reads.py::test_active_prototypes_and_reverse_ignore_inactive_exact_match",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

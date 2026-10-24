@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py::test_pending_subject_keeps_its_composed_predicate_when_stored",
-    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]",
-    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[True]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/sweep-repair-09/worker-026.recycle.json"
-}

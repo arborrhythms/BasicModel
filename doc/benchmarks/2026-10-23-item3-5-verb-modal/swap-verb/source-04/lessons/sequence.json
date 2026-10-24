@@ -1,6 +1,0 @@
-{
-  "source": "deb8bfbbc9c2f5b87e8e75f449eb8d75d3d67ee0",
-  "stop": "stage3",
-  "reason": "execution failure",
-  "exit": 1
-}

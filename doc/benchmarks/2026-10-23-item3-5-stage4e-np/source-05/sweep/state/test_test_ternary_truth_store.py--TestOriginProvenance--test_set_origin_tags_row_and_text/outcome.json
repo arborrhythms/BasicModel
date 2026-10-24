@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_set_origin_tags_row_and_text",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

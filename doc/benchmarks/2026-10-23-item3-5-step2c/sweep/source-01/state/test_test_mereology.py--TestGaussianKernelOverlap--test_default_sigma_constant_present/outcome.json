@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestGaussianKernelOverlap::test_default_sigma_constant_present",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

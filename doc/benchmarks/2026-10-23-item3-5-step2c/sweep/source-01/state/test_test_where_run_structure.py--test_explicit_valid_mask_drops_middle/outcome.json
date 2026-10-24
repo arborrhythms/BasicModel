@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_explicit_valid_mask_drops_middle",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

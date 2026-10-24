@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

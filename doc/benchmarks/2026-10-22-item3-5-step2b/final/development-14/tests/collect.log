@@ -1,4 +1,0 @@
-test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[False]
-test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]
-
-2 tests collected in 0.46s

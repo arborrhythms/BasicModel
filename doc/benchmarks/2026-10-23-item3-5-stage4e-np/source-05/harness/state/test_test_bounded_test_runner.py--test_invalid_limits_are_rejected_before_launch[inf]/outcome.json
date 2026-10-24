@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_invalid_limits_are_rejected_before_launch[inf]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

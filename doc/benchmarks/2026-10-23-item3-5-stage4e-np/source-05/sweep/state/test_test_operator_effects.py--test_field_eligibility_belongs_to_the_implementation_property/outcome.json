@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_effects.py::test_field_eligibility_belongs_to_the_implementation_property",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

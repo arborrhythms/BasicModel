@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_spell_out.py::TestSpellOut::test_longest_match_after_promotion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

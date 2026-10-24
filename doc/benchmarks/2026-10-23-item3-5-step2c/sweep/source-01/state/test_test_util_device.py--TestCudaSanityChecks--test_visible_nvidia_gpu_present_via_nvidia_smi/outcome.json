@@ -1,6 +1,0 @@
-{
-  "node": "test/test_util_device.py::TestCudaSanityChecks::test_visible_nvidia_gpu_present_via_nvidia_smi",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

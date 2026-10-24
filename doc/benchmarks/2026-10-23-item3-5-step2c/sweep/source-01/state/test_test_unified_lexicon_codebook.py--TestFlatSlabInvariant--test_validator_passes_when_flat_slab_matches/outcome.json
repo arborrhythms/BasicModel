@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_validator_passes_when_flat_slab_matches",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

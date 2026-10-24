@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compiled_word_chunk.py::test_cuda_selects_lazy_fullgraph_word_loop_and_cudagraph_policy",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

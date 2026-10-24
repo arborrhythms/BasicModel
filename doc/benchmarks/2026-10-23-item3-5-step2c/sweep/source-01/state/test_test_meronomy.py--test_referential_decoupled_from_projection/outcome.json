@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_referential_decoupled_from_projection",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

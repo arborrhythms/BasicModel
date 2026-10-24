@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_equal_rms_evidence_for_different_codes_is_distinguished[SigmaConceptsFromPercepts]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

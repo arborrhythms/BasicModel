@@ -1,6 +1,0 @@
-{
-  "node": "test/test_understanding_readout.py::test_answer_reads_understanding_with_gradient_cut[True-3]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

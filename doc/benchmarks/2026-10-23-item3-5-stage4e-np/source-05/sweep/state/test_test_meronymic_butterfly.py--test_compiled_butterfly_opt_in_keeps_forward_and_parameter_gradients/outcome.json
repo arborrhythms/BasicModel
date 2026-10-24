@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronymic_butterfly.py::test_compiled_butterfly_opt_in_keeps_forward_and_parameter_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

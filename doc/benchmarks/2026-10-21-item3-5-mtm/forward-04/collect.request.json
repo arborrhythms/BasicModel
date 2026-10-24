@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_medium_term_memory.py"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

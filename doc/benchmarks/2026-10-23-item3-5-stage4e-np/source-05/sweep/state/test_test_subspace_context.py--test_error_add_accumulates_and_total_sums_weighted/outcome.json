@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_context.py::test_error_add_accumulates_and_total_sums_weighted",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

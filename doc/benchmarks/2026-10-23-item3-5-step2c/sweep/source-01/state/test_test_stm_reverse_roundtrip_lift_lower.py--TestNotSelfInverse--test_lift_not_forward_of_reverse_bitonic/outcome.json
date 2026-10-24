@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestNotSelfInverse::test_lift_not_forward_of_reverse_bitonic",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

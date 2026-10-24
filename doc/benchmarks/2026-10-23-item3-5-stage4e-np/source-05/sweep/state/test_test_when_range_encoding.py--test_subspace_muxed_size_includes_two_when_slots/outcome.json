@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_subspace_muxed_size_includes_two_when_slots",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

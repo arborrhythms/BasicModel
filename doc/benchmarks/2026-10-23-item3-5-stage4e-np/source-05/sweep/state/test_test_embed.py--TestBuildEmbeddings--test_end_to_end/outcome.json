@@ -1,6 +1,0 @@
-{
-  "node": "test/test_embed.py::TestBuildEmbeddings::test_end_to_end",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

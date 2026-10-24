@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_binding.py::test_inventory_checkpoint_preserves_definition_between_modes[aligned-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

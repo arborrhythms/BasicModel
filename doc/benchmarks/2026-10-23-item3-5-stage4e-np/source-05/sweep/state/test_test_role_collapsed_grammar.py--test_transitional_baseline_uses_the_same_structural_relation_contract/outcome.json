@@ -1,6 +1,0 @@
-{
-  "node": "test/test_role_collapsed_grammar.py::test_transitional_baseline_uses_the_same_structural_relation_contract",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

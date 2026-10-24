@@ -1,6 +1,0 @@
-{
-  "node": "test/test_streaming_ar_training.py::test_layer_has_start_method",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

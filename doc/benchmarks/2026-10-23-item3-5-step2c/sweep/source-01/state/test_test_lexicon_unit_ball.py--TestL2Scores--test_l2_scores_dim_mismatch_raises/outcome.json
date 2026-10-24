@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_unit_ball.py::TestL2Scores::test_l2_scores_dim_mismatch_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

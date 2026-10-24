@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_assert_relation_raw_codes_reserve_snap_row_no_edges",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

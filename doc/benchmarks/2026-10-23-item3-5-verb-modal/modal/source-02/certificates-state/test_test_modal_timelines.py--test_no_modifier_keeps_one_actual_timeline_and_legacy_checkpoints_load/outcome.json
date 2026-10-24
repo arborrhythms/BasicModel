@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modal_timelines.py::test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

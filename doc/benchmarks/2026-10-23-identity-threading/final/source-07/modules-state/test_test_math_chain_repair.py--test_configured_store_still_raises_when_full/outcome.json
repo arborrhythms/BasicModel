@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair.py::test_configured_store_still_raises_when_full",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

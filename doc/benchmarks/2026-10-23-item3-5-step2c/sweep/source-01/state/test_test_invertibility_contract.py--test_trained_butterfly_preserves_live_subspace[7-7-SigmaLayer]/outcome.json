@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility_contract.py::test_trained_butterfly_preserves_live_subspace[7-7-SigmaLayer]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_what_grammar_context_uses_model_where_ladder",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

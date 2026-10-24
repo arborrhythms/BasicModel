@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_encoding_v2.py::test_no_endpoint_bracket_api",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

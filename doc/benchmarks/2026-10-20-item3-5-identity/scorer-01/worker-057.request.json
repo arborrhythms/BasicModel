@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py::test_objectless_predicate_keeps_its_identity_in_the_ended_compound[False]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-057.recycle.json"
-}

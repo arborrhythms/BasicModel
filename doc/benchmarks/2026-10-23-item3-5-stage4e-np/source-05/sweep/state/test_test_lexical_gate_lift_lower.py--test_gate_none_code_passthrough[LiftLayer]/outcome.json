@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexical_gate_lift_lower.py::test_gate_none_code_passthrough[LiftLayer]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

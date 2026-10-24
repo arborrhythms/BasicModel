@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_names_events_checkpoint_and_reclamation_have_separate_ownership",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

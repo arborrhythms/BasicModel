@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_current_schema_validates_and_retired_scope_is_rejected",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

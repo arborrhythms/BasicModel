@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_error.py::test_uniform_categorical_prediction_is_one_even_for_constant_targets[2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_recursive_absolute_clauses_each_write_one_idea",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

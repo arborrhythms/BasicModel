@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_traversal.py::test_no_evidence_is_ineligible_but_against_only_is_supported",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

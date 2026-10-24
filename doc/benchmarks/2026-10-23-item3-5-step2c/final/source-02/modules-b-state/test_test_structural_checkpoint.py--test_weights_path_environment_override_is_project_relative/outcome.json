@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_checkpoint.py::test_weights_path_environment_override_is_project_relative",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clarifications.py::test_consistency_report_no_contradiction_when_same_sign",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

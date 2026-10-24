@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_integrity.py::test_pending_field_word_reservation_survives_checkpoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

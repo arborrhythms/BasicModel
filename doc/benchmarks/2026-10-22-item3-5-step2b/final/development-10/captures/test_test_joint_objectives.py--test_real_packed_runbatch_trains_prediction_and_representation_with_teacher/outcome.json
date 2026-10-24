@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_real_packed_runbatch_trains_prediction_and_representation_with_teacher",
-  "outcome": "failed",
-  "failure": "test/test_joint_objectives.py:80: in test_real_packed_runbatch_trains_prediction_and_representation_with_teacher\n    assert disc is not None and not m.legacy_prediction_enabled\n                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:1972: in __getattr__\n    raise AttributeError(\nE   AttributeError: 'BasicModel' object has no attribute 'legacy_prediction_enabled'",
-  "records": []
-}

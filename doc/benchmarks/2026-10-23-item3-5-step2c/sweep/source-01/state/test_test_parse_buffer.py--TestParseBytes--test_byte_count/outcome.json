@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parse_buffer.py::TestParseBytes::test_byte_count",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

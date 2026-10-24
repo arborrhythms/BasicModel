@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reduction_pressure.py::test_online_deadline_uses_full_depth_behind_the_two_slot_window",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

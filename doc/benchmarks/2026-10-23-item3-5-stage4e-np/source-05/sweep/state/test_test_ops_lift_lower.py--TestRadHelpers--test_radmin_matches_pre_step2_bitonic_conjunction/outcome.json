@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestRadHelpers::test_radmin_matches_pre_step2_bitonic_conjunction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

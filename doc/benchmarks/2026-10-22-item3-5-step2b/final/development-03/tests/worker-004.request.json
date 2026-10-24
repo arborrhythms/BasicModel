@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_truth_text.py::test_truth_kind_is_rejected_by_the_schema",
-    "test/test_truth_text.py::test_given_truth_texts_are_plain_english",
-    "test/test_truth_text.py::test_supplied_trust_preserves_both_possible_grammatical_fields"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-22-item3-5-step2b/final/development-03/tests/worker-004.recycle.json"
-}

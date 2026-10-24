@@ -1,6 +1,0 @@
-{
-  "node": "test/test_fineweb_preflight.py::test_checkpoint_restores_optimizer_counters_and_rng",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

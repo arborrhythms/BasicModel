@@ -1,6 +1,0 @@
-{
-  "node": "test/test_boolean_reverse_recommender.py::test_conjunction_reverse_no_basis_fails_loud",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

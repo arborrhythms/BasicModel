@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_effects.py::test_order_change_is_declared_and_survives_an_alias",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_reconstruction.py::test_word_scoring_honors_existing_nul_termination",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

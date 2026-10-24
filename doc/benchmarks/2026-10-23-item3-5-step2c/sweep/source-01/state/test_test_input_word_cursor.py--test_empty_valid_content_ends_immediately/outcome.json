@@ -1,6 +1,0 @@
-{
-  "node": "test/test_input_word_cursor.py::test_empty_valid_content_ends_immediately",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

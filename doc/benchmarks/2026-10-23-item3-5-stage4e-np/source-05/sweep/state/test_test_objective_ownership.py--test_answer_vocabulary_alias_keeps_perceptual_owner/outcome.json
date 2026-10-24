@@ -1,6 +1,0 @@
-{
-  "node": "test/test_objective_ownership.py::test_answer_vocabulary_alias_keeps_perceptual_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

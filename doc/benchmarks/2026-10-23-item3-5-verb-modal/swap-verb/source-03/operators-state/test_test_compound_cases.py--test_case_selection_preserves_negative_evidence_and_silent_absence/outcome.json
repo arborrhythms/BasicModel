@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compound_cases.py::test_case_selection_preserves_negative_evidence_and_silent_absence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

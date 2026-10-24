@@ -1,6 +1,0 @@
-{
-  "node": "test/test_objective_ownership.py::test_expectation_does_not_write_its_context_or_routing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

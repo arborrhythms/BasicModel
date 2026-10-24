@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_save_and_load_artifact_round_trips_knowledge",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

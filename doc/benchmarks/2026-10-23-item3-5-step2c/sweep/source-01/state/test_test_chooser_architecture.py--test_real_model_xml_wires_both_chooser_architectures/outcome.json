@@ -1,6 +1,0 @@
-{
-  "node": "test/test_chooser_architecture.py::test_real_model_xml_wires_both_chooser_architectures",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

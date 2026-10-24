@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_metadata.py::test_full_description_metadata_changes_which_referent_is_requested[scope]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

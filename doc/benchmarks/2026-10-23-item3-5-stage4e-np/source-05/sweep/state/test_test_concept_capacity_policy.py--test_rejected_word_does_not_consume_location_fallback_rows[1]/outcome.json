@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_capacity_policy.py::test_rejected_word_does_not_consume_location_fallback_rows[1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestLowerAND::test_region_form_is_max_lower_min_upper",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

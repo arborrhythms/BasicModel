@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_enable_allocates_zeroed_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

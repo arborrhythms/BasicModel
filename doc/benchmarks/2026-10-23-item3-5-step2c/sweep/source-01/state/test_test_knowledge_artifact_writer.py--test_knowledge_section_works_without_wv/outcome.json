@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_knowledge_section_works_without_wv",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

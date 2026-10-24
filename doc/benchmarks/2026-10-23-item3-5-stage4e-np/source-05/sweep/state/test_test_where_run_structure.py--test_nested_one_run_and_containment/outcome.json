@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_nested_one_run_and_containment",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

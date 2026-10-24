@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_padding_and_legacy_operand_orientation_are_explicit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

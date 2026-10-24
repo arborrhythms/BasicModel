@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_whole_property_codebook.py::test_canonical_ws_stage_composes_transformed_property_rows"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-983.recycle.json"
-}

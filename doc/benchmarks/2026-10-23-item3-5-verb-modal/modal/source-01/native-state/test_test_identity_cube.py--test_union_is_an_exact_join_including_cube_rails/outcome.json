@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_cube.py::test_union_is_an_exact_join_including_cube_rails",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

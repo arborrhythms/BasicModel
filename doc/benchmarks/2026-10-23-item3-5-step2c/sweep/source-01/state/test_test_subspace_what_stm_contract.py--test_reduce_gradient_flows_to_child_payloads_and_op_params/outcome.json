@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_reduce_gradient_flows_to_child_payloads_and_op_params",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

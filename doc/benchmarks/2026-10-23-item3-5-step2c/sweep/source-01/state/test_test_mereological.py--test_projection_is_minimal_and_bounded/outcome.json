@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereological.py::test_projection_is_minimal_and_bounded",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

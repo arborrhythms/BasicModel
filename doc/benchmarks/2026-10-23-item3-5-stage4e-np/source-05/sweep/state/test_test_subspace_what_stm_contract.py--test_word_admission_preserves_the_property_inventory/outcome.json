@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_word_admission_preserves_the_property_inventory",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

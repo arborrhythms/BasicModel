@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestConceptualSpaceReverseRangeCheck::test_nonlinear_output_in_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_smaller_checkpoint_table_prefix_loads_into_configured_initial_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

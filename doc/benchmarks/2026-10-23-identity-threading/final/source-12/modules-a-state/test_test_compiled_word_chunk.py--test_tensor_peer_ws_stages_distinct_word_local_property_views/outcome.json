@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

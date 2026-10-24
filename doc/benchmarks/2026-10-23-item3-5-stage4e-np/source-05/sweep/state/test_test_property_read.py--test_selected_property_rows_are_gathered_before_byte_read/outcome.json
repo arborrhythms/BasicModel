@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_read.py::test_selected_property_rows_are_gathered_before_byte_read",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

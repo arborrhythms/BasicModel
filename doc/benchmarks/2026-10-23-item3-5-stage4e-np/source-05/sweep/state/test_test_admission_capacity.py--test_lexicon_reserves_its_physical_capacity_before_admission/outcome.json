@@ -1,6 +1,0 @@
-{
-  "node": "test/test_admission_capacity.py::test_lexicon_reserves_its_physical_capacity_before_admission",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

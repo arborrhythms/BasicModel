@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_rows.py::test_content_meet_cannot_read_form_while_form_can_identify_its_region",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

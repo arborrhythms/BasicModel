@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_normal_priming_uses_boosted_rows_not_the_identity_mask",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

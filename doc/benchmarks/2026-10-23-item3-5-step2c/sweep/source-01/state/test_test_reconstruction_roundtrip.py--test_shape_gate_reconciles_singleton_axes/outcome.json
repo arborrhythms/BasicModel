@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

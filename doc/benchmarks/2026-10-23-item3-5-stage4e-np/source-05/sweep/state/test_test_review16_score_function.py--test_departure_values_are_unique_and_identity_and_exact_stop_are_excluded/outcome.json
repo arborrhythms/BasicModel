@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review16_score_function.py::test_departure_values_are_unique_and_identity_and_exact_stop_are_excluded",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_end_state.py::test_answer_and_recall_own_completed_fields_without_programs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

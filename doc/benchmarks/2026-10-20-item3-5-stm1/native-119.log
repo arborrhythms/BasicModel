@@ -1,8 +1,0 @@
-[collect] 2 selectors; limit 300s, 8.0 GiB
-[collect] exit 0; 3.6s; peak 0.40 GiB
-[worker-000] 1 selectors; limit 300s, 8.0 GiB
-[worker-001] 1 selectors; limit 300s, 8.0 GiB
-[worker-000] exit 1; 5.3s; peak 0.58 GiB
-[worker-001] exit 1; 39.0s; peak 0.94 GiB
-Result: test_failure, exit 1; 2/2 cases completed.
-doc/benchmarks/2026-10-20-item3-5-stm1/native-119/result.json

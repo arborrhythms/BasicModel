@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_activation_boundary.py::test_code_specific_evidence_distinguishes_equal_energy_patterns",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

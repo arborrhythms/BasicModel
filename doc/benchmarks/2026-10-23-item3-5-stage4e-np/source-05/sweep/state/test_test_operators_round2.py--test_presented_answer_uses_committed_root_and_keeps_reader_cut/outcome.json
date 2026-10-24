@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2.py::test_presented_answer_uses_committed_root_and_keeps_reader_cut",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

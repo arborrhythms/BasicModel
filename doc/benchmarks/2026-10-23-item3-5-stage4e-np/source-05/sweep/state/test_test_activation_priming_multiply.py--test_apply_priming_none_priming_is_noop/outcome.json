@@ -1,6 +1,0 @@
-{
-  "node": "test/test_activation_priming_multiply.py::test_apply_priming_none_priming_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

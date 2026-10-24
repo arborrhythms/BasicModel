@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_retention.py::test_narrow_idea_retains_no_implicit_operand_reference",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

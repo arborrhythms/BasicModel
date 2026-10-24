@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_dataset.py::test_split_by_structure_is_disjoint_and_holds_out_deep_problems",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

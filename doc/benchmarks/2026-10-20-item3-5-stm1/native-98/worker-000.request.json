@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]",
-    "test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-98/worker-000.recycle.json"
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_word_base_mereology.py::test_partspace_word_code_is_max_and_anagrams_share_it"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-999.recycle.json"
-}

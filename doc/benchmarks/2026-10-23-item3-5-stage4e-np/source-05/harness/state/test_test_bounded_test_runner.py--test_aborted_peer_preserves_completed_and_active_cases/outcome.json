@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_aborted_peer_preserves_completed_and_active_cases",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

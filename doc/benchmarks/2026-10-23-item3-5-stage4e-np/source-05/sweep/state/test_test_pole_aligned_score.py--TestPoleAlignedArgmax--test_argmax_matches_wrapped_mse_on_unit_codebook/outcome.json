@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pole_aligned_score.py::TestPoleAlignedArgmax::test_argmax_matches_wrapped_mse_on_unit_codebook",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

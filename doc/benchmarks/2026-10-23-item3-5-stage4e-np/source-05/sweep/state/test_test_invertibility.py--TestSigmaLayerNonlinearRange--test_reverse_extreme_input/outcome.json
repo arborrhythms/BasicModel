@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestSigmaLayerNonlinearRange::test_reverse_extreme_input",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

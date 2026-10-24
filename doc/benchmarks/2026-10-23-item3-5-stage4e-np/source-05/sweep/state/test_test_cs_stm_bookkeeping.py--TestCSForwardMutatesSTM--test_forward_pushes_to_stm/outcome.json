@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_stm_bookkeeping.py::TestCSForwardMutatesSTM::test_forward_pushes_to_stm",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

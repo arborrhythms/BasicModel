@@ -1,6 +1,0 @@
-{
-  "node": "test/test_chooser_architecture.py::test_custom_grammar_capacity_shapes_and_all_hidden_gradients[3]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-[collect] 2 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 3.8s; peak 0.40 GiB
-[worker-000] 6 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 1; 3.8s; peak 0.41 GiB
-Result: test_failure, exit 1; 6/6 cases completed.
-doc/benchmarks/2026-10-21-item3-5-mtm/reclose-07-red/result.json

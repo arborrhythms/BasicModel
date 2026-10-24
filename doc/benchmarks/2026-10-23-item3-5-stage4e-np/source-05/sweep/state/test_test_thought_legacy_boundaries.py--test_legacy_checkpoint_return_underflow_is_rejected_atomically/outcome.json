@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_legacy_boundaries.py::test_legacy_checkpoint_return_underflow_is_rejected_atomically",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

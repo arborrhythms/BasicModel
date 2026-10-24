@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_legacy_query_entries_are_masked_inside_forward[answer_query]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

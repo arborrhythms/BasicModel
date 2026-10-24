@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_review.py::test_fork_joins_by_saved_slot_when_packed_end_slots_are_out_of_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

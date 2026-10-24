@@ -1,6 +1,0 @@
-{
-  "node": "test/test_kleene_binding.py::test_variable_binds_to_operand_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

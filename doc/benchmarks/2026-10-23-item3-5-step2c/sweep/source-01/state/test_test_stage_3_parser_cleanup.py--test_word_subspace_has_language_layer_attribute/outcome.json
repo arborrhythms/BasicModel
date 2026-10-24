@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stage_3_parser_cleanup.py::test_word_subspace_has_language_layer_attribute",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

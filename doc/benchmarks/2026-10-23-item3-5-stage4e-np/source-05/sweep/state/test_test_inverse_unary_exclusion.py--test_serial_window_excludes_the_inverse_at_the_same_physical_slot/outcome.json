@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inverse_unary_exclusion.py::test_serial_window_excludes_the_inverse_at_the_same_physical_slot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

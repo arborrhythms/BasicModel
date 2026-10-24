@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review16_score_function.py::test_greedy_stop_has_operand_gradient_and_no_chooser_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

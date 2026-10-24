@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

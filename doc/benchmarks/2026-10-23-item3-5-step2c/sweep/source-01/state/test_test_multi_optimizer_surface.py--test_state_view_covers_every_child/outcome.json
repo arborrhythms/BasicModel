@@ -1,6 +1,0 @@
-{
-  "node": "test/test_multi_optimizer_surface.py::test_state_view_covers_every_child",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

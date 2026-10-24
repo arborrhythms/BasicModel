@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_complement_requires_an_observation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

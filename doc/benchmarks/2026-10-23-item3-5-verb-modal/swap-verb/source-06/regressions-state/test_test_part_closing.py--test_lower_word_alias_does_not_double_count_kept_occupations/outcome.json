@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_closing.py::test_lower_word_alias_does_not_double_count_kept_occupations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

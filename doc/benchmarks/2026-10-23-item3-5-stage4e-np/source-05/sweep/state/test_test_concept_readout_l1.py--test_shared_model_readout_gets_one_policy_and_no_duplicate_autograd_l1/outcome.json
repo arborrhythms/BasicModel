@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_readout_l1.py::test_shared_model_readout_gets_one_policy_and_no_duplicate_autograd_l1",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

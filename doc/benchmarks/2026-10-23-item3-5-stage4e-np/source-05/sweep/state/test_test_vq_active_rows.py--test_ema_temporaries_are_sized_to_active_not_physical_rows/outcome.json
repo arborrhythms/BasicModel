@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_ema_temporaries_are_sized_to_active_not_physical_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

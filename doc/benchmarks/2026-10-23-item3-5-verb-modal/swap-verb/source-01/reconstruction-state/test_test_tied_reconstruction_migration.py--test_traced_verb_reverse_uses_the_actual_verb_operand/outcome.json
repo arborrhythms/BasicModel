@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_reconstruction_migration.py::test_traced_verb_reverse_uses_the_actual_verb_operand",
-  "outcome": "failed",
-  "failure": "test/test_tied_reconstruction_migration.py:102: in test_traced_verb_reverse_uses_the_actual_verb_operand\n    parent = op.compose(noun, verb)\n             ^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3346: in compose\n    return self.forward(left, right, gate=gate)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3426: in forward\n    return self.apply_verb(left, right)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Language.py:3287: in apply_verb\n    return self._verb_rail_transform(\nbin/Language.py:3270: in _verb_rail_transform\n    interior = cube_chart(value_f32, bounded=False)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:116: in cube_chart\n    assert_cube(value)\nbin/Layers.py:103: in assert_cube\n    torch._assert_async(\nE   RuntimeError: identity map requires finite coordinates in [0, 1]",
-  "records": []
-}

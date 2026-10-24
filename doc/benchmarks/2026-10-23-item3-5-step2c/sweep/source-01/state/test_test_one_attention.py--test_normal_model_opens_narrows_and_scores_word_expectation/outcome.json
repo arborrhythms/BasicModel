@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_normal_model_opens_narrows_and_scores_word_expectation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

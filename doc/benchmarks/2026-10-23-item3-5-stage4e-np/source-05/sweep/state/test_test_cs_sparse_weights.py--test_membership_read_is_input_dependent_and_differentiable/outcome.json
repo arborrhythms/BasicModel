@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_membership_read_is_input_dependent_and_differentiable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

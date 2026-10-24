@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_retention.py::test_retained_estimate_links_its_external_observation_and_restores",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

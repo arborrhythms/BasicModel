@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_walk_handles_mixed_output_lengths_per_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

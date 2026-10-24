@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_walk_compiles_fullgraph_and_matches_eager",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

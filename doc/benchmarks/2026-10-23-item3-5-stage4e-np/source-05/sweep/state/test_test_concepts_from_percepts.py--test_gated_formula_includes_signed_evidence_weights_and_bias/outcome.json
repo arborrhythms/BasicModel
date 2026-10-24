@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_gated_formula_includes_signed_evidence_weights_and_bias",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

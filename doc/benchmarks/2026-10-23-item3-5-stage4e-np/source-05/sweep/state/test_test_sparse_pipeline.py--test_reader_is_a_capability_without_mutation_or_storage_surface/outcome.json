@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_reader_is_a_capability_without_mutation_or_storage_surface",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

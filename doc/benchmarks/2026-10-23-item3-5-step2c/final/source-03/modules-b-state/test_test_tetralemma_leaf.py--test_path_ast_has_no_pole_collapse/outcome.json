@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tetralemma_leaf.py::test_path_ast_has_no_pole_collapse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

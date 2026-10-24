@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_word_pair_snap_recovers_folded_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

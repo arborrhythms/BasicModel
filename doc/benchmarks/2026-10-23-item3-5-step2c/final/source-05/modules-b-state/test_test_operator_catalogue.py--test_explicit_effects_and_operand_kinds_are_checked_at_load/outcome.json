@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_explicit_effects_and_operand_kinds_are_checked_at_load",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

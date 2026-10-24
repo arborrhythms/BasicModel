@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_single_sentence_cursor_keeps_true_document_continuations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_interpretation.py::test_testimony_and_its_later_definition_are_read_by_the_parallel_field",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

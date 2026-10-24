@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_generate_policy_decides_an_unstamped_top",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

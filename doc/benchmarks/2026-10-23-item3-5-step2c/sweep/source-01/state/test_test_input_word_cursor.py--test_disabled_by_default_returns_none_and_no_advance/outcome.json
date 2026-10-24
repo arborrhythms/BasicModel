@@ -1,6 +1,0 @@
-{
-  "node": "test/test_input_word_cursor.py::test_disabled_by_default_returns_none_and_no_advance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_expectation_ablation_withholds_the_answer_line_and_all_answer_labels",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

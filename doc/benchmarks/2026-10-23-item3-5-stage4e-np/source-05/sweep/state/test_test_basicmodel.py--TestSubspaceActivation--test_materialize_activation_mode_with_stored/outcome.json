@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubspaceActivation::test_materialize_activation_mode_with_stored",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

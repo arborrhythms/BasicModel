@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_policy_auto_disables_complete_cuda_optimizer_without_tensor_scan",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

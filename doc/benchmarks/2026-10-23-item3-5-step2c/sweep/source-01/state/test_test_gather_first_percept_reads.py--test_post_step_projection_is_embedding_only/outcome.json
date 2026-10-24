@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gather_first_percept_reads.py::test_post_step_projection_is_embedding_only",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

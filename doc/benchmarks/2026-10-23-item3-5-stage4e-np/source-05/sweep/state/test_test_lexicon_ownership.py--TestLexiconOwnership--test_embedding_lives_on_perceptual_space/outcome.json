@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexicon_ownership.py::TestLexiconOwnership::test_embedding_lives_on_perceptual_space",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

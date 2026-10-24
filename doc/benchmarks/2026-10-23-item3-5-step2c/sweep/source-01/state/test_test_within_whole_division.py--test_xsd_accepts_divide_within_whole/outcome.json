@@ -1,6 +1,0 @@
-{
-  "node": "test/test_within_whole_division.py::test_xsd_accepts_divide_within_whole",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

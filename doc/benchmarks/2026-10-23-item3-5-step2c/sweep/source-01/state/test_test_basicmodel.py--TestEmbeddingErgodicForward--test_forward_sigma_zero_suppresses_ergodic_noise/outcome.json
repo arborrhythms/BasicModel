@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestEmbeddingErgodicForward::test_forward_sigma_zero_suppresses_ergodic_noise",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

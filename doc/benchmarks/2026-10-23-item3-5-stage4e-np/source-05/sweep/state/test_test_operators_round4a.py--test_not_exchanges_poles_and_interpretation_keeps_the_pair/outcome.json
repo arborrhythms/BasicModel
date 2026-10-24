@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_not_exchanges_poles_and_interpretation_keeps_the_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

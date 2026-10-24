@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_table.py::test_symbol_code_deterministic_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

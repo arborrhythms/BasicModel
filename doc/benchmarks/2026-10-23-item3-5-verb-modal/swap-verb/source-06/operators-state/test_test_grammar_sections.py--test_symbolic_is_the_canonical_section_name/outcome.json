@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_sections.py::test_symbolic_is_the_canonical_section_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

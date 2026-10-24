@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_weekly_collection_failure_cannot_spin_or_claim_attempts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

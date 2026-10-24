@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_held_out_and_beyond_sources_end_at_question_and_have_no_worked_answers",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

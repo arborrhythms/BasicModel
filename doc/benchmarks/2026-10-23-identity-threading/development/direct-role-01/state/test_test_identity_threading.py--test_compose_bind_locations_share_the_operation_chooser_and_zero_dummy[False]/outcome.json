@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

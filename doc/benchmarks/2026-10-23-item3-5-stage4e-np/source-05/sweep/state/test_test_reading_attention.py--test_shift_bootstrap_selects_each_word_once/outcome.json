@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reading_attention.py::test_shift_bootstrap_selects_each_word_once",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

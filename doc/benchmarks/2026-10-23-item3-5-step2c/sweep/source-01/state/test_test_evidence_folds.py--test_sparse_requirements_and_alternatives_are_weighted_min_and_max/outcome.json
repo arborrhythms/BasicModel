@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_sparse_requirements_and_alternatives_are_weighted_min_and_max",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

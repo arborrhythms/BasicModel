@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestExtrapolate::test_consistent_pair_derives",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

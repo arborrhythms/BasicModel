@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_orth_storage.py::TestPsLocalOrthStorage::test_local_parameter_is_registered",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

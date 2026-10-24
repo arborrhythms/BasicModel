@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lift_generate_dispatches_to_reverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

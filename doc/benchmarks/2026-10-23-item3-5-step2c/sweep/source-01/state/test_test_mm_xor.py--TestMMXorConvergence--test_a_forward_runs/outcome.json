@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mm_xor.py::TestMMXorConvergence::test_a_forward_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

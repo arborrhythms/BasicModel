@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_encoding_recovery.py::test_allocate_starts_at_one",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_required_parts_keep_support_and_counterevidence_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

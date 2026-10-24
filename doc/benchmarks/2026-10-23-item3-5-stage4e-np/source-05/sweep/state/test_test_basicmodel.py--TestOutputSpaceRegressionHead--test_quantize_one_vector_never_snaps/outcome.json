@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_quantize_one_vector_never_snaps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

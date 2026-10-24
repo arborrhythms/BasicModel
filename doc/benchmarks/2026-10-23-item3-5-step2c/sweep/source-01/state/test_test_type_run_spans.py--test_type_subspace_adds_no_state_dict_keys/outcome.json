@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_type_subspace_adds_no_state_dict_keys",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

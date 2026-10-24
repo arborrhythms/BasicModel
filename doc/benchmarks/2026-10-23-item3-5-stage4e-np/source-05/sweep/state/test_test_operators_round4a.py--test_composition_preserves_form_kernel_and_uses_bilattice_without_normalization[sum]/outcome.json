@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a.py::test_composition_preserves_form_kernel_and_uses_bilattice_without_normalization[sum]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

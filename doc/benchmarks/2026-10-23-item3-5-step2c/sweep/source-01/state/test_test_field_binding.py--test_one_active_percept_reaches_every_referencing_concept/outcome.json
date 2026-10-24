@@ -1,6 +1,0 @@
-{
-  "node": "test/test_field_binding.py::test_one_active_percept_reaches_every_referencing_concept",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

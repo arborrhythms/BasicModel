@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_policy.py::test_flush_and_promote_calls_extend_artifact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

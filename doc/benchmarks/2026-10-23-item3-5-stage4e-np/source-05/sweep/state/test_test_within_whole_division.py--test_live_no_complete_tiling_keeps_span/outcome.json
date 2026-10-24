@@ -1,6 +1,0 @@
-{
-  "node": "test/test_within_whole_division.py::test_live_no_complete_tiling_keeps_span",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

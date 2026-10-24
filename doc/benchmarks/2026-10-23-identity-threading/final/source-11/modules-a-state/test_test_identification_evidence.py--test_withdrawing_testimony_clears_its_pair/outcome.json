@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identification_evidence.py::test_withdrawing_testimony_clears_its_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

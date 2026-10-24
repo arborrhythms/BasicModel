@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_stateful_infer_runs_the_host_boundary_after_the_request",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

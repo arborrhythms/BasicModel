@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_it",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

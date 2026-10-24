@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_lexicon_codebook.py::TestFlatSlabInvariant::test_aligned_word_brackets_allows_compact_ps_into_high_dim_cs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

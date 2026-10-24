@@ -1,6 +1,0 @@
-{
-  "node": "test/test_iterated_symbolic_wave.py::test_no_self_edge_via_populate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

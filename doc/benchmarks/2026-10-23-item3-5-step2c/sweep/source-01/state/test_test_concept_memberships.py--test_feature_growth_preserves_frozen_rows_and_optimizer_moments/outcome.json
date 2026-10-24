@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_feature_growth_preserves_frozen_rows_and_optimizer_moments",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

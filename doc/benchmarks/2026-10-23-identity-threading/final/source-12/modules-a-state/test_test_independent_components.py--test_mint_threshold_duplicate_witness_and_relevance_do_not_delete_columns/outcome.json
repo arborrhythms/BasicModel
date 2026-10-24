@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_mint_threshold_duplicate_witness_and_relevance_do_not_delete_columns",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

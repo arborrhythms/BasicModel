@@ -1,5 +1,0 @@
-{
-  "type": "AttributeError",
-  "message": "'NoneType' object has no attribute 'items'",
-  "seconds": 0.6728547919992707
-}

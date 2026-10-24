@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_bracket.py::test_ladder_round_trip_exact_across_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

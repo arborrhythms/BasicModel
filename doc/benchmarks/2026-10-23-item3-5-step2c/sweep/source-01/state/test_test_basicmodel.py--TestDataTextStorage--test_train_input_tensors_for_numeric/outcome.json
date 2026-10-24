@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestDataTextStorage::test_train_input_tensors_for_numeric",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_sentence_priming.py::test_serial_reading_diffuses_over_existing_definitions",
-    "test/test_sentence_priming.py::test_batch_rows_never_prime_each_other",
-    "test/test_sentence_priming.py::test_part_graph_has_no_edge_cap"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-65/worker-016.recycle.json"
-}

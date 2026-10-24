@@ -1,6 +1,0 @@
-{
-  "node": "test/test_heat_reverse_wiring.py::TestHeatReverseSelfPriming::test_selected_left_row_is_reprimed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

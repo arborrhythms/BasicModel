@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_reduce_raises_on_stack_underflow",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

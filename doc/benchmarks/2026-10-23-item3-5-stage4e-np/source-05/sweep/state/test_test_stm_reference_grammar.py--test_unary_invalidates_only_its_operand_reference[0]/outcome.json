@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reference_grammar.py::test_unary_invalidates_only_its_operand_reference[0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

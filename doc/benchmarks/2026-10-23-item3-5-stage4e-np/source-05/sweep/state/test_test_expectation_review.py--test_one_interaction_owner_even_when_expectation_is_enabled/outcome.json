@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_review.py::test_one_interaction_owner_even_when_expectation_is_enabled",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

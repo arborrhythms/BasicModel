@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_store.py::test_missing_surface_snapshot_is_a_staging_error_without_input_fallback",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_lesson.py::test_targets_cannot_change_the_prompt_need",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_constituent_lesson.py::test_training_trajectory_selects_the_kept_trial_and_excludes_unreachable_ce",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

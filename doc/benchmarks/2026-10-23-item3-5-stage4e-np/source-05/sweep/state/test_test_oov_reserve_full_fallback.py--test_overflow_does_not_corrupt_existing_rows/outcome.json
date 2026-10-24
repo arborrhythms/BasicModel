@@ -1,6 +1,0 @@
-{
-  "node": "test/test_oov_reserve_full_fallback.py::test_overflow_does_not_corrupt_existing_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_provenance.py::test_consolidated_pending_chain_reads_the_actual_two_role_presence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

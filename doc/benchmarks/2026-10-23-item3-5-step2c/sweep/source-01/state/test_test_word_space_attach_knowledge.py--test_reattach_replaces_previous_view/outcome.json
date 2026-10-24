@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_space_attach_knowledge.py::test_reattach_replaces_previous_view",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

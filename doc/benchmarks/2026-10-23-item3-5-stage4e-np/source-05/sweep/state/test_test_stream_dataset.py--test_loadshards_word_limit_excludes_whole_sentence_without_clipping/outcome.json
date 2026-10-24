@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_dataset.py::test_loadshards_word_limit_excludes_whole_sentence_without_clipping",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

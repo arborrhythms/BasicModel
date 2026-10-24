@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_disjoint_objects_confine_different_actions",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

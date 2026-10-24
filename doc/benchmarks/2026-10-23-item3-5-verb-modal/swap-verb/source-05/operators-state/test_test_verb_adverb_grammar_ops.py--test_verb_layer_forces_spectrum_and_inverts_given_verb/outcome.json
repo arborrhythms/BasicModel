@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_adverb_grammar_ops.py::test_verb_layer_forces_spectrum_and_inverts_given_verb",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

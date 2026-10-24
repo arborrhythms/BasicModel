@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_compose.py::test_sentence_winners_are_row_local_and_precede_the_next_perception",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_chain_grows.py::TestLtmContextReset::test_shared_prediction_uses_the_same_observed_chain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

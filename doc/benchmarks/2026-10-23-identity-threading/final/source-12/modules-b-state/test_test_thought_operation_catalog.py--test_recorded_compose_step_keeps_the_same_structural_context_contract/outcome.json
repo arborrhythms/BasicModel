@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_recorded_compose_step_keeps_the_same_structural_context_contract",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

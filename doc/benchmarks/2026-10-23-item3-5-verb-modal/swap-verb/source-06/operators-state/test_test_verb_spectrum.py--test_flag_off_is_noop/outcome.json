@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_spectrum.py::test_flag_off_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

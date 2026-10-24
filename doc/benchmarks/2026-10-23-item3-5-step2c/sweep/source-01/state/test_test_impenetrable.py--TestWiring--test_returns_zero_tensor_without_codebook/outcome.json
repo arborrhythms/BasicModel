@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestWiring::test_returns_zero_tensor_without_codebook",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_code_ownership.py::test_known_concept_read_preserves_the_parameter_magnitude",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

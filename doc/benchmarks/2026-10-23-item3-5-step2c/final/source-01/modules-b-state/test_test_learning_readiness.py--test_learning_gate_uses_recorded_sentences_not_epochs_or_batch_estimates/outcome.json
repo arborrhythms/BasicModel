@@ -1,6 +1,0 @@
-{
-  "node": "test/test_learning_readiness.py::test_learning_gate_uses_recorded_sentences_not_epochs_or_batch_estimates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_stage_accepts_three_dim_unity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

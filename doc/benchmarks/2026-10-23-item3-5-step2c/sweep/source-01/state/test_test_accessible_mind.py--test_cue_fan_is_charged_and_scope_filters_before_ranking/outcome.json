@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_cue_fan_is_charged_and_scope_filters_before_ranking",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

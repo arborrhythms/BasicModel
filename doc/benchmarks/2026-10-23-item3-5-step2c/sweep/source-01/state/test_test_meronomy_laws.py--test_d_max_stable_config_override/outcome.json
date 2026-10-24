@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_laws.py::test_d_max_stable_config_override",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

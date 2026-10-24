@@ -1,4 +1,0 @@
-{
-  "sha256": "c479e513ee6690a887e4a2e3eb5e5c1ad899c7eeeb0de507919d844b380bc01d",
-  "note": "Fixed-budget warm-up, not a certificate that stages 3/4 passed; no fresh disabled training control."
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_idea_coarsens_parent_and_releases_its_child_next_pass",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

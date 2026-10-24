@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ispart_query_dispatch.py::test_part_dispatches_its_declared_pure_structural_face",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

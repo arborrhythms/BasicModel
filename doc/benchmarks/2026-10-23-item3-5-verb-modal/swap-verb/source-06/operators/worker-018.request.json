@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_grammar_order_typing.py::test_modal_sentence_lift",
-    "test/test_grammar_order_typing.py::test_complete_grammar_relation_ops_registered_and_mirrored",
-    "test/test_grammar_order_typing.py::test_signatures_capture_explicit_orders_for_runtime_use"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/operators/worker-018.recycle.json"
-}

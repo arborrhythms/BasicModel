@@ -1,6 +1,0 @@
-{
-  "node": "test/test_connective_supervision.py::test_loss_is_differentiable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

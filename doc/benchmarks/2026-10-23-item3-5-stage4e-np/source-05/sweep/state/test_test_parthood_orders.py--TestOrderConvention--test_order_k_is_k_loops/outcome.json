@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestOrderConvention::test_order_k_is_k_loops",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

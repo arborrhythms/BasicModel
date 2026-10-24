@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_checkpoint_rejects_non_prefix_active_mask",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

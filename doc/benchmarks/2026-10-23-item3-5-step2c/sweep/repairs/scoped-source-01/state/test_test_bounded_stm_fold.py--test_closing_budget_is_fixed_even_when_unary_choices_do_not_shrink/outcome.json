@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_stm_fold.py::test_closing_budget_is_fixed_even_when_unary_choices_do_not_shrink",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

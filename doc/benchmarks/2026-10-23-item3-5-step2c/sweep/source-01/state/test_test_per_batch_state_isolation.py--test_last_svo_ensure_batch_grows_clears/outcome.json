@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_state_isolation.py::test_last_svo_ensure_batch_grows_clears",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

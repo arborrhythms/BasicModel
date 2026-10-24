@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_registry.py::test_grammar_rejects_retired_query_catalogue[isTrue()]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

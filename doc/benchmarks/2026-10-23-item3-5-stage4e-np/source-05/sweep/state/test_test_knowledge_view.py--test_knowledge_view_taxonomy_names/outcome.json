@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_view.py::test_knowledge_view_taxonomy_names",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

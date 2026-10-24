@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_common_amp_scale_preserves_summed_gradients[1024.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

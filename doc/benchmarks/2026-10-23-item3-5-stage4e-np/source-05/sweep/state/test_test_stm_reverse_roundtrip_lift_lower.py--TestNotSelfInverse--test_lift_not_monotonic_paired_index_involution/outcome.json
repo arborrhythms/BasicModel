@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestNotSelfInverse::test_lift_not_monotonic_paired_index_involution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

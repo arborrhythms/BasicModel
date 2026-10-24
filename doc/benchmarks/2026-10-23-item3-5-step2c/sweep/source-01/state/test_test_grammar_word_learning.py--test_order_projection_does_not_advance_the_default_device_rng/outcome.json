@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_word_learning.py::test_order_projection_does_not_advance_the_default_device_rng",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

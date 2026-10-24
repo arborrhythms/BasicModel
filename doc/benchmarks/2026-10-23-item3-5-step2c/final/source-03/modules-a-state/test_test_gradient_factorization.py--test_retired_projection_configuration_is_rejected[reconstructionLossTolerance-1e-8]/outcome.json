@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_retired_projection_configuration_is_rejected[reconstructionLossTolerance-1e-8]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

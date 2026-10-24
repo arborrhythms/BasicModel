@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_executors.py::test_removed_quantize_raises_without_symbol_snapping",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

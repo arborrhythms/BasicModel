@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_rows.py::test_meet_ties_kind_requests_and_excludes_missing_defining_content",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

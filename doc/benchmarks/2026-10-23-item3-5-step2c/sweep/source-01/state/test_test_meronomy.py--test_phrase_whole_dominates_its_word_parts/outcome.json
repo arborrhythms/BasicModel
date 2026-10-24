@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_phrase_whole_dominates_its_word_parts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

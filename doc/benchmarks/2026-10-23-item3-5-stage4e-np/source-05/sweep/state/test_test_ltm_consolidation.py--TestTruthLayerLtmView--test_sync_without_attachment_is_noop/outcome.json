@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestTruthLayerLtmView::test_sync_without_attachment_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

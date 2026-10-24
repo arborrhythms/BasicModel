@@ -1,6 +1,0 @@
-{
-  "node": "test/test_train_compile_target.py::test_parse_compile_target_mlx",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

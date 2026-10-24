@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

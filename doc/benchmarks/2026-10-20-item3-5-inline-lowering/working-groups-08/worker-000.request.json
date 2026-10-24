@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_close.py::test_later_common_evidence_merges_accessible_occurrences_without_rewriting_them",
-    "test/test_reference_close.py::test_revision_merges_three_accessible_groups_transitively_across_cued_documents"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-inline-lowering/working-groups-08/worker-000.recycle.json"
-}

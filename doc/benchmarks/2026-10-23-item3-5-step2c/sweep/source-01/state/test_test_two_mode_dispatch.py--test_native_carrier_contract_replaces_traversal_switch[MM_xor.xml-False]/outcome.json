@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_mode_dispatch.py::test_native_carrier_contract_replaces_traversal_switch[MM_xor.xml-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

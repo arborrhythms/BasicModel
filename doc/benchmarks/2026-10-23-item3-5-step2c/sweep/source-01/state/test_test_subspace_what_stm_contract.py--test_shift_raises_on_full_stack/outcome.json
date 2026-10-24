@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_shift_raises_on_full_stack",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

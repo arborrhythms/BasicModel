@@ -1,6 +1,0 @@
-{
-  "node": "test/test_objective_ownership.py::test_named_concept_evidence_has_the_answer_as_its_only_writer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

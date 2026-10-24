@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_origin_replacement_retains_reachable_content_without_fact_authority",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

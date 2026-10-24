@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_peer_guard_detects_direct_or_setter_mutation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

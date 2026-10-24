@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_item6_2_thinking.py::test_thought_nested_writer_is_restricted_and_preflights_capacity"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-389.recycle.json"
-}

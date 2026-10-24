@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_word_learning.py::test_natural_relation_words_have_no_bootstrap_operator_assignment[complete.grammar]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

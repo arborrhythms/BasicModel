@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestStmLtmTrust::test_ltm_slot_none_when_no_trust",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

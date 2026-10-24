@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_ladder_stem_units_are_the_staged_wholes_and_atoms_are_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

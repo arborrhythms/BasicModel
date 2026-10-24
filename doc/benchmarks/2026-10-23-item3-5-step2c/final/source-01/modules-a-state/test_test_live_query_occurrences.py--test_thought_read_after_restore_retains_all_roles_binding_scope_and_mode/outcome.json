@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_query_occurrences.py::test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

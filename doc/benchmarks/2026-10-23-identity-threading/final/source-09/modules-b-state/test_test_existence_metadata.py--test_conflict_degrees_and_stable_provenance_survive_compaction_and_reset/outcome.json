@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_metadata.py::test_conflict_degrees_and_stable_provenance_survive_compaction_and_reset",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

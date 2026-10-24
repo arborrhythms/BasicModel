@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_next_previous_move_time_by_step",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

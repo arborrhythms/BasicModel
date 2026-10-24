@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_bracket.py::test_bracket_decodes_center_and_duration",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

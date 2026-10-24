@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_free_search_scores_meaning_and_centroid_and_trains_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

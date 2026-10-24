@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reset_at_batch_boundary.py::test_reset_fires_every_ar_batch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_admission_capacity.py::test_checkpoint_cannot_resize_an_existing_percept_codebook",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_pi_roundtrip_at_zero_corner_under_eps_log",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

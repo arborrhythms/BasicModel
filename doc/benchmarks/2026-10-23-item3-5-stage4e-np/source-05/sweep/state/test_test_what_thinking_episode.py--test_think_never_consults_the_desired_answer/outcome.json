@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_thinking_episode.py::test_think_never_consults_the_desired_answer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

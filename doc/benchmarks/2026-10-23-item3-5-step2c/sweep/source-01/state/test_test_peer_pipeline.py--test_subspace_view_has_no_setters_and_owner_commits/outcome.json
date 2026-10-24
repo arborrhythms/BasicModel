@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_subspace_view_has_no_setters_and_owner_commits",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

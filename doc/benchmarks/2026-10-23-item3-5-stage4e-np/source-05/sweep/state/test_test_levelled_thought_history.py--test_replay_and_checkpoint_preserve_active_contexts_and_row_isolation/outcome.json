@@ -1,6 +1,0 @@
-{
-  "node": "test/test_levelled_thought_history.py::test_replay_and_checkpoint_preserve_active_contexts_and_row_isolation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

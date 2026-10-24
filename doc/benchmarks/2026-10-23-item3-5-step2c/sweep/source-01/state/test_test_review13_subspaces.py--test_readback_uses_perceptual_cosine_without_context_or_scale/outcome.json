@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review13_subspaces.py::test_readback_uses_perceptual_cosine_without_context_or_scale",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

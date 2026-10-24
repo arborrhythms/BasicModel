@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_arbitrary_byte_subset_learns_without_a_predefined_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

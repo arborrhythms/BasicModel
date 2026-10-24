@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_attention.py::test_typed_where_and_soft_read_shapes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

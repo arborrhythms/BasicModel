@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_preference.py::test_preference_never_overturns_a_better_score_or_unmasks_a_rule[dtype1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

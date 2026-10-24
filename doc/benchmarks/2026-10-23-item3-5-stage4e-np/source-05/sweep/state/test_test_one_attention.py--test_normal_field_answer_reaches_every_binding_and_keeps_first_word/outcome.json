@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_normal_field_answer_reaches_every_binding_and_keeps_first_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

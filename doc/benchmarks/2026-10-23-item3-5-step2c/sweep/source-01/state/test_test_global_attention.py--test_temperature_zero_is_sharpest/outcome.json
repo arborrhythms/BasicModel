@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_attention.py::test_temperature_zero_is_sharpest",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,4 +1,0 @@
-/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/development/32-shared-basis.py:25: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
-Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
-  print(json.dumps(dict(old_seconds=elapsed_old,shared_seconds=elapsed_new,max_output_error=float((y-z).abs().max()),gradients='all equal within 1e-9')))
-{"old_seconds": 0.48075229208916426, "shared_seconds": 0.0021058751735836267, "max_output_error": 2.7755575615628914e-16, "gradients": "all equal within 1e-9"}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_typed_stack.py::test_typed_stack_construct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

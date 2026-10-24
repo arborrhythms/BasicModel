@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contextual_concept_codebook.py::test_reconstruction_lookup_trains_selected_codes_without_projection[mps]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_think_presents_once_and_returns_the_completed_answer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

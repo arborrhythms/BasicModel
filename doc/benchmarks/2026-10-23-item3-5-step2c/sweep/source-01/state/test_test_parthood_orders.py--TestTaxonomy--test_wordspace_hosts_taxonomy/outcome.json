@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parthood_orders.py::TestTaxonomy::test_wordspace_hosts_taxonomy",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_recycling.py::test_explicit_zero_exit_does_not_erase_an_earlier_failed_test",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_chain_grows.py::TestLtmFailLoud::test_nan_payload_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

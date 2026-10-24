@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_one_attention.py::test_narrowing_uses_the_shared_operation_chooser_and_compiles"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

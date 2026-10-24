@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compound_cases.py::test_compound_candidate_is_masked_when_no_native_case_is_available",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

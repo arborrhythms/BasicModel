@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gather_first_percept_reads.py::test_word_local_radix_gathers_before_unorm_with_identical_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

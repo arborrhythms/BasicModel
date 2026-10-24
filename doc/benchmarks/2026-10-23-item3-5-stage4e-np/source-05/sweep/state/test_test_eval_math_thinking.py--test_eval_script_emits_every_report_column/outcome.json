@@ -1,6 +1,0 @@
-{
-  "node": "test/test_eval_math_thinking.py::test_eval_script_emits_every_report_column",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

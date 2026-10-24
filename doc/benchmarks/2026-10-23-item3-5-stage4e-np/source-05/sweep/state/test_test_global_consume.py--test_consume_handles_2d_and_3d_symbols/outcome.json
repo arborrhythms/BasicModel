@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_consume.py::test_consume_handles_2d_and_3d_symbols",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

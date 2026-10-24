@@ -1,6 +1,0 @@
-{
-  "node": "test/test_data_no_byte_loss.py::test_trial_cursor_reset_rewinds_step",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

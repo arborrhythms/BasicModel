@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestWordEncoding::test_encode_validates_negative_vector",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

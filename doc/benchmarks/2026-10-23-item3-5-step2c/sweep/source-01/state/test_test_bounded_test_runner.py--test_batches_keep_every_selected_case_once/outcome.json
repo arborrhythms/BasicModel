@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_batches_keep_every_selected_case_once",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

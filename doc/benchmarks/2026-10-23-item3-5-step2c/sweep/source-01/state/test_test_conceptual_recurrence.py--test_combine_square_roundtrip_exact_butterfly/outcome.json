@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_recurrence.py::test_combine_square_roundtrip_exact_butterfly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

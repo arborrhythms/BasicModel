@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_view.py::test_queries_require_typed_concept_handles_not_numeric_row_features[bad3]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

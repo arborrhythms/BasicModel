@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_different_positions_in_one_extent_supply_the_two_symbols",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_unretained_innovation_cannot_change_population_cost",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

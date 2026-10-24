@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestInvertiblePiLayer2D::test_naive_bias",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestForwardLookupPath::test_hashmap_hit_returns_codebook_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

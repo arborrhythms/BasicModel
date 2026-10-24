@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_lookup_gauge.py::test_gauge_orient_zero_dot_keeps_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

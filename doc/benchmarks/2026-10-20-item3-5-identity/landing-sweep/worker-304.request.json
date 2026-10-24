@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_grammar_binary_ops.py::TestArityContract::test_arity_two_default_raises",
-    "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-304.recycle.json"
-}

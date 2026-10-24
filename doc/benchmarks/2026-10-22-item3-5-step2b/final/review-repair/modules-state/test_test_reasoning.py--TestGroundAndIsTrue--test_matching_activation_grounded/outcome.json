@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestGroundAndIsTrue::test_matching_activation_grounded",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

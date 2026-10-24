@@ -1,6 +1,0 @@
-{
-  "node": "test/test_positive_int_taxonomy.py::TestNativeAddresses::test_word_concept_returns_a_positive_stable_address",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

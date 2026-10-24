@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolize_layer.py::test_legacy_syntax_does_not_restore_thought_only_compose[quantize]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

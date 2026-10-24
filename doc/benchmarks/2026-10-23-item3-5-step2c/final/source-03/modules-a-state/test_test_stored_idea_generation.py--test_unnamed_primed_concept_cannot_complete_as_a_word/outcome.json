@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

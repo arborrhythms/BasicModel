@@ -1,6 +1,0 @@
-{
-  "node": "test/test_config_scoping.py::TestGetSpaceParam::test_raises_when_missing_everywhere",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

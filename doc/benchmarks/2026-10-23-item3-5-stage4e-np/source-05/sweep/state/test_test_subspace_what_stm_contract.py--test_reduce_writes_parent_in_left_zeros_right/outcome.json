@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_reduce_writes_parent_in_left_zeros_right",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

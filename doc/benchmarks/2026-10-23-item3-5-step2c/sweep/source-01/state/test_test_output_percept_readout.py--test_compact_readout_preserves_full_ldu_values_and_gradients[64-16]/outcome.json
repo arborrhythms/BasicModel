@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_percept_readout.py::test_compact_readout_preserves_full_ldu_values_and_gradients[64-16]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

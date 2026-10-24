@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_word_extent_is_letters_and_numeric_percepts_remain_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

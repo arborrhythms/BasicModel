@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_ingestion.py::test_prediction_and_observation_occurrences_cannot_certify_their_content",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_formal_arguments.py::test_empty_grammar_is_zero_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

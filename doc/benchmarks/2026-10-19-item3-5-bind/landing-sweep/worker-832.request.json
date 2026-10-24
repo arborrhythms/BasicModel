@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_subsymbolic_loop.py::test_overlay_rejects_retired_spelling",
-    "test/test_subsymbolic_loop.py::test_selected_typed_scope_changes_the_attentive_extent"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-832.recycle.json"
-}

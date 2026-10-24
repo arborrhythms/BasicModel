@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_nearby_composed_value_is_neither_a_bank_observation_nor_attenuated",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

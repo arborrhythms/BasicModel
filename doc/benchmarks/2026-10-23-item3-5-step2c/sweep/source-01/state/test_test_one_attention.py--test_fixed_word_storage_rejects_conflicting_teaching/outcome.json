@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_fixed_word_storage_rejects_conflicting_teaching",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

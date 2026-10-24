@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

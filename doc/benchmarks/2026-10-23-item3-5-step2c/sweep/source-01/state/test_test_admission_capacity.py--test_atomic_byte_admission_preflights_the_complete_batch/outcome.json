@@ -1,6 +1,0 @@
-{
-  "node": "test/test_admission_capacity.py::test_atomic_byte_admission_preflights_the_complete_batch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

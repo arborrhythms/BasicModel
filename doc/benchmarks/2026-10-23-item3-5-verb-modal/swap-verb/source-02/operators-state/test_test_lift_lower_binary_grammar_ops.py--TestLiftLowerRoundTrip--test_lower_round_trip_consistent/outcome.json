@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerRoundTrip::test_lower_round_trip_consistent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

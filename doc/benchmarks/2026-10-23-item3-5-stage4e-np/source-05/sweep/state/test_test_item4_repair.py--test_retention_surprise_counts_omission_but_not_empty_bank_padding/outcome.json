@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_retention_surprise_counts_omission_but_not_empty_bank_padding",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

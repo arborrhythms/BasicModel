@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_item4_parity.py::test_shipped_defaults_and_declared_parity_configuration",
-    "test/test_item4_parity.py::test_parity_configuration_removes_selection_prime_without_muting_the_predictor"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-375.recycle.json"
-}

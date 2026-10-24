@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_invalid_reference_commit_keeps_previous_complete_handoff[orders]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

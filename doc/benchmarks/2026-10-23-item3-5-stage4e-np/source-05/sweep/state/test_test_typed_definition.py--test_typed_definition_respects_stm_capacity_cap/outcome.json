@@ -1,6 +1,0 @@
-{
-  "node": "test/test_typed_definition.py::test_typed_definition_respects_stm_capacity_cap",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_step2b_storage.py::test_stored_question_is_refused_by_kind_without_a_mode_column",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

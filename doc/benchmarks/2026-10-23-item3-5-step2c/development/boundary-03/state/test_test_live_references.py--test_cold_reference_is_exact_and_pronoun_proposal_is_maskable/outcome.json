@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_references.py::test_cold_reference_is_exact_and_pronoun_proposal_is_maskable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_math_chain_model_has_no_numeric_answer_head_and_uses_existing_operations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

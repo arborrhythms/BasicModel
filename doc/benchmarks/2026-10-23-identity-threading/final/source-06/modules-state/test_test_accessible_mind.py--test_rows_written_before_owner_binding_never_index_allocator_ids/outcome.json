@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_rows_written_before_owner_binding_never_index_allocator_ids",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

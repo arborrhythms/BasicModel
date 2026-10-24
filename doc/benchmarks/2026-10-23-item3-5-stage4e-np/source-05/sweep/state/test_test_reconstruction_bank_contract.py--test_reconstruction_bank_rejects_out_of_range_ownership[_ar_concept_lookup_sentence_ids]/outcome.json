@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reconstruction_bank_contract.py::test_reconstruction_bank_rejects_out_of_range_ownership[_ar_concept_lookup_sentence_ids]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

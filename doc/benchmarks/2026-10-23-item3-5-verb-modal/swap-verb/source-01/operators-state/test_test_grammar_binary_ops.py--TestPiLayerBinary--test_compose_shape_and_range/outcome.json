@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_shape_and_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

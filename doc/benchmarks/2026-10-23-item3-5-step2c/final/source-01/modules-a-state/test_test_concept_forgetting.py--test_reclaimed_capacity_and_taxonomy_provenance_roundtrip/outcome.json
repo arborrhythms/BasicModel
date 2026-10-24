@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_reclaimed_capacity_and_taxonomy_provenance_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

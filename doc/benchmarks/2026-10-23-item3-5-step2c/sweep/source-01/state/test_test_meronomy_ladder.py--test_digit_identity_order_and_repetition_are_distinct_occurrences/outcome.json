@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_digit_identity_order_and_repetition_are_distinct_occurrences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

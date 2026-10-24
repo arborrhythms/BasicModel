@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestLiftOR::test_point_form_is_arithmetic_mean",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

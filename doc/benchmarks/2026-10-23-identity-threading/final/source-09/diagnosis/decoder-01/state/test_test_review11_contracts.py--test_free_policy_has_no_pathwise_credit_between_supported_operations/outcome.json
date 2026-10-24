@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_free_policy_has_no_pathwise_credit_between_supported_operations",
-  "outcome": "failed",
-  "failure": "test/test_review11_contracts.py:135: in test_free_policy_has_no_pathwise_credit_between_supported_operations\n    assert alternatives[0, 0] and actions[0, 0] == 0\nE   assert (tensor(False))",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clarifications.py::test_consistency_ignores_within_truth_both",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

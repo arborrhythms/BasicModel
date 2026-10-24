@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_output.py::test_parallel_field_never_dispatches_grammar_lift_or_lower",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

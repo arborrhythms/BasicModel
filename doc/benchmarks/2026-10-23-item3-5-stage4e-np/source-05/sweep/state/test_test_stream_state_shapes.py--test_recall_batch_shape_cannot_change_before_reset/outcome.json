@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_recall_batch_shape_cannot_change_before_reset",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

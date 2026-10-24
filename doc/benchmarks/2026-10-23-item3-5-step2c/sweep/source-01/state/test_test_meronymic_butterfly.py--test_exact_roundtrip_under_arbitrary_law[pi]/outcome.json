@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronymic_butterfly.py::test_exact_roundtrip_under_arbitrary_law[pi]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

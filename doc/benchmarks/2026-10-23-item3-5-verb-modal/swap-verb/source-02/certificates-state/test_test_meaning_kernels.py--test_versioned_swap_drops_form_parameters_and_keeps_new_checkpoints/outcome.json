@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

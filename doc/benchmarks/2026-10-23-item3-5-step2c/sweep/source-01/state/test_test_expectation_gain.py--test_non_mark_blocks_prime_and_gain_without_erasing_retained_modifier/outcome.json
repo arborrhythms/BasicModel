@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_gain.py::test_non_mark_blocks_prime_and_gain_without_erasing_retained_modifier",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

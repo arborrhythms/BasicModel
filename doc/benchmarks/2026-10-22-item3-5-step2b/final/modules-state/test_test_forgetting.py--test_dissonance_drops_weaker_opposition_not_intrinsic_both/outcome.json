@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_dissonance_drops_weaker_opposition_not_intrinsic_both",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

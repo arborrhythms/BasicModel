@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestInverse::test_lower_and_inverse_requires_W",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

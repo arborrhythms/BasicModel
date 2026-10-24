@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identification_evidence.py::test_clause_order_and_evidence_are_stored_without_a_program",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

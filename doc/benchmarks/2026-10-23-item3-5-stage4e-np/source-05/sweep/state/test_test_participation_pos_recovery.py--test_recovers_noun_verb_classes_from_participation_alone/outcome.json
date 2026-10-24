@@ -1,6 +1,0 @@
-{
-  "node": "test/test_participation_pos_recovery.py::test_recovers_noun_verb_classes_from_participation_alone",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

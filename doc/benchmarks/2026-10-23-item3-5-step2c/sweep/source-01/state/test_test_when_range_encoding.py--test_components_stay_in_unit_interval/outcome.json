@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_components_stay_in_unit_interval",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

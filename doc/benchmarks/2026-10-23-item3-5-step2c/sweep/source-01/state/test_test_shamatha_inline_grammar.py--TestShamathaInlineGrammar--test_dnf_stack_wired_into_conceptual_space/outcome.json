@@ -1,6 +1,0 @@
-{
-  "node": "test/test_shamatha_inline_grammar.py::TestShamathaInlineGrammar::test_dnf_stack_wired_into_conceptual_space",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

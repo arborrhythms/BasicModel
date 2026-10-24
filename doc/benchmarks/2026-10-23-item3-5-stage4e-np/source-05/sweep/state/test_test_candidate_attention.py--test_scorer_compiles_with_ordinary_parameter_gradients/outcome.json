@@ -1,6 +1,0 @@
-{
-  "node": "test/test_candidate_attention.py::test_scorer_compiles_with_ordinary_parameter_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

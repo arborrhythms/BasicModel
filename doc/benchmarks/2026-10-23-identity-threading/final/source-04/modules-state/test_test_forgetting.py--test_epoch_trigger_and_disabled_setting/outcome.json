@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forgetting.py::test_epoch_trigger_and_disabled_setting",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

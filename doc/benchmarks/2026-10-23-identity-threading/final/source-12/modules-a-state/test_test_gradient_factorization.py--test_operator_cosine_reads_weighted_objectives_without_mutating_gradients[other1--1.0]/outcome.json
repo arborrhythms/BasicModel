@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_operator_cosine_reads_weighted_objectives_without_mutating_gradients[other1--1.0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

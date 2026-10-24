@@ -1,5 +1,0 @@
-{
-  "error": "Traceback (most recent call last):\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/constituent_order.py\", line 41, in run\n    drift = restore_warmup(model, args.warmup, restore)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/test/identity_experiment.py\", line 223, in restore_warmup\n    if not restore(model,str(path),require_match=True,grammar_catalog=catalog):\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py\", line 4987, in load_weights\n    if (saved_v.dim() == 2 and model_v.dim() == 2\n        ^^^^^^^^^^^\nAttributeError: 'dict' object has no attribute 'dim'\n",
-  "completed_batches": 0,
-  "elapsed_seconds": 0.16097545810043812
-}

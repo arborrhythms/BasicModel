@@ -1,6 +1,0 @@
-{
-  "node": "test/test_explicit_dimensions.py::TestXorExactCliReconstruction::test_at_least_50_pct_inputs_reconstruct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

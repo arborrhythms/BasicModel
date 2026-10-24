@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_spell_out.py::TestSpellOut::test_full_word_promotion_is_single_percept",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

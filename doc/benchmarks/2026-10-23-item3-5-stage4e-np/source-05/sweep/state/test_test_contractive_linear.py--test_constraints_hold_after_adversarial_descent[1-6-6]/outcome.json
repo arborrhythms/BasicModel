@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_constraints_hold_after_adversarial_descent[1-6-6]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

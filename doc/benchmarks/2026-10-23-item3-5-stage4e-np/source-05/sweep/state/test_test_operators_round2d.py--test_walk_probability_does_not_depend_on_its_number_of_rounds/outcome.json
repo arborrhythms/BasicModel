@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2d.py::test_walk_probability_does_not_depend_on_its_number_of_rounds",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

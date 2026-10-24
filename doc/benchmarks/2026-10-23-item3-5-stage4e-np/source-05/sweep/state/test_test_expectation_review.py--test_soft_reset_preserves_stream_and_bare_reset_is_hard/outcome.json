@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_review.py::test_soft_reset_preserves_stream_and_bare_reset_is_hard",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_merged_loop.py::test_symbolicspace_empty_state_is_callable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

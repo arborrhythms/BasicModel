@@ -1,6 +1,0 @@
-{
-  "node": "test/test_intent_priming.py::test_producer_off_paths",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

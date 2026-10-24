@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestDisabled::test_disabled_short_circuits",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

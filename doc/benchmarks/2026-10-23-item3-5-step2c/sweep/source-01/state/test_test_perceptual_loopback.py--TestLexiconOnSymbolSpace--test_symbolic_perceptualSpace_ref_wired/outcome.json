@@ -1,6 +1,0 @@
-{
-  "node": "test/test_perceptual_loopback.py::TestLexiconOnSymbolSpace::test_symbolic_perceptualSpace_ref_wired",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_binding.py::test_concluded_relation_keeps_its_occurrence_argument[0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

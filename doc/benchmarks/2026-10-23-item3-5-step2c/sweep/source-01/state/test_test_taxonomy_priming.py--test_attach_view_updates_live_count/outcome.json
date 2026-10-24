@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_priming.py::test_attach_view_updates_live_count",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_consume.py::test_consume_gate_injects_on_leading_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

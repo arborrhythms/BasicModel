@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_word_magnitude_counts_containing_rows_and_excludes_definition_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

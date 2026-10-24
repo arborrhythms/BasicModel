@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_view.py::test_knowledge_view_ref_id_for_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

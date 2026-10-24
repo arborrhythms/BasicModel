@@ -1,6 +1,0 @@
-{
-  "node": "test/test_use_flags.py::TestOrthogonalFlags::test_flags_match_expected",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

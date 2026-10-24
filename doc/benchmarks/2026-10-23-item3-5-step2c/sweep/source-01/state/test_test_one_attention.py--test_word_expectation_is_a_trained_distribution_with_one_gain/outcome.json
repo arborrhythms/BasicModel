@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_word_expectation_is_a_trained_distribution_with_one_gain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

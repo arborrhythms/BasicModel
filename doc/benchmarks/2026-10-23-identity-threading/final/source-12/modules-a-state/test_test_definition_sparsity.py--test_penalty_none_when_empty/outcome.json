@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_sparsity.py::test_penalty_none_when_empty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

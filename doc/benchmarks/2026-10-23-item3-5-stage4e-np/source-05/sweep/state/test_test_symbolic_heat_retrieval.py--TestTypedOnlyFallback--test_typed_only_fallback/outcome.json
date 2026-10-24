@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestTypedOnlyFallback::test_typed_only_fallback",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

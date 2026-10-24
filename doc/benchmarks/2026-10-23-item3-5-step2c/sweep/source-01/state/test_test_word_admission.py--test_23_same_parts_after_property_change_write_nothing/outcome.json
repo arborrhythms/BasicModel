@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_admission.py::test_23_same_parts_after_property_change_write_nothing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_capacity_policy.py::test_automatic_capacity_mode_reuses_known_identity_without_recycling",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

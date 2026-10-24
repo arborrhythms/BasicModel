@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clarifications.py::test_suggest_clarifications_missing_source_fallback",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

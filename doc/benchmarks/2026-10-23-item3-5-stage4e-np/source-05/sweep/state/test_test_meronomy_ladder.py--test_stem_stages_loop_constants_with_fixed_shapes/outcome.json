@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_stem_stages_loop_constants_with_fixed_shapes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

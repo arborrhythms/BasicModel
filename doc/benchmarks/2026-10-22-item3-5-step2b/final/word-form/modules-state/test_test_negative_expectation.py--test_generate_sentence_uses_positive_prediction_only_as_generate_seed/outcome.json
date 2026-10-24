@@ -1,6 +1,0 @@
-{
-  "node": "test/test_negative_expectation.py::test_generate_sentence_uses_positive_prediction_only_as_generate_seed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

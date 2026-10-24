@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_grounded_reasoning.py::TestEvaluate::test_is_part_unknown",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

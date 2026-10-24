@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_luminosity_codes.py::test_paired_bivector_store_reads_as_positive_area",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

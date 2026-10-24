@@ -1,5 +1,0 @@
-test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]
-test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[True]
-test/test_operators_final_b.py::test_both_training_trials_share_bootstrap_snapshot
-
-3 tests collected in 0.08s

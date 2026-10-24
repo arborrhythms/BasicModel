@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nanochat_grammar_eval.py::test_word_distribution_score_uses_final_active_word_per_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

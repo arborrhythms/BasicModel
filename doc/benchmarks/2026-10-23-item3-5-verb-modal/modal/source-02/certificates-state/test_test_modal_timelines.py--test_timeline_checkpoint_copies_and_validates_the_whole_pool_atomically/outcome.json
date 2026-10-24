@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modal_timelines.py::test_timeline_checkpoint_copies_and_validates_the_whole_pool_atomically",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

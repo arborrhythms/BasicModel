@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stage_3_parser_cleanup.py::test_rule_probability_fired_bodies_blocks_resfire",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

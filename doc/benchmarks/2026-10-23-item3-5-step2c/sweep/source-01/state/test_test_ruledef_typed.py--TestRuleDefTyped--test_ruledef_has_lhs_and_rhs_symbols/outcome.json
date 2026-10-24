@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ruledef_typed.py::TestRuleDefTyped::test_ruledef_has_lhs_and_rhs_symbols",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

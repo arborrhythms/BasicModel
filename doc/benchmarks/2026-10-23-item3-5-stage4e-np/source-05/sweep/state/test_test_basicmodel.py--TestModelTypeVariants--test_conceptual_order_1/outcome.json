@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestModelTypeVariants::test_conceptual_order_1",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_route_hint_batched",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

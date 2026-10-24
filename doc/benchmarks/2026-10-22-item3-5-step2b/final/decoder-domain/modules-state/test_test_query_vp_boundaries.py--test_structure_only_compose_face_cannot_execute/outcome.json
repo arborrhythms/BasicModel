@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_vp_boundaries.py::test_structure_only_compose_face_cannot_execute",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

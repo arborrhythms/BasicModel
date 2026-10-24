@@ -1,6 +1,0 @@
-{
-  "node": "test/test_no_rebuild_optimizer.py::test_newly_activated_row_has_zero_adam_moments",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

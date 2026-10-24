@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_parity.py::test_shipped_defaults_and_declared_parity_configuration",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

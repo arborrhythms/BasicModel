@@ -1,6 +1,0 @@
-{
-  "node": "test/test_objective_ownership.py::test_objectives_write_only_their_owners_even_with_shared_graphs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_answer_reader_covers_later_roles_after_pole_only_exclusion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

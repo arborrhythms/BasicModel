@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_spectrum.py::test_spectrum_is_sparse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

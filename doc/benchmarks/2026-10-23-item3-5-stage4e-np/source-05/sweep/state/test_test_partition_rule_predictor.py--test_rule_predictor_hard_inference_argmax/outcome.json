@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_rule_predictor.py::test_rule_predictor_hard_inference_argmax",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

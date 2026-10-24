@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serial_stm_split.py::test_serial_reduce_chain_matches_parallel_sigma_extent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

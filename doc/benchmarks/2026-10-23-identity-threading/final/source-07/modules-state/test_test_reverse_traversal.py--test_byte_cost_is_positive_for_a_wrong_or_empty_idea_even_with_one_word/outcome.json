@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

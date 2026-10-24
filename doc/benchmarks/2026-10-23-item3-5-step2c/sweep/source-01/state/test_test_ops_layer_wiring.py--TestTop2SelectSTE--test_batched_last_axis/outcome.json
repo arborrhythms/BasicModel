@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_layer_wiring.py::TestTop2SelectSTE::test_batched_last_axis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

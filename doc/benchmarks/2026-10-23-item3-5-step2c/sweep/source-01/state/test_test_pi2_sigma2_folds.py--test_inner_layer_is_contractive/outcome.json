@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_inner_layer_is_contractive",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

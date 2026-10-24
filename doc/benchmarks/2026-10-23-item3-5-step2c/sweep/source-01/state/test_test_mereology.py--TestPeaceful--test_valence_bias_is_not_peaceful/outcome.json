@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestPeaceful::test_valence_bias_is_not_peaceful",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

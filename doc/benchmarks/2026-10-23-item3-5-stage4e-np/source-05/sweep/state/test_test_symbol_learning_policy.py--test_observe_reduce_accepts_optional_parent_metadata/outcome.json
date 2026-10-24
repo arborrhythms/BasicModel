@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_policy.py::test_observe_reduce_accepts_optional_parent_metadata",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

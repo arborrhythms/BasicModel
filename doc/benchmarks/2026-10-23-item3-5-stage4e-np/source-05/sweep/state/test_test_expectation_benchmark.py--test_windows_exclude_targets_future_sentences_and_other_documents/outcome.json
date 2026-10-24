@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_benchmark.py::test_windows_exclude_targets_future_sentences_and_other_documents",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

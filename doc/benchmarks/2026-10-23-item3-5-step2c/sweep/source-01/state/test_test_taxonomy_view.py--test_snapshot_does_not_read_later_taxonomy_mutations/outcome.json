@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_view.py::test_snapshot_does_not_read_later_taxonomy_mutations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

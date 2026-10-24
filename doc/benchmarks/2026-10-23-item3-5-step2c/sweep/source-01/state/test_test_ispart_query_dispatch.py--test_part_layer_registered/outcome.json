@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ispart_query_dispatch.py::test_part_layer_registered",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

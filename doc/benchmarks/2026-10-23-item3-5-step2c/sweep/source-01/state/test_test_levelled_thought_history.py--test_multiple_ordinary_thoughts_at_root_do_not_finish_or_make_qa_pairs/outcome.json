@@ -1,6 +1,0 @@
-{
-  "node": "test/test_levelled_thought_history.py::test_multiple_ordinary_thoughts_at_root_do_not_finish_or_make_qa_pairs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_luminosity_preserves_both_instead_of_erasing_it_to_unknown",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

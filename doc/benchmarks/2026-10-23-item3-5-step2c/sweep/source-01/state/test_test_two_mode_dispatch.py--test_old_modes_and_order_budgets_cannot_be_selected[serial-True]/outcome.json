@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_mode_dispatch.py::test_old_modes_and_order_budgets_cannot_be_selected[serial-True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

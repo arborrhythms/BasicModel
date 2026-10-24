@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_catalog_forms_unparsed_executable_candidates_without_a_reader_call",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

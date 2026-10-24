@@ -1,6 +1,0 @@
-{
-  "node": "test/test_router_fires_per_word.py::test_default_router_wire_serial_is_both",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

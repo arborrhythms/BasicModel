@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_preposition.py::TestPrepositionLayer::test_forward_is_content_transparent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

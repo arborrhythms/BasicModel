@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_word_learning.py::test_same_candidate_values_do_not_erase_operand_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

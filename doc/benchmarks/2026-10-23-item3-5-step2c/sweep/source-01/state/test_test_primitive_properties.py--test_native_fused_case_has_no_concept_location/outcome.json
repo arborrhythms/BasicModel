@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primitive_properties.py::test_native_fused_case_has_no_concept_location",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_cube.py::test_wide_cube_identity_length_is_not_a_compose_activation[0.5]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

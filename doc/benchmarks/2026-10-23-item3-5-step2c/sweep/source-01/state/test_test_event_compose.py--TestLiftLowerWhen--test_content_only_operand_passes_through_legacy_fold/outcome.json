@@ -1,6 +1,0 @@
-{
-  "node": "test/test_event_compose.py::TestLiftLowerWhen::test_content_only_operand_passes_through_legacy_fold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

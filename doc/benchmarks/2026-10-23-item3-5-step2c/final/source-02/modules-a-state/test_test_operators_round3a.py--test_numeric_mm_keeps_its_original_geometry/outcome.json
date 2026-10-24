@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round3a.py::test_numeric_mm_keeps_its_original_geometry",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

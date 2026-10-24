@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_tensor_while_pipeline_dynamic_trip_warmup_drain_and_latch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

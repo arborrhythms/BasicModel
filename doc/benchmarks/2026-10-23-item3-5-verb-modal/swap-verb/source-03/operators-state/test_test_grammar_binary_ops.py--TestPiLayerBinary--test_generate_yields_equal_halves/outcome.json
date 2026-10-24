@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_generate_yields_equal_halves",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

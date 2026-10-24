@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_chain_grows.py::TestLtmChainGrows::test_ragged_absolute_and_relative_depths_coexist",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

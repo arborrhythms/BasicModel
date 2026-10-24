@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review14_contracts.py::test_raw_root_reader_is_affine_and_cuts_the_root_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

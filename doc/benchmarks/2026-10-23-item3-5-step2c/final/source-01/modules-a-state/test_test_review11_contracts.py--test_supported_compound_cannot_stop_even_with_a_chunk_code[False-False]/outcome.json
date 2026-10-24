@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review11_contracts.py::test_supported_compound_cannot_stop_even_with_a_chunk_code[False-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

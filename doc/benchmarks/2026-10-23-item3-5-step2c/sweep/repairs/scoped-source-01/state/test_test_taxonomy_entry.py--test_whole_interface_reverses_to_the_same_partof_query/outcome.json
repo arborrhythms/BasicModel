@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_entry.py::test_whole_interface_reverses_to_the_same_partof_query",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

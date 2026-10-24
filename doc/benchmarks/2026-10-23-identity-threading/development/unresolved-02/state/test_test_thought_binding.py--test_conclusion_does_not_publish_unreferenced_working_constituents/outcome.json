@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_binding.py::test_conclusion_does_not_publish_unreferenced_working_constituents",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

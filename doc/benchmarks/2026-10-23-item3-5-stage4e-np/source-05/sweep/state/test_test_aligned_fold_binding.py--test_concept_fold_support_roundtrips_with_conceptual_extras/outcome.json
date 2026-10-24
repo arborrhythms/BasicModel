@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_fold_binding.py::test_concept_fold_support_roundtrips_with_conceptual_extras",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

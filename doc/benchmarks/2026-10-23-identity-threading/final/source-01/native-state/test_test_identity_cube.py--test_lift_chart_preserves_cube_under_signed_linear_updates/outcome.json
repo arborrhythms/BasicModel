@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_cube.py::test_lift_chart_preserves_cube_under_signed_linear_updates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

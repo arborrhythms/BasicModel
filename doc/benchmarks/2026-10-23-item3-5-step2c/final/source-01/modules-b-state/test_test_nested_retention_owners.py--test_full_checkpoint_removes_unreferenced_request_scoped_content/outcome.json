@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention_owners.py::test_full_checkpoint_removes_unreferenced_request_scoped_content",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

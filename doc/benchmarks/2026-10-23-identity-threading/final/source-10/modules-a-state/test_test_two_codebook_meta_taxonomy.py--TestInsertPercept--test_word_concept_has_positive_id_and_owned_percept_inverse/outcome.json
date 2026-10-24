@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_codebook_meta_taxonomy.py::TestInsertPercept::test_word_concept_has_positive_id_and_owned_percept_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

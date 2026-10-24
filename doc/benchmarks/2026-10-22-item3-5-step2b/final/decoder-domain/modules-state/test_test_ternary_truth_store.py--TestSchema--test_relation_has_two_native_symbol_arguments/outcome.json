@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestSchema::test_relation_has_two_native_symbol_arguments",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2.py::test_walk_first_departure_counts_and_gradient[narrowing]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

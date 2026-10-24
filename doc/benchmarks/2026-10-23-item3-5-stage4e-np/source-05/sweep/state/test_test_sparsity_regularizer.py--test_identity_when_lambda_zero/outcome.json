@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparsity_regularizer.py::test_identity_when_lambda_zero",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

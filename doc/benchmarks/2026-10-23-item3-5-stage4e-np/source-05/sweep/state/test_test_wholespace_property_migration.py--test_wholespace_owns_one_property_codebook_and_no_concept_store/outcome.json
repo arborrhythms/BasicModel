@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_wholespace_owns_one_property_codebook_and_no_concept_store",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

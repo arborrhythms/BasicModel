@@ -1,6 +1,0 @@
-{
-  "node": "test/test_coordinate_registry.py::test_input_occurrences_and_thought_symbols_use_their_own_ranges",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

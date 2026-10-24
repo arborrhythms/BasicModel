@@ -1,6 +1,0 @@
-{
-  "node": "test/test_kleene_binding.py::test_variable_with_delta_shifts_binding",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

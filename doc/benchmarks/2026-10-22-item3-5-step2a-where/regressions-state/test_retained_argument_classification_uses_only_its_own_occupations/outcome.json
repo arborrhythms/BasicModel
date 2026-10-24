@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_participants.py::test_retained_argument_classification_uses_only_its_own_occupations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

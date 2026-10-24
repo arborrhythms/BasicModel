@@ -1,6 +1,0 @@
-{
-  "node": "test/test_discourse_space.py::TestModelIntegration::test_discourse_layer_absent_when_sentenceExpectation_false",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

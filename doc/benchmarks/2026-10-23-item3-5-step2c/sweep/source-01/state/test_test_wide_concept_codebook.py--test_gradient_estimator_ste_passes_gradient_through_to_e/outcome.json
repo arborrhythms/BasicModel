@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wide_concept_codebook.py::test_gradient_estimator_ste_passes_gradient_through_to_e",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

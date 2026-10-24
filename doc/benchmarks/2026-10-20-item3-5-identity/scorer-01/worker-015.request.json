@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_mentions.py::test_supplied_answer_labels_only_its_role_without_reselecting_the_menu"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-015.recycle.json"
-}

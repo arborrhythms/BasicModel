@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parts_of_speech.py::test_word_flow_follows_the_catalogue_and_ends_at_a_clause",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

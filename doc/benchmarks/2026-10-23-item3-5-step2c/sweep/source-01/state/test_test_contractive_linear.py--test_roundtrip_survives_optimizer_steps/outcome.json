@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_roundtrip_survives_optimizer_steps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

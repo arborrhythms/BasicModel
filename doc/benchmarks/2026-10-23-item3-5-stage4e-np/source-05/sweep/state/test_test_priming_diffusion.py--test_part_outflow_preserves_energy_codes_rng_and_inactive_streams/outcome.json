@@ -1,6 +1,0 @@
-{
-  "node": "test/test_priming_diffusion.py::test_part_outflow_preserves_energy_codes_rng_and_inactive_streams",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

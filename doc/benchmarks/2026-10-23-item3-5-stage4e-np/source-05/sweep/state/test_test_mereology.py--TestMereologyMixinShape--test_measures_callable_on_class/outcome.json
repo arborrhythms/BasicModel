@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestMereologyMixinShape::test_measures_callable_on_class",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

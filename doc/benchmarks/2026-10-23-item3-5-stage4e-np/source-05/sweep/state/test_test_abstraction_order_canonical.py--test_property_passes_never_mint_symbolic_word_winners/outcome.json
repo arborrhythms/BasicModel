@@ -1,6 +1,0 @@
-{
-  "node": "test/test_abstraction_order_canonical.py::test_property_passes_never_mint_symbolic_word_winners",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

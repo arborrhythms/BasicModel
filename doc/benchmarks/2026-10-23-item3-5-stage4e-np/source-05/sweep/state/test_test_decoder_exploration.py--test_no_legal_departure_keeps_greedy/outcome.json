@@ -1,6 +1,0 @@
-{
-  "node": "test/test_decoder_exploration.py::test_no_legal_departure_keeps_greedy",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

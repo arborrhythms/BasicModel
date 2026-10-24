@@ -1,7 +1,0 @@
-[collect] 23 selectors; limit 1800s, 8.0 GiB
-[collect] exit 0; 3.8s; peak 0.44 GiB
-[worker-000] 28 selectors; limit 1800s, 8.0 GiB
-[worker-000] exit 1; 59.0s; peak 2.42 GiB
-Result: test_failure, exit 1; 28/28 cases completed.
-/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-stm1/native-108/result.json
-Skipped phase certificates: fineweb: 1

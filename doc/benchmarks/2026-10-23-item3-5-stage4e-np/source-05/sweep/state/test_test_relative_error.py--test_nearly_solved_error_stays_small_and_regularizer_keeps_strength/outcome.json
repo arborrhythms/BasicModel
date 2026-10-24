@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_error.py::test_nearly_solved_error_stays_small_and_regularizer_keeps_strength",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

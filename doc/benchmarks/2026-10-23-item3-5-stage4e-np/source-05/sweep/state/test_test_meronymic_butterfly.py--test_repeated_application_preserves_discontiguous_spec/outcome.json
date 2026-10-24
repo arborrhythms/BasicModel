@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronymic_butterfly.py::test_repeated_application_preserves_discontiguous_spec",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

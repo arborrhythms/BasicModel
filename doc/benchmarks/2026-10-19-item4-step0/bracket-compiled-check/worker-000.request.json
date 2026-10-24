@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_one_attention.py::test_narrowing_uses_the_shared_operation_chooser_and_compiles"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0/bracket-compiled-check/worker-000.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_signal_router_scorer.py::test_unified_anchor_shapes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

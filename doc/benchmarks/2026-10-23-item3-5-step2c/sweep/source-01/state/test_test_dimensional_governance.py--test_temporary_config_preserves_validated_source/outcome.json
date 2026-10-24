@@ -1,6 +1,0 @@
-{
-  "node": "test/test_dimensional_governance.py::test_temporary_config_preserves_validated_source",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

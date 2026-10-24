@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_recurrence.py::test_callosum_glue_init_average",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

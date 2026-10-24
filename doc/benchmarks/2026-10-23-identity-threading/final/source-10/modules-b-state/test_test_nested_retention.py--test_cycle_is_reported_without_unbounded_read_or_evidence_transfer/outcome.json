@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nested_retention.py::test_cycle_is_reported_without_unbounded_read_or_evidence_transfer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

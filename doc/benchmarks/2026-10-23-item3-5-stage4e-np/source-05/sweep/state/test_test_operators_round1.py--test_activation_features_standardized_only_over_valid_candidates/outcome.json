@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_activation_features_standardized_only_over_valid_candidates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

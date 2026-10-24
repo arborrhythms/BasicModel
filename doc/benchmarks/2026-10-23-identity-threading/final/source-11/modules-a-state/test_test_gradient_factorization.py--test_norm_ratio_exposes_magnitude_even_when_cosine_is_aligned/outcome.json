@@ -1,6 +1,0 @@
-{
-  "node": "test/test_gradient_factorization.py::test_norm_ratio_exposes_magnitude_even_when_cosine_is_aligned",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

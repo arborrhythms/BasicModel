@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_28_forgotten_definition_does_not_survive_in_any_lookup",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

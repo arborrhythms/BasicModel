@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ispart_query_dispatch.py::test_part_structural_forward_passes_parent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

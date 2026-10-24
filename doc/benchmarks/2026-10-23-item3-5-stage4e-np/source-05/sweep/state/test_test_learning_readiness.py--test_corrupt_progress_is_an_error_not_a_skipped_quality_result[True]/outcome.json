@@ -1,6 +1,0 @@
-{
-  "node": "test/test_learning_readiness.py::test_corrupt_progress_is_an_error_not_a_skipped_quality_result[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

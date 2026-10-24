@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_shared_meter_cannot_replenish_between_input_and_thought",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

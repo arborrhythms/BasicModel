@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_tiling.py::test_materialize_property_sinusoidal_unchanged_without_bytes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

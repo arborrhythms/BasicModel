@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_e2e.py::test_order_block_overflow_is_safe",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

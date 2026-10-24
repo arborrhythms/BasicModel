@@ -1,6 +1,0 @@
-{
-  "node": "test/test_native_perception.py::test_native_towers_have_no_learned_fold_layers",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

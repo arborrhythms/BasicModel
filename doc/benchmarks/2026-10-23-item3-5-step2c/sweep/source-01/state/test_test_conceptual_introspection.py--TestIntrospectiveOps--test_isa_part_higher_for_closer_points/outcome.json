@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_introspection.py::TestIntrospectiveOps::test_isa_part_higher_for_closer_points",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_data_no_byte_loss.py::test_all_done_after_window_exhausted",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

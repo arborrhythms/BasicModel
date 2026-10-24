@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_key_to_index_stays_ps_local",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

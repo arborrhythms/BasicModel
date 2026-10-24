@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

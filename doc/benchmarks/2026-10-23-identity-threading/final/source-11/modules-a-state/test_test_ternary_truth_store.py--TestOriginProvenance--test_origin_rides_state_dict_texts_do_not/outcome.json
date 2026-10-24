@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestOriginProvenance::test_origin_rides_state_dict_texts_do_not",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

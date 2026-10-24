@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_reserved_rows_preserve_fold_table",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

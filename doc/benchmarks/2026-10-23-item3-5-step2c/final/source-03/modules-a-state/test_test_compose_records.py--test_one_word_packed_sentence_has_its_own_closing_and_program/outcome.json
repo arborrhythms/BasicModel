@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_syntactic_order.py::test_syntactic_order_zero_collapses_to_single_s",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

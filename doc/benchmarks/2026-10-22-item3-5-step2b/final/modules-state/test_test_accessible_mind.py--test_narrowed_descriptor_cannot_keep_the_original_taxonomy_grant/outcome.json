@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

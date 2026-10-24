@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_attention_modules_retire_after_the_answer_reader_takes_their_contract",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

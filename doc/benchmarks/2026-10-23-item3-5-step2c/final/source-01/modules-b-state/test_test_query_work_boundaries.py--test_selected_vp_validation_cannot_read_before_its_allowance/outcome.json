@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_work_boundaries.py::test_selected_vp_validation_cannot_read_before_its_allowance",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

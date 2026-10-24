@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concepts_from_percepts.py::test_invalid_shapes_and_non_boolean_masks_rejected[GatedConceptsFromPercepts]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

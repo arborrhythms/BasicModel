@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_hard_mask.py::test_reattach_preserves_primed_values",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

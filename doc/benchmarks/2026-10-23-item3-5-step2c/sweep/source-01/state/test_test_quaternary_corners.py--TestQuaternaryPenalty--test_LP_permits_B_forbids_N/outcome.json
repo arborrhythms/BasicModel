@@ -1,6 +1,0 @@
-{
-  "node": "test/test_quaternary_corners.py::TestQuaternaryPenalty::test_LP_permits_B_forbids_N",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

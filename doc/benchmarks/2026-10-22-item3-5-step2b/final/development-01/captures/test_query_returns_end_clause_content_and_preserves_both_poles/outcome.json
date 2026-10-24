@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_query_returns_end_clause_content_and_preserves_both_poles",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

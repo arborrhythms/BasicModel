@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_pinned_masks_known_word_never_descends_and_wide_never_glosses",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

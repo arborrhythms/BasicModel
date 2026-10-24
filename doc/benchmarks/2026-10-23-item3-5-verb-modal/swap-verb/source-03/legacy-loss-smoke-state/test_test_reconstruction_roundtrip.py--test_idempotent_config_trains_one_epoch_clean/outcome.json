@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

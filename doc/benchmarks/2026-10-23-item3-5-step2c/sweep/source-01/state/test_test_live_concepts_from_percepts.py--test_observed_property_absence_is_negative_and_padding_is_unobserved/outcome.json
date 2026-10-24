@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_concepts_from_percepts.py::test_observed_property_absence_is_negative_and_padding_is_unobserved",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

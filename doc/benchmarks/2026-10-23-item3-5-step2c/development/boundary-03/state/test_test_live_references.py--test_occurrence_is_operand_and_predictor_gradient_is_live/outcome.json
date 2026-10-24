@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_references.py::test_occurrence_is_operand_and_predictor_gradient_is_live",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

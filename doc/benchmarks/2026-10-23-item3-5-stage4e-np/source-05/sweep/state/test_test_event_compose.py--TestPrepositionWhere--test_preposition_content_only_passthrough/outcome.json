@@ -1,6 +1,0 @@
-{
-  "node": "test/test_event_compose.py::TestPrepositionWhere::test_preposition_content_only_passthrough",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

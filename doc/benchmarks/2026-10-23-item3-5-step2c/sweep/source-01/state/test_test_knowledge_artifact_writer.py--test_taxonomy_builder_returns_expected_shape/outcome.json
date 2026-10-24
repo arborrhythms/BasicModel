@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_taxonomy_builder_returns_expected_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

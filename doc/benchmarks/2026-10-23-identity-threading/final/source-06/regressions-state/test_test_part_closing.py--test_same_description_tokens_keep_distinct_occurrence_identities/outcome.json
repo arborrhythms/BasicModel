@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_closing.py::test_same_description_tokens_keep_distinct_occurrence_identities",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

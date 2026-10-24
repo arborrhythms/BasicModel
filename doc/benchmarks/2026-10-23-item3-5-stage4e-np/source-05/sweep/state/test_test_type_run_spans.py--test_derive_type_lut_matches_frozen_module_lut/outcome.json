@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_derive_type_lut_matches_frozen_module_lut",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

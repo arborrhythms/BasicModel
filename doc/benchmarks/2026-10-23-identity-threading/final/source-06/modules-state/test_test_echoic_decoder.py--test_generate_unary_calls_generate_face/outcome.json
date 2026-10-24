@@ -1,6 +1,0 @@
-{
-  "node": "test/test_echoic_decoder.py::test_generate_unary_calls_generate_face",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

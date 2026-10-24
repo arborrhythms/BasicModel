@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_deferred_mutations_commit_in_address_order_after_drain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

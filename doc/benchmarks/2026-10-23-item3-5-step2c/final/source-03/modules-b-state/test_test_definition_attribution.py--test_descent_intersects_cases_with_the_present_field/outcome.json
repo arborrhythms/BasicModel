@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_attribution.py::test_descent_intersects_cases_with_the_present_field",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

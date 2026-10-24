@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_capacity_policy.py::test_serial_property_autobind_does_not_persist_sentence_chain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

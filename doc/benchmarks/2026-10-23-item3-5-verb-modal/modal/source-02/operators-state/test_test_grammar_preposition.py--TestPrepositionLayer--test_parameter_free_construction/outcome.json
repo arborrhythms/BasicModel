@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_preposition.py::TestPrepositionLayer::test_parameter_free_construction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

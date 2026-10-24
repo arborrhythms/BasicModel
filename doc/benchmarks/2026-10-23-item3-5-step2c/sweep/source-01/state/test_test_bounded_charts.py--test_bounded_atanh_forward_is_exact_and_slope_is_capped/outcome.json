@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_charts.py::test_bounded_atanh_forward_is_exact_and_slope_is_capped",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

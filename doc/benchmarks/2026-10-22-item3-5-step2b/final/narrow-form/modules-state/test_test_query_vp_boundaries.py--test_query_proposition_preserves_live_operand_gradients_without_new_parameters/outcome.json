@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_vp_boundaries.py::test_query_proposition_preserves_live_operand_gradients_without_new_parameters",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

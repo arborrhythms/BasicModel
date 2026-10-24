@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_thinking_episode.py::test_neutral_chooser_is_single_step_and_iterations_one_builds_no_chooser",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

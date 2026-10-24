@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestDiscourseConsolidationWiring::test_discourse_is_built",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

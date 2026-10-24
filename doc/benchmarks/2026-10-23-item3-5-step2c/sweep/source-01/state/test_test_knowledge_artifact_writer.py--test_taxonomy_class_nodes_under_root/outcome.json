@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_taxonomy_class_nodes_under_root",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

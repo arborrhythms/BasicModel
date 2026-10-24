@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_unreduce_is_noop_on_terminal_slot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

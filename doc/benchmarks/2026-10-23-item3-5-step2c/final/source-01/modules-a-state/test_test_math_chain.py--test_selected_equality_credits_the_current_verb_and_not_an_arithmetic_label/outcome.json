@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain.py::test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

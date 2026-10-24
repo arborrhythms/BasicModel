@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_grammar_rules.py::TestBindGrammarRules::test_bind_has_no_chart_rule_ids",
-  "outcome": "failed",
-  "failure": "test/test_when_grammar_rules.py:62: in test_bind_has_no_chart_rule_ids\n    self.assertFalse(up)\nE   AssertionError: [RuleDef(space_role='CS', canonical='bind_argout1 -> bind.forward(bind_argin1)', arity=1, method_name='bind', lhs='bind_argout1', rhs_symbols=('bind_argin1',), width_min=0, width_max=0, query=False, thought_family=None, thought_permutation=None, reference_roles=(), reference_modes=(), clause_form=None, head_role=1, surface_name='bind', predicate_identity='bind', operand_kinds=('symbol',), effect_writes=('serial', 'percept', 'budget'), relation_kind=None, scope_transparent=True, polarity_effect=None, meaning_mode=None, same_reference_idempotent=False, effect_reads=('percept', 'knowing', 'symbolic', 'serial', 'priming', 'budget', 'expectation', 'ltm'), field_eligible=False, order_delta=0, case_head_role=0, footprint_reads=('form', 'meaning', 'poles'), footprint_writes=('form', 'meaning'), determiner_mode=None, substrate=False, mandatory=False, semantic_operand=None)] is not false",
-  "records": []
-}

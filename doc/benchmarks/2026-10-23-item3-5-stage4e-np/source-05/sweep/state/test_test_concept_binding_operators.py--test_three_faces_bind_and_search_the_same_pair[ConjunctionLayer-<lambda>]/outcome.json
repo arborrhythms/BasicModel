@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_binding_operators.py::test_three_faces_bind_and_search_the_same_pair[ConjunctionLayer-<lambda>]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_e2e.py::test_symbolic_phase_inactive_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

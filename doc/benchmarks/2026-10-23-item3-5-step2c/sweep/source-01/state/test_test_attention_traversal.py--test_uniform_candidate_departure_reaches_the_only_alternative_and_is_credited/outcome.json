@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_traversal.py::test_uniform_candidate_departure_reaches_the_only_alternative_and_is_credited",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

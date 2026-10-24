@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_close.py::test_empty_close_has_no_policy_gradient_or_store_side_effect"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-006.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_forward_does_not_read_a_tensor_scalar_on_host",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

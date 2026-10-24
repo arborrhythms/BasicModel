@@ -1,6 +1,0 @@
-{
-  "node": "test/test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

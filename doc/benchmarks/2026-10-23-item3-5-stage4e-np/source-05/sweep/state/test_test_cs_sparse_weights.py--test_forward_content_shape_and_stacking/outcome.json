@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_forward_content_shape_and_stacking",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_canonical_form_derives_closed_and_open_roles_without_alias_methods",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

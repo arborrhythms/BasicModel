@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_gain.py::test_alternative_mixture_has_positive_floor_and_validates_settings",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

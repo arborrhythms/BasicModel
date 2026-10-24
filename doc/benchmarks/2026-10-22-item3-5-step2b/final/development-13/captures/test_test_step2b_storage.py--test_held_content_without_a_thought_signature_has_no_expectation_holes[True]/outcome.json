@@ -1,6 +1,0 @@
-{
-  "node": "test/test_step2b_storage.py::test_held_content_without_a_thought_signature_has_no_expectation_holes[True]",
-  "outcome": "failed",
-  "failure": "test/test_step2b_storage.py:67: in test_held_content_without_a_thought_signature_has_no_expectation_holes\n    index = store.append_meaning(held, sentence_index=len(store))\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\nbin/Layers.py:9479: in append_meaning\n    raise ValueError(\"a fact requires assertive meaning, not an interrogative question\")\nE   ValueError: a fact requires assertive meaning, not an interrogative question",
-  "records": []
-}

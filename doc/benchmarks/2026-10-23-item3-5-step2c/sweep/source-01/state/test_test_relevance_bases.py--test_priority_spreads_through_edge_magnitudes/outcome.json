@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relevance_bases.py::test_priority_spreads_through_edge_magnitudes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

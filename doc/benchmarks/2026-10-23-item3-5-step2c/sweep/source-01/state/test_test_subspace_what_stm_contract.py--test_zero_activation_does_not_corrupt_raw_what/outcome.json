@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_zero_activation_does_not_corrupt_raw_what",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

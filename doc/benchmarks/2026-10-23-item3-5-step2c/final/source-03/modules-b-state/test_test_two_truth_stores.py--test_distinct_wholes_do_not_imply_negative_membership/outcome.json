@@ -1,6 +1,0 @@
-{
-  "node": "test/test_two_truth_stores.py::test_distinct_wholes_do_not_imply_negative_membership",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

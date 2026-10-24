@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round3a.py::test_masked_mint_extends_bits_and_has_declared_quadruple_fallback[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

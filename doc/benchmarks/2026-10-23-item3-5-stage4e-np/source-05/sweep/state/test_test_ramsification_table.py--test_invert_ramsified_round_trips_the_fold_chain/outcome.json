@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ramsification_table.py::test_invert_ramsified_round_trips_the_fold_chain",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_input_word_cursor.py::test_yields_words_one_per_call_in_T_order_then_null_ends",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

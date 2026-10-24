@@ -1,6 +1,0 @@
-{
-  "node": "test/test_hierarchical.py::TestLevelShapes::test_single_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

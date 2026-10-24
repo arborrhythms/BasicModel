@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_integration.py::test_priming_disabled_matches_unprimed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

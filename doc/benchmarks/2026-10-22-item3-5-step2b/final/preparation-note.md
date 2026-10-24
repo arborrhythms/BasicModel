@@ -1,1 +1,0 @@
-Before freezing, an optional JSON-order-only normalization helper raised StopIteration while scanning the fixture lists. It wrote no source change. The existing passing fixture and source hashes were retained. The freeze and gate runner use that unchanged fixture; no test evidence was promoted from the helper.

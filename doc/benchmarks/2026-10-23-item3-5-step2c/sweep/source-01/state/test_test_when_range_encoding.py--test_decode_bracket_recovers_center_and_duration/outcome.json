@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_decode_bracket_recovers_center_and_duration",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

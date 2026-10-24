@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identification_evidence.py::test_luminosity_view_reads_signed_testimony_from_the_pair",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_capacity_policy.py::test_explicit_word_row_capacity_failure_is_atomic",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

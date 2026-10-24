@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_output.py::test_native_understanding_retains_field_and_native_percept_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

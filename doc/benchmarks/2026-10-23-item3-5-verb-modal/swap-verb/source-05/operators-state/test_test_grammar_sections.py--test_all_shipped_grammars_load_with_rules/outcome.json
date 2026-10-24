@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_sections.py::test_all_shipped_grammars_load_with_rules",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

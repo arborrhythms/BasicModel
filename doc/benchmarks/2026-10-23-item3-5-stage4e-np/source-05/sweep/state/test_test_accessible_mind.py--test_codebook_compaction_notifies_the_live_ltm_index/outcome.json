@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_codebook_compaction_notifies_the_live_ltm_index",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

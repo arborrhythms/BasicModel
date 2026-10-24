@@ -1,6 +1,0 @@
-{
-  "node": "test/test_analyse_chunking_forward.py::TestAnalyseMigration::test_meronomy_synthesis_owns_full_surface_lexing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_consume.py::test_consume_width_mismatch_slices_to_common",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

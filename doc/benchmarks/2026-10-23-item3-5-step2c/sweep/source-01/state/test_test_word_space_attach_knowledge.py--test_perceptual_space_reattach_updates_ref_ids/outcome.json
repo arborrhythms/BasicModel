@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_space_attach_knowledge.py::test_perceptual_space_reattach_updates_ref_ids",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_review.py::test_native_activated_word_is_observed_by_handle_with_both_lanes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

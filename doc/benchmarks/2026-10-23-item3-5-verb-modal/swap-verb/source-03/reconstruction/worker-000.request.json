@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_grammar_checkpoint.py::test_operation_parameters_and_optimizer_follow_identity_across_removed_position",
-    "test/test_grammar_checkpoint.py::test_occupation_migration_retains_counts_by_declared_argument"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-03/reconstruction/worker-000.recycle.json"
-}

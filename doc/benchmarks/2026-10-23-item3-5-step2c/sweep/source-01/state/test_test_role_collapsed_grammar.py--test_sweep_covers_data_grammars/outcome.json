@@ -1,6 +1,0 @@
-{
-  "node": "test/test_role_collapsed_grammar.py::test_sweep_covers_data_grammars",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

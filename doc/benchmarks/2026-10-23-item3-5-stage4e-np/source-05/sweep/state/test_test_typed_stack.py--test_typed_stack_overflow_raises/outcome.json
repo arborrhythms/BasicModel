@@ -1,6 +1,0 @@
-{
-  "node": "test/test_typed_stack.py::test_typed_stack_overflow_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

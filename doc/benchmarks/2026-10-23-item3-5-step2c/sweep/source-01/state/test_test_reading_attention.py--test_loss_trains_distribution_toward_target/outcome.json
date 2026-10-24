@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reading_attention.py::test_loss_trains_distribution_toward_target",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_semantic_categories.py::test_threshold_controls_semantic_grouping",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

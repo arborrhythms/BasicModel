@@ -1,6 +1,0 @@
-{
-  "node": "test/test_generation_catalog.py::test_shared_generation_weights_and_adam_survive_strict_reload[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

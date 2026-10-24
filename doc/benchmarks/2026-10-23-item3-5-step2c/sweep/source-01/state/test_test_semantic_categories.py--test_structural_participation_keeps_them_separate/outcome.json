@@ -1,6 +1,0 @@
-{
-  "node": "test/test_semantic_categories.py::test_structural_participation_keeps_them_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_work_budget.py::test_budget_validation_and_overdraw_are_atomic",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

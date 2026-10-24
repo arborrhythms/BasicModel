@@ -1,6 +1,0 @@
-{
-  "node": "test/test_nanochat_grammar_eval.py::test_checkpoint_prewarm_builds_reducer_and_full_wholes_inventory",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

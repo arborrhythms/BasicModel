@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_state_shapes.py::test_rejected_taxonomy_resize_does_not_partially_resize_its_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

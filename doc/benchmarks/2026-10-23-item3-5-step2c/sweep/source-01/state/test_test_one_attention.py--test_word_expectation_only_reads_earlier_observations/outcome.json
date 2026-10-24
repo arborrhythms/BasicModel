@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_word_expectation_only_reads_earlier_observations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

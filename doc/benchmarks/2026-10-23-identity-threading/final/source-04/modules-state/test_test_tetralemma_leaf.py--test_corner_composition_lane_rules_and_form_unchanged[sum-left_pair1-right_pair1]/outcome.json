@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tetralemma_leaf.py::test_corner_composition_lane_rules_and_form_unchanged[sum-left_pair1-right_pair1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

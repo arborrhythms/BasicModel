@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestConstruction::test_shared_store_is_unconditional",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_within_whole_division.py::test_live_default_on_divides_punct_run",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

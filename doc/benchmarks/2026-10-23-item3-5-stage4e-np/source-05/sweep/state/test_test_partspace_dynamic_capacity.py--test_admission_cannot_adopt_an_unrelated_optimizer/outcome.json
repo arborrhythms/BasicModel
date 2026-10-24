@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_admission_cannot_adopt_an_unrelated_optimizer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

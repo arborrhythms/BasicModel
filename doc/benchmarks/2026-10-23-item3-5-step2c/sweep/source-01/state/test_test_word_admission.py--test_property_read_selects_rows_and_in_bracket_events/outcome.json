@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_admission.py::test_property_read_selects_rows_and_in_bracket_events",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

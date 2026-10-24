@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pole_aligned_score.py::TestArgmaxParityForLookupShapes::test_nearest_idx_call_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

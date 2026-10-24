@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSigmaLayerDeterministic::test_non_ergodic_default",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

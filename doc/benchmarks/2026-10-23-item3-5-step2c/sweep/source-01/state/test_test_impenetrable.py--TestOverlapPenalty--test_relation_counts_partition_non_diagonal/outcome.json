@@ -1,6 +1,0 @@
-{
-  "node": "test/test_impenetrable.py::TestOverlapPenalty::test_relation_counts_partition_non_diagonal",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

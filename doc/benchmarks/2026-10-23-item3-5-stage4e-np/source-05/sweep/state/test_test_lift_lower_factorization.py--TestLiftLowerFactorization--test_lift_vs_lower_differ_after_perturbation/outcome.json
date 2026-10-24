@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_factorization.py::TestLiftLowerFactorization::test_lift_vs_lower_differ_after_perturbation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

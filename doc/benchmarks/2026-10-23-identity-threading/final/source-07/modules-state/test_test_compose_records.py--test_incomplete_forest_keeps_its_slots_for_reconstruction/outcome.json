@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

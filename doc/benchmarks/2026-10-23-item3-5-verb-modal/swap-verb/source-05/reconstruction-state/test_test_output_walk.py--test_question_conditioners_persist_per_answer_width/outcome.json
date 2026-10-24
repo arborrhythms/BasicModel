@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_question_conditioners_persist_per_answer_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_explicit_ordered_stm.py::test_ordered_taxonomy_preserves_np3_np4_orders"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-266.recycle.json"
-}

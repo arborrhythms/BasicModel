@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mps_inductor_any_dtype.py::test_mps_inductor_any_result_retains_torch_bool_metadata",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

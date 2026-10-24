@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_binding_operators.py::test_free_lift_inverse_searches_both_operands_from_the_bank",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_executor_rejects_a_stage_that_returns_its_input_carrier",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

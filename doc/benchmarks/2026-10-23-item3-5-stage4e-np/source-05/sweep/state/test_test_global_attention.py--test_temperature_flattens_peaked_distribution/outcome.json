@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_attention.py::test_temperature_flattens_peaked_distribution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

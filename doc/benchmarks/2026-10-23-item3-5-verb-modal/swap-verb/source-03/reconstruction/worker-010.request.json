@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-03/reconstruction/worker-010.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_routing.py::test_partof_is_not_established_by_an_ltm1_description",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

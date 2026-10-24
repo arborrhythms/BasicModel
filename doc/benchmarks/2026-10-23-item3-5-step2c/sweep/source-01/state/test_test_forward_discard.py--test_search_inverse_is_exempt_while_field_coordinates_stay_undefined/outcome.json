@@ -1,6 +1,0 @@
-{
-  "node": "test/test_forward_discard.py::test_search_inverse_is_exempt_while_field_coordinates_stay_undefined",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

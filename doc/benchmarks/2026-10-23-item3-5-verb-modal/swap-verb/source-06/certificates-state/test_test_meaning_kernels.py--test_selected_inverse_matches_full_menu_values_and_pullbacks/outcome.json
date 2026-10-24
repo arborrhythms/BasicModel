@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

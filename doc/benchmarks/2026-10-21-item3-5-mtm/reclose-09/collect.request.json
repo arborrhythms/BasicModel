@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_medium_term_memory.py::test_reclosed_occurrence_survives_eviction_of_its_previous_token"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_priming.py::test_allocate_priming_preserves_existing_primed_values",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

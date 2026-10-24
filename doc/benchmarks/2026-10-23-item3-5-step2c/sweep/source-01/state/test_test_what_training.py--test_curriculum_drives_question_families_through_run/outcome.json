@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_training.py::test_curriculum_drives_question_families_through_run",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

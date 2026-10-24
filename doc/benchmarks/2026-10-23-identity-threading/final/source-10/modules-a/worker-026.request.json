@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[False]",
-    "test/test_ltm0_location.py::test_location_is_not_retained_and_time_survives_restore_and_compaction[True]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-23-identity-threading/final/source-10/modules-a/worker-026.recycle.json"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lexical_reference_orders.py::test_form_sets_survive_checkpoint_and_missing_order_stays_unknown",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

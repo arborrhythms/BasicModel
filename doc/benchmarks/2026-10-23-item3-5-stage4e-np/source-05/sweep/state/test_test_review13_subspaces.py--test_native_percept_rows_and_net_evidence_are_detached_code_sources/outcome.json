@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review13_subspaces.py::test_native_percept_rows_and_net_evidence_are_detached_code_sources",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

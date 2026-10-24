@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_sections.py::test_old_wholespace_section_no_longer_loads_symbolic_rules",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_dimensional_governance.py::test_cs_os_direct_handoff_mismatch_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

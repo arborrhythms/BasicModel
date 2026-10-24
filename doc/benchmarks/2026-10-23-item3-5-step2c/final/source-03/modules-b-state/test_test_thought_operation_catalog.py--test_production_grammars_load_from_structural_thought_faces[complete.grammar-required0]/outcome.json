@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_production_grammars_load_from_structural_thought_faces[complete.grammar-required0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

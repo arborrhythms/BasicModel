@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_promotion.py::test_first_matching_context_assigns_pair_before_discovery",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

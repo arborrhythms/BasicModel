@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2.py::test_field_scope_resolves_witnesses_acquired_by_later_descent[3-pair0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_traversal.py::test_budget_counts_reads_and_does_not_change_the_lanes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

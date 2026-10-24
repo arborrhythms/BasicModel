@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_combined.py::test_priming_does_not_apply_to_sentinels",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

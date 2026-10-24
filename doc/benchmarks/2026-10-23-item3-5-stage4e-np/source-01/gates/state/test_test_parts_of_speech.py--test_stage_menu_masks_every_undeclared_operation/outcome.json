@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parts_of_speech.py::test_stage_menu_masks_every_undeclared_operation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

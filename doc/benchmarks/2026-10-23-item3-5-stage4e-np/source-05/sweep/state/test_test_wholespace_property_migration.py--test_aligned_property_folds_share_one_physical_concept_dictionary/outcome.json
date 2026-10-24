@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wholespace_property_migration.py::test_aligned_property_folds_share_one_physical_concept_dictionary",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

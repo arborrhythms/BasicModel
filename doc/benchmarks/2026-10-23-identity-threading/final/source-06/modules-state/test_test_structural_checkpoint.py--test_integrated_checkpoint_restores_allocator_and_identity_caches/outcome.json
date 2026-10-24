@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_checkpoint.py::test_integrated_checkpoint_restores_allocator_and_identity_caches",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

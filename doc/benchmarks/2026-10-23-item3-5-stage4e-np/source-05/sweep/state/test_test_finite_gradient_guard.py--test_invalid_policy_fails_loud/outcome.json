@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_invalid_policy_fails_loud",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

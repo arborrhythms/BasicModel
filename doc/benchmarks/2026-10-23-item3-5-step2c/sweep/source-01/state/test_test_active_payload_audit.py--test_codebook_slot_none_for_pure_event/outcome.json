@@ -1,6 +1,0 @@
-{
-  "node": "test/test_active_payload_audit.py::test_codebook_slot_none_for_pure_event",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

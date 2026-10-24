@@ -1,6 +1,0 @@
-{
-  "node": "test/test_abstraction_order_canonical.py::test_order_stable_across_growth_and_remove",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

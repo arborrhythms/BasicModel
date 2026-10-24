@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_experiment.py::test_recovery_control_has_equal_budgets_and_held_out_factor_combinations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

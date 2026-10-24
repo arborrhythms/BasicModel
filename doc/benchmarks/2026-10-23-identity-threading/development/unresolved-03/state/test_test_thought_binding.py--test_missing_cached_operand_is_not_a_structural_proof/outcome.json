@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_binding.py::test_missing_cached_operand_is_not_a_structural_proof",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_input_word_cursor.py::test_none_buffer_returns_none_even_when_enabled",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

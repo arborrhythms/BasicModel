@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_description_thought_preparation_uses_only_its_declared_ltm_view",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

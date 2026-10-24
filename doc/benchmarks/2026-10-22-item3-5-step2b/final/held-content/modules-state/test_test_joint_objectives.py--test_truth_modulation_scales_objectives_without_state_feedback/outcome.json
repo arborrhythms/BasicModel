@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_truth_modulation_scales_objectives_without_state_feedback",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

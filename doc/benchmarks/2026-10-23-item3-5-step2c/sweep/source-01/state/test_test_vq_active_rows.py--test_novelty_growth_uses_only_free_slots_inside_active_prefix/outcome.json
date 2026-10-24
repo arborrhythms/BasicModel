@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_novelty_growth_uses_only_free_slots_inside_active_prefix",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

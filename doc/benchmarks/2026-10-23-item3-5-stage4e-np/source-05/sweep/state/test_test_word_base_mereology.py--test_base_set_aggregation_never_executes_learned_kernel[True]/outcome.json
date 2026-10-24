@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_base_mereology.py::test_base_set_aggregation_never_executes_learned_kernel[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

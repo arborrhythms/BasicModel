@@ -1,6 +1,0 @@
-{
-  "node": "test/test_model_time_when.py::test_when_period_is_a_module_knob",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair2.py::test_pending_query_shape_keeps_its_missing_operand_open",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair.py::test_retrieval_prior_rejects_a_stale_single_stream_surface",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

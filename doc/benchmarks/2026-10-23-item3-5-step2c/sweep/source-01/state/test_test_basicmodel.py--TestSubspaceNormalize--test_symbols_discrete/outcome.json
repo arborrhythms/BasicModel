@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubspaceNormalize::test_symbols_discrete",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

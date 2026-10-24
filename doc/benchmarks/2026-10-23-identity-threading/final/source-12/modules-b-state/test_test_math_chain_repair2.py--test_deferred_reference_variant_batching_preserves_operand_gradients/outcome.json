@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair2.py::test_deferred_reference_variant_batching_preserves_operand_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

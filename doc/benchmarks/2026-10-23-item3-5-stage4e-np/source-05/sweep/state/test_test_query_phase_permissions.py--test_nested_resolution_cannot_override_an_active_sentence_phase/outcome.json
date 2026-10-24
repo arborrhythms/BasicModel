@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_nested_resolution_cannot_override_an_active_sentence_phase",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

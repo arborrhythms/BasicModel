@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_footprint_mismatch_fails_at_load[footprintReads]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

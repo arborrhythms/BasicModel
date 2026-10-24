@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_retired_scope_is_rejected_at_construction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

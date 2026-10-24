@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round1.py::test_modifier_can_write_silent_coordinate_and_reverse_with_witness[verb]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_preference.py::test_compose_probability_rounding_does_not_overturn_a_better_logit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

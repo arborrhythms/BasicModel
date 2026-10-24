@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_sentence_end_state.py::test_one_native_sentence_owns_only_its_end_state_after_the_boundary"
-  ],
-  "collect": true,
-  "keyword": null,
-  "marker": null,
-  "recycle_file": null
-}

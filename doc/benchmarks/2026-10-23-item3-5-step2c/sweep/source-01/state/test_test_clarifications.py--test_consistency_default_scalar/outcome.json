@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clarifications.py::test_consistency_default_scalar",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

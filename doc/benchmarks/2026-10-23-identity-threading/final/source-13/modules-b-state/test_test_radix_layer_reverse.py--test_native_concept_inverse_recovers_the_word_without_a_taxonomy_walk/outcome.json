@@ -1,6 +1,0 @@
-{
-  "node": "test/test_radix_layer_reverse.py::test_native_concept_inverse_recovers_the_word_without_a_taxonomy_walk",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

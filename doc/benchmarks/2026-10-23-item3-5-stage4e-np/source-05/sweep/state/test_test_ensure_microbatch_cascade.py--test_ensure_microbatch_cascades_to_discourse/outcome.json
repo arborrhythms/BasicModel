@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ensure_microbatch_cascade.py::test_ensure_microbatch_cascades_to_discourse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

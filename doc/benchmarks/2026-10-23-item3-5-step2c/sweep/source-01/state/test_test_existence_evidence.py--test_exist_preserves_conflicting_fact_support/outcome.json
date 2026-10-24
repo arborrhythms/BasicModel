@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_evidence.py::test_exist_preserves_conflicting_fact_support",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

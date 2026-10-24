@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_sigma_pi.py::test_unwritten_conjunction_has_no_invented_directional_credit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

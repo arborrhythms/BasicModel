@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exact_primitives.py::test_primitives_are_total_on_random_operands",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

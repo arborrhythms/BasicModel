@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_nested_writes_are_shared_across_batch_positions",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

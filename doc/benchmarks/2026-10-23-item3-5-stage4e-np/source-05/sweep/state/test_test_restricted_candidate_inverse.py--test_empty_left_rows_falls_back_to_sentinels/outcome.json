@@ -1,6 +1,0 @@
-{
-  "node": "test/test_restricted_candidate_inverse.py::test_empty_left_rows_falls_back_to_sentinels",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

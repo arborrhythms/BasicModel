@@ -1,6 +1,0 @@
-{
-  "node": "test/test_participation_pos_recovery.py::test_threshold_controls_grouping_granularity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

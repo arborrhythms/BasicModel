@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_checkpoint_can_grow_capacity_without_changing_an_address",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

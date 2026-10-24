@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_normal_narrowing_reads_native_poles",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

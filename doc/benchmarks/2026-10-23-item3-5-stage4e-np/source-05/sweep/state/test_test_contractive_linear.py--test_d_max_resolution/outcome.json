@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_d_max_resolution",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

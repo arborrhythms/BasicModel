@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_pos_codebook.py::test_pos_codebook_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

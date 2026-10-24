@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_references.py::test_pronoun_requires_a_particular_and_never_uses_its_type",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

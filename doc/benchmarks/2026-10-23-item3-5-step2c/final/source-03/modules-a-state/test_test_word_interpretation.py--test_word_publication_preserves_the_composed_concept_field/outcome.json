@@ -1,6 +1,0 @@
-{
-  "node": "test/test_word_interpretation.py::test_word_publication_preserves_the_composed_concept_field",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

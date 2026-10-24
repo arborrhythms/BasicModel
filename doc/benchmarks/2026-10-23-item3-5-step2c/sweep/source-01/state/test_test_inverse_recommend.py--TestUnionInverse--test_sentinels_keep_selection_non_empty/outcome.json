@@ -1,6 +1,0 @@
-{
-  "node": "test/test_inverse_recommend.py::TestUnionInverse::test_sentinels_keep_selection_non_empty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_participation_pos_recovery.py::test_single_role_categories_recover_the_collapsed_op_role",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

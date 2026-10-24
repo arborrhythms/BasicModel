@@ -1,8 +1,0 @@
-[collect] 2 selectors; limit 240s, 8.0 GiB
-[collect] exit 0; 3.7s; peak 0.43 GiB
-[worker-000] 9 selectors; limit 240s, 8.0 GiB
-[worker-000] exit 0; 4.3s; peak 0.54 GiB
-[worker-001] 4 selectors; limit 240s, 8.0 GiB
-[worker-001] exit 0; 6.5s; peak 0.65 GiB
-Result: passed, exit 0; 13/13 cases completed.
-doc/benchmarks/2026-10-20-item3-5-inline-lowering/object-carrier-regression-06/result.json

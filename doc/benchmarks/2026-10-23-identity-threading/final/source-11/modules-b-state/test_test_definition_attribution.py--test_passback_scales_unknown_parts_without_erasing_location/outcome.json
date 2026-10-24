@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_attribution.py::test_passback_scales_unknown_parts_without_erasing_location",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_expectation_kind.py::test_grammatical_kind_does_not_train_a_second_expectation_head",
-    "test/test_expectation_kind.py::test_activation_preview_and_committed_comparison_agree"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-261.recycle.json"
-}

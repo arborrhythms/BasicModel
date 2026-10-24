@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_defaults.py::test_omitted_enabled_and_disabled_model_settings[None-True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

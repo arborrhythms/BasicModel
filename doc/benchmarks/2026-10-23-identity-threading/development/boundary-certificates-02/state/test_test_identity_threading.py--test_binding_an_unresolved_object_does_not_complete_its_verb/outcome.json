@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_binding_an_unresolved_object_does_not_complete_its_verb",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

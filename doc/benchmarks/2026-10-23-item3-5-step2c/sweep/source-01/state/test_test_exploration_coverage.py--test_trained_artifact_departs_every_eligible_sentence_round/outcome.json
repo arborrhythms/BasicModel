@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exploration_coverage.py::test_trained_artifact_departs_every_eligible_sentence_round",
-  "outcome": "skipped",
-  "failure": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_exploration_coverage.py', 25, 'Skipped: requires BASICMODEL_EXPLORATION_ARTIFACT from paired_identity_experiment')",
-  "records": []
-}

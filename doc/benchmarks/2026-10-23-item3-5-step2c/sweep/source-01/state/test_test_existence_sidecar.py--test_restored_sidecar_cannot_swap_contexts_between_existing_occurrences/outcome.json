@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_sidecar.py::test_restored_sidecar_cannot_swap_contexts_between_existing_occurrences",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

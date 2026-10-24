@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ltm_consolidation.py::TestReasonOverLtm::test_verify_absolute_row_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

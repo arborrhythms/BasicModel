@@ -1,9 +1,0 @@
-{
-  "source": "3a9db635e69e87c17dc50c13c42c2f3eee10910f",
-  "counts": {
-    "arrival_departures": 87,
-    "selected_closing_binds": 15,
-    "selected_closing_binds_with_empty_query": 15,
-    "closing_departures": 15
-  }
-}

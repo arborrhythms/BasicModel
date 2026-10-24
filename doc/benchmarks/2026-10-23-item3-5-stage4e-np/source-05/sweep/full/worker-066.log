@@ -1,9 +1,0 @@
-......................s................................................. [ 56%]
-........................................................                 [100%]
-=============================== warnings summary ===============================
-.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
-  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
-    self.import_plugin(import_spec)
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-127 passed, 1 skipped, 1 warning in 6.32s

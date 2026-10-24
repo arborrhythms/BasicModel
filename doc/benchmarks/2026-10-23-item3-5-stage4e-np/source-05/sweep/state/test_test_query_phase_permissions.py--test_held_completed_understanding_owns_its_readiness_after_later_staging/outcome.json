@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_held_completed_understanding_owns_its_readiness_after_later_staging",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

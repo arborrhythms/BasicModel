@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_synthesis.py::test_compose_auxiliary_policy_setting_is_retired",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

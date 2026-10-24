@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[equal-roles0]",
-    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[ask-roles1]",
-    "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[isTrue-roles2]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-repair/landing-sweep/worker-646.recycle.json"
-}

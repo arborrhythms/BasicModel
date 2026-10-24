@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_gradient.py::test_autograd_matches_finite_differences_on_tied_operator[3]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

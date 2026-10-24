@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_angle_tracks_absolute_time_via_self_t",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

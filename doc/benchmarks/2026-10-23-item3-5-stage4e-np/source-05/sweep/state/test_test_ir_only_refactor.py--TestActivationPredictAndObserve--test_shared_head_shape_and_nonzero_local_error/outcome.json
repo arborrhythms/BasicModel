@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_only_refactor.py::TestActivationPredictAndObserve::test_shared_head_shape_and_nonzero_local_error",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

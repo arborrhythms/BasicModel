@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_corpus.py::test_document_context_changes_referent_with_the_same_probe_words",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_unified_thought_controller.py::test_candidate_payloads_are_detached_from_the_hard_choice",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

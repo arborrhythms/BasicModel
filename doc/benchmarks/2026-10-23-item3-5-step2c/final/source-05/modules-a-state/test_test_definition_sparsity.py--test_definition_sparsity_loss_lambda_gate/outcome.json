@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_sparsity.py::test_definition_sparsity_loss_lambda_gate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

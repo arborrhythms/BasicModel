@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_relative_sentence_end_state.py::test_relative_mask_per_row_and_shared_shapes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

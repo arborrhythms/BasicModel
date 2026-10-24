@@ -1,6 +1,0 @@
-{
-  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-10-19-bind-thought-operation.md]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

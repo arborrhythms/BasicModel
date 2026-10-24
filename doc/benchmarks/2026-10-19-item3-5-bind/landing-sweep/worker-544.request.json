@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_operators_round2e.py::test_comparison_copies_tied_parameters_without_rng_and_restores_presentation",
-    "test/test_operators_round2e.py::test_presented_rejected_root_has_zero_weight_and_each_reader_steps_once",
-    "test/test_operators_round2e.py::test_sentence_advantage_reads_comparison_and_optimizer_owns_both"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/landing-sweep/worker-544.recycle.json"
-}

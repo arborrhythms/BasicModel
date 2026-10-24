@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py::test_g2_generated_leaf_without_object_uses_same_resolver[2-3]"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-036.recycle.json"
-}

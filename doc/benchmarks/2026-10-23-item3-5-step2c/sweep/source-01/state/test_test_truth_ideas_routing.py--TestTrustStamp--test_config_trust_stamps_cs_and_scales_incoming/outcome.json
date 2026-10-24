@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestTrustStamp::test_config_trust_stamps_cs_and_scales_incoming",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

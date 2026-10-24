@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair2.py::test_no_legal_thought_operation_finishes_with_the_reference_open",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

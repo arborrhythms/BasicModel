@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_expectation.py::test_restore_keeps_weights_and_durable_memory_but_starts_context_cold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

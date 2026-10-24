@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_bind_thought.py"
-  ],
-  "collect": true,
-  "keyword": "g1 or g2 or g3",
-  "marker": null,
-  "recycle_file": null
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_selected_relation_meaning.py::test_unreduced_lexical_converse_uses_its_anchored_grammar_form",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

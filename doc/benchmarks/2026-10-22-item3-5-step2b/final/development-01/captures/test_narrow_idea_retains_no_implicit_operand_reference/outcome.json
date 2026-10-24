@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_retention.py::test_narrow_idea_retains_no_implicit_operand_reference",
-  "outcome": "failed",
-  "failure": "test/test_sentence_retention.py:63: in test_narrow_idea_retains_no_implicit_operand_reference\n    assert store.meaning_of(second).role_refs == (None, None, None)\nE   AssertionError: assert (('sym', 1), None, None) == (None, None, None)\nE     \nE     At index 0 diff: ('sym', 1) != None\nE     Use -v to get more diff",
-  "records": []
-}

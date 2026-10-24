@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_sigma_pi.py::test_frozen_conjunctive_edge_stays_frozen_across_pending_growth",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

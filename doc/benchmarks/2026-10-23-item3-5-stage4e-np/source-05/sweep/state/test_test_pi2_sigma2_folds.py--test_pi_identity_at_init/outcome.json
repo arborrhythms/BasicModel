@@ -1,6 +1,0 @@
-{
-  "node": "test/test_pi2_sigma2_folds.py::test_pi_identity_at_init",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

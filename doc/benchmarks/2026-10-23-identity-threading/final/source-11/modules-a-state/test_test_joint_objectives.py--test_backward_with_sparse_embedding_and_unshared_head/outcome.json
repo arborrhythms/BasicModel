@@ -1,6 +1,0 @@
-{
-  "node": "test/test_joint_objectives.py::test_backward_with_sparse_embedding_and_unshared_head",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

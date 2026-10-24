@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_selection_cannot_name_an_inactive_exact_match[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

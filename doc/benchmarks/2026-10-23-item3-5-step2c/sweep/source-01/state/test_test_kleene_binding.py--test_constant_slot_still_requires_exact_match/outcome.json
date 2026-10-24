@@ -1,6 +1,0 @@
-{
-  "node": "test/test_kleene_binding.py::test_constant_slot_still_requires_exact_match",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

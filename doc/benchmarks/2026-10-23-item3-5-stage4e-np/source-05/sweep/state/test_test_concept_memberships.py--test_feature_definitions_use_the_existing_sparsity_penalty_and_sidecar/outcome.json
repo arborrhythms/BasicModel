@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_memberships.py::test_feature_definitions_use_the_existing_sparsity_penalty_and_sidecar",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

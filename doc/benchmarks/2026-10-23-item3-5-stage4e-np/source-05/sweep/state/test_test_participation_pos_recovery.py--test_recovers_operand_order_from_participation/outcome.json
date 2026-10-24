@@ -1,6 +1,0 @@
-{
-  "node": "test/test_participation_pos_recovery.py::test_recovers_operand_order_from_participation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

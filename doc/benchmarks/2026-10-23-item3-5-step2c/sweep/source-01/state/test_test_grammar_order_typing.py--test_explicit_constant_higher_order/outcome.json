@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

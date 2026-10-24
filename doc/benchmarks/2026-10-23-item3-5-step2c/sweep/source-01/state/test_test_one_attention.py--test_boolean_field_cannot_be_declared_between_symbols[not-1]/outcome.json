@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_boolean_field_cannot_be_declared_between_symbols[not-1]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

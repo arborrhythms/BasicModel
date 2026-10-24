@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parts_of_speech.py::test_chooser_adds_input_probabilities_directly_and_carries_words",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_selected_runs_skip_the_full_receipt_lock",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

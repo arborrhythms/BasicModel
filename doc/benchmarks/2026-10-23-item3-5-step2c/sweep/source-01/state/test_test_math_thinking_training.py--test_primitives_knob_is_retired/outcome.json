@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_thinking_training.py::test_primitives_knob_is_retired",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

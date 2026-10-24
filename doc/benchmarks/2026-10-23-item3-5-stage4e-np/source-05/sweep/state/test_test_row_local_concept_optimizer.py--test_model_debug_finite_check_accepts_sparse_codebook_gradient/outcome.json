@@ -1,6 +1,0 @@
-{
-  "node": "test/test_row_local_concept_optimizer.py::test_model_debug_finite_check_accepts_sparse_codebook_gradient",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

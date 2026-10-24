@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_thought_execution_receives_the_common_context_and_only_capability_views",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

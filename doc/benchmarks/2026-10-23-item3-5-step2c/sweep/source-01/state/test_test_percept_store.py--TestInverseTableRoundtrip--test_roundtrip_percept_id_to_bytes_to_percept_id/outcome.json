@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestInverseTableRoundtrip::test_roundtrip_percept_id_to_bytes_to_percept_id",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

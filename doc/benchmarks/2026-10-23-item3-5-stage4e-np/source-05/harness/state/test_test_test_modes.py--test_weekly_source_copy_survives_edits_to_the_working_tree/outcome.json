@@ -1,6 +1,0 @@
-{
-  "node": "test/test_test_modes.py::test_weekly_source_copy_survives_edits_to_the_working_tree",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

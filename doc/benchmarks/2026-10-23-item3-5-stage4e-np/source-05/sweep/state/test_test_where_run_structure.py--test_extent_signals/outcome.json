@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_extent_signals",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

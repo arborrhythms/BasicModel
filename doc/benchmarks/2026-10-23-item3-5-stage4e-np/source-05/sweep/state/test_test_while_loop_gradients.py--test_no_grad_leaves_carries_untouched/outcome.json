@@ -1,6 +1,0 @@
-{
-  "node": "test/test_while_loop_gradients.py::test_no_grad_leaves_carries_untouched",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

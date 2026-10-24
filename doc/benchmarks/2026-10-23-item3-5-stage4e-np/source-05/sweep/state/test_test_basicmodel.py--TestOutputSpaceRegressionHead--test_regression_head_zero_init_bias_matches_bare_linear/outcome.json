@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestOutputSpaceRegressionHead::test_regression_head_zero_init_bias_matches_bare_linear",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_34_learning_codes_cannot_change_definition_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

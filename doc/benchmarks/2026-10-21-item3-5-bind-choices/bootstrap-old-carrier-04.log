@@ -1,6 +1,0 @@
-[collect] 1 selectors; limit 300s, 8.0 GiB
-[collect] exit 0; 1.8s; peak 0.17 GiB
-[worker-000] 1 selectors; limit 300s, 8.0 GiB
-[worker-000] exit 0; 35.6s; peak 0.81 GiB
-Result: passed, exit 0; 1/1 cases completed.
-doc/benchmarks/2026-10-21-item3-5-bind-choices/bootstrap-old-carrier-04/result.json

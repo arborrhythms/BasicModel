@@ -1,6 +1,0 @@
-{
-  "node": "doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_capture_stamp.py::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution",
-  "outcome": "failed",
-  "failure": "doc/benchmarks/2026-10-23-item3-5-step2c/diagnostics/test_capture_stamp.py:30: in test_program_keeps_the_identity_leaf_stamp_before_reference_resolution\n    assert entry.leaf_orders.tolist() == [1, 2]\nE   assert [0, 2] == [1, 2]\nE     \nE     At index 0 diff: 0 != 1\nE     Use -v to get more diff",
-  "records": []
-}

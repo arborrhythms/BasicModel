@@ -1,6 +1,0 @@
-{
-  "node": "test/test_init_scale.py::test_init_scale_zero_is_none_byte_identical",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

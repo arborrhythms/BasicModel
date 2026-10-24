@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order0_percept_definitions.py::test_alternatives_do_not_trigger_conjunctive_overcollection",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

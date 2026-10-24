@@ -1,6 +1,0 @@
-{
-  "node": "test/test_percept_store.py::TestRadixTrie::test_insert_splits_existing_edge_at_partial_overlap",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

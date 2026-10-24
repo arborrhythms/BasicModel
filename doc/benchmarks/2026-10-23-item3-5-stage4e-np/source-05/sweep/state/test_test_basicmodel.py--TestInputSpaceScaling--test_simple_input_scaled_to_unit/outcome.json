@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestInputSpaceScaling::test_simple_input_scaled_to_unit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

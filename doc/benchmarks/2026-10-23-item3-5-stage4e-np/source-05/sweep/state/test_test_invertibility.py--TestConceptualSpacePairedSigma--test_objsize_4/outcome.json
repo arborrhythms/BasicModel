@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestConceptualSpacePairedSigma::test_objsize_4",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

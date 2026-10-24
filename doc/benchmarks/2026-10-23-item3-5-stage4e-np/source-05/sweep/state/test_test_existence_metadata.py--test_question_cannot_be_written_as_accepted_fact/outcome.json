@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_metadata.py::test_question_cannot_be_written_as_accepted_fact",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

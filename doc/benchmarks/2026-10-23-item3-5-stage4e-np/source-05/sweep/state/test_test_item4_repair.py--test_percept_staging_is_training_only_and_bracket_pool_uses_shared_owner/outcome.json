@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

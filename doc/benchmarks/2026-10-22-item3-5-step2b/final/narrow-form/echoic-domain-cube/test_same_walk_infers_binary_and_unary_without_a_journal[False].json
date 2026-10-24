@@ -1,4 +1,0 @@
-{
-  "node": "test/test_echoic_decoder.py::test_same_walk_infers_binary_and_unary_without_a_journal[False]",
-  "outcome": "passed"
-}

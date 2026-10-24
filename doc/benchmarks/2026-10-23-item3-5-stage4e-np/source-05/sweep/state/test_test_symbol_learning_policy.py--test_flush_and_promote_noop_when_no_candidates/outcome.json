@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_policy.py::test_flush_and_promote_noop_when_no_candidates",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

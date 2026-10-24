@@ -1,6 +1,0 @@
-{
-  "node": "test/test_serve_thinking.py::test_non_thinking_model_has_no_payload",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

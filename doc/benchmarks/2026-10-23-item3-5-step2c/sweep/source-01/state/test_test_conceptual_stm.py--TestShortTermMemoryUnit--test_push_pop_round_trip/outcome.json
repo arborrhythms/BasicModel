@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm.py::TestShortTermMemoryUnit::test_push_pop_round_trip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

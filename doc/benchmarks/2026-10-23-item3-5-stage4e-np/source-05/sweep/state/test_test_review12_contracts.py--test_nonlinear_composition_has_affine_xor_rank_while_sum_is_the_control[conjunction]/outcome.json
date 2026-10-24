@@ -1,6 +1,0 @@
-{
-  "node": "test/test_review12_contracts.py::test_nonlinear_composition_has_affine_xor_rank_while_sum_is_the_control[conjunction]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_start_rule.py::test_multiple_start_patterns_with_compact_order_set",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_math_chain_repair.py::test_proposal_menu_never_offers_taxonomy_with_occurrence_operands",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

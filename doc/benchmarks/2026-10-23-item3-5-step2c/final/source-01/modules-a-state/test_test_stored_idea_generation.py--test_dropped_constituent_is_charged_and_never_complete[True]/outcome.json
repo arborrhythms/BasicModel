@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

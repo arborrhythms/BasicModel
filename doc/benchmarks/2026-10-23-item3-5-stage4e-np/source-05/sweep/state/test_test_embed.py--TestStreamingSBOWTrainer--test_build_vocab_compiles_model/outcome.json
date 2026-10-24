@@ -1,6 +1,0 @@
-{
-  "node": "test/test_embed.py::TestStreamingSBOWTrainer::test_build_vocab_compiles_model",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

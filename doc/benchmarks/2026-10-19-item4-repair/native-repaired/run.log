@@ -1,2 +1,0 @@
-[BasicModel] Activated aligned codebook prefix 32 -> 64 rows (physical capacity 64; Parameter/optimizer shapes unchanged; compiled VQ paths specialize on the new active width)
-{"status": "complete", "execution_gate": true, "learning_gate": false, "seconds": 113.4883395419456}

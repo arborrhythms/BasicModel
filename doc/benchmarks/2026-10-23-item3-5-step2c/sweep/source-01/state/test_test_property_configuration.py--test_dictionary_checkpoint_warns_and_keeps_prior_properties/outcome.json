@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_configuration.py::test_dictionary_checkpoint_warns_and_keeps_prior_properties",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

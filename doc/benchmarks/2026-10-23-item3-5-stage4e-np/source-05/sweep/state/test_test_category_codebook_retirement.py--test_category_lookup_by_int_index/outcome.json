@@ -1,6 +1,0 @@
-{
-  "node": "test/test_category_codebook_retirement.py::test_category_lookup_by_int_index",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

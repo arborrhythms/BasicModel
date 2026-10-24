@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_membership_read_never_updates_the_dictionary",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

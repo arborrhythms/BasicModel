@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_mentions.py::test_mention_training_record_is_not_a_thought_chooser_feature"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/scorer-01/worker-017.recycle.json"
-}

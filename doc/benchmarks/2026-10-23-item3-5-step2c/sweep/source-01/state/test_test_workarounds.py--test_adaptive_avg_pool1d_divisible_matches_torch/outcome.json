@@ -1,6 +1,0 @@
-{
-  "node": "test/test_workarounds.py::test_adaptive_avg_pool1d_divisible_matches_torch",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_stack_router_does_not_touch_conceptual_stm",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

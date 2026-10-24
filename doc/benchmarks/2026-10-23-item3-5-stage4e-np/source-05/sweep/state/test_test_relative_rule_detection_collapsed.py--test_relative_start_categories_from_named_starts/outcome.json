@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_rule_detection_collapsed.py::test_relative_start_categories_from_named_starts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

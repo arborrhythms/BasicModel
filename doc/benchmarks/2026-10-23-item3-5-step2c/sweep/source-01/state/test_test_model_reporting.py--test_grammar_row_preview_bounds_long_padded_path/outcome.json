@@ -1,6 +1,0 @@
-{
-  "node": "test/test_model_reporting.py::test_grammar_row_preview_bounds_long_padded_path",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

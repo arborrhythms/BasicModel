@@ -1,6 +1,0 @@
-{
-  "node": "test/test_derived_concept_codes.py::test_rows_conduct_to_other_words_without_crossing_batch_streams",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

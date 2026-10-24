@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_concept_activation_boundary.py::test_sparse_decode_cost_tracks_selected_rows_not_inventory_width",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_partspace_nvectors_is_the_only_physical_capacity_knob",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

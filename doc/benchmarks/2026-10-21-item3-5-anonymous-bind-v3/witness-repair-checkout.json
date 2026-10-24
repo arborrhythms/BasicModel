@@ -1,8 +1,0 @@
-{
-  "base": "3d453e6bb6927e5da1492c25106a4ef107b87bca",
-  "path": "/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/item35-witness-repair-te_zd4j8",
-  "changed": {
-    "bin/ReferenceClose.py": "2f23452c428bcc83f5c2d45b59ce2f962c3342751d518b40bbe744cf5f088c9d"
-  },
-  "note": "Isolated one-line production repair plus the new witness regression; development evidence only, not a frozen-source gate."
-}

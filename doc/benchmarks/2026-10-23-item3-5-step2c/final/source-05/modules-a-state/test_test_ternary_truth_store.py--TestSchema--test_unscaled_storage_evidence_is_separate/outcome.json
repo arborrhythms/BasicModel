@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestSchema::test_unscaled_storage_evidence_is_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

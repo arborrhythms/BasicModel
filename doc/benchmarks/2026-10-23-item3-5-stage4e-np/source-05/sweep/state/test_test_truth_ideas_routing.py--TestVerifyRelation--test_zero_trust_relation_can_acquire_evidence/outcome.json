@@ -1,6 +1,0 @@
-{
-  "node": "test/test_truth_ideas_routing.py::TestVerifyRelation::test_zero_trust_relation_can_acquire_evidence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

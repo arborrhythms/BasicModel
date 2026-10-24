@@ -1,6 +1,0 @@
-{
-  "node": "test/test_typed_stack.py::test_reduce_admissibility_unary_one_item",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

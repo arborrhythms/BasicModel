@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modification_lessons.py::test_np_menu_admits_both_modification_operators_at_the_native_mask",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

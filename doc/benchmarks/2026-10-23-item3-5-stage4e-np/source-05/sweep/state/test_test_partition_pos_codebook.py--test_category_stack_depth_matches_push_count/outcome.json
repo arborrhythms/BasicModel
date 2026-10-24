@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_pos_codebook.py::test_category_stack_depth_matches_push_count",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

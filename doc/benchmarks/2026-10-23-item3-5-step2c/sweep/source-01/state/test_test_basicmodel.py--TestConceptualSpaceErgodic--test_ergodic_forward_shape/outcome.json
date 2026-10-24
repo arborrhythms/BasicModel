@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestConceptualSpaceErgodic::test_ergodic_forward_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

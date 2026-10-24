@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_model_calls_the_symbolic_loop_as_forward",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

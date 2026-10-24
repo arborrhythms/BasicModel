@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-01/regressions/worker-008.recycle.json"
-}

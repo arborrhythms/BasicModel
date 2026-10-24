@@ -1,6 +1,0 @@
-{
-  "node": "test/test_learning_readiness.py::test_amp_skips_do_not_inflate_training_exposure[False-True-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

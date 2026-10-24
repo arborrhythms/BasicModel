@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

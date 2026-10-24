@@ -1,6 +1,0 @@
-{
-  "node": "test/test_normal_thought_controller.py::test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

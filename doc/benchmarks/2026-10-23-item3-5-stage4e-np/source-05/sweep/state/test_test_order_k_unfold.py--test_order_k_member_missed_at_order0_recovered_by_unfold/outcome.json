@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order_k_unfold.py::test_order_k_member_missed_at_order0_recovered_by_unfold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

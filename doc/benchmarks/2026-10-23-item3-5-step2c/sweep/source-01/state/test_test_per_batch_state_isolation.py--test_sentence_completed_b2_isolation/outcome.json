@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_state_isolation.py::test_sentence_completed_b2_isolation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

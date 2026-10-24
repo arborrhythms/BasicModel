@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_taxonomy.py::test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

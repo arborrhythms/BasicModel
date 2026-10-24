@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_concepts_from_percepts.py::test_indexed_checkpoint_roundtrip_growth_and_invalid_reference_rejection",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

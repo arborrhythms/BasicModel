@@ -1,6 +1,0 @@
-{
-  "node": "test/test_heat_reverse_wiring.py::TestHeatReverseWiringIntersectionON::test_on_and_off_differ",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

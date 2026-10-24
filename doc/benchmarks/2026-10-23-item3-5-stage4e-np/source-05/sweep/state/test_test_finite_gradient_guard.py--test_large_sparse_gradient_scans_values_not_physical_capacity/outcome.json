@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_large_sparse_gradient_scans_values_not_physical_capacity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

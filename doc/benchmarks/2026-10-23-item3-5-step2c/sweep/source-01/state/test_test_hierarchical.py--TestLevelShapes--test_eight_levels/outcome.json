@@ -1,6 +1,0 @@
-{
-  "node": "test/test_hierarchical.py::TestLevelShapes::test_eight_levels",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

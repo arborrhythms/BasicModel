@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestTimestampAndTrust::test_trust_clamped",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

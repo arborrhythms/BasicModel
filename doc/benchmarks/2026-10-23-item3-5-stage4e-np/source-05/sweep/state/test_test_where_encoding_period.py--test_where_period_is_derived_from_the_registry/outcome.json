@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_encoding_period.py::test_where_period_is_derived_from_the_registry",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

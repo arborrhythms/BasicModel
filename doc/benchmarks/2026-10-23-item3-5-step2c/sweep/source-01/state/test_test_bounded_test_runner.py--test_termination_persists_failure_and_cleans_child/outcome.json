@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_termination_persists_failure_and_cleans_child",
-  "outcome": "failed",
-  "failure": "test/test_bounded_test_runner.py:459: in test_termination_persists_failure_and_cleans_child\n    assert (tmp_path / \"active.pid\").exists()\nE   AssertionError: assert False\nE    +  where False = exists()\nE    +    where exists = (PosixPath('/private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9244/test_termination_persists_fail0') / 'active.pid').exists",
-  "records": []
-}

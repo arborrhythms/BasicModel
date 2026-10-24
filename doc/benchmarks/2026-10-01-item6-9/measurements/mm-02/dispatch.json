@@ -1,7 +1,0 @@
-{
-  "kind": "mm",
-  "model_compile": "eager",
-  "device": "cpu",
-  "seed": null,
-  "autoload": "false"
-}

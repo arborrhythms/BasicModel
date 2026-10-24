@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_percept_master_prefix_is_byte_exact_not_clamped_view",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

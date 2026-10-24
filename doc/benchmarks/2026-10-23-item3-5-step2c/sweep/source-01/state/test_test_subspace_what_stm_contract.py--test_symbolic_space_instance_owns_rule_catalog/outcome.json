@@ -1,6 +1,0 @@
-{
-  "node": "test/test_subspace_what_stm_contract.py::test_symbolic_space_instance_owns_rule_catalog",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

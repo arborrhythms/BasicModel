@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_error.py::test_reporting_only_penalty_does_not_enter_trained_total",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

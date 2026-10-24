@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item6_2_thinking.py::test_operations_all_declare_pairs_and_ast_never_returns_scalar",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sentence_references.py::test_pronoun_can_bind_an_earlier_live_noun_without_a_reference_operator",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

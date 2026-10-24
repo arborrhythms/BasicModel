@@ -1,6 +1,0 @@
-{
-  "node": "test/test_expectation_defaults.py::test_evaluation_reports_residual_without_training_or_weight_changes",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

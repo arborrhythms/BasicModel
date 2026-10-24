@@ -1,6 +1,0 @@
-{
-  "node": "test/test_structural_preference.py::test_six_word_legacy_pipeline_retains_every_stage_and_feedback_delay",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

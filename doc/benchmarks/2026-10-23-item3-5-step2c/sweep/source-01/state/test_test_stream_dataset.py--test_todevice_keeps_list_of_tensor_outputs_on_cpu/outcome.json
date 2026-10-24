@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stream_dataset.py::test_todevice_keeps_list_of_tensor_outputs_on_cpu",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

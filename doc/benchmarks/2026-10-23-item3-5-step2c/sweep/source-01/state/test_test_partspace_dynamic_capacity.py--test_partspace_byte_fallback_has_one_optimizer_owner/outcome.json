@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partspace_dynamic_capacity.py::test_partspace_byte_fallback_has_one_optimizer_owner",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

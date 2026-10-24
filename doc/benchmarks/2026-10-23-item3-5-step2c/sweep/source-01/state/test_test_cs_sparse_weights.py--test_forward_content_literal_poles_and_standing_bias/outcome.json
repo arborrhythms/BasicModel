@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_sparse_weights.py::test_forward_content_literal_poles_and_standing_bias",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

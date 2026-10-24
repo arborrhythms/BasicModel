@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_reconstruction.py::test_product_recovers_nonzero_operand_residual",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

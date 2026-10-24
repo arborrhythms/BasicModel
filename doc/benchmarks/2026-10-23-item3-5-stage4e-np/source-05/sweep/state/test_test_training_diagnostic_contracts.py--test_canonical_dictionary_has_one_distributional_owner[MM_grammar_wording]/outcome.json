@@ -1,6 +1,0 @@
-{
-  "node": "test/test_training_diagnostic_contracts.py::test_canonical_dictionary_has_one_distributional_owner[MM_grammar_wording]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

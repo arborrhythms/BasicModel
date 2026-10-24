@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2.py::test_reconstruction_keeps_total_credits_and_supplied_answer_only",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

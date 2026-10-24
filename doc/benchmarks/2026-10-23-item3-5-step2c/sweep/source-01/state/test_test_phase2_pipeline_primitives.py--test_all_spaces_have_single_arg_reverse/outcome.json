@@ -1,6 +1,0 @@
-{
-  "node": "test/test_phase2_pipeline_primitives.py::test_all_spaces_have_single_arg_reverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contextual_concept_codebook.py::test_dictionary_is_included_once_in_optimizer_groups",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

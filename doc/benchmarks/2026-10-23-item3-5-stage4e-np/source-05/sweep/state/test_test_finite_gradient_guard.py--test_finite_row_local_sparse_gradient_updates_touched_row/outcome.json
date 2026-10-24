@@ -1,6 +1,0 @@
-{
-  "node": "test/test_finite_gradient_guard.py::test_finite_row_local_sparse_gradient_updates_touched_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

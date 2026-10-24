@@ -1,6 +1,0 @@
-{
-  "node": "test/test_dimensional_governance.py::test_sigma_pi_mode_resolves_and_aliases_butterfly",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

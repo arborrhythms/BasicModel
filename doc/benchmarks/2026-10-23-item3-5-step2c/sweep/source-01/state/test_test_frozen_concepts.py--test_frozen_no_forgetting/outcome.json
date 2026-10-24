@@ -1,6 +1,0 @@
-{
-  "node": "test/test_frozen_concepts.py::test_frozen_no_forgetting",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

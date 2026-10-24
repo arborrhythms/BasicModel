@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_structural_dispatch_adapts_legacy_forward_reverse_behind_the_contract",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

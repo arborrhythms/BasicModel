@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_compiled_input_cannot_execute_queries_during_trace_or_eager_island[False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

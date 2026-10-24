@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_operations.py::test_hard_candidate_and_score_function_have_separate_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

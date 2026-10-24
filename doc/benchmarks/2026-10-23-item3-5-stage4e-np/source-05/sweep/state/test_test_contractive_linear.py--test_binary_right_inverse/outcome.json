@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_binary_right_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

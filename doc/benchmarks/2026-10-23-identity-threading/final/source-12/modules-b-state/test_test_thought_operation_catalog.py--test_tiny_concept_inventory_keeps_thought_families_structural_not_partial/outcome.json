@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_tiny_concept_inventory_keeps_thought_families_structural_not_partial",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

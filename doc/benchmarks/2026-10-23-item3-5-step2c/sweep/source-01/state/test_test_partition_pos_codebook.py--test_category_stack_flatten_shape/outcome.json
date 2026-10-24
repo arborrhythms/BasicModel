@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_pos_codebook.py::test_category_stack_flatten_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

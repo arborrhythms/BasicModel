@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_four_words_two_interior_both_sides",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

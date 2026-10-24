@@ -1,6 +1,0 @@
-{
-  "node": "test/test_accessible_mind.py::test_thought_retrieval_keeps_history_and_restores_episode_knowing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

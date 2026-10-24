@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_experiment.py::test_identification_requires_the_matching_column_to_be_active_in_this_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

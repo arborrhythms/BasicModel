@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operator_catalogue.py::test_inverse_dispatch_uses_declared_computation_not_operator_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

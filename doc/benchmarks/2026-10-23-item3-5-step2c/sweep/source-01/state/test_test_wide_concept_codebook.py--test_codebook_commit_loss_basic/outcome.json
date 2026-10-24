@@ -1,6 +1,0 @@
-{
-  "node": "test/test_wide_concept_codebook.py::test_codebook_commit_loss_basic",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

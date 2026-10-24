@@ -1,6 +1,0 @@
-{
-  "node": "test/test_definition_rows.py::test_24_index_is_bidirectional_and_rebuilds_from_saved_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

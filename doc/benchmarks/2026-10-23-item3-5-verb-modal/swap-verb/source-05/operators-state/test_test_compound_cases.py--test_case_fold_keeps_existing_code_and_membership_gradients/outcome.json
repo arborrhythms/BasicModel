@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compound_cases.py::test_case_fold_keeps_existing_code_and_membership_gradients",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

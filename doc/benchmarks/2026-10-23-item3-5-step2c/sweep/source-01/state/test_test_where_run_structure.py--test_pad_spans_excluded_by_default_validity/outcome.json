@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_pad_spans_excluded_by_default_validity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

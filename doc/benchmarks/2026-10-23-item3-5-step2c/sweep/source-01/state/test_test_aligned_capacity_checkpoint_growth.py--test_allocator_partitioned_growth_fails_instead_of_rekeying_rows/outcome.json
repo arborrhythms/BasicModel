@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_allocator_partitioned_growth_fails_instead_of_rekeying_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

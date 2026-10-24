@@ -1,6 +1,0 @@
-{
-  "node": "test/test_embed.py::TestStreamingSBOWTrainer::test_min_count_filters",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

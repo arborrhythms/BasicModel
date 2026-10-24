@@ -1,6 +1,0 @@
-{
-  "node": "test/test_bounded_test_runner.py::test_weekly_continues_only_unattempted_cases_after_a_guard_stop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

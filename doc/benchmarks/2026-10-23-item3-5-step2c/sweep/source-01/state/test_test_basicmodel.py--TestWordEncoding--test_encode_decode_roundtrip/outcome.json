@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestWordEncoding::test_encode_decode_roundtrip",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

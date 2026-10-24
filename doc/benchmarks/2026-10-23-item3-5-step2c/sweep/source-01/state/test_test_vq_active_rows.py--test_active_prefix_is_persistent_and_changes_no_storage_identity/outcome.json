@@ -1,6 +1,0 @@
-{
-  "node": "test/test_vq_active_rows.py::test_active_prefix_is_persistent_and_changes_no_storage_identity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

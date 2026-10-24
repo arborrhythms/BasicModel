@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_signatures_capture_explicit_orders_for_runtime_use",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

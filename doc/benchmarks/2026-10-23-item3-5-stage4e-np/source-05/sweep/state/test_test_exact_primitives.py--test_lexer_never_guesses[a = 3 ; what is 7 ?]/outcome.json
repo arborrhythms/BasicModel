@@ -1,6 +1,0 @@
-{
-  "node": "test/test_exact_primitives.py::test_lexer_never_guesses[a = 3 ; what is 7 ?]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_train_compile_target.py::test_gpu_compile_target_sets_defaults_without_clobbering",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

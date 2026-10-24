@@ -1,6 +1,0 @@
-{
-  "node": "test/test_doc_links.py::test_relative_links_resolve[doc/Reasoning.md]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

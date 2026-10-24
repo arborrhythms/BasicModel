@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_identity_candidates_share_the_operation_softmax_and_live_credit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

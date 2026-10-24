@@ -1,6 +1,0 @@
-{
-  "node": "test/test_existence_provenance.py::test_partial_new_checkpoint_cannot_forget_required_scope[metadata_required]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

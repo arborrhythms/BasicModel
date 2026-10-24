@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_view.py::test_duplicate_sources_cannot_inflate_taxonomy_support",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_inserted_row_reads_back_through_local_parameter",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

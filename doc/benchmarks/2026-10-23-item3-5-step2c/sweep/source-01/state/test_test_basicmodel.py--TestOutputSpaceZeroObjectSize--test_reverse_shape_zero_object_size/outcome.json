@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestOutputSpaceZeroObjectSize::test_reverse_shape_zero_object_size",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

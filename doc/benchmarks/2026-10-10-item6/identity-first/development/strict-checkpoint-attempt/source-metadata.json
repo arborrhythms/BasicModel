@@ -1,9 +1,0 @@
-{
-  "base_commit": "06f6e2b88811a107fbf7dff505cc8b2af189c34b",
-  "source_files": 771,
-  "corpus_files": 12,
-  "sha256": "56afcd0835f010fddc7e3367afd0fce6f5d1426b4f36ea7b447dd0abcca49d4e",
-  "status": "Uncommitted candidate after unresolved-cue correctness repair. Same declared learning seed and budgets; no rule retired.",
-  "previous_attempt": "development/taxonomy-underflow-attempt; original full sweep and interrupted warm-up retained",
-  "auxiliary_measurement": "bisect/learned_probe.py; frozen artifact, chooser-only reachability check"
-}

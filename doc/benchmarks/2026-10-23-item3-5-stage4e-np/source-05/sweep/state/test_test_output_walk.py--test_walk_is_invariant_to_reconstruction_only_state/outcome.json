@@ -1,6 +1,0 @@
-{
-  "node": "test/test_output_walk.py::test_walk_is_invariant_to_reconstruction_only_state",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

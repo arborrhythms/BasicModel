@@ -1,6 +1,0 @@
-{
-  "node": "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

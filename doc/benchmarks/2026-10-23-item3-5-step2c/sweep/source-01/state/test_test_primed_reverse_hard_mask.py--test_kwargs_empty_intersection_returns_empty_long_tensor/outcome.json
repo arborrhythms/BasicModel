@@ -1,6 +1,0 @@
-{
-  "node": "test/test_primed_reverse_hard_mask.py::test_kwargs_empty_intersection_returns_empty_long_tensor",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

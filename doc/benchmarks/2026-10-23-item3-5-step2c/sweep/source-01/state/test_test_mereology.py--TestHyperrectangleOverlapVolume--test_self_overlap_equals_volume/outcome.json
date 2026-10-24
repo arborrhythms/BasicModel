@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereology.py::TestHyperrectangleOverlapVolume::test_self_overlap_equals_volume",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

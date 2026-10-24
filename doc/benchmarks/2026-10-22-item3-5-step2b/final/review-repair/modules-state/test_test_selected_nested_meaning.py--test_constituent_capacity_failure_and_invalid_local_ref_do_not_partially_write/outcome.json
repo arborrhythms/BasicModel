@@ -1,6 +1,0 @@
-{
-  "node": "test/test_selected_nested_meaning.py::test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_write",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

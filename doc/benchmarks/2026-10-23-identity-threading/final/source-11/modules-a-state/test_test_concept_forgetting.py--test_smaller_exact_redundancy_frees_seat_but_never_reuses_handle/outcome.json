@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_forgetting.py::test_smaller_exact_redundancy_frees_seat_but_never_reuses_handle",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

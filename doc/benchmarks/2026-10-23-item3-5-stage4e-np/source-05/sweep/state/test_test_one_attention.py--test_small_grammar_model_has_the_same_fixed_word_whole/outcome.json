@@ -1,6 +1,0 @@
-{
-  "node": "test/test_one_attention.py::test_small_grammar_model_has_the_same_fixed_word_whole",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestTruthLoss::test_empty_truth_set_no_penalty",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

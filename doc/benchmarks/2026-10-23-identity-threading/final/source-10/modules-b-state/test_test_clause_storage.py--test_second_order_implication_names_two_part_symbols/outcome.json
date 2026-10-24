@@ -1,6 +1,0 @@
-{
-  "node": "test/test_clause_storage.py::test_second_order_implication_names_two_part_symbols",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

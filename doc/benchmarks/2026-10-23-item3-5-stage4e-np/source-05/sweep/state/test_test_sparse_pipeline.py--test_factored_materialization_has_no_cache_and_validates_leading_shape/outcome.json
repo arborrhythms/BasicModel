@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_factored_materialization_has_no_cache_and_validates_leading_shape",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

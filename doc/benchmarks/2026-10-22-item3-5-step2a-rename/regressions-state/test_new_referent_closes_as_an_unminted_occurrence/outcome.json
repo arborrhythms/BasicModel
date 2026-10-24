@@ -1,6 +1,0 @@
-{
-  "node": "test/test_part_closing.py::test_new_referent_closes_as_an_unminted_occurrence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

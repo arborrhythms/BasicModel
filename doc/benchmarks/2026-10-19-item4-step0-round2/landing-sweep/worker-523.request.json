@@ -1,8 +1,0 @@
-{
-  "selectors": [
-    "test/test_operator_effects.py::test_mean_bundling_is_not_a_field_operation",
-    "test/test_operator_effects.py::test_thought_result_and_effect_properties_survive_semantic_rename"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-523.recycle.json"
-}

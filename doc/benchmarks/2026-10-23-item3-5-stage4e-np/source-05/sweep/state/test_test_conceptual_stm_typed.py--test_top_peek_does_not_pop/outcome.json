@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_stm_typed.py::test_top_peek_does_not_pop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

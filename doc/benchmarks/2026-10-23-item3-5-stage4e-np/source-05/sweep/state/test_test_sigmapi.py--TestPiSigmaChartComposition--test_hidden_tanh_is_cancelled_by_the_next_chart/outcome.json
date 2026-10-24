@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sigmapi.py::TestPiSigmaChartComposition::test_hidden_tanh_is_cancelled_by_the_next_chart",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

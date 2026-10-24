@@ -1,6 +1,0 @@
-{
-  "node": "test/test_xor_grammar.py::TestXORGrammarConfigParsing::test_grammar_has_not_conjunction_disjunction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_final_b.py::test_readback_identifies_form_independently_of_both_evidence_lanes[pair0]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_prepared_dataset_value_retains_its_source_after_cursor_advances",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

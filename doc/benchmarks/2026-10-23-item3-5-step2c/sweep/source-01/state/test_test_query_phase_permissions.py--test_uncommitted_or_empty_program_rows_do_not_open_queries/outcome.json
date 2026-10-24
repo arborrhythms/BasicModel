@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_phase_permissions.py::test_uncommitted_or_empty_program_rows_do_not_open_queries",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

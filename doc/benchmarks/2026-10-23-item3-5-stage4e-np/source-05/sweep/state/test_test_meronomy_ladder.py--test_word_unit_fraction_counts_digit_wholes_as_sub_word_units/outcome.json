@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_word_unit_fraction_counts_digit_wholes_as_sub_word_units",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

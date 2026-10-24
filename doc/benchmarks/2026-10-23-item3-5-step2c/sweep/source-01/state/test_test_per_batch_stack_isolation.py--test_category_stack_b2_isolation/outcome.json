@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_batch_stack_isolation.py::test_category_stack_b2_isolation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

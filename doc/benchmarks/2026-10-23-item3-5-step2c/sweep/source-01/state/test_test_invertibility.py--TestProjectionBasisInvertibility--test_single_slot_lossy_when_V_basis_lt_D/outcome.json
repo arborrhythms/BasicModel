@@ -1,6 +1,0 @@
-{
-  "node": "test/test_invertibility.py::TestProjectionBasisInvertibility::test_single_slot_lossy_when_V_basis_lt_D",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

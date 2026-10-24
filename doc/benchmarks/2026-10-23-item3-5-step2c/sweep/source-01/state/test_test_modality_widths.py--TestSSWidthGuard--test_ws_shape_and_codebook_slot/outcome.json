@@ -1,6 +1,0 @@
-{
-  "node": "test/test_modality_widths.py::TestSSWidthGuard::test_ws_shape_and_codebook_slot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

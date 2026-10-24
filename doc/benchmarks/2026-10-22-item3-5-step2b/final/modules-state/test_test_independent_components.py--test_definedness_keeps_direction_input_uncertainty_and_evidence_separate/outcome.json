@@ -1,6 +1,0 @@
-{
-  "node": "test/test_independent_components.py::test_definedness_keeps_direction_input_uncertainty_and_evidence_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

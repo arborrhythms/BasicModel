@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_records_rule_and_word",
-    "test/test_partition_reconstruction_stack.py::test_reconstruction_stack_roundtrip",
-    "test/test_partition_reconstruction_stack.py::test_activation_predictor_parameter_width_does_not_scale_with_bank"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item4-step0-round2/landing-sweep/worker-579.recycle.json"
-}

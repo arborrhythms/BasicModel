@@ -1,8 +1,0 @@
-........................                                                 [100%]
-=============================== warnings summary ===============================
-test/test_existence_metadata.py::test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows
-  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py:2593: UserWarning: Legacy LTM rows have unknown order; decoding requires an explicit order stamp.
-    module._load_from_state_dict(
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-24 passed, 1 warning in 2.78s

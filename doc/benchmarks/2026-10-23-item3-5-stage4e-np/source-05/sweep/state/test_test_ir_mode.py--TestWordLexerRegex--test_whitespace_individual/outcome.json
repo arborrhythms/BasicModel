@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_mode.py::TestWordLexerRegex::test_whitespace_individual",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

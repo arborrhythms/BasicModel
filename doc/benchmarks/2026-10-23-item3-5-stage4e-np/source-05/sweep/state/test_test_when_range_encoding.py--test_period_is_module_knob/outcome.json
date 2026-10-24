@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_period_is_module_knob",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

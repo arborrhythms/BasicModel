@@ -1,6 +1,0 @@
-{
-  "node": "test/test_whole_property_codebook.py::test_materialize_property_shape_and_range",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

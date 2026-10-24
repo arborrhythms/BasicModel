@@ -1,6 +1,0 @@
-{
-  "node": "test/test_where_run_structure.py::test_word_spans_count_as_runs",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

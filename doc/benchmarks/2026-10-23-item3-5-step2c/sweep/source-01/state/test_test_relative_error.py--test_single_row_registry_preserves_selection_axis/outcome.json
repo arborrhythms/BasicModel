@@ -1,6 +1,0 @@
-{
-  "node": "test/test_relative_error.py::test_single_row_registry_preserves_selection_axis",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

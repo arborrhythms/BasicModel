@@ -1,6 +1,0 @@
-{
-  "node": "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

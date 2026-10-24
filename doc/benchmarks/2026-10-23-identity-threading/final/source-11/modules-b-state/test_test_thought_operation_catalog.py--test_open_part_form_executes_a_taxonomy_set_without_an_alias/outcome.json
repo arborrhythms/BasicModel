@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_open_part_form_executes_a_taxonomy_set_without_an_alias",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

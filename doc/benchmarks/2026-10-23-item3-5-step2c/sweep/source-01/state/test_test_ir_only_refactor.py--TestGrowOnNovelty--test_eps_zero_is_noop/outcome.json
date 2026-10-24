@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_eps_zero_is_noop",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

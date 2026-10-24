@@ -1,6 +1,0 @@
-{
-  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerClassAttributes::test_lower_rule_name",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

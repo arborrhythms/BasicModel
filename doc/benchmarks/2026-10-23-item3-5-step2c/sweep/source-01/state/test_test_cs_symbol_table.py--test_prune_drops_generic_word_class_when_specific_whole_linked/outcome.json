@@ -1,6 +1,0 @@
-{
-  "node": "test/test_cs_symbol_table.py::test_prune_drops_generic_word_class_when_specific_whole_linked",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

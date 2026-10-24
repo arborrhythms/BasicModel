@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reference_participants.py::test_ordinary_menu_uses_the_retained_argument_occupations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

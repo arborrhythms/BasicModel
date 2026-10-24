@@ -1,6 +1,0 @@
-{
-  "node": "test/test_parse_buffer.py::TestParseSentences::test_newlines_separate_headings_and_list_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_pipeline.py::test_missing_mutation_owner_is_detected_before_any_commit",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

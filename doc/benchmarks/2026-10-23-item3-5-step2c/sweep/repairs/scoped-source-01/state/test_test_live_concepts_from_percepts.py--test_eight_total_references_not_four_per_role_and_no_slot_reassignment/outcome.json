@@ -1,6 +1,0 @@
-{
-  "node": "test/test_live_concepts_from_percepts.py::test_eight_total_references_not_four_per_role_and_no_slot_reassignment",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

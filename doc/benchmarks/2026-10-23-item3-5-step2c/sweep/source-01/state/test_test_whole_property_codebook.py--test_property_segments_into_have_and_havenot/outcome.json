@@ -1,6 +1,0 @@
-{
-  "node": "test/test_whole_property_codebook.py::test_property_segments_into_have_and_havenot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

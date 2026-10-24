@@ -1,6 +1,0 @@
-{
-  "node": "test/test_what_spacetime.py::test_attached_model_output_keeps_index_and_supplied_target_separate",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

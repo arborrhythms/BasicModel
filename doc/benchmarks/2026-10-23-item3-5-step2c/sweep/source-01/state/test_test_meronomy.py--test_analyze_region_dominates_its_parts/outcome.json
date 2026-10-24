@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy.py::test_analyze_region_dominates_its_parts",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_typed_definition.py::test_typed_definition_verbose_not_wrong_without_relations",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

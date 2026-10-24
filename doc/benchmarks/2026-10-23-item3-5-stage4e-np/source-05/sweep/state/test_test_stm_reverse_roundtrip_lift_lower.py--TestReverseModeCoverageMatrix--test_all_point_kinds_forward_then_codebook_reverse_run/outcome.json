@@ -1,6 +1,0 @@
-{
-  "node": "test/test_stm_reverse_roundtrip_lift_lower.py::TestReverseModeCoverageMatrix::test_all_point_kinds_forward_then_codebook_reverse_run",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

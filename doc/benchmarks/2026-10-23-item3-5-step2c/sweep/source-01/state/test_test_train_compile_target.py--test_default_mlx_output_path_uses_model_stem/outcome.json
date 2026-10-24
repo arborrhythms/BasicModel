@@ -1,6 +1,0 @@
-{
-  "node": "test/test_train_compile_target.py::test_default_mlx_output_path_uses_model_stem",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

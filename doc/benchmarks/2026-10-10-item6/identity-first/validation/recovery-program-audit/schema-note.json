@@ -1,3 +1,0 @@
-{
-  "note": "Interpret recorded operation values only for kind 1 (binary) and kind 2 (unary). Kind 0 push entries can carry journal placeholders; the separate tokens table and word-tensors.pt contain the actual pushed-word values. Operator names use the immutable compose catalog indexed by the program local operation IDs."
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mm_xor.py::TestMMXorConvergence::test_learns_xor_signal",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

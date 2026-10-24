@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reset_at_batch_boundary.py::test_end_of_stream_reset_to_false",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

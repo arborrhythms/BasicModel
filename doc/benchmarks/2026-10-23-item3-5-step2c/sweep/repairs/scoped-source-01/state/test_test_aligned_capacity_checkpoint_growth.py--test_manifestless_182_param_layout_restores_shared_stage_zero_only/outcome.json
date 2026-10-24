@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_capacity_checkpoint_growth.py::test_manifestless_182_param_layout_restores_shared_stage_zero_only",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

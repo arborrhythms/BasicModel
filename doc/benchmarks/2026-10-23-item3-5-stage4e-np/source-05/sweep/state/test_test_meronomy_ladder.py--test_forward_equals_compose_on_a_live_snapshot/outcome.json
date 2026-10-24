@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meronomy_ladder.py::test_forward_equals_compose_on_a_live_snapshot",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_interface_factoring.py::test_factored_crossing_zero_slot_crosses_nothing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

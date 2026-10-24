@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ternary_truth_store.py::TestSchema::test_absolute_idea_is_np_null_null",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

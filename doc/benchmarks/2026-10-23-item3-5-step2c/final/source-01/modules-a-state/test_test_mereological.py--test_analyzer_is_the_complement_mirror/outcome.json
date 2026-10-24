@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereological.py::test_analyzer_is_the_complement_mirror",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

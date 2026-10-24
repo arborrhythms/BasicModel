@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_unknown_concept_does_not_refute_or_erase_a_known_conjunct",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

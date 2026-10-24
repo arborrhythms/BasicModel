@@ -1,6 +1,0 @@
-{
-  "node": "test/test_peer_pipeline.py::test_tensor_banked_pipeline_is_one_fullgraph_and_reusable",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

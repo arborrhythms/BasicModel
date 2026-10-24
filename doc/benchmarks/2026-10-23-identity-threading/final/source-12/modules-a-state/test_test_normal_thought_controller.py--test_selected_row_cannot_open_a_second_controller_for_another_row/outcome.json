@@ -1,6 +1,0 @@
-{
-  "node": "test/test_normal_thought_controller.py::test_selected_row_cannot_open_a_second_controller_for_another_row",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_lesson.py::test_part_supervision_scores_missing_and_extra_leaves_after_decoding",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

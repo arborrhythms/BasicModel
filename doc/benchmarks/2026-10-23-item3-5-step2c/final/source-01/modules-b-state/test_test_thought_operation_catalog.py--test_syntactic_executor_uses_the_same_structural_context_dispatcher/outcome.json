@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_syntactic_executor_uses_the_same_structural_context_dispatcher",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

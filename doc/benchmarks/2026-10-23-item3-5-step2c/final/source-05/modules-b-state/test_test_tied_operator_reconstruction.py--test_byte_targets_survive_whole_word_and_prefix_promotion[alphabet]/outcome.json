@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tied_operator_reconstruction.py::test_byte_targets_survive_whole_word_and_prefix_promotion[alphabet]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

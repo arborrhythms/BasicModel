@@ -1,6 +1,0 @@
-{
-  "node": "test/test_abstraction_order_canonical.py::test_record_fold_misalignment_fails_loud",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

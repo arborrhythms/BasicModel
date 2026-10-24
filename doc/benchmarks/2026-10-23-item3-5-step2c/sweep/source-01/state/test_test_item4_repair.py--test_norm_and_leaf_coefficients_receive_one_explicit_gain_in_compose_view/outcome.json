@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_repair.py::test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

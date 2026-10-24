@@ -1,6 +1,0 @@
-{
-  "node": "test/test_tying_storage_shared.py::TestUntiedWordFlow::test_insert_grows_ps_only",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

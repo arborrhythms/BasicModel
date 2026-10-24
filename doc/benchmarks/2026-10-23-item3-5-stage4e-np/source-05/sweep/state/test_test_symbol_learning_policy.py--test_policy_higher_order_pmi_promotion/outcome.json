@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbol_learning_policy.py::test_policy_higher_order_pmi_promotion",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

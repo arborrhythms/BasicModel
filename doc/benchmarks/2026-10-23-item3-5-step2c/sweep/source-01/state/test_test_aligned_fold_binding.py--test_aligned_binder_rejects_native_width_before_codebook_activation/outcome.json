@@ -1,6 +1,0 @@
-{
-  "node": "test/test_aligned_fold_binding.py::test_aligned_binder_rejects_native_width_before_codebook_activation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

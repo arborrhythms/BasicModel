@@ -1,6 +1,0 @@
-{
-  "node": "test/test_when_range_encoding.py::test_shift_time_is_invertible",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

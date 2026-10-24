@@ -1,6 +1,0 @@
-{
-  "node": "test/test_compose_operations.py::test_fullgraph_round_and_backward_match_eager",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

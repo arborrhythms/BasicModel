@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mereological.py::test_projection_repairs_every_edge_incl_cross_boundary",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

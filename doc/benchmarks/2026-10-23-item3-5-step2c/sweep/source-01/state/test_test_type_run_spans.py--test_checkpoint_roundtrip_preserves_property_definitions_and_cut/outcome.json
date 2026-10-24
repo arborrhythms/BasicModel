@@ -1,6 +1,0 @@
-{
-  "node": "test/test_type_run_spans.py::test_checkpoint_roundtrip_preserves_property_definitions_and_cut",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_contractive_linear.py::test_square_roundtrip[False-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

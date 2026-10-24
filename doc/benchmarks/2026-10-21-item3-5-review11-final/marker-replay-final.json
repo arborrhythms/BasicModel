@@ -1,7 +1,0 @@
-{
-  "source": "bedbea855a5701c4802a58142c6ccb08ef7b9097",
-  "receipt": "marker-replay-final",
-  "selector": "test/test_math_chain_section14.py::test_forced_ordinary_pending_premise_in_both_orders[False]",
-  "exit": 0,
-  "initial": "doc/benchmarks/2026-10-21-item3-5-review10-observer/fresh-final-forward-5-state/test_forced_ordinary_pending_premise_in_both_orders[False]"
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ops_lift_lower.py::TestRegionPromotion::test_as_region_promotes_point",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

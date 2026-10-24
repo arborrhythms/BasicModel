@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round4a0.py::test_four_occurrences_after_four_hundred_presentations_and_full_upsert",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

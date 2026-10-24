@@ -1,6 +1,0 @@
-{
-  "node": "test/test_evidence_folds.py::test_seam_never_invents_counterevidence_from_an_absent_property",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

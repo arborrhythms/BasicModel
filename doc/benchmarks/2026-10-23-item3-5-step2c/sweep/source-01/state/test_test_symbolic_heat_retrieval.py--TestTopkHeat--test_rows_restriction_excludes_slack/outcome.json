@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolic_heat_retrieval.py::TestTopkHeat::test_rows_restriction_excludes_slack",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

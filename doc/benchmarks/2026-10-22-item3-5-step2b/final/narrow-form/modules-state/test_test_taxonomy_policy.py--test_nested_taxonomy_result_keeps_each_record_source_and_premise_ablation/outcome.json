@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_policy.py::test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

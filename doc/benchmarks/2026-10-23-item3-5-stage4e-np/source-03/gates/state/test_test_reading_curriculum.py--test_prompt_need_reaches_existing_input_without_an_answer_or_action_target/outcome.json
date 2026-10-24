@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reading_curriculum.py::test_prompt_need_reaches_existing_input_without_an_answer_or_action_target",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

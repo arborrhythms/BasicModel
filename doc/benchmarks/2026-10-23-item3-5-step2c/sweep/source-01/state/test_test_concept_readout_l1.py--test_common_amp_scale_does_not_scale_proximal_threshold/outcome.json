@@ -1,6 +1,0 @@
-{
-  "node": "test/test_concept_readout_l1.py::test_common_amp_scale_does_not_scale_proximal_threshold",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

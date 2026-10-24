@@ -1,6 +1,0 @@
-{
-  "node": "test/test_model_time_when.py::test_forward_stamps_absolute_time_in_angle",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_per_row_hard_reset.py::test_per_row_hard_reset_clears_only_target_row_state",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

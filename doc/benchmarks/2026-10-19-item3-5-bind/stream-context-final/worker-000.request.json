@@ -1,7 +1,0 @@
-{
-  "selectors": [
-    "test/test_item55_mechanisms.py::test_stream_chain"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-19-item3-5-bind/stream-context-final/worker-000.recycle.json"
-}

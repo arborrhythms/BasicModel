@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_group_fit_recurrence_join_capacity_and_checkpoint",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

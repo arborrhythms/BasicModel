@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_view.py::test_direct_taxonomic_links_change_partof_with_canonical_direction",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_symbolize_layer.py::test_implementation_alias_cannot_restore_retired_carrier",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

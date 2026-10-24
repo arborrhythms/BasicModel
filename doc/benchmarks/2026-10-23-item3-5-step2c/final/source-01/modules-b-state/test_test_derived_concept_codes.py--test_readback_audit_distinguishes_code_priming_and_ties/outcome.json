@@ -1,6 +1,0 @@
-{
-  "node": "test/test_derived_concept_codes.py::test_readback_audit_distinguishes_code_priming_and_ties",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

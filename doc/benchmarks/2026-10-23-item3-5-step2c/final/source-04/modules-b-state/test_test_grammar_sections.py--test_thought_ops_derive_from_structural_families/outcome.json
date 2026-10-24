@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_sections.py::test_thought_ops_derive_from_structural_families",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

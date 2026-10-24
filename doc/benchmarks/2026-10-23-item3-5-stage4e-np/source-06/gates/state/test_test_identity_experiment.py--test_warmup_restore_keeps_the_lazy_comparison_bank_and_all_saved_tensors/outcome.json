@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_experiment.py::test_warmup_restore_keeps_the_lazy_comparison_bank_and_all_saved_tensors",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

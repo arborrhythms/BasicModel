@@ -1,6 +1,0 @@
-{
-  "node": "test/test_coordinate_registry.py::test_live_conceptual_eight_space_has_fixed_sinusoidal_slot_addresses",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestRuntimeBatch::test_runtime_batch_sets_and_restores",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

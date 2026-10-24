@@ -1,9 +1,0 @@
-[collect] 41 selectors; limit 1800s, 8.0 GiB
-[collect] exit 0; 4.0s; peak 0.47 GiB
-[worker-000] 26 selectors; limit 1800s, 8.0 GiB
-[worker-001] 48 selectors; limit 1800s, 8.0 GiB
-[worker-000] exit 1; 57.6s; peak 2.43 GiB
-[worker-001] exit 1; 96.2s; peak 4.17 GiB
-Result: test_failure, exit 1; 74/74 cases completed.
-doc/benchmarks/2026-10-20-item3-5-stm1/native-107/result.json
-Skipped phase certificates: copular_identity: 1

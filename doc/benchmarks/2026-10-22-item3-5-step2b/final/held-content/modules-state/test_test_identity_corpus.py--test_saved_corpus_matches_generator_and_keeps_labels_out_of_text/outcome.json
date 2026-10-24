@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_corpus.py::test_saved_corpus_matches_generator_and_keeps_labels_out_of_text",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

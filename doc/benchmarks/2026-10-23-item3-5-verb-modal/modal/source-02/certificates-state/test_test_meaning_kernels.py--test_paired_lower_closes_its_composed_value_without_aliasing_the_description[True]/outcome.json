@@ -1,6 +1,0 @@
-{
-  "node": "test/test_meaning_kernels.py::test_paired_lower_closes_its_composed_value_without_aliasing_the_description[True]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

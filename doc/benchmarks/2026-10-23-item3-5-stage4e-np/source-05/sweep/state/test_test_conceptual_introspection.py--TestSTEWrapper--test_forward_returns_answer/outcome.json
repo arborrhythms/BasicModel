@@ -1,6 +1,0 @@
-{
-  "node": "test/test_conceptual_introspection.py::TestSTEWrapper::test_forward_returns_answer",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

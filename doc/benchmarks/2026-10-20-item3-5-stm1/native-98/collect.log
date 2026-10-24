@@ -1,4 +1,0 @@
-test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[query]
-test/test_thought_binding.py::test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part[bind]
-
-2 tests collected in 0.47s

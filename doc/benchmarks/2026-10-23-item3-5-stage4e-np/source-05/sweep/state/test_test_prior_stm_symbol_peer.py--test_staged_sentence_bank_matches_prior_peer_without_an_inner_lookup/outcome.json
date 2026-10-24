@@ -1,6 +1,0 @@
-{
-  "node": "test/test_prior_stm_symbol_peer.py::test_staged_sentence_bank_matches_prior_peer_without_an_inner_lookup",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

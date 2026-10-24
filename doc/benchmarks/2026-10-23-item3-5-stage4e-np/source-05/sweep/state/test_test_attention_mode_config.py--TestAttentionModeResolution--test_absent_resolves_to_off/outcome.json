@@ -1,6 +1,0 @@
-{
-  "node": "test/test_attention_mode_config.py::TestAttentionModeResolution::test_absent_resolves_to_off",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

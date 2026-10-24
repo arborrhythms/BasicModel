@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_thought_boundary_detaches_executor_operands_and_recorded_request",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

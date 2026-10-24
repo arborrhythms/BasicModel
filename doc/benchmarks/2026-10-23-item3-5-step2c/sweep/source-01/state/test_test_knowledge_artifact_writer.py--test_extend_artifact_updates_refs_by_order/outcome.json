@@ -1,6 +1,0 @@
-{
-  "node": "test/test_knowledge_artifact_writer.py::test_extend_artifact_updates_refs_by_order",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

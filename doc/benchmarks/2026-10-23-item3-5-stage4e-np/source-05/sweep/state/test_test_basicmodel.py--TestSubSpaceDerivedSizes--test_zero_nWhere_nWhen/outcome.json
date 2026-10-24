@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubSpaceDerivedSizes::test_zero_nWhere_nWhen",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

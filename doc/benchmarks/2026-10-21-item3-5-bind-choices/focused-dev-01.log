@@ -1,4 +1,0 @@
-[collect] 8 selectors; limit 360s, 8.0 GiB
-[collect] exit 4; 1.3s; peak 0.04 GiB
-Result: collection_exit, exit 4; 0/0 cases completed.
-doc/benchmarks/2026-10-21-item3-5-bind-choices/focused-dev-01/result.json

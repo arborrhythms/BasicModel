@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_structural_operator_without_thought_declaration_is_not_a_boundary_action",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

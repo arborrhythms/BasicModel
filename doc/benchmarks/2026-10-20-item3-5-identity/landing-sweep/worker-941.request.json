@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_type_run_spans.py::test_digit_wholes_cut_each_digit",
-    "test/test_type_run_spans.py::test_stage_digit_wholes_knob",
-    "test/test_type_run_spans.py::test_digit_wholes_property_basis_signature"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-20-item3-5-identity/landing-sweep/worker-941.recycle.json"
-}

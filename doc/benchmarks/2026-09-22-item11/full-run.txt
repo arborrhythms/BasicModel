@@ -1,2 +1,0 @@
-item11-publish-full
-passed: 4717/4717 completed; exit 0

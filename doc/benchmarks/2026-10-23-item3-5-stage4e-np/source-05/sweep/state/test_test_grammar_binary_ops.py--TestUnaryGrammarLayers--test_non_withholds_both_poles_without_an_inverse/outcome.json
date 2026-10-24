@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_non_withholds_both_poles_without_an_inverse",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

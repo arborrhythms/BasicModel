@@ -1,6 +1,0 @@
-{
-  "node": "test/test_reasoning.py::TestOrderPartitions::test_partitions_cover_full_dim",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

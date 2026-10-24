@@ -1,6 +1,0 @@
-{
-  "node": "test/test_grammar_order_typing.py::test_modal_sentence_lift",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

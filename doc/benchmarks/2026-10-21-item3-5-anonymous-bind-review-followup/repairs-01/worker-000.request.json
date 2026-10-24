@@ -1,9 +1,0 @@
-{
-  "selectors": [
-    "test/test_reference_arrival_review.py::test_occurrence_bind_witness_is_a_locatable_address",
-    "test/test_reference_arrival_review.py::test_native_arrival_without_occurrence_does_not_materialize_a_working_vector",
-    "test/test_reference_arrival_review.py::test_arrival_without_a_selection_reports_it_without_reopening_the_token"
-  ],
-  "collect": false,
-  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/doc/benchmarks/2026-10-21-item3-5-anonymous-bind-review-followup/repairs-01/worker-000.recycle.json"
-}

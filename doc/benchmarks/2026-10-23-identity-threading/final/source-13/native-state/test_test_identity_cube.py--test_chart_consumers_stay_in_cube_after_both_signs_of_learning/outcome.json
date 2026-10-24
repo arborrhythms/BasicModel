@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_cube.py::test_chart_consumers_stay_in_cube_after_both_signs_of_learning",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

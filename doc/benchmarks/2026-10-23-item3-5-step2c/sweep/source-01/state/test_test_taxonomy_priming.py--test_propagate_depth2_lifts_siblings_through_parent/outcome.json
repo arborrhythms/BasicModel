@@ -1,6 +1,0 @@
-{
-  "node": "test/test_taxonomy_priming.py::test_propagate_depth2_lifts_siblings_through_parent",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

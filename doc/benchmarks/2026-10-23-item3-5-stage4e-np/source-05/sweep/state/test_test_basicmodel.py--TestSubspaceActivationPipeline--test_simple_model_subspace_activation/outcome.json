@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestSubspaceActivationPipeline::test_simple_model_subspace_activation",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

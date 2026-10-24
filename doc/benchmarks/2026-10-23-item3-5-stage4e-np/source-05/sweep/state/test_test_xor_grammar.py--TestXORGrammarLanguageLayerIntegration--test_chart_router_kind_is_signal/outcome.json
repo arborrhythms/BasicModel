@@ -1,6 +1,0 @@
-{
-  "node": "test/test_xor_grammar.py::TestXORGrammarLanguageLayerIntegration::test_chart_router_kind_is_signal",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

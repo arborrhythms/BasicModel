@@ -1,6 +1,0 @@
-{
-  "node": "test/test_signal_router_xor_grammar.py::test_xor_router_emits_per_space_role_rule_dict",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

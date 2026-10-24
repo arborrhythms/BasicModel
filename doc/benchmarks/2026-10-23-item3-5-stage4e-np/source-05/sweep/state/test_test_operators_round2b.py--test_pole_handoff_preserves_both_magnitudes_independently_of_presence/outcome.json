@@ -1,6 +1,0 @@
-{
-  "node": "test/test_operators_round2b.py::test_pole_handoff_preserves_both_magnitudes_independently_of_presence",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

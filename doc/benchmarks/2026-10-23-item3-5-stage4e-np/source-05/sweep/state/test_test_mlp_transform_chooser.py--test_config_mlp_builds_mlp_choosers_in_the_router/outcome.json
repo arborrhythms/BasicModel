@@ -1,6 +1,0 @@
-{
-  "node": "test/test_mlp_transform_chooser.py::test_config_mlp_builds_mlp_choosers_in_the_router",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

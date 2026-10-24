@@ -1,3 +1,0 @@
-test/test_one_attention.py::test_narrowing_uses_the_shared_operation_chooser_and_compiles
-
-1 test collected in 0.46s

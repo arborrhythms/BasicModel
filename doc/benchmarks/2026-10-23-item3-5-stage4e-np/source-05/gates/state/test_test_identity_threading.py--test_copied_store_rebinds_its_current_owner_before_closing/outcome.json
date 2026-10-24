@@ -1,6 +1,0 @@
-{
-  "node": "test/test_identity_threading.py::test_copied_store_rebinds_its_current_owner_before_closing",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

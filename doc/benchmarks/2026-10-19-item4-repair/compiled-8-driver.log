@@ -1,8 +1,0 @@
-[collect] 2 selectors; limit 180s, 8.0 GiB
-[collect] exit 0; 3.5s; peak 0.39 GiB
-[worker-000] 1 selectors; limit 180s, 8.0 GiB
-[worker-001] 1 selectors; limit 180s, 8.0 GiB
-[worker-001] exit 0; 11.1s; peak 0.69 GiB
-[worker-000] exit 0; 41.8s; peak 1.34 GiB
-Result: passed, exit 0; 2/2 cases completed.
-doc/benchmarks/2026-10-19-item4-repair/compiled-8/result.json

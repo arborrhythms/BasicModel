@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_step0.py::test_thought_judge_uses_the_supplied_answer_kind[sentence]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

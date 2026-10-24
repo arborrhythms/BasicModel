@@ -1,6 +1,0 @@
-{
-  "node": "test/test_basicmodel.py::TestGrammar::test_configure_unknown_rule_raises",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

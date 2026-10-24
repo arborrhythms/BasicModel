@@ -1,6 +1,0 @@
-{
-  "node": "test/test_thought_operation_catalog.py::test_structural_pair_derives_one_immutable_thought_operation_without_queries",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

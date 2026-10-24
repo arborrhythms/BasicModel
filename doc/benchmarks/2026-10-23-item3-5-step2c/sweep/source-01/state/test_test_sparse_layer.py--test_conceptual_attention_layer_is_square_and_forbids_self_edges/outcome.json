@@ -1,6 +1,0 @@
-{
-  "node": "test/test_sparse_layer.py::test_conceptual_attention_layer_is_square_and_forbids_self_edges",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

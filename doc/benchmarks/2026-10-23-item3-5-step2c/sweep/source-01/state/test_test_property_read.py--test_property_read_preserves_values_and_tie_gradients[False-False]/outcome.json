@@ -1,6 +1,0 @@
-{
-  "node": "test/test_property_read.py::test_property_read_preserves_values_and_tie_gradients[False-False]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

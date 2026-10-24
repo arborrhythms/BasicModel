@@ -1,6 +1,0 @@
-{
-  "node": "test/test_order_k_unfold.py::test_unfolded_prototypes_reconstitutes_stamped_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

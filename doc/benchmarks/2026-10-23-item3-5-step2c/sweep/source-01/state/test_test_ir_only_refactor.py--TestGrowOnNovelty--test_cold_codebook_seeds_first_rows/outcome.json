@@ -1,6 +1,0 @@
-{
-  "node": "test/test_ir_only_refactor.py::TestGrowOnNovelty::test_cold_codebook_seeds_first_rows",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

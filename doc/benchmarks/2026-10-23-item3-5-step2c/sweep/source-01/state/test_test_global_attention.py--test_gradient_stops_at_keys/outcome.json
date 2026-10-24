@@ -1,6 +1,0 @@
-{
-  "node": "test/test_global_attention.py::test_gradient_stops_at_keys",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

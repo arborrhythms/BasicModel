@@ -1,6 +1,0 @@
-{
-  "node": "test/test_item4_step0.py::test_episode_state_audit_does_not_materialize_sparse_capacity",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}

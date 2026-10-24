@@ -1,6 +1,0 @@
-{
-  "node": "test/test_query_owner_width.py::test_checked_call_rejects_foreign_width_before_any_executor[isTrue-roles2]",
-  "outcome": "passed",
-  "failure": "None",
-  "records": []
-}
