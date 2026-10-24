@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reference_close.py::test_implicit_reference_offers_retained_definitions_at_their_native_orders[True-0]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -7169,12 +7169,22 @@ class BasicModel(BaseModel):
         Per-word reconstruction sets score_when=False: the field's shared
         time is transported, but is not an independent target on every word.
         """
+        # Native reconstruction can return byte identities. This optional
+        # diagnostic is numerical even when both observed surfaces are ints.
+        native_bytes = not rev_ev.dtype.is_floating_point
+        dtype = torch.promote_types(rev_ev.dtype, fwd_ev.dtype)
+        if not dtype.is_floating_point:
+            dtype = torch.get_default_dtype()
+        rev_ev, fwd_ev = rev_ev.to(dtype), fwd_ev.to(dtype)
         Kr = min(rev_ev.shape[1], fwd_ev.shape[1])
         Dr = min(rev_ev.shape[-1], fwd_ev.shape[-1])
         sub = getattr(getattr(self, "inputSpace", None), "subspace", None)
         nw = getattr(sub, "nWhere", None)
         nn_ = getattr(sub, "nWhen", None)
-        if nw is None or nn_ is None:
+        if native_bytes:
+            # A byte surface has no conceptual where/when bands.
+            nw, nn_ = 0, 0
+        elif nw is None or nn_ is None:
             # Fail-loud (5b pattern): an unknowable band must announce itself, never silently take what_scale.
             self._warn_zeroed_channel(
                 "lossrev_band_unknown",

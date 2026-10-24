@@ -208,3 +208,17 @@ def test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints(paired):
     restored, drift, _ = align(model, state, catalog(model))
     assert not drift
     model.load_state_dict(restored)
+
+
+def test_direct_paired_reverses_reject_a_retired_split(paired):
+    from Language import SynthesizeLayer, CompoundLayer
+    from Layers import EqualLayer
+    a, b = torch.linspace(.15, .75, 12), torch.linspace(.8, .2, 12)
+    for cls in (SynthesizeLayer, CompoundLayer, EqualLayer):
+        op = cls()
+        result = op.compose(a, b)
+        with pytest.raises(NotImplementedError, match='candidate search'):
+            op.reverse(result)
+        left, right = op.reverse_blocks(result, b)
+        torch.testing.assert_close(left, a)
+        torch.testing.assert_close(right, b)

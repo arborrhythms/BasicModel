@@ -1,0 +1,51 @@
+{
+  "certificates": {
+    "reason": "passed",
+    "exit": 0,
+    "counts": {
+      "passed": 16
+    },
+    "selected": 16,
+    "completed": 16
+  },
+  "native": {
+    "reason": "test_failure",
+    "exit": 1,
+    "counts": {
+      "passed": 122,
+      "skipped": 7,
+      "failed": 1
+    },
+    "selected": 130,
+    "completed": 130
+  },
+  "regressions": {
+    "reason": "passed",
+    "exit": 0,
+    "counts": {
+      "passed": 110
+    },
+    "selected": 110,
+    "completed": 110
+  },
+  "operators": {
+    "reason": "passed",
+    "exit": 0,
+    "counts": {
+      "passed": 191,
+      "skipped": 1
+    },
+    "selected": 192,
+    "completed": 192
+  },
+  "reconstruction": {
+    "reason": "interrupted",
+    "exit": 130,
+    "counts": {
+      "passed": 9,
+      "failed": 8
+    },
+    "selected": 150,
+    "completed": 17
+  }
+}

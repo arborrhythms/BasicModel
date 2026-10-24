@@ -560,3 +560,114 @@ configuration's wider meaning block. The layout is now admitted only for
 the configured conceptual width (or a width-free grammatical face).
 Run 20 passes that repair and the stored-generation file, with no assertion
 port. The source audit retains the unchanged four out-of-scope XML files.
+
+## 10. First frozen checks: inverse boundaries and retained fixtures (Codex, 2026-10-23)
+
+The swap/verb production commit is `b7487f8821`; the unchanged additional
+Philosophy edit is `374d7e0aa6`, the first gate hash. Certificates passed
+16/16; the native set completed 130 cases (122 passed, seven prerequisite
+skips, one failure); the reference regressions passed 110/110; the operator
+set completed 192 cases (191 passed, one prerequisite skip). Full pending
+captures and keep probes are retained, and both orders passed. The
+reconstruction run exposed eight more failures in the slow historical
+migration file. It was interrupted while the next file was running so the
+failed source could be repaired; its completed results and interruption
+remain in the receipt. Unrun groups supply no evidence.
+
+1. **Paired direct inverses.** The synthesis forward had moved to a
+   centroid and meaning kernel while its direct reverse still returned
+   the old chart-sum split. Refuse that split without a context or candidate
+   search, as the structural reverse already does. The same audit closes
+   two bypasses: paired `EqualLayer.forward` uses its meaning kernel, and
+   its direct reverse and compound's old case-bank reverse cannot return a
+   retired split. Known-context `reverse_blocks` and the bounded search
+   remain the actual inverses. Numerical configurations are unchanged.
+2. **The synthesis fixture's old form equation is superseded by §1.1.**
+   Its four-coordinate layout is unchanged. Initialize its declared
+   two-lane kernel, supply the known right operand, and recover the other
+   form by `2 * parent - left`, instead of chart subtraction. Keep its
+   cube, recomposition and recovered-operand assertions. Its name now
+   states the centroid/meaning contract. No input or capacity is resized.
+3. **A diagnostic byte score must accept bytes.** Native input
+   reconstruction now returns integer surface identities. The optional
+   `reverseReconstruct(target=...)` diagnostic reached MSE with a Long
+   tensor. Promote the two surfaces to their shared floating type before
+   computing the existing diagnostic. Byte surfaces carry no conceptual
+   where/when bands; do not slice those bands from a byte string. Do not change any training term,
+   weight, target flow or keep comparison.
+4. **The old supplied-traversal probes called the free-R entry point.**
+   A compose journal no longer directs free reconstruction. Port the two
+   explicitly supplied three-leaf inverse fixtures to
+   `DerivationReconstruction.reconstruct`, the existing supplied-text
+   reader that still owns those co-operands. Their shapes, distinct
+   occurrence activations, pre-fold structure, recovered values, root-damage
+   and inverse-error assertions stay. Their local error is the supplied
+   inverse's coordinate discrepancy, not a claim about the free-R term.
+   The signed fixture now shifts its values by .5 into the identity cube,
+   preserving the three distinct activations and all assertions. No production
+   reader is changed and no journal is reintroduced into R.
+5. **Other historical fixture/API ports.** The verb witness fixture's
+   random values enter the identity cube by adding .5 and its nonzero spectral
+   weight is .002 instead of .2, avoiding saturation after that shift; its seed, widths
+   and three inverse assertions stay. The zero-valued ownership probe
+   installs its observer after the paired sentence run and clears only
+   the reconstruction cache before capture of the four-item execution adapter
+   (the full adapter would republish the old completed result); the unchanged `len(calls)==1`
+   now measures creation of that owned result, not all paired-trial
+   scorings. The enablement fixture explicitly starts disabled on the model, then enables the same path; the retired
+   config flag no longer disables reconstruction for a retained grammar reading. The enablement and root-damage
+   fixtures supply three native bank words at the lexical positions as their
+   terminal field, and STOP to the native free decoder; no intermediate
+   transformed word or whitespace slot is presented as an exact terminal.
+   Root damage stays in the cube and updates the sentence root as well as
+   the final field. The compiled derivative fixture also enters the cube. These behavioral fixtures use the
+   established eager-reading seam; the explicit compiled inverse probe
+   still calls `torch.compile` itself. No fixture is resized.
+6. **Two assertion ports in the slow migration file.** The selected sum
+   inverse is `2 * parent - witness`, so its parent derivative is 2:
+   `expected=[1.,2.]` becomes `[2.,2.]`; the inactive row's two passthrough
+   derivatives remain 2. The native surface is now a byte identity with
+   variable length: its damaged-surface check uses `not torch.equal`
+   instead of `not torch.allclose`, so different byte lengths are compared
+   as different surfaces. No other assertion is weakened or retired.
+
+These are §39 repairs and fixture ports within the decided swap and the
+existing free/supplied-reader separation. They do not reverse a §1
+decision. Every old/new assertion and fixture change rides with the final
+source audit; the failed first freeze is not promoted as passing evidence.
+
+**Development follow-up.** The fallback free reader's bank contains exact
+WORD/OBJECT copies. `decoder_eligibility` counted two identical terminal
+codes as two explanations and rejected even the supplied primitive. Its
+existing rule is about *different* tied one-code explanations: identical
+copies now count as one, while different tied codes remain ambiguous. A
+new regression checks both. This changes neither the candidate bank nor
+any binding menu, and applies to the shared decoder; the unchanged XOR
+and decomposition assertions must certify it on the next frozen source.
+Development 21/23/25 and the two diagnostic probes retain each failure.
+
+The development process that predated the duplicate-terminal repair was
+interrupted after three completed compile tests (653 seconds); its partial
+run and warnings remain. A second development experiment staged the two
+historical packed-reconstruction stress fixtures eagerly before compiling
+their reconstruction, but was interrupted before either completed. Its
+patch is retained as an unlanded experiment; that test file is restored
+unchanged. Neither partial run certifies the stress tests. The changed
+meaning action has its own eager/fullgraph gradient certificate, and the
+native fullgraph word-chunk file is still fully opted in.
+
+**Scope correction before the repaired freeze.** The roundtrip file mixes
+loss-band/dispatch checks with historical three-epoch free-reconstruction
+learning bars on the unchanged MM configurations. Those learning bars are
+item 0, not this mechanism landing (§6). The initial development invocation
+incorrectly opted the whole file into RUN_SLOW; its partial run (nine cases
+completed before interruption) is retained. On the repaired source that
+file runs under its normal default slow boundary as `legacy-loss-smoke`;
+the separate reconstruction migration and objective files remain opted
+in; the unchanged compile file keeps its default slow boundary and runs
+its three general compiler contracts. The native fullgraph word-chunk
+file and compiled meaning-action certificate remain opted in, as do XOR, decomposition,
+G1–G3 and pending-premise gates. No assertion or skip marker is changed
+for this scope correction, and no interrupted learning run is called a
+pass. The original-budget line-3 and modal-corpus learning runs remain
+exactly the requested reported gates, with no rescue.

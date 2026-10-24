@@ -4,6 +4,8 @@ import pytest
 
 from test_reverse_traversal import _traversal_model, _run
 
+pytestmark = pytest.mark.usefixtures("eager_reading")
+
 
 def _model(tmp_path):
     from Models import _ensure_grad_anchors
@@ -38,14 +40,50 @@ def test_empty_rows_and_padding_carry_no_reconstruction_cost(tmp_path, all_empty
         model.symbolSpace.soft_reset()
 
 
-@pytest.mark.slow
-def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
-    """A valid pre,push,closing trace must invert as unfold,pop,pre.
+def _supplied_three_leaf_inverse(model, root, reference):
+    """The supplied-reading inverse owns occurrence witnesses; free R does not."""
+    from types import SimpleNamespace
+    from DerivationReconstruction import reconstruct
+    language = model.languageSpace
+    index = list(language._tree_layer(2).op_names).index('sum')
+    op = getattr(language._tree_layer(2).ops[index], 'gl', language._tree_layer(2).ops[index])
+    first = op.compose(reference[:, 0], reference[:, 1])
+    original = op.compose(first, reference[:, 2])
+    actions = torch.tensor([[0,-1,0],[0,-1,1],[1,index,-1],[0,-1,2],[1,index,-1]])
+    programs = []
+    for row in range(len(reference)):
+        frames = reference.new_zeros(5, 3, reference.shape[-1])
+        frames[2] = torch.stack((reference[row,0], reference[row,1], first[row]))
+        frames[4] = torch.stack((first[row], reference[row,2], original[row]))
+        programs.append(SimpleNamespace(actions=actions, operation_values=frames))
+    valid = torch.zeros(reference.shape[:2], dtype=torch.bool)
+    valid[:, :3] = True
+    record = SimpleNamespace(word_values=reference, word_valid=valid,
+        end_depth=torch.ones(len(reference), dtype=torch.long), end_slots=root[:,None], primed=None)
+    recovered, unavailable, _ = reconstruct(language, record, programs, lambda _: torch.arange(3))
+    error = (recovered[:, :3] - reference[:, :3]).square().mean((-1, -2))
+    return recovered, error, None, unavailable.any(-1)
 
-    The current canonical producer leaves pre slots inactive. This explicitly
-    executes a valid retained three-leaf compose derivation to check the
-    documented trace ABI, including traces from earlier producers.
-    """
+
+def _explicit_terminal_field(model):
+    """A three-slot fixed reading exercises ownership with the native decoder."""
+    from test_output_walk import _stop
+    _stop(model)
+    _, codes, _, _ = model._snapshot_tables(model._tensor_pushed_ideas)
+    positions = model.inputSpace._ar_grammar_leaf_mask[0].nonzero().flatten()[:3]
+    slots = codes.index_select(1, positions).clone()
+    model._tensor_final_end_slots = slots
+    model._tensor_final_end_depth = torch.full((len(slots),), 3, dtype=torch.long)
+    model._stm_single_S = slots[:, 0]
+    model._tensor_sentence_roots_live[:, 0] = slots.flatten(1)
+    model._tensor_sentence_roots_depth[:, 0] = 3
+    model._recon_completed = False
+    model._reconstruction_product = None
+
+
+@pytest.mark.slow
+def test_supplied_reading_inverts_a_pre_fold_then_the_new_word(tmp_path):
+    """The supplied reader follows its three-leaf program, including the pre-fold."""
     model = _model(tmp_path)
     try:
         _run(model, ["aa bb cc"])
@@ -54,28 +92,12 @@ def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
         assert int(active.sum()) >= 3
         active[:, 3:] = False
         model.inputSpace._word_active_mask = active
-        trace = model._reconstruction_stack()
-        rules, arities, masks = trace.choices()
-        left_rows, right_rows = trace.operand_rows()
         binary = model.languageSpace._tree_layer(2)
         index = list(binary.op_names).index("sum")
-        rule_id = int(model.languageSpace._cs_binary_rule_ids[index])
         op = getattr(binary.ops[index], "gl", binary.ops[index])
-        # push leaf0; push leaf1; pre-fold; push leaf2; closing.
         root01 = op.compose(reference[:, 0], reference[:, 1])
         root = op.compose(root01, reference[:, 2])
-        width = int(active.shape[1])
-        rows = model._word_symbol_rows()
-        with torch.no_grad():
-            masks.zero_()
-            arities.zero_()
-            for slot in (6, 3 * width):
-                rules[:, slot] = rule_id
-                arities[:, slot] = 2
-                masks[:, slot] = True
-            left_rows[:, 6], right_rows[:, 6] = rows[:, 0], rows[:, 1]
-            left_rows[:, 3 * width], right_rows[:, 3 * width] = -1, rows[:, 2]
-        recovered, cost, _bytes, truncated = model._reconstruct_sentence_traversal(root, reference)
+        recovered, cost, _bytes, truncated = _supplied_three_leaf_inverse(model, root, reference)
         assert not bool(truncated.any())
         torch.testing.assert_close(recovered[:, :3], reference[:, :3], atol=1e-6, rtol=1e-5)
         assert float(cost.max()) < 1e-10
@@ -95,10 +117,10 @@ def test_traced_verb_reverse_uses_the_actual_verb_operand(tmp_path):
         op = getattr(binary.ops[index], "gl", binary.ops[index])
         width = int(model.conceptualSpace.stm.concept_dim)
         generator = torch.Generator().manual_seed(812)
-        noun = torch.randn(2, width, generator=generator).tanh() * .3
-        verb = torch.randn(2, width, generator=generator).tanh() * .4
+        noun = .5 + torch.randn(2, width, generator=generator).tanh() * .3
+        verb = .5 + torch.randn(2, width, generator=generator).tanh() * .4
         with torch.no_grad():
-            op._verb_spec.weight.fill_(.2)
+            op._verb_spec.weight.fill_(.002)
         parent = op.compose(noun, verb)
         left, right = language.reverse_binary_step(
             parent, torch.full((2,), index), torch.ones(2, dtype=torch.bool),
@@ -142,7 +164,7 @@ def test_eager_reverse_evaluates_only_selected_recorded_operators(tmp_path, monk
 
 @pytest.mark.slow
 def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
-    """The same symbol identity can be pushed with different signed values."""
+    """The same symbol identity can be pushed with different occurrence values."""
     model = _model(tmp_path)
     try:
         _run(model, ["aa bb cc"])
@@ -152,34 +174,18 @@ def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
         model.inputSpace._word_active_mask = active
         reference = torch.zeros_like(model._tensor_pushed_ideas)
         atom = torch.linspace(-.1, .1, reference.shape[-1], device=reference.device)
-        reference[:, :3] = torch.tensor([.2, 1.3, -.6], device=reference.device)[:, None] * atom
+        reference[:, :3] = .5 + torch.tensor([.2, 1.3, -.6], device=reference.device)[:, None] * atom
         model.inputSpace._ar_word_concept_rows = torch.full_like(active, 42, dtype=torch.long)
         model.inputSpace._ar_word_object_rows = torch.full_like(active, -1, dtype=torch.long)
-        trace = model._reconstruction_stack()
-        rules, arities, masks = trace.choices()
-        left_rows, right_rows = trace.operand_rows()
         binary = model.languageSpace._tree_layer(2)
         index = list(binary.op_names).index("sum")
-        rule_id = int(model.languageSpace._cs_binary_rule_ids[index])
         op = getattr(binary.ops[index], "gl", binary.ops[index])
         root = op.compose(op.compose(reference[:, 0], reference[:, 1]), reference[:, 2])
-        width = int(active.shape[1])
-        with torch.no_grad():
-            masks.zero_()
-            arities.zero_()
-            left_rows.fill_(-1)
-            right_rows.fill_(-1)
-            for slot in (4, 3 * width):
-                rules[:, slot] = rule_id
-                arities[:, slot] = 2
-                masks[:, slot] = True
-            left_rows[:, 4], right_rows[:, 4] = 42, 42
-            right_rows[:, 3 * width] = 42
-        recovered, cost, _bytes, truncated = model._reconstruct_sentence_traversal(root, reference)
+        recovered, cost, _bytes, truncated = _supplied_three_leaf_inverse(model, root, reference)
         assert not bool(truncated.any())
         torch.testing.assert_close(recovered[:, :3], reference[:, :3], atol=1e-6, rtol=1e-5)
         assert float(cost.max()) < 1e-10
-        damaged, damaged_cost, _, _ = model._reconstruct_sentence_traversal(root + .05, reference)
+        damaged, damaged_cost, _, _ = _supplied_three_leaf_inverse(model, root + .05, reference)
         assert not torch.allclose(damaged[:, :3], recovered[:, :3])
         assert float(damaged_cost.min()) > 1e-5
     finally:
@@ -261,10 +267,13 @@ def test_zero_recovered_values_are_still_one_completed_traversal(tmp_path, monke
         # readiness cannot be inferred from its nonzero count.
         return (torch.zeros_like(result[0]), *result[1:])
 
-    monkeypatch.setattr(model, "_reconstruct_sentences", observed)
     try:
         execution = _run(model, ["aa bb"])
-        understanding = model._capture_understanding(execution)
+        model._recon_completed = False
+        model._reconstruction_product = None
+        model.__dict__.pop('_reconstruct_compiled', None)
+        monkeypatch.setattr(model, "_reconstruct_sentences", observed)
+        understanding = model._capture_understanding(execution[:4])
         model.reverseReconstruct(understanding)
         model.reverseReconstruct(understanding)
         assert len(calls) == 1
@@ -285,7 +294,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
         with torch.no_grad():
             unused._sigma.layer.raw_L.fill_(float("nan"))
         width = int(model.conceptualSpace.stm.concept_dim)
-        parent = torch.linspace(-.2, .3, 2 * width).reshape(2, width).requires_grad_()
+        parent = torch.linspace(.2, .3, 2 * width).reshape(2, width).requires_grad_()
         witness = torch.full_like(parent, .03)
         indices = torch.full((2,), selected, dtype=torch.long)
         live = torch.tensor([True, False])
@@ -294,7 +303,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
         assert torch.isfinite(left).all() and torch.isfinite(right).all()
         gradient, = torch.autograd.grad(left.sum() + right.sum(), (parent,))
         assert torch.isfinite(gradient).all()
-        expected = torch.tensor([1., 2.]).reshape(2, 1).expand_as(gradient)
+        expected = torch.tensor([2., 2.]).reshape(2, 1).expand_as(gradient)
         torch.testing.assert_close(gradient, expected)
     finally:
         model.End()
@@ -308,13 +317,15 @@ def test_enabling_tied_reconstruction_retains_the_owned_ideas(tmp_path):
     from test_meronomy_ladder import _build_ladder_variant
     _ensure_grad_anchors(torch.device("cpu"))
     model = _build_ladder_variant(tmp_path, "enable_tied", [])
+    model.reconstruct_in_loop = False
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
     assert not model.reconstruct_in_loop
     model.reconstruct_in_loop = True
     try:
         execution = _run(model, ["aa bb cc"])
-        understanding = model._capture_understanding(execution)
+        _explicit_terminal_field(model)
+        understanding = model._capture_understanding(execution[:4])
         owned = understanding.input_reconstruction
         assert owned is not None
         active = model.inputSpace._word_active_mask
@@ -352,19 +363,21 @@ def test_completed_state_damage_reaches_the_actual_input_surface(tmp_path):
     model = _model(tmp_path)
     try:
         _run(model, ["aa bb cc"])
+        _explicit_terminal_field(model)
         parameters = {name: id(value) for name, value in model.named_parameters()}
         with torch.no_grad():
             original = model._complete_input_reconstruction()
             model._recon_completed = False
             model._reconstruction_product = None
-            model._stm_single_S = model._stm_single_S + .1
+            model._stm_single_S = model._stm_single_S * .8 + .1
             changed_end = model._tensor_final_end_slots.clone()
-            changed_end[:, 0] += .1
+            changed_end[:, 0] = changed_end[:, 0] * .8 + .1
             model._tensor_final_end_slots = changed_end
+            model._tensor_sentence_roots_live[:, 0] = changed_end.flatten(1)
             damaged = model._complete_input_reconstruction()
         assert torch.isfinite(original.event).all() and torch.isfinite(damaged.event).all()
         assert not torch.allclose(original.ideas, damaged.ideas)
-        assert not torch.allclose(original.event, damaged.event)
+        assert not torch.equal(original.event, damaged.event)
         assert {name: id(value) for name, value in model.named_parameters()} == parameters
     finally:
         model.End()

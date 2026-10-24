@@ -1,0 +1,15 @@
+[
+  {
+    "file": "test/test_mind_generativity.py",
+    "removed": [],
+    "added": []
+  },
+  {
+    "file": "test/test_operators_round2c.py",
+    "removed": [
+      "assert not torch.equal(first['root'], second['root'])",
+      "assert model._sentence_comparison_reader_weights.tolist() == [[0.5, 0.5]] * 4"
+    ],
+    "added": []
+  }
+]

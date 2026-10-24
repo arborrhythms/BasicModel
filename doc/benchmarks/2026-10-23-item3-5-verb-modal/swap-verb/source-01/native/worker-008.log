@@ -1,0 +1,19 @@
+F...........                                                             [100%]
+=================================== FAILURES ===================================
+__________ test_native_synthesis_adds_in_chart_and_keeps_its_inverse ___________
+test/test_identity_cube.py:18: in test_native_synthesis_adds_in_chart_and_keeps_its_inverse
+    torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-6, rtol=1e-5)
+E   AssertionError: Tensor-likes are not close!
+E   
+E   Mismatched elements: 2 / 4 (50.0%)
+E   Greatest absolute difference: 0.125 at index (0, 0) (up to 1e-06 allowed)
+E   Greatest relative difference: 0.5 at index (0, 0) (up to 1e-05 allowed)
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; arrival_capture
+    self.import_plugin(import_spec)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse
+1 failed, 11 passed, 1 warning in 1.67s

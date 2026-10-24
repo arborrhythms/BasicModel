@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_reconstruction_migration.py::test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse",
+  "outcome": "failed",
+  "failure": "test/test_tied_reconstruction_migration.py:298: in test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse\n    torch.testing.assert_close(gradient, expected)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 104 / 208 (50.0%)\nE   Greatest absolute difference: 1.0 at index (0, 0) (up to 1e-05 allowed)\nE   Greatest relative difference: 1.0 at index (0, 0) (up to 1.3e-06 allowed)",
+  "records": []
+}

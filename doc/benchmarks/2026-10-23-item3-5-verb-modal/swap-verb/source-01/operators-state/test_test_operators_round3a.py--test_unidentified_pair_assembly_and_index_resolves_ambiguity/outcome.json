@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operators_round3a.py::test_unidentified_pair_assembly_and_index_resolves_ambiguity",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

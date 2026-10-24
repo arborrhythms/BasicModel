@@ -3796,10 +3796,14 @@ class EqualLayer(GrammarLayer):
 
     def forward(self, left, right):
         """Mutual parthood: ``part(left, right) * part(right, left)``."""
+        if self.meaning_layout is not None and left.shape[-1] == self.meaning_layout[1]:
+            return self.compose_blocks(None, left, right)
         return Ops._equal_kernel(left, right)
 
     def reverse(self, parent):
         """Lossy ``(parent, parent)`` pseudo-inverse."""
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('a meaning fold needs its context or the candidate search')
         return parent, parent
 
     def compose(self, left, right):

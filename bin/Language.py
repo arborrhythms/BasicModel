@@ -2688,6 +2688,8 @@ class SynthesizeLayer(GrammarLayer):
         return ``(x1, parent - x1)`` — exact recomposition by
         construction. ``left_rows`` restricts the candidate rows;
         the priming kwargs are accepted for sibling-signature parity."""
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('a meaning fold needs its context or the candidate search')
         if self.butterfly:
             return self._butterfly_reverse(parent)
         if basis is not None:
@@ -3375,6 +3377,8 @@ class CompoundLayer(GrammarLayer):
                                    counts=getattr(context, 'leaf_counts', None))
 
     def reverse(self, parent, *, case_bank=None):
+        if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
+            self.raise_no_inverse('a meaning fold needs its context or the candidate search')
         if case_bank is None:
             self.raise_no_inverse('supply the primed native case bank')
         from CaseSelection import search_cases
@@ -13654,7 +13658,13 @@ class LanguageSpace(nn.Module):
         # must not declare a compound completely recovered after dropping the
         # unsupported remainder. No target length or trace is available here.
         tolerance = 1e-8 * value.square().mean(-1).clamp_min(1. / value.shape[-1])
-        singular = ((terminal_mask & residual.eq(best[:, None])).sum(-1).eq(1)
+        tied = terminal_mask & residual.eq(best[:, None])
+        selected = terminals.gather(1, residual.argmin(-1)[:, None, None].expand(
+            -1, 1, terminals.shape[-1]))
+        # WORD and OBJECT snapshots may carry the very same code twice.
+        # Copies are one explanation; different tied codes remain ambiguous.
+        same_explanation = (terminals == selected).all(-1)
+        singular = (tied.any(-1) & (~tied | same_explanation).all(-1)
                     & value.ne(0).any(-1) & (best <= tolerance))
         for index, wrapped in enumerate(binary_ops):
             op = getattr(wrapped, 'gl', wrapped)

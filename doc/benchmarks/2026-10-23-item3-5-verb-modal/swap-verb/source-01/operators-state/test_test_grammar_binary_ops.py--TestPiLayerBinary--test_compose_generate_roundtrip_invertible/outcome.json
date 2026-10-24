@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_binary_ops.py::TestPiLayerBinary::test_compose_generate_roundtrip_invertible",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

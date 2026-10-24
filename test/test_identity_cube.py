@@ -5,18 +5,19 @@ import pytest
 from Language import LiftLayer, LowerLayer, SurfaceLayer, VerbLayer
 
 
-def test_native_synthesis_adds_in_chart_and_keeps_its_inverse():
+def test_native_synthesis_centroids_form_and_inverts_meaning():
     from Language import SynthesizeLayer
-    from Layers import cube_chart, cube_unchart
+    from MeaningKernels import LaneKernel
     layer = SynthesizeLayer(4, 4)
     layer.meaning_layout = (2, 4)
+    layer.meaning_kernel = LaneKernel(2)
     layer.configure_identity_domain()
     left, right = torch.tensor([[.2, .8, 0., 1.]]), torch.tensor([[.3, .7, .5, .5]])
     parent = layer.compose(left, right)
     assert bool(((parent >= 0) & (parent <= 1)).all())
-    a, b = layer.generate(parent)
+    a, b = layer.reverse_blocks(parent, right)
     torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-6, rtol=1e-5)
-    recovered = cube_unchart(cube_chart(parent[..., :2]) - cube_chart(left[..., :2]))
+    recovered = 2 * parent[..., :2] - left[..., :2]
     torch.testing.assert_close(recovered, right[..., :2], atol=1e-6, rtol=1e-5)
 
 

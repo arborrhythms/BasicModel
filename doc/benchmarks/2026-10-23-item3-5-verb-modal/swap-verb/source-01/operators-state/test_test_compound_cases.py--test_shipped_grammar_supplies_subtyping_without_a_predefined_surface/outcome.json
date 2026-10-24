@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compound_cases.py::test_shipped_grammar_supplies_subtyping_without_a_predefined_surface",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

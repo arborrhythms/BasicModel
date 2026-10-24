@@ -81,3 +81,16 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
         assert decoder and all(row['owner'] == 'reconstruction' and row['writers'] == ['reconstruction'] for row in decoder)
     finally:
         model.End()
+
+
+def test_terminal_copies_share_one_explanation_but_different_ties_do_not():
+    from Language import LanguageSpace
+    parent = torch.tensor([[.4, .2]])
+    available = torch.ones(1, 1, dtype=torch.bool)
+    valid = torch.ones(1, 2, dtype=torch.bool)
+    def eligible(bank):
+        return LanguageSpace.decoder_eligibility(parent, (), (), available, (), bank, valid)
+    copies = parent[:, None].expand(1, 2, 2).clone()
+    assert bool(eligible(copies)[0, 0])
+    distinct = torch.stack((parent, parent * 2), 1)
+    assert not bool(eligible(distinct)[0, 0])

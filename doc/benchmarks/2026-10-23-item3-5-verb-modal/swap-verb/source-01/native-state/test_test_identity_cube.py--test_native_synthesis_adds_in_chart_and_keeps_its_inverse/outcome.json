@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_cube.py::test_native_synthesis_adds_in_chart_and_keeps_its_inverse",
+  "outcome": "failed",
+  "failure": "test/test_identity_cube.py:18: in test_native_synthesis_adds_in_chart_and_keeps_its_inverse\n    torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-6, rtol=1e-5)\nE   AssertionError: Tensor-likes are not close!\nE   \nE   Mismatched elements: 2 / 4 (50.0%)\nE   Greatest absolute difference: 0.125 at index (0, 0) (up to 1e-06 allowed)\nE   Greatest relative difference: 0.5 at index (0, 0) (up to 1e-05 allowed)",
+  "records": []
+}

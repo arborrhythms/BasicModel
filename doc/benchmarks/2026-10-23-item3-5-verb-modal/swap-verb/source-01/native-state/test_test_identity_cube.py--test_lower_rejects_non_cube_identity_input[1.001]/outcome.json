@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_cube.py::test_lower_rejects_non_cube_identity_input[1.001]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
