@@ -73,7 +73,7 @@ def test_corner_composition_lane_rules_and_form_unchanged(name, left_pair, right
             (max(left_pair[0], right_pair[0]), min(left_pair[1], right_pair[1]))
             if name == 'disjunction' else
             ((left_pair[0] + right_pair[0]) / 2, (left_pair[1] + right_pair[1]) / 2))
-    torch.testing.assert_close(result[:, :2], op.compose(a[:, :2], b[:, :2]), rtol=0, atol=0)
+    torch.testing.assert_close(result[:, :2], (a[:, :2] + b[:, :2]) / 2, rtol=0, atol=0)
     torch.testing.assert_close(result[:, 2:], torch.cat((code * pair[0], code * pair[1]), -1), rtol=0, atol=0)
 
 
@@ -121,6 +121,26 @@ def test_path_ast_has_no_pole_collapse():
     from tetralemma_audit import audit
     report = audit()
     assert report['sites'] and not report['violations']
+
+
+@pytest.mark.parametrize('name', ['conjunction', 'disjunction'])
+@pytest.mark.parametrize('pole', [0, 1])
+def test_exact_candidate_magnitudes_survive_a_noninjective_lane_read(name, pole):
+    from MeaningCodes import compose, recover_lanes
+    # Captured bootstrap magnitudes: the shared coordinates differ by one
+    # float32 step, while the complete candidate pair already folds exactly.
+    a = torch.tensor([[.10675211995840073, .1601281613111496, 0.]])
+    b = torch.tensor([[0., .1601281464099884, .10675211250782013]])
+    zero = torch.zeros_like(a)
+    candidates = [torch.cat((v, v, zero), -1) for v in (a, b)]
+    readings = [torch.cat((v, v if pole == 0 else zero,
+                          v if pole == 1 else zero), -1) for v in (a, b)]
+    parent = torch.cat((a, compose(name, readings[0][..., 3:], readings[1][..., 3:])), -1)
+    recovered = recover_lanes(name, parent, *candidates, 3)
+    for actual, expected in zip(recovered, readings):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    torch.testing.assert_close(compose(name, recovered[0][..., 3:], recovered[1][..., 3:]),
+                               parent[..., 3:], rtol=0, atol=0)
 
 
 @pytest.mark.parametrize('expression', [

@@ -337,6 +337,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             alternative=node.get('timeline', False), modifiers=tuple(modifiers),
             timeline_order=program.timeline_actions is not None,
             timeline_values=program.timeline_values,
+            case_value=(program.case_values[action] if action is not None and program.case_selected is not None
+                       and bool(program.case_selected[action]) else None),
             leaf_count=len(node['leaves']),
             origins=program.identity_origins, values=program.identity_values)
 

@@ -152,7 +152,9 @@ def test_real_packed_ends_train_before_the_next_sentence(tmp_path, monkeypatch, 
         result = commit(*args)
         disc = model.symbolSpace.expectation
         context = tuple(tuple(row) for row in disc._inter_context_occurrences)
-        assert [len(row) for row in context] == [args[1] + 1] * 2
+        # Each stream starts with its document cover, followed by the kept
+        # sentence occurrences. The last frame remains the just-kept reading.
+        assert [len(row) for row in context] == [args[1] + 2] * 2
         assert all(occurrence is not None for row in context for occurrence in row)
         for b, alternative in enumerate((True, False)):
             expected = candidates[args[1], alternative]

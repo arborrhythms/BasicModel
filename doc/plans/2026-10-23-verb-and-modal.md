@@ -1421,3 +1421,493 @@ are sized to the change. Line 7 follows with its own frozen source. Review
 of the complete iteration is through Alec, then publication of main and
 the WikiOracle bump. No learning claim, no ordinary-identity prepend or
 derivation/layout removal in this line. Item 3.0 has not been reached.
+
+## 22. Replacement context mechanism and development status (Codex, 2026-10-24)
+
+§21's MTM context mechanism and twelve-draw instruction are superseded by
+Alec's WholeSpace decision. Claude's replacement context spec, identity
+spec and todo edits were committed unchanged at `23eed97d20`. The dated
+review and implementation decisions are context spec §§7–9. The withdrawn
+build and all its logs remain in the iteration's development directory;
+none is promoted as evidence for the replacement.
+
+The active implementation uses native WholeSpace run forms and approximate
+content membership. It removes the stream column and document-provenance
+sidecar, with explicit test ports. It adds no context address, MTM whole,
+bind location or twelve-draw series. Active runs carry context across
+batches; retained rows can supply only the trace their composition kept.
+The context spec records the read path after symbolic promotion, the
+initial membership threshold, migration and capacity behavior. No learned
+abstraction or exact document recovery is claimed.
+
+Surface inverses, nested admission and direct-operand occupations have
+development coverage; the existing categorizer remains the owner for
+line 7. The VP-phase gap from §20.2 remains: the paired compound uses a
+meaning kernel, and event snapshots are not yet selectable VP phases with
+R carried as content. The six generator variants and phase questions must
+be connected to that implementation, not accepted on the basis of the
+existing generic case selector. This is work remaining in line 6, not a
+new prerequisite skip or a move of its mechanism to item 0.
+
+Neither line has frozen or published. A receipt starts only at its freeze;
+development logs and the exact assertion/fixture inventory are retained
+separately. Keep one freeze per line after its lesson smoke, then the sized
+gates, one review of the iteration through Alec, and publication. No full
+sweep until 3.5 ends. Item 3.0 has not been reached.
+
+## 23. Cover replacement and preflight stops (Codex, 2026-10-24)
+
+§22's WholeSpace run build is withdrawn. Claude's context spec, todo,
+Orders, FutureWork and Architecture edits were committed unchanged at
+`47a2216e0b`. Context spec §§11–12 record the §2b review, adaptations,
+ports and two stops requiring decisions. The active tree restores exact
+batch streams and their original readers, opens an ordinary order-1
+concept and LTM cover row per document, and reads segment membership.
+No run row, MTM context identity, contextual word blend or membership
+threshold remains; _consolidation_sources stays removed. WholeSpace
+contributes only to order-0 composed form centroids; tower intervals
+and derive are unchanged. Promotion uses evidence-weighted centroids.
+
+Preflight passed XOR's eight cases. Both original decomposition arms
+failed at two successors because cheaper live readings dropped required
+premises. Keep probes and a diagnostic-only RNG intervention isolate
+the added cover draw's effect on the departure. An existing 24-row
+forgetting fixture needs a twenty-fifth row for the required cover before
+its boundary. No seed, keep rule, forced scope, capacity or existing
+behavioral assertion has changed to make these pass. Context spec §12
+gives recommendations and an exact capacity-port proposal for Alec.
+
+All evidence remains development evidence, including every failure and
+both withdrawn builds. Line 6 has not frozen; VP phases, six generated
+variants and final gates remain. Line 7 follows with its own smoke/freeze;
+one iteration review precedes publication. No sweep or twelve-draw series
+has run. Item 3.0 has not been reached.
+
+## 24. Final cover correction, inverse smoke and the remaining compound decision (Codex, 2026-10-24)
+
+Context spec §§13–16 supersede §23's two stops. The forgetting fixture
+preallocates 32 rows in both constructors, asserts 32 and uses 8/32 and
+6/32. No runtime capacity changes. Its eight sentences, interval, one
+boundary pass and behavioral assertions remain verbatim. The cover's
+checkpointed dedicated generator leaves the global RNG untouched.
+`preflight-02` passes XOR (8) and both original decomposition arms (2 each),
+without the diagnostic intervention. The three §13 notes are recorded
+individually in context §15.
+
+Run 66 passes the 32 live surface, occupation and case-mechanism checks
+(3 prerequisite skips), but its native lesson smoke exposes an invalid
+free unary inverse. A dictionary word's centered form can be closer while
+uncentering the different parent would leave the membership chart.
+`FormCentroids.unary` now admits that centered equation only if its
+recovered form is finite and within the chart. The plain equation remains
+available; no coordinate is clipped and no chooser action is forced.
+Run 67 passes all 19 cover/inverse checks and the native lesson smoke.
+The failing run is retained. This fixes the new inverse's domain, with no
+existing assertion changed. The stream-placement fixture port and its
+failed intermediate setups are recorded in context §16.
+
+**Decision requested from Alec before the phase change.** The phase rule
+in occurrence §§4–5 and §13.1 is idempotent selection of a head's cases.
+The accepted swap in this spec §§1–2 gives paired `compound` a direct,
+identity-initialized affine meaning kernel. After learning, that kernel
+need not be a projection: applying it twice can change the meaning twice.
+Neither the operator's current paired forward nor its paired inverse
+reads `SelectedCases`. This is the gap identified in §20.2, not a cover
+or preallocation failure.
+
+Recommendation: keep one learned kernel, but use it to form the modifier's
+case test; intersect that test with the retained cases and fold the result
+without mixing positive and negative evidence. Carry the retained case
+selection through subsequent applications so repeating the same test is
+idempotent. The head supplies its cases (including a VP's before/change/
+after); the object supplies content, including a referred-to event for R.
+No `.when` column is a composition operand. Its absent-marker face shares
+the same kernel. This replaces direct affine meaning composition and its
+affine inverse for paired `compound`; it requires a bounded case search
+on generation, as the unpaired case selector already does.
+
+That replacement is submitted through Alec because it changes the
+accepted operation contract, rather than being treated as a routine
+inverse repair under §39. No phase implementation, grammar-menu change,
+phase assertion port or frozen source is included in this section. The
+six generated variants depend on that mechanism. Independent cover,
+surface and direct-operand audits continue; line 6's single freeze waits
+for the remaining mechanism, followed by line 7 and the iteration review.
+
+## 25. Correcting the scope of §24 and implementing the case owner (Codex, 2026-10-24)
+
+On rereading §§1–2, the affine parameterization is an implementation
+choice, not Alec's decision. The decision is one learned kernel per
+grammatical operation, shared by its faces and preserving the evidence
+lanes. A learned case test followed by a case fold satisfies it. Therefore
+§24 should not have been an approval stop; its question is optional
+steering, and work continues under §39. No elapsed silence is treated as
+approval. The authority is the existing §39 hand-off.
+
+`CaseView` retains the head's cases, bilateral memberships and an accumulated
+content test. Selection intersects tests; refolding averages each evidence
+lane independently. Unselected cases give unknown to a case question, and
+a partial content selection cannot certify the whole request. The paired
+compound's existing kernel forms the test, using the unfiltered head as its
+stable context. It is not reapplied as a gain to the previously selected
+value. Form remains the leaf-weighted centroid, including the separately
+supplied WholeSpace center when applicable. Neither the case view nor its
+kernel reads memory or a clock inside the tensor body.
+
+Two exact ports in `test_meaning_kernels.py` accompany that semantic change:
+`test_other_catalogue_faces_use_the_same_centroid_contract` expects the
+compound's right head, rather than the left modifier, when no cases are
+available; all other classes and assertions remain unchanged.
+`test_direct_paired_reverses_reject_a_retired_split` now requires the
+compound's `reverse_blocks` to reject an affine split and request candidate
+search, as its direct reverse already does. The other classes retain the
+original exact inverse assertions. Run 71's failure of the old affine
+assumption is retained. Run 73 passes all 36 case-view, compound and
+meaning-kernel checks. These are development checks; case staging, parse
+flow, generation and the phase questions still have to be connected and
+verified before the line's smoke and freeze.
+
+## 26. Phase content, parse flow and the six placements (Codex, 2026-10-24)
+
+The phase bridge is separate from the identity overlay. `CaseFlow` carries
+head membership, the accumulated content test, the current reference value
+and the selected-content journal beside the conceptual stack. The eager
+owner stages reachable native cases and accessible actual-event snapshots
+(before, the verb operator, after), within the existing candidate bound.
+Added phase slots are local bank positions, never native symbols or bind
+candidates. Current reference content comes from each accessible identity's
+current value, counted once per head/identity; multiple available identities
+supply a centroid, not a new identity or an asserted correspondence. Explicit
+selection instead receives its actual object operand, which can carry a
+referred event. Neither path reads `.when` to compose a phase.
+
+The binary and absent-marker faces of `compound` share one kernel. The
+absent-marker face uses that staged current reference as its implicit object;
+with native cases but no event history it uses the head's own content. It
+preserves the same case set and accumulated intersection, so the same
+selection is idempotent. A second call can restrict the first selection,
+without creating a temporal/spatial operator, a marker lookup or another
+scorer. Both shipped catalogues declare the absent-marker face and its
+one-child reverse. No phase call withholds lowering as `adverb` does.
+`test_shipped_grammar_supplies_subtyping_without_a_predefined_surface` ports
+its exact face count from 1 to 2; its binary head/order/anchor assertions
+stay, and it also checks the unary head/order and absence of a surface
+anchor. Run 88 retains the old count failure.
+
+A kept subject event records the selected **content**, not its test mask.
+The mask alone could appear to cover coordinates that were never among the
+head's cases. Phase questions carry that content in an ordinary meaning
+constituent; `_query_case` contains only its typed local reference, keeping
+numerical payloads out of semantic metadata. Each evidence lane must cover
+the whole requested content. No selection, an empty selection or a proper
+fragment does not certify completion or its negation. Event clocks do not
+enter this comparison. Expired event history cannot certify the phase and
+reports `phase_history_expired`; ordinary retained event queries keep their
+existing derivation fallback. MTM checkpoint version 7 copies and validates
+this optional event value; versions 1–6 remain readable, with no phase value.
+No read adds a detach to MTM's staged content.
+
+The retained inverse reconstructs the counted form centroid against its
+co-operand and marks discarded head meaning undefined. It does not run an
+affine inverse of selection or copy the missing head from the answer target.
+Free generation uses the primed candidate search and the same case fold;
+the absent-marker inverse emits one candidate and no extra leaf. Existing
+forward-discard credit therefore applies to genuinely lost content. The
+surface and exact-rule inverses keep their own contracts.
+
+Development repairs are retained: run 77 exposed a conditionally unbound
+module import in a compiled loop (78 passes both modes); 80 exposed a tensor
+incorrectly put in query metadata; 81–82 are launcher collection errors;
+83 exposed exact decimal comparison against float32 evidence in the new
+fixture (the two scalar checks now use `pytest.approx`, with the same .8/.2
+values); 87–88 exposed a staging variable shadowing the reference accumulator.
+Run 84 passes 57 phase, modal and thought checks. Run 86 completes the short
+unforced native lesson (one training and one evaluation batch), but passes
+0/2 answers, selections and exact reconstructions. That is a development
+observation, not learning evidence promoted to the freeze.
+
+`constituent_corpus.case_corpus` supplies the six §13.2 placements; their
+labels never enter the model. `phase_experiment.py` uses one configuration,
+the complete menu, no reference orders, segmentation hints or grammar
+forcing, and answer targets only for separate training questions. The
+frozen protocol is three epochs of 18 training cases in batches of two,
+then six held-out cases, for each placement. One first RNG draw is retained
+and shared across the six placements; no result selects a seed or budget.
+It reports exact answers, selection counts and zero native reconstruction R,
+retaining both trials, keep decisions, initial and failure states. Failed
+learning goes to item 0 without rescue. The smoke uses only one batch from
+each split and makes no learning claim. The single line-6 freeze still
+follows its final smoke and preflight; line 7 follows, then review through
+Alec. Nothing in this section is published evidence.
+
+## 27. Integration ports and cover capacity (Codex, 2026-10-24)
+
+Development run 90 stopped in the decomposition measurement loader before
+behavior, because its archived grammar was missing. Run 93 then exposed the
+new generate action's unmapped parameter row. `preflight-05` authenticates
+compose and generate action names against the original grammar, restores
+every surviving original parameter exactly, and retains initialization only
+for the new `compound_unary` rows (alongside the already accepted `bind`
+rows). Run 94 passes both original decomposition arms, two cases each, at
+their original snapshots and seeds. No behavioral certificate changed.
+Run 92 passes 213 integrated regressions, with seven existing skips.
+
+Run 96 passes 277 operator/reader checks and skips four, with six failures.
+One production adaptation is missing: `_program_entries` must allow its
+minimal capture owner to lack `languageSpace`, just as it allows absent
+optional form metadata. The optional lookup is now nested; no assertion
+changes. Two tests assume there is no prior frame at a document's first
+sentence. Under §39, their exact ports are:
+
+- `test_real_packed_ends_train_before_the_next_sentence`: context length
+  `[sid + 1] * 2` becomes `[sid + 2] * 2`, counting the cover; the last-frame,
+  occurrence, stored-value, gradient and train/commit assertions stay.
+- `test_zero_meaning_departures_and_one_reader_step`: compare components
+  0 and 2 (R and A) between readings, rather than all three. A polarity
+  departure now changes expectation against the cover, which is legitimate
+  context. Captured credit still has zero R+A advantage and keeps greedy;
+  every keep, root, evidence, reader and optimizer assertion stays. The
+  objective and predictor are unchanged.
+
+Run 97 is retained as a diagnostic launcher failure: it omitted the CPU
+setting and selected MPS, where the existing float64 centroid diagnostic is
+unsupported. Run 98 sets the same CPU environment as the scoped gates and
+retains initial/failure states, cover allocations and both trials' credit.
+It confirms the expectation-only difference and the capacity issue below.
+
+**Decision routed to Alec before freeze.** The three XOR_grammar cases
+(two round-2c arms and the round-3a native-root check) fill six concept seats
+with four admitted word concepts and the first two covers; the third cover
+fails before any reading or keep. Four one-sentence batch documents require
+four covers, hence eight total seats. No safely redundant or unreferenced
+seat exists. The proposed patch changes only construction-time
+`ConceptualSpace.nVectors` in `data/XOR_grammar.xml`, 6 to 8; output width,
+data, budgets, seeds and assertions stay. This is a preallocation, never a
+runtime resize. It is held unapplied because the standing no-fixture-capacity
+rule needs an explicit exception beyond the separate §12.2 LTM correction.
+The patch is `development/proposed-xor-preallocation.patch`. No cover is
+suppressed and no seat is reserved. Independent development checks continue;
+line 6 is not frozen and line 7 has not started.
+
+## 28. Line-7 read-ahead: direct operand occupations (Codex, 2026-10-24)
+
+Parts-of-speech §3's mechanism is already live. `formal_arguments` builds
+fixed prototypes from the declared compose arguments and results.
+`PartsOfSpeech.observe_kept` replays only the selected program: each carried
+word occurrence increments its direct argument, and the head-flow table
+carries the resulting occurrences onward. A symmetric phrase preserves both
+occurrences, a headed phrase preserves all the head operand's words, and a
+clause stops their flow. `Models._commit_sentence` is the admission seam;
+the two trial reads share the eagerly staged occupation probabilities and
+cannot update counts. `Language.OperationSelectionLayer` adds these direct
+argument probabilities to operation scores. `GrammarCheckpoint` migrates
+occupation columns by their declared names and does not turn old category
+weights into observations. No definition or word-order lookup decides a
+part of speech here.
+
+The new absent-marker compound face follows this existing one-operand head
+rule. It needs no new prototype class, lexical table or learned category
+codebook. Line 7 will add a focused repeated-occurrence certificate through
+binary composition, the unary face and clause completion; compare the host
+journal with the tensor flow, and retain the existing kept-only native,
+checkpoint and gradient checks. The narrow scope is mechanism verification,
+not a claim that unseen words' classes have been learned. Its lesson smoke,
+freeze and scoped evidence follow line 6 in the requested order. This is
+read-ahead only, not a second source freeze or a landing receipt.
+
+### §27 capacity proposal corrected after the complete native group (2026-10-24)
+
+The eight-file development group completes with 121 passed, seven existing
+skips and two more capacity failures: `test_forced_not_and_or_descend_and_snapshot_certificate`
+and `test_both_training_trials_share_bootstrap_snapshot`. Both fail at the
+third cover of the first presentation, before their reading/keep. The latter
+presents the same four documents three times, with a new cover on each
+reading as §2b requires. Its twelve covers plus four word seats need sixteen
+occupied positions. The unchanged initial order partition leaves two unused
+order-0 positions, so **18 is the minimum construction-time inventory**:
+partition (6, 3), ordinary tail 9, hence 12 order-1 positions. No reservation
+or allocator change is proposed. Eight would cover only the first read;
+the earlier proposal is retained as `superseded-xor-eight-seat-proposal.patch`.
+`proposed-xor-preallocation.patch` now changes 6 to 18 and remains unapplied.
+The exact inventory is in `xor-capacity-diagnosis.json`. All output widths,
+input rows, repeated readings, targets, seeds and assertions stay. G1–G3,
+both pending-premise orders and the other live native checks pass on the
+current development source. No frozen evidence is claimed.
+
+### Another bounded fixture exposed by cover retention (2026-10-24)
+
+The identity/driver group also reaches
+`test_compose_pair_driver.py::test_evaluation_repeats_the_same_program_without_an_explore_trial`.
+Its `MM_xor_loopback` configuration has eight concept seats, four words and
+four covers after its first evaluation. Its second reading needs four more
+covers and fails before composition. This is a separate configuration from
+both the XOR standing gate and the eight-seat `MM_grammar` gates.
+The unapplied `proposed-loopback-preallocation.patch` changes only that
+configuration's ConceptualSpace construction capacity, 8 to 16. The existing
+order partition (8, 4) then has an ordinary tail of four, permitting the
+eight retained covers; output width stays eight. No assertion, input, repeat
+count or runtime shape changes. This needs the same narrow preallocation
+exception as the XOR proposal, and is not applied.
+
+A diagnostic tested restoring an initial checkpoint before the second call
+instead of changing capacity. Run 102 failed in the diagnostic wrapper's
+signature (fixed with `wraps`); run 103 still exhausts capacity. Its pre-read
+checkpoint predates dynamic word admission, and loading weights into the
+populated instance does not rewind that inventory. This is not evidence for
+a valid fixture port. Both logs and the checkpoint are retained; no reset
+or checkpoint change is made to production, and the existing evaluation
+test is unchanged. The capacity failure is reported as such, not hidden by
+suppressing covers or changing the determinism assertion. The remaining
+checks continue on the unchanged development source.
+
+## 29. Predictor isolation diagnosis (Codex, 2026-10-24)
+
+The identity/driver development group completed with two failures: the
+loopback capacity failure above and the predictor-isolation check in
+`test_real_packed_runbatch_trains_prediction_and_representation_with_teacher`.
+The latter initially looked like a production gradient leak. Replay of its
+captured initial process and generator states in run 108 distinguishes the
+terms: `expectation.activation` and `expectation.symbols` reach only the six
+shared predictor parameters. `expectation.components` has graph connections
+to ten representation parameters (all zero-norm in that captured trial).
+Covers introduce the native individuals that activate that pre-existing B
+energy path. There is no completed keep at the failure: the assertion fires
+in the first trial's backward probe.
+
+The component contract is explicit in
+`test_independent_components.py::test_sparse_coding_is_confined_to_verbs_and_cannot_train_noun_signatures`:
+its observed roles must receive nonzero gradients while no noun dictionary
+is trained. Detaching that target would break the accepted contract. No
+production loss, gradient route, MTM read or objective will change.
+Under §39, the exact fixture port is to form the diagnostic loss from
+`registry.terms()` named `expectation.activation` and `expectation.symbols`,
+including their weights, in place of `registry.total(objective='expectation')`.
+The test already disables word prediction to isolate this head. All of its
+assertions, including encoder disconnection, observed predictor gradients,
+zero-weight Adam behavior and detached retained context, remain verbatim.
+The independent sparse-component certificate remains unchanged and runs
+beside it. The source edit and verification follow the current reader run.
+
+Runs 104, 106 and 107 are retained diagnostic-launcher failures (missing
+capture-helper imports); 108 uses the established full capture environment
+and reproduces the actual assertion with per-term parameter gradients.
+These are development logs, not a freeze or a receipt.
+
+## 30. Authorized XOR preallocation (Codex, 2026-10-24)
+
+Alec authorized the corrected proposal: `data/XOR_grammar.xml` changes
+only `ConceptualSpace.nVectors`, from 6 to 18. The twelve covers and four
+word concepts required by the unchanged three-presentation bootstrap
+certificate fit the existing partition. Output width, inputs, budgets,
+readings and assertions stay unchanged. This is construction-time
+preallocation; no runtime shape or allocation policy changes. The earlier
+eight-seat proposal remains retained and superseded. The independent
+`MM_xor_loopback` proposal is still awaiting its own authorization.
+
+The edit follows completion of the running, source-guarded reader group,
+so its captures continue to identify one source. Development checks of
+the affected cases then precede the line-6 lesson smoke and single freeze.
+
+## 31. Preallocation rationale for review (Codex, 2026-10-24)
+
+Alec asked that the preallocations be justified to Claude, noting that the
+code has too many unjustified variables. These are three existing fixture
+capacity fields, not new parameters. Their inputs and repeats remain fixed;
+none changes a compiled shape at runtime or reserves seats for a reading.
+
+| fixture | fixed capacity | derivation and headroom |
+| --- | ---: | --- |
+| `test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads` | LTM 32, both constructors | Eight unchanged sentences can write 24 rows; the new cover requires a twenty-fifth. Alec chose 32 for construction-time headroom. High/low marks remain exactly eight/six, expressed as 8/32 and 6/32; one boundary pass and every behavioral assertion remain. |
+| `data/XOR_grammar.xml` | concepts 18 | The bootstrap certificate presents four documents three times: twelve covers plus four admitted words. With unchanged output width six, the existing partition is (6, 3), followed by nine ordinary tail seats. That supplies twelve order-1 positions and leaves two order-0 positions unused. Eighteen is the minimum inventory under that partition. |
+| `data/MM_xor_loopback.xml` | concepts 16 | The evaluation determinism certificate presents four documents twice: eight covers plus four words. With unchanged output width eight, the existing partition is (8, 4), followed by four ordinary tail seats. That supplies eight order-1 positions and leaves four order-0 positions unused. Sixteen is the minimum inventory under that partition. |
+
+The XOR change was explicitly authorized at eighteen; Alec's follow-up
+instruction to justify the preallocations is applied to the separate
+sixteen-seat loopback proposal as well. That change follows the running
+source-guarded checks. Both remain bounded fixture changes: no new allocator
+rule, learning budget, document count, output width or behavioral assertion.
+The eight-seat `MM_grammar` gates are unaffected. The superseded eight-seat
+XOR and twenty-five-row LTM proposals and every failed run are retained.
+
+The reader development group passes all 55 cases. The storage group passes
+111 and fails only `test_every_read_word_has_a_concept_and_symbol[XOR_grammar.xml]`
+at the same six-seat cover allocation, before composition. It joins the
+authorized preallocation verification. These results are development logs;
+the receipt begins at the single line-6 freeze.
+
+## 32. Exact candidate lane recovery (Codex, 2026-10-24)
+
+With the authorized inventory, run 110 passes six cases and reaches two
+strict zero-R failures in the unchanged final-b certificates. Runs 112 and
+114 replay their captured initial states, retain the full models and both
+trials' terms and keeps. The charge is `reconstruction.content`, about
+2.9e-9; word identity, bytes and recomposition are exact. The two readings
+tie and keep greedy. No reference choice, answer target or keep rule is
+changed. The predictor port separately passes on its captured state, as do
+all eighteen independent-component checks; the sixteen-seat loopback
+certificate passes with every assertion unchanged.
+
+The lane inverse takes signless candidate codes, then solves their evidence
+magnitudes. On the failing second read the candidates already reproduce the
+nonempty negative lane exactly. Their common coordinates differ by one
+float32 step (.1601281613111496 versus .1601281464099884). The min inverse
+nevertheless rescales the first candidate to the least admissible magnitude,
+shrinking its exclusive coordinates from .10675211995840073 to
+.10675210505723953. Those exclusive coordinates cannot be inferred from a
+min root. This is an unnecessary change to an already exact candidate, not
+a missing word or a failed allocation.
+
+Under §39, `MeaningCodes.recover_lanes` keeps the candidate pair's nominal
+magnitudes when their min/max already equals a nonempty parent lane exactly;
+otherwise its existing least-min/greatest-max solve remains. An empty lane
+still uses that solve and cannot acquire unobserved evidence. The two lanes
+remain independent, and the mean solve is unchanged. This uses the free
+candidate bank, with no input operand, target, tolerance, clipping, weight or
+new parameter. The non-injective inverse's exact-candidate preference changes;
+the reconstruction objective and every existing assertion stay verbatim.
+Four new cases retain the captured magnitudes across both operators and both
+poles, checking exact content and exact recomposition. The unchanged final-b
+pair is rerun before the smoke and freeze. All failures remain retained.
+
+## 33. Retained form assertion follows the published swap (Codex, 2026-10-24)
+
+The expanded lane-recovery file exposes an older form assertion in
+`test_corner_composition_lane_rules_and_form_unchanged`. It compares the
+form block of an operator configured with a meaning block to a second call
+on a form-only input. Those calls have different contracts since iteration
+1's published swap: the former is the parts' centroid, while the latter
+retains its legacy exact form rule. The failure precedes lane recovery.
+All 32 conjunction/disjunction corner cases fail this one assertion; the
+sixteen sum cases already agree because their old rule is the mean.
+
+Under §39, the assertion's expected value changes from
+`op.compose(a[:, :2], b[:, :2])` to `(a[:, :2] + b[:, :2]) / 2`, with
+`rtol=0, atol=0` unchanged. This is one assertion over 48 parameterizations;
+the evidence-lane assertion and every input remain verbatim. It enforces the
+already published centroid rule independently of the implementation. The
+failed runs are retained and no test is retired.
+
+## 34. Line-6 freeze audit (Codex, 2026-10-24)
+
+The final development preflight passes the 147-case lane/form file, both
+strict final-b certificates replayed from their captured failures, the eight
+XOR standing cases, and both original decomposition arms (two cases each,
+original snapshots and seeds). The last native lesson smoke completes one
+training batch and one held-out batch, with six paired updates. It reports
+0/2 exact answers, 2/2 selection counts and 0/2 exact reconstructions. This
+is a runtime smoke with failed learning targets, not a learning claim or
+evidence promoted to the frozen gates. Its complete states and every earlier
+failure remain under `development/`.
+
+The source audit records every changed source and fixture hash, syntax
+checks, removed identifiers and exact assertion/fixture ports. No test is
+retired. No run wholes, MTM wholes, contextual word blend or membership knob
+remain. Covers use the ordinary reference menu, so no twelve-draw series is
+introduced. The three preallocations and their arithmetic are in §31. The
+new lane inverse preference and the retained form assertion port are in
+§§32–33; no reconstruction weight, answer target or keep rule changes.
+
+Line 6 freezes once on main. Its receipt begins there and runs the scoped
+groups and all six generated placements by that hash. Line 7 follows with
+its own smoke, freeze and scoped evidence. Both wait for the one iteration
+review through Alec before publication. Item 3.0 has not been reached.

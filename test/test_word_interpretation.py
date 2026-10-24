@@ -222,7 +222,7 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
 def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     """The selected generic reading of 'cats are animals' owns kind refs.
 
-    This tests the declared grammar interface, not untrained English parsing.
+    This tests the declared grammar interface, not untrained parsing.
     The closing receives resolved objects and never performs lexical resolution.
     """
     from dataclasses import replace

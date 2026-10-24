@@ -1,4 +1,4 @@
-"""Source-addressed recurrence, pool lifetime and retained identity promotion."""
+"""Cover-segment recurrence, pool lifetime and retained identity promotion."""
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -15,6 +15,13 @@ from test_medium_term_memory import mention, snapshot, unchanged
 
 
 def kept(resolver, clause, frames=(), *, document='consolidation', position=0, stream=0):
+    from DocumentCover import begin_sentence
+    model = resolver.__dict__.setdefault('_cover_fixture_cursor', SimpleNamespace(
+        _concept_owner=lambda: resolver.components.owner))
+    model._sentence_sources = tuple(((document, position),) if b == stream else () for b in range(stream+1))
+    present = torch.zeros(stream+1, dtype=torch.bool)
+    present[stream] = True
+    begin_sentence(model, 0, present)
     plan = resolver.preview(clause, frames, stream=stream)
     prepared = resolver.prepare(clause, plan)
     written = {}
@@ -40,8 +47,12 @@ def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinc
     tree = Composition(value, (Composition(atoms[0], reference=left),
         Composition(atoms[1], reference=right)), operation='sum')
     clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=tree)
+    from DocumentCover import open_cover
     for n in range(3):
-        row = store.write_clause(clause, document_key=('source', n if distinct else 0), sentence_index=n)
+        if n == 0 or distinct:
+            open_cover(owner, store, stream=0)
+        row = store.write_clause(clause, document_key=('source', n if distinct else 0), sentence_index=n,
+                                 stream=0, evidence=(1., 0.))
         reading = store.raw_meaning_of(row).role_refs[0][1]
         before = store.slots.clone(), store.parts.refs.clone()
         consolidate(owner, store)
@@ -69,7 +80,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     verb = native(owner, atoms[3])
     def actual(node, frames=(), *, position=0):
         root = Clause(ConceptualMeaning.from_description(node.point), point=node.point,
-            order=0, children=(node,), refs=(('clause', 0), -1, -1),
+            order=0, evidence=(1., 0.), children=(node,), refs=(('clause', 0), -1, -1),
             factored_refs=(('clause', 0), verb, -1))
         plan = resolver.preview(root, frames, stream=0)
         prepared = resolver.prepare(root, plan)
@@ -90,7 +101,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     entry = pool.entries[token]
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
-    expected = atoms[0] + atoms[1] + atoms[2]
+    expected = atoms[0] + (atoms[1] + atoms[2]) / 3
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
     assert resolver._derivation_symbol(token) == entry.symbol
     pool.update(token, atoms[3], when=50)

@@ -29,8 +29,10 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
                 continue
             frame = program.operation_values[index]
             with torch.no_grad():
+                from FormCentroids import inverse_context
                 children = inverse_step(language, kind, operation, frame[2:3].detach(),
-                    frame.detach(), case_bank=None if case_bank is None else case_bank.for_stream(b))
+                    frame.detach(), case_bank=None if case_bank is None else case_bank.for_stream(b),
+                    **inverse_context(program, index))
                 undefined = torch.cat([~domain[:, meaning_start:] for _, domain in children])
                 inputs = frame[:len(children), meaning_start:].detach().abs()
                 whole_mass = inputs.amax(0).sum()

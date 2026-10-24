@@ -2489,18 +2489,22 @@ class GrammarLayer(Layer):
     substrate = False
     mandatory = False
 
-    def compose_blocks(self, kernel, *operands, counts=None, action_context=None, **kwargs):
+    def compose_blocks(self, kernel, *operands, counts=None, action_context=None, whole=None, **kwargs):
         """Compose meaning; carry the leaf-weighted form centroid alongside it."""
         layout = self.meaning_layout
         if layout is None or operands[0].shape[-1] != layout[1]:
             return kernel(*operands, **kwargs)
         form_width, _ = layout
         from MeaningKernels import centroid
-        form = centroid(tuple(value[..., :form_width] for value in operands), counts)
+        if whole is not None:
+            whole = (F.pad(whole[0], (0, form_width-whole[0].shape[-1])), whole[1])
+        form = centroid(tuple(value[..., :form_width] for value in operands), counts, whole=whole)
         meanings = tuple(value[..., form_width:] for value in operands)
         from MeaningCodes import compose
         if self.meaning_rule is not None:
             meaning = compose(self.meaning_rule, *meanings)
+        elif callable(getattr(self, 'compose_case_meaning', None)):
+            meaning = self.compose_case_meaning(*meanings, view=kwargs.get('case_view'))
         elif getattr(self, 'meaning_action', None) is not None:
             context = {} if action_context is None or self.rule_name == 'adverb' else dict(action_context)
             if context.get('object_value') is not None:
@@ -2514,10 +2518,12 @@ class GrammarLayer(Layer):
         return assert_cube(torch.cat((form, meaning), -1))
 
     def reverse_blocks(self, parent, reference, *, counts=(1, 1), reference_right=True,
-                       action_context=None):
+                       action_context=None, whole=None):
         """Undo a meaning kernel given its context and split the form centroid."""
         from MeaningKernels import split_centroid
         form_width, _ = self.meaning_layout
+        if whole is not None:
+            whole = (F.pad(whole[0], (0, form_width-whole[0].shape[-1])), whole[1])
         if getattr(self, 'meaning_action', None) is not None:
             if not reference_right:
                 self.raise_no_inverse('an action requires its operator as the known operand')
@@ -2535,7 +2541,7 @@ class GrammarLayer(Layer):
         else:
             self.raise_no_inverse('this exact rule requires a candidate search')
         form = split_centroid(parent[..., :form_width], reference[..., :form_width:], counts,
-                              known_right=reference_right)
+                              known_right=reference_right, whole=whole)
         missing = torch.cat((form, meaning), -1)
         return (missing, reference) if reference_right else (reference, missing)
 
@@ -2553,8 +2559,10 @@ class GrammarLayer(Layer):
             raise ValueError(
                 f"{type(self).__name__} expects {self.arity} structural operands, "
                 f"got {len(operands)}")
+        from FormCentroids import selected
         return self.compose_blocks(self.compose, *operands,
             counts=getattr(context, 'leaf_counts', None),
+            whole=selected(getattr(context, 'form_context', None), len(operands), operands[0], self),
             action_context=getattr(context, 'action_context', None))
 
     def generate_from_grammar_context(self, result, *, context):
@@ -2562,8 +2570,10 @@ class GrammarLayer(Layer):
         if self.meaning_layout is not None and result.shape[-1] == self.meaning_layout[1]:
             witness = getattr(context, 'reference', None)
             if witness is not None:
+                from FormCentroids import selected
                 return self.reverse_blocks(result, witness,
                     counts=getattr(context, 'leaf_counts', None) or (1, 1),
+                    whole=selected(getattr(context, 'form_context', None), self.arity, result, self),
                     action_context=getattr(context, 'action_context', None))
             if self.arity == 2:
                 self.raise_no_inverse('a meaning fold needs a reference or the candidate search')
@@ -8797,12 +8807,16 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     ORIGIN_PROVISIONED = 1
     ORIGIN_USER = 2
 
-    KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference")
+    KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference", "cover")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
         super().__init__(nDim, nDim)
         self.nDim = int(nDim)
         self.capacity = int(capacity)
+        # Cover initialization has its own checkpointed stream. Creating
+        # a document must not change the chooser's global random draws.
+        self._cover_generator = torch.Generator(device='cpu').manual_seed(0)
+        self.register_buffer('cover_rng_state', self._cover_generator.get_state())
         # Content ('what') width a reasoning reader slices to (the leading
         # band of the event vector); defaults to the full width. Stored for
         # forward-compat -- this class keeps the FULL idea vectors.
@@ -9384,6 +9398,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # Legacy checkpoints retain their recorded pair. The retired scalar
         # was provenance, so it must not silently overwrite that evidence.
         state_dict.setdefault(prefix + 'source_trust', torch.zeros_like(self.source_trust))
+        state_dict.setdefault(prefix + 'cover_rng_state',
+                              torch.Generator(device='cpu').manual_seed(0).get_state())
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
             state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
         # Checkpoint schema migration only: the removed clock has no live reader.
@@ -9452,8 +9468,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         i = int(idx)
         if not 0 <= i < len(self):
             raise IndexError(f"row {i} of {len(self)}")
-        if self.KINDS[int(self.record_kind[i])] in ("question", "estimate"):
-            raise ValueError("a question or estimate cannot certify its own referent")
+        if self.KINDS[int(self.record_kind[i])] in ("question", "estimate", "cover"):
+            raise ValueError("a question, estimate or cover cannot certify its own referent")
         self.record_kind[i] = self.KINDS.index("fact")
 
     def bind_constituents(self, meaning, *, reserve=0, stream=-1, parent_address=None):
@@ -11040,6 +11056,18 @@ class SymbolExpectation(Layer):
             self._inter_context_ids[b][-1] = None
             self._inter_last_meaning[b] = None
 
+
+    def include_occurrence(self, b, occurrence):
+        """Admit a written cover to the ordinary recent situation, without a target."""
+        from ReferenceContext import SituationAddress
+        b = int(b)
+        self.ensure_batch(max(self._batch, b + 1))
+        if self._ltm_store is None or self._ltm_store.location(occurrence) is None:
+            raise ValueError('a situation occurrence must be retained')
+        self._inter_context[b].append(SituationAddress(occurrence))
+        self._inter_context_occurrences[b].append(occurrence)
+        self._inter_context_lanes[b].append(None)
+        self._inter_context_ids[b].append(None)
 
     def situation_references(self, b=0):
         """Materialize only the recent addresses the predictor already holds."""
@@ -14107,6 +14135,9 @@ class ShortTermMemory(Layer):
              unit_b.reshape(B).to(dtype=torch.long, device=wholes.device),
              clause_b.reshape(B).to(dtype=torch.long, device=wholes.device)),
             dim=-1).reshape(B, 1, 3)
+        if wholes.shape[-1] == 5:
+            unit = unit_b.reshape(B, 1, 1)
+            entry = torch.cat((entry, unit, unit+1), -1)
         shifted = torch.cat((entry, wholes[:, :cap - 1]), dim=1)
         return torch.where(gate.reshape(B, 1, 1), shifted, wholes)
 
@@ -14127,6 +14158,10 @@ class ShortTermMemory(Layer):
         parent = torch.stack(
             (torch.where(same_w, newer[:, 0], minus), minus,
              torch.where(same_c, newer[:, 2], minus)), dim=-1).reshape(B, 1, 3)
+        if wholes.shape[-1] == 5:
+            low = torch.minimum(newer[:, 3], older[:, 3])
+            high = torch.maximum(newer[:, 4], older[:, 4])
+            parent = torch.cat((parent, torch.stack((low, high), -1)[:, None]), -1)
         shifted = torch.cat(
             (parent, wholes[:, 2:], torch.full_like(wholes[:, :1], -1)), dim=1)
         return torch.where(gate.reshape(B, 1, 1), shifted, wholes)

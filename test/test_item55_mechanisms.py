@@ -59,11 +59,12 @@ def _stream_code_banks(tmp_path,monkeypatch):
     model.candidate_attention=None
     try:
         with torch.no_grad():
-            raw=model.inputSpace.prepInput(['cat','cat'])
-            model.runBatch(train=False,split='validation',batchSize=2,
-                batch_override=(raw,torch.empty(2,0)),document_keys=('a','b'))
             owner=model._concept_owner();book=owner.similarity_codebook
-            cid=owner.interpret.forward(owner.interpret.word_for_form('cat'))
+            # Admit the form this placement certificate observes. A free
+            # sentence may instead bind it to an accessible cover, whose
+            # native identity cache deliberately does not vary by stream.
+            word=owner.interpret.lookup_word((), (), form='cat')
+            cid=owner.interpret.forward(word)
             row=owner._csw_row_of(cid)
             point=book.lookup_rows(torch.tensor(row))
             meaning=ConceptualMeaning(torch.stack((point,point*0,point*0)),
@@ -72,7 +73,9 @@ def _stream_code_banks(tmp_path,monkeypatch):
             # Bare objectless readings need not have closed point-valued rows.
             from dataclasses import replace
             from ClauseRow import Clause
+            from DocumentCover import open_cover
             for stream, value in enumerate((replace(meaning,roles=meaning.roles*.5),meaning)):
+                open_cover(owner, model.symbolSpace.ltm_store, stream=stream)
                 model.symbolSpace.ltm_store.write_clause(
                     Clause(value, point=value.roles[0], refs=(cid,-1,-1), order=0),
                     stream=stream, document_key=('context',stream), sentence_index=1)

@@ -9,7 +9,7 @@
        selects an executor and no second kernel result is attached.
 
        The shared grammar chooser receives paired cost credit from supplied
-       answers, the next sentence expectation and actual work. Reading these plain English truths depends
+       answers, the next sentence expectation and actual work. Reading these plain-text truths depends
        on a trained chooser. A token subject can form an idea while a generic
        subject forms a part relation; chaining is a learning result.
        See doc/SelectedMeaning.md. -->

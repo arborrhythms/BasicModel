@@ -10,7 +10,7 @@ from ThoughtReferences import bindings
 
 def request(clause, written, store):
     record = clause.identity
-    if (not record or not record.get('timeline_order')
+    if (not record or not (record.get('timeline_order') or record.get('case_value') is not None)
             or record.get('operation') != 'lift' or not record.get('event')):
         return None
     subject, verb = record['event'][1], record['event'][3]
@@ -40,6 +40,35 @@ def request(clause, written, store):
     return reference, resolver._event_symbol(int(verb)), int(clause.order)
 
 
+def phase_request(meaning, value):
+    """Keep requested content in a meaning, with only its handle in metadata."""
+    from Meaning import ConceptualMeaning
+    data = bindings(meaning)
+    data['_query_case'] = ('constituent', len(meaning.constituents))
+    return replace(meaning, bindings=data, constituents=(*meaning.constituents,
+        ConceptualMeaning.from_description(value)))
+
+
+def case_coverage(owner, wanted, held):
+    """Content entailment of a phase, without consulting occurrence time.
+
+    An unselected event is unknown about its phase. Each evidence lane must
+    cover the complete requested content; a proper fragment proves neither
+    completion nor its negation.
+    """
+    import torch
+    from IdentityRows import coordinates, meet_ratios
+    if held is None:
+        return 0., 0.
+    a, b = (coordinates(owner, value) for value in (wanted, held))
+    layout = getattr(owner.similarity_codebook, 'mereology', None)
+    start = 0 if layout is None else layout.percept_event_width
+    a, b = (value[start:].unflatten(-1, (2, -1)) for value in (a, b))
+    _, covered = meet_ratios(a, b)
+    complete = covered >= 1-8*torch.finfo(covered.dtype).eps
+    return tuple(float(value) for value in complete)
+
+
 def read(store, description, *, max_records, work, fallback):
     """Return one bounded set per timeline, or retained addressed ideas."""
     data = bindings(description)
@@ -47,6 +76,12 @@ def read(store, description, *, max_records, work, fallback):
     if query is None:
         return None
     reference, verb, order = query
+    phase = data.get('_query_case')
+    if phase is not None:
+        if (len(phase) != 2 or phase[0] != 'constituent' or type(phase[1]) is not int
+                or not 0 <= phase[1] < len(description.constituents)):
+            raise ValueError('a phase query requires its content constituent')
+        phase = description.constituents[phase[1]].roles[0]
     owner = store._concept_owner()
     pool = owner.mtm
     key = pool.token_of(reference)
@@ -69,7 +104,13 @@ def read(store, description, *, max_records, work, fallback):
                     cache[marker] = None if row is None else store.row(row)
                 row = cache[marker]
                 if (row is not None and event.role == 0 and event.verb == verb
-                        and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question')):
+                        and event.occurrence not in excluded and row['kind'] not in ('estimate', 'question', 'cover')):
+                    if phase is not None:
+                        coverage = case_coverage(owner, phase, event.case_value)
+                        evidence = tuple(value*weight for value, weight in zip(row['evidence'], coverage))
+                        if not any(evidence):
+                            continue
+                        row = dict(row, evidence=evidence)
                     records.append(dict(row, match=1.))
             groups.append(tuple(records))
         return dict(groups=tuple(groups), records_scanned=scanned,
@@ -77,6 +118,9 @@ def read(store, description, *, max_records, work, fallback):
 
     # Expiry removes branch organization, not ideas. The old derivation
     # reader supplies subject/predicate correspondence until its removal round.
+    if phase is not None:
+        return dict(groups=((),), records_scanned=scanned,
+                    incomplete=('phase_history_expired',), retained=True, order=order)
     from PartRead import argument_reader
     operation, _ = argument_reader(store, incomplete)
     roots = set()
@@ -138,7 +182,7 @@ def read(store, description, *, max_records, work, fallback):
         return None
     records = []
     for row in candidates:
-        if row['occurrence'] in excluded or row['kind'] in ('estimate', 'question'):
+        if row['occurrence'] in excluded or row['kind'] in ('estimate', 'question', 'cover'):
             continue
         raw = store.raw_meaning_of(row['index']).role_refs[0]
         if raw and raw[0] == 'sym':

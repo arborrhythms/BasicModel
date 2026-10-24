@@ -1271,8 +1271,7 @@ class ReferenceClose(nn.Module):
         # mention/refinement/event references, not equal timestamps, refresh
         # the pool's independent kept-close access counter.
         mtm.close(self.store, stream=plan.get('stream'),
-            references=(*closed_mentions, *refinements, *events),
-            sources=self.components.owner.__dict__.get('_consolidation_sources'))
+            references=(*closed_mentions, *refinements, *events))
         from MemoryConsolidation import consolidate
         consolidate(self.components.owner, self.store)
         while len(mentions) > self.components.source_capacity:
@@ -1391,6 +1390,7 @@ class ReferenceClose(nn.Module):
                     before=record.get('before') if is_action and verb_action is not None else None,
                     basis=basis if is_action and verb_action is not None else None,
                     after=result if role == 0 else None,
+                    case_value=record.get('case_value') if role == 0 else None,
                     modifiers=record.get('modifiers', ()) if role == 0 and alternative else ())
                 referenced.add(token)
                 if role == 0 and changed:

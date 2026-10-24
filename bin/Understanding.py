@@ -74,6 +74,12 @@ class AnswerProgram:
     identity_leaves: Any = None
     timeline_actions: Any = None
     timeline_values: Any = None
+    case_values: Any = None
+    case_selected: Any = None
+    # Occurrence-local inverse witnesses; never written into LTM.
+    operand_counts: Any = None
+    form_wholes: Any = None
+    form_whole_counts: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
@@ -81,7 +87,8 @@ class AnswerProgram:
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
                                              "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
                                              "identity_origins", "identity_actions", "identity_values", "identity_leaves",
-                                             "timeline_actions", "timeline_values")
+                                             "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",
+                                             "form_wholes", "form_whole_counts")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -169,6 +176,14 @@ class AnswerProgram:
                         1,len(self.actions)+1,device=actions.device))).any()) or
                     bool(((actions[:,3] < 0) | (actions[:,3] > 1)).any())):
                 raise ValueError('timeline correspondence must align with identities and selected actions')
+        if self.case_values is not None or self.case_selected is not None:
+            tests, selected = self.case_values, self.case_selected
+            if (not torch.is_tensor(tests) or tests.shape != (len(self.actions), self.leaves.shape[-1])
+                    or not tests.is_floating_point() or not bool(torch.isfinite(tests).all())
+                    or bool(((tests < 0) | (tests > 1)).any())
+                    or not torch.is_tensor(selected) or selected.shape != (len(self.actions),)
+                    or selected.dtype != torch.bool):
+                raise ValueError('case selections must align to the open reading actions')
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())

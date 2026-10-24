@@ -95,6 +95,9 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         if event is not None:
             data['_query_event'] = event
         result = replace(result, bindings=data)
+        if event is not None and clause.identity.get('case_value') is not None:
+            from TimelineRead import phase_request
+            result = phase_request(result, clause.identity['case_value'])
     return result if needs_episode(result) else None
 
 

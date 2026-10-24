@@ -77,7 +77,7 @@
     <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
     <meaningWidth>128</meaningWidth>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
-    <nVectors>6</nVectors>
+    <nVectors>18</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 

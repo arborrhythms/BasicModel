@@ -185,7 +185,7 @@ def inverse_basis(parent, basis, basis_valid, priming, constituents, constituent
 @preserve_operator_activations
 def selected_inverse(language, parent, choice, live, *, basis, basis_valid, priming=None,
                      limit=16, case_bank=None, constituents=None, constituent_valid=None,
-                     require_symbols=True):
+                     require_symbols=True, whole_bank=None):
     """Pull back the hard choice without retaining every rejected inverse graph."""
     basis, basis_valid, priming = inverse_basis(
         parent, basis, basis_valid, priming, constituents, constituent_valid)
@@ -198,11 +198,12 @@ def selected_inverse(language, parent, choice, live, *, basis, basis_valid, prim
             basis=basis if require_symbols else None,
             basis_valid=basis_valid if require_symbols else None,
             basis_priming=priming, candidate_limit=limit,
-            free=require_symbols, case_bank=case_bank)
+            free=require_symbols, case_bank=case_bank, whole_bank=whole_bank)
         left = torch.where(use_binary[:, None], a, left)
         right = torch.where(use_binary[:, None], b, right)
     if bool(use_unary.any()):
-        a = language.generate_unary_step(parent, choice - len(binary), use_unary)
+        a = language.generate_unary_step(parent, choice - len(binary), use_unary,
+                                         whole_bank=whole_bank, case_bank=case_bank)
         left = torch.where(use_unary[:, None], a, left)
     return left, right
 
@@ -210,7 +211,7 @@ def selected_inverse(language, parent, choice, live, *, basis, basis_valid, prim
 def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
                  limit=16, case_bank=None, constituents=None,
                  constituent_valid=None, constituent_families=None, require_symbols=True,
-                 terminal_valid=None):
+                 terminal_valid=None, whole_bank=None):
     from Language import LanguageSpace
     words, word_valid = basis, basis_valid
     terminals = word_valid if terminal_valid is None else word_valid & terminal_valid
@@ -232,11 +233,12 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
                 ops=(op,), basis=basis if require_symbols else None,
                 basis_valid=basis_valid if require_symbols else None,
                 basis_priming=priming, candidate_limit=limit,
-                free=require_symbols, return_status=True, case_bank=case_bank)
+                free=require_symbols, return_status=True, case_bank=case_bank, whole_bank=whole_bank)
         lefts.append(left); rights.append(right); missing.append(unavailable)
     for i in range(len(unary)):
         value, unavailable = language.generate_unary_step(
-            parent, torch.full_like(live, i, dtype=torch.long), live, return_status=True)
+            parent, torch.full_like(live, i, dtype=torch.long), live, return_status=True,
+            whole_bank=whole_bank, case_bank=case_bank)
         unavailable = unavailable | ~value.detach().ne(parent.detach()).any(-1)
         lefts.append(value); rights.append(parent); missing.append(unavailable)
     lefts.append(parent); rights.append(parent); missing.append(torch.zeros_like(live))
@@ -246,6 +248,6 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     options = ({} if constituents is None and terminal_valid is None else
                dict(terminal_basis=words, terminal_valid=terminals))
     legal = (LanguageSpace.decoder_eligibility(parent, lefts, rights, available,
-        binary, basis, basis_valid, case_bank=case_bank, **options)
+        binary, basis, basis_valid, case_bank=case_bank, whole_bank=whole_bank, **options)
         if require_symbols else available)
     return torch.stack(lefts, 1), torch.stack(rights, 1), legal

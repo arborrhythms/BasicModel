@@ -150,7 +150,7 @@ def force_absolute_reading(model):
 
     Both binary absolute operators remain eligible for the explore deviation;
     a unary negation permits a deviation from a one-slot stop. This is an
-    explicit supplied reading, never a claim about learned English parsing.
+    explicit supplied reading, never a claim about learned parsing.
     """
     layer = model.languageSpace._tree_layer(2)
     binary = layer.chooser.score_binary

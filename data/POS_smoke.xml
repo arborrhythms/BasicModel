@@ -1,10 +1,10 @@
 <?xml version="1.0" ?>
 <model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:noNamespaceSchemaLocation="model.xsd">
-  <!-- POS_smoke: small inline corpus of basic English sentences for
+  <!-- POS_smoke: small inline corpus of short sentences for
        smoke-testing parser POS tagging and grammar-rule
        selection.  Built on the HeadEmission.xml shape (inline
-       sentences, modest dims) but with the MentalModel.xml English
+       sentences, modest dims) but with the MentalModel.xml text
        grammar block so we exercise multiple rule alternatives.
        writeSyntax=true dumps a parse tree per forward pass to
        output/syntax_pos_smoke.xml so we can inspect what POS / rule

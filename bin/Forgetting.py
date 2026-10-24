@@ -271,6 +271,14 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
         raise ValueError('forgetting requires the complete semantic sidecar')
     dependencies = {i: _references(store, i, contexts[key], indexes) for i, key in enumerate(keys)}
     protected = {i for i in range(n) if int(store.origin[i]) in config.protect_origins}
+    # A live segment cannot lose its boundary and acquire the preceding
+    # document's cover. Release the empty cover at the next boundary pass.
+    from DocumentCover import segments
+    for row, covers in segments(store).items():
+        for cover in covers:
+            boundary = store.location(cover)
+            if boundary != row:
+                protected.add(boundary)
     for ref in retained_occurrences:
         if ref[:1] == ('sym',) and store.parts.contains(ref[1]):
             continue

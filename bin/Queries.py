@@ -87,6 +87,9 @@ class StructuralGrammarContext(GrammarContext):
     leaf_counts: object = None
     action_context: object = None
     reference: object = None
+    form_context: object = None
+    case_view: object = None
+    case_unary_view: object = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -98,6 +101,14 @@ class StructuralGrammarContext(GrammarContext):
                 raise TypeError('structural case selection requires the bounded tensor carrier')
             object.__setattr__(self, 'selected_cases', SelectedCases(
                 *(value.clone() for value in self.selected_cases)))
+        for name in ('case_view', 'case_unary_view'):
+            value = getattr(self, name)
+            if value is None:
+                continue
+            from CaseSelection import CaseView
+            if not isinstance(value, CaseView):
+                raise TypeError('structural case view requires the bounded tensor carrier')
+            object.__setattr__(self, name, CaseView(*(item.clone() if torch.is_tensor(item) else item for item in value)))
         if not isinstance(self.conceptual_space, ConceptualSpaceCapability):
             raise ValueError('structural context requires a geometry-only conceptual capability')
 
@@ -889,6 +900,11 @@ class ThoughtLTMCapability:
         from Layers import LTM0
         if not isinstance(store, LTM0):
             return {'value': (), 'records_scanned': 0, 'incomplete': ('unavailable_ltm',)}
+        from DocumentCover import read as read_cover
+        segment = read_cover(store, description, references=references, max_records=max_records,
+                            work=work, role_mask=role_mask)
+        if segment is not None:
+            return segment
         return store.cued_rows(description,
             primed=object.__getattribute__(self, '_ThoughtLTMCapability__primed'),
             references=tuple(references) + tuple(
@@ -953,7 +969,7 @@ class ThoughtLTMCapability:
         if meaning is None:
             raise ValueError('ended clause metadata is unavailable')
         positive, negative = retained['evidence']
-        if retained['kind'] == 'estimate':
+        if retained['kind'] in ('estimate', 'cover'):
             positive = negative = 0.
         return dict(value=meaning, support_true=positive, support_false=negative, meaning=meaning,
                     occurrence=reference, witnesses=(reference,), trust=retained['trust'],
@@ -1008,7 +1024,7 @@ class ThoughtLTMCapability:
                            for source, answer in ((0, 2), (2, 0)))
             return not any(role in marked for role in free)
         candidates = tuple(row for row in found['value']
-                           if row['match'] >= tau and row['kind'] != 'estimate'
+                           if row['match'] >= tau and row['kind'] not in ('estimate', 'cover')
                            and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))
                            and row['occurrence'] not in excluded and can_answer(row))
         best = max(candidates, key=lambda row: row['match']) if candidates else None
@@ -1059,7 +1075,7 @@ class ThoughtLTMCapability:
             scanned += 1
             row = store.row(index)
             meaning = row['meaning']
-            if row['kind'] in ('question','estimate','unverified') or meaning is None:
+            if row['kind'] in ('question','estimate','unverified','cover') or meaning is None:
                 continue
             if int(meaning.role_mask.sum()) != 1:
                 continue

@@ -252,7 +252,7 @@ class LeafCodeIndex:
                 break
             scanned += 1
             kind = self.KINDS[int(self.record_kind[row])]
-            if kind == 'estimate' or (kind == 'question' and float(self.c_plus[row]) == 0.
+            if kind in ('estimate', 'cover') or (kind == 'question' and float(self.c_plus[row]) == 0.
                                      and float(self.c_minus[row]) == 0.):
                 continue
             meaning = self.meaning_of(row)

@@ -10,20 +10,28 @@ from torch import nn
 from torch.nn import functional as F
 
 
-def centroid(values, counts=None):
+def centroid(values, counts=None, *, whole=None):
     if len(values) == 1:
-        return values[0]
-    if counts is None:
+        parts = values[0]
+    elif counts is None:
         counts = tuple(torch.ones_like(value[..., :1]) for value in values)
+        parts = sum(values) / len(values)
     else:
         counts = tuple(torch.as_tensor(n, device=value.device, dtype=value.dtype)
                        for value, n in zip(values, counts))
         counts = tuple(n[..., None] if n.ndim == value.ndim-1 else n
                        for n, value in zip(counts, values))
-    return sum(value * n for value, n in zip(values, counts)) / sum(counts).clamp_min(1)
+        parts = sum(value * n for value, n in zip(values, counts)) / sum(counts).clamp_min(1)
+    if whole is None:
+        return parts
+    mean, count = whole
+    return torch.where(count > 0, (parts + mean) * .5, parts)
 
 
-def split_centroid(parent, known, counts, *, known_right=True):
+def split_centroid(parent, known, counts, *, known_right=True, whole=None):
+    if whole is not None:
+        mean, count = whole
+        parent = torch.where(count > 0, parent * 2 - mean, parent)
     left, right = (torch.as_tensor(n, device=parent.device, dtype=parent.dtype) for n in counts)
     if left.ndim == parent.ndim-1:
         left, right = left[..., None], right[..., None]

@@ -6809,6 +6809,9 @@ class BasicModel(BaseModel):
             getattr(self, '_readback_percept_width', None), sparse_forms if identity is not None else None,
             getattr(getattr(owner.similarity_codebook, 'mereology', None), 'percept_event_width', None),
             bool(TheXMLConfig.space('ConceptualSpace', 'readerBlockNormalization', True)), types)
+        from FormCentroids import candidates as candidate_wholes
+        self._sentence_primed_bank = replace(self._sentence_primed_bank,
+            form_wholes=candidate_wholes(self.wholeSpace, self._sentence_primed_bank))
         self._sentence_priming_written = True
 
     def store_truths(self, entries, *, source_key='user-truths'):
@@ -6897,7 +6900,7 @@ class BasicModel(BaseModel):
     # -- LTM consolidation: XML TruthSet provisioning ------------------
     @torch.no_grad()
     def provision_ltm(self):
-        """Read the configured English assertions through the sentence driver.
+        """Read the configured text assertions through the sentence driver.
 
         Each text supplies only external trust, origin and source text. Its
         trained grammar selects an idea or relation and the writer preserves
@@ -6920,7 +6923,7 @@ class BasicModel(BaseModel):
             return 0
         if isinstance(entries, dict):           # singleton un-listed by parser
             entries = [entries]
-        # TruthSet supplies plain English and provenance, never grammar.
+        # TruthSet supplies plain text and provenance, never grammar.
         texts, trusts = [], []
         for ent in entries:
             if not isinstance(ent, dict):
@@ -9551,6 +9554,7 @@ class BasicModel(BaseModel):
                         basis_priming=None if bank is None else bank.weights,
                         case_bank=(None if bank is None or bank.case_bank is None
                                    else bank.case_bank.detached()),
+                        whole_bank=None if bank is None else bank.form_wholes,
                         initial_depth=occupied.long().sum(-1),
                         require_symbols=not self._aligned_serial_word_mode(),
                         constituents=None if structure is None else structure.constituents,
@@ -12019,7 +12023,7 @@ class BasicModel(BaseModel):
                                     *, exploit_actions=None, departure=None,
                                     return_candidates=False, case_bank=None,
                                     constituents=None, constituent_valid=None, constituent_families=None,
-                                    terminal_valid=None):
+                                    terminal_valid=None, whole_bank=None):
         """Decode from the idea, words and an unordered structural snapshot."""
         B, K, D = end_slots.shape
         positions = torch.arange(K, device=root.device)[None]
@@ -12031,6 +12035,7 @@ class BasicModel(BaseModel):
             candidate_limit=self.reconstruction_basis_limit, return_trace=True,
             exploit_actions=exploit_actions, departure=departure,
             return_candidates=return_candidates, case_bank=case_bank, terminal_valid=terminal_valid,
+            whole_bank=whole_bank,
             constituents=constituents, constituent_valid=constituent_valid,
             constituent_families=constituent_families)
 
@@ -12102,7 +12107,7 @@ class BasicModel(BaseModel):
                 if candidate_basis is None and torch.is_tensor(ownership):
                     candidates = valid & (ownership == sid)
             decoder_options = ({} if understanding is None else
-                               dict(terminal_valid=bank.terminal_valid))
+                               dict(terminal_valid=bank.terminal_valid, whole_bank=bank.form_wholes))
             if understanding is not None and bank.case_bank is not None:
                 decoder_options['case_bank'] = bank.case_bank
             if understanding is not None and understanding.constituents is not None:
@@ -12821,6 +12826,7 @@ class BasicModel(BaseModel):
         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
         relations = getattr(self._reconstruction_stack(), "_choice_ref_relations", None)
         identity = getattr(self._reconstruction_stack(), '_identity_state', None)
+        case_state = getattr(self._reconstruction_stack(), '_case_state', None)
         journal_columns = getattr(self._reconstruction_stack(), "_choice_journal_columns", None)
         if journal_columns is not None:
             columns = journal_columns.gather(1, columns.clamp(0, journal_columns.shape[1] - 1))
@@ -12902,11 +12908,17 @@ class BasicModel(BaseModel):
                 identity_leaves=identity_leaves,
                 timeline_actions=timeline_actions,
                 timeline_values=None if timeline_actions is None else identity[5][b],
+                case_values=None if case_state is None else case_state[3][b, columns[b, :L].clamp_min(0)],
+                case_selected=None if case_state is None else case_state[4][b, columns[b, :L].clamp_min(0)],
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
                        ('symbol_when', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_when', None)))
                    if torch.is_tensor(value)})
+            form_bank = getattr(getattr(self, 'languageSpace', None), '_form_wholes', None)
+            if form_bank is not None:
+                from FormCentroids import capture
+                entry = capture(entry, form_bank, b, pos, self.languageSpace)
             entries.append(entry)
         return tuple(entries)
 
@@ -12931,7 +12943,7 @@ class BasicModel(BaseModel):
                               return_candidates=False, case_bank=None,
                               initial_depth=None, require_symbols=True,
                               constituents=None, constituent_valid=None, constituent_families=None,
-                              terminal_valid=None):
+                              terminal_valid=None, whole_bank=None):
         """The shared conceptual decoder. No compose actions enter this walk.
 
         Hard generate choices determine the stack topology. Reconstruction
@@ -12957,6 +12969,8 @@ class BasicModel(BaseModel):
         terminal_valid, n_live0 = own(terminal_valid), own(n_live0)
         if case_bank is not None:
             case_bank = type(case_bank)(*(own(value) for value in case_bank))
+        if whole_bank is not None:
+            whole_bank = type(whole_bank)(*(own(value) for value in whole_bank))
         if exploit_actions is not None:
             # A preceding differentiable while_loop can expose symbolic
             # journal strides. Materialize its fixed-shape trace before it
@@ -12987,7 +13001,7 @@ class BasicModel(BaseModel):
                     limit=candidate_limit, case_bank=case_bank,
                     constituents=constituents, constituent_valid=constituent_valid,
                     constituent_families=constituent_families,
-                    require_symbols=require_symbols, terminal_valid=terminal_valid)
+                    require_symbols=require_symbols, terminal_valid=terminal_valid, whole_bank=whole_bank)
             if first_graph:
                 zero_menu[0] = (options.sum() + others.sum()) * 0
             is_binary = torch.arange(stop + 1, device=event.device) < R2
@@ -13017,7 +13031,7 @@ class BasicModel(BaseModel):
                 left, right = selected_inverse(language, parent, choice, live & ~missing,
                     basis=basis, basis_valid=basis_valid, priming=basis_priming,
                     limit=candidate_limit, case_bank=case_bank, constituents=constituents,
-                    constituent_valid=constituent_valid, require_symbols=require_symbols)
+                    constituent_valid=constituent_valid, require_symbols=require_symbols, whole_bank=whole_bank)
             binary = live & (choice < R2) & (depth < N) & ~missing
             unary = live & (choice >= R2) & (choice < stop) & ~missing
             pop = live & (choice == stop) & ~missing
@@ -13300,12 +13314,10 @@ class BasicModel(BaseModel):
             if torch.is_tensor(depth) and depth.numel():
                 stm._max_depth_host = int(depth.max().item())
         if any(getattr(self, '_thought_document_ends', ())):
-            from Occurrence import source_at
-            sources = getattr(self, '_sentence_sources', ())
+            from DocumentCover import end_document
             for stream, ended in enumerate(self._thought_document_ends):
                 if ended:
-                    slot = max(0, len(sources[stream])-1) if stream < len(sources) else 0
-                    self._concept_owner().mtm.end_document(source_at(self, stream, slot)[0])
+                    end_document(self, stream)
             self._forget_document_boundary = True
             self._forget_all_streams_closed = all(self._thought_document_ends)
             self._forget_training = bool(getattr(self, '_sentence_training', False))
@@ -19648,7 +19660,9 @@ class BasicModel(BaseModel):
         trace._choice_alternative_counts = lang[23]
         trace._choice_explorable = lang[23] > 0
         trace._choice_log_probabilities = lang[24]
-        trace._identity_state = lang[26:] if len(lang) >= 31 else None
+        identity_end = 38 if self.languageSpace.verb_action() is not None else 31
+        trace._identity_state = lang[26:identity_end] if len(lang) >= 31 else None
+        trace._case_state = lang[identity_end:] or None
         self._packed_sentence_roots = lang[6]
         self._tensor_sentence_roots_live = lang[10]
         self._tensor_sentence_roots_depth = lang[11]
@@ -20716,6 +20730,12 @@ class BasicModel(BaseModel):
             if types is not None:
                 required = torch.cat((required, types.identities.flatten(1)), 1)
             cases = stage_case_bank(self._concept_owner(), required, limit=self.reconstruction_basis_limit)
+            if self.languageSpace.verb_action() is not None and components is not None:
+                from CaseSelection import stage_event_cases
+                frames = [() if disc is None or not bool(active[b]) else
+                          tuple(disc.situation_references(b))[-window:] for b in range(B)]
+                cases = stage_event_cases(cases, components.reference_close, frames,
+                                          limit=self.reconstruction_basis_limit)
         inventory = torch.tensor(() if components is None else components.individual_ids,
                                  dtype=torch.long, device=like.device)
         inventory = torch.unique(torch.cat((inventory, ids[valid])))
@@ -20774,6 +20794,8 @@ class BasicModel(BaseModel):
                 for module in self.symbolSpace.modules():
                     if hasattr(module, '_what_context'):
                         module._what_context, module._what_ltm_context = context, detail
+            from DocumentCover import begin_sentence
+            begin_sentence(self, sid, present)
             # A sentence is perceived once, after its predecessor's commit.
             cache = []
             for w in range(W):
@@ -20826,6 +20848,14 @@ class BasicModel(BaseModel):
                     if bool(present[b]):
                         discourse.expect_next_meaning(b)
             reference_bank = self._sentence_reference_bank(present, before[0][0])
+            if any(getattr(getattr(op, 'gl', op), 'case_head_role', 0) and
+                   getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
+                   for op in self.languageSpace._tree_layer(2).ops):
+                import CaseFlow
+                identity_end = 38 if self.languageSpace.verb_action() is not None else 31
+                cases = CaseFlow.empty(before[0][0], cases=len(reference_bank.cases.ids),
+                                       journal=before[1][19].shape[1])
+                before = (before[0], (*before[1][:identity_end], *cases), before[2])
             reducer = self._stm_reducer()
             if reducer is not None:
                 prime = before[0][0].new_zeros(B, reducer.d_model)
@@ -21321,6 +21351,10 @@ class BasicModel(BaseModel):
         lookup_rows = getattr(isp, '_ar_concept_lookup_rows', None)
         lookup_atoms = getattr(isp, '_ar_concept_lookup_atoms', None)
         word_property_weights = getattr(ws, '_staged_word_primitive_counts', None)
+        from FormCentroids import stage as stage_form_wholes
+        self.languageSpace._form_wholes = (stage_form_wholes(ws) if any(
+            getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
+            for op in self.languageSpace._tree_layer(2).ops) else None)
         reference_codes = getattr(isp, '_ar_percept_reference_codes', None)
         reference_roles = getattr(isp, '_ar_percept_reference_roles', None)
         part_reference_vectors = getattr(isp, '_ar_part_reference_vectors', None)
@@ -21429,7 +21463,7 @@ class BasicModel(BaseModel):
         # loop input suppressed the STM's buffer/depth replay on the first
         # compiled call (torch 2.14 nightly).
         wholes_state = torch.full(
-            (B, capacity, 3), -1, dtype=torch.long, device=words.device)
+            (B, capacity, 5 if language._form_wholes is not None else 3), -1, dtype=torch.long, device=words.device)
         chunk_owner = self._concept_owner()
         prop_slab, prop_count = chunk_owner.ensure_chunk_proposal_state(
             B, words.device)
@@ -21528,6 +21562,13 @@ class BasicModel(BaseModel):
         from MTMOverlay import MTMOverlay
         cs_lang_state = (*cs_lang_state, *MTMOverlay.empty(stm._buffer, journal=record_width, words=width,
             timelines=language.verb_action() is not None))
+        case_start = len(cs_lang_state)
+        case_enabled = any(getattr(getattr(op, 'gl', op), 'case_head_role', 0) and
+                           getattr(getattr(op, 'gl', op), 'meaning_layout', None) is not None
+                           for op in language._tree_layer(2).ops)
+        import CaseFlow
+        if case_enabled:
+            cs_lang_state = (*cs_lang_state, *CaseFlow.empty(stm._buffer, cases=1, journal=record_width))
         empty_cs_sub = (
             zero_concept.clone(),
             torch.full(
@@ -21776,9 +21817,13 @@ class BasicModel(BaseModel):
             word_ids = (_gather_word(native_ids, index).reshape(B) if torch.is_tensor(native_ids)
                         else torch.full_like(current_stm[1], -1))
             clause_state = scope.push(current_cs_lang[17], commit.reshape(B), word_ids)
-            identity_state = language.identity_overlay.push(current_cs_lang[26:], commit.reshape(B),
+            identity_state = language.identity_overlay.push(current_cs_lang[26:case_start], commit.reshape(B),
                 resolved[0][:, 0], word=word_ids, order=resolved[2][:, 0], index=index.clamp(0, width-1),
                 words=width, resolved=object_gate)
+            case_state = current_cs_lang[case_start:] if case_enabled else ()
+            if case_enabled and sentence_transactions:
+                case_state = CaseFlow.push(case_state, language._reference_bank.cases,
+                                           word_ids, commit.reshape(B))
             closing_events = current_cs_lang[18]
             # Only this word's three choices and its bounded closing can
             # change. Record their numerical frames locally, then publish each
@@ -21803,6 +21848,8 @@ class BasicModel(BaseModel):
                 + torch.arange(closing_budget, device=words.device)[None]), dim=1)
             if record_columns is not None:
                 journal_columns = record_columns.gather(1, journal_columns)
+            if case_enabled and sentence_transactions:
+                case_state = CaseFlow.local(case_state, journal_columns)
             if sentence_transactions:
                 value_columns = journal_columns[..., None].expand(-1, -1, 3 * concept_dim)
                 ref_columns = journal_columns[..., None].expand(-1, -1, 2)
@@ -21855,7 +21902,7 @@ class BasicModel(BaseModel):
                     reference_relations, unary_history, explorable_slab,
                     log_probability_slab, post_op, unary_op, post_valid,
                     unary_valid, next_symbol_activations,
-                    row_gate, commit, intermediate_end, occupation_words, *identity_state)
+                    row_gate, commit, intermediate_end, occupation_words, case_state, *identity_state)
             for round_index in range(3):
                 if (not torch.compiler.is_compiling() and not bool(round_active.any())
                         and (fork is None or not fork.pending(index, closing=False, width=width))):
@@ -21869,7 +21916,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid,
                      next_symbol_activations,
-                     row_gate, commit, intermediate_end, occupation_words, *identity_state
+                     row_gate, commit, intermediate_end, occupation_words, case_state, *identity_state
                     ) = fork.resume(slot, fork_state(final_stm, round_active))
                 before = final_stm
                 journal_slot = index.new_tensor(round_index)
@@ -21883,7 +21930,8 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    identity_state=identity_state if sentence_transactions else None,
+                    identity_state=identity_state if sentence_transactions else None, form_spans=wholes,
+                    case_state=case_state if case_enabled and sentence_transactions else None,
                     previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
@@ -21914,6 +21962,11 @@ class BasicModel(BaseModel):
                         reference_relations, journal_slot, relative, choice.applied)
                     identity_state = language.identity_overlay.apply(identity_state, choice, operands,
                         column=journal_columns[:, round_index], words=width)
+                    if case_enabled:
+                        case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
+                            operands, language._compose_binary_rules, language._compose_unary_rules,
+                            language._tree_layer(2).ops, column=journal_slot.expand(B),
+                            unary_ops=language._tree_layer(1).unary_ops)
                 occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
                 final_stm = apply_language_choice(before, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
@@ -21951,7 +22004,7 @@ class BasicModel(BaseModel):
                      unary_history, explorable_slab, log_probability_slab, post_op,
                      unary_op, post_valid, unary_valid,
                      next_symbol_activations,
-                     row_gate, commit, intermediate_end, occupation_words, *identity_state
+                     row_gate, commit, intermediate_end, occupation_words, case_state, *identity_state
                     ) = fork.resume(slot, fork_state(end_stm, closing_active))
                 pre_closing = end_stm
                 journal_slot = index.new_tensor(3 + closing_index)
@@ -21962,7 +22015,8 @@ class BasicModel(BaseModel):
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
-                    identity_state=identity_state if sentence_transactions else None,
+                    identity_state=identity_state if sentence_transactions else None, form_spans=wholes,
+                    case_state=case_state if case_enabled and sentence_transactions else None,
                     previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
                     policy_grad=(fork is None or (fork.explore and bool(
                         (fork.selected & (fork.slot == slot)).any()))))
@@ -21993,6 +22047,11 @@ class BasicModel(BaseModel):
                         reference_relations, journal_slot, relative, choice.applied)
                     identity_state = language.identity_overlay.apply(identity_state, choice, operands,
                         column=journal_columns[:, 3 + closing_index], words=width)
+                    if case_enabled:
+                        case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
+                            operands, language._compose_binary_rules, language._compose_unary_rules,
+                            language._tree_layer(2).ops, column=journal_slot.expand(B),
+                            unary_ops=language._tree_layer(1).unary_ops)
                 occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
                 end_stm = apply_language_choice(pre_closing, choice)
                 clause_state, ended = scope.apply(clause_state, choice, slot)
@@ -22051,6 +22110,8 @@ class BasicModel(BaseModel):
             final_stm = FunctionalPeerSTM.soft_reset_rows(end_stm, reset)
             wholes = ShortTermMemory.functional_wholes_reset(wholes, reset)
             clause_state = scope.reset(clause_state, reset)
+            if case_enabled and sentence_transactions:
+                case_state = CaseFlow.publish(current_cs_lang[case_start:], case_state, journal_columns)
 
             next_cs_lang = (
                 next_symbol_activations, *trace_state, next_sentence_roots,
@@ -22059,7 +22120,8 @@ class BasicModel(BaseModel):
                 clause_state, closing_events, operation_values, operation_refs,
                 reference_relations,
                 torch.where(reset[:, None], -1, unary_history), explorable_slab, log_probability_slab,
-                torch.where(reset[:, None, None], 0., occupation_words), *identity_state)
+                torch.where(reset[:, None, None], 0., occupation_words), *identity_state,
+                *(CaseFlow.reset(case_state, reset) if case_enabled else ()))
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
                 unary_op, unary_valid, like=word_idea)
@@ -22238,7 +22300,8 @@ class BasicModel(BaseModel):
             trace._choice_ref_relations = final_cs_lang[21].clone()
             trace._choice_alternative_counts = final_cs_lang[23].clone()
             trace._choice_explorable = final_cs_lang[23] > 0
-            trace._identity_state = final_cs_lang[26:] if sentence_transactions else None
+            trace._identity_state = final_cs_lang[26:case_start] if sentence_transactions else None
+            trace._case_state = final_cs_lang[case_start:] if sentence_transactions and case_enabled else None
         stm._clause_state = final_cs_lang[17].clone()
         stm._last_unary = final_cs_lang[22].clone()
         stm._unary_history_depth = stm._depth.clone()
@@ -23115,7 +23178,8 @@ class BasicModel(BaseModel):
                 # parser/reasoner as if it were a new source.  The dedicated
                 # expectation-pair API is its only generic reader here.
                 estimate_kind = ltm.KINDS.index("estimate")
-                eligible = ltm.record_kind[:cnt] != estimate_kind
+                eligible = ((ltm.record_kind[:cnt] != estimate_kind)
+                            & (ltm.record_kind[:cnt] != ltm.KINDS.index('cover')))
                 if bool(eligible.any()):
                     rows = ltm.slots[:cnt][eligible].detach().mean(dim=1)  # [M, D]
                     spaces.append({"id": GA.SPACE_LTM, "keys": rows})

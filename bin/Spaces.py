@@ -14299,6 +14299,11 @@ class ConceptualSpace(Space):
         next_row = int(store._row_next.get(base, 0))
         while next_row < size and base + next_row in store._tensor_row_keys:
             next_row += 1
+        if next_row >= size and int(order) > 0 and sum(caps) < capacity:
+            base, size = sum(caps), capacity - sum(caps)
+            next_row = int(store._row_next.get(base, 0))
+            while next_row < size and base + next_row in store._tensor_row_keys:
+                next_row += 1
         if next_row >= size:
             raise RuntimeError('concept row capacity exhausted before word admission; no identity was minted')
         return base + next_row
@@ -15455,6 +15460,15 @@ class ConceptualSpace(Space):
             region, cap = f"order-{o} block", caps[o]
             row = ly.assign_row((f"o{o}", int(concept_id)), capacity=caps[o],
                                 base=sum(caps[:o]))
+        if row is None and int(order) > 0 and sum(caps) < int(self.nVectors):
+            # The initial taper is a placement preference, not a second
+            # physical inventory ceiling. Use its ordinary unpartitioned
+            # tail, as order-zero admission does; no seats are reserved.
+            key = ("pool", int(concept_id)) if len(caps) == 2 else (f"o{o}", int(concept_id))
+            base = sum(caps)
+            required = base + int(ly._row_next.get(base, 0)) + 1
+            ly.grow_inventory(min(int(self.nVectors), max(required, ly.nOutput)))
+            row = ly.assign_row(key, capacity=int(self.nVectors)-base, base=base)
         if row is not None:
             # Aligned capacity is physically preallocated. Revealing a row is
             # a full-shape bool-mask mutation shared across CS/WS VQs; no
@@ -18667,7 +18681,6 @@ class ConceptualSpace(Space):
             "role": "conceptual_structure",
             "mtm": self.mtm.state(),
             "recurring_readings": dict(self.__dict__.get("_recurring_readings", {})),
-            "consolidation_sources": dict(self.__dict__.get("_consolidation_sources", {})),
         }
         fold_support = getattr(self, "_concept_fold_support", None)
         if isinstance(fold_support, dict) and fold_support:
@@ -18696,13 +18709,8 @@ class ConceptualSpace(Space):
                 type(value) is not int or value <= 0 for key, value in recurring.items()):
             raise ValueError('invalid recurring-reading checkpoint')
         self._recurring_readings = dict(recurring)
-        sources = extras.get('consolidation_sources', {})
-        if not isinstance(sources, dict) or any(not isinstance(key, tuple) or len(key) != 3
-                or key[0] != 'ltm' or not isinstance(value, tuple) or len(value) != 2
-                or not isinstance(value[0], bytes) or len(value[0]) != 32
-                or type(value[1]) is not int or value[1] < 0 for key, value in sources.items()):
-            raise ValueError('invalid consolidation source checkpoint')
-        self._consolidation_sources = dict(sources)
+        # Legacy document provenance is not a membership reader. Covers
+        # are retained rows; no source sidecar is restored.
 
         reference_state = extras.get("percept_readout_references")
         if reference_state is not None:

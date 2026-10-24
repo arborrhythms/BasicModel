@@ -7,7 +7,8 @@ used to choose a child. A retained co-operand is a detached inverse witness.
 import torch
 
 
-def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, case_bank=None):
+def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, case_bank=None,
+                 counts=(1, 1), whole=None):
     """Invert one step and return each child's value and defined coordinates.
 
     Omit coordinates to measure this operation's own inverse domain at its
@@ -22,18 +23,57 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     if kind == 2:
         wrapped = language._tree_layer(1).unary_ops[operation]
         op = getattr(wrapped, 'gl', wrapped)
+        if callable(getattr(op, 'compose_case_meaning', None)):
+            width = op.meaning_layout[0]
+            # Selection discards case content. The single child's form is
+            # preserved; no affine inverse invents the discarded meaning.
+            if whole is not None:
+                mean, number = whole
+                mean = torch.nn.functional.pad(mean, (0, width-mean.shape[-1]))
+                form = torch.where(number > 0, parent[..., :width]*2-mean, parent[..., :width])
+            else:
+                form = parent[..., :width]
+            return ((torch.cat((form, torch.zeros_like(parent[..., width:])), -1),
+                     torch.cat((coordinates[..., :width], torch.zeros_like(coordinates[..., width:])), -1)),)
         if getattr(op, 'retains_operand', False):
             # A withholding operation explicitly retains its operand in the
             # committed journal. This is an occurrence witness, not a free
             # inverse of exclusion or a prediction of a missing operand.
             witness = frame[:1].detach()
             return ((witness, torch.isfinite(witness)),)
+        if whole is not None and getattr(op, 'meaning_layout', None) is not None:
+            width = op.meaning_layout[0]
+            mean, number = whole
+            mean = torch.nn.functional.pad(mean, (0, width-mean.shape[-1]))
+            form = torch.where(number > 0, parent[..., :width]*2-mean, parent[..., :width])
+            parent = torch.cat((form, parent[..., width:]), -1)
         child, bad = language.reverse_unary_step(parent, op_index, live, return_status=True)
         if getattr(op, 'inverse_kind', None) == 'unary' and not hasattr(op, 'marker_base'):
             coordinates = op.reverse(coordinates.to(parent)).bool()
         return ((child, coordinates & ~bad[:, None]),)
     wrapped = language._tree_layer(2).ops[operation]
     op = getattr(wrapped, 'gl', wrapped)
+    if callable(getattr(op, 'compose_case_meaning', None)):
+        from MeaningKernels import split_centroid
+        width = op.meaning_layout[0]
+        witness = frame[0:1].detach()
+        if whole is not None:
+            whole = (torch.nn.functional.pad(whole[0], (0, width-whole[0].shape[-1])), whole[1])
+        form = split_centroid(parent[..., :width], witness[..., :width], counts,
+                              known_right=False, whole=whole)
+        missing = torch.cat((form, torch.zeros_like(parent[..., width:])), -1)
+        domain = torch.cat((coordinates[..., :width], torch.zeros_like(coordinates[..., width:])), -1)
+        return ((witness, coordinates), (missing, domain))
+    if getattr(op, 'meaning_layout', None) is not None and (
+            getattr(op, 'meaning_kernel', None) is not None or
+            getattr(op, 'meaning_action', None) is not None or op.meaning_rule == 'sum'):
+        right_known = getattr(op, 'meaning_action', None) is not None or op.meaning_head_role == 0
+        witness = frame[1 if right_known else 0].detach()[None]
+        left, right = op.reverse_blocks(parent, witness, counts=counts,
+                                        reference_right=right_known, whole=whole)
+        valid = ((left >= -1e-6) & (left <= 1+1e-6) & (right >= -1e-6) & (right <= 1+1e-6)).all(-1)
+        domain = coordinates & valid[:, None]
+        return ((left, domain), (right, domain))
     inverse = getattr(op, 'inverse_kind', None)
     side = 'left' if inverse in ('right', 'surface') else 'right'
     witness = frame[0 if side == 'left' else 1].detach()[None]
@@ -108,9 +148,11 @@ def reconstruct(language, record, programs, positions):
                 # address code itself is not a concept value to invert.
                 parent = program.operation_values[index, 2:3]
             bank = getattr(getattr(record, 'primed', None), 'case_bank', None)
+            from FormCentroids import inverse_context
             children = inverse_step(language, kind, operation, parent,
                 program.operation_values[index], coordinates=coordinates,
-                case_bank=None if bank is None else bank.for_stream(b))
+                case_bank=None if bank is None else bank.for_stream(b),
+                **inverse_context(program, index))
             pending.extend((child_node, value, domain)
                 for child_node, (value, domain) in zip(node[3:], children, strict=True))
     unavailable = record.word_valid & ~defined.all(-1)

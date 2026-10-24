@@ -3358,23 +3358,44 @@ class CompoundLayer(GrammarLayer):
     predicate_identity = 'compound'
     arity = 2
     head_role = 2
+    meaning_head_role = 1
     case_head_role = 2
     space_role = 'CS'
     inverse_kind = 'case_search'
     invertible = False
     lossy = True
+    left_identity = 0.
 
-    def compose(self, modifier, head, *, selected_cases=None):
+    def compose(self, modifier, head, *, selected_cases=None, case_view=None):
         if self.meaning_layout is not None and modifier.shape[-1] == self.meaning_layout[1]:
-            return self.compose_blocks(None, modifier, head)
+            return self.compose_blocks(None, modifier, head, case_view=case_view)
         if selected_cases is None:
             raise ValueError('compound requires the owner-staged native cases')
         from CaseSelection import fold_cases
         return fold_cases(selected_cases)
 
+    def select_view(self, modifier, view):
+        """One learned test; intersect with the already retained cases."""
+        width = self.meaning_layout[0]
+        test = self.meaning_kernel(modifier[..., width:], view.origin(meaning_start=width))
+        test = torch.cat((torch.ones_like(modifier[..., :width]), test), -1)
+        return view.select(test)
+
+    def compose_case_meaning(self, modifier, head, *, view=None):
+        if view is None:
+            return head
+        width = self.meaning_layout[0]
+        padded = torch.nn.functional.pad(modifier, (width, 0))
+        selected = self.select_view(padded, view)
+        known = (view.weights > 0).any(-1).any(-1)
+        return torch.where(known[..., None], selected.fold(meaning_start=width), head)
+
     def compose_from_grammar_context(self, operands, *, context):
+        from FormCentroids import selected
         return self.compose_blocks(self.compose, *operands, selected_cases=context.selected_cases,
-                                   counts=getattr(context, 'leaf_counts', None))
+            case_view=getattr(context, 'case_view', None),
+            counts=getattr(context, 'leaf_counts', None),
+            whole=selected(getattr(context, 'form_context', None), 2, operands[0], self))
 
     def reverse(self, parent, *, case_bank=None):
         if self.meaning_layout is not None and parent.shape[-1] == self.meaning_layout[1]:
@@ -3385,6 +3406,9 @@ class CompoundLayer(GrammarLayer):
         left, right, available = search_cases(case_bank, parent)
         torch._assert_async(available.all(), 'compound has no admissible primed inverse pair')
         return left, right
+
+    def reverse_blocks(self, parent, reference, **kwargs):
+        self.raise_no_inverse('case selection requires a candidate search')
 
     def generate(self, parent, *, case_bank=None):
         return self.reverse(parent, case_bank=case_bank)
@@ -3746,6 +3770,48 @@ class SurfaceUnaryLayer(MarkerUnaryLayer):
     rule_name = 'surface_unary'
     predicate_identity = 'surface'
     semantic_operand = 0
+
+
+class CompoundUnaryLayer(MarkerUnaryLayer):
+    """The same case selection with the unfiltered head as its implicit object."""
+    marker_base = 'compound'
+    rule_name = 'compound_unary'
+    predicate_identity = 'compound'
+    case_head_role = 1
+    inverse_kind = 'case_search'
+    invertible = False
+    lossy = True
+
+    def compose(self, value, *, case_view=None):
+        if self.meaning_layout is None:
+            return value
+        return self.compose_blocks(None, value, case_view=case_view)
+
+    forward = compose
+
+    def select_view(self, value, view):
+        width = self.meaning_layout[0]
+        object_value = (torch.nn.functional.pad(view.origin(meaning_start=width), (width, 0))
+                        if view.reference is None else view.reference)
+        return self.base.select_view(object_value, view)
+
+    def compose_case_meaning(self, value, *, view=None):
+        if view is None:
+            return value
+        selected = self.select_view(value, view)
+        return torch.where((view.weights > 0).any(-1).any(-1)[..., None],
+                           selected.fold(meaning_start=self.meaning_layout[0]), value)
+
+    def compose_from_grammar_context(self, operands, *, context):
+        from FormCentroids import selected
+        return self.compose_blocks(self.compose, *operands,
+            case_view=context.case_unary_view,
+            whole=selected(context.form_context, 1, operands[0], self))
+
+    def reverse(self, parent):
+        self.raise_no_inverse('case selection requires a candidate search')
+
+    generate = reverse
 
 
 class TransposeLayer(GrammarLayer):
@@ -4459,6 +4525,7 @@ GRAMMAR_LAYER_CLASSES = {
     'definite_unary': DefiniteUnaryLayer,
     'preposition_unary': PrepositionUnaryLayer,
     'surface_unary': SurfaceUnaryLayer,
+    'compound_unary': CompoundUnaryLayer,
     'surface':      SurfaceLayer,
     'preposition':  PrepositionLayer,
     'conjunction':  ConjunctionLayer,
@@ -12593,7 +12660,7 @@ class LanguageSpace(nn.Module):
                          sample=True, masked_action=None,
                          allowance=None, rounds_left=None, reference_scope=None,
                          previous_unary=None, policy_grad=True, lesson_slot=None, occupation=None,
-                         identity_state=None):
+                         identity_state=None, form_spans=None, case_state=None):
         """The shared compose layer with the two newest occupied STM slots."""
         buffer, depth = state[:2]
         B, K, D = buffer.shape
@@ -12656,6 +12723,34 @@ class LanguageSpace(nn.Module):
             references = prepare(references, identity_state, source, self._compose_binary_rules,
                 meaning_start=D-self.verb_action().readout.shape[-1])
         structural_context = self._structural_context(phase='compose', input_stream=buffer)
+        if structural_context is not None and case_state is not None:
+            from dataclasses import replace
+            import CaseFlow
+            structural_context = replace(structural_context,
+                case_view=CaseFlow.view(case_state, self._reference_bank.cases, source[:, 1:]),
+                case_unary_view=CaseFlow.view(case_state, self._reference_bank.cases, source))
+        form_bank = getattr(self, '_form_wholes', None)
+        if structural_context is not None and form_bank is not None and form_spans is not None:
+            from dataclasses import replace
+            spans = form_spans[..., 3:5].gather(1, source[..., None].expand(B, n, 2))
+            whole = form_bank.read(spans)
+            pair_span = torch.stack((torch.minimum(spans[:, :-1, 0], spans[:, 1:, 0]),
+                                     torch.maximum(spans[:, :-1, 1], spans[:, 1:, 1])), -1)
+            stamps = state[2].gather(1, source)
+            form_context = {1: (*whole, (stamps,)),
+                            2: (*form_bank.read(pair_span), (stamps[:, :-1], stamps[:, 1:]))}
+            if identity_state is not None and len(identity_state) > 5:
+                from TimelineOverlay import SCOPE, gather
+                scope = gather(identity_state[SCOPE], source)
+                # These are the result stamps already used by TimelineOverlay:
+                # NP + VP lowers unless its VP withholds lowering; a modifier
+                # attached to an event restores its abstract stamp.
+                form_context[2, 'lift'] = torch.where(scope[:, 1:, 0].bool(),
+                    stamps[:, :-1].clamp_min(1), (stamps[:, :-1]-1).clamp_min(0))
+                form_context[2, 'adverb'] = torch.where(scope[:, :-1, 1] > 0,
+                    scope[:, :-1, 3], stamps[:, :-1])
+            structural_context = replace(structural_context,
+                form_context=form_context)
         if structural_context is not None and identity_state is not None:
             from dataclasses import replace
             from MTMOverlay import MTMOverlay
@@ -12728,8 +12823,18 @@ class LanguageSpace(nn.Module):
             def evaluate(left, right, active):
                 value = self.forward_binary_step(left, right, choice.local_op,
                     active & (choice.kind == 1), grammar_context=structural_context)
+                unary_context = structural_context
+                if structural_context is not None and structural_context.form_context is not None:
+                    from dataclasses import replace
+                    mean, count, orders = structural_context.form_context[1]
+                    at = route['position'].clamp(0, mean.shape[1]-1)[:, None]
+                    unary_context = replace(structural_context, form_context={
+                        **structural_context.form_context,
+                        1: (mean.gather(1, at[..., None].expand(-1, -1, mean.shape[-1])),
+                            count.gather(1, at[..., None]),
+                            tuple(order.gather(1, at) for order in orders))})
                 unary = self.forward_unary_step(left, choice.local_op,
-                    active & (choice.kind == 2), grammar_context=structural_context, selected_only=True)
+                    active & (choice.kind == 2), grammar_context=unary_context, selected_only=True)
                 return torch.where((choice.kind == 1)[:,None], value, unary)
             choice = timeline_choice(self.identity_overlay, identity_state, choice,
                 route['operands'], state[2], evaluate,
@@ -13242,7 +13347,7 @@ class LanguageSpace(nn.Module):
                             basis=None, basis_valid=None, candidate_limit=16,
                             basis_priming=None, return_status=False, *, free=False,
                             left_basis=None, right_basis=None, case_bank=None,
-                            left_valid=None, right_valid=None):
+                            left_valid=None, right_valid=None, whole_bank=None):
         """``(left, right)`` ``[B, D]`` of one recorded binary fold.
 
         ``parent`` is the folded slot; ``op_local`` ``[B]`` the recorded
@@ -13302,7 +13407,7 @@ class LanguageSpace(nn.Module):
                     W_inv, (side[:, 0], side[:, 1]), basis, candidate_valid,
                     candidate_limit, basis_priming=basis_priming, free=free,
                     left_basis=left_basis, right_basis=right_basis, case_bank=case_bank,
-                    left_valid=left_valid, right_valid=right_valid)
+                    left_valid=left_valid, right_valid=right_valid, whole_bank=whole_bank)
                 return torch.stack((a, b, available[:, None].expand_as(a).to(a.dtype)), dim=1)
 
             if compiling:
@@ -13323,7 +13428,7 @@ class LanguageSpace(nn.Module):
                               reference_side="right", basis=None, basis_valid=None,
                               candidate_limit=16, *, basis_priming=None, free=False,
                               left_basis=None, right_basis=None, case_bank=None,
-                              left_valid=None, right_valid=None):
+                              left_valid=None, right_valid=None, whole_bank=None):
         op = getattr(op, "gl", op)          # the reducer wraps grammar layers
         sigma = getattr(op, "_sigma", None)
         pi = getattr(op, "_pi", None)
@@ -13338,7 +13443,8 @@ class LanguageSpace(nn.Module):
             if basis is None and left_basis is None and right_basis is None:
                 has_kernel = getattr(op, 'meaning_kernel', None) is not None
                 has_action = getattr(op, 'meaning_action', None) is not None
-                if reference is not None and (has_kernel or has_action or op.meaning_rule == 'sum'):
+                if (reference is not None and not callable(getattr(op, 'compose_case_meaning', None))
+                        and (has_kernel or has_action or op.meaning_rule == 'sum')):
                     right_known = has_action or op.meaning_head_role == 0
                     left, right = op.reverse_blocks(parent, ref, reference_right=right_known)
                     valid = known & (on_right == right_known)
@@ -13348,7 +13454,7 @@ class LanguageSpace(nn.Module):
                 basis, basis_valid, candidate_limit, left_priming=basis_priming,
                 right_priming=basis_priming, left_basis=left_basis, right_basis=right_basis,
                 left_valid=left_valid, right_valid=right_valid,
-                chooser=self.decomposition_chooser, require_progress=free)
+                chooser=self.decomposition_chooser, require_progress=free, whole_bank=whole_bank, case_bank=case_bank)
 
         if inverse == 'case_search':
             if case_bank is None:
@@ -13480,7 +13586,7 @@ class LanguageSpace(nn.Module):
                                        left_valid=None, right_valid=None,
                                        left_priming=None, right_priming=None,
                                        left_basis=None, right_basis=None,
-                                       chooser=None, return_details=False, require_progress=False):
+                                       chooser=None, return_details=False, require_progress=False, whole_bank=None, case_bank=None):
         """Reconstruction-owned hard pair, initially least residual; no straight-through search gradient.
 
         At most K constituents per side, with words snapped only at leaves.
@@ -13535,7 +13641,7 @@ class LanguageSpace(nn.Module):
             # Reject self-reproducing pairs before ranking, so a live whole
             # cannot hide a supported lexical split with the same residual.
             allowed = allowed & progressing
-        counts = None
+        counts, whole = None, None
         if form_width is not None:
             # A symbol bank is signless. Solve each candidate's two evidence
             # lanes before judging an exact logical fold, as the selected
@@ -13550,14 +13656,15 @@ class LanguageSpace(nn.Module):
             older, newer = (torch.where(domain[..., None], value, 0.) for value in (older, newer))
             # Free generation proposes two contents, not a saved tree. Fit the
             # centroid mixture from their forms; this is the count ratio.
-            delta = older[..., :form_width] - newer[..., :form_width]
-            length = delta.square().sum(-1)
-            ratio = ((parent[:, None, None, :form_width] - newer[..., :form_width]) * delta).sum(-1)
-            ratio = torch.where(length > 0, ratio / torch.where(length > 0, length, 1.), .5).clamp(0, 1)
+            from FormCentroids import fit
+            ratio, whole = fit(parent[:, None, None, :form_width], older, newer, whole_bank)
             # A child occupies at least one leaf; endpoints are not splits.
             allowed = allowed & (ratio > 0) & (ratio < 1)
             counts = (ratio, 1-ratio)
-        folded = (op.compose_blocks(op.compose, older, newer, counts=counts) if form_width is not None else
+        case_view = (case_bank.for_values(newer, form_width=form_width)
+                     if case_bank is not None and form_width is not None and
+                     callable(getattr(op, 'compose_case_meaning', None)) else None)
+        folded = (op.compose_blocks(op.compose, older, newer, counts=counts, whole=whole, case_view=case_view) if form_width is not None else
                   older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer))
         if form_width is None and getattr(op, 'same_reference_idempotent', False):
             same = left_indices[:, :, None] == right_indices[:, None, :]
@@ -13618,11 +13725,13 @@ class LanguageSpace(nn.Module):
             from MeaningCodes import recover_lanes
             hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
                 parent, hard_left, hard_right, form_width)
-            if getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None:
+            if (not callable(getattr(op, 'compose_case_meaning', None)) and
+                    (getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None)):
                 fraction = ratio.flatten(1).gather(1, selected[:, None])[:, 0]
                 right_known = op.meaning_head_role == 0 or getattr(op, 'meaning_action', None) is not None
+                _, selected_whole = fit(parent[..., :form_width], hard_left, hard_right, whole_bank)
                 left, right = op.reverse_blocks(parent, hard_right if right_known else hard_left,
-                    counts=(fraction, 1-fraction), reference_right=right_known)
+                    counts=(fraction, 1-fraction), reference_right=right_known, whole=selected_whole)
                 # The inverse recovers meaning; the selected symbol supplies
                 # its exact form. No parameter lives on the centroid side.
                 left = torch.cat((hard_left[..., :form_width], left[..., form_width:]), -1)
@@ -13643,7 +13752,7 @@ class LanguageSpace(nn.Module):
     @staticmethod
     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
                             basis, basis_valid, *, case_bank=None,
-                            terminal_basis=None, terminal_valid=None):
+                            terminal_basis=None, terminal_valid=None, whole_bank=None):
         """A supported pair takes precedence over a single-symbol projection.
 
         Use the pair search's squared reconstruction residual, compared with
@@ -13708,11 +13817,11 @@ class LanguageSpace(nn.Module):
             progress = (((lf - value).square().mean(-1) > tolerance)
                         & ((rf - value).square().mean(-1) > tolerance))
             if form_width is not None:
-                delta = lf - rf
-                length = delta.square().sum(-1)
-                ratio = ((value-rf)*delta).sum(-1) / torch.where(length > 0, length, 1.)
-                ratio = torch.where(length > 0, ratio, .5).clamp(0, 1)
-                folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio))
+                from FormCentroids import fit
+                ratio, whole = fit(value, left, right, whole_bank)
+                view = (case_bank.for_values(right, form_width=form_width) if case_bank is not None and
+                        callable(getattr(op, 'compose_case_meaning', None)) else None)
+                folded = op.compose_blocks(op.compose, left, right, counts=(ratio, 1-ratio), whole=whole, case_view=view)
                 meaning_error = (folded[..., form_width:]-parent[..., form_width:]).square().mean(-1)
                 meaning_scale = parent[..., form_width:].square().mean(-1).clamp_min(1. / (parent.shape[-1]-form_width))
                 admissible = admissible & (meaning_error <= 1e-8*meaning_scale)
@@ -13742,7 +13851,8 @@ class LanguageSpace(nn.Module):
         unaries = available[:, binary_count:-1] & (~compound & ~singular)[:, None]
         return torch.cat((pairs, unaries, (singular & ~compound)[:, None]), -1)
 
-    def generate_unary_step(self, x, op_local, valid, *, return_status=False):
+    def generate_unary_step(self, x, op_local, valid, *, return_status=False, whole_bank=None,
+                            case_bank=None):
         """Decode a unary through its declared generate face, never its journal."""
         result = x.clone()
         available = torch.zeros_like(valid, dtype=torch.bool)
@@ -13751,11 +13861,22 @@ class LanguageSpace(nn.Module):
             op = getattr(wrapped, 'gl', wrapped)
             if not getattr(op, 'reverse_dispatchable', True):
                 continue
+            if callable(getattr(op, 'compose_case_meaning', None)):
+                if case_bank is not None and getattr(op, 'meaning_layout', None) is not None:
+                    from CaseSelection import inverse_unary
+                    value, found = inverse_unary(case_bank, x, op, whole_bank=whole_bank)
+                    result = torch.where((selected & found)[:, None], value, result)
+                    available = available | (selected & found)
+                continue
+            source = x
+            if whole_bank is not None and getattr(op, 'meaning_layout', None) is not None:
+                from FormCentroids import unary
+                source = unary(x, whole_bank)
             if getattr(op, 'meaning_layout', None) is not None and x.shape[-1] == op.meaning_layout[1] and getattr(op, 'meaning_kernel', None) is not None:
                 width = op.meaning_layout[0]
-                value = torch.cat((x[..., :width], op.meaning_kernel(x[..., width:], inverse=True)), -1)
+                value = torch.cat((source[..., :width], op.meaning_kernel(source[..., width:], inverse=True)), -1)
             else:
-                value = op.generate(x)
+                value = op.generate(source)
             result = torch.where(selected[:, None], value, result)
             available = available | selected
         return (result, valid.bool() & ~available) if return_status else result

@@ -213,6 +213,9 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     from dataclasses import replace
     from ClauseJournal import finish_clause
     from ReferenceContext import SituationAddress
+    from DocumentCover import open_cover
+    if not hasattr(f, 'cover'):
+        f.cover = open_cover(f.cs, f.store, stream=0)
     clause=finish_clause(f.language,program,registry=f.registry)
     if question:
         clause=replace(clause,meaning=replace(clause.meaning,mode='interrogative'))
@@ -222,7 +225,7 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     plan=resolver.preview(clause,frames)
     kept=resolver.prepare(clause,plan)
     written={}
-    row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position)
+    row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position,stream=0)
     resolver.commit(plan,row,written,document='timeline',position=position,training=False,
                     verb_action=actions[0],modifier_action=actions[1])
     frame=SituationAddress(f.store.occurrence_of(row),symbols=written.get(('symbols',id(kept)),()),
@@ -337,7 +340,7 @@ def test_some_every_include_actual_and_use_both_lanes(monkeypatch):
 def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeypatch):
     from MemoryConsolidation import consolidate
     f,verb,modifier=fixture(monkeypatch)
-    _,frame,actual_row,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')))
+    _,frame,actual_row,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')),evidence=(1.,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     actual_value=f.store.slots[actual_row,0].clone()
     tree=('lift',('bind','subject'),('adverb','move','shift'))
@@ -351,7 +354,7 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     assert entry.timelines[1].value.ne(actual_value).any()
     rows,bank=f.store.slots.clone(),f.cs.similarity_codebook.W.clone()
     consolidate(f.cs,f.store)
-    f.cs.mtm.end_document('timeline')
+    f.cs.mtm.end_document(f.cover,store=f.store)
     assert not f.cs.mtm.entries and not f.cs.mtm.names
     assert all(int(f.store.order[f.store.location(ref)])>=1 for ref in ideas)
     torch.testing.assert_close(f.store.slots,rows)
@@ -421,7 +424,7 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     token,entry=next(iter(f.cs.mtm.entries.items()))
     query=replace(ConceptualMeaning.from_description(f.store.slots[row,0]),
         bindings={'_query_event':(token,entry.timelines[1].events[-1].verb,1)})
-    f.cs.mtm.end_document('timeline')
+    f.cs.mtm.end_document(f.cover,store=f.store)
     reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
     found=reader.best_match(query,max_records=64,work=QueryWorkBudget(256))
     assert found['witnesses']==(f.store.occurrence_of(row),)

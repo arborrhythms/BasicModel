@@ -117,7 +117,10 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
             assert all(a.polarity and b.polarity for a,b in zip(first['meanings'],second['meanings']))
             for a,b in zip(first['entries'],second['entries']):
                 torch.testing.assert_close(a.leaf_evidence, b.leaf_evidence.flip(-1))
-            torch.testing.assert_close(audit['components'][:,0],audit['components'][:,1],rtol=0,atol=0)
+            # A document cover supplies predictor context even at the first
+            # sentence. The polarity departure can change expectation loss;
+            # reconstruction and answer credit still tie exactly.
+            torch.testing.assert_close(audit['components'][:,0,(0,2)],audit['components'][:,1,(0,2)],rtol=0,atol=0)
             assert audit['advantage'].eq(0).all() and not audit['wins'].any()
             assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4
         else:

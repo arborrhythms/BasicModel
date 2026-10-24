@@ -37,6 +37,16 @@
       "now": "Reads the common row model-time band; no identity operator consumes it."
     },
     {
+      "file": "bin/DocumentCover.py",
+      "function": "segments",
+      "attributes": [
+        "when"
+      ],
+      "role": "document segment index",
+      "previous_absolute_time": false,
+      "now": "Orders retained covers and members within each exact batch stream by model RowTime, with store order breaking equal-stamp ties."
+    },
+    {
       "file": "bin/Forgetting.py",
       "function": "forget_parts",
       "attributes": [
@@ -175,6 +185,16 @@
       "role": "identity checkpoint model-time provenance",
       "previous_absolute_time": false,
       "now": "Serializes or restores the retained identity time; no new clock or forward-path timestamp."
+    },
+    {
+      "file": "bin/ModalLearning.py",
+      "function": "observe",
+      "attributes": [
+        "when"
+      ],
+      "role": "owner lifecycle and teacher correspondence",
+      "previous_absolute_time": false,
+      "now": "Matches actual and alternative events at equal when for the modal teacher; already landed in iteration 1."
     },
     {
       "file": "bin/ModelCandidateAttention.py",

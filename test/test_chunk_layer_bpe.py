@@ -79,7 +79,7 @@ class TestChunkLayerBPE(unittest.TestCase):
                                     "vocab size must grow monotonically")
 
         # The most-frequent byte pair in the corpus is ' t' / 'th' / 'he'
-        # etc.  At least one of the common English digraphs should land
+        # etc.  At least one of the common letter pairs should land
         # in the learned vocab after 12 training steps.
         common_digraphs = [b"th", b"he", b"lo", b"or", b"wo", b"ld"]
         learned = [d for d in common_digraphs

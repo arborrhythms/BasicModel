@@ -75,6 +75,7 @@ class PrimedSymbols:
     meaning_start: int | None = None
     normalize_reader: bool = False
     type_families: object = None
+    form_wholes: object = None
 
     @property
     def valid(self):

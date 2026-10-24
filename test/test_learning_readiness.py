@@ -135,7 +135,7 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     model._chart_compose_per_word = lambda: None
     model.reconstruction_placement = 'eager'
     # This is checkpoint/prediction plumbing with an explicitly supplied
-    # absolute reading, not a measurement of the untrained English parser.
+    # absolute reading, not a measurement of the untrained parser.
     force_absolute_reading(model)
     data = model.inputSpace.data
     manifest = dict(dataset='text', corpus=FINEWEB_CORPUS,

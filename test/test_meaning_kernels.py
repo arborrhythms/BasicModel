@@ -81,7 +81,7 @@ def test_other_catalogue_faces_use_the_same_centroid_contract(paired):
                 IsPartLayer, PartLayer, WholeLayer, AssertPartLayer):
         op = cls()
         result = op.compose(a, b)
-        assert torch.equal(result[4:], a[4:])
+        assert torch.equal(result[4:], b[4:] if cls is CompoundLayer else a[4:])
         torch.testing.assert_close(result[:4], (a[:4]+b[:4])*.5)
         assert tuple(op.named_parameters()) and all('meaning_kernel' in name for name, _ in op.named_parameters())
     op = NullLayer()
@@ -219,6 +219,10 @@ def test_direct_paired_reverses_reject_a_retired_split(paired):
         result = op.compose(a, b)
         with pytest.raises(NotImplementedError, match='candidate search'):
             op.reverse(result)
+        if cls is CompoundLayer:
+            with pytest.raises(NotImplementedError, match='candidate search'):
+                op.reverse_blocks(result, b)
+            continue
         left, right = op.reverse_blocks(result, b)
         torch.testing.assert_close(left, a)
         torch.testing.assert_close(right, b)

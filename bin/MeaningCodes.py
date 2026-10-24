@@ -49,9 +49,11 @@ def recover_lanes(name, parent, left, right, form_width):
     A live candidate may carry either or both poles. Recover its shared
     code support before solving; its current stance is not the stance of
     the parent being decoded.
-    Min/max are not injective: choose the least min operands and greatest
-    max operands consistent with the root. This recovers a reading, not the
-    lost derivation. A mean has the two-code nonnegative least-squares read.
+    Min/max are not injective. Keep a candidate pair's nominal magnitudes
+    when they already reproduce a nonempty lane exactly; otherwise choose
+    the least min operands and greatest max operands consistent with it.
+    This recovers a reading, not the lost derivation. A mean has the
+    two-code nonnegative least-squares read.
     No evidence from the opposite parent lane enters a lane's inverse.
     """
     def signless(candidate):
@@ -69,7 +71,10 @@ def recover_lanes(name, parent, left, right, form_width):
             result = torch.where(nonzero, values, torch.inf).amin(-1, keepdim=True)
             return torch.where(nonzero.any(-1, keepdim=True), result, 0.)
         if rule != 'mean':
-            return a * ratio(a), b * ratio(b)
+            left, right = a * ratio(a), b * ratio(b)
+            folded = torch.minimum(a, b) if rule == 'min' else torch.maximum(a, b)
+            exact = (folded == y).all(-1, keepdim=True) & (y > 0).any(-1, keepdim=True)
+            return torch.where(exact, a, left), torch.where(exact, b, right)
         aa, ab, bb = (a*a).sum(-1, keepdim=True), (a*b).sum(-1, keepdim=True), (b*b).sum(-1, keepdim=True)
         ay, by = (a*y*2).sum(-1, keepdim=True), (b*y*2).sum(-1, keepdim=True)
         det = aa * bb - ab.square()

@@ -83,7 +83,9 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     backward = m._backward_training_loss
     def backward_probe(total, amp_scaler=None, **kwargs):
         registry = m._sentence_cost_registry if getattr(m, '_sentence_backward', False) else m.errors
-        loss = registry.total(objective='expectation')
+        terms = [value * weight for name, value, weight, _, _ in registry.terms()
+                 if name in ('expectation.activation', 'expectation.symbols')]
+        loss = sum(terms) if terms else None
         if loss is not None and loss.requires_grad:
             shared = m.objective_parameter_groups(optimizer)['reconstruction']
             gradients = torch.autograd.grad(loss.sum(), shared, retain_graph=True, allow_unused=True)

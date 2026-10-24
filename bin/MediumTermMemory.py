@@ -23,6 +23,7 @@ class Event:
     after: torch.Tensor | None = None
     modifiers: tuple = ()
     modal_taught: bool = False
+    case_value: torch.Tensor | None = None
 
 
 class Timeline(NamedTuple):
@@ -70,7 +71,7 @@ class MediumTermMemory:
             raise ValueError('mtmHorizon must be positive')
         self.capacity = int(capacity)
         self.horizon = horizon
-        self.closes, self.accesses, self.documents = {}, {}, {}
+        self.closes, self.accesses = {}, {}
         self.entries = {}
         self.names = {}
 
@@ -171,7 +172,7 @@ class MediumTermMemory:
             for index, item in enumerate(entry.timelines)))
 
     def event(self, token, occurrence, *, verb, role, when, before=None, basis=None,
-              after=None, modifiers=(), timeline=0):
+              after=None, modifiers=(), timeline=0, case_value=None):
         key = self.token_of(token)
         if key is None or role not in (0, 2) or type(verb) is not int:
             raise ValueError('an event requires a retained identity, verb and participant role')
@@ -179,11 +180,15 @@ class MediumTermMemory:
         if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
             raise ValueError('an event requires a retained timeline')
         old = entry.timelines[timeline]
+        if case_value is not None and (self._value(case_value).shape != old.value.shape or
+                                     bool(((case_value < 0) | (case_value > 1)).any())):
+            raise ValueError('an event case test requires its native content shape and chart')
         event = Event(occurrence, verb, role, when,
             None if before is None else self._value(before),
             self._value(basis) if torch.is_tensor(basis) else basis,
             after=None if after is None else self._value(after),
-            modifiers=tuple(self._value(value) for value in modifiers))
+            modifiers=tuple(self._value(value) for value in modifiers),
+            case_value=None if case_value is None else self._value(case_value))
         previous = next((item for item in old.events
                          if (item.occurrence, item.role) == (occurrence, role)), None)
         if previous is not None:
@@ -203,7 +208,6 @@ class MediumTermMemory:
             if token == occurrence:
                 del self.entries[token]
                 self.accesses.pop(token, None)
-                self.documents.pop(token, None)
                 for address in entry.occurrences:
                     self.names.pop(address, None)
             else:
@@ -238,25 +242,27 @@ class MediumTermMemory:
             *self.entries[target].timelines, *previous.timelines[1:]))
         for occurrence in previous.occurrences:
             self.names[occurrence] = replace(self.names[occurrence], token=target)
-        self.documents.pop(source, None)
         for stream, clock in self.accesses.pop(source, {}).items():
             retained = self.accesses.setdefault(target, {})
             retained[stream] = max(clock, retained.get(stream, 0))
         del self.entries[source]
         return target
 
-    def close(self, store, *, stream=None, references=(), sources=None):
+    def close(self, store, *, stream=None, references=()):
         """Advance once after a kept sentence; staging and reads never call this."""
         clock = self.closes.get(stream, 0) + 1
         self.closes[stream] = clock
+        from DocumentCover import latest, segments
+        current = None if stream is None else latest(store, stream)
+        membership = segments(store, stream)
         for key in self.entries:
-            if key not in self.documents:
-                row = store.location(key)
-                if isinstance(row, int):
-                    self.documents[key] = (sources[key][0] if sources and key in sources
-                                           else bytes(store.document_keys[row].tolist()))
-            # Legacy checkpoints and explicitly supplied pool fixtures begin
-            # aging at their first kept close; no fabricated past age.
+            row = store.location(key)
+            if current is not None and current not in membership.get(row, ()):
+                continue
+            # Uncovered legacy/fixture rows retain the original stream aging.
+            if (stream is not None and isinstance(row, int) and bool(store.stream[row].any())
+                    and (stream >= store.stream.shape[1] or not bool(store.stream[row, stream]))):
+                continue
             self.accesses.setdefault(key, {stream: clock})
         for reference in references:
             key = self.token_of(reference)
@@ -268,12 +274,14 @@ class MediumTermMemory:
                 if not accesses:
                     self._detach(key)
 
-    def end_document(self, document):
-        """A document boundary retires the pool, never the retained rows."""
-        from Occurrence import document_digest
-        digest = document_digest(document)
+    def end_document(self, cover, *, store):
+        """Retire entries introduced in this retained document segment."""
+        if cover is None:
+            return
+        from DocumentCover import segments
+        membership = segments(store)
         for key in tuple(self.entries):
-            if self.documents.get(key) == digest:
+            if cover in membership.get(store.location(key), ()):
                 self._detach(key)
 
     def state(self):
@@ -283,10 +291,11 @@ class MediumTermMemory:
         def event_state(event):
             return (event.occurrence, event.verb, event.role, event.when,
                 snapshot(event.before), snapshot(event.basis), event.taught,
-                snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught)
-        return dict(version=5, closes=tuple(self.closes.items()),
+                snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught,
+                snapshot(event.case_value))
+        return dict(version=7, closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
-            documents=tuple(self.documents.items()), entries=tuple(dict(key=key, occurrences=entry.occurrences,
+            entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when,
             native=entry.native, pending=entry.pending, symbol=entry.symbol,
             timelines=tuple((tuple(map(event_state, timeline.events)), snapshot(timeline.value))
@@ -297,10 +306,12 @@ class MediumTermMemory:
         """Validate a complete pool before replacing its current context."""
         if state is None:
             self.entries, self.names = {}, {}
-            self.closes, self.accesses, self.documents = {}, {}, {}
+            self.closes, self.accesses = {}, {}
             return
-        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4, 5):
+        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4, 5, 6, 7):
             raise ValueError('unsupported identity checkpoint')
+        if state['version'] >= 6 and 'documents' in state:
+            raise ValueError('identity checkpoint contains retired document provenance')
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
                     and isinstance(value[1], str) and type(value[2]) is int)
@@ -310,7 +321,7 @@ class MediumTermMemory:
             raise ValueError('identity checkpoint requires entries and names')
         entries, names = {}, {}
         for record in state['entries']:
-            required = ('timelines',) if state['version'] == 5 else ('value', 'events')
+            required = ('timelines',) if state['version'] >= 5 else ('value', 'events')
             if not isinstance(record, dict) or not set(('key', 'occurrences', 'kind', 'count',
                     'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
@@ -325,7 +336,7 @@ class MediumTermMemory:
             pending = record['kind'] is None if state['version'] == 1 else record.get('pending')
             if type(pending) is not bool or (pending and record['kind'] is not None):
                 raise ValueError('invalid identity checkpoint pending state')
-            saved = record['timelines'] if state['version'] == 5 else ((record['events'], record['value']),)
+            saved = record['timelines'] if state['version'] >= 5 else ((record['events'], record['value']),)
             if not isinstance(saved, (tuple, list)) or not saved:
                 raise ValueError('identity checkpoint requires an actual timeline')
             timelines = []
@@ -340,18 +351,20 @@ class MediumTermMemory:
                     raise ValueError('identity checkpoint values have different widths')
                 if device is not None:
                     value = value.to(device)
-                size = 10 if state['version'] == 5 else 7 if state['version'] == 4 else 4
+                size = 11 if state['version'] >= 7 else 10 if state['version'] >= 5 else 7 if state['version'] == 4 else 4
                 if not isinstance(history, (tuple, list)) or any(
                         not isinstance(event, (tuple, list)) or len(event) != size for event in history):
                     raise ValueError('invalid identity checkpoint event')
                 events = tuple(Event(*event) for event in history)
                 for event in events:
+                    if event.case_value is not None and bool(((event.case_value < 0) | (event.case_value > 1)).any()):
+                        raise ValueError('invalid identity event case test')
                     if (type(event.taught) is not bool or type(event.modal_taught) is not bool
                             or not isinstance(event.modifiers, (tuple, list))
                             or (event.basis is not None and not torch.is_tensor(event.basis)
                                 and (type(event.basis) is not int or event.basis < -1))):
                         raise ValueError('invalid identity event basis or teacher metadata')
-                    for snapshot in (event.before, event.after, *event.modifiers):
+                    for snapshot in (event.before, event.after, event.case_value, *event.modifiers):
                         if snapshot is not None and self._value(snapshot).shape != value.shape:
                             raise ValueError('invalid identity event snapshot')
                     if torch.is_tensor(event.basis) and self._value(event.basis).shape != value.shape:
@@ -359,6 +372,7 @@ class MediumTermMemory:
                 events = tuple(replace(event,
                     before=None if event.before is None else self._value(event.before).to(value),
                     after=None if event.after is None else self._value(event.after).to(value),
+                    case_value=None if event.case_value is None else self._value(event.case_value).to(value),
                     modifiers=tuple(self._value(item).to(value) for item in event.modifiers),
                     basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
                     for event in events)
@@ -379,21 +393,18 @@ class MediumTermMemory:
         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
                 for entry in entries.values())):
             raise ValueError('identity checkpoint exceeds capacity or omits a name')
-        clocks, accesses, documents = {}, {}, {}
+        clocks, accesses = {}, {}
         if state['version'] >= 3:
             try:
                 clocks = dict(state['closes'])
                 accesses = {key: dict(value) for key, value in state['accesses']}
-                documents = dict(state['documents'])
             except (KeyError, TypeError, ValueError) as error:
                 raise ValueError('invalid identity checkpoint expiry metadata') from error
             if (any((stream is not None and (type(stream) is not int or stream < 0)) or
                     type(clock) is not int or clock < 0 for stream, clock in clocks.items())
                     or any(key not in entries or not value or any(stream not in clocks or
                         type(clock) is not int or not 0 <= clock <= clocks[stream]
-                        for stream, clock in value.items()) for key, value in accesses.items())
-                    or any(key not in entries or not isinstance(value, bytes) or len(value) != 32
-                           for key, value in documents.items())):
+                        for stream, clock in value.items()) for key, value in accesses.items())):
                 raise ValueError('invalid identity checkpoint expiry metadata')
         self.entries, self.names = entries, names
-        self.closes, self.accesses, self.documents = clocks, accesses, documents
+        self.closes, self.accesses = clocks, accesses

@@ -315,13 +315,13 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     from What import What
     from test_compiled_word_chunk import _tiny_canonical_model
     restore = BaseModel.load_weights
-    # Eight closings now retain prediction/observation pairs plus conceived
-    # absences. Allow three rows per closing while keeping the original
-    # absolute forgetting thresholds: start at eight, retain six.
-    settings = dict(forgetHighWater=8/24, forgetLowWater=6/24,
+    # Preallocate the compiled shape for eight closings and their cover;
+    # capacity never changes at runtime. Keep the original absolute
+    # forgetting thresholds: start at eight, retain six.
+    settings = dict(forgetHighWater=8/32, forgetLowWater=6/32,
                     forgetMinInterval=256, forgetting=True)
     model = _tiny_canonical_model(tmp_path, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=24, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=32, architecture_overrides=settings)
     assert type(model) is BasicModel
     model._tensor_peer_while_eager = True
     model.stateless = False
@@ -331,7 +331,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     data = model.inputSpace.data
     monkeypatch.setattr(data, 'has_supervised_outputs', False)
     store = model.symbolSpace.ltm_store
-    assert store.capacity == 24
+    assert store.capacity == 32
     counters = ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff')
     def document(name, sentences):
         data.source_addresses = {'validation': [dict(document=name, document_key=name,
@@ -375,7 +375,7 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     fresh = tmp_path/'fresh'
     fresh.mkdir()
     restored = _tiny_canonical_model(fresh, monkeypatch, batch_size=1,
-        word_buckets='16', ltm_capacity=24, architecture_overrides=settings)
+        word_buckets='16', ltm_capacity=32, architecture_overrides=settings)
     try:
         assert restore(restored, str(checkpoint))
         loaded = restored.symbolSpace.ltm_store

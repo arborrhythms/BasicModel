@@ -1,4 +1,4 @@
-"""Clause structure belongs to grammar roles, never to English token tests."""
+"""Clause structure belongs to grammar roles, never to lexical token tests."""
 import torch
 
 from Language import Grammar

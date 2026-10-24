@@ -151,6 +151,7 @@
       <rule>lift_argout1 = lift.forward(lift_argin1, lift_argin2)</rule>
       <rule>verb_argout1 = verb.forward(verb_argin1, verb_argin2)</rule>
       <rule>compound_argout1 = compound.forward(compound_argin1, compound_argin2)</rule>
+      <rule>compound_unary_argout1 = compound_unary.forward(compound_unary_argin1)</rule>
       <rule>adverb_argout1 = adverb.forward(adverb_argin1, adverb_argin2)</rule>
       <rule>lower_argout1 = lower.forward(lower_argin1, lower_argin2)</rule>
 
@@ -158,10 +159,6 @@
            Bind: contextual missing/controlled-NP resolution (control/raising). -->
       <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
 
-      <!-- .when / surface ops: tense (phase rotation of the .when key);
-           morphology (surface inflection -> .when). aspect is REPURPOSED as
-           rewrite() - a PLANNED surface-inflection MLP (lemma + tense ->
-           ran / will run / ...); not a live rule until RewriteLayer exists. -->
       <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
     </compose>
 
@@ -208,6 +205,7 @@
       <rule>lift_argin1, lift_argin2 = lift.reverse(lift_argout1)</rule>
       <rule>verb_argin1, verb_argin2 = verb.reverse(verb_argout1)</rule>
       <rule>compound_argin1, compound_argin2 = compound.reverse(compound_argout1)</rule>
+      <rule>compound_unary_argin1 = compound_unary.reverse(compound_unary_argout1)</rule>
       <rule>adverb_argin1, adverb_argin2 = adverb.reverse(adverb_argout1)</rule>
       <rule>lower_argin1, lower_argin2 = lower.reverse(lower_argout1)</rule>
 

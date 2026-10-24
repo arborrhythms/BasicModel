@@ -55,7 +55,7 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>12</nInputDim>
-    <nVectors>8</nVectors>
+    <nVectors>16</nVectors>
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input
 	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep

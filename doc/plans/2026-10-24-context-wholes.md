@@ -174,6 +174,19 @@ written into its meaning block by `derive`; by the registered priming
 surface once item 3 lands the placement decision, with zeroth-order
 concepts starting random and moved by the surface.
 
+**Clarification (Alec, 2026-10-24, understanding only, no change now):**
+"centroids: that applies to percepts and symbols, not concepts." The
+centroid is a form-side notion, computed over symbols' forms and stored
+on the symbol associated with a concept: at order 0 over the symbol's
+parts and wholes, at higher orders over the member symbols' forms weighted
+by their evidence. A concept's meaning is not a centroid of its members'
+meanings; it is arranged by context, today the occurrence-context mean,
+in item 3 the priming surface. The paragraph above says "content" where
+it should say the symbol's form, and `MemoryConsolidation._fold` as built
+applies the evidence-weighted mean to the meaning coordinates; Alec asked
+that nothing change now, so this is recorded as a discrepancy for item 3's
+layout round, when the promoted row's two blocks are defined.
+
 **The cover concept (Alec, 2026-10-24):** an order-1 individual with a
 random code, minted at the document's start as a promoted identity is,
 placed by the priming surface later, written as the cover row's one slot,
@@ -750,3 +763,426 @@ the mean of the active wholes' forms, one term however many wholes, which
 with the stream gone and the sentence whole kept only as the clause
 bracket is the document's cover alone. The cover itself is discussed in
 the chat before §2b is written.
+
+## 11. §2b code review and withdrawal decisions (Codex, 2026-10-24)
+
+Claude's five documents were committed unchanged at `47a2216e0b`.
+The complete rejected development tree, untracked files and port inventory
+are retained in `development/withdrawn-2a` under the iteration-2 benchmark.
+All its runs remain development records; none supplies evidence for §2b.
+`WholeRuns`, `WholeRead`, the run-form reads, the membership knob and the
+run fixtures are removed. The independent surface/inverse certificates and
+language-neutral documentation corrections remain. The old paragraph
+beginning “What a context whole is” below the new §2b is withdrawn §2a
+history, not a second mechanism to implement.
+
+1. **Batch ownership is restored literally.** `OccurrenceRows.stream_rows`
+   and `witness_stream`, LTM0's stream buffer and writer/export/restore,
+   `Forgetting.history_age`, `MereologicalCodes.begin_forward` and both
+   `ReferenceClose` guards return to the pre-§2a implementation. The towers'
+   `_interval` and `derive` are unchanged.
+2. **Presentation and membership have different owners.** The eager
+   sentence driver has `source_at` before perception and
+   `_thought_document_ends` at teardown. It opens a cover once at each
+   presentation boundary before either compose trial, using the ordinary
+   allocator, and inserts its address into the predictor's recent frames.
+   This does not supply a target or name, or create an MTM token for a
+   whole. Cursor state detects boundaries only; historical membership is
+   rebuilt from cover rows and the exact stream column.
+3. **Equal stamps and rereads.** `RowTime.stamp` deliberately permits
+   several writes at one model-present tick. Segment ordering uses decoded
+   `.when`, with existing store order breaking equal stamps. A new cover
+   precedes its newly appended sentence rows at that tick. Existing
+   occurrence upserts retain their address, `.when` and store position:
+   a reread opens a fresh cover but does not relocate historical rows or
+   count an old occurrence as new recurrence evidence. No provenance
+   sidecar compensates for that immutable-row contract.
+4. **Pool expiry and recurrence.** Document end is passed the cover's
+   occurrence, not a document digest. A token's introducing row is tested
+   against that segment; the sixteen-close access rule stays. Reading
+   recurrence counts distinct cover occurrences; token recurrence counts
+   distinct retained rows, as §2b says. Legacy rows before any retained
+   cover have unknown document membership and cannot invent a document
+   witness. A forgotten cover must not silently reassign its segment to
+   its predecessor; the retention pass must protect covers while their
+   segment has retained rows.
+5. **Covers are ordinary bounded storage.** `cover` is appended to
+   `LTM0.KINDS` so existing kind numbers are unchanged. Cover writes have
+   one occupied slot and an order-1 individual reference, no derivation.
+   Allocation/capacity errors remain loud. A query naming the cover
+   traverses its segment under the existing record meter. Covers do not
+   themselves enter the recurrence learner as sentence observations.
+6. **Centroid correction.** `GrammarLayer.compose_blocks` currently calls
+   the parts-only `MeaningKernels.centroid`; its reverse subtracts the
+   known part with `split_centroid`. Both faces must receive the same
+   span's WholeSpace witness, including candidate reconstruction. The
+   native source is WholeSpace's property table and its staged primitive
+   counts, already read by `compute_word_property_event`, not invented
+   run types or a modification of a lexical conceptual read. Higher-order
+   promotion's `_fold` currently uses `amax`; the new fold averages
+   members with their positive/negative evidence and keeps absent
+   evidence unknown. The exact fixture ports and the span-read wiring
+   are recorded with their implementation below.
+
+### 11.1 Development findings and ports (2026-10-24)
+
+Development runs 34–39 are retained. Run 36 passed 36 checks and found:
+three consolidation fixtures missing their new cover/evidence inputs, a
+new cover-menu fixture assuming native grouping instead of the ordinary
+occurrence grouping, and two native capacity errors. The corrected cover
+and consolidation unit group passed 27 checks in run 38. Run 37 was an
+invalid diagnostic environment (MPS selected before pytest setup); run 39
+records the actual CPU allocation failure.
+
+The allocation capture has 64 physical seats, 15 occupied, and a four-seat
+initial order-1 partition already occupied by three ordinary word seats
+and one cover. The next cover incorrectly reported physical exhaustion.
+Under §39 the existing unpartitioned tail is now available after the
+initial higher-order partition fills, just as it already is for order 0.
+The configured inventory and all fixtures are unchanged; no seat is
+reserved and no live row is recycled. Grouped consolidation preflight uses
+the same placement rule. The physical-capacity failure remains loud.
+
+Ports so far: `test_memory_consolidation` writes cover rows at the fixture's
+presentation boundary, replacing the implicit digest membership; the
+three-document reading fixture now writes explicit positive evidence;
+the token-fold fixture gives its actual sentence positive evidence and
+expects `a0 + (a1 + a2)/3` instead of the old max-union `a0 + a1 + a2`.
+Its two numerical checks use that same expected centroid. All other
+assertions in that file remain verbatim. The new cover-menu fixture uses
+the ordinary occurrence key, then binds through that candidate; it does
+not install a lexical name for the cover.
+
+### 11.2 Native centroids, inverse and bounded reads (Codex, 2026-10-24)
+
+FormCentroids.stage reads existing WholeSpace property coefficients,
+codes and staged per-word primitive counts outside the compose body.
+SpanWholes.read tests those properties over the occupied word span's
+primitive support and averages active rows by membership count. This is
+where a composed span reads WholeSpace. The provenance stack carries its
+span beside producer correspondence. No run row, identity, lexical blend
+or membership threshold is created. MereologicalCodes._interval and
+derive remain unchanged.
+
+MeaningKernels.centroid centers the leaf-weighted parts average with that
+whole average only for an order-0 result, including NP + VP lowering and
+modal withholding. The temporary AnswerProgram retains the same witness
+and counts for its inverse. A unary shadow read must gather that unary's
+position, rather than both window positions; run 47 caught this error
+and 49 verifies the repair. Answer generation receives the same native
+whole candidate bank as reconstruction.
+
+The free inverse receives neither an input span nor a saved tree.
+CandidateWholes gets primitive support from candidates matching dictionary
+leaf forms and reads the same WholeSpace table. An unspelled candidate
+supplies no whole witness. Without a parent stamp, fit compares the
+parts-only and centered form equations and fits the count ratio from
+candidate forms. This inverse remains approximate. Higher-order promotion
+weights the two evidence lanes separately without changing member rows.
+
+Cover lookup now uses existing leaf/occurrence indexes, without scanning
+unmetered meanings. Every segment payload is charged before reading.
+Remaining query roles still constrain its match. A cover is protected
+while any segment member survives; losing its last member releases the
+boundary for a later pass.
+
+Additional fixture ports: test_modal_timelines.close opens one cover and
+writes to stream 0; its two expiry calls supply that cover and store,
+replacing a document digest. Its promotion fixture supplies positive
+evidence on the actual occurrence. Existing assertions stay verbatim.
+The when-reader inventory adds DocumentCover.segments and the previously
+missing ModalLearning.observe entry.
+
+New-test corrections in retained runs 51–54: the cover fixture now uses
+production's configure_model_index. The committed-bind check uses the
+audit's reference and resolves its occurrence key through the store,
+correcting an invented selected field. The new forgetting test initially
+requested target zero while requiring a protected cover; its setup now
+targets one, retaining the cover/member assertions and removing the
+incorrect warning expectation. No existing forgetting test was changed.
+Run 49 passed 55 checks including the native lesson smoke. Run 51 passed
+131 and skipped 4 alongside retained failures. Run 54 passes all 13 cover
+cases and the existing native tensor-loop/backward check. Run 48 used the
+wrong interpreter and remains an invalid invocation.
+
+## 12. Preflight stops requiring Alec's decisions (Codex, 2026-10-24)
+
+This is still a working tree on `47a2216e0b`, without a line-6 freeze,
+receipt, review verdict or publication. Claude's five requested files
+were committed unchanged at that hash first. The withdrawn §2a source
+and logs remain in the iteration's development/withdrawn-2a directory.
+These findings meet §39's stop rule because their apparent remedies
+reverse explicit gate or fixture constraints. Review remains through Alec.
+
+### 12.1 The original decomposition draw no longer supplies a proof
+
+Preflight used the original snapshots and seeds. XOR passed all eight
+cases. Both decomposition arms passed one successor and failed the
+unchanged two-successor `assert proved, questions`. These development
+results are not promoted evidence for a later source.
+
+The premise/keep probes locate the failure before decomposition. In the
+first companion document, a live compose departure keeps a field instead
+of "three plus one is four"; the second loses "four plus one is five".
+Each chain lacks one arithmetic licence. The equality has R = 0.0360673778
+and the competitor R = 0.0288539026, entirely from reconstruction.free_bytes.
+A and reference cost are zero. The lower-cost reading is correctly kept.
+Both thought trials lack a link: R ties at zero and A at 0.5019048452.
+Work is not exhausted. decomposition-diagnostic-01 retains both premise
+trials and correspondences.
+
+decomposition-diagnostic-02 changes only a diagnostic plugin: restore
+global RNG immediately after each random cover draw, retaining the covers,
+codes and menu exposure. The same original zero-arm snapshot then passes
+two successors. This isolates the added draws' effect on the departure.
+It is **not a gate pass, source fix, seed selection or proposed production
+RNG guard**. The intervention, manifest and working patch are retained;
+production consumes its draws normally. Both failed arms and every
+companion outcome remain.
+
+**Question and recommendation for Alec/Claude:** keep the cover mechanism,
+normal RNG advancement, keep law, budgets and proof assertions. Review
+whether the architecture certificate's licensed-premise precondition can
+be separated from live premise-keep behavior, with the latter finding
+carried to item 0. This would amend the instruction that this certificate
+pass unchanged and could change its forced scope; neither is authorized
+or applied here. Do not choose another seed or promote the diagnostic.
+A different mechanism diagnosis from these captures would instead justify
+an ordinary §39 repair.
+
+### 12.2 The existing forgetting fixture needs a twenty-fifth row
+
+test_forgetting.test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads
+fills 24 rows with eight prediction/observation/absence triples, then
+calls boundary forgetting. The required cover adds a row. Run 51 fails
+before the boundary; run 53 captures occupancy/capacity 24, zero forgetting
+passes, and 1 cover + 8 estimates + 8 observations + 7 inferences, with
+one more inference waiting. The capture/state are retained in
+development/cover-capacity-failure.
+
+**Recommendation requiring Alec's narrow exception to "no fixture
+resizing":** capacity 24 → 25 in both constructors, its capacity assertion
+→ 25, and fractional settings 8/24, 6/24 → 8/25, 6/25. Absolute water marks
+stay eight and six, with the same input, interval, one boundary pass and
+every behavioral assertion. The exact proposed diff is retained as
+development/proposed-cover-capacity-port.patch, not applied or run.
+Do not suppress the cover, reserve a slot, discard an inference or add
+early forgetting to fit the old capacity. Production capacity policy
+has not changed for this failure.
+
+VP-phase wiring, six generated variants, final line-6 smoke/freeze/gates,
+then line 7 and iteration review remain. Item 3.0 has not been reached.
+
+## 13. Claude's review of the §2b build and the two stops — 2026-10-24
+
+Reviewed: §§11–12, iteration spec §23, the working tree on `47a2216e0b`
+(`DocumentCover`, `FormCentroids`, 29 changed files; `Occurrence` and the
+towers untouched), the development logs 34–54, the two diagnostics and
+the proposed capacity port.
+
+**The build matches §2b.** The stream column and its readers are back
+exactly (`Occurrence.py` is unchanged from HEAD). A document's start
+mints an order-1 individual with a random code and writes a `cover` row
+(`LTM0.KINDS` gains `cover` at the end, so no kind number moves) into the
+batch's stream before the first sentence; membership is the segment after
+the latest cover by decoded `.when` with store order breaking ties;
+consolidation counts distinct covers and distinct retained rows; MTM's
+close and document end read the segment; a query naming the cover reads
+its segment under the meter; forgetting protects a cover while its segment
+has members; the cover enters the recent frames as any row; nothing is
+blended into word reads and no MTM whole or sidecar exists. The centroid
+rules are implemented as decided: `MeaningKernels.centroid` centers the
+parts' average with the span's WholeSpace average for an order-0 result
+only, with the same witness carried to the inverse and a candidate-side
+estimate for the free search; `MemoryConsolidation._fold` is the
+evidence-weighted centroid per lane, an unwitnessed lane staying unknown.
+The language-naming cleanups ("English" to "text") are right.
+
+**Three notes for the receipt, not stops.**
+
+1. *Exclude `cover` where `estimate` is excluded.* `premise_evidence`,
+   `TimelineRead` and the other thought readers skip estimates and
+   questions by kind; a cover row carries a concept code with evidence
+   (1, 0) and must not be matched as a proposition. Codex lists the
+   readers and adds the kind.
+2. *Cover before boundary forgetting.* `open_cover` raises when the store
+   is full, and the cursor opens the cover at the new document's first
+   sentence. The boundary pass that frees rows runs at the document end;
+   the receipt should show that the pass precedes the next cover under
+   pressure, so that a full store at a document start forgets before it
+   raises. The 24-row fixture (12.2) is the same question in a test.
+3. *The span read is one interpretation.* `SpanWholes.read` takes a
+   WholeSpace property as active over a span to the extent its
+   coefficient holds over every primitive the span supports (the minimum),
+   and averages the active rows. That is a reasonable reading of "the
+   wholes active over the span"; §5.6 fixes it in a certificate, and it
+   is recorded here as Codex's choice.
+
+**12.1, the decomposition arms.** The cause is exact: `open_cover` draws
+the cover's code with `uniform_` from the global generator, one draw per
+document, so the fixed-seed arms take different live departures and a
+cheaper reading drops a licensed premise; restoring the generator after
+the draw makes both arms pass on their original snapshots. The project
+already has the rule for this: an operator's initialization is
+global-RNG-neutral (`_make_lex_gate`'s local generator, "constructing the
+operator must not shift the seeded draws of fixtures built after it";
+`MeaningAction`'s object readouts initialized "without consuming RNG").
+Recommended: the cover's code comes from a dedicated generator owned by
+the store, seeded once from a constant and advanced per cover, so the
+code is random in the needed sense and the global stream is untouched.
+That is an ordinary §39 repair under an existing convention, not a seed
+chosen to pass and not an amendment of the certificate; Codex's proposal
+to split the certificate's precondition from live keep is not needed.
+Alec decides, since Codex framed it as his.
+
+**12.2, the forgetting fixture.** Eight triples fill 24 rows exactly and
+the cover is a twenty-fifth. Recommended: accept the exact proposed port,
+capacity 24 to 25 with the fractional marks 8/25 and 6/25, the absolute
+marks eight and six, the input, the interval, one boundary pass and every
+behavioral assertion unchanged. It is a narrow exception to "no fixture
+resizing" for a row the design adds, with the alternative, suppressing or
+deferring the cover, rejected.
+
+**Decided (Alec, 2026-10-24), the two stops.** 12.1: the cover draws its
+code from a dedicated generator owned by the store, seeded once from a
+constant and advanced per cover; the global stream is untouched and the
+decomposition certificate is unchanged. 12.2: Alec, "resizing breaks
+compilation, so that's not allowed", then "just preallocate more": a
+capacity changed at runtime is a resize and breaks compiled shapes; a
+larger capacity fixed at construction is preallocation and is fine. So
+the fixture preallocates a comfortably larger store at construction,
+32 rows, with the fractional marks 8/32 and 6/32 so the absolute marks
+stay eight and six; the document keeps its eight sentences, and the
+interval, one boundary pass and every behavioral assertion stay; the
+capacity assertion reads 32. Alec also asked what the
+principle behind a forgetting fixture is and whether access counts were
+dropped; answered in the chat and recorded in §14.
+
+## 14. The forgetting fixture's principle, and access counts (Claude, 2026-10-24, at Alec's question)
+
+**The fixture.** `test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads`
+is the one end-to-end check of forgetting on a real, tiny model: a
+document of eight sentences, each close retaining about three rows
+(prediction, observation, absence), fills the store; at the document's
+end one forgetting pass runs at the configured marks (high water eight,
+low water six, absolute, with the interval preventing a second pass),
+and the fixture asserts that the pass fired once, reduced the store
+toward six or left `forget_pending`, and reported; then a second document
+is read and written, the store is checkpointed and restored, and the
+restored occupancy, addresses, counters and every row's meaning agree.
+The cover is one more row in that count, hence 25.
+
+**Access counts were not dropped; they were never a retention term.**
+The forgetting spec of 2026-09-16 (§3) defines a row's value as
+`V = w_t·trust + w_u·utility + w_l·luminosity − w_a·age`: provenance
+trust, utility as one minus deducibility (the row's `surprise` for ideas,
+one relation-reader step for part and implication rows), luminosity as
+one minus dissonance (or coverage gain), and age as the row's distance
+from the tail of its stream's history, with the explicit rule
+"re-witnessing does not move a row; a read does not refresh it." The
+access count (`witness_count`, incremented at each re-witness, renamed
+"access count" in the layout) is a column the spec keeps, read today by
+identity definedness (`Occurrence.identity_code`), placement's occurrence
+roots, the reference resolver's witnesses and the components' witness
+reads, but not by `retention_values`. MTM, by contrast, is refreshed by
+reference (2c's sixteen-close rule), so working memory forgets by disuse
+while long-term memory forgets by low value and age in the stream. If
+Alec wants frequency of access to count toward retention, it is one term
+added to `V` and an amendment of the spec, not a repair.
+
+## 15. Applying Alec's final preallocation and §13 notes (Codex, 2026-10-24)
+
+§13 supersedes both §12 stops. The forgetting fixture preallocates 32 rows
+in both constructors and checks capacity 32. Its fractional high/low marks
+are 8/32 and 6/32; the absolute marks remain eight and six. The eight
+sentences, interval, one boundary pass and all behavioral assertions are
+verbatim. This is construction-time preallocation, not a runtime resize.
+The earlier 25-row proposal is retained as superseded development material.
+
+`LTM0` owns a CPU generator seeded once with the constant zero, together
+with a checkpointed `cover_rng_state`. `open_cover` draws from that stream
+and advances its saved state. It neither draws from nor resets the global
+generator. Older checkpoints begin this newly introduced stream at its
+initial state. Consecutive covers differ, checkpoint continuation reproduces
+the next cover code, and the global RNG state remains identical. The
+decomposition fixtures and their original snapshots and seeds are unchanged.
+
+The three review notes are resolved as follows:
+
+1. Proposition readers exclude covers: `MemoryIndex.cued_rows`,
+   `ThoughtLTMCapability.end_evidence`, `best_match` and `premise_evidence`,
+   both `TimelineRead` paths, `DocumentCover.read`'s segment payloads, and
+   the generic LTM attention pool. `accept_fact` also refuses a cover.
+   Consolidation already excludes it. Stream history, ordinary reference
+   access and occurrence placement retain the cover; those read context
+   objects, not proposition evidence. No cover's (1, 0) evidence certifies
+   a proposition through an addressed or concept-cued read.
+2. Production's streaming loop completes the preceding document's backward,
+   buffer flush and resets, then calls `post_tick_compact`, before the next
+   `runBatch` can open a cover. A full-store certificate follows this exact
+   hook order: one boundary pass frees rows, then the next cover opens
+   without a second pass. No compaction is inserted into a live forward
+   graph, and interval/protection rules are unchanged. If a boundary cannot
+   free space under those rules, exhaustion remains loud. The real-model
+   fixture separately checks this sequence through the next document and
+   checkpoint reload.
+3. A span activates a native WholeSpace row to the minimum of its
+   coefficients over all primitives supported by that span. The active
+   rows are averaged by their total coefficient; that average is centered
+   with the leaf-weighted parts average for an order-0 result. The known
+   parts/wholes certificate fixes this interpretation and its inverse;
+   no run type or contextual word blend is introduced.
+
+Development run 55 passes all 49 cover/forgetting tests, including the
+unchanged eight-sentence behavioral checks. This is development evidence,
+not a freeze or receipt. XOR and both original decomposition arms are
+rerun in `preflight-02` with the production generator and full captures;
+the diagnostic RNG intervention is not loaded. All earlier failures and
+withdrawn builds remain retained. Line 6's remaining work and the single
+freeze, line 7 and the iteration review through Alec are unchanged.
+
+## 16. Preflight and the remaining inverse/fixture repairs (Codex, 2026-10-24)
+
+`preflight-02` completes on the working source: XOR standing 8 passed,
+the original zero-budget decomposition arm 2 passed, and the original
+enabled arm 2 passed. Both decomposition arms use their retained initial
+snapshots and seeds, with complete arrival and keep captures. No diagnostic
+RNG intervention is loaded. Run 57 also passes 104 reader, consolidation,
+modal and thought checks (4 prerequisite skips). These are development
+runs, not evidence promoted to a frozen source.
+
+The free unary inverse lacked the whole-center removal already present
+in the retained-program inverse. `FormCentroids.unary` now compares the
+plain and centered form equations against the independent candidate bank,
+then removes the selected whole center before reversing the unary meaning
+kernel. It receives no compose witness or target word. Plain and centered
+cases pass alongside the binary inverse certificates; meaning is untouched
+by this form adjustment.
+
+`test_item55_mechanisms._stream_code_banks` assumed a free read of a bare
+word produced one native object. With covers available as ordinary objects,
+the captured reads instead bound that word to two covers. Selecting one
+cover cannot repair the fixture: a native identity's cache intentionally
+does not vary across streams. The fixture now admits the lexical form
+through `Interpret.lookup_word`, opens a cover in each stream, and writes
+its two explicit contrasting observations through the existing clause
+writer. The cover supplies the preceding history that the production path
+has. Every assertion is verbatim, including the different stream codes,
+bank correspondence and free inverse. Run 65 passes. Runs 59–64, including
+the failed intermediate setups and their full state captures, are retained.
+This is a fixture port under step-2 §39, not a change to identity placement
+or a restriction on binding to covers.
+
+The obsolete grammar-file comments prescribing a clock shift and a
+morphology rewrite layer are removed; no grammar rule changes with those
+comments. The VP-phase and six-variant work identified in iteration §20.2
+still precedes line 6's smoke and single freeze.
+
+The follow-up native lesson in run 66 found a domain defect in the new
+free unary search: a closer centered candidate could unfold outside the
+membership chart. The centered equation now requires a finite recovered
+form in [0, 1], with the plain equation retained as the other hypothesis;
+no value is clipped. Run 67 passes the 19 cover/inverse checks and the
+native lesson smoke. Run 69 passes 56 meaning-kernel, retained and free
+reconstruction, and surface checks (3 existing slow skips). Iteration §24
+records the separate compound/phase contract question submitted to Alec.

@@ -19,7 +19,7 @@ def test_truth_kind_is_rejected_by_the_schema(tmp_path):
         XMLConfig._parse_xml(str(path))
 
 
-def test_given_truth_texts_are_plain_english():
+def test_given_truth_texts_are_plain_text():
     import xml.etree.ElementTree as ET
     query = ET.parse('data/MM_query_reasoning.xml')
     assert [row.attrib for row in query.findall('.//truth')] == [
@@ -40,7 +40,7 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
               Clause(meaning, relation='part', refs=(1, 3, 2))]
     for field in fields:
         with store.clause_assertions(trust=.8, origin=store.ORIGIN_PROVISIONED,
-                                     text='given plain English') as rows:
+                                     text='given plain text') as rows:
             store.write_clause(field)
         assert len(rows) == 1
         row = rows[0]

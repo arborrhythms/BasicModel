@@ -9,6 +9,45 @@ from identity_corpus import KINDS, PROPERTIES, ROOT
 DEST = ROOT / 'data/constituents'
 STAGE3_ARTIFACT = ROOT / 'output/stage4e-student-order-20261017/order.ckpt'
 FAMILY_ORDER = ('description', 'np', 'intransitive', 'transitive', 'preposition')
+CASE_VARIANTS = ('verb_form', 'separate_leaf', 'noun_form',
+                 'one_leaf_two_selections', 'two_leaves', 'unmarked')
+
+
+def case_corpus(variant):
+    """Six surface placements; labels stay with the evaluator, never a lesson.
+
+    The same three case answers and held-out factorial apply to every
+    placement. The unmarked form supplies no phase evidence. The extra
+    selection is a second location restriction on the same head.
+    """
+    if variant not in CASE_VARIANTS:
+        raise ValueError('unknown case-corpus placement')
+    rows = []
+    for i, subject in enumerate(('ava', 'oro', 'emi', 'ulu')):
+        for j, head in enumerate(('dak', 'fep')):
+            for phase, marker in enumerate(('za', 'zi', 'zu')):
+                if variant == 'verb_form':
+                    phrase = head+marker
+                elif variant == 'separate_leaf':
+                    phrase = marker+' '+head
+                elif variant == 'noun_form':
+                    phrase = ('nav', 'vem')[j]+marker
+                elif variant == 'one_leaf_two_selections':
+                    phrase = marker+'lo '+head
+                elif variant == 'two_leaves':
+                    phrase = marker+' lo '+head
+                else:
+                    phrase = head
+                rows.append(dict(id=f'{variant}:{i}:{j}:{phase}', subject=subject,
+                    sentences=[subject+' '+('bem', 'tek')[j], subject+' '+phrase],
+                    prompt='qi '+subject+' ?',
+                    answer='un' if variant == 'unmarked' else ('pa', 'pc', 'pz')[phase],
+                    heldout=(i+j)%4 == 3,
+                    labels=dict(case=phase, head='noun' if variant == 'noun_form' else 'verb',
+                        selections=0 if variant == 'unmarked' else
+                                   2 if variant in ('one_leaf_two_selections', 'two_leaves') else 1,
+                        nested=variant in ('noun_form', 'verb_form'))))
+    return rows
 
 
 def curriculum_order(texts, rng):

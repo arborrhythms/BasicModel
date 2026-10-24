@@ -1,7 +1,7 @@
 """Two-truths §7: forced grammatical derivations, with the real operator faces.
 
 The strings label reconstruction leaves. Only selected rules classify them;
-these fixtures do not assert that an untrained chooser parses English.
+these fixtures do not assert that an untrained chooser parses these sentences.
 """
 from types import SimpleNamespace
 import torch

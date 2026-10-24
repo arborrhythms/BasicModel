@@ -2,7 +2,7 @@
 extrapolate, TruthLoss (falsity_penalty), and reason().
 
 Unit tests pass without a trained model.
-English-level tests are @pytest.mark.xfail until word identity is learned.
+Text-level tests are @pytest.mark.xfail until word identity is learned.
 """
 
 
