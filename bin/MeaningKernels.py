@@ -124,10 +124,21 @@ class VerbGroups(nn.Module):
         return report
 
     def get_extra_state(self):
-        return dict(version=1, used=self.used, assignments=dict(self.assignments),
-                    witnesses={key: tuple(value) for key, value in self.witnesses.items()})
+        from IndependentComponents import _pack_state
+        return _pack_state(dict(version=1, used=self.used, assignments=dict(self.assignments),
+                    witnesses={key: tuple(value) for key, value in self.witnesses.items()}))
+
+    def prepare_checkpoint(self, state, prefix):
+        # The first swap freeze wrote the host dictionary directly. Keep
+        # that readable while honoring the model's tensor-only envelope.
+        from IndependentComponents import _pack_state
+        key = prefix + '_extra_state'
+        if key in state and not torch.is_tensor(state[key]):
+            state[key] = _pack_state(state[key])
 
     def set_extra_state(self, state):
+        from IndependentComponents import _unpack_state
+        state = _unpack_state(state)
         if (state.get('version') != 1 or type(state.get('used')) is not int
                 or not 0 <= state['used'] <= self.capacity):
             raise ValueError('invalid verb-group checkpoint')

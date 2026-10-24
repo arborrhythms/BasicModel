@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

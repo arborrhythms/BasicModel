@@ -1,0 +1,21 @@
+....s.........................F.                                         [100%]
+=================================== FAILURES ===================================
+____ test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar] _____
+test/test_operators_round2c.py:126: in test_zero_meaning_departures_and_one_reader_step
+    assert model._sentence_comparison_reader_weights.tolist()==[[.5,.5]]*4
+E   assert [[1.0, 0.0], ...], [1.0, 0.0]] == [[0.5, 0.5], ...], [0.5, 0.5]]
+E     
+E     At index 0 diff: [1.0, 0.0] != [0.5, 0.5]
+E     Use -v to get more diff
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.234s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5458: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar]
+1 failed, 30 passed, 1 skipped, 1 warning in 11.39s

@@ -1,0 +1,130 @@
+
+FILE reconstruction_roundtrip RUN_SLOW=0
+sssss.s..s..ssss.s.s                                                     [100%]
+=============================== warnings summary ===============================
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7132: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/idempotent.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(4, 10, 104)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+7 passed, 13 skipped, 2 warnings in 3.72s
+
+EXIT 0
+
+FILE mixing_reconstruction_bank RUN_SLOW=1
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+test/test_mixing_reconstruction_bank.py::test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 1 warning in 3.14s
+
+EXIT 0
+
+FILE generation_catalog RUN_SLOW=1
+.........                                                                [100%]
+=============================== warnings summary ===============================
+test/test_generation_catalog.py::test_declared_generation_catalog_shares_one_optimizer_owner[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7132: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9422/test_normal_supervised_output_0/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+test/test_generation_catalog.py::test_normal_supervised_output_respects_gradient_contract[True]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7132: RuntimeWarning: what_answer_target_shape [config /private/var/folders/_y/q6ybzrpx39jd0fzf9g671z280000gn/T/pytest-of-arogers/pytest-9422/test_normal_supervised_output_1/MM_ladder_native_answer.xml]: Data.what target (2, 1, 16) replaces the loader output (2, 1, 1) (placeholder labels)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 3 warnings in 30.70s
+
+EXIT 0
+
+FILE grammar_lesson_context RUN_SLOW=1
+.                                                                        [100%]
+1 passed in 2.10s
+
+EXIT 0
+
+FILE mind_generativity RUN_SLOW=1
+.                                                                        [100%]
+=============================== warnings summary ===============================
+test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1 passed, 1 warning in 2.31s
+
+EXIT 0
+
+FILE stored_idea_generation RUN_SLOW=1
+..........................                                               [100%]
+=============================== warnings summary ===============================
+test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+26 passed, 1 warning in 14.17s
+
+EXIT 0
+
+FILE reverse_traversal RUN_SLOW=1
+............                                                             [100%]
+=============================== warnings summary ===============================
+test/test_reverse_traversal.py::test_free_walk_reports_missing_leaves_without_underflow
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_reverse_traversal.py::test_byte_cost_is_positive_for_a_wrong_or_empty_idea_even_with_one_word
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_reverse_traversal.py:477: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(zero.min()) > 0.1 and float(wrong_c.min()) > 0.1
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+12 passed, 2 warnings in 61.04s (0:01:01)
+
+EXIT 0
+
+FILE active_decode_candidates RUN_SLOW=1
+...                                                                      [100%]
+3 passed in 2.10s
+
+EXIT 0
+
+FILE understanding_reconstruct RUN_SLOW=1
+.....                                                                    [100%]
+=============================== warnings summary ===============================
+test/test_understanding_reconstruct.py::test_understand_returns_one_explicit_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_understanding_reconstruct.py::test_runbatch_reverse_cost_equals_reconstruct_of_its_understanding
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Models.py:7132: RuntimeWarning: reconstruction_zeroed [config /Users/arogers/github/WikiOracle/basicmodel/data/MM_xor.xml]: perceptual reconstruction inputs missing (mask, target); percept .what=Codebook, pred_full shape=(2, 8, 14)
+    warnings.warn(f"{site} [config {cfg}]: {detail}", RuntimeWarning)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+5 passed, 2 warnings in 2.72s
+
+EXIT 0
+
+FILE reading_curriculum RUN_SLOW=1
+...........                                                              [100%]
+=============================== warnings summary ===============================
+test/test_reading_curriculum.py::test_supplied_text_reader_preserves_shared_work_spent_during_sentence_scoring
+  /Users/arogers/github/WikiOracle/basicmodel/test/attention_field_gates.py:46: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    words.append('<unresolved>' if float(scores[b,i,j]) <= 0 else
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+11 passed, 1 warning in 5.45s
+
+EXIT 0

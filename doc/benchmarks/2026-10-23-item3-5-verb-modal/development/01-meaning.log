@@ -1,0 +1,36 @@
+.EE....                                                                  [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_grammatical_heads_start_exact_and_lanes_are_independent _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126190f20>
+
+    @pytest.fixture
+    def paired(monkeypatch):
+        from util import TheXMLConfig
+        config = copy.deepcopy(TheXMLConfig.data)
+        config.setdefault('architecture', {}).setdefault('data', {})['dataType'] = 'embedding'
+        config.setdefault('PartSpace', {})['nDim'] = 4
+        config.setdefault('ConceptualSpace', {})['nDim'] = 12
+>       monkeypatch.setattr(TheXMLConfig, 'data', config)
+E       AttributeError: property 'data' of 'XMLConfig' object has no setter
+
+test/test_meaning_kernels.py:17: AttributeError
+_______ ERROR at setup of test_meaning_inverse_and_gradient_at_identity ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x126379cd0>
+
+    @pytest.fixture
+    def paired(monkeypatch):
+        from util import TheXMLConfig
+        config = copy.deepcopy(TheXMLConfig.data)
+        config.setdefault('architecture', {}).setdefault('data', {})['dataType'] = 'embedding'
+        config.setdefault('PartSpace', {})['nDim'] = 4
+        config.setdefault('ConceptualSpace', {})['nDim'] = 12
+>       monkeypatch.setattr(TheXMLConfig, 'data', config)
+E       AttributeError: property 'data' of 'XMLConfig' object has no setter
+
+test/test_meaning_kernels.py:17: AttributeError
+=========================== short test summary info ============================
+ERROR test/test_meaning_kernels.py::test_grammatical_heads_start_exact_and_lanes_are_independent
+ERROR test/test_meaning_kernels.py::test_meaning_inverse_and_gradient_at_identity
+5 passed, 2 errors in 4.78s

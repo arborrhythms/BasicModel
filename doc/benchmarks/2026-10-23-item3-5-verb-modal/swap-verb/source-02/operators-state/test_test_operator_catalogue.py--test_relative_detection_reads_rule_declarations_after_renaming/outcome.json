@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_relative_detection_reads_rule_declarations_after_renaming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

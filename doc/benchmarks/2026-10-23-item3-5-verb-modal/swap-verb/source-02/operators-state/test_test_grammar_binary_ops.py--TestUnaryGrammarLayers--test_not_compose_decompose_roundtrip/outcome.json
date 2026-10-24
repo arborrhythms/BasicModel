@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_binary_ops.py::TestUnaryGrammarLayers::test_not_compose_decompose_roundtrip",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -4603,11 +4603,12 @@ class BaseModel(Mereology, nn.Module):
         from IndependentComponents import ColumnDictionary, IndependentComponents
         from ReferenceClose import ReferenceClose
         from PartsOfSpeech import PartsOfSpeech
+        from MeaningKernels import VerbGroups
         component_metadata = set()
         for name, module in self.named_modules(remove_duplicate=False):
-            if isinstance(module, ColumnDictionary):
+            if isinstance(module, (ColumnDictionary, VerbGroups)):
                 module.prepare_checkpoint(state, name + '.')
-            if isinstance(module, (ColumnDictionary, IndependentComponents, ReferenceClose, PartsOfSpeech)):
+            if isinstance(module, (ColumnDictionary, IndependentComponents, ReferenceClose, PartsOfSpeech, VerbGroups)):
                 component_metadata.add(name + '._extra_state')
         model_state = dict(self.state_dict())
         for name in tuple(state):

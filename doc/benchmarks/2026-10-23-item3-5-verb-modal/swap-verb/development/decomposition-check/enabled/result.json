@@ -1,0 +1,114 @@
+{
+  "exit_code": 1,
+  "reason": "test_failure",
+  "selected": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "completed": [
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+    "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/worker-000.json"
+      ],
+      "pid": 39708,
+      "exit_code": 1,
+      "reason": "exit",
+      "peak_memory_bytes": 439403864,
+      "elapsed_seconds": 4.090710749849677,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+          "phase": "setup",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.001366166863590479,
+          "message": "doc/benchmarks/2026-10-23-item3-5-step2c/development/identity_capture.py:42: in capture_contract\n    root = Path(os.environ['CONTRACT_CAPTURE']) / request.node.nodeid.replace('/', '_').replace('::', '--')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 'CONTRACT_CAPTURE'",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]",
+          "phase": "setup",
+          "outcome": "failed",
+          "certificate_phase": null,
+          "duration": 0.0005037919618189335,
+          "message": "doc/benchmarks/2026-10-23-item3-5-step2c/development/identity_capture.py:42: in capture_contract\n    root = Path(os.environ['CONTRACT_CAPTURE']) / request.node.nodeid.replace('/', '_').replace('::', '--')\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   KeyError: 'CONTRACT_CAPTURE'",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 1800.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled",
+  "elapsed_seconds": 11.08972983318381,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 439403864,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/collect.json"
+    ],
+    "pid": 39699,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 436274376,
+    "elapsed_seconds": 4.105621083872393,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/development/decomposition-check/enabled/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[1]",
+        "test/test_math_chain_decomposition.py::test_forced_native_decomposition_through_training_driver[2]"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

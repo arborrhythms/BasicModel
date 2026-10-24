@@ -1,0 +1,33 @@
+diff --git a/test/test_tied_reconstruction_compile.py b/test/test_tied_reconstruction_compile.py
+index fc5cb81a89..ef7d408eb1 100644
+--- a/test/test_tied_reconstruction_compile.py
++++ b/test/test_tied_reconstruction_compile.py
+@@ -113,9 +113,13 @@ def test_reconstruction_compile_retains_buffers_for_joint_gradient_reads(tmp_pat
+     model._install_unit_span_fn()
+     try:
+         _stage_packed(model, [["aa bb cc", "dd ee ff", "gg hh ii"]])
+-        with torch.no_grad():
+-            state = model._forward_with_compiled_sentence_state(None)
++        from reading_fixtures import use_eager_reading
++        with pytest.MonkeyPatch.context() as staging:
++            use_eager_reading(staging)
++            with torch.no_grad():
++                state = model._forward_with_compiled_sentence_state(None)
+         model._publish_compiled_sentence_state(state)
++        model.__dict__.pop('_reconstruct_compiled', None)
+         roots = model._tensor_sentence_roots_live.detach().clone().requires_grad_()
+         end = model._tensor_final_end_slots.detach().clone().requires_grad_()
+         with config.patch(donated_buffer=True):
+@@ -148,7 +152,11 @@ def test_separate_reconstruction_does_not_retrace_backward_every_step(tmp_path,
+     model = _model(tmp_path)
+     calls = []
+     try:
+-        _run(model, ["aa bb cc"])
++        from reading_fixtures import use_eager_reading
++        with pytest.MonkeyPatch.context() as staging:
++            use_eager_reading(staging)
++            _run(model, ["aa bb cc"])
++        model.__dict__.pop('_reconstruct_compiled', None)
+         for module_name in ("cond", "while_loop"):
+             module = importlib.import_module("torch._higher_order_ops." + module_name)
+             original = module.materialize_as_graph

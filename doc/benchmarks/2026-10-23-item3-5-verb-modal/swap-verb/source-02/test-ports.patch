@@ -1,0 +1,799 @@
+diff --git a/test/test_free_reconstruction.py b/test/test_free_reconstruction.py
+index 8de9a9b730..d97993af7a 100644
+--- a/test/test_free_reconstruction.py
++++ b/test/test_free_reconstruction.py
+@@ -81,3 +81,16 @@ def test_free_trial_uses_no_reference_or_offsets_and_keeps_identity_audit(monkey
+         assert decoder and all(row['owner'] == 'reconstruction' and row['writers'] == ['reconstruction'] for row in decoder)
+     finally:
+         model.End()
++
++
++def test_terminal_copies_share_one_explanation_but_different_ties_do_not():
++    from Language import LanguageSpace
++    parent = torch.tensor([[.4, .2]])
++    available = torch.ones(1, 1, dtype=torch.bool)
++    valid = torch.ones(1, 2, dtype=torch.bool)
++    def eligible(bank):
++        return LanguageSpace.decoder_eligibility(parent, (), (), available, (), bank, valid)
++    copies = parent[:, None].expand(1, 2, 2).clone()
++    assert bool(eligible(copies)[0, 0])
++    distinct = torch.stack((parent, parent * 2), 1)
++    assert not bool(eligible(distinct)[0, 0])
+diff --git a/test/test_identity_cube.py b/test/test_identity_cube.py
+index fc5edee4a2..ca06fea8a1 100644
+--- a/test/test_identity_cube.py
++++ b/test/test_identity_cube.py
+@@ -5,18 +5,19 @@ import pytest
+ from Language import LiftLayer, LowerLayer, SurfaceLayer, VerbLayer
+ 
+ 
+-def test_native_synthesis_adds_in_chart_and_keeps_its_inverse():
++def test_native_synthesis_centroids_form_and_inverts_meaning():
+     from Language import SynthesizeLayer
+-    from Layers import cube_chart, cube_unchart
++    from MeaningKernels import LaneKernel
+     layer = SynthesizeLayer(4, 4)
+     layer.meaning_layout = (2, 4)
++    layer.meaning_kernel = LaneKernel(2)
+     layer.configure_identity_domain()
+     left, right = torch.tensor([[.2, .8, 0., 1.]]), torch.tensor([[.3, .7, .5, .5]])
+     parent = layer.compose(left, right)
+     assert bool(((parent >= 0) & (parent <= 1)).all())
+-    a, b = layer.generate(parent)
++    a, b = layer.reverse_blocks(parent, right)
+     torch.testing.assert_close(layer.compose(a, b), parent, atol=1e-6, rtol=1e-5)
+-    recovered = cube_unchart(cube_chart(parent[..., :2]) - cube_chart(left[..., :2]))
++    recovered = 2 * parent[..., :2] - left[..., :2]
+     torch.testing.assert_close(recovered, right[..., :2], atol=1e-6, rtol=1e-5)
+ 
+ 
+diff --git a/test/test_meaning_kernels.py b/test/test_meaning_kernels.py
+new file mode 100644
+index 0000000000..b14a9a6897
+--- /dev/null
++++ b/test/test_meaning_kernels.py
+@@ -0,0 +1,224 @@
++"""Paired-block grammar certificates; fixed operations, no learning claim."""
++import copy
++
++import pytest
++import torch
++
++from MeaningKernels import LaneKernel, MeaningAction, VerbGroups, centroid, split_centroid
++
++
++@pytest.fixture
++def paired(monkeypatch):
++    from util import TheXMLConfig
++    config = copy.deepcopy(TheXMLConfig.data)
++    config.setdefault('architecture', {}).setdefault('data', {})['dataType'] = 'embedding'
++    config.setdefault('PartSpace', {})['nDim'] = 4
++    config.setdefault('ConceptualSpace', {})['nDim'] = 12
++    monkeypatch.setattr(TheXMLConfig, '_data', config)
++
++
++def test_centroid_is_leaf_weighted_and_splits_exactly():
++    leaves = torch.arange(12, dtype=torch.float64).reshape(3, 4) / 12
++    pair = centroid((leaves[0], leaves[1]))
++    whole = centroid((pair, leaves[2]), (2, 1))
++    torch.testing.assert_close(whole, leaves.mean(0), atol=1e-15, rtol=0)
++    torch.testing.assert_close(split_centroid(whole, pair, (1, 2)), leaves[2], atol=1e-15, rtol=0)
++
++
++def test_an_explicit_numerical_width_does_not_inherit_a_paired_layout(paired):
++    from Language import LiftLayer
++    op = LiftLayer(3, 3)
++    assert op.meaning_layout is None and not hasattr(op, 'meaning_action')
++    a, b = torch.full((1, 3), .2), torch.full((1, 3), .3)
++    folded = op.compose(a, b)
++    left, right = op.generate(folded)
++    torch.testing.assert_close(op.compose(left, right), folded, atol=1e-6, rtol=0)
++
++
++def test_grammatical_heads_start_exact_and_lanes_are_independent(paired):
++    from Language import ProductLayer, LowerLayer, SurfaceLayer, VerbLayer, PrepositionLayer
++    from Layers import EqualLayer
++    a = torch.linspace(.1, .9, 12)
++    b = a.flip(0)
++    for cls in (ProductLayer, LowerLayer, SurfaceLayer, VerbLayer, PrepositionLayer, EqualLayer):
++        op = cls() if cls is EqualLayer else cls(nInput=12, nOutput=12)
++        result = op.compose_blocks(op.compose, a, b, counts=(3, 1))
++        torch.testing.assert_close(result[:4], (a[:4]*3+b[:4])/4)
++        assert torch.equal(result[4:], (a, b)[op.meaning_head_role][4:])
++        with torch.no_grad():
++            op.meaning_kernel.context.fill_(.02)
++        changed = b.clone()
++        changed[4:8] = .3
++        x = op.compose_blocks(op.compose, a, b)
++        y = op.compose_blocks(op.compose, a, changed)
++        assert torch.equal(x[8:], y[8:])
++
++
++def test_meaning_inverse_and_gradient_at_identity(paired):
++    from Language import SurfaceLayer
++    op = SurfaceLayer(12, 12).double()
++    a = torch.linspace(.15, .8, 12, dtype=torch.float64)
++    b = a.flip(0)
++    parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))
++    left, right = op.reverse_blocks(parent, b, counts=(2, 1))
++    torch.testing.assert_close(left, a, atol=1e-12, rtol=0)
++    assert torch.equal(right, b)
++    parent[4:].sum().backward()
++    assert op.meaning_kernel.context.grad.abs().sum() > 0
++    with torch.no_grad():
++        op.meaning_kernel.context.fill_(.01)
++        op.meaning_kernel.log_scale.fill_(.05)
++    parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))
++    left, _ = op.reverse_blocks(parent, b, counts=(2, 1))
++    torch.testing.assert_close(left, a, atol=1e-12, rtol=0)
++
++
++def test_other_catalogue_faces_use_the_same_centroid_contract(paired):
++    from Language import (SynthesizeLayer, CompoundLayer, MinLayer, MaxLayer,
++        IsEqualLayer, IsPartLayer, PartLayer, WholeLayer, AssertPartLayer, NullLayer)
++    a, b = torch.linspace(.1, .8, 12), torch.linspace(.8, .2, 12)
++    for cls in (SynthesizeLayer, CompoundLayer, MinLayer, MaxLayer, IsEqualLayer,
++                IsPartLayer, PartLayer, WholeLayer, AssertPartLayer):
++        op = cls()
++        result = op.compose(a, b)
++        assert torch.equal(result[4:], a[4:])
++        torch.testing.assert_close(result[:4], (a[:4]+b[:4])*.5)
++        assert tuple(op.named_parameters()) and all('meaning_kernel' in name for name, _ in op.named_parameters())
++    op = NullLayer()
++    assert torch.equal(op(a), a)
++    with torch.no_grad():
++        op.meaning_kernel.bias.fill_(.01)
++    torch.testing.assert_close(op.reverse(op(a)), a, atol=1e-6, rtol=0)
++
++
++def test_journal_leaf_counts_drive_the_structural_face(paired):
++    from types import SimpleNamespace
++    from Language import ProductLayer
++    from MTMOverlay import MTMOverlay
++    from test_identity_threading import choice
++    overlay = MTMOverlay((SimpleNamespace(method_name='product', head_role=0),), ())
++    op = ProductLayer(12, 12)
++    values = torch.linspace(.1, .8, 36).reshape(3, 12)
++    state = overlay.empty(values[None], words=3, journal=2)
++    for index in (0, 1):
++        state = overlay.push(state, torch.tensor([True]), values[index:index+1],
++            word=torch.tensor([index+1]), order=torch.tensor([0]), index=torch.tensor(index),
++            words=3, resolved=torch.tensor([True]))
++    pair = op.compose(values[0:1], values[1:2])
++    state = overlay.apply(state, choice(pair, kind=1), values[:2][None], column=torch.tensor(0), words=3)
++    state = overlay.push(state, torch.tensor([True]), values[2:3], word=torch.tensor([3]),
++        order=torch.tensor([0]), index=torch.tensor(2), words=3, resolved=torch.tensor([True]))
++    counts = (state[2][:, 1, 6], state[2][:, 0, 6])
++    assert (int(counts[0]), int(counts[1])) == (2, 1)
++    result = op.compose_from_grammar_context((pair, values[2:3]),
++        context=SimpleNamespace(leaf_counts=counts, action_context=None))
++    torch.testing.assert_close(result[0, :4], values[:, :4].mean(0))
++
++
++@pytest.mark.parametrize('compiled', (False, True))
++def test_action_keeps_absence_and_inverts_on_each_lane(compiled):
++    action = MeaningAction(8, capacity=2).double()
++    subject = torch.tensor([.2, 0., .4, .7, 0., .3, .6, 0.], dtype=torch.float64)
++    verb = torch.full((8,), .2, dtype=torch.float64)
++    apply = torch.compile(action, backend='eager', fullgraph=True) if compiled else action
++    assert torch.equal(apply(subject, verb), subject)
++    apply(subject, verb).sum().backward()
++    assert action.readout.grad.abs().sum() > 0
++    with torch.no_grad():
++        action.readout.fill_(.15)
++        action.object_vectors[0, :, :] += .05
++    obj = torch.tensor([.3, 0., .2, 0., .3, 0., .2, 0.], dtype=torch.float64)
++    result = apply(subject, verb, object_value=obj)
++    assert torch.equal(result[subject == 0], subject[subject == 0])
++    assert torch.equal(result[[1, 3, 5, 7]], subject[[1, 3, 5, 7]])
++    restored = apply(result, verb, object_value=obj, inverse=True)
++    torch.testing.assert_close(restored, subject, atol=1e-12, rtol=0)
++
++
++def test_disjoint_objects_confine_different_actions():
++    action = MeaningAction(8, capacity=2).double()
++    subject = torch.full((8,), .3, dtype=torch.float64)
++    verb = torch.full((8,), .2, dtype=torch.float64)
++    with torch.no_grad():
++        action.readout.fill_(.15)
++    one = torch.tensor([1., 1., 0., 0., 0., 0., 0., 0.], dtype=torch.float64)
++    two = one.roll(2)
++    a = action(subject, verb, object_value=one)
++    b = action(subject, verb, object_value=two)
++    assert not torch.equal(a, b)
++    assert torch.equal(a[[2, 3, 6, 7]], subject[[2, 3, 6, 7]])
++    assert torch.equal(b[[0, 1, 4, 5]], subject[[0, 1, 4, 5]])
++
++
++def test_group_fit_recurrence_join_capacity_and_checkpoint():
++    groups = VerbGroups(4, capacity=1)
++    for row in range(2):
++        assert groups.observe(11, ('ltm', 'unit', row), [1.], 1.)['group'] == -1
++    # Repeating a witness does not mint a group.
++    assert groups.observe(11, ('ltm', 'unit', 1), [1.], 1.)['group'] == -1
++    assert groups.observe(11, ('ltm', 'unit', 2), [1.], 1.)['group'] == 0
++    for row in range(3):
++        report = groups.observe(12, ('ltm', 'unit', row+3), [.01], 1.)
++    assert report['group'] == 0 and not report['capacity']
++    for row in range(3):
++        report = groups.observe(13, ('ltm', 'unit', row+6), [1.], 1.)
++    assert report['capacity'] and report['group'] == 0
++    restored = VerbGroups(4, capacity=1)
++    restored.load_state_dict(groups.state_dict())
++    assert restored.assignments == groups.assignments
++    torch.testing.assert_close(restored(torch.tensor(0)), torch.eye(4), atol=0, rtol=0)
++
++
++def test_free_search_scores_meaning_and_centroid_and_trains_inverse(paired):
++    from Language import LanguageSpace, ProductLayer
++    op = ProductLayer(12, 12)
++    a = torch.tensor([.2, .4, .2, .4, .2, .3, .4, .2, .2, .3, .4, .2])
++    b = torch.tensor([.4, .2, .4, .2, .6, .6, .6, .6, .6, .6, .6, .6])
++    wrong = a.clone()
++    wrong[4:] = .8
++    parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))[None].detach()
++    bank = torch.stack((wrong, a, b))[None]
++    left, right, valid, details = LanguageSpace._bounded_binary_reconstruction(op, parent,
++        torch.zeros_like(parent), torch.tensor([True]), torch.tensor([False]),
++        bank, torch.ones(1, 3, dtype=torch.bool), 3, return_details=True)
++    assert valid.all()
++    torch.testing.assert_close(left, a[None])
++    torch.testing.assert_close(right, b[None])
++    assert details['relative_residual'][0, 0, 2] > details['relative_residual'][0, 1, 2]
++    (left[..., 4:] - .6).square().sum().backward()
++    assert op.meaning_kernel.context.grad.abs().sum() > 0
++
++
++def test_versioned_swap_drops_form_parameters_and_keeps_new_checkpoints(paired):
++    from Language import LiftLayer, SurfaceLayer
++    from GrammarCheckpoint import align, catalog
++    model = torch.nn.ModuleDict(dict(lift=LiftLayer(12, 12), surface=SurfaceLayer(12, 12)))
++    current = model.state_dict()
++    assert not any('_sigma' in key or 'marker_map' in key for key in current)
++    old = dict(current)
++    old['lift._sigma.layer.weight'] = torch.eye(12)
++    old['surface.marker_map.weight'] = torch.eye(12)
++    previous_catalog = dict(catalog(model))
++    previous_catalog.pop('meaning_kernel_schema')
++    state, drift, transforms = align(model, old, previous_catalog)
++    assert 'lift._sigma.layer.weight' not in state and 'surface.marker_map.weight' not in state
++    assert drift['lift._sigma.layer.weight']['action'] == 'retired form kernel'
++    assert transforms['surface.marker_map.weight'] is None
++    model.load_state_dict(state)
++    restored, drift, _ = align(model, state, catalog(model))
++    assert not drift
++    model.load_state_dict(restored)
++
++
++def test_direct_paired_reverses_reject_a_retired_split(paired):
++    from Language import SynthesizeLayer, CompoundLayer
++    from Layers import EqualLayer
++    a, b = torch.linspace(.15, .75, 12), torch.linspace(.8, .2, 12)
++    for cls in (SynthesizeLayer, CompoundLayer, EqualLayer):
++        op = cls()
++        result = op.compose(a, b)
++        with pytest.raises(NotImplementedError, match='candidate search'):
++            op.reverse(result)
++        left, right = op.reverse_blocks(result, b)
++        torch.testing.assert_close(left, a)
++        torch.testing.assert_close(right, b)
+diff --git a/test/test_mind_generativity.py b/test/test_mind_generativity.py
+index 75025eb703..410c6cf8a6 100644
+--- a/test/test_mind_generativity.py
++++ b/test/test_mind_generativity.py
+@@ -63,7 +63,9 @@ def test_current_grammar_recovery_by_depth_training_and_chain_length(tmp_path):
+             # lift split. Shared numerical credit is tied inverse error.
+             left, right = leaves[:-1], leaves[1:]
+             parent = op.compose(left, right)
+-            children = op.generate(parent)
++            # The meaning action reverses with its context; free stored
++            # reads above still receive only the candidate bank.
++            children = op.reverse_blocks(parent, right)
+             inputs = torch.cat((leaves, parent.detach()))
+             stop = language.generate_policy_logits(inputs).shape[-1] - 1
+             targets = torch.tensor([stop] * len(leaves) + [op_index] * len(parent))
+diff --git a/test/test_operators_round2c.py b/test/test_operators_round2c.py
+index 71cf7c1d4a..36ee87965a 100644
+--- a/test/test_operators_round2c.py
++++ b/test/test_operators_round2c.py
+@@ -25,11 +25,20 @@ def test_interpret_both_directions_preserve_form_presence_and_both_lanes():
+ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eager_reading):
+     from test_mm_xor import _fresh_model
+     from Language import OperationSelectionLayer
++    from SentenceFork import SentenceFork
+     import SentenceCredit
+     model,_,data=_fresh_model('data/'+config+'.xml')
+     original_attend=OperationSelectionLayer.attend
+     original_forward=OperationSelectionLayer.forward
+     original_departure=SentenceCredit.departure
++    original_record=SentenceFork.record
++    def numeric_fork(fork,choice,*args,**kwargs):
++        if walk=='compose' and not fork.explore:
++            # This fixture witnesses a change of binary face. With zero
++            # meaning, both faces now carry the same form centroid.
++            choice=choice._replace(alternative_count=torch.where(
++                (choice.kind==1)&choice.applied,choice.alternative_count,0.))
++        return original_record(fork,choice,*args,**kwargs)
+     def depart(narrowing,compose,**kwargs):
+         draw=original_departure(narrowing,compose,**kwargs)
+         if walk=='narrowing':
+@@ -61,9 +70,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
+         unary=tuple(range(module.r_apply)) if refs is None else refs['unary_ops']
+         stop=(x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
+         depth=kwargs.get('depth',torch.full((len(x),),x.shape[1]))
+-        # A sparse cube meet treats zero as unspecified, so meet and join
+-        # coincide on these binary form codes. Force the declared product
+-        # and probabilistic-sum faces to exercise a numerical departure.
++        # The exact faces differ on meaning. Zero meaning keeps both the
++        # meaning and the parameter-free form centroid unchanged.
+         product = module.op_names.index('conjunction')
+         disjoin = module.op_names.index('disjunction')
+         op=torch.full_like(depth,binary.index(disjoin))
+@@ -86,6 +94,7 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
+         with patch.object(module,'select_logits',choose):
+             return original_forward(module,x,**kwargs)
+     monkeypatch.setattr(SentenceCredit,'departure',depart)
++    monkeypatch.setattr(SentenceFork,'record',numeric_fork)
+     monkeypatch.setattr(OperationSelectionLayer,'attend',attend)
+     monkeypatch.setattr(OperationSelectionLayer,'forward',disjunction)
+     snapshots=[]
+@@ -113,8 +122,13 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
+             assert model._sentence_reader_weights.tolist()==[[1.,0.]]*4
+         else:
+             torch.testing.assert_close(first['activation'],second['activation'],rtol=0,atol=0)
+-            assert not torch.equal(first['root'],second['root'])
+-            assert model._sentence_comparison_reader_weights.tolist()==[[.5,.5]]*4
++            torch.testing.assert_close(first['root'],second['root'],rtol=0,atol=0)
++            # A zero-meaning centroid can leave no eligible binary fork.
++            # Compare both readings only on rows that actually departed.
++            departed=model._sentence_departure['compose_round']>=0
++            expected=torch.where(departed[:,None],torch.tensor([.5,.5]),
++                                 torch.stack((~audit['wins'],audit['wins']),-1).float())
++            torch.testing.assert_close(model._sentence_comparison_reader_weights,expected,rtol=0,atol=0)
+         kept=torch.stack((~audit['wins'],audit['wins']),-1).to(model._sentence_reader_weights)
+         torch.testing.assert_close(model._sentence_reader_weights,kept)
+         assert model._sentence_reader_updates==1
+diff --git a/test/test_tied_reconstruction_migration.py b/test/test_tied_reconstruction_migration.py
+index 9f1b85e31c..5867c31a68 100644
+--- a/test/test_tied_reconstruction_migration.py
++++ b/test/test_tied_reconstruction_migration.py
+@@ -4,6 +4,8 @@ import pytest
+ 
+ from test_reverse_traversal import _traversal_model, _run
+ 
++pytestmark = pytest.mark.usefixtures("eager_reading")
++
+ 
+ def _model(tmp_path):
+     from Models import _ensure_grad_anchors
+@@ -38,14 +40,50 @@ def test_empty_rows_and_padding_carry_no_reconstruction_cost(tmp_path, all_empty
+         model.symbolSpace.soft_reset()
+ 
+ 
+-@pytest.mark.slow
+-def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
+-    """A valid pre,push,closing trace must invert as unfold,pop,pre.
++def _supplied_three_leaf_inverse(model, root, reference):
++    """The supplied-reading inverse owns occurrence witnesses; free R does not."""
++    from types import SimpleNamespace
++    from DerivationReconstruction import reconstruct
++    language = model.languageSpace
++    index = list(language._tree_layer(2).op_names).index('sum')
++    op = getattr(language._tree_layer(2).ops[index], 'gl', language._tree_layer(2).ops[index])
++    first = op.compose(reference[:, 0], reference[:, 1])
++    original = op.compose(first, reference[:, 2])
++    actions = torch.tensor([[0,-1,0],[0,-1,1],[1,index,-1],[0,-1,2],[1,index,-1]])
++    programs = []
++    for row in range(len(reference)):
++        frames = reference.new_zeros(5, 3, reference.shape[-1])
++        frames[2] = torch.stack((reference[row,0], reference[row,1], first[row]))
++        frames[4] = torch.stack((first[row], reference[row,2], original[row]))
++        programs.append(SimpleNamespace(actions=actions, operation_values=frames))
++    valid = torch.zeros(reference.shape[:2], dtype=torch.bool)
++    valid[:, :3] = True
++    record = SimpleNamespace(word_values=reference, word_valid=valid,
++        end_depth=torch.ones(len(reference), dtype=torch.long), end_slots=root[:,None], primed=None)
++    recovered, unavailable, _ = reconstruct(language, record, programs, lambda _: torch.arange(3))
++    error = (recovered[:, :3] - reference[:, :3]).square().mean((-1, -2))
++    return recovered, error, None, unavailable.any(-1)
++
++
++def _explicit_terminal_field(model):
++    """A three-slot fixed reading exercises ownership with the native decoder."""
++    from test_output_walk import _stop
++    _stop(model)
++    _, codes, _, _ = model._snapshot_tables(model._tensor_pushed_ideas)
++    positions = model.inputSpace._ar_grammar_leaf_mask[0].nonzero().flatten()[:3]
++    slots = codes.index_select(1, positions).clone()
++    model._tensor_final_end_slots = slots
++    model._tensor_final_end_depth = torch.full((len(slots),), 3, dtype=torch.long)
++    model._stm_single_S = slots[:, 0]
++    model._tensor_sentence_roots_live[:, 0] = slots.flatten(1)
++    model._tensor_sentence_roots_depth[:, 0] = 3
++    model._recon_completed = False
++    model._reconstruction_product = None
+ 
+-    The current canonical producer leaves pre slots inactive. This explicitly
+-    executes a valid retained three-leaf compose derivation to check the
+-    documented trace ABI, including traces from earlier producers.
+-    """
++
++@pytest.mark.slow
++def test_supplied_reading_inverts_a_pre_fold_then_the_new_word(tmp_path):
++    """The supplied reader follows its three-leaf program, including the pre-fold."""
+     model = _model(tmp_path)
+     try:
+         _run(model, ["aa bb cc"])
+@@ -54,28 +92,12 @@ def test_reverse_replays_pre_fold_after_popping_the_new_word(tmp_path):
+         assert int(active.sum()) >= 3
+         active[:, 3:] = False
+         model.inputSpace._word_active_mask = active
+-        trace = model._reconstruction_stack()
+-        rules, arities, masks = trace.choices()
+-        left_rows, right_rows = trace.operand_rows()
+         binary = model.languageSpace._tree_layer(2)
+         index = list(binary.op_names).index("sum")
+-        rule_id = int(model.languageSpace._cs_binary_rule_ids[index])
+         op = getattr(binary.ops[index], "gl", binary.ops[index])
+-        # push leaf0; push leaf1; pre-fold; push leaf2; closing.
+         root01 = op.compose(reference[:, 0], reference[:, 1])
+         root = op.compose(root01, reference[:, 2])
+-        width = int(active.shape[1])
+-        rows = model._word_symbol_rows()
+-        with torch.no_grad():
+-            masks.zero_()
+-            arities.zero_()
+-            for slot in (6, 3 * width):
+-                rules[:, slot] = rule_id
+-                arities[:, slot] = 2
+-                masks[:, slot] = True
+-            left_rows[:, 6], right_rows[:, 6] = rows[:, 0], rows[:, 1]
+-            left_rows[:, 3 * width], right_rows[:, 3 * width] = -1, rows[:, 2]
+-        recovered, cost, _bytes, truncated = model._reconstruct_sentence_traversal(root, reference)
++        recovered, cost, _bytes, truncated = _supplied_three_leaf_inverse(model, root, reference)
+         assert not bool(truncated.any())
+         torch.testing.assert_close(recovered[:, :3], reference[:, :3], atol=1e-6, rtol=1e-5)
+         assert float(cost.max()) < 1e-10
+@@ -95,10 +117,10 @@ def test_traced_verb_reverse_uses_the_actual_verb_operand(tmp_path):
+         op = getattr(binary.ops[index], "gl", binary.ops[index])
+         width = int(model.conceptualSpace.stm.concept_dim)
+         generator = torch.Generator().manual_seed(812)
+-        noun = torch.randn(2, width, generator=generator).tanh() * .3
+-        verb = torch.randn(2, width, generator=generator).tanh() * .4
++        noun = .5 + torch.randn(2, width, generator=generator).tanh() * .3
++        verb = .5 + torch.randn(2, width, generator=generator).tanh() * .4
+         with torch.no_grad():
+-            op._verb_spec.weight.fill_(.2)
++            op._verb_spec.weight.fill_(.002)
+         parent = op.compose(noun, verb)
+         left, right = language.reverse_binary_step(
+             parent, torch.full((2,), index), torch.ones(2, dtype=torch.bool),
+@@ -142,7 +164,7 @@ def test_eager_reverse_evaluates_only_selected_recorded_operators(tmp_path, monk
+ 
+ @pytest.mark.slow
+ def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
+-    """The same symbol identity can be pushed with different signed values."""
++    """The same symbol identity can be pushed with different occurrence values."""
+     model = _model(tmp_path)
+     try:
+         _run(model, ["aa bb cc"])
+@@ -152,34 +174,18 @@ def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
+         model.inputSpace._word_active_mask = active
+         reference = torch.zeros_like(model._tensor_pushed_ideas)
+         atom = torch.linspace(-.1, .1, reference.shape[-1], device=reference.device)
+-        reference[:, :3] = torch.tensor([.2, 1.3, -.6], device=reference.device)[:, None] * atom
++        reference[:, :3] = .5 + torch.tensor([.2, 1.3, -.6], device=reference.device)[:, None] * atom
+         model.inputSpace._ar_word_concept_rows = torch.full_like(active, 42, dtype=torch.long)
+         model.inputSpace._ar_word_object_rows = torch.full_like(active, -1, dtype=torch.long)
+-        trace = model._reconstruction_stack()
+-        rules, arities, masks = trace.choices()
+-        left_rows, right_rows = trace.operand_rows()
+         binary = model.languageSpace._tree_layer(2)
+         index = list(binary.op_names).index("sum")
+-        rule_id = int(model.languageSpace._cs_binary_rule_ids[index])
+         op = getattr(binary.ops[index], "gl", binary.ops[index])
+         root = op.compose(op.compose(reference[:, 0], reference[:, 1]), reference[:, 2])
+-        width = int(active.shape[1])
+-        with torch.no_grad():
+-            masks.zero_()
+-            arities.zero_()
+-            left_rows.fill_(-1)
+-            right_rows.fill_(-1)
+-            for slot in (4, 3 * width):
+-                rules[:, slot] = rule_id
+-                arities[:, slot] = 2
+-                masks[:, slot] = True
+-            left_rows[:, 4], right_rows[:, 4] = 42, 42
+-            right_rows[:, 3 * width] = 42
+-        recovered, cost, _bytes, truncated = model._reconstruct_sentence_traversal(root, reference)
++        recovered, cost, _bytes, truncated = _supplied_three_leaf_inverse(model, root, reference)
+         assert not bool(truncated.any())
+         torch.testing.assert_close(recovered[:, :3], reference[:, :3], atol=1e-6, rtol=1e-5)
+         assert float(cost.max()) < 1e-10
+-        damaged, damaged_cost, _, _ = model._reconstruct_sentence_traversal(root + .05, reference)
++        damaged, damaged_cost, _, _ = _supplied_three_leaf_inverse(model, root + .05, reference)
+         assert not torch.allclose(damaged[:, :3], recovered[:, :3])
+         assert float(damaged_cost.min()) > 1e-5
+     finally:
+@@ -261,10 +267,13 @@ def test_zero_recovered_values_are_still_one_completed_traversal(tmp_path, monke
+         # readiness cannot be inferred from its nonzero count.
+         return (torch.zeros_like(result[0]), *result[1:])
+ 
+-    monkeypatch.setattr(model, "_reconstruct_sentences", observed)
+     try:
+         execution = _run(model, ["aa bb"])
+-        understanding = model._capture_understanding(execution)
++        model._recon_completed = False
++        model._reconstruction_product = None
++        model.__dict__.pop('_reconstruct_compiled', None)
++        monkeypatch.setattr(model, "_reconstruct_sentences", observed)
++        understanding = model._capture_understanding(execution[:4])
+         model.reverseReconstruct(understanding)
+         model.reverseReconstruct(understanding)
+         assert len(calls) == 1
+@@ -285,7 +294,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
+         with torch.no_grad():
+             unused._sigma.layer.raw_L.fill_(float("nan"))
+         width = int(model.conceptualSpace.stm.concept_dim)
+-        parent = torch.linspace(-.2, .3, 2 * width).reshape(2, width).requires_grad_()
++        parent = torch.linspace(.2, .3, 2 * width).reshape(2, width).requires_grad_()
+         witness = torch.full_like(parent, .03)
+         indices = torch.full((2,), selected, dtype=torch.long)
+         live = torch.tensor([True, False])
+@@ -294,7 +303,7 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
+         assert torch.isfinite(left).all() and torch.isfinite(right).all()
+         gradient, = torch.autograd.grad(left.sum() + right.sum(), (parent,))
+         assert torch.isfinite(gradient).all()
+-        expected = torch.tensor([1., 2.]).reshape(2, 1).expand_as(gradient)
++        expected = torch.tensor([2., 2.]).reshape(2, 1).expand_as(gradient)
+         torch.testing.assert_close(gradient, expected)
+     finally:
+         model.End()
+@@ -308,13 +317,15 @@ def test_enabling_tied_reconstruction_retains_the_owned_ideas(tmp_path):
+     from test_meronomy_ladder import _build_ladder_variant
+     _ensure_grad_anchors(torch.device("cpu"))
+     model = _build_ladder_variant(tmp_path, "enable_tied", [])
++    model.reconstruct_in_loop = False
+     model._tensor_peer_while_eager = True
+     model._chart_compose_per_word = lambda: None
+     assert not model.reconstruct_in_loop
+     model.reconstruct_in_loop = True
+     try:
+         execution = _run(model, ["aa bb cc"])
+-        understanding = model._capture_understanding(execution)
++        _explicit_terminal_field(model)
++        understanding = model._capture_understanding(execution[:4])
+         owned = understanding.input_reconstruction
+         assert owned is not None
+         active = model.inputSpace._word_active_mask
+@@ -352,19 +363,21 @@ def test_completed_state_damage_reaches_the_actual_input_surface(tmp_path):
+     model = _model(tmp_path)
+     try:
+         _run(model, ["aa bb cc"])
++        _explicit_terminal_field(model)
+         parameters = {name: id(value) for name, value in model.named_parameters()}
+         with torch.no_grad():
+             original = model._complete_input_reconstruction()
+             model._recon_completed = False
+             model._reconstruction_product = None
+-            model._stm_single_S = model._stm_single_S + .1
++            model._stm_single_S = model._stm_single_S * .8 + .1
+             changed_end = model._tensor_final_end_slots.clone()
+-            changed_end[:, 0] += .1
++            changed_end[:, 0] = changed_end[:, 0] * .8 + .1
+             model._tensor_final_end_slots = changed_end
++            model._tensor_sentence_roots_live[:, 0] = changed_end.flatten(1)
+             damaged = model._complete_input_reconstruction()
+         assert torch.isfinite(original.event).all() and torch.isfinite(damaged.event).all()
+         assert not torch.allclose(original.ideas, damaged.ideas)
+-        assert not torch.allclose(original.event, damaged.event)
++        assert not torch.equal(original.event, damaged.event)
+         assert {name: id(value) for name, value in model.named_parameters()} == parameters
+     finally:
+         model.End()
+diff --git a/test/test_verb_learning.py b/test/test_verb_learning.py
+new file mode 100644
+index 0000000000..e1fc4dbdcb
+--- /dev/null
++++ b/test/test_verb_learning.py
+@@ -0,0 +1,200 @@
++"""Kept observations credit a retained verb event once, across sentences."""
++from dataclasses import replace
++from types import SimpleNamespace
++
++import torch
++
++from Layers import Error
++from MeaningKernels import MeaningAction
++from MediumTermMemory import MediumTermMemory
++from VerbLearning import observe
++
++
++def test_teacher_graph_is_built_after_the_paired_optimizer_steps():
++    from VerbLearning import register
++    mtm = MediumTermMemory()
++    token, event = ('ltm', 'unit', 1), ('ltm', 'unit', 2)
++    before, after, verb = (torch.full((8,), value) for value in (.2, .35, .3))
++    action = MeaningAction(8, capacity=1)
++    mtm.open(token, kind=11, value=before, when=1)
++    mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1)
++    previous = dict(mtm.entries)
++    mtm.update(token, after, when=3)
++    records, errors = [], Error()
++    observe(action, mtm, previous, {token}, lambda _: verb, errors=errors, deferred=records)
++    assert errors.total(objective='reconstruction') is None
++    assert len(records) == 1 and all(not value.requires_grad for value in records[0][1:4])
++    with torch.no_grad():
++        action.readout.add_(.1)  # a later sentence's ordinary paired update
++    register(records, errors)
++    expected = action.teacher(before, after, verb, group=torch.tensor(-1)) * .1
++    torch.testing.assert_close(errors.total(objective='reconstruction'), expected)
++    errors.total(objective='reconstruction').backward()
++    assert action.readout.grad.abs().sum() > 0 and not records
++
++
++def record(f, tree, frames=()):
++    """Fixed operations on the production frame-staged identity transaction."""
++    from MTMOverlay import MTMOverlay
++    from ReferenceContext import result_order
++    from test_identity_threading import choice
++    entry = f.program(tree)
++    orders = torch.tensor([1 if word == f.words['subject'][0] else 0 for word in entry.word_ids])
++    overlay = MTMOverlay(f.binary, f.unary)
++    words, columns = len(entry.leaves), len(entry.actions)
++    state = overlay.stage(f.cs.components.reference_close, [frames],
++        entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns)
++    base = state[0].shape[1] - words - columns
++    stack, stamps, recorded, refs = [], [], [], []
++    for column, (kind, local, word) in enumerate(entry.actions.tolist()):
++        if kind == 0:
++            value = entry.leaves[word][None]
++            state = overlay.push(state, torch.tensor([True]), value,
++                word=entry.concept_ids[word:word+1], order=orders[word:word+1],
++                index=torch.tensor(word), words=words, resolved=torch.tensor([True]))
++            stack.insert(0, value); stamps.insert(0, int(orders[word]))
++            recorded.append(value.new_zeros(3, 8)); refs.append((-1, -1))
++            continue
++        live = overlay.refresh(state, torch.stack(stack, 1), torch.arange(len(stack))[None])
++        rule = (f.binary if kind == 1 else f.unary)[local]
++        operands = live[:, [1, 0]] if kind == 1 else torch.stack((live[:, 0], live[:, 0]*0), 1)
++        handle = 0
++        if rule.method_name == 'bind':
++            points, records, _, _, available = overlay.menu(state, live[:, :1], torch.tensor([[0]]))
++            handle = 1
++            assert base and available[0, 0, handle]
++            result = points[:, 0, handle]
++            operands = torch.stack((live[:, 0], records[:, 0, handle]), 1)
++        else:
++            values = (operands[:, 0], operands[:, 1]) if kind == 1 else (operands[:, 0],)
++            result = f.operation(rule).compose(*values).reshape(1, -1)
++        arity = 2 if kind == 1 else 1
++        order = result_order(rule, tuple(reversed(stamps[:arity])))
++        selected = choice(result, kind=kind, identity=handle)._replace(
++            local_op=torch.tensor([local]), order=torch.tensor([order]))
++        state = overlay.apply(state, selected, operands, column=torch.tensor(column), words=words)
++        del stack[:arity]; del stamps[:arity]
++        stack.insert(0, result); stamps.insert(0, order)
++        recorded.append(torch.cat((operands, result[:, None]), 1)[0]); refs.append((-1, -1))
++    return replace(entry, leaf_orders=orders, close_references=True,
++        operation_values=torch.stack(recorded), operation_refs=torch.tensor(refs),
++        identity_origins=state[3][0], identity_actions=state[4][0], identity_values=state[0][0],
++        identity_leaves=torch.arange(base+1, base+words+1),
++        end_state=torch.stack((stack[0][0], stack[0][0]*0, stack[0][0]*0)))
++
++
++def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypatch):
++    from ClauseJournal import finish_clause
++    from ReferenceContext import SituationAddress
++    from test_clause_acceptance import SentenceFixture
++    f = SentenceFixture(monkeypatch)
++    action = MeaningAction(8, capacity=2)
++    for word, value in (('subject', .2), ('move', .3), ('property', .4)):
++        symbol = f.noun(word)
++        with torch.no_grad():
++            f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
++    f.ops['lift'] = SimpleNamespace(compose=lambda a, b: action(a, b))
++    resolver, errors = f.cs.components.reference_close, Error()
++    def close(tree, frames=(), position=0):
++        clause = finish_clause(f.language, record(f, tree, frames), registry=f.registry)
++        plan = resolver.preview(clause, frames)
++        kept = resolver.prepare(clause, plan)
++        written = {}
++        row = f.store.write_clause(kept, written_rows=written, document_key='teacher', sentence_index=position)
++        resolver.commit(plan, row, written, document='teacher', position=position, training=True,
++                        verb_action=action, errors=errors)
++        return SituationAddress(f.store.occurrence_of(row),
++            symbols=written.get(('symbols', id(kept)), ()),
++            activations=written.get(('activations', id(kept)), ())).read(f.store)
++    frame = close(('lift', ('lower_unary', 'subject'), 'move'))
++    token = next(key for key, entry in f.cs.mtm.entries.items() if entry.events)
++    assert not resolver.last_verb_teacher
++    close(('part', ('bind', 'subject'), 'property'), (frame,), position=1)
++    assert len(resolver.last_verb_teacher) == 1
++    assert resolver.last_verb_teacher[0]['token'] == token
++    torch.testing.assert_close(f.cs.mtm.value_of(token), torch.full((8,), .4))
++    assert sum(event.taught for event in f.cs.mtm.entries[token].events) == 1
++    errors.total(objective='reconstruction').backward()
++    assert action.readout.grad.abs().sum() > 0
++
++
++def test_observed_state_trains_readout_once_without_concept_gradients():
++    mtm = MediumTermMemory()
++    token, event = ('ltm', 'unit', 1), ('ltm', 'unit', 2)
++    before = torch.tensor([.2, .3, 0., .4, .2, .3, 0., .4], requires_grad=True)
++    verb = torch.full((8,), .2, requires_grad=True)
++    action = MeaningAction(8, capacity=2)
++    mtm.open(token, kind=11, value=before, when=1)
++    mtm.event(token, event, verb=12, role=0, when=2, before=before, basis=-1)
++    previous = dict(mtm.entries)
++    observed = torch.tensor([.3, .4, .8, .45, .3, .4, .8, .45], requires_grad=True)
++    mtm.update(token, observed, when=3)
++    errors = Error()
++    report = observe(action, mtm, previous, {token}, lambda _: verb, errors=errors)
++    assert len(report) == 1 and report[0]['defined'] == 6
++    term = errors.total(objective='reconstruction')
++    term.backward()
++    assert action.readout.grad.abs().sum() > 0
++    assert before.grad is None and observed.grad is None and verb.grad is None
++    # The optimizer receives only the defined-coordinate chart discrepancy.
++    assert torch.equal(action.readout.grad[[2]], torch.zeros_like(action.readout.grad[[2]]))
++    assert observe(action, mtm, dict(mtm.entries), {token}, lambda _: verb, errors=errors) == []
++    copy = MediumTermMemory()
++    copy.restore(mtm.state())
++    assert copy.entries[token].events[0].taught
++    torch.testing.assert_close(copy.entries[token].events[0].before, before.detach())
++
++
++def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
++    from test_clause_acceptance import SentenceFixture
++    from test_identity_threading import recorded_identity_reading
++    from ClauseJournal import finish_clause
++    from test_medium_term_memory import keep, mention
++    from ReferenceContext import SituationAddress
++    from ClauseRow import Clause, ClausePredicate
++    from Meaning import ConceptualMeaning
++    f = SentenceFixture(monkeypatch)
++    action = MeaningAction(8, capacity=2)
++    for word, value in (('subject', .2), ('move', .3), ('property', .4)):
++        symbol = f.noun(word)
++        with torch.no_grad():
++            f.cs.similarity_codebook.W[f.cs._csw_row_of(symbol)].fill_(value)
++    f.ops['lift'] = SimpleNamespace(compose=lambda a, b: action(a, b))
++    entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'move'))
++    clause = finish_clause(f.language, entry, registry=f.registry)
++    resolver = f.cs.components.reference_close
++    plan = resolver.preview(clause, ())
++    prepared = resolver.prepare(clause, plan)
++    written = {}
++    row = f.store.write_clause(prepared, written_rows=written, document_key='unit', sentence_index=0)
++    resolver.commit(plan, row, written, document='unit', position=0, training=True, verb_action=action)
++    token = next(key for key, value in f.cs.mtm.entries.items() if any(event.before is not None for event in value.events))
++    prior = f.cs.mtm.entries[token].value.clone()
++    # The second sentence is a fixed part operation on the retained subject.
++    from MTMOverlay import MTMOverlay
++    from test_identity_threading import choice
++    overlay = MTMOverlay((SimpleNamespace(method_name='part', relation_kind='part'),), ())
++    values, valid, stack, origins, journal = overlay.empty(prior[None, None].expand(1, 2, 8), words=2, journal=1)
++    values[0, 0], valid[0, 0] = prior, True
++    stack[0, 1, :4] = torch.tensor([1, 12, 0, 1])
++    stack[0, 0, :4] = torch.tensor([0, 13, 0, 1])
++    stack[..., 6] = 1
++    property_value = torch.full_like(prior, .4)
++    previous = dict(f.cs.mtm.entries)
++    state = overlay.apply((values, valid, stack, origins, journal), choice(property_value[None], kind=1),
++        torch.stack((prior, property_value))[None], column=torch.tensor(0), words=2)
++    torch.testing.assert_close(state[0][0, 0], torch.maximum(prior, property_value))
++    f.cs.mtm.update(token, state[0][0, 0], when=3)
++    errors = Error()
++    from IdentityRows import point
++    reports = observe(action, f.cs.mtm, previous, {token}, lambda symbol: point(f.cs, symbol), errors=errors)
++    assert len(reports) == 1
++    loss = errors.total(objective='reconstruction')
++    loss.backward()
++    assert action.readout.grad.abs().sum() > 0
++    with torch.no_grad():
++        action.readout.sub_(10 * action.readout.grad)
++    before_error = reports[0]['error']
++    remembered = previous[token].events[-1]
++    after_error = action.teacher(remembered.before, f.cs.mtm.value_of(token), point(f.cs, remembered.verb))
++    assert after_error < before_error

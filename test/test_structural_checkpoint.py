@@ -164,3 +164,25 @@ def test_wall_clock_cap_returns_through_normal_trial_tail(monkeypatch):
     accuracy = model.runTrial(numEpochs=3, batchSize=1, lr=0.01)
     assert accuracy == [0.0, 0.0, 0.0]
     assert model._training_deadline_reached is True
+
+
+def test_verb_group_metadata_survives_native_weight_restore(tmp_path):
+    from IndependentComponents import _unpack_state
+    from MeaningKernels import MeaningAction
+    source = _model_with(types.SimpleNamespace(_concept_allocator=_allocator()), types.SimpleNamespace())
+    source.action = MeaningAction(8, capacity=2)
+    for occurrence in range(3):
+        source.action.groups.observe(7, occurrence, (.2, .3), .2)
+    source.action.groups.observe(8, 4, (.2, .3), .2)
+    path = tmp_path / 'verb-groups.ckpt'
+    source.save_weights(path)
+    target = _model_with(types.SimpleNamespace(_concept_allocator=_allocator()), types.SimpleNamespace())
+    target.action = MeaningAction(8, capacity=2)
+    assert target.load_weights(path, require_match=True)
+    assert _unpack_state(target.action.groups.get_extra_state()) == _unpack_state(source.action.groups.get_extra_state())
+    # The first swap freeze's dictionary is a supported input envelope.
+    saved = torch.load(path, weights_only=False)
+    saved['state_dict']['action.groups._extra_state'] = _unpack_state(saved['state_dict']['action.groups._extra_state'])
+    torch.save(saved, path)
+    assert target.load_weights(path, require_match=True)
+    assert _unpack_state(target.action.groups.get_extra_state()) == _unpack_state(source.action.groups.get_extra_state())

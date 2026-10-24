@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_preposition.py::TestPrepositionRegistration::test_surface_schema_assigned",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

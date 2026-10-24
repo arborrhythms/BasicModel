@@ -671,3 +671,23 @@ G1–G3 and pending-premise gates. No assertion or skip marker is changed
 for this scope correction, and no interrupted learning run is called a
 pass. The original-budget line-3 and modal-corpus learning runs remain
 exactly the requested reported gates, with no rescue.
+
+## 11. Lesson restore repair (Codex, 2026-10-23)
+
+The repaired swap/verb source `d3450e16e8` passed every scoped mechanism
+group, both decomposition arms and XOR. Its original warm-up completed
+76 presentations and 38 paired updates. Stage 3 then failed **before its
+first presentation**: `VerbGroups.get_extra_state` returned a dictionary,
+where the native weight preflight and the lesson's exact-retention adapter
+require tensor envelopes. The failed restore, initial state and warm-up
+are retained on that source; this is not a failed behavior gate.
+
+Use the existing `_pack_state`/`_unpack_state` envelope for the group's
+host metadata and declare it variable metadata at native restore, just
+like occupation counts. The initial dictionary envelope remains readable
+through the module's checkpoint preparation. No learned tensor, group
+assignment, witness, lesson budget, seed or assertion changes. A native
+save/load regression checks a minted group and a pending fit witness,
+including the first freeze's envelope. Regenerate the warm-up and resume
+the original lesson sequence on the repaired frozen source. This is a
+§39 persistence repair, not a rescue of a learning result.

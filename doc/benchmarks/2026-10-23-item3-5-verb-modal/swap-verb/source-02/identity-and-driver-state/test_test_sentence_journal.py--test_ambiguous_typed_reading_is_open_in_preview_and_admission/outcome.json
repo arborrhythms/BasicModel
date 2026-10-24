@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_ambiguous_typed_reading_is_open_in_preview_and_admission",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

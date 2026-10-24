@@ -1,0 +1,686 @@
+....................ssFF.Fs......FF......FFFF..FF...FF                   [100%]
+=================================== FAILURES ===================================
+_______ test_stored_unfold_uses_forward_search_and_terminal_eligibility ________
+test/test_stored_idea_generation.py:30: in test_stored_unfold_uses_forward_search_and_terminal_eligibility
+    result = unfold_idea(additive_language(), basis, basis[0] + basis[1], 8,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:34: in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:333: in unfold_idea
+    lefts, rights, legal = inverse_menu(language, top, gate,
+bin/Generative.py:196: in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+bin/Language.py:13288: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13273: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13309: in _reverse_of_binary_op
+    if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+       ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Add' object has no attribute 'meaning_layout'
+________ test_missing_compound_is_incomplete_instead_of_losing_a_phrase ________
+test/test_stored_idea_generation.py:40: in test_missing_compound_is_incomplete_instead_of_losing_a_phrase
+    result = unfold_idea(additive_language(), words, words[:3].sum(0), 8,
+.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py:124: in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+bin/Generative.py:34: in read
+    return function(language, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/MemoryIndex.py:333: in unfold_idea
+    lefts, rights, legal = inverse_menu(language, top, gate,
+bin/Generative.py:196: in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+bin/Language.py:13288: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13273: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13309: in _reverse_of_binary_op
+    if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+       ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Add' object has no attribute 'meaning_layout'
+____________ test_compound_candidates_are_not_word_emissions[False] ____________
+test/test_stored_idea_generation.py:76: in test_compound_candidates_are_not_word_emissions
+    out, count, truncated, _ = decode(event, words, phrase)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_stored_idea_generation.py:72: in walk
+    return BasicModel._output_generate_walk(owner, event, 8,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:395: in _reconstruction_while_loop
+    return torch.while_loop(condition, body, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'Add' object has no attribute 'meaning_layout'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E       return while_loop_op(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12951, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13282, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13273, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13309, in _reverse_of_binary_op
+E       if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+E          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+___ test_every_family_can_occupy_either_side_when_recomposition_fits[False] ____
+test/test_stored_idea_generation.py:141: in test_every_family_can_occupy_either_side_when_recomposition_fits
+    left, right, legal = decode(expected_left + 2 * expected_right, basis, constituents, families)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+test/test_stored_idea_generation.py:135: in menu
+    return inverse_menu(language, parent, torch.ones(16, dtype=torch.bool),
+bin/Generative.py:196: in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+bin/Language.py:13288: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13273: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13309: in _reverse_of_binary_op
+    if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+       ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Ordered' object has no attribute 'meaning_layout'
+____ test_every_family_can_occupy_either_side_when_recomposition_fits[True] ____
+test/test_stored_idea_generation.py:141: in test_every_family_can_occupy_either_side_when_recomposition_fits
+    left, right, legal = decode(expected_left + 2 * expected_right, basis, constituents, families)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'Ordered' object has no attribute 'meaning_layout'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/test/test_stored_idea_generation.py", line 135, in menu
+E       return inverse_menu(language, parent, torch.ones(16, dtype=torch.bool),
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13282, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13273, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13309, in _reverse_of_binary_op
+E       if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+E          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+____________ test_unnamed_primed_concept_cannot_complete_as_a_word _____________
+test/test_stored_idea_generation.py:301: in test_unnamed_primed_concept_cannot_complete_as_a_word
+    result, trace = BasicModel._reconstruct_sentences(owner, root, record.word_values,
+bin/Models.py:12098: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+test/test_stored_idea_generation.py:298: in decode
+    return BasicModel._output_generate_walk(owner, slots, 8, basis=candidates,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:395: in _reconstruction_while_loop
+    return torch.while_loop(condition, body, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'Add' object has no attribute 'meaning_layout'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E       return while_loop_op(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12951, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13282, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13273, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13309, in _reverse_of_binary_op
+E       if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+E          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:symbolic_shapes.py:8056 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_______ test_unspelled_primed_compound_stays_available_for_decomposition _______
+test/test_stored_idea_generation.py:331: in test_unspelled_primed_compound_stays_available_for_decomposition
+    result, trace = BasicModel._reconstruct_sentences(owner, root, words,
+bin/Models.py:12098: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+test/test_stored_idea_generation.py:328: in decode
+    return BasicModel._output_generate_walk(owner, slots, 8, basis=candidates,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:395: in _reconstruction_while_loop
+    return torch.while_loop(condition, body, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'Add' object has no attribute 'meaning_layout'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E       return while_loop_op(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12951, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13282, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13273, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13309, in _reverse_of_binary_op
+E       if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+E          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2402 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:structured.py:28 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+________ test_dropped_constituent_is_charged_and_never_complete[False] _________
+test/test_stored_idea_generation.py:366: in test_dropped_constituent_is_charged_and_never_complete
+    result, trace = BasicModel._reconstruct_sentences(owner, root, words, record.roots,
+bin/Models.py:12098: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+test/test_stored_idea_generation.py:364: in <lambda>
+    BasicModel._output_generate_walk(owner, slots, 8, basis=candidates,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:397: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12951: in body
+    options, others, legal = inverse_menu(language, parent, live,
+bin/Generative.py:196: in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+bin/Language.py:13288: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13273: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13309: in _reverse_of_binary_op
+    if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+       ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Projection' object has no attribute 'meaning_layout'
+_________ test_dropped_constituent_is_charged_and_never_complete[True] _________
+test/test_stored_idea_generation.py:366: in test_dropped_constituent_is_charged_and_never_complete
+    result, trace = BasicModel._reconstruct_sentences(owner, root, words, record.roots,
+bin/Models.py:12098: in _reconstruct_sentences
+    decoded = self._decode_conceptual_sentence(root, end, depth, codes, candidates, weights,
+test/test_stored_idea_generation.py:364: in <lambda>
+    BasicModel._output_generate_walk(owner, slots, 8, basis=candidates,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:397: in _reconstruction_while_loop
+    values = body(*values)
+             ^^^^^^^^^^^^^
+bin/Models.py:12951: in body
+    options, others, legal = inverse_menu(language, parent, live,
+bin/Generative.py:196: in inverse_menu
+    left, right, unavailable = language.reverse_binary_step(
+bin/Language.py:13288: in reverse_binary_step
+    pair = apply(operands, sides, selected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:13273: in apply
+    a, b, available = self._reverse_of_binary_op(
+bin/Language.py:13309: in _reverse_of_binary_op
+    if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+       ^^^^^^^^^^^^^^^^^
+E   AttributeError: 'Projection' object has no attribute 'meaning_layout'
+_______ test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse ________
+test/test_stored_idea_generation.py:453: in test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse
+    out, count, truncated, _ = BasicModel._output_generate_walk(owner, event, 8,
+bin/Models.py:13000: in _output_generate_walk
+    _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+bin/Models.py:395: in _reconstruction_while_loop
+    return torch.while_loop(condition, body, values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py:254: in while_loop
+    return _hop_compile_and_call(
+.venv/lib/python3.12/site-packages/torch/_higher_order_ops/utils.py:118: in _hop_compile_and_call
+    return torch.compile(fn, backend=backend, fullgraph=True)(
+.venv/lib/python3.12/site-packages/torch/_dynamo/eval_frame.py:1272: in compile_wrapper
+    raise e.with_traceback(
+E   torch._dynamo.exc.UncapturedHigherOrderOpError: This higher order operator doesn't work unless it is captured completely with torch.compile. Got graph break/error:
+E   
+E   raised exception AttributeError("'Mean' object has no attribute 'meaning_layout'")
+E     Higher Order Operator: torch.cond
+E   
+E   from user code:
+E      File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 250, in _while_loop_op_wrapper
+E       return while_loop_op(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/while_loop.py", line 224, in flat_body_fn
+E       return body_fn(*carried, *additional)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Models.py", line 12951, in body
+E       options, others, legal = inverse_menu(language, parent, live,
+E                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Generative.py", line 196, in inverse_menu
+E       left, right, unavailable = language.reverse_binary_step(
+E                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13282, in reverse_binary_step
+E       pair = torch.cond(
+E              ^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/.venv/lib/python3.12/site-packages/torch/_higher_order_ops/cond.py", line 195, in cond
+E       return cond_op(pred, true_fn, false_fn, operands)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13273, in apply
+E       a, b, available = self._reverse_of_binary_op(
+E                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/Users/arogers/github/WikiOracle/basicmodel/bin/Language.py", line 13309, in _reverse_of_binary_op
+E       if op.meaning_layout is not None and parent.shape[-1] == op.meaning_layout[1]:
+E          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   
+E   Set TORCHDYNAMO_VERBOSE=1 for the internal stack trace (please do this especially if you're reporting a bug to PyTorch). For even more developer context, set TORCH_LOGS="+dynamo"
+------------------------------ Captured log call -------------------------------
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:304 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:symbolic_shapes.py:8465 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:meta_utils.py:298 
+DEBUG    torch.__trace:meta_utils.py:537 
+DEBUG    torch.__trace:meta_utils.py:2385 
+DEBUG    torch.__trace:symbolic_shapes.py:5971 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:convert_frame.py:2148 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2363 
+DEBUG    torch.__trace:utils.py:2022 
+DEBUG    torch.__trace:utils.py:2363
+_______ test_current_grammar_recovery_by_depth_training_and_chain_length _______
+test/test_mind_generativity.py:66: in test_current_grammar_recovery_by_depth_training_and_chain_length
+    children = op.generate(parent)
+               ^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3350: in generate
+    return self.reverse(parent, gate=gate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bin/Language.py:3320: in reverse
+    self.raise_no_inverse('a meaning action needs its operator or the candidate search')
+bin/Layers.py:2578: in raise_no_inverse
+    raise NotImplementedError(
+E   NotImplementedError: LiftLayer rule 'lift' (arity 2, space_role CS): no faithful reverse() [a meaning action needs its operator or the candidate search] -- write a real reverse() or remove the rule from the grammar (serial-derivation plan 2026-07-04, Gate S1 inventory).
+____ test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar] _____
+test/test_operators_round2c.py:126: in test_zero_meaning_departures_and_one_reader_step
+    assert not torch.equal(first['root'],second['root'])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10ca6d3a0>(tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.0000, 0.0000, 0.5000,\n          0.5000, 0.5000, 0.0000, 0.5000, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]), tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.0000, 0.0000, 0.5000,\n          0.5000, 0.5000, 0.0000, 0.5000, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]))
+E    +    where <built-in method equal of type object at 0x10ca6d3a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.243s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+_____ test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar] _____
+test/test_operators_round2c.py:126: in test_zero_meaning_departures_and_one_reader_step
+    assert not torch.equal(first['root'],second['root'])
+E   assert not True
+E    +  where True = <built-in method equal of type object at 0x10ca6d3a0>(tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.0000, 0.0000, 0.5000,\n          0.5000, 0.5000, 0.0000, 0.5000, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]), tensor([[[0.0000, 0.0000, 0.0000, 0.0000, 0.5000, 0.0000, 0.0000, 0.5000,\n          0.5000, 0.5000, 0.0000, 0.5000, 0....0, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,\n          0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]]]))
+E    +    where <built-in method equal of type object at 0x10ca6d3a0> = torch.equal
+----------------------------- Captured stdout call -----------------------------
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.909s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+=============================== warnings summary ===============================
+test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5458: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_stored_idea_generation.py::test_stored_unfold_uses_forward_search_and_terminal_eligibility
+FAILED test/test_stored_idea_generation.py::test_missing_compound_is_incomplete_instead_of_losing_a_phrase
+FAILED test/test_stored_idea_generation.py::test_compound_candidates_are_not_word_emissions[False]
+FAILED test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[False]
+FAILED test/test_stored_idea_generation.py::test_every_family_can_occupy_either_side_when_recomposition_fits[True]
+FAILED test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word
+FAILED test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition
+FAILED test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]
+FAILED test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]
+FAILED test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse
+FAILED test/test_mind_generativity.py::test_current_grammar_recovery_by_depth_training_and_chain_length
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar]
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-MM_grammar]
+13 failed, 38 passed, 3 skipped, 1 warning in 12.23s

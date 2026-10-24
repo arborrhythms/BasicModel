@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

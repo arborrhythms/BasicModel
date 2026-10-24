@@ -1,0 +1,32 @@
+{"target": ["sym", 55], "env": [0, "y"], "current": [null, ["sym", 4010033338316264258], ["sym", 55]], "chosen": "query"}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 54], ["sym", 4010033338316264258], ["sym", 55]], "chosen": "ask"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [null, ["sym", 4010033338316264258], ["sym", 37]], "chosen": "query"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 36], ["sym", 4010033338316264258], ["sym", 37]], "chosen": "ask"}
+{"target": ["sym", 17], "env": [0, "x"], "current": [null, ["sym", 4010033338316264258], ["sym", 17]], "chosen": "query"}
+{"target": ["sym", 17], "env": [0, "x"], "current": [["sym", 21], ["sym", 4010033338316264258], ["sym", 17]], "chosen": null}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 36], ["sym", 4010033338316264258], ["sym", 37]], "chosen": "query"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 70], ["sym", 4010033338316264258], ["sym", 37]], "chosen": null}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 54], ["sym", 4010033338316264258], ["sym", 55]], "chosen": "query"}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 77], ["sym", 4010033338316264258], ["sym", 55]], "chosen": null}
+{"target": ["sym", 55], "env": [0, "y"], "current": [null, ["sym", 4010033338316264258], ["sym", 55]], "chosen": "query"}
+{"target": ["sym", 55], "env": [0, "y"], "current": [null, ["sym", 4010033338316264258], ["sym", 55]], "chosen": "query"}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 54], ["sym", 4010033338316264258], ["sym", 55]], "chosen": "ask"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [null, ["sym", 4010033338316264258], ["sym", 37]], "chosen": "query"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 36], ["sym", 4010033338316264258], ["sym", 37]], "chosen": "ask"}
+{"target": ["sym", 17], "env": [0, "x"], "current": [null, ["sym", 4010033338316264258], ["sym", 17]], "chosen": "query"}
+{"target": ["sym", 17], "env": [0, "x"], "current": [["sym", 21], ["sym", 4010033338316264258], ["sym", 17]], "chosen": null}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 36], ["sym", 4010033338316264258], ["sym", 37]], "chosen": "query"}
+{"target": ["sym", 37], "env": [0, "z"], "current": [["sym", 70], ["sym", 4010033338316264258], ["sym", 37]], "chosen": null}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 54], ["sym", 4010033338316264258], ["sym", 55]], "chosen": "query"}
+{"target": ["sym", 55], "env": [0, "y"], "current": [["sym", 77], ["sym", 4010033338316264258], ["sym", 55]], "chosen": null}
+{"target": ["sym", 63], "env": [1, "y"], "current": [null, ["sym", 4010033338316264258], ["sym", 63]], "chosen": "query"}
+{"target": ["sym", 63], "env": [1, "y"], "current": [["sym", 62], ["sym", 4010033338316264258], ["sym", 63]], "chosen": "ask"}
+{"target": ["sym", 45], "env": [1, "z"], "current": [null, ["sym", 4010033338316264258], ["sym", 45]], "chosen": "query"}
+{"target": ["sym", 45], "env": [1, "z"], "current": [["sym", 44], ["sym", 4010033338316264258], ["sym", 45]], "chosen": "ask"}
+{"target": ["sym", 25], "env": [1, "x"], "current": [null, ["sym", 4010033338316264258], ["sym", 25]], "chosen": "query"}
+{"target": ["sym", 25], "env": [1, "x"], "current": [["sym", 21], ["sym", 4010033338316264258], ["sym", 25]], "chosen": null}
+{"target": ["sym", 45], "env": [1, "z"], "current": [["sym", 44], ["sym", 4010033338316264258], ["sym", 45]], "chosen": "query"}
+{"target": ["sym", 45], "env": [1, "z"], "current": [["sym", 70], ["sym", 4010033338316264258], ["sym", 45]], "chosen": null}
+{"target": ["sym", 63], "env": [1, "y"], "current": [["sym", 62], ["sym", 4010033338316264258], ["sym", 63]], "chosen": "query"}
+{"target": ["sym", 63], "env": [1, "y"], "current": [["sym", 77], ["sym", 4010033338316264258], ["sym", 63]], "chosen": null}
+{"target": ["sym", 63], "env": [1, "y"], "current": [["sym", 62], ["sym", 4010033338316264258], ["sym", 63]], "chosen": "query"}

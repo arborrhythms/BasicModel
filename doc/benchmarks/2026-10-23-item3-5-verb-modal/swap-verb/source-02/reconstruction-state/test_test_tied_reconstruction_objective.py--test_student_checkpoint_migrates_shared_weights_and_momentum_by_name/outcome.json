@@ -1,0 +1,6 @@
+{
+  "node": "test/test_tied_reconstruction_objective.py::test_student_checkpoint_migrates_shared_weights_and_momentum_by_name",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

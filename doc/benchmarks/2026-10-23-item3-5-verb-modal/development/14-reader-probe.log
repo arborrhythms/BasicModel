@@ -1,0 +1,23 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+DRAW {'round': [31, 31, 31, 31], 'rounds': [4, 4, 4, 4], 'walk': [1, 1, 1, 1], 'walk_count': [1, 1, 1, 1], 'walk_rounds': [0, 0, 0, 0], 'narrowing': [False, False, False, False], 'attention_round': [-1, -1, -1, -1], 'compose_round': [-1, -1, -1, -1], 'candidate_round': [-1, -1, -1, -1], 'bind_round': [-1, -1, -1, -1]} R+A [[0.3503260910511017, 0.3503260910511017], [0.34996411204338074, 0.34996411204338074], [0.34964093565940857, 0.34964093565940857], [0.3500690162181854, 0.3500690162181854]]
+DRAW {'round': [31, 31, 31, 31], 'rounds': [4, 4, 4, 4], 'walk': [1, 1, 1, 1], 'walk_count': [1, 1, 1, 1], 'walk_rounds': [0, 0, 0, 0], 'narrowing': [False, False, False, False], 'attention_round': [-1, -1, -1, -1], 'compose_round': [-1, -1, -1, -1], 'candidate_round': [-1, -1, -1, -1], 'bind_round': [-1, -1, -1, -1]} R+A [[0.3503260910511017, 0.3503260910511017], [0.34996411204338074, 0.34996411204338074], [0.34964093565940857, 0.34964093565940857], [0.3500690162181854, 0.3500690162181854]]
+batch = 0 (warm-up, 100.00%)
+Training throughput: 1 batches in 0.587s; word units 100.0% of 8 words (letters-only 100.0% of 8).
+F
+=================================== FAILURES ===================================
+____ test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar] _____
+test/test_operators_round2c.py:126: in test_zero_meaning_departures_and_one_reader_step
+    assert model._sentence_comparison_reader_weights.tolist()==[[.5,.5]]*4
+E   assert [[1.0, 0.0], ...], [1.0, 0.0]] == [[0.5, 0.5], ...], [0.5, 0.5]]
+E     
+E     At index 0 diff: [1.0, 0.0] != [0.5, 0.5]
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5458: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_operators_round2c.py::test_zero_meaning_departures_and_one_reader_step[compose-XOR_grammar]
+1 failed, 1 warning in 2.25s

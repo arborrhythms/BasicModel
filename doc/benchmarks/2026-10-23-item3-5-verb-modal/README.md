@@ -27,3 +27,23 @@ on a now-paired centroid/kernel layout. The reconstruction failures and
 repairs are dated in specification §10; the exact port ledger accompanies
 the repaired freeze. Every original failed run stays here and is never
 renamed as passing evidence.
+
+## Repaired swap/verb source — mechanism gates passed, lesson restore failed
+
+Source `d3450e16e86485354d1f2d673fd77c71ab3645ab`:
+[source audit](swap-verb/source-02/source-audit.json),
+[all scoped results](swap-verb/source-02/gate-summary.json).
+Every selected mechanism group passed, including the unchanged XOR gate,
+both original decomposition arms, both pending-premise orders, native
+fullgraph word chunk, and paired meaning-action gradients. The two legacy
+loss files use their default slow boundary, as spec §10 declares; their
+optional historical learning/stress tests are not certified.
+
+The original warm-up completed (76 presentations, 38 paired updates).
+Stage 3 failed in checkpoint restore before any presentation: verb-group
+host metadata lacked the native tensor envelope. Its initial state and
+failure are retained under `lessons/stage3-capture`. Spec §11 records the
+repair and a new native save/load regression; no existing assertion changes.
+No result from this hash is promoted to the repair hash. Development logs,
+failed captures, interrupted optional runs and the unlanded staging patch
+are retained under `development` and `swap-verb/development`.

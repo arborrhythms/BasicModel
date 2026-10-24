@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compiled_word_chunk.py::test_tensor_peer_while_runs_symbolic_reference_transaction_and_releases_owner_state",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

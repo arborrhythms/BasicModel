@@ -1,0 +1,27 @@
+...........F.F                                                           [100%]
+=================================== FAILURES ===================================
+__________ test_enabling_tied_reconstruction_retains_the_owned_ideas ___________
+test/test_tied_reconstruction_migration.py:336: in test_enabling_tied_reconstruction_retains_the_owned_ideas
+    assert bool((owned.ideas.norm(dim=-1)[active] > 0).any())
+E   assert False
+E    +  where False = bool(tensor(False))
+E    +    where tensor(False) = <built-in method any of Tensor object at 0x1449f8190>()
+E    +      where <built-in method any of Tensor object at 0x1449f8190> = tensor([0., 0., 0., 0., 0.], grad_fn=<IndexBackward0>) > 0.any
+_________ test_completed_state_damage_reaches_the_actual_input_surface _________
+test/test_tied_reconstruction_migration.py:379: in test_completed_state_damage_reaches_the_actual_input_surface
+    assert not torch.allclose(original.ideas, damaged.ideas)
+E   assert not True
+E    +  where True = <built-in method allclose of type object at 0x10a9913a0>(tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]), tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]))
+E    +    where <built-in method allclose of type object at 0x10a9913a0> = torch.allclose
+E    +    and   tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = InputReconstruction(ideas=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0....sor([0.]), byte_cost=tensor([2.]), truncated=tensor([True]), sentence_costs=tensor([[2., 0., 0., 0., 0., 0., 0., 0.]])).ideas
+E    +    and   tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0....., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,\n          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]]) = InputReconstruction(ideas=tensor([[[0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0....sor([0.]), byte_cost=tensor([2.]), truncated=tensor([True]), sentence_costs=tensor([[2., 0., 0., 0., 0., 0., 0., 0.]])).ideas
+=============================== warnings summary ===============================
+test/test_tied_reconstruction_migration.py::test_empty_rows_and_padding_carry_no_reconstruction_cost[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_tied_reconstruction_migration.py::test_enabling_tied_reconstruction_retains_the_owned_ideas
+FAILED test/test_tied_reconstruction_migration.py::test_completed_state_damage_reaches_the_actual_input_surface
+2 failed, 12 passed, 1 warning in 12.40s

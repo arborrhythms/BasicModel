@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_adverb_grammar_ops.py::test_verb_reverse_without_operand_raises",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

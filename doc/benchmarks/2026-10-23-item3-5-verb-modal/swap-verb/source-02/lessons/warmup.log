@@ -1,0 +1,40 @@
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "presentations": 4, "updates": {"paired": 2, "batch_end_disabled": 0}, "elapsed_seconds": 2.776277125114575}
+batch = 0 (Δ=2.494s)
+{"batch": 2, "presentations": 8, "updates": {"paired": 4, "batch_end_disabled": 0}, "elapsed_seconds": 5.307413833914325}
+batch = 0 (Δ=2.614s)
+{"batch": 3, "presentations": 12, "updates": {"paired": 6, "batch_end_disabled": 0}, "elapsed_seconds": 7.959944125032052}
+batch = 0 (Δ=2.726s)
+{"batch": 4, "presentations": 16, "updates": {"paired": 8, "batch_end_disabled": 0}, "elapsed_seconds": 10.723040374927223}
+batch = 0 (Δ=3.011s)
+{"batch": 5, "presentations": 20, "updates": {"paired": 10, "batch_end_disabled": 0}, "elapsed_seconds": 13.776186750037596}
+batch = 0 (Δ=2.997s)
+{"batch": 6, "presentations": 24, "updates": {"paired": 12, "batch_end_disabled": 0}, "elapsed_seconds": 16.807445334037766}
+batch = 0 (Δ=3.125s)
+{"batch": 7, "presentations": 28, "updates": {"paired": 14, "batch_end_disabled": 0}, "elapsed_seconds": 19.971745542017743}
+batch = 0 (Δ=1.514s)
+{"batch": 8, "presentations": 32, "updates": {"paired": 16, "batch_end_disabled": 0}, "elapsed_seconds": 21.526257416931912}
+batch = 0 (Δ=1.571s)
+{"batch": 9, "presentations": 36, "updates": {"paired": 18, "batch_end_disabled": 0}, "elapsed_seconds": 23.139688374940306}
+batch = 0 (Δ=1.709s)
+{"batch": 10, "presentations": 40, "updates": {"paired": 20, "batch_end_disabled": 0}, "elapsed_seconds": 24.87848083395511}
+batch = 0 (Δ=1.655s)
+{"batch": 11, "presentations": 44, "updates": {"paired": 22, "batch_end_disabled": 0}, "elapsed_seconds": 26.571895709028468}
+batch = 0 (Δ=1.665s)
+{"batch": 12, "presentations": 48, "updates": {"paired": 24, "batch_end_disabled": 0}, "elapsed_seconds": 28.28436612500809}
+batch = 0 (Δ=1.785s)
+{"batch": 13, "presentations": 52, "updates": {"paired": 26, "batch_end_disabled": 0}, "elapsed_seconds": 30.103889459045604}
+batch = 0 (Δ=1.656s)
+{"batch": 14, "presentations": 56, "updates": {"paired": 28, "batch_end_disabled": 0}, "elapsed_seconds": 31.797818874940276}
+batch = 0 (Δ=1.854s)
+{"batch": 15, "presentations": 60, "updates": {"paired": 30, "batch_end_disabled": 0}, "elapsed_seconds": 33.693513750098646}
+batch = 0 (Δ=1.815s)
+{"batch": 16, "presentations": 64, "updates": {"paired": 32, "batch_end_disabled": 0}, "elapsed_seconds": 35.54004029207863}
+batch = 0 (Δ=1.927s)
+{"batch": 17, "presentations": 68, "updates": {"paired": 34, "batch_end_disabled": 0}, "elapsed_seconds": 37.50417141709477}
+batch = 0 (Δ=1.881s)
+{"batch": 18, "presentations": 72, "updates": {"paired": 36, "batch_end_disabled": 0}, "elapsed_seconds": 39.422115250024945}
+batch = 0 (Δ=1.886s)
+{"batch": 19, "presentations": 76, "updates": {"paired": 38, "batch_end_disabled": 0}, "elapsed_seconds": 41.364066125126556}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-02/lessons/warmup/warmup.ckpt

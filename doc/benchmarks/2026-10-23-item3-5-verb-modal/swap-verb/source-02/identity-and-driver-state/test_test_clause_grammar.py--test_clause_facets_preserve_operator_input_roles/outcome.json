@@ -1,0 +1,6 @@
+{
+  "node": "test/test_clause_grammar.py::test_clause_facets_preserve_operator_input_roles",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
