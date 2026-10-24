@@ -40,104 +40,105 @@ before each freeze.
    `stream` column are retired as columns in item 3's layout round (two
    truths §1). This line replaces their *readers*; the columns are still
    written and go in item 3.
-8. No language in code: no indexical or marker is named.
+8. **A context whole is a WholeSpace type, not an MTM identity** (Alec,
+   2026-10-24: "wholes and parts are in different spaces, in general").
+   Parts and their identities live in PartSpace and MTM; a whole is a type
+   over a run of the field, in WholeSpace, as a word is over its letters.
+9. **No exact readers** (Alec, 2026-10-24: "I don't see a reason to have
+   exact readers"). Membership of a row in a document or stream is read
+   from its content, by the whole's trace, and the readers that used the
+   `stream` column and 2c's document sidecar switch to that read in this
+   line; the `stream` column and the sidecar go now, since nothing reads
+   them. The four address columns stay until item 3, because the writer
+   still addresses a re-witnessed sentence by them.
+10. No language in code: no indexical or marker is named.
 
-## 2. The mechanism, in code names
+## 2. The first mechanism — withdrawn 2026-10-24
 
-**A context whole is an MTM identity.** Two per batch stream: the
-*document* whole, opened at the first sentence of each document, and the
-*stream* whole, opened at the stream's first sentence and never reopened
-(it is the conversation). Both are ordinary `Token`s under capacity,
-names, expiry and promotion, with one difference of key: a context whole
-has no mention row, so its key is a context address `('ltm', 'context',
-digest)`, with `document_digest(source_at(model, b, slot)[0])` for the
-document (today's provenance key, so a re-read finds the same token while
-it lives) and the stream's digest for the stream. Each sentence row the
-stream writes is an occurrence of both wholes: `ReferenceClose.commit`
-binds the row to them (`mtm.bind(document, occurrence)`, `mtm.bind(stream,
-occurrence)`), and a sentence is a description mention of its wholes, so
-its meaning *joins* their values ("VP replaces, mention joins"); nothing
-acts on a context whole as a verb. A document's occurrences are its
-sentences in store order; the stream's include every row it witnessed.
+The first draft made a context whole an MTM identity keyed by a context
+address, bound each sentence row to it, prepended the two wholes to the
+symbol array, and replaced the stream-column readers by token membership.
+Alec: "wholes and parts are in different spaces, in general." Withdrawn;
+the record is in the git history of this file. Nothing of it is built.
 
-**Percept part.** The whole's form is the leaf-weighted centroid of its
-sentences' forms (`MeaningKernels.centroid`, counts from the journal's
-leaf counts), its `.where` the bracket from its first sentence's start to
-the current sentence's end (`RunStructureLayer`'s contiguous run; one
-document is one run of sentences in its stream), and its `.when` is
-stamped now when it enters the field, as a concept entering STM is. The
-form is updated at each kept close. Nothing is placed on the priming
-surface before promotion.
+## 2a. The mechanism, in code names: wholes as types over runs
 
-**In the field: the first prepended entries.** The two context wholes are
-prepended to the symbol array that conceptual space reads for every
-sentence of the document: the per-word arrays `isp._ar_word_concept_ids`,
-`_ar_word_concept_rows`, `_ar_word_concept_orders`, `_ar_word_symbol_where`
-and `_ar_word_symbol_when`, and the compose window (`stm[0]`, `words`, the
-`identities`, `positions` and `orders` of `prepare_operands`), as two
-leading positions per batch row, with the whole's current value as content
-and a reserved transient symbol id (the token key) until promotion gives
-it `symbol`. This is the first consumer of Alec's prepend suggestion,
-confined to these two entries; the identity overlay keeps the ordinary
-identities until item 3 retires it. Consequences the design wants:
+**What a context whole is.** A type row in WholeSpace (`Spaces.WholeSpace`,
+the learned property table evaluated at every live position) that is
+constant across a run of the field and changes at the run's boundary, so
+that the run is a maximal constant-type run in the sense already used for
+segmentation (`stage_analysis_spans`; `RunStructureLayer` for contiguity
+and containment). Three levels this line, nested by their runs:
 
-- the parallel prelude (`_per_word_prelude`; interleave groups) folds the
-  context entries with the words, which is how each sentence's concepts
-  carry the wholes' trace (§3.4: the parallel read is where concepts see
-  every part and whole);
-- attention's mask over `.where` includes them: the widest bracket;
-- the serial chooser can bind a mention to them through the ordinary
-  reference-expanded menu (`binary_refs`), which is how an indexical takes
-  a context whole as referent, by exposure, with no word named;
-- a sentence read in two documents composes to different fused points; the
-  same sentence re-read in one document refreshes its address as today.
+| whole | its run | begins | ends |
+| --- | --- | --- | --- |
+| sentence | the words of one clause | the sentence's first word | its close |
+| document | the sentences of one document | the document's first sentence | the document boundary (`_thought_document_ends`) |
+| stream | one subject's whole history | the stream's first sentence | never, while the stream lives |
 
-*Claude's call, reversible:* prepend now rather than stage them in the
-overlay, because the decided behavior, presence in the field for the
-parallel read, is exactly what the overlay cannot give. The twelve-draw
-pending-premise series runs once for this line, since the menu gains two
-locations.
+The parallel group of `interleave:N` is the presented unity that
+WholeSpace's analysis divides; it gets no row of its own in this line.
 
-**Readers replaced now.** Every reader of the `stream` column reads the
-stream whole's occurrences instead: `LTM0.get_stm_chain` (the recency
-chain: the whole's occurrences in store order, the same list),
-`Occurrence.stream_rows` and `witness_stream` (membership in the stream
-whole), `recency_weights` (goes with `PartRead` in item 3; until then reads
-the whole), `Forgetting.forget`'s stream read, and `ReferenceClose`'s two
-stream guards (a row is this stream's iff it is an occurrence of its
-whole). 2c's `_consolidation_sources` sidecar (`ClauseRow.write_clause`,
-`MemoryConsolidation.consolidate`, the `Spaces` extras) is replaced by
-document-whole membership: a reading's distinct documents are the
-document wholes its rows belong to, and a token's distinct sentences are
-its occurrences' places in their document whole. `mtm.end_document`
-retires the document whole and the entries whose last reference lies in
-it, as now; the stream whole is refreshed by every close and lives while
-the stream does, under no exemption. The `stream` and address columns are
-still written and unread; item 3 drops them.
+**Minting and content.** A whole's row is minted when its run begins and
+its code is the leaf-weighted centroid of its parts' forms
+(`MeaningKernels.centroid`; for a word, `MereologicalCodes.derive` already
+takes the form from its parts), updated as parts arrive: a document's form
+is the centroid of its sentences' forms so far, the stream's of its
+documents'. Its `.where` is the run's bracket, its `.when` the entry
+stamp. Its concept, the fold over the meanings of its parts, is minted on
+recurrence as any symbol's is and forgotten by value; nothing is placed on
+the priming surface before then. The same run machinery that makes a word
+whole from its letters (item 6.8) makes these, one level up each.
 
-**Nesting and queries.** Sentence ⊂ document ⊂ stream is read from
-membership and brackets; no row is written for it. "What was said in *d*"
-is a bounded read of *d*'s occurrences under the work meter, in the shape
-of `TimelineRead.read` (a query bound to the document whole), and after
-promotion a content match against the document's concept. The current
-sentence is the innermost context whole and the default object of
-`position` for tense, §4's "now" (§3.4: "tense's 'now' is the current
-sentence's whole"); the parallel group is the batch and gets no individual
-in this line.
+**Presence in the field.** The whole's activation holds at every position
+of its run, so each word's conceptual read in the parallel prelude
+(`_per_word_prelude`, `ConceptualSpace.forward(subspace, word_subspace)`
+reading `wholeSpace.subspace`) sees the sentence, document and stream
+wholes with the other wholes, and the sentence's composed concept carries
+their trace to the degree the fold keeps it (§3.4: the parallel read is
+where concepts see every part and whole). Attention's mask over `.where`
+includes the run: the widest bracket. The exact path from the WholeSpace
+row to the word's code is Codex's to confirm against the code and to
+state in its review; the requirement is that the trace is in the written
+row's content, so that membership can be read from it.
 
-**Lifetime.** A document whole is retired at the document's end; three
-sentences promote it to a concept (2c's rule, unchanged), and a later
-re-read of the document opens a new token at the same context address and
-binds it to that concept through the native path. The stream whole is
-never retired while the stream is live.
+**Membership by content.** A row belongs to a whole when its content
+carries the whole's trace: the whole's code covers the row's content
+above a threshold, the same meet that binding uses (`IdentityRows.
+meet_ratios`), with the threshold a model.xml knob, `contextMembership`.
+Every former reader of the `stream` column and of 2c's sidecar reads
+this instead: `LTM0.get_stm_chain` (the stream's rows by membership, in
+store order), `Occurrence.stream_rows` and `recency_weights`,
+`Forgetting.forget`'s stream read, `ReferenceClose`'s two stream guards;
+`MemoryConsolidation.consolidate` counts a reading's distinct document
+wholes and a token's distinct sentence wholes by membership;
+`MediumTermMemory.close` and `end_document` take the document whole in
+place of a digest and retire the entries whose introducing row belongs to
+it. `witness_stream`, the `stream` column, `_consolidation_sources`
+(`ClauseRow.write_clause`, the `Spaces` extras) and `document_digest`'s
+provenance use go. Exactness is not promised: a row whose trace fell
+below the threshold is not the stream's for these readers, which Alec
+accepts.
+
+**Re-witnessing and queries.** Reading a document again re-forms the same
+type, since the centroid of the same sentences recurs, and its promoted
+concept recognizes it by content, as a word is recognized; "what was said
+in *d*" is a bounded read of the rows that carry *d*'s trace under the
+work meter, in the shape of `TimelineRead.read`. Indexicals take a whole as
+referent not by `bind`, which resolves among things, but as a word takes
+an object: by exposure the word's interpretation names the whole's symbol
+(`Interpret.define`), and the whole's recent rows are the frames the
+resolver already reads (`situation_references`), which is "they seed the
+domain of discourse." The current sentence whole is `position`'s default
+object for tense, §4's "now."
 
 ## 3. Not in this line
 
-Word adjacency (dropped); retiring the `stream` and address columns, LTM0
-one slot and LTM1 chains (item 3); prepending the ordinary identities and
-retiring the overlay (item 3); a conversation beyond the stream; the
-parallel group as an individual; the §72 sentence-level stamp and recall
-by `.when` (item 3).
+Word adjacency (dropped); any MTM entry or prepended symbol for a whole
+(withdrawn); retiring the address columns, LTM0 one slot and LTM1 chains
+(item 3); prepending the identities and retiring the overlay (item 3); a
+conversation beyond the stream; the parallel group as a row; the §72
+sentence-level stamp and recall by `.when` (item 3).
 
 ## 4. The rest of line 6, and line 7, by pointer
 
@@ -162,28 +163,27 @@ by `.when` (item 3).
 
 ## 5. Certificates for the context wholes
 
-1. A stream reading two documents opens one document whole per document
-   and one stream whole; every sentence row is an occurrence of its
-   document and of the stream; the document's form is the leaf-weighted
-   centroid of its sentences' forms with the document bracket, and its
-   value the join of their meanings; the whole's percept `.when` is the
-   entry stamp.
-2. Every sentence's compose window carries the two context entries first;
-   the parallel prelude's fold includes them; one sentence text read in two
-   documents yields different fused points, and re-read in one document
-   refreshes its address.
-3. `get_stm_chain`, the `ReferenceClose` stream guards and `Forgetting`'s
-   stream read give the same results as before on a fixture; 2c's
-   recurrence and promotion certificates pass unchanged with the sidecar
-   gone.
-4. Document end retires the document whole and not the stream whole; three
-   sentences promote the document; a re-read after expiry binds the new
-   token to the promoted concept.
-5. A fixed-operation fixture binds a leaf to the document whole through the
-   ordinary menu; the context entries are never placed on the priming
-   surface before promotion.
-6. Unchanged: G1–G3, both decomposition arms, XOR, the pending-premise
-   certificates, plus the twelve-draw series once for the menu change.
+1. A stream reading two documents holds one document whole per document
+   and one stream whole as WholeSpace rows constant over their runs; the
+   document row's code is the leaf-weighted centroid of its sentences'
+   forms, with the run's bracket; the sentence whole's run is the clause.
+2. Every word's conceptual read in the parallel prelude includes the active
+   wholes; one sentence text read in two documents yields different fused
+   points, and re-read in one document refreshes its address as today.
+3. Membership by content: with the `stream` column gone, `get_stm_chain`
+   returns the same rows in the same order as the column did on a fixture;
+   the stream guards and forgetting's stream read agree with the old column
+   on that fixture; 2c's recurrence and promotion certificates pass with
+   the sidecar gone.
+4. Runs end: the document boundary ends the document whole's run and not
+   the stream's; `end_document` by whole retires the same MTM entries the
+   digest did on a fixture; a re-read document re-forms the same type and
+   its promoted concept recognizes it.
+5. A word takes a whole as its object through interpretation in a
+   fixed-operation fixture, no word named; the wholes are not on the
+   priming surface before promotion.
+6. Unchanged: G1–G3, both decomposition arms, XOR and the pending-premise
+   certificates; the bind menu is unchanged, so no twelve-draw series.
 
 ## 6. Code review and implementation adaptations (Codex, 2026-10-24)
 
@@ -285,3 +285,10 @@ The twelve-draw series runs once on that freeze because context locations
 change the bind menu. Line 7 gets its own smoke, freeze and scoped receipt.
 No gate result or test assertion is changed by this review. Claude reviews
 the whole iteration through Alec before publication.
+
+*Note (Claude, 2026-10-24): §6 reviews the withdrawn §2. Its adaptations
+that concern MTM entries, context addresses, menu locations and pool
+expiry lapse with §2; those on store-order recency, bounded context
+queries, checkpoint migration and eager staging before the compiled
+prelude carry to §2a where they apply. Claude's rewrite briefly dropped
+this section by mistake; it is restored verbatim.*

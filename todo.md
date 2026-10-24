@@ -955,8 +955,10 @@ not by a passing identity lesson.
      that decision and verify native paired use and reindexing cost
      (iteration spec §20.3).
    - *Specified 2026-10-24:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
-     (MTM identities keyed by context address, prepended first to the field;
-     stream-column and sidecar readers replaced; columns stay until item 3).
+     (WholeSpace types over runs, sentence ⊂ document ⊂ stream, minted at
+     the run's start with the centroid of their parts, present in the
+     parallel read; membership by content, no exact readers; the `stream`
+     column and 2c's sidecar go, address columns stay until item 3).
    - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after. *Added (Alec, 2026-10-22):* word adjacency is removed
      in step 2b with no replacement here: neighbours are distributional
      information, already carried into a word's meaning by the sentences it
