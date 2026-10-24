@@ -1,0 +1,29 @@
+{
+  "reviewed_source": "01effdcaf9dd9adfbc460a791e06feb06b38b940",
+  "forms": {
+    "free": {
+      "keep_records": 21,
+      "entry_observations": 814,
+      "entries_with_alternatives": 0,
+      "event_observations": 16,
+      "taught_true": 0,
+      "modal_taught_true": 0,
+      "logical_batches": 7,
+      "adverb_compositions": 0,
+      "source_file": "source-02/corpus/free/keep.jsonl.gz",
+      "sha256": "39bb76cf4b9d5e7a024258ec5ef0ba991ac4e44bb339d220d9a0cbf50d611b11"
+    },
+    "affix": {
+      "keep_records": 21,
+      "entry_observations": 1109,
+      "entries_with_alternatives": 0,
+      "event_observations": 77,
+      "taught_true": 0,
+      "modal_taught_true": 0,
+      "logical_batches": 7,
+      "adverb_compositions": 0,
+      "source_file": "source-02/corpus/affix/keep.jsonl.gz",
+      "sha256": "f57a14754e10912158165043d223b9d8c20988cc4ec5a9e55951a0b5e0e7717b"
+    }
+  }
+}

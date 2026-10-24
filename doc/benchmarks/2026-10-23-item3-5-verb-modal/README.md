@@ -1,11 +1,11 @@
 # Swap, verb and modal — 2026-10-23
 
-Ready for one combined review through Alec under the verb/modal
-specification §§1–6 and step-2 §39. Swap/verb source `65451694e` passes
+Claude's combined review through Alec is **LAND `01effdcaf9`**, recorded
+in the iteration specification §19. Swap/verb source `65451694e` passes
 811 scoped cases with 26 existing skips. Modal source `01effdcaf9` passes
 733 with 11 existing skips. The line-3 lesson stop and both failed modal
 corpus forms remain failed learning evidence. No publication or learning
-claim. [Review hand-off](review-handoff.md).
+claim. [Review hand-off](review-handoff.md); publication is authorized.
 
 ## First frozen swap/verb source — retained failure
 
@@ -286,6 +286,15 @@ complete keep readings/costs/pools, source audits and logs. No retry,
 extra budget, seed selection, forcing or menu rescue. The learning gate
 moves to item 0, alongside the failed description lesson and its unrun
 continuation. No trained artifact is promoted.
+
+**Post-review corpus finding (2026-10-24).** Across all 21 retained
+sentence-batch keep records for each corpus form, no pool entry ever
+held an alternative timeline and no event has `taught` or `modal_taught`
+set, so neither teacher fired. Neither trial contains an `adverb`
+composition: the chooser never applied it to the marker. The learning
+remainder carried to item 0 therefore starts from operator choice.
+The [read-only audit](modal/corpus-review-20261024.json) records the counts
+and hashes of both retained files; no lesson or gate was rerun.
 
 ### Exact modal test ports
 
