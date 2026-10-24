@@ -17,22 +17,28 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Step 2 is published at BasicModel `3624f6204`, WikiOracle
-`c9b19d4`. The swap/verb source `65451694e` passes 811 scoped cases with
+**Current:** Iteration 1 is published at BasicModel `f306fc28aa`, WikiOracle
+`319a793`, after Claude's LAND review through Alec (§19); the required
+corpus receipt paragraph and unchanged parent Ethics edit are included.
+The swap/verb source `65451694e` passes 811 scoped cases with
 26 existing skips. Its original-budget line-3 rerun reads source order
 8/8 (both CE bars still fail), passes lower and definite 1/1, then stops
 at description: brackets 4/4, answers 1/4. The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
 retains all states, failed sources and test ports. Description learning
 and the unrun adjective, definite-adjective, final and copular continuation
-move to item 0; no later artifact is passed. The released modal follows
+move to item 0; no later artifact is passed. The modal followed
 that stop, with one identity's actual and alternative timelines. Modal
 source `01effdcaf9` completes 733 scoped passes and 11 existing skips;
 both fixed-budget corpus forms fail answers 0/4 and required timeline
-histories 0/4. That learning gate moves to item 0 without rescue. The
-[combined review hand-off](doc/benchmarks/2026-10-23-item3-5-verb-modal/review-handoff.md)
-is ready for Claude through Alec; publication is still pending. Lines 6–7 and their
-final sweep follow this iteration. Layout/removal and STM chunks stay
-item 3.0, which has not been reached. All work stays on main.
+histories 0/4. Neither teacher fired and the chooser never applied
+`adverb` to the marker; the item-0 learning remainder starts from operator
+choice. Iteration 2 is lines 6–7. Its [dated code review](doc/plans/2026-10-23-verb-and-modal.md#20-iteration-2-review-of-the-existing-specifications-against-the-code-codex-2026-10-24)
+is complete; Claude's [context-wholes spec](doc/plans/2026-10-24-context-wholes.md)
+is committed unchanged and its §6 code review records the adaptations.
+Implementation of lines 6–7 is released under step-2 §39. Run a short native lesson smoke before each
+line's single freeze; one full sweep remains at the end of 3.5.
+Layout/removal and STM chunks stay item 3.0, which has not been reached.
+All work stays on main; review is through Alec.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -729,13 +735,19 @@ not by a passing identity lesson.
    The swap/verb freezes before the lesson rerun and the modal freezes
    after it; one combined review through Alec, gates sized to the change,
    one full sweep at the end of 3.5.
-   *Iteration 1 reviewed LAND 2026-10-24* ([iteration spec §19](doc/plans/2026-10-23-verb-and-modal.md)):
+   *Iteration 1 published 2026-10-24:* BasicModel `f306fc28aa`, WikiOracle
+   `319a793`, Claude LAND ([iteration spec §19](doc/plans/2026-10-23-verb-and-modal.md)):
    swap, verb and modal landed on the paired configurations; line 3's
    rerun stopped at description (1/4) and the modal corpus failed 0/4 in
    both forms, both carried to item 0 without rescue; six carried notes.
    The corpus's retained keep records show no alternative timeline was
    ever opened and neither teacher fired: the chooser never applied
    `adverb` to the marker, so item 0's retry starts from operator choice.
+   Lines 3–5 therefore leave 3.5 at those landing hashes, with their
+   learning remainder explicitly carried to item 0. **Iteration 2 is
+   lines 6–7 only**, reviewed against the code in spec §§20–21 and
+   context-wholes §6; implementation is released. A short lesson smoke precedes each
+   line's single freeze, then scoped gates and review through Alec.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
@@ -843,9 +855,10 @@ not by a passing identity lesson.
      sentence row; **moved to item 3** (Alec, 2026-10-23) with STM's eight
      shared chunks: [spec](doc/plans/2026-10-23-layout-and-removal.md).
      Step 2 here ends with the identity line, 2c and the sweep.
-   - **VP vectors by temporal difference** — the deferred per-individual
-     teacher (§15 item 4); until it exists legacy B's `SparseDictionary`
-     stays confined to verbs (plan §17), and it goes when the teacher lands.
+   - **VP vectors by temporal difference — Done at `f306fc28aa`**
+     (WikiOracle `319a793`, iteration spec §§3,19). The per-identity
+     teacher and verb-group action are landed; learning stays item 0.
+     The following earlier formulation is retained as the decision record.
      *Formulation (Alec, 2026-10-19; [occurrence spec §14](doc/specs/2026-09-30-occurrence-tense-aspect.md#14-two-differences-the-verb-across-time-the-modal-across-possibility-alec-2026-10-19-written-by-claude)):*
      the **first difference** — the verb is a group element acting on
      the identity's frame (object before ↦ object after; a diagonal in a
@@ -877,7 +890,9 @@ not by a passing identity lesson.
      a noun phrase's alternative verb phrases, a diagonal per modal in a
      shared basis. This answers occurrence §14.5's possible situation:
      an alternative VP, neither a minted world nor a lane.
-   - *Superseded 2026-10-23 (Alec; [iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)):*
+   - **Modal mechanism — Done at `f306fc28aa`** (WikiOracle `319a793`;
+     failed corpus learning moved to item 0). *Superseded 2026-10-23
+     (Alec; [iteration spec §4](doc/plans/2026-10-23-verb-and-modal.md)):*
      a counterfactual is an alternative **timeline** of the one identity
      (MTM holds identities, connected NPs, and timelines, connected VPs on
      one identity); a modal clause is the ordinary composition with the
@@ -907,12 +922,14 @@ not by a passing identity lesson.
      and `Clause.eternal` is gone; nothing to retire. **Recency is store
      order, as landed** (Alec, 2026-10-22): `get_stm_chain` reads a stream's
      rows oldest first and re-witnessing keeps a row's place. When context
-     wholes replace the stream column, the chain becomes the stream whole's
-     rows in `.when` order, the same order; nothing else to build.
+     wholes replace the stream column, preserve that store order; equal
+     model ticks do not determine it. Claude's context-wholes spec defines
+     the replacement reader.
    - The **learned surface transformations and their inverses** (absorb and transpose; split and insert left the grammar, occurrence §12/§13.1)
-     replacing the English analyzer, `surface` as one operator with four
-     suboperations trained by reconstruction under parsimony; removes the
-     old tense, aspect and morphology code and its table of English forms.
+     — the old analyzer and tense/aspect/morphology layers are already
+     absent. Verify the two remaining capabilities through paired native
+     composition and inverse, trained by reconstruction under the existing
+     step cost; remove stale language-naming text (iteration spec §20).
    - **Tense and aspect on VP phases** (the catalogue's compound selecting
      among the verb phrase's phases; the preposition as one operation with
      two attachments), after the identity lessons above; the inert markers
@@ -932,9 +949,11 @@ not by a passing identity lesson.
      configuration, six generator variants of where the marker is
      written, no change to the mechanism; does not wait for the developed
      corpus.
-   - The **nested-admission criterion** and its performance: the landed
-     shared-run criterion carves 7 of the 17 4e words at shared letter
-     pairs (plan, "Before the 4e pass"); scoped to one named marker today.
+   - The **nested-admission criterion** and its performance: the old
+     shared-run probe carved 7 of the 17 4e words; Alec superseded the
+     broader statistic with one named marker lesson, default off. Keep
+     that decision and verify native paired use and reindexing cost
+     (iteration spec §20.3).
    - *Specified 2026-10-24:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
      (MTM identities keyed by context address, prepended first to the field;
      stream-column and sidecar readers replaced; columns stay until item 3).
@@ -1566,6 +1585,12 @@ not by a passing identity lesson.
    complete their fixed 24 training examples / 36 paired updates, then
    fail held-out answers 0/4 and required timeline histories 0/4. Carry
    certificate 15's learning here; no seed, budget, forcing or menu rescue.
+   Each form's 21 retained sentence-batch keep records contain no
+   alternative timeline and no fired teacher; no trial applied `adverb`
+   to the marker. Start the learning remainder from operator choice.
+   Before retrying, carry §19's teacher pairing by branch point rather
+   than model-close tick; the corpus has no after-observation target for
+   the verb teacher by design.
    The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
    retains every run and state; no learning claim is made.
 
@@ -1577,7 +1602,7 @@ not by a passing identity lesson.
    fixed semantics and same-kind revision; VP temporal-difference prediction;
    direct-operand word classes; and deferred order-2 kind recovery. The stage 4e
    candidate and measurement exist, but its [gate fails](doc/benchmarks/2026-10-17-stage4e/).
-   The VP teacher mechanism awaits iteration 1's review; order-2 kinds are
+   The VP teacher mechanism is published at `f306fc28aa`; order-2 kinds are
    not built. Do not start another native
    identity run before stage 4e passes. Retain stored-idea recovery beyond two
    words, order CE, relation trace 2/4, free readback 0/4, MM grammar recovery,
@@ -1589,6 +1614,8 @@ Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
 
 ### Done (newest first)
+
+- **Item 3.5 iteration 1, lines 3–5 and the meaning/form swap:** landing `f306fc28aa` (WikiOracle `319a793`), reviewed sources `65451694e` and `01effdcaf9`, Claude LAND through Alec; scoped gates pass, the fixed-budget lesson stop and both failed modal corpus forms are carried to item 0 without rescue. The required corpus finding and parent Ethics edit are published ([receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)).
 
 - **Item 3.5 step 2c and step-2 sweep:** reviewed source `fcaff2d19`, frozen sweep repair `9f5500870`; Claude LAND through Alec, one retained full sweep and passing scoped repairs, no production change after review ([receipt](doc/benchmarks/2026-10-23-item3-5-step2c/sweep/README.md)).
 

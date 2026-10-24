@@ -1170,3 +1170,254 @@ no rescue, as the protocol fixed in advance. These are the measurements
 Publish BasicModel main, include the parent `doc/Ethics.md` edit with the
 WikiOracle bump, and push the parent main. Lines 6 and 7 follow as
 iteration 2, after Claude's context-wholes spec.
+
+
+## 20. Iteration 2: review of the existing specifications against the code (Codex, 2026-10-24)
+
+Reviewed occurrence §§4–5 and §§12–13.1, with §13.2's gate and the later
+decisions read for precedence; parts-of-speech §3, with its operand-flow
+table and chooser contract; and the 5.5 plan's nested-admission decision.
+The source is published BasicModel `f306fc28aa190264a6c841267155686f9f71ea3d`
+(reviewed modal freeze `01effdcaf9`, production unchanged), referenced by
+published WikiOracle `319a79373be58d5309989193fec49b7ef1b64ffe`. The requested
+corpus paragraph and read-only keep-record audit landed before those
+pushes. This section is a code review, not an implementation or a new
+freeze. No test, lesson or sweep was run for it; no assertion changed.
+Claude's context-wholes specification comes before that implementation,
+and review continues through Alec.
+
+### 20.1 What is already present, and what remains
+
+| Contract | Present on this source | Work still to establish |
+| --- | --- | --- |
+| Occurrence §12: history order | `OccurrenceRows.stream_rows` and `recency_weights`, and `get_stm_chain`, use the store's order within a stream. Re-witnessing does not move a row. | Preserve that order when context wholes replace source/stream columns; do not infer it from equal model ticks. |
+| Occurrence §§12–13.1: surface and inverse | `SurfaceLayer`, its shared unary face and explicit self-inverse `TransposeLayer` exist; the retired analyzers and split/insert faces are absent. | Exercise the native paired form/meaning path, including a nested marker and its inverse; remove the remaining language-naming text. |
+| Occurrence §§4–5: VP phases and selection | MTM has actual/alternative event histories, with `before`, `after`, verb and role. `CaseSelection` supports bounded native concept cases on the unpaired path. | A VP phase view, its repeated idempotent selection, reference-event content and phase questions are not implemented by those pieces. The paired compound does not use the case fold. |
+| Occurrence §12: nested admission | One named suffix lesson, default off, witnessed stem, irregular kept whole; scoped parts persist afterwards. | Native paired composition/inverse coverage and admission cost, under the existing scoped decision. |
+| Parts-of-speech §3 | Kept-program direct-operand counts, carried words, direct chooser probabilities, report-only cosines and checkpoint state already exist. | Audit their current native integration and close line 7 with scoped evidence; no new category codebook is needed. |
+| Documents and streams as context wholes | Today's source-address and stream columns still serve several owners and readers. | Claude's new spec must define the replacement and migration. This review does not build the item-3 layout or STM integration. |
+
+The old inventory is not an accurate removal list. `surface_tense.py`,
+`surface_morphology.py`, `TenseLayer`, `AspectLayer`, `MorphologyLayer`,
+`_lift_when` and `_lower_when` are already absent. So are the legacy
+timestamp column and `Clause.eternal`; LTM0's load migration drops the old
+timestamp. `test_item55_mechanisms.test_absences` already checks the retired
+mechanisms. The remaining `.when` is model time, not a temporal operand.
+The obsolete analyzer, situation-whole and four-surface-operation passages
+must be read with the later amendments, not rebuilt.
+
+### 20.2 VP phases: the actual gap is in the meaning and query paths
+
+Occurrence §4 assigns the selection to the catalogue's compound; §13.1
+calls its semantic rule `position`. There is no `PositionLayer` or live
+grammar entry by that name. `CompoundLayer` (`Language.py:3355`) declares
+the right operand as its case head. Its unpaired path requires
+`selected_cases` and folds them; `CaseSelection.stage_case_bank` stages
+existing native concept cases, while `select_cases` uses the modifier's
+observed memberships. This corrects the older statement that modifier
+conditioning is absent everywhere. It does not supply the phases of a
+newly composed VP or a bound identity's event.
+
+On a paired layout, `CompoundLayer.compose` instead calls
+`GrammarLayer.compose_blocks` (`Layers.py:2492`): centroid on form, a
+generic meaning kernel on meaning. The compiled candidate path
+(`Language.py:7287`) supplies `SelectedCases` only when `meaning_layout`
+is absent, and paired reverse validation follows the paired kernel too.
+Consequently the existing compound tests do not establish the phase
+contract on BasicModel. The old `fold_cases` also subtracts negative from
+positive membership in a signed code; copying it into the paired meaning
+block would collapse the two evidence lanes.
+
+`PrepositionLayer` (`Language.py:3638`) does not fill this gap. Its
+unpaired computation returns the right operand; its paired computation is
+another meaning kernel. Its comment about editing `.where` describes no
+such live operation. The transparent unpaired preposition tests remain
+valid for that configuration and must not be weakened to accommodate a
+different paired rule.
+
+Iteration 1 supplies an event history and verb action, superseding §4's
+old dependency on an unbuilt item 6.5 teacher. It does not yet expose
+before/change/after as selectable cases. `TimelineRead.request/read`
+matches a grammatical subject, verb and order against timeline events;
+it has no phase selection or R operand. An event's stored snapshots alone
+cannot answer whether only part of its change was asserted. In particular:
+
+- Before and after must remain distinguishable on reverse. Progressive
+  selection must not entail the completed event; repeated selection must
+  be idempotent, not another application of a verb gain.
+- R is now or a referred-to event's content, never the referenced row's
+  `.when`. Close ticks and §19's teacher-pairing note do not implement
+  narrated time. Preserve that distinction in both composition and query.
+- No selection retains the whole case set and answers phase questions as
+  unknown. It must not silently select the present or a completed event.
+- `TimelineOverlay.choice` treats the chosen `adverb` operation as modal
+  scope and withholds lowering. Routing all tense/aspect selections through
+  that operation would incorrectly turn ordinary phase selections into
+  alternative events. The phase selector must retain VP order as §4 says;
+  it must not add a lexical exception to modal scope.
+
+**Recommendation for the implementation specification:** retain one
+case-selection owner, the existing compound, for the semantic `position`
+rule. Generalize its staged case view to NP cases and VP phases, using the
+bound value and event content, with a lane-preserving fold on paired
+layouts. Stage the required view outside the compiled body. Keep marker
+packaging separate from selection and call the selector again for another
+selection; do not add temporal/spatial variants, a second scorer or a
+phase-gain rule. State how the absent-marker face gets its learned
+selection object and how R is carried in that view. This is a proposed
+bridge to today's code, not a new operator, a catalogue rename or a stored
+phase table. No code or checkpoint schema is changed here.
+
+### 20.3 Surface forms and nested admission
+
+`SurfaceLayer` (`Language.py:3537`) has two accepted layout paths. The
+unpaired one owns the marker map/prior and chart reconstruction; the
+paired one has no such form parameters and uses the centroid plus meaning
+kernel. `MarkerUnaryLayer` shares the binary owner's kernel and its reverse
+emits no extra leaf. Binary surface takes a marker on the left; a marker
+on the other side is reachable by the existing charged transpose of the
+two newest constituents. There is no reason to add another surface face,
+split or insert. Existing surface/mechanism tests cover reverse witnesses,
+unary output and transpose cost, but direct unpaired layer fixtures alone
+do not certify the paired native route and counted centroid inverse.
+
+`WordIdentity.nested_lesson/observe_nested` (`WordIdentity.py:240–296`)
+admits only the active suffix after a witnessed stem, including when the
+stem is witnessed after its marked word. It does so after one such pair;
+there is no distinct-stem threshold. That is **not a newly found decision
+violation**: the 5.5 plan's later Alec decision, under “Before the 4e pass,”
+explicitly supersedes the proposed stricter statistic with lesson scoping.
+Occurrence §12 retains both stages of that history. Keep the named-pattern,
+default-off decision and the existing immediate-admission assertions in
+`test_nested_wholes`, rather than introducing an unapproved threshold.
+The artifact-backed companion is still prerequisite-dependent, not a new
+learned pass. No prefix/infix/general substring admission is implemented.
+
+The performance residue is concrete: the candidate search considers only
+the current word and that word plus the active marker, but an admitted
+change still revisits nested parts, reindexes word forms and rebuilds the
+word hash/trie. A bounded lesson smoke should measure that path and prove
+that the staged sub-word parts reach composition and reverse while the
+word remains the attention unit. A unit test that merely carves a word
+does not show that the chooser uses the marker. No marker label should
+choose a grammar operation.
+
+The language-naming inventory also needs correction. `Models.py:6900` has
+one such docstring and `:6923` a comment, not two live docstrings. Additional
+names remain in configuration/test comments and the test identifier
+`test_given_truth_texts_are_plain_english` and its diagnostic text.
+Those need neutral descriptions under §13.0, with assertion semantics
+unchanged. The inactive tense/morphology/aspect planning comments in
+`complete.grammar` and `ladder.grammar` are stale too. This review has not
+edited code, fixtures, test names or configurations.
+
+### 20.4 Direct-operand word classes: audit the existing owner
+
+`PartsOfSpeech.formal_arguments`, `flow_mask` and `observe_kept`
+(`PartsOfSpeech.py:16–120`) already implement the central §3 contract.
+Each carried lexical occurrence receives its input-argument count in a
+kept program; producing operations pass their words according to §2b,
+with result-argument counts and both transpose outputs recorded. Clauses
+clear the carrier. Rejected readings and bracket annotations do not
+supply those counts. `collapse` reports occupant-distribution cosines;
+it merges nothing and trains no prototypes.
+
+The probability table is staged once for the paired trials
+(`Models.py:17634`). The kept-program update is at `Models.py:20494`,
+followed by the table refresh. `Language.py:7017` adds the appropriate
+direct-argument probabilities to operation scores; `update_flow` preserves
+one contribution per carried word rather than averaging a phrase into a
+new class. Checkpoint state keeps the formal-argument schema and counts.
+The output-argument counts exist but do not implement output typing.
+`PartClosing` also records admitted-symbol occupations; that is not a
+license to count bracket supervision as word evidence.
+
+`test_parts_of_speech.py` already covers kept-only/exactly-once counts,
+unseen distributions, direct scores, carrier flow, compiled execution,
+checkpoint restoration and report-only collapse. Its phase-artifact cases
+remain prerequisite-dependent. Line 7 should close the current integration
+with a short native paired lesson smoke and scoped tests, then document
+any actual gap; it should not build a second categorizer. The old §3 noun
+prior tied to an individual column is superseded by grammar-only parts of
+speech and is not to be revived. Order-2 kinds, output typing, order in
+parts of speech and the learning claims stay on their recorded later
+items. Neither labels nor a forced stage menu supply learning evidence.
+
+### 20.5 Inputs to Claude's context-wholes specification
+
+The current owners still use `document_keys`, `sentence_index`,
+`sentence_content_keys`, `address_keys` and `stream`. Consumers are broader
+than the row exporter: `Occurrence` stages and resolves source addresses;
+`ClauseRow` upserts them; `ReferenceContext` excludes replaced occurrences;
+`Models`, `data` and `Teacher` drive document/stream boundaries;
+`Queries`, `MemoryIndex` and `ThoughtStream` read provenance or scope;
+`Forgetting` protects/releases addressed rows; `MediumTermMemory.close`
+and `end_document` use document identity for expiry and promotion.
+
+The new spec needs to preserve occurrence handles and token/mention/event
+references while replacing provenance columns; say how the same retained
+row participates in more than one stream; preserve first store order
+under re-witnessing; and define document-end teardown of all timelines,
+sixteen-close expiry, recurrence across three distinct documents and
+promotion across three distinct sentences. Context membership must not
+silently replace those distinctness tests with model ticks. The chain's
+replacement reader must still distinguish streams without ordering them
+against one another. No stream-as-seat identity or resurrection of word
+adjacency follows from this work.
+
+This is an interface inventory, not an alternative context-wholes design.
+The item-3 tagged layout, derivation removal, close-time mint retirement
+and MTM-prepending/STM integration remain out of scope. In particular,
+do not deepen the transition overlay to solve phase or context storage,
+and do not retire `TimelineRead`'s current derivation fallback here.
+The §19 branch-point teacher note remains carried to the item-0 retry;
+changing `.when` semantics is not a substitute for that repair.
+
+### 20.6 Gate plan after the specification is ready
+
+The six placement variants in occurrence §13.2 are not yet implemented in
+`test/constituent_corpus.py`; it still produces the earlier constituent
+families. The phase gate needs those variants with one grammar and one
+configuration, including no-marker → unknown, partial change without
+completion, repeated selection, stacked selections and both surface
+directions. Report behavioral learning separately from controlled phase
+and inverse certificates. A failed learned operator choice is not repaired
+by a marker table, forced choice, wider menu, extra budget or another seed.
+
+Before each line's single freeze, run the §19 short lesson smoke on the
+native paired configuration: input staging, live composition, kept close,
+reverse and checkpoint restore must all execute, including any new nested
+or phase path. Development runs retain logs; the receipt starts at the
+freeze. Then size the gates to the actual changed modules, preserving
+surface/compound/POS tests and occurrence §8's applicable certificates,
+G1–G3, the unchanged XOR standing gate, original decomposition arms and
+pending-premise certificates.
+A twelve-draw series is needed only if binding changes. No full sweep
+until the end of 3.5. Record every fix and assertion port under step-2 §39,
+and carry every failed run. There is no gate result or assertion-port
+request in this review.
+
+Iteration 1 is published; iteration 2 is reviewed here while Claude writes
+the context-wholes spec. Lines 6–7, their scoped landings and the single
+end-of-3.5 sweep remain. Item 3.0 has not been reached.
+
+## 21. Context wholes released; iteration 2 proceeds (Codex, 2026-10-24)
+
+Alec supplied Claude's [context-wholes specification](2026-10-24-context-wholes.md)
+while §20 was being completed and explicitly released its implementation
+with the rest of lines 6–7 under step-2 §39. Claude's spec and the exact
+identity/todo additions are committed unchanged at `0f90e9b2d3`. The
+context spec's dated §6 reviews the code and records the required
+adaptations: overlapping memberships without merging identities, retained
+membership after pool expiry, checkpoint migration, transient addresses,
+eager staging before the compiled prelude, store-order recency, bounded
+context lifetime and bounded context queries. §20 remains the review of
+the existing surface, phase, admission and occupation specifications.
+
+Proceed on main. Line 6 includes context wholes and its twelve fresh
+pending-premise draws because the menu gains context locations. A short
+native lesson smoke precedes each line's single freeze; gates and receipts
+are sized to the change. Line 7 follows with its own frozen source. Review
+of the complete iteration is through Alec, then publication of main and
+the WikiOracle bump. No learning claim, no ordinary-identity prepend or
+derivation/layout removal in this line. Item 3.0 has not been reached.
