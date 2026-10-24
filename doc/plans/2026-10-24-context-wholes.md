@@ -52,6 +52,24 @@ before each freeze.
    them. The four address columns stay until item 3, because the writer
    still addresses a re-witnessed sentence by them.
 10. No language in code: no indexical or marker is named.
+11. **Wholes come from WholeSpace, parts from PartSpace; the centroid is
+    the center of that space** (Alec, 2026-10-24): the average over a
+    position's parts and wholes, compensating for their numbers, parts
+    over their count and wholes over theirs. Run rows for the sentence,
+    the document and the stream are not wholes: "we don't need indices
+    for sentence, document and stream." §2a's run inventory and its blend
+    into word reads are withdrawn.
+12. **Batch indexing and `.when` do the segmenting** (Alec, 2026-10-24):
+    LTM and the STM structures are indexed by batch row, and rows carry
+    their `.when`; the batch index segments the store by stream, and the
+    per-batch structures (the batch's LTM view, MTM's per-stream pools,
+    STM per row) stand as they were.
+13. **A document starts with a cover in its LTM stream** (Alec,
+    2026-10-24): "LTM streams are prefixed by a 'cover' to indicate the
+    start of a document, which can be conceptual or perceptual, but
+    perceptual LTM requires episodic memory that we don't have yet, so
+    let's make that future work and just prepend a per-document concept
+    that we create automatically." A perceptual cover is FutureWork.
 
 ## 2. The first mechanism — withdrawn 2026-10-24
 
@@ -61,7 +79,106 @@ symbol array, and replaced the stream-column readers by token membership.
 Alec: "wholes and parts are in different spaces, in general." Withdrawn;
 the record is in the git history of this file. Nothing of it is built.
 
-## 2a. The mechanism, in code names: wholes as types over runs
+## 2a. The second mechanism — withdrawn 2026-10-24
+
+*Alec, on §2a and its build: "This definition of wholes is completely
+wrong. Wholes come from whole space, parts come from part space." No run
+rows for the sentence, the document or the stream, and no blend of run
+forms into word reads. Kept as the record; nothing of it is built. §2b
+replaces it.*
+
+## 2b. The mechanism, in code names: batch indexing, `.when`, and a cover row
+
+**Batch indexing.** LTM0 keeps the batch index of the row that wrote each
+row: the `stream` column returns, as what it always was, exact per-batch
+ownership (`witness_stream` at `append_meaning`), and its readers return
+to it unchanged: `get_stm_chain` and `stream_rows` (the batch's rows in
+store order), `Forgetting`'s age by position within the batch's rows,
+`MereologicalCodes.begin_forward`'s stream count, and `ReferenceClose`'s
+two antecedent guards. STM is per batch row by construction. `.when` is
+the row's model-time stamp (`RowTime`), already a column.
+
+**The cover.** At each document's start the presentation cursor, which
+knows the boundary (`source_at`, `_thought_document_ends`), mints a
+per-document concept automatically (`owner.new_concept()` and the
+allocator's ordinary seat, as `MemoryConsolidation` mints a promoted
+identity; order 1, an individual; its code initialized as a zeroth-order
+concept is, at random, and placed by the priming surface later) and
+writes a **cover row** into that batch's LTM stream: an LTM0 row of kind
+`cover` whose one slot holds the concept's code, stamped with the current
+`.when`, before the document's first sentence. The cover is conceptual;
+a perceptual cover, the title page as a percept in LTM, waits for
+episodic memory ([FutureWork](../FutureWork.md#perceptual-cover-episodic-ltm-alec-2026-10-24)).
+
+**Document membership is a segment.** A row belongs to the document whose
+cover is the latest cover row before it in its batch's stream, by `.when`
+order; the document ends at the next cover or the stream's end. No content
+match and no membership column: segmentation by batch index and `.when`,
+as Alec says. The readers that 2c's provenance sidecar served read the
+segment: `MemoryConsolidation.consolidate` counts a reading's distinct
+documents as distinct covers among its rows' segments and a token's
+distinct sentences as distinct rows; `MediumTermMemory.close` and
+`end_document` retire, at a document's boundary, the entries whose
+introducing row lies in the ended segment; "what was said in *d*" is a
+bounded read of *d*'s segment under the work meter, reached by the cover
+concept as a reference, in the shape of `TimelineRead.read`. The
+`_consolidation_sources` sidecar and `document_digest`'s provenance use
+stay removed; the four address columns stay for addressing and
+re-witnessing until item 3.
+
+**What the cover is for composition.** It is a row in the batch's recent
+frames (`situation_references`), so the resolver can offer it as a
+referent like any recent row and an indexical can bind to it by exposure;
+nothing names it. Nothing is folded into word reads for it: no blend.
+Re-reading a document mints a new cover; identifying it with an earlier
+reading is the perceptual cover's job, in FutureWork.
+
+**The centroid, corrected (Alec, 2026-10-24).** "This centroid applies
+to all concepts order zero. Higher-order concepts don't have parts and
+wholes, so it's just a pure centroid calculation (although with positive
+and negative evidence and weighted over those)." Two rules, then:
+
+- *Order 0.* A form composed from parts is the center of the space of its
+  parts and its wholes: the parts (PartSpace) averaged over their count and
+  the wholes (the WholeSpace rows active over the span) averaged over
+  theirs, the two averages then centered. Codex applies this to the swap's
+  form centroid (`MeaningKernels.centroid`, today parts only) at
+  composition, and records where the active WholeSpace rows for a span
+  are read; with no active whole it is today's leaf-weighted centroid.
+- *Order 1 and above.* A concept's content is the pure centroid of its
+  members' content, weighted by their evidence in the two lanes, positive
+  and negative, never a max-union or a min-intersection. This replaces the
+  coordinatewise maximum in `MemoryConsolidation._fold` for promoted
+  identities and readings, and governs Orders §9's centroid caches; the
+  identity-basis question in FutureWork is answered by it for content.
+  Codex lists the 2c promotion assertions this changes as ports.
+
+**Verified against the code (Claude, 2026-10-24, at Alec's request).**
+Centroids are for concepts, stored on the symbol associated with the
+concept: the shared index keeps one cached row per symbol/concept pair,
+`[form | meaning]` in `similarity_codebook.W`, and a concept's centroid is
+written there (promotion copies its fold into `W[row]`; a composed idea's
+form rides in the node until its row is written; `centroid_forms` caches
+by row). Percepts are stored on the two towers and have a different
+mereological definition: `MereologicalCodes._interval` reads a symbol's
+parts from tower 0 (PartSpace) and its wholes from tower 1 (WholeSpace)
+and returns bounds, not means, the lower bound the maximum over the parts'
+codes and the upper bound the minimum over the wholes' codes scaled by
+their degree, and `derive` gives a symbol its lower bound; the exact word
+forms and atoms live in PartSpace's percept store (`WordIdentity`). So the
+order-0 centroid rule above is the rule for a concept's form, the
+composed node's and the minted concept's, and leaves the towers' interval
+mereology as it is. Concepts in conceptual space are arranged by context:
+today by `occurrence_terms`, the mean of a concept's occurrence contexts
+written into its meaning block by `derive`; by the registered priming
+surface once item 3 lands the placement decision, with zeroth-order
+concepts starting random and moved by the surface.
+
+**The cover concept (Alec, 2026-10-24):** an order-1 individual with a
+random code, minted at the document's start as a promoted identity is,
+placed by the priming surface later, written as the cover row's one slot,
+and a referent in the batch's recent frames.
+
 
 **What a context whole is.** A type row in WholeSpace (`Spaces.WholeSpace`,
 the learned property table evaluated at every live position) that is
@@ -134,11 +251,11 @@ object for tense, §4's "now."
 
 ## 3. Not in this line
 
-Word adjacency (dropped); any MTM entry or prepended symbol for a whole
-(withdrawn); retiring the address columns, LTM0 one slot and LTM1 chains
-(item 3); prepending the identities and retiring the overlay (item 3); a
-conversation beyond the stream; the parallel group as a row; the §72
-sentence-level stamp and recall by `.when` (item 3).
+Word adjacency (dropped); MTM entries, prepended symbols, run rows and
+blends for wholes (withdrawn); a perceptual cover (FutureWork); retiring
+the address columns, LTM0 one slot and LTM1 chains (item 3); prepending
+the identities and retiring the overlay (item 3); the §72 sentence-level
+stamp and recall by `.when` (item 3).
 
 ## 4. The rest of line 6, and line 7, by pointer
 
@@ -161,29 +278,31 @@ sentence-level stamp and recall by `.when` (item 3).
 - **Line 7** (parts-of-speech §3): the distributional categorizer over
   direct operands; output typing deferred (§4 there).
 
-## 5. Certificates for the context wholes
+## 5. Certificates for the cover and batch indexing
 
-1. A stream reading two documents holds one document whole per document
-   and one stream whole as WholeSpace rows constant over their runs; the
-   document row's code is the leaf-weighted centroid of its sentences'
-   forms, with the run's bracket; the sentence whole's run is the clause.
-2. Every word's conceptual read in the parallel prelude includes the active
-   wholes; one sentence text read in two documents yields different fused
-   points, and re-read in one document refreshes its address as today.
-3. Membership by content: with the `stream` column gone, `get_stm_chain`
-   returns the same rows in the same order as the column did on a fixture;
-   the stream guards and forgetting's stream read agree with the old column
-   on that fixture; 2c's recurrence and promotion certificates pass with
-   the sidecar gone.
-4. Runs end: the document boundary ends the document whole's run and not
-   the stream's; `end_document` by whole retires the same MTM entries the
-   digest did on a fixture; a re-read document re-forms the same type and
-   its promoted concept recognizes it.
-5. A word takes a whole as its object through interpretation in a
-   fixed-operation fixture, no word named; the wholes are not on the
-   priming surface before promotion.
-6. Unchanged: G1–G3, both decomposition arms, XOR and the pending-premise
-   certificates; the bind menu is unchanged, so no twelve-draw series.
+1. A batch row reading two documents writes a cover row at each document's
+   start, of kind `cover`, holding a freshly minted concept, stamped before
+   the document's first sentence; the two covers' concepts are distinct.
+2. Batch indexing: `get_stm_chain`, the stream guards and forgetting's age
+   give exactly the results they gave before the §2a build, on a fixture
+   with two batch rows.
+3. Segments: every row's document is the latest cover before it in its
+   batch's stream by `.when`; a row written at the boundary belongs to the
+   new document; 2c's recurrence and promotion certificates pass with the
+   sidecar gone, counting distinct covers.
+4. Document end: `end_document` retires the same MTM entries by segment
+   that it retired by digest on the 2c fixture; the next document's cover
+   starts a new segment.
+5. The cover is a referent: a fixed-operation fixture binds a leaf to the
+   cover row through the ordinary menu, no word named; the cover concept
+   is not on the priming surface until placed.
+6. The centroid: a composed form equals the centered average of its parts'
+   average and its active wholes' average on a fixture with known parts
+   and wholes; with no active whole it equals today's leaf-weighted
+   centroid.
+7. Unchanged: G1–G3, both decomposition arms, XOR and the pending-premise
+   certificates; the bind menu gains the cover row only as any recent row
+   is gained, so no twelve-draw series.
 
 ## 6. Code review and implementation adaptations (Codex, 2026-10-24)
 
@@ -292,3 +411,342 @@ expiry lapse with §2; those on store-order recency, bounded context
 queries, checkpoint migration and eager staging before the compiled
 prelude carry to §2a where they apply. Claude's rewrite briefly dropped
 this section by mistake; it is restored verbatim.*
+
+## 7. Review of §2a and disposition of development work (Codex, 2026-10-24)
+
+Claude's replacement and the restored §6, including its amendment, are
+committed unchanged at `23eed97d20`, with the identity and todo edits.
+This review supersedes §6's implementation instructions. There is no
+context address, MTM context entry, retained exact membership, new bind
+location, or twelve-draw series in this implementation.
+
+The withdrawn development source and every run are retained under
+`doc/benchmarks/2026-10-24-item3-5-iteration2/development/` as
+`context-mtm-development.patch`, full tracked/new-file snapshots, logs and
+`context-development-status.json`. None of its membership, expiry, menu,
+checkpoint or field-prefix implementation remains in the active source.
+Its arithmetic for weighted forms can inform the new run owner; it is not
+evidence for §2a. Independent surface-inverse tests and neutral wording
+edits remain development changes. No line has frozen.
+
+1. **The native read is not the path named in the prose.** The current
+   aligned sentence driver perceives each word once before either trial.
+   `stage_cs_sub` reads `WholeSpace.compute_word_property_event`, then
+   `ConceptualSpace.reduce_aligned_percept_peers`. WholeSpace currently
+   affects evidence for the word's indexed dictionary decode, not an
+   additional conceptual value. `stage_cs_sym` decodes the indexed word
+   again. `_per_word_prelude` itself runs inside the captured body and
+   `_sentence_prelude` is a no-op. Therefore putting rows in WholeSpace,
+   or publishing its subspace alone, would not put their trace in LTM.
+   Stage run boundaries eagerly, materialize their active values in the
+   tensor read, and preserve that contextual read through symbol
+   promotion and the captured reconstruction source. Test the written
+   point, not just presence metadata. Raw percept targets remain words.
+2. **Run rows need their own row family in WholeSpace.** The primitive
+   property basis in BasicModel has nine rows, all already occupied, and
+   is explicitly frozen. Its byte predicates cannot represent a document
+   run. Put the run inventory under WholeSpace, with native form centroids
+   and brackets, rather than borrowing character-property rows or MTM
+   entries. This does not resize a fixture or reserve conceptual seats.
+   Concept promotion still uses the existing conceptual allocator and
+   ordinary capacity checks. Before promotion no priming symbol exists.
+3. **A trace is content, not a provenance encoding.** No digest, row ID,
+   batch index or address is converted into a context vector. The run
+   form is computed from its actual parts. Repeated equal content can be
+   indistinguishable, and membership can be lost as a run's centroid
+   changes. Distinct-document/sentence counts count recognized whole
+   types, not recovered source identifiers. Fixtures formerly separating
+   equal vectors solely by a source key must supply distinguishable
+   whole content; those setup ports will be listed individually.
+4. **Membership and migration.** Use `IdentityRows.meet_ratios` on the
+   common content carrier and the request-coverage ratio (the whole
+   covers the row), strictly above `contextMembership`. Start the knob
+   at 0.5; tests establish the boundary explicitly, not by tuning a seed.
+   An absent or empty trace supplies no membership evidence. Old stream
+   bits and document sidecars are discarded on load; they cannot recreate
+   content that an old forward never wrote. Do not rewrite historical
+   rows to manufacture a migration witness. Four address columns remain
+   solely for addressing and re-witnessing.
+5. **The reader inventory has two additional consumers.** Besides §2a's
+   named sites, `MereologicalCodes.begin_forward` enumerates
+   `store.stream.shape[1]`, and `Forgetting.history_age` does the same.
+   Both must enumerate the active stream-whole reads instead. Retained
+   row exports and `SituationFrame` must also cease exporting the column.
+   The two ReferenceClose guards must distinguish unknown membership
+   from a positive match to another stream. All ordering stays store
+   order; a shared model tick is not an ordering key.
+6. **Boundaries do not supply membership.** The presentation cursor still
+   says when a document run ends, and the writer still obtains source
+   addresses. Neither supplies a row-to-whole lookup. MTM expiry reads
+   the introducing occurrence's content against the ending whole; the
+   sixteen-close clock remains a close count. Whole queries are bounded
+   content scans and never traverse a retained member list. The bind
+   menu remains the resolver's existing frames and candidates.
+
+The remainder of line 6 follows iteration spec §20. Its phase gap is real:
+event snapshots and verb diagonals are not yet a selectable VP phase
+representation, and the paired compound path bypasses `CaseSelection`.
+The existing lesson-scoped nested-admission decision remains in force.
+Development logs precede a native lesson smoke, one line-6 freeze and its
+scoped gates; line 7 then has its own smoke and freeze. Review of both
+lines goes through Alec before publication.
+
+## 8. Development decisions and retained failures (Codex, 2026-10-24)
+
+`WholeSpace.context_runs` owns a bounded row family (`WholeRuns.Whole`):
+level, native form centroid, leaf count, bracket, entry stamp, whether the
+run is open, recurrence count and an optional promoted symbol. There is
+no list of occurrences or source keys. Its capacity follows the existing
+LTM capacity; the three simultaneously active levels are the minimum
+inventory. This does not enlarge either conceptual or primitive-property
+seats. Closed inactive types are retired by recurrence value, then age.
+
+The eager sentence boundary stages only the currently presented clause.
+The native PS/WS read and symbolic promotion run once as before. CS then
+reads the three active WholeSpace forms as additional native form sources,
+with an equal-weight centroid, before either grammar trial. The form of a
+word interpreted as an object receives the same read. Neither operation
+changes meaning lanes or the bind menu. The captured leaf and reconstruction
+source receive that same form read; raw percept targets stay words. The
+ordinary composition can still lose a trace. Nothing restores it at close
+or writes an exact membership alongside it. The native certificate checks
+different document forms, different captured leaves and the written point.
+This read makes no claim that a learned abstraction retains context.
+
+Membership compares the common native **form** coordinates. WholeSpace's
+unpromoted type has a form and no conceptual meaning yet; comparing a
+padded zero meaning against all of a sentence's meaning would ask for
+coverage the whole never supplied. This clarifies §7.4's “common content
+carrier.” The meet and threshold are unchanged. Promotion uses the fold
+of recognized actual rows' meanings, adding the whole's own form to its
+conceptual cache. Equal re-formed types count once even during the new
+run, before its end coalesces the retained type. A word can name the
+promoted symbol through `Interpret.define`; `WholeRead` scans membership
+under the existing shared work meter. Unpromoted rows add no priming symbol.
+
+The old MTM document-digest cache is removed, including checkpoint export.
+Schema 6 rejects that retired field; schemas 1–5 discard it at migration.
+Expiry reads the introducing row at the boundary. `GrammarCheckpoint`
+also drops old stream tensors before strict model loading. The address
+writer and its self-reference exclusion retain their address checks.
+
+Development logs 08–17 are retained beside the earlier withdrawn logs.
+The first new run tests used a non-weak-referenceable fixture owner; its
+setup was corrected without changing assertions. A native test initially
+looked for programs on `SentenceUnderstanding`; it now captures the real
+sentence-observation entries. The first lesson invocation skipped its
+slow marker, and the next used an unsupported option; neither is evidence
+of a pass. With `RUN_SLOW=1`, the native lesson passed (log 12). Log 14
+has 28 passes for the context and consolidation files. These are development
+results, not frozen receipts.
+
+The first diagnosis of the wider run treated the printed promotion tensor
+as empty. `_fold` now declines an empty conceptual fold before allocation,
+since recurrence supplies frequency rather than missing meaning. That was
+not the full diagnosis: logs 18–19 and the capture described in §9 show a
+nonempty fold and excessive content matches. The failed path is the small
+`XOR_grammar` fixture, not the eight-seat MM certificate. Log 16 remains
+retained; its truncated tensor was not sufficient evidence for the earlier
+empty-meaning claim.
+
+Test ports currently applied under §39 (none of these retire a test):
+
+- `test_memory_consolidation.py`: the distinct-document, three-sentence
+  promotion and document-expiry fixtures now supply WholeSpace rows and
+  actual native context content. Every existing assertion remains verbatim.
+- `test_forgetting.py`: the age fixture supplies distinguishable native
+  contents and a third whole covering only the first row instead of
+  calling `witness_stream`. The common full-store fixture supplies its
+  stream whole; the restore fixture restores the separate whole inventory.
+  Every existing assertion remains verbatim.
+- `test_reference_arrival_review.py`: the scoped-name fixture gives the
+  otherwise empty name a native form trace, as production perception does.
+  Its two stream-column assertions become active-whole/membership checks;
+  the unscoped-row assertion becomes absence of a matching stream whole.
+  The new-stream index comes from the active whole runs. Antecedent,
+  arrival, row and bank assertions remain verbatim. The scoped test's
+  identifier says `whole` in place of `column`.
+- `test_operators_round4a0.py`: the legacy stream-bit restoration assertion
+  becomes absence of the retired column and state key. Address/reference
+  migration assertions remain verbatim. The exhaustive when-reader
+  inventory also needs the new WholeRuns readers and the already-landed
+  modal teacher's correspondence read; its set-equality assertion stays.
+
+The full changed-assertion/fixture inventory will be generated from the
+source diff at the freeze. No new failure has been removed by assertion
+loosening. Line 6 remains unfrozen while consumer and native-path checks
+and the remaining phase work continue.
+
+## 9. Content-read diagnostics and lifetime repairs (Codex, 2026-10-24)
+
+Alec noted that LTM can retain context but does not itself thread a context
+over documents and batches. The implementation keeps that distinction:
+WholeSpace maintains the active run and stages its form at each sentence;
+LTM retains only the result of the ordinary composition. A later reader
+cannot recover a trace that that composition has lost. No context column,
+source-derived vector or exact membership is added as a recovery path.
+
+**Initial threshold.** `contextMembership` now defaults to **0.75** rather
+than §7's provisional 0.5. This is a development choice under §39, not an
+Alec decision being reversed. In log 19's retained
+`consolidation-failure.pt`, a row's coverage by its own document is 0.88889;
+other documents cover 0.45478–0.67442. At 0.5 the latter can count as three
+document types and prematurely promote a word reading. The captured plan
+has three nonzero meaning coordinates, total mass 0.31307, so rejecting
+empty folds does not fix that failure. The stricter default requires three
+quarters of the native form to be covered. Log 21 replays the captured
+initial torch RNG and passes the unchanged reread/clock/address test.
+This is one mechanism replay, not a selected fresh draw or a learning
+claim; approximate matches and missed memberships remain possible.
+
+**Lifetime and restore.** A promoted whole is readable from its native
+concept cache after its bounded run row retires. A re-formed type recognizes
+that cached form without allocating another concept. Equal sentence and
+document types promoted in the same close share a symbol; their run rows
+remain distinct. Growing a live run invalidates a symbol that no longer
+describes its form. New tests exercise capacity retirement with additional
+live streams, bounded reads after retirement, and recognition with the bank
+unchanged. Restore validates exact form width, live-run ownership, nesting,
+brackets, counts and serials before replacing any live state. The real model
+checkpoint round trip passes; the first attempt accidentally used the tiny
+fixture's startup-autoload stub and is retained in log 26.
+
+**Native write test.** Two separate setup corrections were necessary, with
+all assertions retained. First, admission is not the selected trial's
+numerical source: `_commit_sentence` restores the selected frozen values.
+Second, the unconstrained chooser can keep an open relation, whose writer
+stores canonical roles rather than the fused top of the parser stack. The
+new test now captures the selected clause before commit and uses its
+production point/role representation. Logs 16 and 28's failures remain;
+passing another draw was not treated as a repair. The test keeps a failure
+capture containing the initial RNG, chosen clauses, leaves, actions, whole
+state and LTM state. The new capacity test also initially exercised eviction
+of a lower-value recent type, not retirement of the promoted type; its setup
+now supplies additional active streams without changing capacity or any
+assertion (logs 28–31).
+
+**Additional ports.** `test_item55_mechanisms.test_stream_chain` supplies
+native bounded form coordinates in place of the scalar row-number vectors.
+Its ordered payload assertion compares those values, and its upsert call
+uses the same values. The two exact stream-bit checks become restored
+content-read agreement and native threshold agreement. Its shared-row,
+order, address, time and witness-count checks remain. The contextual
+code-bank fixture supplies common earlier form content and distinguishable
+later content for both whole rows and observations; all its assertions
+remain. `test_ltm_consolidation` drops `stream` from the checkpoint-key
+assertion loop and asserts its absence; three chain fixtures supply a whole.
+`test_existence_provenance` supplies a whole for its two-role chain, and
+`test_expectation_retention` supplies one at an explicit 0.25 threshold for
+its legacy magnitude-two carrier. Their existing assertions remain.
+
+`development/assertion-ports.json` lists exact old/new assertions and the
+changed checkpoint-key loop; `test-ports.diff` retains every fixture edit.
+No test is retired. Development groups pass in logs 20 (120 passed, 2
+skipped), 25 (21 passed, 2 skipped), 27 (102 passed, 4 skipped, including
+G1–G3) and 31 (35 passed). Each result belongs to its development source,
+not a future frozen hash. Every failed invocation and diagnostic is retained.
+The line remains unfrozen: VP-phase composition, reference-content selection
+and the six-variant phase gate still need completion, followed by the scoped
+gates and review through Alec. Item 3.0 has not been reached.
+
+The subsequent native lesson smoke passes in log 32 (19.65 seconds).
+Log 33 passes all 50 whole/MTM/consolidation tests, including a close that
+obtains its active document whole from the run owner rather than requiring
+an explicit argument. `development-source.json` hashes the current changed
+source files; it is a development snapshot, not the line's frozen source.
+
+## 10. Claude's review of the §2a build, and the book cover — 2026-10-24
+
+Reviewed: §§7–9, iteration spec §22, the working tree (`WholeRuns`,
+`WholeRead`, 33 changed files, unfrozen), the development logs 01–33 and
+`consolidation-failure.pt`'s numbers. Alec's framing of Codex's finding:
+wholes are not a good place for document context unless some percepts are
+saved to LTM, because a document's identity in a whole is not transmitted
+by concepts, which abstract over it; so save the document's identity in
+LTM as (1) a perceptual "book cover" and (2) some episodic memory in LTM;
+and since documents are aligned in batches, the document mechanism is in
+addition to the per-batch LTM, MTM and STM.
+
+**What Codex built, and what of Alec's two parts it is.** `WholeRuns`
+keeps, per stream, an open run row for the sentence, the document and the
+stream, each with a leaf-weighted centroid of its parts' forms, a bracket
+and a stamp; `contextual_form` folds the three active forms into every
+word's form read with equal weight (one quarter word, three quarters
+context), after symbolic promotion and before the grammar trials, and the
+same read reaches the pushed slab, the atoms and the reconstruction
+source; so the written row's form block, its episodic part, carries the
+trace. That is part (2), diluted: episodic memory in LTM as a blend in
+each row's percept. Membership is the meet coverage of a row's form by a
+whole's form above `contextMembership` (0.75), and every former reader of
+the stream column and the sidecar reads it: the recency chain, the stream
+guards, forgetting's age, consolidation's distinct-document and
+distinct-sentence counts, MTM's close and document-end teardown, and a
+query by whole (`WholeRead`). Promotion at recurrence three mints a
+concept whose form is the whole's centroid; a re-formed type is recognized
+by exact equality of centroids. Part (1) is absent: there is no cover.
+
+**Three findings.**
+
+1. *The trace drifts, so membership drifts.* The document's form is a
+   running centroid, so the trace written into sentence 1 was made with a
+   different form from the one in sentence 20, and membership is tested
+   against the final form. Early rows fall out of their own document as it
+   grows; Codex notes it. Two documents of similar vocabulary have similar
+   centroids: in the captured failure a row's own document covers it at
+   0.889 and other documents at 0.455–0.674, which is why the threshold
+   went from 0.5 to 0.75. A fixed cover removes both: a distinctive
+   percept, set at the run's start and never changed, carried unchanged
+   into every row, so that membership is a stable match and distinct
+   documents stay distinct however alike their sentences are.
+2. *The blend is heavy and universal.* Three quarters of every word's form
+   read is context, in every configuration, since `stage_sentence` runs
+   wherever word atoms exist. The XOR standing gate and the decomposition
+   arms, both on configurations without a meaning block, have not been run
+   on this source, and word identification by form (`readback_scores`)
+   now sees blended leaves against a bank of pure word forms. They must
+   run before any freeze; and the sentence whole adds nothing to context
+   (it is the sentence's own words) while costing a quarter of each form.
+3. *The stream whole does the per-batch bookkeeping by content.* The
+   stream's centroid drifts over everything the stream ever read, so
+   stream isolation of antecedents, the recency chain and forgetting's age
+   now rest on the weakest trace. Alec's framing separates these: the
+   stream is a per-batch structure, and the document mechanism is added
+   to it. Reading that literally, the stream's view of LTM is exact
+   per-batch ownership, which the stream column was, and only the document
+   mechanism is content-based.
+
+**The book cover, as a design.** The document whole has two forms: its
+*cover*, fixed at the run's start as the form of its first sentence (the
+title, the first page), stamped and saved to LTM as the document's own
+percept row, so it survives the run row; and its *type*, the running
+centroid, kept for recognizing the kind of document and for promotion.
+Each word's form read carries the cover at a small, configurable share
+(`contextTrace`), not a quarter; membership is the row's match to the
+cover; a re-read of the document matches its cover row in LTM, across
+streams and batches, which is the cross-batch identity Alec asks for; and
+promotion makes the cover the concept's form. The stream whole is dropped
+from the blend; the sentence whole stays as the clause bracket, tense's
+"now". The §2a readers split: document readers (consolidation's
+distinct-document count, MTM document-end teardown, the query by document)
+read the cover; stream readers (the chain, the guards, forgetting's age)
+return to per-batch ownership if Alec confirms finding 3.
+
+**Verdict:** not freezable as built; the direction is right and the cover
+completes it. Decisions put to Alec below; the remaining line-6 work (the
+VP-phase gap of §20.2, the surface inverses, nested admission, the §13.2
+gate) proceeds meanwhile.
+
+**Alec's answers to §10 (2026-10-24), under discussion.** On the cover:
+"Discuss first." On the stream: "What is the advantage of a stream if we
+have batch indexing and document separation?" On the trace share: "What
+are the three active wholes? Parts are also significant here, I guess we
+should take wholes/numWholes as the contribution, which keeps the centroid
+centered." Claude's answers: the three active wholes are Codex's sentence,
+document and stream runs; the stream has no advantage over the batch index,
+which is what the old column recorded at write, so the stream whole goes
+and per-batch ownership stays as bookkeeping; the contribution rule is
+taken as stated: a word's form read is the centroid of its own form and
+the mean of the active wholes' forms, one term however many wholes, which
+with the stream gone and the sentence whole kept only as the clause
+bracket is the document's cover alone. The cover itself is discussed in
+the chat before §2b is written.

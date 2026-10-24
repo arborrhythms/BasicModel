@@ -1627,6 +1627,12 @@ composition, read through its declared head.
 
 ## Intersection or union as the basis of identity (Alec, 2026-10-21)
 
+*Answered for content (Alec, 2026-10-24): a higher-order concept's content
+is the pure centroid of its members' content weighted by their positive
+and negative evidence, neither union nor intersection ([context-wholes
+spec §2b](plans/2026-10-24-context-wholes.md)). The meet remains binding's
+test.*
+
 Alec asked whether successive binds intersect an identity, so that it is
 defined progressively, and asked that its intersection or union basis be
 flagged as future work. Today an MTM token stores only addresses, kind,
@@ -1687,3 +1693,17 @@ of the root-position follow-up is implemented through its declared head;
 the root predicate/marker ambiguity remains here. Identity's live value
 now belongs to MTM (identity §34); the promotion fold uses the historical
 mention union, leaving the intersection-versus-union design question open.
+
+## Perceptual cover: episodic LTM (Alec, 2026-10-24)
+
+A document's start is marked in its batch's LTM stream by a cover row
+holding an automatically minted per-document concept
+([context-wholes spec §2b](plans/2026-10-24-context-wholes.md)). Alec: the
+cover "can be conceptual or perceptual, but perceptual LTM requires
+episodic memory that we don't have yet, so let's make that future work."
+A perceptual cover is the title page as a percept, saved in LTM so that a
+re-read of the document is recognized by its cover across batches and
+sessions; it needs the percept part of rows to be retained and matched,
+the episodic memory of the stores decision (every mental event has a
+perceptual and a conceptual part; the percept part is episodic). Until
+then a re-read mints a new cover.

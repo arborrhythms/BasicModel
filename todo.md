@@ -954,11 +954,12 @@ not by a passing identity lesson.
      broader statistic with one named marker lesson, default off. Keep
      that decision and verify native paired use and reindexing cost
      (iteration spec §20.3).
-   - *Specified 2026-10-24:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
-     (WholeSpace types over runs, sentence ⊂ document ⊂ stream, minted at
-     the run's start with the centroid of their parts, present in the
-     parallel read; membership by content, no exact readers; the `stream`
-     column and 2c's sidecar go, address columns stay until item 3).
+   - *Specified 2026-10-24, third version:* [context wholes](doc/plans/2026-10-24-context-wholes.md)
+     §2b: batch indexing on LTM and STM plus `.when` segment the store; a
+     document starts with a cover row holding an automatically minted
+     per-document concept in its batch's LTM stream; no run rows, no
+     blend; a perceptual cover is FutureWork; the centroid is the center
+     of parts and wholes, each averaged over its count.
    - **Documents (and streams) as context wholes** in WholeSpace, their trace in content (two truths §1 row table, 2026-10-20); learned before/after. *Added (Alec, 2026-10-22):* word adjacency is removed
      in step 2b with no replacement here: neighbours are distributional
      information, already carried into a word's meaning by the sentences it

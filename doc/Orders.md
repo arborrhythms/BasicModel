@@ -268,6 +268,13 @@ conceptual spaces, but keep all symbols in the mereological space."
   per-order kernel land with the LTM2 store (3.5 step 1b carries the
   edges; item 3 carries the strata and placement).
 
+*Centroids (Alec, 2026-10-24; [context-wholes spec §2b](plans/2026-10-24-context-wholes.md)):*
+an order-0 concept's form is the center of the space of its parts and its
+wholes, each averaged over its count; a higher-order concept has no parts
+and wholes, so its content is the pure centroid of its members' content,
+weighted by their positive and negative evidence. The caches of §9 and the
+promotion fold follow this rule, not a max or a min.
+
 ## 10. Orders are learned: definitions raise, three compositions lower (Alec, 2026-10-21; decided, built in item 3)
 
 Alec: "we need not create an ordered grammar, because we have the rule
