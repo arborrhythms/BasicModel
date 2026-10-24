@@ -977,7 +977,7 @@ class ThoughtLTMCapability:
 
     def best_match(self, pattern, *, max_records, work, references=()):
         """One best matching row, with its poles and its own occurrence witness."""
-        from ThoughtReferences import bindings, open_slots
+        from ThoughtReferences import bindings, open_slots, unresolved_operands_match
         timelines = self._timeline_read(pattern, max_records=max_records, work=work, references=references)
         if timelines is not None:
             from TimelineRead import evidence
@@ -1022,7 +1022,7 @@ class ThoughtLTMCapability:
                 region = pattern.role_refs[2-free[0]]
                 return any(answer not in marked and meaning.role_refs[source] == region
                            for source, answer in ((0, 2), (2, 0)))
-            return not any(role in marked for role in free)
+            return unresolved_operands_match(pattern, meaning) and not any(role in marked for role in free)
         candidates = tuple(row for row in found['value']
                            if row['match'] >= tau and row['kind'] not in ('estimate', 'cover')
                            and (row['kind'] != 'question' or tuple(row['evidence']) != (0., 0.))

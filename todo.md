@@ -18,27 +18,16 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Iteration 1 is published at BasicModel `f306fc28aa`, WikiOracle
-`319a793`, after Claude's LAND review through Alec (§19); the required
-corpus receipt paragraph and unchanged parent Ethics edit are included.
-The swap/verb source `65451694e` passes 811 scoped cases with
-26 existing skips. Its original-budget line-3 rerun reads source order
-8/8 (both CE bars still fail), passes lower and definite 1/1, then stops
-at description: brackets 4/4, answers 1/4. The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
-retains all states, failed sources and test ports. Description learning
-and the unrun adjective, definite-adjective, final and copular continuation
-move to item 0; no later artifact is passed. The modal followed
-that stop, with one identity's actual and alternative timelines. Modal
-source `01effdcaf9` completes 733 scoped passes and 11 existing skips;
-both fixed-budget corpus forms fail answers 0/4 and required timeline
-histories 0/4. Neither teacher fired and the chooser never applied
-`adverb` to the marker; the item-0 learning remainder starts from operator
-choice. Iteration 2 is lines 6–7. Its [dated code review](doc/plans/2026-10-23-verb-and-modal.md#20-iteration-2-review-of-the-existing-specifications-against-the-code-codex-2026-10-24)
-is complete; Claude's [context-wholes spec](doc/plans/2026-10-24-context-wholes.md)
-is committed unchanged and its §6 code review records the adaptations.
-Implementation of lines 6–7 is released under step-2 §39. Run a short native lesson smoke before each
-line's single freeze; one full sweep remains at the end of 3.5.
-Layout/removal and STM chunks stay item 3.0, which has not been reached.
-All work stays on main; review is through Alec.
+`319a793`; its failed learning gates are carried to item 0. Iteration 2 is
+lines 6–7. Line 6's first frozen source `e9c53252aa` completed 1,185 scoped
+cases with five failures, and retained the corpus runtime stops. The
+[receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/README.md) documents the
+repairs, exact ports and all three construction-time preallocations. Repair
+verification and the short lesson smoke precede its new frozen hash; every
+gate will identify that source. Line 7 follows, then the iteration review
+through Alec before publication. The single end-of-3.5 sweep remains;
+layout/removal and STM stay item 3.0, which has not been reached. Work stays
+on main.
 
 **Historical step 1b review ledger (superseded by Current).**
 

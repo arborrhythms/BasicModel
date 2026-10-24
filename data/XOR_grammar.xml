@@ -77,6 +77,9 @@
     <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
     <meaningWidth>128</meaningWidth>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
+    <!-- Four documents read three times require 12 cover concepts plus 4 words.
+         Fixed partition (6, 3) + tail 9 gives 12 order-1 seats; 17 gives 11.
+         Preallocated at construction; output width and runtime shapes stay fixed. -->
     <nVectors>18</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>

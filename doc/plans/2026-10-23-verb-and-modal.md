@@ -1911,3 +1911,171 @@ Line 6 freezes once on main. Its receipt begins there and runs the scoped
 groups and all six generated placements by that hash. Line 7 follows with
 its own smoke, freeze and scoped evidence. Both wait for the one iteration
 review through Alec before publication. Item 3.0 has not been reached.
+
+## 35. Frozen line-6 failures and captured diagnosis (Codex, 2026-10-24)
+
+Source `e9c53252aa` passes the 82 mechanism certificates and 110 reference
+regressions. The native group completes 122 passes, seven prerequisite skips
+and one c/e failure at the unchanged line 348. All remaining groups continue
+on that same source before any implementation changes.
+
+The full capture shows the question's explored parse contains
+`part(what, is)` inside its equality. Its R is .14269229769706726 versus
+.16269230842590332 for greedy; A is zero for both, so explore is correctly
+kept. The query then takes the other sentence's equality as an answer at
+match .7132023572921753. That row marks its fixed right operand unresolved,
+but `best_match.can_answer` checks only whether the *free* role is marked
+outside the equality-specific path. Content from the unresolved right side
+therefore appears to establish a match against a different fixed reference.
+No cover is the answer witness. The same annotation already refuses an
+unresolved *answer* and admits an exact address of an unresolved operand;
+this is the missing fixed-operand check, not a new identity or query target.
+
+A captured diagnostic replay filters precisely that unsupported match and
+passes the original c/e test with every assertion, reading and keep unchanged.
+The diagnostic is not a frozen gate pass. The intended repair applies the
+same resolution boundary in retrieval and ordinary fill: a marked fixed
+operand cannot establish a content match to another reference. Direct reads
+that explicitly name that operand retain their valid opposite endpoint.
+No query rank, bind menu, forced choice, objective or keep rule changes.
+
+The fixed-budget corpus also exposes a runtime error after training creates
+multiple lexical readings. The grouped operation executor flattens position
+and reading-variant axes; the new phase view still indexes the original
+positions. Unary phase selection then receives six candidate positions with
+a two-position view. Both initial and failing states, updates and keeps are
+retained for each affected variant; these are execution failures, not failed
+learning targets. The repair will preserve the position axis for contextual
+case operations, using the existing per-variant execution pattern. A direct
+binary/unary reproduction checks values and pullbacks against separate
+variant execution in eager and fullgraph modes. No new parameter, capacity,
+selection or budget follows from the repair. Source changes wait until the
+current frozen invocations finish; every original run remains retained.
+
+The identity/driver group reveals a third runtime failure, in the existing
+joint-objectives packed-run certificate. Its configuration has no meaning
+block, yet the new retained phase inverse indexes `meaning_layout[0]`.
+Both unary and binary case branches must require the paired layout before
+using that inverse. The unpaired unary face already composes as an identity;
+its inverse declaration and reverse must say the same. The unpaired binary
+face retains its existing native-case search. This corrects an inverse
+contract without introducing a new operation, objective term or parameter.
+A new regression covers the unary values, inverse domain and gradients in
+eager/fullgraph modes and the binary case search. Its first compiled setup
+constructed a namespace inside the trace; moving that fixture construction
+outside the tensor function keeps every assertion. That setup failure and
+the original production capture remain retained. No existing assertion is
+changed by any of these three repairs.
+
+The query-boundary diagnostic also passes all 55 existing thought/query
+consumer cases with their assertions unchanged. The unpaired inverse repair
+passes the original packed-run failure from its captured initial state.
+The matching free unary decoder must make the same paired-layout check:
+without a meaning block its absent selection is the identity there too.
+The new certificate checks both retained and free inverse availability,
+exact values and gradients. These diagnostic results justify the repair;
+they do not replace gates on the repaired frozen source.
+
+The remaining query group exposes an additional retained-inverse domain
+failure in `test_numeric_and_renamed_sentence_paths_keep_oracles_out[texts1]`.
+An inverse-derived parent reaches a lane kernel outside the cube. Its
+initial state and failed run are retained; a read-only replay now records
+each inverse input, output and defined-coordinate mask to locate where the
+invalid value first appeared. No clipping, tolerance or assertion change is
+proposed before that diagnosis. Both original decomposition arms and the
+XOR standing gate pass on the unchanged first frozen source.
+
+## 36. Inverse domain and provisioning-count follow-ups (Codex, 2026-10-24)
+
+The retained trace locates the first invalid inverse value at `SumLayer`:
+a bound identity's current value no longer admits the retained sum split.
+The inverse correctly marks every returned coordinate undefined; its
+largest placeholder is 1.9996763467788696. Two identity inverses carry that
+undefined value, then `VerbLayer` passes it to the cube chart despite the
+all-false defined-coordinate mask. This is evaluation of an already
+unavailable inverse, not a roundoff or cube-domain decision.
+
+Under §39, `inverse_step` supplies a numerical zero at coordinates already
+marked undefined before invoking the next map. The false mask stays false;
+zero is not asserted as recovered content. Defined coordinates are never
+clipped, detached or repaired, and an out-of-cube defined input still
+rejects loudly. The new eager/fullgraph cases check that form remains
+exact, missing meaning stays undefined and a defined invalid input still
+raises. The original failing run and the read-only inverse trace remain;
+its captured replay verifies the production path before the repair freeze.
+
+The context/storage group completes 111 cases with two failures. The
+occurrence-coordinate certificate reaches the same unpaired-inverse defect
+already diagnosed in §35; every assertion stays. The other failure is a
+count port in `test_real_provisioning_is_not_an_external_prediction_stream`:
+three provisioned one-sentence documents now write three cover rows beside
+the original three sentence rows. Port `assert len(store) == 3` to
+`assert len(store) == 6` and add a separate three-cover check. The prohibition
+on external prediction binding, the empty context and absent next
+expectation assertions stay verbatim. No test is retired. This changes no
+fixture capacity, input, document count or behavioral threshold.
+
+The supplemental forward-discard file exposes a historical fixture mismatch,
+not another inverse failure. Its October-10 retained frames predate the
+published swap and contain the old transformed forms. The action indices
+still name `lower` and `non` correctly; all lower meaning inverses are in
+range, while 50–61 form coordinates per lower frame violate the current
+centroid inverse. The local certificate does not replay a forest or carry
+leaf counts. Port only its copied output form: the mean of the two retained
+operand forms for a binary, or the single operand form for a unary. Keep
+all actions, all three meaning values, saved costs and assertions verbatim;
+the immutable archive is untouched. This makes the fixture express the
+current form rule without changing the meaning-loss certificate. The failed
+probe, per-step domain audit and original grammar snapshot are retained.
+
+The first working-tree application of the diagnostic patch lost one level
+of indentation in the grouped unary branch. Development unit and replay
+launches failed at import before executing the model. Those logs remain;
+the indentation is corrected and syntax checks now precede the reruns.
+This was an application error, not a frozen source or a fixture failure.
+
+The first form-only port still fails because the archived operand forms
+are signed coordinates, not current cube coordinates; the per-step audit
+retains that correction to the initial diagnosis. Complete the fixture
+migration by applying the existing `cube_unchart` to the copied form block
+before taking each local output's centroid. No meaning coordinate, action,
+cost, assertion or archived byte changes. This is a fixture carrier port,
+not a production clamp or an inverse-domain relaxation. The first port's
+failure is retained beside the original failure.
+
+For the repair protocol, the arithmetic-isolation file runs one case per
+worker invocation under the same 900-second limit. Its first frozen worker
+completed five cases in 873 seconds, close to that aggregate limit. This
+changes test-process grouping only; every selector remains, with the same
+fixture, training steps, suite limit and assertions. Other query cases keep
+the existing grouping. No model or lesson budget is enlarged.
+
+The applied repair passes the c/e, unpaired packed-run and occurrence-time
+captures. The signed-form fixture port passes all three forward-discard
+checks. The domain replay's test body also passes, but its runner reports
+`source_changed` because the independent forward-discard fixture was edited
+while it ran. That invocation is retained as invalidated, not a clean pass;
+the same captured domain case is repeated after source edits finish. The
+lesson smoke and remaining pre-freeze checks run with the source stable.
+
+## 37. Line-6 repair freeze audit (Codex, 2026-10-24)
+
+The repaired source passes the eighteen new regression/provisioning cases,
+the three forward-discard cases after the signed-form fixture migration,
+and all four original production-failure captures (c/e, packed unpaired
+read, occurrence coordinates and the stable domain replay). The short
+lesson smoke completes one training and one held-out batch, six paired
+updates, with 0/2 answers, 0/2 selection counts and 0/2 exact reverses.
+Those learning targets fail; the smoke supplies runtime coverage only.
+
+The cumulative audit hashes 63 source/fixture files and parses every changed
+Python file. Relative to the first freeze, exactly one existing assertion
+changes: provisioning row count 3 to 6, with a separate three-cover check.
+The historical frame fixture changes only its copied form representation;
+every assertion stays. Four new regression files cover the production
+repairs. The capacity values are unchanged; their arithmetic is also written
+beside the two concept capacities and the 32-row fixture. Every failed or
+invalidated invocation remains retained. The repaired source receives a new
+frozen hash; the first freeze remains failed. All scoped groups and the six
+corpus placements run on the repair hash, with no promoted pass and the
+corpus's same captured first draw. Line 7 follows before review through Alec.

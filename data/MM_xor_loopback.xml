@@ -55,6 +55,9 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>12</nInputDim>
+    <!-- Four documents evaluated twice require 8 covers plus 4 words.
+         Fixed partition (8, 4) + tail 4 gives 8 order-1 seats; 15 gives 7.
+         Preallocated at construction; the eight-wide output stays unchanged. -->
     <nVectors>16</nVectors>
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input

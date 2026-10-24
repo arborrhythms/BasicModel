@@ -315,8 +315,9 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     from What import What
     from test_compiled_word_chunk import _tiny_canonical_model
     restore = BaseModel.load_weights
-    # Preallocate the compiled shape for eight closings and their cover;
-    # capacity never changes at runtime. Keep the original absolute
+    # Eight closings can write 24 rows; their cover needs row 25. Alec chose
+    # 32 at construction (seven spare); capacity never changes at runtime.
+    # Keep the original absolute
     # forgetting thresholds: start at eight, retain six.
     settings = dict(forgetHighWater=8/32, forgetLowWater=6/32,
                     forgetMinInterval=256, forgetting=True)

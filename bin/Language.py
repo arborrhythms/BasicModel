@@ -3782,6 +3782,11 @@ class CompoundUnaryLayer(MarkerUnaryLayer):
     invertible = False
     lossy = True
 
+    def __init__(self, base):
+        super().__init__(base)
+        if self.meaning_layout is None:
+            self.inverse_kind, self.invertible, self.lossy = 'identity', True, False
+
     def compose(self, value, *, case_view=None):
         if self.meaning_layout is None:
             return value
@@ -3809,6 +3814,8 @@ class CompoundUnaryLayer(MarkerUnaryLayer):
             whole=selected(context.form_context, 1, operands[0], self))
 
     def reverse(self, parent):
+        if self.meaning_layout is None:
+            return parent
         self.raise_no_inverse('case selection requires a candidate search')
 
     generate = reverse
@@ -7322,7 +7329,8 @@ class OperationSelectionLayer(nn.Module):
                                        device=x.device, dtype=torch.long)
                 count = len(columns)
                 implementation = getattr(self.ops[local], 'gl', self.ops[local])
-                if callable(getattr(implementation, 'compose_with_context', None)):
+                if (callable(getattr(implementation, 'compose_with_context', None))
+                        or (grammar_context is not None and getattr(implementation, 'case_head_role', 0))):
                     # Contextual operators index the original live slab by
                     # pair position. Keep that axis separate from variants.
                     for column in columns.unbind():
@@ -7409,6 +7417,15 @@ class OperationSelectionLayer(nn.Module):
             for local in dict.fromkeys(operations):
                 columns = torch.tensor([i for i, op in enumerate(operations) if op == local],
                                        device=x.device, dtype=torch.long)
+                implementation = getattr(self.unary_ops[local], 'gl', self.unary_ops[local])
+                if grammar_context is not None and getattr(implementation, 'case_head_role', 0):
+                    # Phase views index positions independently of lexical alternatives.
+                    for column in columns.unbind():
+                        one = column.reshape(1)
+                        values = reference_data['unary'].index_select(2, one)[:, :, 0]
+                        values = self._apply_op(self.unary_ops[local], values, grammar_context=grammar_context)
+                        result = result.index_copy(2, one, values[:, :, None])
+                    continue
                 values = reference_data['unary'].index_select(2,columns).reshape(B,N*len(columns),D)
                 values = self._apply_op(self.unary_ops[local],values,grammar_context=grammar_context)
                 result = result.index_copy(2,columns,values.reshape(B,N,len(columns),D))
@@ -13861,8 +13878,9 @@ class LanguageSpace(nn.Module):
             op = getattr(wrapped, 'gl', wrapped)
             if not getattr(op, 'reverse_dispatchable', True):
                 continue
-            if callable(getattr(op, 'compose_case_meaning', None)):
-                if case_bank is not None and getattr(op, 'meaning_layout', None) is not None:
+            if (getattr(op, 'meaning_layout', None) is not None
+                    and callable(getattr(op, 'compose_case_meaning', None))):
+                if case_bank is not None:
                     from CaseSelection import inverse_unary
                     value, found = inverse_unary(case_bank, x, op, whole_bank=whole_bank)
                     result = torch.where((selected & found)[:, None], value, result)

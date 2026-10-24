@@ -49,6 +49,14 @@ def open_slots(meaning):
     return tuple(dict.fromkeys(result))
 
 
+def unresolved_operands_match(pattern, candidate):
+    """An unresolved fixed operand is usable only by its exact reference."""
+    free = {role for kind, role in open_slots(pattern) if kind != 'evidence'}
+    return all(role in free or not bool(pattern.role_mask[role])
+               or pattern.role_refs[role] == reference
+               for role, reference in bindings(candidate).get('_unresolved_operands', ()))
+
+
 def needs_episode(meaning):
     """A region can need evidence without owning an extra operand slot."""
     return bool(open_slots(meaning)) or (meaning.mode == 'interrogative'
@@ -160,6 +168,8 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
         supplied = frames[0].get('meaning') if len(frames) == 1 else None
     if supplied is not None:
         validate_local_references(supplied)
+        if not unresolved_operands_match(meaning, supplied):
+            return meaning
     frames = evidence.get('frames', ())
     roles, mask = meaning.roles.clone(), meaning.role_mask.clone()
     references = list(meaning.role_refs)

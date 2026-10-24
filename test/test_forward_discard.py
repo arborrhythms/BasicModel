@@ -10,6 +10,7 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
     from pathlib import Path
     from identity_experiment import make_model
     from DerivationReconstruction import inverse_step
+    from Layers import cube_unchart
     saved = torch.load(Path(__file__).resolve().parents[1] /
         'doc/benchmarks/2026-10-10-item6/identity-r2/validation/retained-trials.pt',
         map_location='cpu', weights_only=True)
@@ -17,6 +18,18 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
     try:
         for trial in saved['trials']:
             programs = [SimpleNamespace(**p) for p in trial['programs']]
+            # The archive has signed, pre-centroid forms. Keep its actions and
+            # all three meaning values; map only forms into the current cube
+            # and express each local output as its parts' centroid.
+            for program in programs:
+                program.operation_values = program.operation_values.clone()
+                width = saved['meaning_start']
+                program.operation_values[..., :width] = cube_unchart(
+                    program.operation_values[..., :width])
+                for step, (kind, _, _) in enumerate(program.actions.tolist()):
+                    if kind in (1, 2):
+                        frame = program.operation_values[step]
+                        frame[2, :width] = frame[:2 if kind == 1 else 1, :width].mean(0)
             charge = forward_discard(model.languageSpace, programs, saved['meaning_start'], trial['other_cost'])
             torch.testing.assert_close(charge, torch.zeros(4))
             torch.testing.assert_close(trial['other_cost'], torch.full((4,), 1.85))

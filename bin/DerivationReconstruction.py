@@ -18,12 +18,16 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     """
     coordinates = (torch.isfinite(parent) if coordinates is None else
                    coordinates & torch.isfinite(parent))
+    # Missing coordinates carry no value into a later inverse. Their mask
+    # remains false; a defined invalid coordinate still rejects in its map.
+    parent = torch.where(coordinates, parent, 0.)
     op_index = torch.tensor([operation], device=parent.device)
     live = torch.ones(1, dtype=torch.bool, device=parent.device)
     if kind == 2:
         wrapped = language._tree_layer(1).unary_ops[operation]
         op = getattr(wrapped, 'gl', wrapped)
-        if callable(getattr(op, 'compose_case_meaning', None)):
+        if (getattr(op, 'meaning_layout', None) is not None
+                and callable(getattr(op, 'compose_case_meaning', None))):
             width = op.meaning_layout[0]
             # Selection discards case content. The single child's form is
             # preserved; no affine inverse invents the discarded meaning.
@@ -53,7 +57,8 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         return ((child, coordinates & ~bad[:, None]),)
     wrapped = language._tree_layer(2).ops[operation]
     op = getattr(wrapped, 'gl', wrapped)
-    if callable(getattr(op, 'compose_case_meaning', None)):
+    if (getattr(op, 'meaning_layout', None) is not None
+                and callable(getattr(op, 'compose_case_meaning', None))):
         from MeaningKernels import split_centroid
         width = op.meaning_layout[0]
         witness = frame[0:1].detach()
