@@ -691,3 +691,44 @@ save/load regression checks a minted group and a pending fit witness,
 including the first freeze's envelope. Regenerate the warm-up and resume
 the original lesson sequence on the repaired frozen source. This is a
 §39 persistence repair, not a rescue of a learning result.
+
+## 12. Working-view port and stationary reconstruction (Codex, 2026-10-23)
+
+Source `f83d0081bf` passed nine scoped groups; identity/driver completed
+182 passes and one failure. Its captured failure in
+`test_one_native_sentence_owns_only_its_end_state_after_the_boundary`
+reproduced: a thought filled a stored question's working reading while
+the test compared that reading with the raw occurrence slots. Use
+`store.row(row)['meaning'].roles` for both storage layouts, instead of
+using it only for Part rows and `store.slots[row]` otherwise. The equality
+assertion and every other assertion stay verbatim; the written row is not
+changed. The captured replay then passes. This is a §39 expected-view
+port, not a change to the binding or storage contract.
+
+The original warm-up passed. Stage 3 restored, but its first two training
+batches each took roughly 150 seconds and the process reached a 33.4 GiB
+footprint on a 36 GiB host. The run was interrupted during its third
+training batch; initial, last-batch and failure states and all keep probes
+are retained. No behavior gate had completed, and the partial run is not
+learning evidence.
+
+A first-batch profile found 1,089 reconstruction trips. Once every live
+top had no legal inverse or terminal, the walk repeated exactly the same
+pending state to its budget. Stop at that fixed state, retaining its
+pending depth, empty trace suffix and already allocated full-budget random
+draws. A regression compares the complete old-budget result, trace, RNG
+state and input pullback, with one readable row and one pending row, in
+eager and fullgraph execution. Nothing admits a new move or changes a
+budget, candidate, residual, objective or keep. The first-batch diagnostic
+falls to 2.3 seconds with the same four cross-entropies and two paired
+updates; the original-budget lesson must still run on the new freeze.
+
+Two exact action simplifications also stay: the modifier uses its one
+shared basis without expanding it per candidate, and an eager action
+with no object and no assigned group uses the identity basis directly.
+The general compiled path and eager shortcut have matching outputs and
+pullbacks. A separate selected-face graph experiment gave no useful speed
+improvement and is withdrawn; its patch and logs remain in development.
+There are no other existing-test assertion changes or retired tests in
+this repair. Development checks: 54 passed and one existing prerequisite
+skip; the captured end-state replay passed separately.

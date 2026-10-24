@@ -1,0 +1,32 @@
+{
+  "source": "f83d0081bf84d6feea28c07e9b04639a4a0379e5",
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "test/test_report.py",
+    "test/test_math_chain_section14.py",
+    "test/test_reference_close.py",
+    "test/test_reference_mentions.py",
+    "test/test_bind_thought.py",
+    "test/test_identity_rows.py",
+    "test/test_identity_cube.py",
+    "test/test_part_store.py",
+    "test/test_operators_final_b.py",
+    "--workers",
+    "1",
+    "--memory-gib",
+    "8",
+    "--timeout",
+    "900",
+    "--suite-timeout",
+    "7200",
+    "--batch-size",
+    "16",
+    "--max-files",
+    "1",
+    "--run-dir",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-03/native"
+  ],
+  "started": "2026-10-24T02:06:37.109111+00:00",
+  "exit": 0,
+  "finished": "2026-10-24T02:15:45.701222+00:00"
+}

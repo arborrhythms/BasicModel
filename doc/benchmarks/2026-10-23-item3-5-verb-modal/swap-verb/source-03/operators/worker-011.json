@@ -1,0 +1,159 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_verb_spectrum.py::test_flag_off_is_noop",
+    "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+    "test/test_verb_spectrum.py::test_untrained_is_identity",
+    "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+    "test/test_verb_spectrum.py::test_per_verb_differentiation",
+    "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+    "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+    "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+  ],
+  "completed": [
+    "test/test_verb_spectrum.py::test_flag_off_is_noop",
+    "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+    "test/test_verb_spectrum.py::test_untrained_is_identity",
+    "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+    "test/test_verb_spectrum.py::test_per_verb_differentiation",
+    "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+    "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+    "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+    "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_flag_off_is_noop",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.000710667110979557,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_flag_on_builds_projection",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004722089506685734,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_untrained_is_identity",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008694170974195004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_roundtrip_exact_and_nontrivial",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007334169931709766,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_per_verb_differentiation",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00056245899759233,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_spectrum_is_sparse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004934170283377171,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_spectrum_log_gain_is_bounded_and_preserves_normal_range",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001334416912868619,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_selected_overflowing_verb_candidate_has_finite_adjoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014365124981850386,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_unselected_overflowing_verb_candidate_has_finite_adjoint",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0016101659275591373,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0015804998110979795,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0009981670882552862,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008372499141842127,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_spectrum.py::test_low_precision_roundtrip_is_accurate_to_output_quantization[dtype1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006668330170214176,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_curriculum.py::test_derivation_inverse_recovers_composed_children_and_depends_on_the_root",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

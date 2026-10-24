@@ -12953,10 +12953,10 @@ class BasicModel(BaseModel):
         departure_draw = (torch.rand(B, 1, device=event.device, dtype=event.dtype)
                           if exploit_actions is not None else None)
 
-        def cond(t, stack, depth, emitted, count, actions, alternatives):
-            return (t < T) & (depth > 0).any()
+        def cond(t, stack, depth, emitted, count, actions, alternatives, progressing):
+            return (t < T) & (depth > 0).any() & progressing
 
-        def body(t, stack, depth, emitted, count, actions, alternatives):
+        def body(t, stack, depth, emitted, count, actions, alternatives, progressing):
             pos = (depth - 1).clamp(0, N - 1)
             parent = stack[ar, pos]
             live = depth > 0
@@ -13008,13 +13008,18 @@ class BasicModel(BaseModel):
             alternatives1 = alternatives.scatter(1, t.reshape(1, 1).expand(B, 1),
                                                   (live & legal.sum(-1).gt(1))[:, None])
             return (t + 1, stack1, depth + binary.long() - pop.long(),
-                    emitted1, count + pop.long(), actions1, alternatives1)
+                    emitted1, count + pop.long(), actions1, alternatives1,
+                    (live & ready).any())
 
+        # With no legal move in any live row, the remaining trips would
+        # repeat this exact state. Keep its pending depth and untouched
+        # trace suffix; the random draws were allocated for the whole budget.
         zeros = torch.zeros(B, device=event.device, dtype=torch.long)
-        _, stack, depth, emitted, count, actions, alternatives = _reconstruction_while_loop(
+        _, stack, depth, emitted, count, actions, alternatives, _ = _reconstruction_while_loop(
             cond, body, _carries_with_grad((zeros.new_zeros(()), event.clone(), n_live0,
                 event.new_zeros(B, T, D), zeros, zeros.new_full((B, T), -1),
-                torch.zeros(B, T, device=event.device, dtype=torch.bool))))
+                torch.zeros(B, T, device=event.device, dtype=torch.bool),
+                torch.ones((), device=event.device, dtype=torch.bool))))
         index = (torch.arange(T, device=event.device)[None] + (T-count)[:, None]).clamp_max(T-1)
         out = emitted.gather(1, index[..., None].expand(B, T, D))
         keep = torch.arange(T, device=event.device)[None] < count[:, None]

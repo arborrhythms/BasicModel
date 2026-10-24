@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_compose.py::test_disabled_sentence_prediction_leaves_adam_momentum_unused",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

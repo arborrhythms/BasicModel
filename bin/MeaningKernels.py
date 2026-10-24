@@ -179,7 +179,7 @@ class MeaningAction(nn.Module):
         eye = torch.eye(size, dtype=value.dtype, device=value.device)
         q = eye if group is None else self.groups(group)
         if self.modifier:
-            q = self.groups(torch.zeros(value.shape[:-1], dtype=torch.long, device=value.device))
+            q = self.groups(torch.zeros((), dtype=torch.long, device=value.device))
         support = torch.ones_like(value[..., :size], dtype=torch.bool)
         if object_value is not None:
             support = object_value.unflatten(-1, (2, size)).ne(0).any(-2)
@@ -195,7 +195,15 @@ class MeaningAction(nn.Module):
     def forward(self, value, verb, *, object_value=None, group=None,
                 object_present=None, inverse=False):
         from Layers import cube_chart, cube_unchart
-        if not self.modifier and object_value is None and group is None:
+        # Unknown groups and absent objects have exactly the identity basis.
+        # Eager evaluation need not build a dense matrix for that masked path.
+        # The compiled path retains the tensor-only general expression.
+        neutral_basis = object_value is None and group is None
+        if not torch.compiler.is_compiling() and not self.modifier:
+            neutral_basis = ((object_value is None or
+                (object_present is not None and not bool(object_present.any())))
+                and (group is None or not bool((group >= 0).any())))
+        if not self.modifier and neutral_basis:
             w = self.spectrum(verb)
             lanes = value.unflatten(-1, (2, -1))
             chart = cube_chart(lanes, bounded=False)

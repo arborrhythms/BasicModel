@@ -1,0 +1,6 @@
+{
+  "node": "test/test_grammar_binary_ops.py::TestArityContract::test_unary_accepts_one_operand",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

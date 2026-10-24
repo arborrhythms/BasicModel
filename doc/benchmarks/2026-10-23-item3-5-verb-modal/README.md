@@ -47,3 +47,28 @@ repair and a new native save/load regression; no existing assertion changes.
 No result from this hash is promoted to the repair hash. Development logs,
 failed captures, interrupted optional runs and the unlanded staging patch
 are retained under `development` and `swap-verb/development`.
+
+## Third swap/verb source — working-view failure and interrupted lesson
+
+Source `f83d0081bf84d6feea28c07e9b04639a4a0379e5`:
+[source audit](swap-verb/source-03/source-audit.json),
+[scoped results](swap-verb/source-03/gate-summary.json).
+All groups passed except identity/driver (182 passed, one failure). Both
+pending orders and original decomposition arms passed. The end-state
+failure reproduced from its captured RNG; a stored question's working
+reading was compared with its raw slots. Specification §12 records the
+uniform working-view port. The assertion text is unchanged; its expected
+view changes from raw occurrence slots to the same stored working meaning
+already used for Part rows. No other assertion changes or retired tests.
+
+Warm-up passed at 76 presentations and 38 paired updates. Stage 3 was
+interrupted for resource diagnosis after two completed training batches,
+before a behavior gate. Its full initial/last-batch/failure states and keep
+probes remain; no partial result or earlier hash supplies a pass. Large
+capture files are losslessly compressed with original SHA-256 and lengths
+in [compressed-files.json](swap-verb/source-03/compressed-files.json).
+Development 32–44 records the profile, exact output/gradient checks,
+reproduced failure, corrected replay and withdrawn selected-face experiment.
+The new fixed-state reconstruction exit changes no learning budget,
+selection, objective or keep; the original lessons are regenerated on the
+next source. The shared and neutral basis simplifications are also exact.

@@ -1,0 +1,12 @@
+{
+  "selectors": [
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-03/operators/worker-009.recycle.json"
+}

@@ -222,3 +222,24 @@ def test_direct_paired_reverses_reject_a_retired_split(paired):
         left, right = op.reverse_blocks(result, b)
         torch.testing.assert_close(left, a)
         torch.testing.assert_close(right, b)
+
+
+def test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback():
+    action = MeaningAction(8, capacity=2).double()
+    with torch.no_grad():
+        action.readout.fill_(.1)
+    before = torch.linspace(.1, .8, 16, dtype=torch.float64).reshape(2, 8).requires_grad_()
+    verb = before.flip(-1).detach().requires_grad_()
+    obj = before.detach().clone().requires_grad_()
+    def run(value, operator, context):
+        return action(value, operator, object_value=context,
+            object_present=torch.zeros(2, dtype=torch.bool), group=torch.full((2,), -1))
+    expected = torch.compile(run, backend='eager', fullgraph=True)(before, verb, obj)
+    actual = run(before, verb, obj)
+    torch.testing.assert_close(actual, expected, rtol=1e-12, atol=1e-12)
+    inputs = (before, verb, obj, *action.parameters())
+    a = torch.autograd.grad(actual.sum(), inputs, allow_unused=True)
+    b = torch.autograd.grad(expected.sum(), inputs, allow_unused=True)
+    for tensor, x, y in zip(inputs, a, b):
+        torch.testing.assert_close(torch.zeros_like(tensor) if x is None else x,
+                                   torch.zeros_like(tensor) if y is None else y, rtol=1e-9, atol=1e-9)

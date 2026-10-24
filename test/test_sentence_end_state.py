@@ -193,8 +193,7 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
         store = model.symbolSpace.ltm_store
         row = store.location(ended.row_id)
         assert row is not None
-        retained_roles = (store.row(row)['meaning'].roles if isinstance(row, tuple)
-                          else store.slots[row])
+        retained_roles = store.row(row)['meaning'].roles
         torch.testing.assert_close(ended.meaning.roles, retained_roles, rtol=0, atol=0)
         trace = model._reconstruction_stack()
         assert not trace._choice_mask.any()

@@ -43,6 +43,46 @@ def test_missing_compound_is_incomplete_instead_of_losing_a_phrase():
     assert result['codes'] == ()
 
 
+@pytest.mark.parametrize('compiled', [False, True])
+def test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback(compiled, monkeypatch):
+    import Models
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    owner = SimpleNamespace(languageSpace=additive_language())
+    words = torch.eye(4, dtype=torch.float64)[None, :2].expand(2, -1, -1).clone()
+    event = torch.zeros(2, 4, 4, dtype=torch.float64)
+    event[0, 0] = words[0].sum(0)
+    event[1, 0, 3] = 1.  # This top has no legal inverse or terminal.
+    event.requires_grad_()
+    def walk(value):
+        return Models.BasicModel._output_generate_walk(owner, value, 12,
+            basis=words, basis_valid=torch.ones(2, 2, dtype=torch.bool),
+            sample_actions=True, return_candidates=True)
+    ordinary_loop = Models._reconstruction_while_loop
+    trips = []
+    def full_budget(condition, body, values):
+        while bool((values[0] < 12) & (values[2] > 0).any()):
+            trips.append(1)
+            values = body(*values)
+        return values
+    initial_rng = torch.get_rng_state()
+    monkeypatch.setattr(Models, '_reconstruction_while_loop', full_budget)
+    expected = walk(event)
+    expected_rng = torch.get_rng_state()
+    expected_gradient, = torch.autograd.grad(expected[0].sum(), event)
+    assert len(trips) == 12
+    monkeypatch.setattr(Models, '_reconstruction_while_loop', ordinary_loop)
+    torch.set_rng_state(initial_rng)
+    decode = torch.compile(walk, fullgraph=True, backend='eager') if compiled else walk
+    actual = decode(event)
+    actual_gradient, = torch.autograd.grad(actual[0].sum(), event)
+    for a, b in zip(actual, expected):
+        torch.testing.assert_close(a, b, rtol=0, atol=0)
+    torch.testing.assert_close(actual_gradient, expected_gradient, rtol=0, atol=0)
+    assert torch.equal(torch.get_rng_state(), expected_rng)
+    assert actual[1].tolist() == [2, 0] and actual[2].tolist() == [False, True]
+
+
 def test_stored_unfold_preserves_live_native_operator_activation():
     from Language import LiftLayer
     from MemoryIndex import unfold_idea

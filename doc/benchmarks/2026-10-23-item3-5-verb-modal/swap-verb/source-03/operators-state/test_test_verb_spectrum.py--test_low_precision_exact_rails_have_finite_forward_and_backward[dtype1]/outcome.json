@@ -1,0 +1,6 @@
+{
+  "node": "test/test_verb_spectrum.py::test_low_precision_exact_rails_have_finite_forward_and_backward[dtype1]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

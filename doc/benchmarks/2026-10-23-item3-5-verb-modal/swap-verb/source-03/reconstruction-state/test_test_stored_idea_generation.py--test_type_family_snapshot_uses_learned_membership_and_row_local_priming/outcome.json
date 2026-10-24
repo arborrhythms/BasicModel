@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

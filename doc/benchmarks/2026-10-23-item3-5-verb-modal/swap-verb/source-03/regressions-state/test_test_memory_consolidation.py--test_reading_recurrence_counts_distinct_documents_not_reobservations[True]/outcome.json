@@ -1,0 +1,6 @@
+{
+  "node": "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

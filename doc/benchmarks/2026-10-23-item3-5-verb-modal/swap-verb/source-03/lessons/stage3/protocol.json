@@ -1,0 +1,14 @@
+{
+  "seed": 20261010,
+  "batches_per_lesson": 64,
+  "batch_size": 4,
+  "training_presentations": 512,
+  "paired_optimizer_steps": 256,
+  "evaluation_presentations": 16,
+  "learning_rate": 0.003,
+  "warmup": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-03/lessons/warmup/warmup.ckpt",
+  "candidate": "f83d0081bf84d6feea28c07e9b04639a4a0379e5",
+  "gate": "both lessons: exact free source order on every row and final per-row CE <= .01 nats/read",
+  "batch_end_optimizer": "disabled",
+  "no_retries": true
+}

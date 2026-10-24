@@ -1,0 +1,6 @@
+{
+  "node": "test/test_surface_grammar.py::test_selected_surface_preserves_complete_content_meaning",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

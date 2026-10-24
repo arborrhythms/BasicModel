@@ -1,0 +1,6 @@
+{
+  "node": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}
