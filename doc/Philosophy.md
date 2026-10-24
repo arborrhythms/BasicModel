@@ -1860,6 +1860,61 @@ and the ethical one in [Ethics](../../doc/Ethics.md#witnessing-plants-the-seeds-
 The mapping, with references, is in the
 [identity spec §5](plans/2026-10-23-identity-threading.md#5-grounding-the-psychological-stores-and-dharmakīrti-claude-2026-10-23-at-alecs-request).
 
+## The Afflicted Mind and the Transformation of the Basis: Two Configurations of MTM (Alec's question, 2026-10-23)
+
+Alec: "Given the relation of MTM to the kliṣṭa-manas, describe how to make
+an unenlightened vs an enlightened mind." In Yogācāra the afflicted mind
+(*kliṣṭa-manas*) continuously takes the store consciousness as "I",
+always accompanied by four afflictions, self-view (*ātma-dṛṣṭi*),
+self-delusion (*ātma-moha*), self-pride (*ātma-māna*) and self-love
+(*ātma-sneha*), and the other consciousnesses cognize with it as their
+support, so everything is cognized as mine or not mine. Enlightenment is
+the transformation of the basis (*āśraya-parāvṛtti*): the manas ceases
+(*Triṃśikā* 7: it is absent in the arhat, in the attainment of cessation
+and on the supramundane path), the store consciousness continues,
+transformed into the mirror wisdom that holds what occurred without
+grasping it, and the manas's place is taken by the wisdom of equality
+(*samatā-jñāna*), which sees self and other alike. Memory and continuity
+are not abolished; the privileged grasping of one continuity is.
+
+In the architecture both minds have MTM, timelines, LTM and the concept
+index. The difference is whether there is a manas: an identity privileged
+over every other and taken as the support of cognition. Each affliction
+is a configuration of machinery that exists.
+
+| Yogācāra | The unenlightened mind: a manas | The enlightened mind: the basis transformed |
+| --- | --- | --- |
+| the self's support | one MTM identity is privileged: always accessible (prepended first to the symbol array at every sentence), exempt from capacity, expiry and the document's end, always in the protected set of forgetting | the self is an ordinary identity: witnessed into MTM when mentioned or recalled, expiring sixteen closes after its last reference, promoted by recurrence, protected only while referenced |
+| self-view: the continuity taken as a self with an essence | the identity read by intersection as the thing: an invariant core row that events do not update, "I am the same" | identity by union and designation: the state is the result of the latest event, the concept is the class of the occurrences, and there is no core (the identity-basis section above) |
+| self-delusion: not knowing that the self is imputed | "I" binds to the self without the dummy and without a score, as perception rather than judgment, never revised | binding to the self is a scored judgment with the dummy present, refined by arrival and revisable, like every bind |
+| self-pride | evidence and credit asymmetric: rows in which the self participates carry a lane bias or a higher trust, and the self's expectations are privileged | the two lanes symmetric and never netted (the tetralemma rule), trust from the source alone; the same rules for self and other, Ethics' universality applied to identity |
+| self-love | the forgetting economy values what concerns the self; its rows are never released; the priming surface is centered on it | value from surprise, utility and access alone; the self is forgotten like anything unrefreshed |
+| perfuming | every idea is composed over the self, a self-referenced perspective frame, so the store fills with self-referenced seeds | ideas are written as what occurred; the self enters an idea only when it participated: the mirror |
+| the store | the storehouse of defiled seeds, refreshed at every close | continues, holding what occurred; the counterfactual machinery (alternative timelines) runs for other identities as for one's own, which is the wisdom of equality as perspective-taking |
+
+The path is also mechanical. Remove the exemptions and the manas's
+support expires with every other identity; stop composing over the self
+and the self-referenced seeds, no longer refreshed, lose value and are
+forgotten; the store remains, holding what occurred. The second
+obscuration, the cognitive one (*jñeya-āvaraṇa*), is the same reification
+applied to every concept, taking a kind's invariant for an essence; the
+architecture's concepts are classes of occurrences and its universals are
+not causally efficacious, which is as far as a design can go toward not
+building it in.
+
+Two honest limits. The architecture as decided has no self at all, which
+is a different condition from enlightenment: an arhat uses "I"
+conventionally without grasping it, and a system without a self-identity
+has neither the convention nor the grasping. If a self is given (Ethics,
+"Witnessing plants the seeds of identity"), the enlightened construction
+is to admit it as an ordinary identity under the universal rules, and
+the unenlightened one is the privileged, exempt, essence-bearing,
+unscored, protected token that every idea is composed over. And most of
+the enlightened column is already the design: the dummy in every bind,
+identity by union with the meet as the test, two lanes never netted,
+trust from the source, forgetting by value, MTM's expiry. What makes a
+manas is not new machinery but exemptions from it.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |
