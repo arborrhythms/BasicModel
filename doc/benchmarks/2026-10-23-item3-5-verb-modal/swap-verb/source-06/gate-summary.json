@@ -1,0 +1,138 @@
+{
+  "native": {
+    "selected": 130,
+    "completed": 130,
+    "exit": 0,
+    "counts": {
+      "passed": 123,
+      "skipped": 7
+    },
+    "skipped_certificates_by_phase": {
+      "copular_identity": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_forced_ordinary_answer_fills_committed_question_without_its_own_episode",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 241, 'Skipped: phase artifact absent: copular_identity (no producing lesson registered)')"
+        }
+      ],
+      "mtm_reidentification": [
+        {
+          "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[0]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 185, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')"
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[1]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 185, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')"
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[2]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 185, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')"
+        },
+        {
+          "nodeid": "test/test_reference_close.py::test_reidentification_revises_the_earlier_ambiguous_binding[3]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reference_close.py', 185, 'Skipped: phase artifact absent: mtm_reidentification (no producing lesson registered)')"
+        }
+      ],
+      "pending_premise_learning": [
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_live_pending_premise_closes_in_both_orders[False]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 437, 'Skipped: phase artifact absent: pending_premise_learning (no producing lesson registered)')"
+        },
+        {
+          "nodeid": "test/test_math_chain_section14.py::test_live_pending_premise_closes_in_both_orders[True]",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_math_chain_section14.py', 437, 'Skipped: phase artifact absent: pending_premise_learning (no producing lesson registered)')"
+        }
+      ]
+    }
+  },
+  "operators": {
+    "selected": 192,
+    "completed": 192,
+    "exit": 0,
+    "counts": {
+      "passed": 191,
+      "skipped": 1
+    },
+    "skipped_certificates_by_phase": {
+      "fineweb": [
+        {
+          "nodeid": "test/test_surface_grammar.py::test_real_text_has_a_complete_selected_meaning",
+          "reason": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_surface_grammar.py', 191, 'Skipped: phase artifact absent: fineweb (no producing lesson registered)')"
+        }
+      ]
+    }
+  },
+  "identity-and-driver": {
+    "selected": 183,
+    "completed": 183,
+    "exit": 0,
+    "counts": {
+      "passed": 180,
+      "skipped": 3
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "certificates": {
+    "selected": 23,
+    "completed": 23,
+    "exit": 0,
+    "counts": {
+      "passed": 23
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "decomposition-enabled": {
+    "selected": 2,
+    "completed": 2,
+    "exit": 0,
+    "counts": {
+      "passed": 2
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "decomposition-zero": {
+    "selected": 2,
+    "completed": 2,
+    "exit": 0,
+    "counts": {
+      "passed": 2
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "legacy-loss-smoke": {
+    "selected": 25,
+    "completed": 25,
+    "exit": 0,
+    "counts": {
+      "passed": 10,
+      "skipped": 15
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "reconstruction": {
+    "selected": 162,
+    "completed": 162,
+    "exit": 0,
+    "counts": {
+      "passed": 162
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "regressions": {
+    "selected": 110,
+    "completed": 110,
+    "exit": 0,
+    "counts": {
+      "passed": 110
+    },
+    "skipped_certificates_by_phase": {}
+  },
+  "xor-standing": {
+    "selected": 8,
+    "completed": 8,
+    "exit": 0,
+    "counts": {
+      "passed": 8
+    },
+    "skipped_certificates_by_phase": {}
+  }
+}

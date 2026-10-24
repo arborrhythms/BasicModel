@@ -1128,7 +1128,8 @@ class ReferenceClose(nn.Module):
 
     @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training,
-               verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None):
+               verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None,
+               modifier_action=None, modal_teacher_weight=.1, modal_records=None):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         from collections import OrderedDict
         from IdentityRows import point
@@ -1263,6 +1264,9 @@ class ReferenceClose(nn.Module):
         self.last_verb_teacher = observe(verb_action, mtm, previous, observed,
             lambda symbol: point(self.components.owner, symbol), errors=errors,
             weight=verb_teacher_weight, training=training, deferred=teacher_records)
+        from ModalLearning import observe as observe_modal
+        self.last_modal_teacher = observe_modal(modifier_action, mtm, events,
+            errors=errors, weight=modal_teacher_weight, training=training, deferred=modal_records)
         # Several kept closes can share one model-present tick. Actual
         # mention/refinement/event references, not equal timestamps, refresh
         # the pool's independent kept-close access counter.
@@ -1278,7 +1282,7 @@ class ReferenceClose(nn.Module):
     def _commit_events(self, plan, written, *, when, closed_mentions=(), observed=None, verb_action=None):
         """Read the kept role correspondence, never infer roles from a value."""
         from ClauseRow import ClausePredicate
-        if plan.get('prepared_root') is None:
+        if plan.get('prepared_root') is None or plan['prepared_root'].meaning.mode == 'interrogative':
             return set()
         mtm = self.components.owner.mtm
         identities, introduced, referenced = {}, set(), set()
@@ -1323,7 +1327,8 @@ class ReferenceClose(nn.Module):
                         break
                     pending.extend(reversed(term.children))
             if type(verb) is int and verb not in (-1, 0):
-                mtm.event(token, event, verb=self._event_symbol(verb), role=item['role'], when=when)
+                mtm.event(token, event, verb=self._event_symbol(verb), role=item['role'], when=when,
+                          after=parent.point if item['role'] == 0 else None)
                 referenced.add(token)
         pending, nodes, seen = [plan['prepared_root']], [], set()
         while pending:
@@ -1335,7 +1340,7 @@ class ReferenceClose(nn.Module):
                 nodes.append(node)
             pending.extend((*node.children, *node.companions))
         updated = {}
-        for node in sorted(nodes, key=lambda node: node.identity['action']):
+        for node in sorted(nodes, key=lambda node: node.identity.get('event_order', node.identity['action'])):
             record = node.identity
             _, subject, obj, verb, _, changed = record['event']
             if not subject:
@@ -1373,20 +1378,30 @@ class ReferenceClose(nn.Module):
                     if int(record['origins'][handle-1, 0]) == 3 and handle not in introduced:
                         raise RuntimeError('a kept identity event lost its determined introduction')
                     continue
+                alternative = record.get('alternative', False)
+                timeline = (mtm.alternative(token, when=when,
+                            before=record.get('before') if role == 0 else None)
+                            if alternative else 0)
                 is_action = role == 0 and record.get('operation') == 'lift'
                 basis = record.get('basis')
                 if is_action and basis is None and verb_action is not None:
                     basis = verb_action.groups.assignments.get(int(verb), -1)
-                mtm.event(token, event, verb=int(verb), role=role, when=when,
+                result = record.get('result')
+                mtm.event(token, event, verb=int(verb), role=role, when=when, timeline=timeline,
                     before=record.get('before') if is_action and verb_action is not None else None,
-                    basis=basis if is_action and verb_action is not None else None)
+                    basis=basis if is_action and verb_action is not None else None,
+                    after=result if role == 0 else None,
+                    modifiers=record.get('modifiers', ()) if role == 0 and alternative else ())
                 referenced.add(token)
                 if role == 0 and changed:
-                    updated[token] = record['values'][handle-1]
-                    if observed is not None and record.get('operation') in ('part', 'whole', 'equal'):
+                    values = record.get('timeline_values') if alternative else record['values']
+                    if values is None:
+                        raise RuntimeError('a kept alternative lost its numerical state')
+                    updated[token, timeline] = values[handle-1]
+                    if not alternative and observed is not None and record.get('operation') in ('part', 'whole', 'equal'):
                         observed.add(token)
-        for token, value in updated.items():
-            mtm.update(token, value, when=when)
+        for (token, timeline), value in updated.items():
+            mtm.update(token, value, when=when, timeline=timeline)
         return referenced
 
     def get_extra_state(self):

@@ -18,17 +18,18 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Step 2 is published at BasicModel `3624f6204`, WikiOracle
-`c9b19d4`. Line 3's production/lesson source is `3b34b3f38`; final fixture
-repair `1e78fb6d3` passes 212 scoped cases with eight existing skips and
-the captured sweep-failure replay. The [receipt](doc/benchmarks/2026-10-23-item3-5-stage4e-np/README.md)
-retains its single failed sweep and every port. Regenerated stage3 reads
-in source order 8/8 but fails the original CE bars. The original NP lower
-lesson fails the occurrence gate (0/1) after six presentations/four paired
-updates; the remaining lesson chain through copular identity is carried
-to item 0 for review. No later artifact is passed. Review remains through
-Alec; line 3 is unpublished. The concurrent iteration note is preserved
-pending direction. Layout/removal and STM chunks stay item 3.0, which
-has not been reached. All work stays on main.
+`c9b19d4`. The swap/verb source `65451694e` passes 811 scoped cases with
+26 existing skips. Its original-budget line-3 rerun reads source order
+8/8 (both CE bars still fail), passes lower and definite 1/1, then stops
+at description: brackets 4/4, answers 1/4. The [iteration receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md)
+retains all states, failed sources and test ports. Description learning
+and the unrun adjective, definite-adjective, final and copular continuation
+move to item 0; no later artifact is passed. The released modal follows
+that stop, with one identity's actual and alternative timelines. Its
+frozen scoped gates and generated-corpus report precede one combined
+review through Alec; publication is still pending. Lines 6–7 and their
+final sweep follow this iteration. Layout/removal and STM chunks stay
+item 3.0, which has not been reached. All work stays on main.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -722,13 +723,20 @@ not by a passing identity lesson.
    ("The whole swap now"), in the order swap, verb, line 3's lessons rerun,
    modal ([spec](doc/plans/2026-10-23-verb-and-modal.md)); then lines 6 and 7
    (the 5.5 remainder with context wholes; direct-operand word classes).
-   One freeze and one review per iteration, gates sized to the change,
+   The swap/verb freezes before the lesson rerun and the modal freezes
+   after it; one combined review through Alec, gates sized to the change,
    one full sweep at the end of 3.5.
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
    described below by origin; the first-pass order above supersedes the older sequencing:
-   - **Stage 4e, constituents**, to a passing gate under
+   - **Stage 4e, constituents — learning remainder moved to item 0
+     (2026-10-24):** on swap/verb source `65451694e`, original budgets
+     pass source order 8/8 (both CE bars fail), lower and definite 1/1;
+     description stops at answers 1/4 with brackets 4/4. No rescue.
+     Adjective, definite-adjective, final evaluation and copular identity
+     remain unrun. [Receipt](doc/benchmarks/2026-10-23-item3-5-verb-modal/README.md).
+     The retained learning contract is a passing gate under
      [parts-of-speech §5a](doc/specs/2026-10-18-parts-of-speech.md#5a-gates-are-behaviors-decided-alec-2026-10-18)
      (behaviors, no operator named): the next pass from the stage-3
      artifact with stage scoping of the menu and, **decided (Alec,

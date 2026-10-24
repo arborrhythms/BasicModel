@@ -126,3 +126,56 @@ Development 53–56 retains two failed probe setups (import path, then
 instrumentation inside a compiled loop), the read-only semantic replay
 and the passing port. No production code or other assertion changes;
 no retired test. Large states use the same lossless compression inventory.
+
+## Sixth swap/verb source — scoped pass and the original lesson stop
+
+Frozen source `65451694e209edafacb5b74c87b091be6ca8342b`:
+[source audit](swap-verb/source-06/source-audit.json),
+[scoped results](swap-verb/source-06/gate-summary.json),
+[lesson stop](swap-verb/source-06/lessons/sequence.json).
+All ten scoped groups complete on this source: **811 passed, 26 existing
+skips**, 837 cases. Both pending-premise orders, G1–G3, the unchanged XOR
+standing gate and both decomposition arms at their original snapshots and
+seeds pass. No earlier source supplies a result.
+
+The original-budget lesson chain is complete through its first failed
+behavior gate, without rescue:
+
+| Lesson | Training budget used | Final behavior |
+| --- | --- | --- |
+| Warm-up | 76 presentations, 38 paired updates | Completed |
+| Stage 3 | 512 presentations, 256 paired updates; seed 20261010 | Source order 8/8; both original CE bars failed |
+| NP lower | 6 presentations, 4 paired updates | Brackets 1/1 and occurrence 1/1; no duplicates or collisions |
+| NP definite | 6 presentations, 4 paired updates | Brackets 1/1 and occurrence 1/1; no duplicates or collisions |
+| NP description | 24 presentations, 12 paired updates | Brackets 4/4; answers **1/4**, failed |
+
+Stage 3's raw `passed: false` remains: it includes the CE bars, whereas
+§5a's behavior gate permits the next lesson after source order passes.
+Its last four training CEs are 0.032019499689, 0.032099217176,
+0.032048460096 and 0.032070260495 for reading-two; 0.016223739833,
+0.016630833969, 0.016546100378 and 0.016297793016 for reading-four.
+Description's four unlowered bare descriptions and four selected
+intersections are reports, not replacement gates. Adjective,
+definite-adjective, final evaluation and copular identity were **not run**.
+Their learning continuation moves to item 0; no copular prerequisite is
+lifted. The old-source stop remains intact.
+
+The passed intermediate producer checkpoints, every initial and last-batch
+state, RNGs, complete keep readings and failed outcome are retained under
+`source-06/lessons`. Files over 8 MiB are losslessly compressed; original
+lengths and SHA-256 values are in
+[compressed-files.json](swap-verb/source-06/compressed-files.json).
+No artifact is promoted to a phase prerequisite before this review.
+
+The earlier prose sometimes counted selected cases as passed. The raw
+reports remain untouched. Worker totals are retained in
+[worker-count-corrections](swap-verb/worker-count-corrections): source 01
+448 passed/8 skipped/9 failed; source 02 769/26; source 03 772/26/1;
+source 04 776/26; source 05 620/8/1. Those counts do not turn an interrupted
+or failed lesson into a pass. The exact swap/verb test ports remain in
+[the ledger](swap-verb-port-ledger.md) and
+[the assertion/fixture patch](swap-verb-test-ports.patch).
+
+The modal follows this stop, under the released §4. The combined iteration
+awaits Claude's review through Alec before publication. Item 3.0 has not
+been reached.

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_walk.py::test_free_generate_policy_has_no_numerical_credit",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

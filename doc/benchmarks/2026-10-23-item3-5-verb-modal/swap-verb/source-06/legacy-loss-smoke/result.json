@@ -1,0 +1,495 @@
+{
+  "exit_code": 0,
+  "reason": "passed",
+  "selected": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+    "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+    "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+    "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+    "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+    "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+  ],
+  "completed": [
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+    "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+    "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+    "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+    "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+    "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+    "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+    "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+    "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+    "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+    "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+    "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+    "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+    "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+    "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+    "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+    "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+    "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+    "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+    "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+  ],
+  "workers": [
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-000.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-000.json"
+      ],
+      "pid": 56245,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 435635520,
+      "elapsed_seconds": 3.722197833005339,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-000.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+        "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+        "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+        "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+        "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+        "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+        "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.845794945955276e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 31, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.466700091958046e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 44, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.43749551475048e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 96, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 6.812484934926033e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 123, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.004197686910629e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 175, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0003039170987904072,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.812500163912773e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 251, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.009904667036607862,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.00011566700413823128,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.058291859924793e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 307, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0007850830443203449,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.0015184169169515371,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.079106919467449e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 404, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.60830007493496e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 440, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.545785047113895e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 449, 'Skipped: ~40s (build + 3 epochs + decode) -- RUN_SLOW gates it')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 7.66250304877758e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 463, 'Skipped: 160-epoch reconstruction acceptance -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-001.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-001.json"
+      ],
+      "pid": 56270,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 589972920,
+      "elapsed_seconds": 5.025260624941438,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-001.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "completed": [
+        "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.001121415989473462,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 8.995807729661465e-05,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 494, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 1.1193869160488248,
+          "message": "",
+          "stdout": "[AMP] off (fp32, MODEL_AMP unset or =off)\nbatch = 0 (warm-up, 6.25%)\r\nbatch = 1 (\u0394=0.052s, 12.50%)\r\nbatch = 2 (\u0394=0.041s, 18.75%)\r\nbatch = 3 (\u0394=0.041s, 25.00%)\r\nbatch = 4 (\u0394=0.040s, 31.25%)\r\nbatch = 5 (\u0394=0.040s, 37.50%)\r\nbatch = 6 (\u0394=0.040s, 43.75%)\r\nbatch = 7 (\u0394=0.040s, 50.00%)\r\nbatch = 8 (\u0394=0.040s, 56.25%)\r\nbatch = 9 (\u0394=0.040s, 62.50%)\r\nbatch = 10 (\u0394=0.039s, 68.75%)\r\nbatch = 11 (\u0394=0.040s, 75.00%)\r\nbatch = 12 (\u0394=0.041s, 81.25%)\r\nbatch = 13 (\u0394=0.042s, 87.50%)\r\nbatch = 14 (\u0394=0.042s, 93.75%)\r\nbatch = 15 (\u0394=0.042s, 100.00%)\r\nTraining throughput: 16 batches in 0.996s; word units 0.0% of 64 words.\r\nbatch = 0 (\u0394=0.089s, 100.00%)\r\nTraining throughput: 1 batches in 0.088s; word units 0.0% of 16 words.\r\n"
+        },
+        {
+          "nodeid": "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00014845817349851131,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_reconstruction_roundtrip.py', 537, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    },
+    {
+      "command": [
+        "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+        "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-002.request.json",
+        "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-002.json"
+      ],
+      "pid": 56285,
+      "exit_code": 0,
+      "reason": "exit",
+      "peak_memory_bytes": 609224576,
+      "elapsed_seconds": 5.350220334017649,
+      "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/worker-002.log",
+      "device": "cpu",
+      "selected": [
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+        "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+        "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+        "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+      ],
+      "completed": [
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+        "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+        "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+        "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+      ],
+      "reports": [
+        {
+          "nodeid": "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.9350810830947012,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.4157529999502003,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+          "phase": "call",
+          "outcome": "passed",
+          "certificate_phase": null,
+          "duration": 0.049840667052194476,
+          "message": "",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.0001437920145690441,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_tied_reconstruction_compile.py', 94, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        },
+        {
+          "nodeid": "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step",
+          "phase": "setup",
+          "outcome": "skipped",
+          "certificate_phase": null,
+          "duration": 0.00013395794667303562,
+          "message": "('/Users/arogers/github/WikiOracle/basicmodel/test/test_tied_reconstruction_compile.py', 142, 'Skipped: slow -- set RUN_SLOW=1')",
+          "stdout": ""
+        }
+      ],
+      "recycled": false,
+      "active_case": null
+    }
+  ],
+  "compile_cache_retries": [],
+  "limits": {
+    "memory_bytes": 8589934592,
+    "aggregate_memory_bytes": 8589934592,
+    "per_worker_memory_bytes": 8589934592,
+    "workers": 1,
+    "worker_seconds": 900.0,
+    "suite_seconds": 7200.0,
+    "batch_size": 16,
+    "max_files": 1
+  },
+  "root": "/Users/arogers/github/WikiOracle/basicmodel",
+  "run_dir": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke",
+  "elapsed_seconds": 20.623082417063415,
+  "requested_device": "cpu",
+  "device_policy": {
+    "all": "cpu"
+  },
+  "skipped_certificates_by_phase": {},
+  "peak_aggregate_memory_bytes": 609224576,
+  "collection": {
+    "command": [
+      "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+      "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/collect.request.json",
+      "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/collect.json"
+    ],
+    "pid": 56231,
+    "exit_code": 0,
+    "reason": "exit",
+    "peak_memory_bytes": 434029792,
+    "elapsed_seconds": 3.7103668339550495,
+    "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/legacy-loss-smoke/collect.log",
+    "pytest": {
+      "exit_code": 0,
+      "selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_model_loss_honors_explicit_zero_scales",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_shape_gate_reconciles_singleton_axes",
+        "test/test_reconstruction_roundtrip.py::test_output_shape_gate_warns_once",
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+        "test/test_reconstruction_roundtrip.py::test_spell_out_respects_tile_cut",
+        "test/test_reconstruction_roundtrip.py::test_word_tiling_survives_promotion",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_associate_span_two_arms",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_idempotent_config_trains_one_epoch_clean",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_resolves_the_auto_backend",
+        "test/test_tied_reconstruction_compile.py::test_word_end_scoring_accepts_dynamic_target_windows",
+        "test/test_tied_reconstruction_compile.py::test_cached_backward_supports_retained_reads_after_an_ordinary_step",
+        "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+      ],
+      "completed": [],
+      "slow_selected": [
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_loss_is_live",
+        "test/test_reconstruction_roundtrip.py::test_xor_recon_grads_flow",
+        "test/test_reconstruction_roundtrip.py::test_recon_channel_within_decade_of_output",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_lossrev",
+        "test/test_reconstruction_roundtrip.py::test_where_scale_applies_to_masked_lossin",
+        "test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero",
+        "test/test_reconstruction_roundtrip.py::test_xor_percepts_tile_words",
+        "test/test_reconstruction_roundtrip.py::test_reconstruction_not_double_counted",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_roundtrip_at_harness_budget",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_grammar_free_derivation_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_mm20m_xor_exact_roundtrip",
+        "test/test_reconstruction_roundtrip.py::test_radix_decode_gates_pad_slots",
+        "test/test_reconstruction_roundtrip.py::test_codebook_mask_path_inert_under_no_grad",
+        "test/test_tied_reconstruction_compile.py::test_reconstruction_compile_retains_buffers_for_joint_gradient_reads",
+        "test/test_tied_reconstruction_compile.py::test_separate_reconstruction_does_not_retrace_backward_every_step"
+      ],
+      "requested_devices": {},
+      "shared_training": {},
+      "phase_certificates": {},
+      "reports": [],
+      "recycled": false,
+      "active": null,
+      "device": "cpu"
+    },
+    "device": "cpu"
+  },
+  "phase_certificates": {}
+}

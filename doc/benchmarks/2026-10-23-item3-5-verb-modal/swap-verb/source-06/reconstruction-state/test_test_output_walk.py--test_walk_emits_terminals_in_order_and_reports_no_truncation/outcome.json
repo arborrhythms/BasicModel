@@ -1,0 +1,6 @@
+{
+  "node": "test/test_output_walk.py::test_walk_emits_terminals_in_order_and_reports_no_truncation",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

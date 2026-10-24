@@ -318,15 +318,16 @@ def test_invalid_identity_checkpoint_does_not_replace_the_pool(corruption):
     if corruption == 'membership':
         bad['entries'][0]['occurrences'] = (address(2),)
     elif corruption == 'value':
-        bad['entries'][0]['value'][0] = float('nan')
+        bad['entries'][0]['timelines'][0][1][0] = float('nan')
     elif corruption == 'event':
-        bad['entries'][0]['events'] = ((address(3), 5, 1, 3),)
+        bad['entries'][0]['timelines'] = ((((address(3), 5, 1, 3, None, None, False, None, (), False),),
+                                           bad['entries'][0]['timelines'][0][1]),)
     else:
         bad['names'] = ((address(1), address(1), 'bad'),)
     with pytest.raises(ValueError):
         pool.restore(bad)
     assert pool.state()['names'] == before['names']
-    torch.testing.assert_close(pool.value_of(address(1)), before['entries'][0]['value'])
+    torch.testing.assert_close(pool.value_of(address(1)), before['entries'][0]['timelines'][0][1])
 
 
 def test_binding_an_unresolved_object_does_not_complete_its_verb():
@@ -573,6 +574,8 @@ def test_pending_checkpoint_migration_and_validation_are_atomic():
     legacy = copy.deepcopy(state)
     legacy['version'] = 1
     for entry in legacy['entries']:
+        events, value = entry.pop('timelines')[0]
+        entry.update(events=tuple(event[:4] for event in events), value=value)
         del entry['pending']
     restored = MediumTermMemory()
     restored.restore(legacy)

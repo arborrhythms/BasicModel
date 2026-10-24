@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[False]",
+    "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[True]",
+    "test/test_identity_threading.py::test_latest_verb_replaces_state_and_two_aliases_share_description_join",
+    "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[False]",
+    "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[True]",
+    "test/test_identity_threading.py::test_names_events_checkpoint_and_reclamation_have_separate_ownership",
+    "test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value",
+    "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[False]",
+    "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[True]",
+    "test/test_identity_threading.py::test_compose_menu_uses_the_resolvers_observed_exclusions",
+    "test/test_identity_threading.py::test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[membership]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[value]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[event]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[reading]",
+    "test/test_identity_threading.py::test_binding_an_unresolved_object_does_not_complete_its_verb"
+  ],
+  "completed": [
+    "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[False]",
+    "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[True]",
+    "test/test_identity_threading.py::test_latest_verb_replaces_state_and_two_aliases_share_description_join",
+    "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[False]",
+    "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[True]",
+    "test/test_identity_threading.py::test_names_events_checkpoint_and_reclamation_have_separate_ownership",
+    "test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value",
+    "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[False]",
+    "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[True]",
+    "test/test_identity_threading.py::test_compose_menu_uses_the_resolvers_observed_exclusions",
+    "test/test_identity_threading.py::test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[membership]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[value]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[event]",
+    "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[reading]",
+    "test/test_identity_threading.py::test_binding_an_unresolved_object_does_not_complete_its_verb"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.014772624941542745,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_second_verb_receives_first_result_through_bind_with_derivative[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.4651832499075681,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_latest_verb_replaces_state_and_two_aliases_share_description_join",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0019055830780416727,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00177116715349257,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_trial_values_are_isolated_and_only_selected_values_commit[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001207916997373104,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_names_events_checkpoint_and_reclamation_have_separate_ownership",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00027887499891221523,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.032522707944735885,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004135166062042117,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.418406874872744,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_compose_menu_uses_the_resolvers_observed_exclusions",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004802500130608678,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03241133317351341,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[membership]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00026599992997944355,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[value]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00024308310821652412,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[event]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00022070901468396187,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_invalid_identity_checkpoint_does_not_replace_the_pool[reading]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002437499351799488,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_identity_threading.py::test_binding_an_unresolved_object_does_not_complete_its_verb",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0012927919160574675,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

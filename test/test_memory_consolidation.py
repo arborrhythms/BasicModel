@@ -66,15 +66,27 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     kind = native(owner, atoms[0])
-    first, _ = kept(resolver, mention(atoms[0], reference=kind))
+    verb = native(owner, atoms[3])
+    def actual(node, frames=(), *, position=0):
+        root = Clause(ConceptualMeaning.from_description(node.point), point=node.point,
+            order=0, children=(node,), refs=(('clause', 0), -1, -1),
+            factored_refs=(('clause', 0), verb, -1))
+        plan = resolver.preview(root, frames, stream=0)
+        prepared = resolver.prepare(root, plan)
+        written = {}
+        row = store.write_clause(prepared, document_key='consolidation', sentence_index=position,
+                                 stream=0, written_rows=written)
+        resolver.commit(plan, row, written, document='consolidation', position=position, training=False)
+        return store.location(written[('occurrence', id(plan['items'][0]['written_node']))]), plan
+    first, _ = actual(mention(atoms[0], reference=kind))
     token = store.occurrence_of(first)
     frame = SituationFrame.from_row(store.row(first))
-    second, _ = kept(resolver, mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
+    second, _ = actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is None
     # Reclosing the same source sentence increments accesses, not recurrence.
-    kept(resolver, mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
+    actual(mention(atoms[0]+atoms[1], mode='bind'), (frame,), position=1)
     assert pool.entries[token].symbol is None
-    third, _ = kept(resolver, mention(atoms[0]+atoms[2], mode='bind'), (frame,), position=2)
+    third, _ = actual(mention(atoms[0]+atoms[2], mode='bind'), (frame,), position=2)
     entry = pool.entries[token]
     assert entry.occurrences == (token, store.occurrence_of(second), store.occurrence_of(third))
     assert entry.kind == kind and entry.symbol is not None and entry.count == 4
@@ -267,7 +279,7 @@ def test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool(corrupti
     with pytest.raises(ValueError):
         pool.restore(bad)
     assert pool.names == {key: pool.names[key]} and pool.closes == dict(saved['closes'])
-    torch.testing.assert_close(pool.value_of(key), saved['entries'][0]['value'])
+    torch.testing.assert_close(pool.value_of(key), saved['entries'][0]['timelines'][0][1])
 
 
 def test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token():

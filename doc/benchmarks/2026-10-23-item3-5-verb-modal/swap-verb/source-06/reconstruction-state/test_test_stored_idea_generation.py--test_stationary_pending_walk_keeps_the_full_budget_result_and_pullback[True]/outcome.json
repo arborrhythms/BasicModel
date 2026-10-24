@@ -1,0 +1,6 @@
+{
+  "node": "test/test_stored_idea_generation.py::test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback[True]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_compose.py::test_evaluation_has_one_trial_and_no_step",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

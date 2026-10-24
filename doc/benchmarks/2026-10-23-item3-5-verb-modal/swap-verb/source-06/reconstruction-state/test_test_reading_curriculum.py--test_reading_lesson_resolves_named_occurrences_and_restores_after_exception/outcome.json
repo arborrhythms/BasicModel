@@ -1,0 +1,6 @@
+{
+  "node": "test/test_reading_curriculum.py::test_reading_lesson_resolves_named_occurrences_and_restores_after_exception",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

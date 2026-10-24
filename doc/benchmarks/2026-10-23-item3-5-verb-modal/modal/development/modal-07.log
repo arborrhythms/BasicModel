@@ -1,0 +1,36 @@
+................F..................................................      [100%]
+=================================== FAILURES ===================================
+______ test_retained_idea_keeps_its_subject_reference_after_token_expiry _______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x144f641a0>
+
+    def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatch):
+        from dataclasses import replace
+        from Meaning import ConceptualMeaning
+        from Queries import ThoughtLTMCapability
+        from QueryWork import QueryWorkBudget
+        f,_,_=fixture(monkeypatch)
+        _,frame,row,_=close(f,recording(f,('lift',('lower_unary','subject'),('adverb','move','shift'))),
+                             evidence=(.9,0.))
+        token,entry=next(iter(f.cs.mtm.entries.items()))
+        query=replace(ConceptualMeaning.from_description(f.store.slots[row,0]),
+            bindings={'_query_event':(token,entry.timelines[1].events[-1].verb,1)})
+        f.cs.mtm.end_document('timeline')
+        reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
+        found=reader.best_match(query,max_records=64,work=QueryWorkBudget(256))
+>       assert found['witnesses']==(f.store.occurrence_of(row),)
+E       AssertionError: assert () == (('ltm', 'add...34164352116),)
+E         
+E         Right contains one more item: ('ltm', 'address-v1', -3062641234164352116)
+E         Use -v to get more diff
+
+test/test_modal_timelines.py:427: AssertionError
+=============================== warnings summary ===============================
+test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_modal_timelines.py::test_retained_idea_keeps_its_subject_reference_after_token_expiry
+1 failed, 66 passed, 1 warning in 6.17s

@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+    "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+    "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+    "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+    "test/test_grammar_order_typing.py::test_invalid_raises",
+    "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+    "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+    "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+    "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+    "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+    "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+    "test/test_grammar_order_typing.py::test_lhs_order_captured"
+  ],
+  "completed": [
+    "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+    "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+    "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+    "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+    "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+    "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+    "test/test_grammar_order_typing.py::test_invalid_raises",
+    "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+    "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+    "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+    "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+    "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+    "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+    "test/test_grammar_order_typing.py::test_lhs_order_captured"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_bare_category_is_constant_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00018395786173641682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_order_zero",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010379194281995296,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_order_one",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.866586722433567e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_explicit_constant_higher_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.091710671782494e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_whitespace_tolerant",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.225006215274334e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_zero_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.179208427667618e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_positive_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.341716602444649e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_kleene_variable_negative_offset",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 9.916583076119423e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_invalid_raises",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00012170802801847458,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_compact_order_set_rule_expands_pairwise",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010124989785254002,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_parse_category_still_accepts_multi_digit_constant",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 8.445791900157928e-05,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lift_preserves_subject_order",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00015154201537370682,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lower_rule_has_order_delta_minus_one",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011350004933774471,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_ordinary_rule_is_order_preserving",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00011866586282849312,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_unary_rule_order_signature",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010649999603629112,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_grammar_order_typing.py::test_lhs_order_captured",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0001194169744849205,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

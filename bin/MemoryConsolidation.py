@@ -88,6 +88,11 @@ def consolidate(owner, store):
         if entry.native is not None:
             pool.entries[key] = replace(entry, symbol=entry.native)
             continue
+        # Mention recurrence admits promotion; only actual occurrences give
+        # the promoted identity content. Alternative ideas stay references.
+        actual = set(entry.occurrences) | {event.occurrence for event in entry.events if event.role == 0}
+        rows = [store.location(address) for address in actual]
+        rows = [row for row in rows if isinstance(row, int) and int(store.order[row]) == 0]
         value = _fold(owner, store, rows)
         if value is not None:
             plans.append((1, value))

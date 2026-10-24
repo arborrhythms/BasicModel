@@ -1,0 +1,6 @@
+{
+  "node": "test/test_adverb_eig_edit.py::test_strong_adverb_changes_output_but_preserves_complement",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

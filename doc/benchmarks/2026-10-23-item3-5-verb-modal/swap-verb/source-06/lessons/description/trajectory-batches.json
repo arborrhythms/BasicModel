@@ -1,0 +1,4552 @@
+[
+  {
+    "batch": 1,
+    "epoch": 0,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 26,
+        "sum": 3.5695655156373514,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 7,
+        "sum": 18.631451551564517,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 7,
+    "kept": [
+      {
+        "id": "np:description:3:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.442739725112915,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.042925868183374405
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.1226041316986084,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.031166350468993187
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 6.09976053237915,
+              "occupation_term": 0.5109890103340149,
+              "probability": 0.6118550300598145
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 5.361232757568359,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.29235464334487915
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.6252152919769287,
+              "occupation_term": 0.0,
+              "probability": 0.01895277015864849
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:1:0",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8960723876953125,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.040163300931453705
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.545736074447632,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.028293084353208542
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 5.54860258102417,
+              "occupation_term": 0.4395604431629181,
+              "probability": 0.5699130892753601
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.960189342498779,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.3164200484752655
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.9111454486846924,
+              "occupation_term": 0.0,
+              "probability": 0.04077327251434326
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:1:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.9945790767669678,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.04373541474342346
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.616011142730713,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.029951825737953186
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 5.564856052398682,
+              "occupation_term": 0.3443223536014557,
+              "probability": 0.5715975761413574
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.955367088317871,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.3107368052005768
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8952460289001465,
+              "occupation_term": 0.0,
+              "probability": 0.03959984332323074
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:0:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.260985851287842,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.036323633044958115
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.7439866065979004,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.02166004478931427
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 6.162007808685303,
+              "occupation_term": 0.5109890103340149,
+              "probability": 0.6608259677886963
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 5.189553737640381,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.2498939037322998
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.018784999847412,
+              "occupation_term": 0.0,
+              "probability": 0.028510363772511482
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  },
+  {
+    "batch": 2,
+    "epoch": 0,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 28,
+        "sum": 5.592430297717489,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 6,
+        "sum": 10.844588018545256,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 6,
+    "kept": [
+      {
+        "id": "np:description:2:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.7608847618103027,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.10269324481487274
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.494905948638916,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.07870978862047195
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.285857677459717,
+              "occupation_term": 0.3859890103340149,
+              "probability": 0.47187739610671997
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.7131190299987793,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.2661288380622864
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.342790126800537,
+              "occupation_term": 0.0,
+              "probability": 0.06760294735431671
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:3:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.3779296875,
+              "occupation_term": 0.0,
+              "probability": 0.07978016138076782
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.2350516319274902,
+              "occupation_term": 0.0,
+              "probability": 0.06915821880102158
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 5.472536563873291,
+              "occupation_term": 1.375,
+              "probability": 0.6479942202568054
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.977111339569092,
+              "occupation_term": 0.0,
+              "probability": 0.14525002241134644
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.9570558071136475,
+              "occupation_term": 0.0,
+              "probability": 0.05237351730465889
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:2:0",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8223037719726562,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.10517484694719315
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.4509177207946777,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.07254725694656372
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.371500492095947,
+              "occupation_term": 0.4554334580898285,
+              "probability": 0.4951302707195282
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.6731162071228027,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.246272012591362
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.3915598392486572,
+              "occupation_term": 0.0,
+              "probability": 0.06836631894111633
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:2:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.999300479888916,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.09547692537307739
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5012941360473633,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.05802525207400322
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.766652584075928,
+              "occupation_term": 0.5109890103340149,
+              "probability": 0.5590487718582153
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.852564811706543,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.22411267459392548
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.010989011265337467,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.4261116981506348,
+              "occupation_term": 0.0,
+              "probability": 0.053822729736566544
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  },
+  {
+    "batch": 3,
+    "epoch": 0,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 27,
+        "sum": 4.0083786416304035,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 6,
+        "sum": 8.085499887445412,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 6,
+    "kept": [
+      {
+        "id": "np:description:0:0",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.051854133605957,
+              "occupation_term": 0.0,
+              "probability": 0.13829408586025238
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.9447758197784424,
+              "occupation_term": 0.0,
+              "probability": 0.12425105273723602
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.37217903137207,
+              "occupation_term": 1.454545497894287,
+              "probability": 0.5178612470626831
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.77860164642334,
+              "occupation_term": 0.0,
+              "probability": 0.10522805154323578
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.7404685020446777,
+              "occupation_term": 0.0,
+              "probability": 0.10129091888666153
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:1:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.9065589904785156,
+              "occupation_term": 0.0,
+              "probability": 0.1553940623998642
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.846892833709717,
+              "occupation_term": 0.0,
+              "probability": 0.14639349281787872
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.091186046600342,
+              "occupation_term": 1.5,
+              "probability": 0.5080558061599731
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.4989213943481445,
+              "occupation_term": 0.0,
+              "probability": 0.10337122529745102
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.1061811447143555,
+              "occupation_term": 0.0,
+              "probability": 0.06979668140411377
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:3:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.2995142936706543,
+              "occupation_term": 0.0,
+              "probability": 0.15024015307426453
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.0908138751983643,
+              "occupation_term": 0.0,
+              "probability": 0.12194066494703293
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.572683334350586,
+              "occupation_term": 1.5,
+              "probability": 0.5366811156272888
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8551688194274902,
+              "occupation_term": 0.0,
+              "probability": 0.09634057432413101
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.714632034301758,
+              "occupation_term": 0.0,
+              "probability": 0.08370952308177948
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:0:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.3701794147491455,
+              "occupation_term": 0.0,
+              "probability": 0.13325050473213196
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.0402915477752686,
+              "occupation_term": 0.0,
+              "probability": 0.09580768644809723
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 4.839193344116211,
+              "occupation_term": 1.5,
+              "probability": 0.5789665579795837
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.966831684112549,
+              "occupation_term": 0.0,
+              "probability": 0.0890219584107399
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.019007682800293,
+              "occupation_term": 0.0,
+              "probability": 0.09379008412361145
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  },
+  {
+    "batch": 4,
+    "epoch": 1,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 26,
+        "sum": 2.4176938822513723,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 7,
+        "sum": 6.4894906759130695,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 7,
+    "kept": [
+      {
+        "id": "np:description:3:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.690619468688965,
+              "occupation_term": 0.0,
+              "probability": 0.21415749192237854
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.6894469261169434,
+              "occupation_term": 0.0,
+              "probability": 0.21390651166439056
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.092331886291504,
+              "occupation_term": 1.4166666269302368,
+              "probability": 0.3200329840183258
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.5516307353973389,
+              "occupation_term": 0.0,
+              "probability": 0.06856093555688858
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.362713098526001,
+              "occupation_term": 0.0,
+              "probability": 0.15428557991981506
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:2:0",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5669937133789062,
+              "occupation_term": 0.0,
+              "probability": 0.2021486461162567
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5221571922302246,
+              "occupation_term": 0.0,
+              "probability": 0.19328519701957703
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.205465316772461,
+              "occupation_term": 1.4615384340286255,
+              "probability": 0.3827855587005615
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.6617132425308228,
+              "occupation_term": 0.0,
+              "probability": 0.0817546620965004
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.9492433071136475,
+              "occupation_term": 0.0,
+              "probability": 0.1089896485209465
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:2:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8613176345825195,
+              "occupation_term": 0.0,
+              "probability": 0.20890337228775024
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.6502785682678223,
+              "occupation_term": 0.0,
+              "probability": 0.16915792226791382
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.572676658630371,
+              "occupation_term": 1.5,
+              "probability": 0.4254854917526245
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.8646080493927002,
+              "occupation_term": 0.0,
+              "probability": 0.07710454612970352
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.0780787467956543,
+              "occupation_term": 0.0,
+              "probability": 0.09545289725065231
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:0:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.054121971130371,
+              "occupation_term": 0.0,
+              "probability": 0.2156701683998108
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.8004355430603027,
+              "occupation_term": 0.0,
+              "probability": 0.1673460453748703
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 3.664018154144287,
+              "occupation_term": 1.5,
+              "probability": 0.396884948015213
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.8103915452957153,
+              "occupation_term": 0.0,
+              "probability": 0.06217915564775467
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.6045477390289307,
+              "occupation_term": 0.0,
+              "probability": 0.1375759392976761
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  },
+  {
+    "batch": 5,
+    "epoch": 1,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 26,
+        "sum": 2.8704156493408357,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 7,
+        "sum": 4.710592985965577,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 7,
+    "kept": [
+      {
+        "id": "np:description:0:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 12,
+          "correct": false,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.6703109741210938,
+              "occupation_term": 0.0,
+              "probability": 0.24651673436164856
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.670753002166748,
+              "occupation_term": 0.0,
+              "probability": 0.24662573635578156
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.7802162170410156,
+              "occupation_term": 1.5,
+              "probability": 0.2751551568508148
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.1629188060760498,
+              "occupation_term": 0.0,
+              "probability": 0.05460021272301674
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.125509262084961,
+              "occupation_term": 0.0,
+              "probability": 0.1429690569639206
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:3:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.4852070808410645,
+              "occupation_term": 0.0,
+              "probability": 0.26954132318496704
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.473386764526367,
+              "occupation_term": 0.0,
+              "probability": 0.26637402176856995
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.288458824157715,
+              "occupation_term": 1.5,
+              "probability": 0.22140054404735565
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 0.7085959315299988,
+              "occupation_term": 0.0,
+              "probability": 0.045609250664711
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.9134498834609985,
+              "occupation_term": 0.0,
+              "probability": 0.15216486155986786
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:1:0",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.370089054107666,
+              "occupation_term": 0.0,
+              "probability": 0.2651181221008301
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.2864766120910645,
+              "occupation_term": 0.0,
+              "probability": 0.2438523769378662
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.2685866355895996,
+              "occupation_term": 1.4666666984558105,
+              "probability": 0.23952865600585938
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 0.6085386276245117,
+              "occupation_term": 0.0,
+              "probability": 0.04554154723882675
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.8423103094100952,
+              "occupation_term": 0.0,
+              "probability": 0.15639685094356537
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:2:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.677086353302002,
+              "occupation_term": 0.0,
+              "probability": 0.2824784517288208
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.403688907623291,
+              "occupation_term": 0.0,
+              "probability": 0.21490688621997833
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5543766021728516,
+              "occupation_term": 1.4285714626312256,
+              "probability": 0.24985793232917786
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 0.787177324295044,
+              "occupation_term": 0.0,
+              "probability": 0.042678412050008774
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.176492691040039,
+              "occupation_term": 0.0,
+              "probability": 0.17123016715049744
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  },
+  {
+    "batch": 6,
+    "epoch": 1,
+    "lesson_calls": 8,
+    "ce": {
+      "wait": {
+        "reachable": 28,
+        "sum": 5.780308229979004,
+        "unreachable": 0
+      },
+      "fold": {
+        "reachable": 5,
+        "sum": 2.2421930246081683,
+        "unreachable": 0
+      }
+    },
+    "fold_targets": 5,
+    "kept": [
+      {
+        "id": "np:description:1:3",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5309441089630127,
+              "occupation_term": 0.27142858505249023,
+              "probability": 0.37634527683258057
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.2591774463653564,
+              "occupation_term": 0.0,
+              "probability": 0.28678715229034424
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.0977637767791748,
+              "occupation_term": 1.0285714864730835,
+              "probability": 0.08977680653333664
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": -0.033809006214141846,
+              "occupation_term": 0.0,
+              "probability": 0.02895532175898552
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.664508581161499,
+              "occupation_term": 0.0,
+              "probability": 0.15823344886302948
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:0:0",
+        "family": "description",
+        "trial": 1,
+        "first_pair": null,
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:1:1",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.5615220069885254,
+              "occupation_term": 0.26249998807907104,
+              "probability": 0.3965822160243988
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.1860146522521973,
+              "occupation_term": 0.0,
+              "probability": 0.2724284529685974
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 0.9386404156684875,
+              "occupation_term": 0.9750000238418579,
+              "probability": 0.07825727015733719
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": -0.22788792848587036,
+              "occupation_term": 0.0,
+              "probability": 0.02437293902039528
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.6974525451660156,
+              "occupation_term": 0.0,
+              "probability": 0.167137011885643
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      },
+      {
+        "id": "np:description:3:2",
+        "family": "description",
+        "trial": 0,
+        "first_pair": {
+          "target": [
+            4,
+            7
+          ],
+          "kind": 1,
+          "operation": 4,
+          "correct": true,
+          "menu": [
+            {
+              "operation": "part",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "whole",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "equal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "implies",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "intersection",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.806957483291626,
+              "occupation_term": 0.1666666716337204,
+              "probability": 0.36670973896980286
+            },
+            {
+              "operation": "union",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "sum",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "product",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.4193809032440186,
+              "occupation_term": 0.0,
+              "probability": 0.24888578057289124
+            },
+            {
+              "operation": "lift",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "verb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "compound",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "adverb",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "lower",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 1.7418303489685059,
+              "occupation_term": 1.1666667461395264,
+              "probability": 0.1263989955186844
+            },
+            {
+              "operation": "definite",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 0.23799441754817963,
+              "occupation_term": 0.0,
+              "probability": 0.028095446527004242
+            },
+            {
+              "operation": "universal",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "preposition",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "surface",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "transpose",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "conjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "disjunction",
+              "variants": 1,
+              "legal": 0,
+              "maximum_logit": null,
+              "occupation_term": 0.0,
+              "probability": 0.0
+            },
+            {
+              "operation": "STOP",
+              "variants": 1,
+              "legal": 1,
+              "maximum_logit": 2.1260881423950195,
+              "occupation_term": 0.0,
+              "probability": 0.18561995029449463
+            }
+          ]
+        },
+        "steps": {
+          "leaf": 2,
+          "binary": 1,
+          "unary": 0,
+          "transpose": 0,
+          "compose": 1,
+          "total": 3
+        }
+      }
+    ]
+  }
+]

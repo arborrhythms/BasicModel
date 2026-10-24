@@ -212,6 +212,10 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             parent['identity_handle'] = int(record[0])
             parent['identity_event'] = tuple(record.tolist())
             parent['identity_action'] = action
+        if program.timeline_actions is not None:
+            stamp, alternative, origin, suppressed = program.timeline_actions[action].tolist()
+            parent.update(order=stamp, timeline=bool(alternative), event_origin=origin-1,
+                          suppressed_event=bool(suppressed), timeline_order=True)
         if getattr(program, 'close_references', False):
             rule = catalog[local]
             for role in getattr(rule, 'reference_roles', ()):
@@ -270,13 +274,36 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     def value(node):
         return node['value']
 
+    def identity_head(node):
+        """The outer event attachment owns scope; semantic roles stay at S."""
+        while node['children']:
+            event = node.get('identity_event')
+            if event is not None and event[1] and not node.get('suppressed_event'):
+                return node
+            role = getattr(node['rule'], 'head_role', 0)
+            if not role and len(node['children']) == 1 and getattr(node['rule'], 'scope_transparent', False):
+                role = 1
+            if not role:
+                break
+            node = node['children'][role-1]
+        return node
+
+    action_nodes = {}
+    pending = list(stack)
+    while pending:
+        node = pending.pop()
+        if node.get('identity_action') is not None:
+            action_nodes[node['identity_action']] = node
+        pending.extend(node['children'])
+
     def identity_record(node):
         if program.identity_actions is None:
             return None
         action = node.get('identity_action')
+        semantic = action_nodes.get(node.get('event_origin'), node)
         basis = None
-        if action is not None and getattr(node['rule'], 'clause_form', None) == 'S':
-            vp = node['children'][1]
+        if action is not None and getattr(semantic['rule'], 'clause_form', None) == 'S':
+            vp = semantic['children'][1]
             while vp['children'] and getattr(vp['rule'], 'clause_form', None) != 'VP':
                 head_role = getattr(vp['rule'], 'head_role', 0)
                 if not head_role:
@@ -284,13 +311,32 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 vp = vp['children'][head_role-1]
             if getattr(vp.get('rule'), 'clause_form', None) == 'VP':
                 basis = vp['children'][1]['value']
+        modifiers = []
+        def attached(current):
+            if not current['children']:
+                return
+            rule = current['rule']
+            if rule.method_name == 'adverb':
+                attached(current['children'][0])
+                modifiers.append(frames[current['identity_action'],1])
+            elif current is semantic and getattr(rule, 'clause_form', None) == 'S':
+                attached(current['children'][1])
+            elif getattr(rule, 'head_role', 0) and current is not semantic:
+                attached(current['children'][rule.head_role-1])
+        if node.get('timeline'):
+            attached(node)
+        source_action = semantic.get('identity_action', action)
         return dict(handle=node.get('identity_handle', 0),
             event=node.get('identity_event'), action=action,
+            event_order=source_action,
             introduction=introductions.get(node.get('identity_handle', 0)) is node,
             result=None if action is None else (frames[action, 1] if
                 getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
-            before=None if action is None else frames[action, 0], basis=basis,
-            operation=None if node['rule'] is None else node['rule'].method_name,
+            before=None if source_action is None else frames[source_action, 0], basis=basis,
+            operation=None if semantic['rule'] is None else semantic['rule'].method_name,
+            alternative=node.get('timeline', False), modifiers=tuple(modifiers),
+            timeline_order=program.timeline_actions is not None,
+            timeline_values=program.timeline_values,
             leaf_count=len(node['leaves']),
             origins=program.identity_origins, values=program.identity_values)
 
@@ -662,6 +708,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 selected = head(part)
                 while len(selected['children']) == 1:
                     selected = head(selected['children'][0])
+                if part.get('suppressed_event'):
+                    pending.extend(reversed(part['children']))
+                    continue
                 if selected is not node and is_clause(part):
                     # A projection changes the enclosing NP's head, not the
                     # ownership of S events completed in its derivation.
@@ -695,6 +744,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 if not ready:
                     pending.append((part, True))
                     pending.extend((child, False) for child in part['children'])
+                    continue
+                if part.get('timeline_order'):
+                    orders[id(part)] = max(0, part['order'])
                     continue
                 rule = part['rule']
                 role = 1 if getattr(rule, 'clause_form', None) == 'S' else getattr(rule, 'head_role', 0)
@@ -773,7 +825,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             refs=references, children=tuple(children),
             subject_word_id=subject_word_id(role_nodes[0]),
             factored_refs=factored_refs, composition=composition(root),
-            identity=identity_record(node),
+            identity=identity_record(identity_head(root)),
             **evidence,
             **bands(root))
         return field
@@ -818,7 +870,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     extra.append(ended)
                     collect(ended)
             event = node.get('identity_event')
-            if event is not None and event[1] and node['identity_action'] not in events:
+            if (event is not None and event[1] and not node.get('suppressed_event')
+                    and node['identity_action'] not in events):
                 ended = recover(node)
                 extra.append(ended)
                 collect(ended)

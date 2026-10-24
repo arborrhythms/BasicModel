@@ -90,6 +90,10 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         data = bindings(result)
         data['_query_occurrence'] = store.occurrence_of(index)
         data['_source_evidence'] = tuple(clause.evidence)
+        from TimelineRead import request
+        event = request(clause, written_rows, store)
+        if event is not None:
+            data['_query_event'] = event
         result = replace(result, bindings=data)
     return result if needs_episode(result) else None
 

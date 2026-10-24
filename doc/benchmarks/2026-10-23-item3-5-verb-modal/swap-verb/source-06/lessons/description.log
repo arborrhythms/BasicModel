@@ -1,0 +1,18 @@
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/lessons/definite/trained.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "training": true, "epoch": 0, "ids": ["np:description:3:3", "np:description:1:0", "np:description:1:1", "np:description:0:3"], "updates": {"paired": 2, "batch_end_disabled": 0}, "elapsed_seconds": 122.32005291711539}
+batch = 1 (Δ=69.680s)
+{"batch": 2, "training": true, "epoch": 0, "ids": ["np:description:2:1", "np:description:3:1", "np:description:2:0", "np:description:2:2"], "updates": {"paired": 4, "batch_end_disabled": 0}, "elapsed_seconds": 192.00020037498325}
+batch = 2 (Δ=69.741s)
+{"batch": 3, "training": true, "epoch": 0, "ids": ["np:description:0:0", "np:description:1:3", "np:description:3:2", "np:description:0:2"], "updates": {"paired": 6, "batch_end_disabled": 0}, "elapsed_seconds": 261.7413051670883}
+batch = 3 (Δ=69.950s)
+{"batch": 4, "training": true, "epoch": 1, "ids": ["np:description:3:1", "np:description:2:0", "np:description:2:2", "np:description:0:3"], "updates": {"paired": 8, "batch_end_disabled": 0}, "elapsed_seconds": 331.6918664171826}
+batch = 4 (Δ=69.835s)
+{"batch": 5, "training": true, "epoch": 1, "ids": ["np:description:0:2", "np:description:3:3", "np:description:1:0", "np:description:2:1"], "updates": {"paired": 10, "batch_end_disabled": 0}, "elapsed_seconds": 401.52693341718987}
+batch = 5 (Δ=69.914s)
+{"batch": 6, "training": true, "epoch": 1, "ids": ["np:description:1:3", "np:description:0:0", "np:description:1:1", "np:description:3:2"], "updates": {"paired": 12, "batch_end_disabled": 0}, "elapsed_seconds": 471.44122204207815}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/lessons/description/trained.ckpt
+batch = 6 (Δ=17.247s)
+{"batch": 7, "training": false, "epoch": null, "ids": ["np:description:0:1", "np:description:1:2", "np:description:2:3", "np:description:3:0"], "updates": {"paired": 12, "batch_end_disabled": 0}, "elapsed_seconds": 488.6855238750577}
+{"completed": true, "gates": {"brackets": {"correct": 4, "total": 4, "threshold": 0.9, "passed": true}, "answers": {"correct": 1, "total": 4, "threshold": 1.0, "passed": false}}, "passed": false, "groups": {"description": {"sentences": 4, "brackets": 4, "nps": 0, "occurrences": 0, "reductions": 0}}, "reports": {"reductions": {"correct": 0, "total": 0}, "unlowered": {"correct": 4, "total": 4}, "kept_programs": {"intersection": 4}, "kept_operators": {"intersection": 4}, "unexpected_occurrences": 0, "lowering_stamps": [{"id": "np:description:0:1", "lowerings": []}, {"id": "np:description:1:2", "lowerings": []}, {"id": "np:description:2:3", "lowerings": []}, {"id": "np:description:3:0", "lowerings": []}], "meaning_norms": [{"id": "np:description:0:1", "closed_meaning_norm": 0.8173982501029968, "operations": [{"method": "intersection", "meaning_norms": [0.5555555820465088, 0.6000000238418579, 0.8173982501029968]}]}, {"id": "np:description:1:2", "closed_meaning_norm": 0.7472639083862305, "operations": [{"method": "intersection", "meaning_norms": [0.5000000596046448, 0.5555555820465088, 0.7472639083862305]}]}, {"id": "np:description:2:3", "closed_meaning_norm": 0.7469566464424133, "operations": [{"method": "intersection", "meaning_norms": [0.5, 0.5555555820465088, 0.7469566464424133]}]}, {"id": "np:description:3:0", "closed_meaning_norm": 0.8332391977310181, "operations": [{"method": "intersection", "meaning_norms": [0.4999999701976776, 0.6666667461395264, 0.8332391977310181]}]}]}}

@@ -1,0 +1,6 @@
+{
+  "node": "test/test_identity_cube.py::test_native_synthesis_centroids_form_and_inverts_meaning",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

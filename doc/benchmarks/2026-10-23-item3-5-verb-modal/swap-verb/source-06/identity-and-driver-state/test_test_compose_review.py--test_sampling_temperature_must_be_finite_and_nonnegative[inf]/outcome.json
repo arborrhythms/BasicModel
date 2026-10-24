@@ -1,0 +1,6 @@
+{
+  "node": "test/test_compose_review.py::test_sampling_temperature_must_be_finite_and_nonnegative[inf]",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

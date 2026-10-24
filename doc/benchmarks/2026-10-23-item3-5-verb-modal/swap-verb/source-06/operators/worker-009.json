@@ -1,0 +1,82 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority"
+  ],
+  "completed": [
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+    "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerComposeGenerate::test_lower_compose_dispatches_to_forward",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001517290947958827,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lift_constructible_without_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007069581188261509,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerNoSubstrateBorrow::test_lower_constructible_without_spaces",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00016779103316366673,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lift_has_internal_sigma",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003778340760618448,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerHasInternalSubstrate::test_lower_has_internal_pi",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010291696526110172,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_lift_lower_binary_grammar_ops.py::TestLiftLowerWiredIntoSignalRouter::test_lift_and_lower_registered_with_word_subspace_authority",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00033412501215934753,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

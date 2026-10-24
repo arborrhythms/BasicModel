@@ -1,0 +1,14 @@
+..............................................................s......... [ 56%]
+........ss.ss...ssss...................................                  [100%]
+=============================== warnings summary ===============================
+test/test_modal_timelines.py::test_modal_bracketings_write_only_an_idea_and_preserve_the_actual[False]
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+test/test_compiled_word_chunk.py::test_tensor_peer_ws_stages_distinct_word_local_property_views
+  /Users/arogers/github/WikiOracle/basicmodel/test/test_compiled_word_chunk.py:551: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at /Users/runner/work/pytorch/pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:821.)
+    assert float(presence.max()) > .5
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+118 passed, 9 skipped, 2 warnings in 12.03s

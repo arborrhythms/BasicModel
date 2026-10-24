@@ -1,5 +1,17 @@
 # Step 1b: current gates and carry ledger
 
+**Iteration 1, 2026-10-24:** the swap/verb source `65451694e` completes
+811 scoped passes with 26 existing skips. Its original-budget lesson
+sequence passes source order 8/8 (both CE bars failed), lower and definite
+1/1, then fails description answers 1/4 despite brackets 4/4. The learning
+continuation through copular identity moves to item 0; nothing later is
+promoted. The [iteration receipt](../2026-10-23-item3-5-verb-modal/README.md)
+retains every failed source, complete captures and exact ports. The
+released modal follows that stop with one identity's alternative
+timelines. Its frozen scoped pass and generated-corpus report precede the
+combined review through Alec. No publication or second sweep yet. Item
+3.0 has not been reached; lines 6–7 remain after this iteration.
+
 **Line 3 evidence ready, 2026-10-23:** production/lesson source `3b34b3f38`,
 fixture repair `1e78fb6d3`; 212 scoped passes, eight existing skips and
 one passing captured replay. The single line-3 sweep is retained with its

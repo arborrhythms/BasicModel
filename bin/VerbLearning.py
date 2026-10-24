@@ -37,7 +37,7 @@ def observe(action, mtm, previous, observed, point, *, errors=None, weight=.1, t
                 residuals = [action.teacher(before, after, verb,
                     group=torch.tensor(group, device=before.device)).item() for group in range(action.groups.capacity)]
             report['fit'] = action.groups.observe(event.verb, event.occurrence, residuals, float(term.detach()))
-        mtm.entries[token] = replace(current, events=tuple(
+        mtm.entries[token] = current.with_actual(events=tuple(
             replace(item, taught=True) if (item.occurrence, item.role) == (event.occurrence, event.role) else item
             for item in current.events))
         reports.append(report)

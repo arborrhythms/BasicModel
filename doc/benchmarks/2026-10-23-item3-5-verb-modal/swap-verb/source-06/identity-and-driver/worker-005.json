@@ -1,0 +1,137 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
+  ],
+  "completed": [
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+    "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+    "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+    "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+    "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+    "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+    "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+    "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+    "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+    "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0030183750204741955,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_retained_trial_reconstructs_every_admitted_leaf[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013273749500513077,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_older_slot_unary_is_preserved_in_the_committed_program",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00020462507382035255,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_invalid_unary_position_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002805418334901333,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_unknown_recorded_operation_is_not_silently_dropped",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00030570896342396736,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_incomplete_forest_keeps_its_slots_for_reconstruction",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0003437078557908535,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_parallel_completion_guards_memory_without_serial_depths",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00010699988342821598,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_exploration_forces_one_used_round_for_each_packed_sentence",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00032466696575284004,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_one_word_packed_sentence_has_its_own_closing_and_program",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0002999170683324337,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[0]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.18230937491171062,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_compose_records.py::test_tensor_pipeline_records_both_one_word_packed_ends[1]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.10472220811061561,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

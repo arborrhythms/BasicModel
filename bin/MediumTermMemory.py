@@ -1,5 +1,6 @@
 """Bounded identities, current values and mention readings between kept closes."""
 from dataclasses import dataclass, replace
+from typing import NamedTuple
 
 import torch
 
@@ -19,6 +20,14 @@ class Event:
     before: torch.Tensor | None = None
     basis: torch.Tensor | int | None = None
     taught: bool = False
+    after: torch.Tensor | None = None
+    modifiers: tuple = ()
+    modal_taught: bool = False
+
+
+class Timeline(NamedTuple):
+    events: tuple
+    value: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -27,11 +36,23 @@ class Token:
     kind: int | None
     count: int
     when: int
-    value: torch.Tensor
-    events: tuple = ()
+    timelines: tuple
     native: int | None = None
     pending: bool = False
     symbol: int | None = None
+
+    @property
+    def value(self):
+        return self.timelines[0].value
+
+    @property
+    def events(self):
+        return self.timelines[0].events
+
+    def with_actual(self, *, value=None, events=None, **metadata):
+        actual = Timeline(self.events if events is None else events,
+                          self.value if value is None else value)
+        return replace(self, timelines=(actual, *self.timelines[1:]), **metadata)
 
 
 class MediumTermMemory:
@@ -69,7 +90,7 @@ class MediumTermMemory:
             return candidates[0] if len(candidates) == 1 else None
         return next((key for key, entry in self.entries.items()
                      if any(event.occurrence == occurrence and event.role == 0
-                            for event in entry.events)), None)
+                            for timeline in entry.timelines for event in timeline.events)), None)
 
     def reading_of(self, occurrence):
         name = self.names.get(occurrence)
@@ -88,7 +109,7 @@ class MediumTermMemory:
             self._detach(occurrence)
         if occurrence in self.entries:
             entry = self.entries[occurrence]
-            self.entries[occurrence] = replace(entry, count=entry.count + 1,
+            self.entries[occurrence] = entry.with_actual(count=entry.count + 1,
                 when=when, value=torch.maximum(entry.value.to(value), value),
                 pending=entry.pending and pending)
             self.names[occurrence] = Name(occurrence, reading)
@@ -97,7 +118,7 @@ class MediumTermMemory:
             # Capacity retires an identity, not the occurrence row that may
             # still witness an event owned by another retained identity.
             self._detach(min(self.entries, key=lambda key: self.entries[key].when))
-        self.entries[occurrence] = Token((occurrence,), kind, 1, when, value, native=native, pending=pending)
+        self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),), native=native, pending=pending)
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
 
@@ -113,7 +134,7 @@ class MediumTermMemory:
         if occurrence not in uses:
             uses += (occurrence,)
         joined = entry.value if value is None else torch.maximum(entry.value.to(value), self._value(value))
-        self.entries[token] = replace(entry, occurrences=uses,
+        self.entries[token] = entry.with_actual(occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
             pending=entry.pending and kind is None,
             count=entry.count + 1, when=when, value=joined)
@@ -121,31 +142,58 @@ class MediumTermMemory:
         self.names[occurrence] = Name(token, previous.reading if reading is None and previous else reading)
         return token
 
-    def update(self, token, value, *, when):
+    def alternative(self, token, *, when, before=None):
+        """Continue the latest branch, opening it from the actual prefix once."""
+        key = self.token_of(token)
+        if key is None:
+            raise ValueError('an alternative requires a retained identity')
+        entry = self.entries[key]
+        if len(entry.timelines) == 1:
+            value = entry.value.clone() if before is None else self._value(before)
+            if value.shape != entry.value.shape:
+                raise ValueError('alternative value has a different width')
+            self.entries[key] = replace(entry, when=when,
+                timelines=(*entry.timelines, Timeline(entry.events, value)))
+        return len(self.entries[key].timelines) - 1
+
+    def update(self, token, value, *, when, timeline=0):
         key = self.token_of(token)
         if key is None:
             raise ValueError('cannot update an unretained identity')
-        self.entries[key] = replace(self.entries[key], value=self._value(value), when=when)
+        entry = self.entries[key]
+        if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
+            raise ValueError('cannot update an absent timeline')
+        value = self._value(value)
+        if value.shape != entry.value.shape:
+            raise ValueError('timeline value has a different width')
+        self.entries[key] = replace(entry, when=when, timelines=tuple(
+            Timeline(item.events, value) if index == timeline else item
+            for index, item in enumerate(entry.timelines)))
 
-    def event(self, token, occurrence, *, verb, role, when, before=None, basis=None):
+    def event(self, token, occurrence, *, verb, role, when, before=None, basis=None,
+              after=None, modifiers=(), timeline=0):
         key = self.token_of(token)
         if key is None or role not in (0, 2) or type(verb) is not int:
             raise ValueError('an event requires a retained identity, verb and participant role')
         entry = self.entries[key]
+        if type(timeline) is not int or not 0 <= timeline < len(entry.timelines):
+            raise ValueError('an event requires a retained timeline')
+        old = entry.timelines[timeline]
         event = Event(occurrence, verb, role, when,
             None if before is None else self._value(before),
-            self._value(basis) if torch.is_tensor(basis) else basis)
-        previous = tuple(item for item in entry.events
-                         if (item.occurrence, item.role) != (occurrence, role))
-        if previous != entry.events:
-            # Re-observation updates evidence at its existing history position.
-            event = replace(event, taught=next(item.taught for item in entry.events
-                if (item.occurrence, item.role) == (occurrence, role)))
-            events = tuple(event if (item.occurrence, item.role) == (occurrence, role)
-                           else item for item in entry.events)
+            self._value(basis) if torch.is_tensor(basis) else basis,
+            after=None if after is None else self._value(after),
+            modifiers=tuple(self._value(value) for value in modifiers))
+        previous = next((item for item in old.events
+                         if (item.occurrence, item.role) == (occurrence, role)), None)
+        if previous is not None:
+            event = replace(event, taught=previous.taught, modal_taught=previous.modal_taught)
+            events = tuple(event if item is previous else item for item in old.events)
         else:
-            events = (*previous, event)
-        self.entries[key] = replace(entry, events=events, when=when)
+            events = (*old.events, event)
+        self.entries[key] = replace(entry, when=when, timelines=tuple(
+            Timeline(events, item.value) if index == timeline else item
+            for index, item in enumerate(entry.timelines)))
 
     def _detach(self, occurrence):
         """Detach a mention; an event with this address has its own owner."""
@@ -165,9 +213,9 @@ class MediumTermMemory:
         self._detach(occurrence)
         # One event can witness a subject and an object in different identities.
         for token, entry in tuple(self.entries.items()):
-            events = tuple(event for event in entry.events if event.occurrence != occurrence)
-            if events != entry.events:
-                self.entries[token] = replace(entry, events=events)
+            self.entries[token] = replace(entry, timelines=tuple(
+                Timeline(tuple(event for event in timeline.events if event.occurrence != occurrence), timeline.value)
+                for timeline in entry.timelines))
 
     def merge(self, token, into, *, when):
         """Join a pending object without moving the antecedent's existing uses."""
@@ -177,7 +225,7 @@ class MediumTermMemory:
         if source == target:
             return target
         previous, antecedent = self.entries[source], self.entries[target]
-        self.entries[target] = replace(antecedent,
+        self.entries[target] = antecedent.with_actual(
             occurrences=antecedent.occurrences + previous.occurrences,
             count=antecedent.count + previous.count, when=when,
             kind=previous.kind if antecedent.kind is None else antecedent.kind,
@@ -186,6 +234,8 @@ class MediumTermMemory:
             events=antecedent.events + tuple(event for event in previous.events
                 if not any((other.occurrence, other.role) == (event.occurrence, event.role)
                            for other in antecedent.events)))
+        self.entries[target] = replace(self.entries[target], timelines=(
+            *self.entries[target].timelines, *previous.timelines[1:]))
         for occurrence in previous.occurrences:
             self.names[occurrence] = replace(self.names[occurrence], token=target)
         self.documents.pop(source, None)
@@ -228,15 +278,19 @@ class MediumTermMemory:
 
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
-        return dict(version=4, closes=tuple(self.closes.items()),
+        def snapshot(value):
+            return value.detach().cpu().clone() if torch.is_tensor(value) else value
+        def event_state(event):
+            return (event.occurrence, event.verb, event.role, event.when,
+                snapshot(event.before), snapshot(event.basis), event.taught,
+                snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught)
+        return dict(version=5, closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
             documents=tuple(self.documents.items()), entries=tuple(dict(key=key, occurrences=entry.occurrences,
-            kind=entry.kind, count=entry.count, when=entry.when, value=entry.value.detach().cpu().clone(),
-            native=entry.native, pending=entry.pending, symbol=entry.symbol, events=tuple((event.occurrence, event.verb, event.role, event.when,
-                None if event.before is None else event.before.detach().cpu().clone(),
-                event.basis.detach().cpu().clone() if torch.is_tensor(event.basis) else event.basis, event.taught)
-                                             for event in entry.events))
-            for key, entry in self.entries.items()),
+            kind=entry.kind, count=entry.count, when=entry.when,
+            native=entry.native, pending=entry.pending, symbol=entry.symbol,
+            timelines=tuple((tuple(map(event_state, timeline.events)), snapshot(timeline.value))
+                            for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
 
     def restore(self, state, *, device=None):
@@ -245,7 +299,7 @@ class MediumTermMemory:
             self.entries, self.names = {}, {}
             self.closes, self.accesses, self.documents = {}, {}, {}
             return
-        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4):
+        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4, 5):
             raise ValueError('unsupported identity checkpoint')
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
@@ -256,8 +310,9 @@ class MediumTermMemory:
             raise ValueError('identity checkpoint requires entries and names')
         entries, names = {}, {}
         for record in state['entries']:
+            required = ('timelines',) if state['version'] == 5 else ('value', 'events')
             if not isinstance(record, dict) or not set(('key', 'occurrences', 'kind', 'count',
-                    'when', 'value', 'native', 'events')) <= record.keys():
+                    'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
             key, uses = record['key'], tuple(record['occurrences'])
             if (not address(key) or not all(map(address, uses)) or key in entries or
@@ -270,31 +325,50 @@ class MediumTermMemory:
             pending = record['kind'] is None if state['version'] == 1 else record.get('pending')
             if type(pending) is not bool or (pending and record['kind'] is not None):
                 raise ValueError('invalid identity checkpoint pending state')
-            value = self._value(record['value'])
-            if entries and value.shape != next(iter(entries.values())).value.shape:
-                raise ValueError('identity checkpoint values have different widths')
-            if device is not None:
-                value = value.to(device)
-            if any(not isinstance(event, (tuple, list)) or len(event) != (7 if state['version'] >= 4 else 4) for event in record['events']):
-                raise ValueError('invalid identity checkpoint event')
-            events = tuple(Event(*event) for event in record['events'])
-            for event in events:
-                if type(event.taught) is not bool or (event.basis is not None and not torch.is_tensor(event.basis)
-                        and (type(event.basis) is not int or event.basis < -1)):
-                    raise ValueError('invalid identity event basis')
-                for snapshot in (event.before, event.basis):
-                    if torch.is_tensor(snapshot) and self._value(snapshot).shape != value.shape:
+            saved = record['timelines'] if state['version'] == 5 else ((record['events'], record['value']),)
+            if not isinstance(saved, (tuple, list)) or not saved:
+                raise ValueError('identity checkpoint requires an actual timeline')
+            timelines = []
+            for timeline in saved:
+                if not isinstance(timeline, (tuple, list)) or len(timeline) != 2:
+                    raise ValueError('invalid identity checkpoint timeline')
+                history, value = timeline
+                value = self._value(value)
+                expected = (timelines[0].value if timelines else
+                            next(iter(entries.values())).value if entries else value)
+                if value.shape != expected.shape:
+                    raise ValueError('identity checkpoint values have different widths')
+                if device is not None:
+                    value = value.to(device)
+                size = 10 if state['version'] == 5 else 7 if state['version'] == 4 else 4
+                if not isinstance(history, (tuple, list)) or any(
+                        not isinstance(event, (tuple, list)) or len(event) != size for event in history):
+                    raise ValueError('invalid identity checkpoint event')
+                events = tuple(Event(*event) for event in history)
+                for event in events:
+                    if (type(event.taught) is not bool or type(event.modal_taught) is not bool
+                            or not isinstance(event.modifiers, (tuple, list))
+                            or (event.basis is not None and not torch.is_tensor(event.basis)
+                                and (type(event.basis) is not int or event.basis < -1))):
+                        raise ValueError('invalid identity event basis or teacher metadata')
+                    for snapshot in (event.before, event.after, *event.modifiers):
+                        if snapshot is not None and self._value(snapshot).shape != value.shape:
+                            raise ValueError('invalid identity event snapshot')
+                    if torch.is_tensor(event.basis) and self._value(event.basis).shape != value.shape:
                         raise ValueError('invalid identity event snapshot')
-            events = tuple(replace(event,
-                before=None if event.before is None else self._value(event.before).to(value),
-                basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
-                for event in events)
-            if (any(not address(event.occurrence) or event.role not in (0, 2) or
-                    type(event.verb) is not int or event.verb <= 0 or type(event.when) is not int
-                    for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
-                raise ValueError('invalid identity checkpoint event')
-            entries[key] = Token(uses, record['kind'], record['count'], record['when'], value,
-                                 events, record['native'], pending, record.get('symbol'))
+                events = tuple(replace(event,
+                    before=None if event.before is None else self._value(event.before).to(value),
+                    after=None if event.after is None else self._value(event.after).to(value),
+                    modifiers=tuple(self._value(item).to(value) for item in event.modifiers),
+                    basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
+                    for event in events)
+                if (any(not address(event.occurrence) or event.role not in (0, 2) or
+                        type(event.verb) is not int or event.verb <= 0 or type(event.when) is not int
+                        for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
+                    raise ValueError('invalid identity checkpoint event')
+                timelines.append(Timeline(events, value))
+            entries[key] = Token(uses, record['kind'], record['count'], record['when'],
+                                 tuple(timelines), record['native'], pending, record.get('symbol'))
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:

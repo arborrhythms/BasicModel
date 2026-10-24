@@ -810,3 +810,203 @@ unary must consume three trips. The captured replay passes after this
 fixture-only port; no production code or other assertion changes. Failed
 probe setup attempts and both semantic replays are retained in development
 53–56. The next hash runs the scoped groups and original lessons afresh.
+
+## 15. Modal code review before implementation (Codex, 2026-10-23)
+
+The released §4 replaces both withdrawn possible-identity proposals. The
+unmodified Claude edits were committed before this work. Nothing here
+changes a §1 decision. This review follows the swap/verb mechanism freeze
+and the line-3 rerun; its source-specific result is in the receipt.
+
+1. `Token.value` and `Token.events` currently own only the actual state.
+   Make `timelines` their owner and keep those names as timeline-0 views.
+   Version the checkpoint, validate the complete pool before replacement,
+   and migrate the old one-timeline state. Pool capacity, age, names,
+   native identity and document teardown stay on the token, not a branch.
+2. `MTMOverlay` has one value array, a seven-column stack and a six-column
+   action journal. Stage the latest alternative beside the actual value
+   and carry its numerical composition while the parse is open. Neither
+   branch is an extra bind candidate or identity. A preceding adverb on
+   the VP selects the alternative subject value for lift; an adverb on an
+   already-composed S uses that S's alternative evaluation and cancels its
+   provisional actual event. Transparent wrappers preserve that scope.
+   The committed timelines stay in Token; no new persistent overlay owner
+   or all-order identity integration is introduced.
+3. The current journal retains each completed S and `node_order` preserves
+   its subject stamp. Actual NP+VP must instead lower to order 0, with
+   adverb withholding it. The marker is the selected operation and the
+   resulting order, never a word or a new record kind. An inner S covered
+   by that modifier must not escape as an actual companion row.
+4. `ReferenceClose._commit_events` currently updates the token from the
+   final overlay value. Preserve that final update, including later mention
+   joins, and also retain each selected event's before/after snapshots so
+   the teacher has the correct correspondence between multiple events. Commit into actual or latest alternative
+   by the recorded grammatical order, keeping the subject's mention
+   reference in the written idea. A bound value still enters composition
+   through the existing bind menu; no detach is added to that read.
+5. `VerbLearning` already admits kept observations once and defers their
+   numerical graphs until after the paired updates. Use the same boundary
+   for `modal_teacher`, matching actual and alternative subject events at
+   equal `when`. Only a retained modifier with both event values supplies
+   this teacher; an absent branch supplies no target. Its term trains the
+   existing adverb action and does not enter the sentence's keep.
+6. The occurrence reader currently has no order restriction. Fixed-order
+   queries need to distinguish order 0 from abstractions, and timeline
+   evidence needs the two-lane some/every fold, including actual timeline
+   0. Carry the grammatical request's order through the existing query
+   metadata; no lexical name recognizes a modal or a question marker.
+7. Consolidation currently folds one-slot mention rows, including order-1
+   mentions. Keep the three-distinct-sentence threshold, but fold only
+   the identity's order-0 occurrences. Alternative ideas remain reachable
+   through their subject reference and are excluded from concept content.
+   The existing promotion fixture will supply actual occurrences for its
+   three mentions; its membership, count and content assertions remain.
+8. Generated-corpus protocol is fixed before the modal freeze, including
+   its budgets, corpus partition and initialization state.
+   The two forms are a free modifier leaf and a verb affix; exposure alone
+   chooses the parse, bind and adverb. Failure is reported and carried to
+   item 0, without seed, budget, forcing or menu rescue.
+
+The paired `lift` path needs the subject's stamp minus one for NP+VP;
+`result_order` currently follows lift's declared VP head, while the writer
+separately follows the subject without lowering. These cannot both be the
+new order mark. Record the chosen event order in the paired timeline
+journal and let the writer use it. Unpaired numerical configurations keep
+their existing contracts and gates. Relative description joins remain
+observations, not alternative events merely because their rows have an
+order-1 stamp. Only the selected modifier withholds the predication.
+
+The generated protocol and any existing test ports are listed before the
+modal freeze. Checkpoint ports change only the actual-timeline access path;
+old versions still load as a single actual timeline. There is no separate
+saved alias for `value`/`events`, and no test enshrines the overlay's current
+order-1 bind limitation. The modal question reads the existing event or
+abstraction; it must not assert its own alternative event.
+
+The line-3 sequence on `65451694e209edafacb5b74c87b091be6ca8342b`
+ends at description: source order 8/8, both original CE bars failed;
+lower and definite each pass bracket/occurrence 1/1; description brackets
+4/4 and answers 1/4 after 24 presentations/12 paired updates. No retry or
+later lesson supplies a pass. The remaining chain is carried to item 0.
+Claude's later Philosophy edit is restored byte-for-byte and committed at
+`bc9ae646f`; its exact patch was held outside the frozen lesson tree.
+
+Additional implementation boundaries from this review:
+
+- Opening an alternative shares the actual event prefix and the recorded
+  branch-before value. Shared events across timelines are valid; duplicate
+  occurrence/role pairs within a timeline are not. A later actual event
+  does not advance a branch.
+- A post-S adverb cancels only its covered provisional event. It restores
+  the prior actual value only while that event is still the latest actual
+  writer; a later independent actual event or description join survives.
+  No second parser or re-choice is introduced.
+- Substitute alternative meaning operands before the existing chooser
+  scores the binary candidates, preserving their form coordinates. Bind's
+  candidates, dummy, validity and score are unchanged. The selected
+  numerical shadow supplies post-S attachment, using the same kernel,
+  counts and basis, with no pool access in the compiled body.
+- A question must not assert an event merely by asking. Retained event
+  correspondence (subject identity and predicate), not cosine similarity
+  alone, distinguishes initialized verbs with equal state results. The
+  bounded thought reader keeps its work meter and unknown evidence.
+- The actual view remains the default. The existing existence and truth
+  read faces can reduce the timelines with some/every, respectively; no
+  lexical marker classifier or new grammar operator chooses that fold.
+  The actual timeline participates in both folds; missing evidence is
+  unknown, not negative.
+
+## 16. Modal implementation and corpus protocol (Codex, 2026-10-24)
+
+These decisions implement §4 without reversing §1. Development logs stay
+separate from the receipt that starts at the modal freeze.
+
+- `Token.timelines` owns `(events, value)`. `value` and `events` are views
+  of actual timeline 0. Checkpoint version 5 writes only this owner;
+  versions 1–4 migrate to one actual timeline. The complete pool is
+  validated before replacement, including event snapshots and widths.
+  Capacity, sixteen-close expiry, names, promotion and document teardown
+  still belong to the identity. A branch is never a bind candidate.
+- `TimelineOverlay` mirrors the latest alternative and carries temporary
+  scope, branch evaluations, prior actual values and the latest writer.
+  The chooser scores branch meaning operands before selecting the same
+  existing operation. Form coordinates, bind menus, dummy, validity and
+  credit are unchanged. A post-S modifier restores the covered actual
+  value and its unresolved flag only if no later actual writer has
+  superseded it. No reference choice is rerun. Both bracketings and their
+  pathwise derivatives are checked in eager and compiled execution.
+- The temporary journal records the event order and covered-event
+  suppression. The writer keeps the outer idea and the subject reference;
+  it does not write the covered S as an actual occurrence. Event admission
+  uses the semantic S's position, not the later attachment's position, so
+  a later independent actual event cannot enter an earlier branch's
+  prefix. Transparent unary wrappers retain the original event address.
+  Object participants retain their own branch value, not the subject's.
+- `modal_teacher` matches subject events at equal model time and consumes
+  each alternative once. Like `verb_teacher`, it defers the graph until
+  after paired updates. The weight is `training.modalTeacherWeight`,
+  default 0.1, under reconstruction. Only explicit teacher observations
+  end their graphs; no detach is added to an MTM read during composition.
+- A question does not assert its event. `closing_question` carries the
+  selected subject, predicate and order to `TimelineRead`. The existing
+  bounded thought reader matches those references, not the cosine of
+  initialized equal-valued events. Actual requests read order 0; abstract
+  requests read order 1 or above. The existence face folds some timelines
+  and the truth face folds every timeline, with actual included and the
+  dual lane rule. Missing evidence is unknown. A truncated read cannot
+  certify every. After expiry, retained Part arguments still locate an
+  idea through its subject reference, under the same record meter; they
+  cannot reconstruct an expired branch organization or certify every.
+  If content postings are absent, this exact-reference read scans only
+  within that meter. No new stored identity, derivation or record kind is
+  introduced. The non-timeline query path is unchanged.
+- Mention recurrence still admits promotion at three distinct sentences.
+  Its value fold includes only order-0 mention/event occurrences, never
+  alternative ideas. The latter keep their reference after document end.
+
+**Existing test ports (no retired tests).**
+`test_invalid_identity_checkpoint_does_not_replace_the_pool` moves the
+invalid value, invalid event and expected value accesses to timeline 0;
+the event corruption retains invalid role 1 in the version-5 tuple.
+`test_pending_checkpoint_migration_and_validation_are_atomic` explicitly
+builds the legacy value/events layout before testing version 1. The
+expiry/promotion corruption test changes its expected-value access to
+timeline 0. The promotion test supplies an actual order-0 close around
+each of its four mention presentations; its assertions remain verbatim.
+The receipt includes the exact patch, including both expected-value
+assertion ports. All other existing assertions remain unchanged.
+
+Development failures are retained: the new checkpoint comparison first
+used a tensor helper on string metadata; the version-5 existing fixtures
+still addressed removed flat fields; a transparent wrapper lost its event
+address; and a retained idea lacked a content cue after expiry. Their
+repairs preserve the semantic checks. The same-round close helper now
+returns the prepared clause, as production does, for query construction.
+The independent-event test additionally checks that an earlier branch
+does not inherit a later actual event.
+
+**Certificate 15, fixed before execution.** The complete protocol is
+[`corpus-protocol.json`](../benchmarks/2026-10-23-item3-5-verb-modal/modal/corpus-protocol.json).
+A fresh seed, 394616477, is drawn once and fixed for both forms. Each form
+has four subjects, two verbs and eight generated documents: six training,
+two held out by `(subject index + verb index) mod 4 == 3`. Each document
+has an actual event, then an alternative, and two separately presented
+questions. Two epochs give 24 training examples/72 sentence presentations
+and 36 paired updates per form; evaluation gives four examples/twelve
+sentences, without updates. The two premises are presented without any
+supplied target, then the question is presented as a separate closing in
+the same document. This protocol correction precedes its first execution: a
+supervised multi-sentence batch would otherwise credit every premise. Batch size 4, learning rate .003, the native
+232-coordinate paired lesson configuration and a fresh model per form.
+The same initial draw is used for the free modifier leaf and verb affix.
+There is no prerequisite restore, stage menu, grammar lesson, reference
+order, segmentation hint or premise answer. Only training questions have
+answer supervision. Both exact held-out answers and the correctly
+referenced actual/alternative event histories must pass at 100%; failures
+move to item 0 without retries, extra budget, forcing or another seed.
+
+No binding mechanism changes: this modal source runs the pending-premise
+certificates once in the scoped groups, not a twelve-draw series. There is
+no full sweep in this iteration. The all-order MTM-prepending integration
+and retirement of the transition overlay remain item 3; no test pins the
+current order-1 bind limitation.

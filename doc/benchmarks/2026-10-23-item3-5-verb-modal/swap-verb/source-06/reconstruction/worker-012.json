@@ -1,0 +1,148 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+    "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores",
+    "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+    "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+    "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+    "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+    "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[False]",
+    "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse"
+  ],
+  "completed": [
+    "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+    "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores",
+    "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+    "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+    "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+    "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+    "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+    "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]",
+    "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[False]",
+    "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_type_family_snapshot_uses_learned_membership_and_row_local_priming",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0007448750548064709,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_determiner_uses_order_and_identity_with_learned_marker_scores",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006632499862462282,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_order_mismatch_expands_determiner_and_terminates",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00475966720841825,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_stored_binding_reads_filled_identity_not_formation_provenance",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0005062499549239874,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_native_catalog_can_realize_both_determiner_identity_choices",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.20027679204940796,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_unnamed_primed_concept_cannot_complete_as_a_word",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 1.133798207854852,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_unspelled_primed_compound_stays_available_for_decomposition",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.7856807089410722,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.001829707995057106,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_dropped_constituent_is_charged_and_never_complete[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0013983328826725483,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0006462500896304846,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0004403330385684967,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_stored_idea_generation.py::test_unspelled_idempotent_whole_cannot_hide_its_lexical_inverse",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.8126726250629872,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

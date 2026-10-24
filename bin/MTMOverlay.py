@@ -23,24 +23,29 @@ class MTMOverlay(nn.Module):
                 getattr(rule, 'relation_kind', None) == 'equal',
                 getattr(rule, 'relation_kind', None) in ('part', 'whole', 'equal'),
                 getattr(rule, 'relation_kind', None) in ('part', 'whole'),
-            ) for rule in rules] or [(0,) * 8], dtype=torch.long)
+                rule.method_name == 'adverb',
+            ) for rule in rules] or [(0,) * 9], dtype=torch.long)
         self.register_buffer('binary', table(binary), persistent=False)
         self.register_buffer('unary', table(unary), persistent=False)
 
     @staticmethod
-    def empty(like, *, journal, words):
+    def empty(like, *, journal, words, timelines=False):
         batch, stack, width = like.shape
         # One introduction per word or selected operation. This is a write
         # journal, not extra STM capacity or a second set of accessible frames.
         count = words + journal
-        return (like.new_zeros(batch, count, width),
+        state = (like.new_zeros(batch, count, width),
                 torch.zeros(batch, count, dtype=torch.bool, device=like.device),
                 torch.zeros(batch, stack, 7, dtype=torch.long, device=like.device),
                 torch.zeros(batch, count, 3, dtype=torch.long, device=like.device),
                 torch.zeros(batch, journal, 6, dtype=torch.long, device=like.device))
+        if timelines:
+            from TimelineOverlay import empty
+            return empty(state)
+        return state
 
     @staticmethod
-    def stage(resolver, frames, like, *, journal, words):
+    def stage(resolver, frames, like, *, journal, words, timelines=False):
         """Host boundary: no pool access is needed during composition."""
         records = [resolver.individuals(resolver.accessible(row)) for row in frames]
         base = max(map(len, records), default=0)
@@ -58,7 +63,18 @@ class MTMOverlay(nn.Module):
                             resolver._derivation_symbol(identity) is not None)
                 origins[batch, index] = origins.new_tensor(
                     (1, identity, resolved) if isinstance(identity, int) else (2, identity[-1], resolved))
-        return values, valid, stack, origins, actions
+        state = values, valid, stack, origins, actions
+        if timelines:
+            from TimelineOverlay import empty
+            state = empty(state)
+            for batch, row in enumerate(records):
+                for index, (identity, record) in enumerate(row.items()):
+                    entry = resolver.components.owner.mtm.entries.get(record.get('token') or identity)
+                    if entry is not None and len(entry.timelines) > 1:
+                        value = entry.timelines[-1].value.to(like)
+                        state[5][batch,index,:value.numel()] = value
+                        state[6][batch,index] = True
+        return state
 
     @staticmethod
     def read(values, handles):
@@ -73,7 +89,7 @@ class MTMOverlay(nn.Module):
 
     @staticmethod
     def push(state, active, value, *, word, order, index, words, resolved):
-        values, valid, stack, origins, journal = state
+        values, valid, stack, origins, journal = state[:5]
         base = values.shape[1] - words - journal.shape[1]
         handle = (base + index + 1).expand(len(value))
         # The reading stamp makes a provisional object. Its grammatical
@@ -86,18 +102,27 @@ class MTMOverlay(nn.Module):
                               resolved.long(), word, torch.zeros_like(word), torch.ones_like(word)), -1)
         stack = torch.where(active[:, None, None],
             torch.cat((member[:, None], stack[:, :-1]), 1), stack)
-        return values, valid, stack, origins, journal
+        core = values, valid, stack, origins, journal
+        if len(state) > 5:
+            from TimelineOverlay import push
+            return (*core, *push(state, active, value))
+        return core
 
     @staticmethod
     def refresh(state, value, source):
-        values, valid, stack, _, _ = state
+        values, valid, stack, _, _ = state[:5]
         handles = stack[..., 0].gather(1, source)
         present = valid.gather(1, (handles - 1).clamp_min(0)) & (handles > 0)
-        return torch.where(present[..., None], MTMOverlay.read(values, handles), value)
+        current = MTMOverlay.read(values, handles)
+        if len(state) > 5:
+            from TimelineOverlay import branch, gather, SCOPE
+            current = torch.where(gather(state[SCOPE], source)[...,0,None].bool(),
+                                  branch(state, handles, current), current)
+        return torch.where(present[..., None], current, value)
 
     @staticmethod
     def menu(state, value, source, *, exclusions=None):
-        values, valid, stack, origins, _ = state
+        values, valid, stack, origins, _ = state[:5]
         batch, positions, width = value.shape
         handles = stack[..., 0].gather(1, source)
         columns = torch.arange(values.shape[1], device=value.device) + 1
@@ -125,13 +150,17 @@ class MTMOverlay(nn.Module):
                 torch.cat((torch.zeros_like(handles)[..., None], refs[:, None].expand_as(selected)), 2),
                 torch.cat((torch.ones_like(handles, dtype=torch.bool)[..., None], available), 2))
 
+    def rule(self, choice):
+        return torch.where((choice.kind == 1)[:, None],
+            self.binary[choice.local_op.clamp(0, len(self.binary)-1)],
+            self.unary[choice.local_op.clamp(0, len(self.unary)-1)])
+
     def apply(self, state, choice, operands, *, column, words):
-        values, valid, stack, origins, journal = state
+        values, valid, stack, origins, journal = state[:5]
         batch, size, _ = stack.shape
         binary, unary = choice.kind == 1, choice.kind == 2
         applied = choice.applied & (binary | unary)
-        rule = torch.where(binary[:, None], self.binary[choice.local_op.clamp(0, len(self.binary)-1)],
-                           self.unary[choice.local_op.clamp(0, len(self.unary)-1)])
+        rule = self.rule(choice)
         selected = stack.gather(1, choice.position.clamp(0, size-1)[:, None, None].expand(batch, 1, 7))[:, 0]
         left = torch.where(binary[:, None], stack[:, min(1, size-1)], selected)
         right = torch.where(binary[:, None], stack[:, 0], selected)
@@ -193,4 +222,8 @@ class MTMOverlay(nn.Module):
         if size > 1:
             stack = torch.where((choice.applied & (choice.kind == 3))[:, None, None],
                 torch.cat((stack[:, 1:2], stack[:, :1], stack[:, 2:]), 1), stack)
-        return values, valid, stack, origins, journal
+        core = values, valid, stack, origins, journal
+        if len(state) > 5:
+            from TimelineOverlay import apply
+            return apply(self, state, core, choice, operands, column=column)
+        return core

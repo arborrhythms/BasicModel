@@ -72,13 +72,16 @@ class AnswerProgram:
     identity_actions: Any = None
     identity_values: Any = None
     identity_leaves: Any = None
+    timeline_actions: Any = None
+    timeline_values: Any = None
     @property
     def _tensor_fields(self):
         core = ("rows", "word_rows", "activations", "leaves", "actions",
                 "targets", "end_state", "concept_ids")
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
                                              "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
-                                             "identity_origins", "identity_actions", "identity_values", "identity_leaves")
+                                             "identity_origins", "identity_actions", "identity_values", "identity_leaves",
+                                             "timeline_actions", "timeline_values")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
@@ -154,6 +157,18 @@ class AnswerProgram:
                     bool(((events[:, 4] < -1) | (events[:, 4] > count)).any()) or
                     bool(((events[:, 5] < 0) | (events[:, 5] > 1)).any())):
                 raise ValueError('identity correspondence contains an invalid location or event')
+        if self.timeline_actions is not None or self.timeline_values is not None:
+            actions, values = self.timeline_actions, self.timeline_values
+            if (self.identity_actions is None or not torch.is_tensor(actions) or
+                    actions.shape != (self.actions.shape[0],4) or actions.dtype != torch.long or
+                    not torch.is_tensor(values) or values.shape != self.identity_values.shape or
+                    not values.is_floating_point() or not bool(torch.isfinite(values).all()) or
+                    bool((actions[:,0] < -1).any()) or
+                    bool(((actions[:,1] < 0) | (actions[:,1] > 1)).any()) or
+                    bool(((actions[:,2] < 0) | (actions[:,2] > torch.arange(
+                        1,len(self.actions)+1,device=actions.device))).any()) or
+                    bool(((actions[:,3] < 0) | (actions[:,3] > 1)).any())):
+                raise ValueError('timeline correspondence must align with identities and selected actions')
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())

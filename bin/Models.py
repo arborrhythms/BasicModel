@@ -2413,6 +2413,9 @@ class BaseModel(Mereology, nn.Module):
             TheXMLConfig.training('reconstructionReferenceWeight', .1))
         if not math.isfinite(self.reconstruction_reference_weight) or self.reconstruction_reference_weight < 0:
             raise ValueError('reconstructionReferenceWeight must be finite and nonnegative')
+        self.modal_teacher_weight = float(TheXMLConfig.training('modalTeacherWeight', .1))
+        if not math.isfinite(self.modal_teacher_weight) or self.modal_teacher_weight < 0:
+            raise ValueError('modalTeacherWeight must be finite and nonnegative')
         self.verb_teacher_weight = float(TheXMLConfig.training('verbTeacherWeight', .1))
         if not math.isfinite(self.verb_teacher_weight) or self.verb_teacher_weight < 0:
             raise ValueError('verbTeacherWeight must be finite and nonnegative')
@@ -12862,6 +12865,14 @@ class BasicModel(BaseModel):
                 reference_ids, reference_orders = resolve(*args, leaf_orders=selected_leaf_orders, admit=admit)
                 if not bool((reference_orders >= 0).any()):
                     reference_ids = reference_orders = None
+            timeline_actions = None
+            if identity is not None and len(identity) > 5:
+                timeline_actions = identity[11][b, columns[b,:L].clamp_min(0)].clone()
+                origins = timeline_actions[:,2]
+                correspondence = origins[:,None] == columns[b,:L][None]+1
+                resolved = correspondence.any(-1) & (origins > 0)
+                timeline_actions[:,2] = torch.where(resolved,
+                    correspondence.long().argmax(-1)+1, 0)
             entry = AnswerProgram(
                 rows=rows[b].index_select(0, pos.to(rows.device)),
                 word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
@@ -12889,6 +12900,8 @@ class BasicModel(BaseModel):
                 identity_values=None if identity is None else identity[0][b],
                 identity_actions=None if identity is None else identity[4][b, columns[b, :L].clamp_min(0)],
                 identity_leaves=identity_leaves,
+                timeline_actions=timeline_actions,
+                timeline_values=None if timeline_actions is None else identity[5][b],
                 **{name: value[b].index_select(0, pos.to(value.device))
                    for name, value in (
                        ('symbol_where', getattr(getattr(self, 'inputSpace', None), '_ar_word_symbol_where', None)),
@@ -19635,7 +19648,7 @@ class BasicModel(BaseModel):
         trace._choice_alternative_counts = lang[23]
         trace._choice_explorable = lang[23] > 0
         trace._choice_log_probabilities = lang[24]
-        trace._identity_state = lang[26:31] if len(lang) >= 31 else None
+        trace._identity_state = lang[26:] if len(lang) >= 31 else None
         self._packed_sentence_roots = lang[6]
         self._tensor_sentence_roots_live = lang[10]
         self._tensor_sentence_roots_depth = lang[11]
@@ -20460,7 +20473,10 @@ class BasicModel(BaseModel):
                             training=bool(self._sentence_training),
                             verb_action=self.languageSpace.verb_action(), errors=self.errors,
                             verb_teacher_weight=getattr(self, 'verb_teacher_weight', .1),
-                            teacher_records=getattr(self, '_verb_teacher_records', None))
+                            teacher_records=getattr(self, '_verb_teacher_records', None),
+                            modifier_action=self.languageSpace.modifier_action(),
+                            modal_teacher_weight=getattr(self, 'modal_teacher_weight', .1),
+                            modal_records=getattr(self, '_modal_teacher_records', None))
                         self.__dict__.setdefault('_reference_close_audit', {})[(int(sid), b)] = resolver.last_audit
                         self._concept_owner().components.commit(row, view['meanings'][b],
                             None if comparison is None else comparison.estimate)
@@ -20730,6 +20746,7 @@ class BasicModel(BaseModel):
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word):
         from SentenceCompose import sentence_pair, fork_perception
         self._verb_teacher_records = []
+        self._modal_teacher_records = []
         # Raw forward enters here without runBatch's eager setup. Compiled
         # reconstruction must find its autograd anchors already allocated.
         _ensure_grad_anchors(words.device)
@@ -20775,7 +20792,8 @@ class BasicModel(BaseModel):
             self.languageSpace.stage_verb_groups(resolver, self.inputSpace._ar_word_concept_ids, stm[0])
             frames = [() if disc is None or not bool(present[b]) else tuple(disc.situation_references(b))
                       for b in range(B)]
-            overlay = MTMOverlay.stage(resolver, frames, stm[0], journal=lang[19].shape[1], words=W)
+            overlay = MTMOverlay.stage(resolver, frames, stm[0], journal=lang[19].shape[1], words=W,
+                timelines=self.languageSpace.verb_action() is not None)
             lang = (*lang[:26], *overlay)
             before = self._snapshot_sentence_state((stm, lang, feedback))
             observations, predictions, paths = [], [], []
@@ -21251,6 +21269,8 @@ class BasicModel(BaseModel):
             self._recon_completed = True
         from VerbLearning import register
         register(self._verb_teacher_records, self.errors)
+        from ModalLearning import register as register_modal
+        register_modal(self._modal_teacher_records, self.errors)
         return stm, sub, sym, lang, feedback, words.new_tensor(W, dtype=torch.long)
 
     def _run_tensor_peer_word_pipeline(self, width):
@@ -21506,7 +21526,8 @@ class BasicModel(BaseModel):
             words.new_zeros(B, capacity, occupations.shape[-1]),  # phrase head distribution
         )
         from MTMOverlay import MTMOverlay
-        cs_lang_state = (*cs_lang_state, *MTMOverlay.empty(stm._buffer, journal=record_width, words=width))
+        cs_lang_state = (*cs_lang_state, *MTMOverlay.empty(stm._buffer, journal=record_width, words=width,
+            timelines=language.verb_action() is not None))
         empty_cs_sub = (
             zero_concept.clone(),
             torch.full(
@@ -21755,7 +21776,7 @@ class BasicModel(BaseModel):
             word_ids = (_gather_word(native_ids, index).reshape(B) if torch.is_tensor(native_ids)
                         else torch.full_like(current_stm[1], -1))
             clause_state = scope.push(current_cs_lang[17], commit.reshape(B), word_ids)
-            identity_state = language.identity_overlay.push(current_cs_lang[26:31], commit.reshape(B),
+            identity_state = language.identity_overlay.push(current_cs_lang[26:], commit.reshape(B),
                 resolved[0][:, 0], word=word_ids, order=resolved[2][:, 0], index=index.clamp(0, width-1),
                 words=width, resolved=object_gate)
             closing_events = current_cs_lang[18]
@@ -22217,7 +22238,7 @@ class BasicModel(BaseModel):
             trace._choice_ref_relations = final_cs_lang[21].clone()
             trace._choice_alternative_counts = final_cs_lang[23].clone()
             trace._choice_explorable = final_cs_lang[23] > 0
-            trace._identity_state = final_cs_lang[26:31] if sentence_transactions else None
+            trace._identity_state = final_cs_lang[26:] if sentence_transactions else None
         stm._clause_state = final_cs_lang[17].clone()
         stm._last_unary = final_cs_lang[22].clone()
         stm._unary_history_depth = stm._depth.clone()

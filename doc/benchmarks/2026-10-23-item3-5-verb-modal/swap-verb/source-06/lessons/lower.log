@@ -1,0 +1,10 @@
+[BasicModel] Weights loaded from /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/lessons/stage3/order.ckpt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+{"batch": 1, "training": true, "epoch": 0, "ids": ["np:np:0:-1:0", "np:np:0:-1:2", "np:np:0:-1:1"], "updates": {"paired": 2, "batch_end_disabled": 0}, "elapsed_seconds": 108.74898620904423}
+batch = 1 (Δ=56.489s)
+{"batch": 2, "training": true, "epoch": 1, "ids": ["np:np:0:-1:2", "np:np:0:-1:0", "np:np:0:-1:1"], "updates": {"paired": 4, "batch_end_disabled": 0}, "elapsed_seconds": 165.23876795894466}
+[BasicModel] Weights saved to /Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/lessons/lower/trained.ckpt
+batch = 2 (Δ=7.361s)
+{"batch": 3, "training": false, "epoch": null, "ids": ["np:np:0:-1:3"], "updates": {"paired": 4, "batch_end_disabled": 0}, "elapsed_seconds": 172.59847904206254}
+{"completed": true, "gates": {"brackets": {"correct": 1, "total": 1, "threshold": 0.9, "passed": true}, "occurrences": {"correct": 1, "total": 1, "threshold": 0.95, "duplicate_writes": 0, "collisions": 0, "passed": true}}, "passed": true, "groups": {"np": {"sentences": 1, "brackets": 1, "nps": 1, "occurrences": 1, "reductions": 1}}, "reports": {"reductions": {"correct": 1, "total": 1}, "unlowered": {"correct": 0, "total": 0}, "kept_programs": {"lower": 1}, "kept_operators": {"lower": 1}, "unexpected_occurrences": 0, "lowering_stamps": [{"id": "np:np:0:-1:3", "lowerings": [{"span": [0, 1], "description": [1], "before": 0, "after": 1, "method": "lower", "meaning_norm": 4.232634544372559}]}], "meaning_norms": [{"id": "np:np:0:-1:3", "closed_meaning_norm": 0.20000003278255463, "operations": [{"method": "lower", "meaning_norms": [0.4285714328289032, 0.20000003278255463, 4.232634544372559]}]}]}}

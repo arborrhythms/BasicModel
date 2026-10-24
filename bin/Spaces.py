@@ -71,8 +71,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity",
-    defaults=(None, None, None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline",
+    defaults=(None, None, None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 

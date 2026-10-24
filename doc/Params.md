@@ -413,6 +413,13 @@ the action's readouts and bases from detached retained observations. These
 defaults are read only by paired meaning configurations; `model.xml` and
 the numeric configurations retain their existing behavior.
 
+`training.modalTeacherWeight` defaults to `0.1`. It weights the equal-time
+actual/alternative `modal_teacher` term in the reconstruction owner. The
+retained event values supply detached teacher targets; the modifier readout
+and shared basis receive the gradient. Tokens own actual and alternative
+timelines, which share the token's capacity and expiry. Only actual order-0
+occurrences enter a promoted identity's content.
+
 > `ConceptualSpace` owns definitions, evidence and STM/event state. The
 > former per-stage `sigma_in` / `sigma_cs` layers are retired and no longer
 > constructed on the live path. On aligned BasicModel, native PS

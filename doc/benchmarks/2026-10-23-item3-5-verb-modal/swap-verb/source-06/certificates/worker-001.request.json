@@ -1,0 +1,9 @@
+{
+  "selectors": [
+    "test/test_meaning_kernels.py::test_selected_inverse_matches_full_menu_values_and_pullbacks",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[False]",
+    "test/test_meaning_kernels.py::test_selected_walk_preserves_unused_gradients_and_optimizer_steps[True]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/certificates/worker-001.recycle.json"
+}

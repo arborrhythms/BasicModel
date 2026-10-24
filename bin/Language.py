@@ -12568,6 +12568,14 @@ class LanguageSpace(nn.Module):
                 return getattr(op, 'meaning_action', None)
         return None
 
+    def modifier_action(self):
+        layer = self._tree_layer(2)
+        for wrapped in (() if layer is None else layer.ops):
+            op = getattr(wrapped, 'gl', wrapped)
+            if op.rule_name == 'adverb':
+                return getattr(op, 'meaning_action', None)
+        return None
+
     def stage_verb_groups(self, resolver, words, like):
         """Freeze host assignments before composition; the loop reads tensors."""
         action = self.verb_action()
@@ -12643,6 +12651,10 @@ class LanguageSpace(nn.Module):
                                                 reference_scope[..., 0].bitwise_and(1) != 0, live_positions,
                                                 reference_scope[..., 0].bitwise_and(16) != 0),
                                           active=(torch.arange(n, device=buffer.device)[None] < window_depth[:, None]) & row_gate.reshape(B, 1))
+        if identity_state is not None and len(identity_state) > 5:
+            from TimelineOverlay import prepare
+            references = prepare(references, identity_state, source, self._compose_binary_rules,
+                meaning_start=D-self.verb_action().readout.shape[-1])
         structural_context = self._structural_context(phase='compose', input_stream=buffer)
         if structural_context is not None and identity_state is not None:
             from dataclasses import replace
@@ -12711,6 +12723,17 @@ class LanguageSpace(nn.Module):
                     route['logits'], torch.zeros_like(route['logits'])), -1)
                 .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
             route['proposal_inverse'], output_order, route.get('identity'))
+        if identity_state is not None and len(identity_state) > 5:
+            from TimelineOverlay import choice as timeline_choice
+            def evaluate(left, right, active):
+                value = self.forward_binary_step(left, right, choice.local_op,
+                    active & (choice.kind == 1), grammar_context=structural_context)
+                unary = self.forward_unary_step(left, choice.local_op,
+                    active & (choice.kind == 2), grammar_context=structural_context, selected_only=True)
+                return torch.where((choice.kind == 1)[:,None], value, unary)
+            choice = timeline_choice(self.identity_overlay, identity_state, choice,
+                route['operands'], state[2], evaluate,
+                meaning_start=D-self.verb_action().readout.shape[-1])
         if reference_scope is None:
             return choice
         return choice, route['refs'], route['relations'], route['operands']
@@ -13780,7 +13803,7 @@ class LanguageSpace(nn.Module):
             result = torch.where(selected[:, None], undone, result)
         return (result, valid.reshape(B).bool() & ~available) if return_status else result
 
-    def forward_binary_step(self, left, right, op_local, valid):
+    def forward_binary_step(self, left, right, op_local, valid, *, grammar_context=None):
         """``[B, D]`` parent of one recorded binary fold applied forward:
         the reducer's candidate of the recorded local op on the (older,
         newer) pair, the value the forward's hard choice committed; an
@@ -13799,8 +13822,8 @@ class LanguageSpace(nn.Module):
         local = op_local.reshape(B).clamp(0, len(ops) - 1)
         live = valid.reshape(B).to(dtype=torch.bool)
         window = torch.stack((left, right), dim=1)  # independent cond operand storage
-        grammar_context = self._structural_context(
-            phase='compose', input_stream=window)
+        if grammar_context is None:
+            grammar_context = self._structural_context(phase='compose', input_stream=window)
         result = right.clone()
         compiling = torch.compiler.is_compiling()
         indices = (range(len(ops)) if compiling else
@@ -13809,7 +13832,8 @@ class LanguageSpace(nn.Module):
             op = ops[index]
             # Fullgraph traces every conditional body, including impossible
             # compound branches. A case-less replay has no eligible compound.
-            if bool(getattr(getattr(op,'gl',op),'case_head_role',0)) and (
+            if (getattr(getattr(op,'gl',op),'meaning_layout',None) is None
+                    and bool(getattr(getattr(op,'gl',op),'case_head_role',0))) and (
                     grammar_context is None or grammar_context.selected_cases is None):
                 continue
             selected = torch.logical_and(live, local == index)
@@ -13835,7 +13859,7 @@ class LanguageSpace(nn.Module):
                 result = apply(window, result, selected)
         return result
 
-    def forward_unary_step(self, x, op_local, valid):
+    def forward_unary_step(self, x, op_local, valid, *, grammar_context=None, selected_only=False):
         """``[B, D]`` of one recorded unary rewrite applied forward (the
         unary candidate of the recorded local op); an invalid row
         keeps ``x``."""
@@ -13846,8 +13870,24 @@ class LanguageSpace(nn.Module):
         if not ops:
             return x
         B, D = int(x.shape[0]), int(x.shape[-1])
-        grammar_context = self._structural_context(
-            phase='compose', input_stream=x.unsqueeze(1))
+        if grammar_context is None:
+            grammar_context = self._structural_context(phase='compose', input_stream=x.unsqueeze(1))
+        if selected_only:
+            result = x.clone()
+            live = valid.reshape(B).bool()
+            local = op_local.reshape(B).clamp(0, len(ops)-1)
+            compiling = torch.compiler.is_compiling()
+            indices = range(len(ops)) if compiling else sorted(set(local[live].detach().cpu().tolist()))
+            for index in indices:
+                selected = live & (local == index)
+                def apply(value, previous, mask):
+                    candidate = unary._apply_op(ops[index], value.unsqueeze(1),
+                        grammar_context=grammar_context).reshape(B,D)
+                    return torch.where(mask[:,None], candidate, previous).clone()
+                result = (torch.cond(selected.any(), apply, lambda value, previous, mask: previous.clone(),
+                    (x, result, selected)) if compiling else apply(x, result, selected))
+            return result
+
         outs = [unary._apply_op(
             op, x.unsqueeze(1), grammar_context=grammar_context).reshape(B, D)
                 for op in ops]

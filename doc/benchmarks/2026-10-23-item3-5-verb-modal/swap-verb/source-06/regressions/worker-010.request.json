@@ -1,0 +1,11 @@
+{
+  "selectors": [
+    "test/test_memory_consolidation.py::test_capacity_eviction_during_close_drops_only_the_evicted_tokens_history",
+    "test/test_memory_consolidation.py::test_a_kept_bind_refreshes_its_token_even_when_model_time_is_unchanged",
+    "test/test_memory_consolidation.py::test_surface_wrapped_relation_does_not_add_a_standalone_object",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[capacity]",
+    "test/test_memory_consolidation.py::test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation[expiry]"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-06/regressions/worker-010.recycle.json"
+}

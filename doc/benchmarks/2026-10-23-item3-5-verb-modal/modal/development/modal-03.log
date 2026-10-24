@@ -1,0 +1,39 @@
+...............................F......................s............      [100%]
+=================================== FAILURES ===================================
+_____________ test_transparent_wrapper_retains_one_completed_event _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x146863350>
+
+    def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
+        from ClauseJournal import finish_clause
+        from test_clause_acceptance import SentenceFixture
+        f = SentenceFixture(monkeypatch)
+        entry, _, _ = recorded_identity_reading(f, ('not',
+            ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'target')))))
+        clause = finish_clause(f.language, entry, registry=f.registry)
+        resolver = f.cs.components.reference_close
+        plan = resolver.preview(clause, ())
+        prepared = resolver.prepare(clause, plan)
+        written = {}
+        row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped-event', sentence_index=0)
+        resolver.commit(plan, row, written, document='wrapped-event', position=0, training=False)
+        events = {event.occurrence for token in f.cs.mtm.entries.values() for event in token.events}
+>       assert events == {written[('occurrence', id(prepared))]}
+E       AssertionError: assert {('ltm', 'add...564936336845)} == {('ltm', 'add...814549981460)}
+E         
+E         Extra items in the left set:
+E         ('ltm', 'address-v1', -3426735564936336845)
+E         Extra items in the right set:
+E         ('ltm', 'address-v1', 2514970814549981460)
+E         Use -v to get more diff
+
+test/test_identity_threading.py:494: AssertionError
+=============================== warnings summary ===============================
+test/test_identity_threading.py::test_frame_access_does_not_leak_a_native_individuals_other_stream_value
+  /Users/arogers/github/WikiOracle/basicmodel/bin/Layers.py:5462: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /Users/runner/work/pytorch/pytorch/aten/src/ATen/Context.cpp:855.)
+    self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_identity_threading.py::test_transparent_wrapper_retains_one_completed_event
+1 failed, 65 passed, 1 skipped, 1 warning in 5.47s

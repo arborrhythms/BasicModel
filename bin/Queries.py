@@ -897,7 +897,23 @@ class ThoughtLTMCapability:
             stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'),
             max_candidates=max_records, work=work, role_mask=role_mask)
 
+    def _timeline_read(self, description, *, max_records, work, references=()):
+        from ThoughtReferences import bindings
+        if bindings(description).get('_query_event') is None:
+            return None
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        if store is None or not callable(getattr(store, '_concept_owner', None)):
+            return None
+        from TimelineRead import read
+        return read(store, description, max_records=max_records, work=work,
+            fallback=lambda clean: self._cued(clean, max_records=max_records,
+                                              work=work, references=references))
+
     def existence_evidence(self, description, *, max_records, work):
+        timelines = self._timeline_read(description, max_records=max_records, work=work)
+        if timelines is not None:
+            from TimelineRead import evidence
+            return evidence(timelines, description)
         result = self._cued(description, max_records=max_records, work=work)
         positive = negative = 0.
         sources = []
@@ -946,6 +962,13 @@ class ThoughtLTMCapability:
     def best_match(self, pattern, *, max_records, work, references=()):
         """One best matching row, with its poles and its own occurrence witness."""
         from ThoughtReferences import bindings, open_slots
+        timelines = self._timeline_read(pattern, max_records=max_records, work=work, references=references)
+        if timelines is not None:
+            from TimelineRead import evidence
+            abstract = timelines['order'] > 0
+            scoped = tuple(tuple(row for row in records if (row['order'] > 0) == abstract)
+                           for records in timelines['groups'])
+            return evidence(dict(timelines, groups=scoped), pattern)
         data = bindings(pattern)
         relation = data.get('_query_relation')
         if relation == 'truth':
@@ -1010,6 +1033,10 @@ class ThoughtLTMCapability:
                     incomplete=tuple(dict.fromkeys(incomplete)))
 
     def truth_evidence(self, description, *, max_records, work):
+        timelines = self._timeline_read(description, max_records=max_records, work=work)
+        if timelines is not None:
+            from TimelineRead import evidence
+            return evidence(timelines, description, every=timelines['order'] > 0)
         result = self.best_match(description, max_records=max_records, work=work)
         if result['frames']:
             result['trust'] = result['frames'][0]['trust']

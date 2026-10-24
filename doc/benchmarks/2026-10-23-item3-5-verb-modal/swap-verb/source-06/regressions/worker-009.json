@@ -1,0 +1,192 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[False]",
+    "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[True]",
+    "test/test_memory_consolidation.py::test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state",
+    "test/test_memory_consolidation.py::test_many_mentions_in_one_sentence_do_not_promote",
+    "test/test_memory_consolidation.py::test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows",
+    "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[open]",
+    "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[bind]",
+    "test/test_memory_consolidation.py::test_standalone_order_one_composite_gets_a_site_through_its_head",
+    "test/test_memory_consolidation.py::test_definition_cache_rebuilds_after_forgetting_and_restore",
+    "test/test_memory_consolidation.py::test_event_without_factored_refs_uses_the_captured_verb_reading",
+    "test/test_memory_consolidation.py::test_pending_alias_and_later_self_arrival_leave_the_same_token_pending",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[clock]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[access]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[document]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[symbol]",
+    "test/test_memory_consolidation.py::test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token"
+  ],
+  "completed": [
+    "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[False]",
+    "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[True]",
+    "test/test_memory_consolidation.py::test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state",
+    "test/test_memory_consolidation.py::test_many_mentions_in_one_sentence_do_not_promote",
+    "test/test_memory_consolidation.py::test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows",
+    "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[open]",
+    "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[bind]",
+    "test/test_memory_consolidation.py::test_standalone_order_one_composite_gets_a_site_through_its_head",
+    "test/test_memory_consolidation.py::test_definition_cache_rebuilds_after_forgetting_and_restore",
+    "test/test_memory_consolidation.py::test_event_without_factored_refs_uses_the_captured_verb_reading",
+    "test/test_memory_consolidation.py::test_pending_alias_and_later_self_arrival_leave_the_same_token_pending",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[clock]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[access]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[document]",
+    "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[symbol]",
+    "test/test_memory_consolidation.py::test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[False]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0067812909837812185,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_reading_recurrence_counts_distinct_documents_not_reobservations[True]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004344000015407801,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_its_state",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.009553791023790836,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_many_mentions_in_one_sentence_do_not_promote",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.003580584190785885,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0061445829924196005,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[open]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005834333831444383,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_reclosing_a_mention_does_not_erase_another_tokens_event[bind]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.006041625048965216,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_standalone_order_one_composite_gets_a_site_through_its_head",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.005136790918186307,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_definition_cache_rebuilds_after_forgetting_and_restore",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.03825345914810896,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_event_without_factored_refs_uses_the_captured_verb_reading",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.015338165918365121,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_pending_alias_and_later_self_arrival_leave_the_same_token_pending",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.008429333101958036,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[clock]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004592709010466933,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[access]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004414499970152974,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[document]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0043550829868763685,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_invalid_expiry_or_promotion_checkpoint_keeps_the_existing_pool[symbol]",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.004340124782174826,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_memory_consolidation.py::test_kept_closes_with_one_model_tick_do_not_refresh_an_unmentioned_token",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.031104542082175612,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

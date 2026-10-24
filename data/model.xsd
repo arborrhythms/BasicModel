@@ -859,6 +859,7 @@
       <xs:element name="reconstructionScale" type="unitInterval" minOccurs="0"/>
       <xs:element name="reconstructionReferenceWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="verbTeacherWeight" type="nonNegativeFloat" minOccurs="0"/>
+      <xs:element name="modalTeacherWeight" type="nonNegativeFloat" minOccurs="0"/>
       <!-- Every N batches, log weighted reconstruction/output/expectation
            norms and cosine per shared operator/codebook. Read-only; 0 disables. -->
       <xs:element name="branchDiagnosticsEvery" type="xs:nonNegativeInteger" minOccurs="0"/>
