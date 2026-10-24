@@ -1915,6 +1915,58 @@ identity by union with the meet as the test, two lanes never netted,
 trust from the source, forgetting by value, MTM's expiry. What makes a
 manas is not new machinery but exemptions from it.
 
+**Attachment to conceptual identity, and benefit without it (Alec,
+2026-10-23).** Alec: "I think there is attachment to conceptual identity,
+and I think that is the problem that Yogācāra identifies. So to act for
+the benefit of one of the MTM identities, or perhaps even to act for the
+benefit of all of them, is problematic if it signifies attachment to these
+selves that are ultimately non-existent." The table above removes a
+privileged self and leaves every other identity as a possible object of
+grasping, and "all beings" can be grasped as readily as "I". The problem
+is not which identity is valued but that value attaches to identities at
+all: to the promoted concept of an individual taken as a self, the
+imagined nature laid over the dependent continuum.
+
+The architecture's answer follows from a decision already made: an
+identity is nothing but its occurrences (2026-09-30). So "the benefit of
+X" has two readings. The unattached one is benefit at X's occurrences,
+what happens, now, where it happens; the attached one is X's continuation,
+protection and privilege as such, a value placed on the chain beyond its
+links. This is Śāntideva's argument that suffering has no owner and is to
+be removed because it is suffering, not because it is someone's
+(*Bodhicaryāvatāra* 8.101–103), and the Diamond Sutra's bodhisattva who
+liberates all beings while holding no notion of a being (*Vajracchedikā*
+3, 17). In Yogācāra's terms the continuum is used, the self is not
+imputed to it, and equality wisdom is action that does not perceive
+beings. Mechanically:
+
+- **Value is defined over occurrences, never over identities.** Any
+  objective, credit, retention value or priming weight is a function of
+  ideas, order-0 events with their two lanes, and carries no term indexed
+  by an identity: not its persistence, not its protection, not its share
+  of attention. Today this holds: forgetting values rows by surprise,
+  utility and access; MTM expiry refreshes by reference, not by worth;
+  priming diffuses along edges; the reference term credits correct
+  reading, not anyone's good; and there is no benefit objective at all.
+  Should one be built (Ethics, the Constitution), the rule is that it
+  ranges over what occurs, uniformly, which is equality: acting for all
+  without a notion of a being.
+- **Identities are used conventionally, to locate and to predict.** The
+  chain is how suffering is found where it occurs and how the first
+  difference predicts what an event does to its subject; it is read, never
+  valued. A promoted concept of an individual is a class of occurrences,
+  read by union, and "concepts never die" is said of classes; attachment
+  would be the moment the class's continuation became a term of value.
+- **The counterfactual machinery serves without attaching.** An
+  alternative timeline run for another identity is perspective-taking;
+  what it yields is an occurrence that would be, valued as an occurrence.
+
+So the two configurations above are completed by a third rule: a mind may
+be built without a manas and still be attached, if its objectives are
+written over identities. The enlightened construction has three parts:
+no exemptions, identity by designation, and value over occurrences alone.
+
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |
