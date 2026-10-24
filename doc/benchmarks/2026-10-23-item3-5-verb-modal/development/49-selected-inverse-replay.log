@@ -1,0 +1,29 @@
+[BasicModel] checkpoint schema migration reset 20 obsolete WholeSpace dense tensor(s) (0.1 MiB); live property rows retain deterministic initialization
+Grammar checkpoint: 180 declared migrations
+[BasicModel] Weight file partial -- output/item3-5-verb-modal-20261023/swap-verb/final/source-04/lessons/stage3-capture/last-batch-start.pt
+  Keys in model but missing from file: 20 (initialized fresh)
+[BasicModel] Weights loaded from output/item3-5-verb-modal-20261023/swap-verb/final/source-04/lessons/stage3-capture/last-batch-start.pt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)
+Traceback (most recent call last):
+  File "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/development/49-selected-inverse-replay.py", line 47, in <module>
+    (out/'result.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report),flush=True)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_2/Frameworks/Python.framework/Versions/3.12/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type Tensor is not JSON serializable

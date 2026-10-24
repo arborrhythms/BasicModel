@@ -1,0 +1,6 @@
+{
+  "node": "test/test_pi_sigma_inherit_grammarlayer.py::TestPiSigmaInheritGrammarLayer::test_pi_inherits_empty_rule_name",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

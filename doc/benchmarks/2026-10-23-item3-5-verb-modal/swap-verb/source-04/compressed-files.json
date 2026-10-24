@@ -1,0 +1,104 @@
+[
+  {
+    "path": "decomposition-enabled-03fb1f716073d152892b-0-initial.pt",
+    "bytes": 20507807,
+    "sha256": "ef09d40854329ea76349118a02944e0adddc12702beca9ce7d55fb0179693ad9",
+    "stored": "decomposition-enabled-03fb1f716073d152892b-0-initial.pt.gz"
+  },
+  {
+    "path": "decomposition-zero-e9daaa04366132fba57e-0-initial.pt",
+    "bytes": 20507580,
+    "sha256": "37d8c0ddeaef47a1d947ca789a8f0813340d0f29422dd0e8cfffebeef4d43d28",
+    "stored": "decomposition-zero-e9daaa04366132fba57e-0-initial.pt.gz"
+  },
+  {
+    "path": "decomposition-enabled-e9daaa04366132fba57e-0-initial.pt",
+    "bytes": 20507935,
+    "sha256": "612d8542908ce68e9803a68a857cbdce2583c8a3fea55a27a1502b3d005a9b3a",
+    "stored": "decomposition-enabled-e9daaa04366132fba57e-0-initial.pt.gz"
+  },
+  {
+    "path": "decomposition-zero-03fb1f716073d152892b-0-initial.pt",
+    "bytes": 20507452,
+    "sha256": "a304f1a19bae40ced0f97051ca68ef08b6e707eb7a59d0ee8413d61b03fc46ed",
+    "stored": "decomposition-zero-03fb1f716073d152892b-0-initial.pt.gz"
+  },
+  {
+    "path": "native-state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/initial-1.pt",
+    "bytes": 14709726,
+    "sha256": "13093c39900aa31f9befae03df40cf441714a29d7d641523d0210eef055176e5",
+    "stored": "native-state/test_test_math_chain_section14.py--test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage/initial-1.pt.gz"
+  },
+  {
+    "path": "native-state/test_test_math_chain_section14.py--test_ordinary_initial_binding_distribution_includes_every_retained_candidate/initial-1.pt",
+    "bytes": 14701541,
+    "sha256": "f2e62ede6b6234d148ef36d89ec9f6780830b9bb032d16230b09f34c0b946a93",
+    "stored": "native-state/test_test_math_chain_section14.py--test_ordinary_initial_binding_distribution_includes_every_retained_candidate/initial-1.pt.gz"
+  },
+  {
+    "path": "decomposition-zero-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[1]/initial-1.pt",
+    "bytes": 14699813,
+    "sha256": "2f2fad6bafb24fd349a2ebbe6a2e1a6bba8648f1c87bb08b4529e6003541f264",
+    "stored": "decomposition-zero-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[1]/initial-1.pt.gz"
+  },
+  {
+    "path": "decomposition-zero-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[2]/initial-1.pt",
+    "bytes": 14699813,
+    "sha256": "4c9f06660810995d2b1d6e96836be44c2acc3664cb541be6ec4e8b6d1ef4992e",
+    "stored": "decomposition-zero-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[2]/initial-1.pt.gz"
+  },
+  {
+    "path": "decomposition-enabled-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[1]/initial-1.pt",
+    "bytes": 14699813,
+    "sha256": "2f2fad6bafb24fd349a2ebbe6a2e1a6bba8648f1c87bb08b4529e6003541f264",
+    "stored": "decomposition-enabled-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[1]/initial-1.pt.gz"
+  },
+  {
+    "path": "decomposition-enabled-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[2]/initial-1.pt",
+    "bytes": 14699813,
+    "sha256": "4c9f06660810995d2b1d6e96836be44c2acc3664cb541be6ec4e8b6d1ef4992e",
+    "stored": "decomposition-enabled-state/test_test_math_chain_decomposition.py--test_forced_native_decomposition_through_training_driver[2]/initial-1.pt.gz"
+  },
+  {
+    "path": "lessons/stage3-capture/initial.pt",
+    "bytes": 53173119,
+    "sha256": "66f14a85f067f2e24122eebfc7d4f5305472acc4c8bba9397f8c3f7510a691ef",
+    "stored": "lessons/stage3-capture/initial.pt.gz"
+  },
+  {
+    "path": "lessons/stage3-capture/failure.pt",
+    "bytes": 107778127,
+    "sha256": "544957137cef82634fd3b4fcaff8ba5a38b50c30fd0cb737dbe98d282367caef",
+    "stored": "lessons/stage3-capture/failure.pt.gz"
+  },
+  {
+    "path": "lessons/stage3-capture/last-batch-start.pt",
+    "bytes": 107780261,
+    "sha256": "61d75c6e67fe59f1185f75c1466677b3d8b8be0e74646918202e5cce9c7a28f0",
+    "stored": "lessons/stage3-capture/last-batch-start.pt.gz"
+  },
+  {
+    "path": "lessons/warmup-capture/initial.pt",
+    "bytes": 53173119,
+    "sha256": "66f14a85f067f2e24122eebfc7d4f5305472acc4c8bba9397f8c3f7510a691ef",
+    "stored": "lessons/warmup-capture/initial.pt.gz"
+  },
+  {
+    "path": "lessons/warmup-capture/last-batch-start.pt",
+    "bytes": 59469261,
+    "sha256": "e49e23eb270e10391d4da9ac46fa1d11c46f19a9706dd965cb1f25623de6e1b6",
+    "stored": "lessons/warmup-capture/last-batch-start.pt.gz"
+  },
+  {
+    "path": "lessons/warmup/warmup.ckpt",
+    "bytes": 55969627,
+    "sha256": "59f5e514a9bf1b0560c400803d382533aec8dcf7132ae6cf81c984ec691e37b5",
+    "stored": "lessons/warmup/warmup.ckpt.gz"
+  },
+  {
+    "path": "lessons/warmup/presentations.json",
+    "bytes": 92570764,
+    "sha256": "8a8297a42f65b2c177b9921095279041b6d2ad0ce16e111dd673aced287aa3a3",
+    "stored": "lessons/warmup/presentations.json.gz"
+  }
+]

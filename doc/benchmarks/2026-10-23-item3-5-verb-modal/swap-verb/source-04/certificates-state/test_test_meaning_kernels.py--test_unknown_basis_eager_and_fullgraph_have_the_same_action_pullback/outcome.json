@@ -1,0 +1,6 @@
+{
+  "node": "test/test_meaning_kernels.py::test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

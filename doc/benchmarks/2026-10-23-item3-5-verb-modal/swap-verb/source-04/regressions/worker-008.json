@@ -1,0 +1,27 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_reference_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate"
+  ],
+  "completed": [
+    "test/test_reference_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_reference_participants.py::test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.00025166687555611134,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

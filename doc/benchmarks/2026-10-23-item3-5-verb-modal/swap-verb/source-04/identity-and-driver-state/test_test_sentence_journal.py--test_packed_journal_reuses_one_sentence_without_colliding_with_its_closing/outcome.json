@@ -1,0 +1,6 @@
+{
+  "node": "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

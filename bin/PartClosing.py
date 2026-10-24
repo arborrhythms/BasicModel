@@ -20,6 +20,9 @@ class PartClosing:
         self.owner, self.store = owner, store
         self.alloc = _concept_alloc_of(owner)
         self.parts = self.alloc.parts
+        layout = getattr(owner.similarity_codebook, 'mereology', None)
+        self._inline_lower = (layout is None or
+                              layout.code_width == layout.percept_event_width)
         self.symbols = {}
         self.edges = []
         self._terms = {}
@@ -100,7 +103,7 @@ class PartClosing:
                 record['symbol'] = self._plan_term(record['alias'], as_argument)
                 record['types'] = self._planned[id(record['alias'])]['types']
                 return record['symbol']
-            if value.formal_name == 'lower' and len(value.children) == 2:
+            if self._inline_lower and value.formal_name == 'lower' and len(value.children) == 2:
                 head = value.children[value.head_role - 1]
                 record['symbol'] = self._plan_term(head, as_argument)
                 record['types'] = self._planned[id(head)]['types']
@@ -154,7 +157,7 @@ class PartClosing:
             child_record = self._planned[id(value.children[0])]
             edge, pair = child_record['edge'], child_record['pair']
         elif len(children) == 2:
-            if value.formal_name == 'lower':
+            if self._inline_lower and value.formal_name == 'lower':
                 head = value.children[value.head_role - 1]
                 if not torch.equal(value.point, head.point):
                     raise ValueError('inline lowering must preserve its description exactly')
@@ -164,6 +167,9 @@ class PartClosing:
                 self._planned[id(value)] = record
                 self._plan.append(record)
                 return reference
+            # A paired lower has its own form centroid and learned meaning.
+            # Like the other grammatical folds, it retains its operands and
+            # is seated only when a containing relation needs that value.
             part, whole = children
             if value.operation == 'whole':
                 part, whole = whole, part

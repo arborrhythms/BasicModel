@@ -1,0 +1,24 @@
+{
+  "selectors": [
+    "test/test_operators_round2c.py",
+    "test/test_operators_round3a.py",
+    "test/test_operator_catalogue.py",
+    "test/test_compose_operations.py",
+    "test/test_sentence_compose.py",
+    "test/test_grammar_binary_ops.py",
+    "test/test_lift_lower_binary_grammar_ops.py",
+    "test/test_verb_adverb_grammar_ops.py",
+    "test/test_verb_spectrum.py",
+    "test/test_adverb_eig_edit.py",
+    "test/test_surface_grammar.py",
+    "test/test_compound_cases.py",
+    "test/test_grammar_preposition.py",
+    "test/test_grammar_sections.py",
+    "test/test_grammar_order_typing.py",
+    "test/test_pi_sigma_inherit_grammarlayer.py"
+  ],
+  "collect": true,
+  "keyword": null,
+  "marker": null,
+  "recycle_file": null
+}

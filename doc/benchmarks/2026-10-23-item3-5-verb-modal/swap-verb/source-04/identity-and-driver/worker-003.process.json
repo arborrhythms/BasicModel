@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/arogers/github/WikiOracle/basicmodel/.venv/bin/python",
+    "/Users/arogers/github/WikiOracle/basicmodel/test/pytest_worker.py",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/identity-and-driver/worker-003.request.json",
+    "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/identity-and-driver/worker-003.json"
+  ],
+  "pid": 49066,
+  "exit_code": 0,
+  "reason": "exit",
+  "peak_memory_bytes": 1800833400,
+  "elapsed_seconds": 25.892104709055275,
+  "log": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/identity-and-driver/worker-003.log"
+}

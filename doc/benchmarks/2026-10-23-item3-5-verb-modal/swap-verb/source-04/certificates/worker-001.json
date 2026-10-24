@@ -1,0 +1,60 @@
+{
+  "exit_code": 0,
+  "selected": [
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+  ],
+  "completed": [
+    "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+    "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+    "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+    "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher"
+  ],
+  "slow_selected": [],
+  "requested_devices": {},
+  "shared_training": {},
+  "phase_certificates": {},
+  "reports": [
+    {
+      "nodeid": "test/test_verb_learning.py::test_teacher_graph_is_built_after_the_paired_optimizer_steps",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.012260542018339038,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_learning.py::test_two_kept_sentences_join_the_copular_observation_and_teach_once",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.04398966603912413,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_learning.py::test_observed_state_trains_readout_once_without_concept_gradients",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.0008917499799281359,
+      "message": "",
+      "stdout": ""
+    },
+    {
+      "nodeid": "test/test_verb_learning.py::test_copular_join_is_kept_and_fires_the_previous_verb_teacher",
+      "phase": "call",
+      "outcome": "passed",
+      "certificate_phase": null,
+      "duration": 0.01627954188734293,
+      "message": "",
+      "stdout": ""
+    }
+  ],
+  "recycled": false,
+  "active": null,
+  "device": "cpu"
+}

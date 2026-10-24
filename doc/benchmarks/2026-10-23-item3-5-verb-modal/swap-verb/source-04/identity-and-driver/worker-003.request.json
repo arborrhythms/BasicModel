@@ -1,0 +1,19 @@
+{
+  "selectors": [
+    "test/test_sentence_journal.py::test_no_numerical_frames_without_a_sentence_closing_reader",
+    "test/test_sentence_journal.py::test_packed_journal_reuses_one_sentence_without_colliding_with_its_closing",
+    "test/test_sentence_journal.py::test_journal_shape_is_fixed_within_the_serial_word_bucket",
+    "test/test_sentence_journal.py::test_large_packed_capacity_uses_existing_sentence_buckets",
+    "test/test_sentence_journal.py::test_program_reads_compact_journal_by_global_address_and_keeps_value_gradients",
+    "test/test_sentence_journal.py::test_inactive_columns_neither_split_a_sentence_nor_alias_its_active_words",
+    "test/test_sentence_journal.py::test_packed_word_and_closing_leave_other_sentence_rows_unchanged",
+    "test/test_sentence_journal.py::test_deep_sentence_derivation_preserves_exact_postorder",
+    "test/test_sentence_journal.py::test_deep_meaning_projection_accepts_configured_sentences",
+    "test/test_sentence_journal.py::test_program_keeps_the_identity_leaf_stamp_before_reference_resolution",
+    "test/test_sentence_journal.py::test_identity_admission_uses_the_resolved_stm_order",
+    "test/test_sentence_journal.py::test_unresolved_typed_admission_keeps_the_scored_source_reference",
+    "test/test_sentence_journal.py::test_ambiguous_typed_reading_is_open_in_preview_and_admission"
+  ],
+  "collect": false,
+  "recycle_file": "/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/identity-and-driver/worker-003.recycle.json"
+}

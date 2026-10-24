@@ -1,0 +1,8 @@
+[collect] 2 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 3.3s; peak 0.25 GiB
+[worker-000] 14 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 4.7s; peak 0.49 GiB
+[worker-001] 4 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 4.1s; peak 0.41 GiB
+Result: passed, exit 0; 18/18 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/certificates/result.json

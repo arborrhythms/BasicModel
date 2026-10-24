@@ -1,0 +1,7 @@
+[BasicModel] checkpoint schema migration reset 20 obsolete WholeSpace dense tensor(s) (0.1 MiB); live property rows retain deterministic initialization
+Grammar checkpoint: 180 declared migrations
+[BasicModel] Weight file partial -- output/item3-5-verb-modal-20261023/swap-verb/final/source-04/lessons/stage3-capture/last-batch-start.pt
+  Keys in model but missing from file: 20 (initialized fresh)
+[BasicModel] Weights loaded from output/item3-5-verb-modal-20261023/swap-verb/final/source-04/lessons/stage3-capture/last-batch-start.pt
+[AMP] off (fp32, MODEL_AMP unset or =off)
+batch = 0 (warm-up)

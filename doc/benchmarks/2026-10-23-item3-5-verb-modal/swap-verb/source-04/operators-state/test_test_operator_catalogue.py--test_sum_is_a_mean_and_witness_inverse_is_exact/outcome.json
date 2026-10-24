@@ -1,0 +1,6 @@
+{
+  "node": "test/test_operator_catalogue.py::test_sum_is_a_mean_and_witness_inverse_is_exact",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

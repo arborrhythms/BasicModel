@@ -1,0 +1,257 @@
+[
+  {
+    "lesson": "reading_two",
+    "batch": 1,
+    "ce": [
+      0.3465735912322998,
+      0.3465735912322998,
+      0.3465735912322998,
+      0.3465735912322998
+    ],
+    "updates": {
+      "paired": 2,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 6.184807792073116
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 2,
+    "ce": [
+      0.34651434421539307,
+      0.34649330377578735,
+      0.34649497270584106,
+      0.34651267528533936
+    ],
+    "updates": {
+      "paired": 4,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 8.828491875203326
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 3,
+    "ce": [
+      0.34621119499206543,
+      0.3462286591529846,
+      0.3462260365486145,
+      0.34621384739875793
+    ],
+    "updates": {
+      "paired": 6,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 11.675576833076775
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 4,
+    "ce": [
+      0.34571927785873413,
+      0.3457058072090149,
+      0.34570708870887756,
+      0.34571802616119385
+    ],
+    "updates": {
+      "paired": 8,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 14.661588833201677
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 5,
+    "ce": [
+      0.34496191143989563,
+      0.34497812390327454,
+      0.34498539566993713,
+      0.34495463967323303
+    ],
+    "updates": {
+      "paired": 10,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 17.899877875111997
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 6,
+    "ce": [
+      0.3439938724040985,
+      0.343963086605072,
+      0.34394559264183044,
+      0.3440113961696625
+    ],
+    "updates": {
+      "paired": 12,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 21.57743529207073
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 7,
+    "ce": [
+      0.34271320700645447,
+      0.3427354097366333,
+      0.34273862838745117,
+      0.34271007776260376
+    ],
+    "updates": {
+      "paired": 14,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 25.161774125183
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 8,
+    "ce": [
+      0.34120428562164307,
+      0.3411828875541687,
+      0.3412170112133026,
+      0.3411702513694763
+    ],
+    "updates": {
+      "paired": 16,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 29.36776841711253
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 9,
+    "ce": [
+      0.33936062455177307,
+      0.3393964171409607,
+      0.3393530249595642,
+      0.33940404653549194
+    ],
+    "updates": {
+      "paired": 18,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 34.19253045809455
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 10,
+    "ce": [
+      0.3372919261455536,
+      0.3372531235218048,
+      0.33723515272140503,
+      0.33731013536453247
+    ],
+    "updates": {
+      "paired": 20,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 39.04862770810723
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 11,
+    "ce": [
+      0.3348836898803711,
+      0.33483657240867615,
+      0.33492541313171387,
+      0.33479514718055725
+    ],
+    "updates": {
+      "paired": 22,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 42.24536625016481
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 12,
+    "ce": [
+      0.3320869505405426,
+      0.3321676552295685,
+      0.33215591311454773,
+      0.3320988714694977
+    ],
+    "updates": {
+      "paired": 24,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 156.3197845001705
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 13,
+    "ce": [
+      0.329075425863266,
+      0.3290974497795105,
+      0.3289835453033447,
+      0.32918980717658997
+    ],
+    "updates": {
+      "paired": 26,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 272.6931789170485
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 14,
+    "ce": [
+      0.32580244541168213,
+      0.32564425468444824,
+      0.32564646005630493,
+      0.3258008658885956
+    ],
+    "updates": {
+      "paired": 28,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 389.548249833053
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 15,
+    "ce": [
+      0.3219994604587555,
+      0.32201212644577026,
+      0.322194367647171,
+      0.32181766629219055
+    ],
+    "updates": {
+      "paired": 30,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 506.4462692500092
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 16,
+    "ce": [
+      0.3179241120815277,
+      0.3180348575115204,
+      0.3180253505706787,
+      0.3179343342781067
+    ],
+    "updates": {
+      "paired": 32,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 623.5607985421084
+  },
+  {
+    "lesson": "reading_two",
+    "batch": 17,
+    "ce": [
+      0.3135613799095154,
+      0.3136550188064575,
+      0.31344228982925415,
+      0.31377482414245605
+    ],
+    "updates": {
+      "paired": 34,
+      "batch_end_disabled": 0
+    },
+    "elapsed_seconds": 741.66417920799
+  }
+]

@@ -170,6 +170,43 @@ def reconstruction_coverage(emitted, expected):
     return missing, excess, (missing + excess) == 0
 
 
+def inverse_basis(parent, basis, basis_valid, priming, constituents, constituent_valid):
+    if constituents is not None:
+        if basis is None or basis_valid is None or constituent_valid is None:
+            raise ValueError('structural decoding requires explicit word and constituent masks')
+        priming = torch.cat((torch.ones_like(basis_valid, dtype=parent.dtype)
+                             if priming is None else priming,
+                             constituent_valid.to(parent)), 1)
+        basis = torch.cat((basis, constituents.detach()), 1)
+        basis_valid = torch.cat((basis_valid, constituent_valid), 1)
+    return basis, basis_valid, priming
+
+
+@preserve_operator_activations
+def selected_inverse(language, parent, choice, live, *, basis, basis_valid, priming=None,
+                     limit=16, case_bank=None, constituents=None, constituent_valid=None,
+                     require_symbols=True):
+    """Pull back the hard choice without retaining every rejected inverse graph."""
+    basis, basis_valid, priming = inverse_basis(
+        parent, basis, basis_valid, priming, constituents, constituent_valid)
+    binary, unary = language._generate_binary_ops, language._generate_unary_ops
+    use_binary = live & (choice < len(binary))
+    use_unary = live & (choice >= len(binary)) & (choice < len(binary) + len(unary))
+    left, right = parent, parent
+    if bool(use_binary.any()):
+        a, b = language.reverse_binary_step(parent, choice, use_binary, ops=binary,
+            basis=basis if require_symbols else None,
+            basis_valid=basis_valid if require_symbols else None,
+            basis_priming=priming, candidate_limit=limit,
+            free=require_symbols, case_bank=case_bank)
+        left = torch.where(use_binary[:, None], a, left)
+        right = torch.where(use_binary[:, None], b, right)
+    if bool(use_unary.any()):
+        a = language.generate_unary_step(parent, choice - len(binary), use_unary)
+        left = torch.where(use_unary[:, None], a, left)
+    return left, right
+
+
 def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
                  limit=16, case_bank=None, constituents=None,
                  constituent_valid=None, constituent_families=None, require_symbols=True,
@@ -177,14 +214,8 @@ def inverse_menu(language, parent, live, *, basis, basis_valid, priming=None,
     from Language import LanguageSpace
     words, word_valid = basis, basis_valid
     terminals = word_valid if terminal_valid is None else word_valid & terminal_valid
-    if constituents is not None:
-        if basis is None or basis_valid is None or constituent_valid is None:
-            raise ValueError('structural decoding requires explicit word and constituent masks')
-        basis = torch.cat((basis, constituents.detach()), 1)
-        basis_valid = torch.cat((basis_valid, constituent_valid), 1)
-        priming = torch.cat((torch.ones_like(word_valid, dtype=parent.dtype)
-                             if priming is None else priming,
-                             constituent_valid.to(parent)), 1)
+    basis, basis_valid, priming = inverse_basis(
+        parent, basis, basis_valid, priming, constituents, constituent_valid)
     # Families describe candidate types. Every type is admitted on either
     # side; recomposition and the learned generate policy decide orientation.
     binary, unary = language._generate_binary_ops, language._generate_unary_ops

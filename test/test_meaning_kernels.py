@@ -243,3 +243,146 @@ def test_unknown_basis_eager_and_fullgraph_have_the_same_action_pullback():
     for tensor, x, y in zip(inputs, a, b):
         torch.testing.assert_close(torch.zeros_like(tensor) if x is None else x,
                                    torch.zeros_like(tensor) if y is None else y, rtol=1e-9, atol=1e-9)
+
+
+@pytest.mark.parametrize('as_argument', [False, True])
+def test_paired_lower_closes_its_composed_value_without_aliasing_the_description(monkeypatch, tmp_path, as_argument):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    from Language import LowerLayer
+    from identity_experiment import make_model
+    model = make_model(tmp_path, monkeypatch)
+    try:
+        owner = model._concept_owner()
+        store = owner._closed_clause_store()
+        width = owner.similarity_codebook.W.shape[-1]
+        op = LowerLayer(width, width)
+        with torch.no_grad():
+            op.meaning_kernel.context.fill_(.015)
+        points = (torch.linspace(.1, .6, width), torch.linspace(.7, .2, width))
+        terms = []
+        for value in points:
+            symbol = owner.new_concept()
+            seat = owner._csw_concept_row(0, symbol)
+            with torch.no_grad():
+                owner.similarity_codebook.W[seat].copy_(value)
+            terms.append(Composition(value, reference=symbol))
+        point = op.compose(*points).detach()
+        lower = Composition(point, tuple(terms), operation='lower', formal_name='lower',
+                            head_role=2, order=1)
+        root = (Composition(point, (lower, terms[0]), operation='verb', formal_name='verb',
+                            head_role=1) if as_argument else lower)
+        clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
+                        composition=root, order=root.order)
+        written = {}
+        row = store.write_clause(clause, written_rows=written)
+        symbol = store.raw_meaning_of(row).role_refs[0][1]
+        if as_argument:
+            symbol = int(store.parts.refs[symbol, 0])
+            torch.testing.assert_close(owner.similarity_codebook.lookup_rows(owner._csw_row_of(symbol)),
+                                       point, rtol=0, atol=0)
+        assert symbol not in [term.reference for term in terms]
+        assert store.parts.refs[symbol].tolist() == [term.reference for term in terms]
+        torch.testing.assert_close(store.slots[row, 0], root.point, rtol=0, atol=0)
+        assert not torch.equal(point, points[1])
+    finally:
+        model.End()
+
+
+def test_selected_inverse_matches_full_menu_values_and_pullbacks(paired):
+    from types import MethodType, SimpleNamespace
+    from DecompositionChooser import DecompositionChooser
+    from Generative import inverse_menu, selected_inverse
+    from Language import LanguageSpace, SurfaceLayer, LowerLayer, NullLayer
+    binary = (SurfaceLayer(12, 12).double(), LowerLayer(12, 12).double())
+    unary = (NullLayer().double(),)
+    for index, op in enumerate((*binary, *unary), 1):
+        with torch.no_grad():
+            op.meaning_kernel.log_scale.fill_(.01 * index)
+            op.meaning_kernel.bias.fill_(.005 * index)
+    language = SimpleNamespace(_generate_binary_ops=binary, _generate_unary_ops=unary,
+                              decomposition_chooser=DecompositionChooser())
+    for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                 'generate_unary_step'):
+        setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+    language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+    words = torch.tensor([[.1,.2,.3,.4,.1,.2,.3,.4,.5,.6,.7,.8],
+                          [.7,.6,.5,.4,.2,.3,.4,.5,.6,.7,.8,.9],
+                          [.3,.1,.7,.2,.4,.1,.6,.2,.3,.6,.5,.8]], dtype=torch.float64)
+    parent = torch.stack((binary[0].compose(words[0], words[1]),
+                          binary[1].compose(words[0], words[1]),
+                          unary[0].compose(words[2]), words[0])).detach().requires_grad_()
+    basis = words[None].expand(4, -1, -1).clone().requires_grad_()
+    valid = torch.ones(4, dtype=torch.bool)
+    choices = torch.arange(4)
+    options = dict(basis=basis, basis_valid=torch.ones(4, 3, dtype=torch.bool))
+    lefts, rights, legal = inverse_menu(language, parent, valid, **options)
+    expected = (lefts[torch.arange(4), choices], rights[torch.arange(4), choices])
+    actual = selected_inverse(language, parent, choices, valid, **options)
+    for a, b in zip(actual, expected):
+        torch.testing.assert_close(a, b, rtol=0, atol=0)
+    parameters = (parent, basis, *(p for op in (*binary, *unary) for p in op.parameters()))
+    weights = torch.linspace(.1, .9, 48, dtype=torch.float64).reshape(4, 12)
+    gradients = [torch.autograd.grad((a*weights+b*weights.flip(-1)).sum(), parameters,
+                                    allow_unused=True) for a, b in (expected, actual)]
+    for parameter, a, b in zip(parameters, *gradients):
+        a = torch.zeros_like(parameter) if a is None else a
+        b = torch.zeros_like(parameter) if b is None else b
+        torch.testing.assert_close(a, b, rtol=1e-12, atol=1e-12)
+    assert gradients[1][0].abs().sum() > 0
+    assert any(g is not None and bool(g.abs().sum()) for g in gradients[1][2:])
+
+
+@pytest.mark.parametrize('compound', [False, True])
+def test_selected_walk_preserves_unused_gradients_and_optimizer_steps(paired, monkeypatch, compound):
+    from types import MethodType, SimpleNamespace
+    from DecompositionChooser import DecompositionChooser
+    from Language import LanguageSpace, SurfaceLayer, LowerLayer, NullLayer
+    from Models import BasicModel
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    binary = (SurfaceLayer(12, 12).double(), LowerLayer(12, 12).double())
+    unary = (NullLayer().double(),)
+    language = SimpleNamespace(_generate_binary_ops=binary, _generate_unary_ops=unary,
+                              decomposition_chooser=DecompositionChooser())
+    for name in ('reverse_binary_step', '_reverse_of_binary_op', '_finish_binary_inverse',
+                 'generate_unary_step', 'choose_generate'):
+        setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
+    language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
+    language.generate_policy_logits = lambda p: p.new_tensor([2., 1., 0., 3.]).expand(len(p), -1)
+    words = torch.tensor([[[.1,.2,.3,.4,.1,.2,.3,.4,.5,.6,.7,.8],
+                           [.7,.6,.5,.4,.2,.3,.4,.5,.6,.7,.8,.9]]], dtype=torch.float64)
+    parent = binary[0].compose(words[:, 0], words[:, 1]) if compound else words[:, 0]
+    event = torch.cat((parent.detach()[:, None], torch.zeros(1, 3, 12, dtype=torch.float64)), 1).requires_grad_()
+    from Models import _ensure_grad_anchors
+    _ensure_grad_anchors(event.device, (event.dtype,))
+    owner = SimpleNamespace(languageSpace=language)
+    def walk(value):
+        return BasicModel._output_generate_walk(owner, value, 8, basis=words,
+            basis_valid=torch.ones(1, 2, dtype=torch.bool), return_candidates=True)
+    parameters = tuple(p for op in (*binary, *unary) for p in op.parameters())
+    before = [p.detach().clone() for p in parameters]
+    gradients, steps, results = [], [], []
+    import Generative
+    selected_inverse = Generative.selected_inverse
+    def full_menu(language, parent, choice, live, **kwargs):
+        left, right, _ = Generative.inverse_menu(language, parent, live, **kwargs)
+        selected = torch.nn.functional.one_hot(choice, left.shape[1]).to(left)
+        return (left*selected[..., None]).sum(1), (right*selected[..., None]).sum(1)
+    for inverse in (full_menu, selected_inverse):
+        monkeypatch.setattr(Generative, 'selected_inverse', inverse)
+        with torch.no_grad():
+            for p, saved in zip(parameters, before):p.copy_(saved)
+        optimizer = torch.optim.SGD(parameters, lr=.01, momentum=.9)
+        for p in parameters:optimizer.state[p]['momentum_buffer'] = torch.full_like(p, .1)
+        optimizer.zero_grad(set_to_none=True);event.grad = None
+        result = walk(event)
+        result[0].sum().backward()
+        gradients.append([None if p.grad is None else p.grad.clone() for p in (event, *parameters)])
+        results.append(result)
+        optimizer.step();steps.append([p.detach().clone() for p in parameters])
+    for a, b in zip(*results):torch.testing.assert_close(a, b, rtol=0, atol=0)
+    for a, b in zip(*gradients):
+        assert (a is None) == (b is None)
+        if a is not None:torch.testing.assert_close(a, b, rtol=1e-12, atol=1e-12)
+    for a, b in zip(*steps):torch.testing.assert_close(a, b, rtol=1e-12, atol=1e-12)

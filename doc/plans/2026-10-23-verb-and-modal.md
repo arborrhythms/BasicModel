@@ -732,3 +732,54 @@ improvement and is withdrawn; its patch and logs remain in development.
 There are no other existing-test assertion changes or retired tests in
 this repair. Development checks: 54 passed and one existing prerequisite
 skip; the captured end-state replay passed separately.
+
+## 13. Paired determination at the close (Codex, 2026-10-23)
+
+Frozen source `deb8bfbbc9` passed all ten scoped groups. The original
+warm-up completed. Stage 3 stopped while closing its eighteenth training
+batch, after seventeen completed batches, before any final behavior gate:
+`PartClosing` required a `lower` result to equal its description. The
+retained keep shows row 1 choosing the explore reading `lower(word,
+ask(word))`, with R 3.056869 against 3.076869 and equal A. Both readings,
+full initial/last-batch/failure states and the failure remain in source 04.
+A fresh model restored from the last-batch checkpoint did not reproduce
+the whole-batch failure; that diagnostic is retained and is not certified
+as an exact replay. A fixed-operation test on the production paired model
+reproduces the writer failure both for a standalone determination and
+when a relation consumes it.
+
+The old inline alias is valid for the unchanged configurations, whose
+lower is an exact projection. In §2's paired configurations the result
+has its own form centroid and learned meaning. Close that result as the
+ordinary binary fold it now is: retain its operand pair, keep the fused
+occurrence value, and seat it only when a containing relation needs it as
+an argument. The second planning visit must also retain that result,
+rather than aliasing it back to the description. No stored layout changes.
+The old rejection of an altered exact-projection lower remains unchanged
+and passes. No existing assertion is changed or test retired.
+
+The longer learned walks also exposed a resource cost: the eager decoder
+retained the inverse graph of every menu option on every trip, although
+its choice is hard and has no straight-through gradient. Compute the same
+menu and legality without a gradient, then recompute the selected inverse
+with the live parent and candidate inputs. The selected value path keeps
+its gradient; no MTM read is detached. Preserve operator diagnostic
+activations across that recomputation. Compiled execution keeps the full
+menu path. A regression compares outputs and pullbacks to the parent,
+candidate bank and meaning-kernel parameters against the full menu; the
+existing eager/fullgraph walk comparison still checks traces, pending
+state and RNG. No choice, inverse eligibility, budget, loss, keep law or
+learning assertion changes. Development logs precede the next freeze;
+all original lessons and scoped gates must run again on that hash.
+
+Preserve the first menu's zero-valued graph contribution as well: rejected
+operators retain their zero gradients, rather than acquiring absent
+gradients that would change a momentum update. The new regression checks
+that distinction and the complete optimizer step against the full eager
+menu for a terminal and a compound. Its initial compiled reference exposed
+an existing eager/compiled distinction in unused-gradient materialization;
+use the full eager menu as the reference for this eager-only change. The
+assertions stay; the earlier failed setup checks are retained. Final
+focused development check: 46 passed, one existing prerequisite skip.
+The optional timing diagnostic completed the model call but failed while
+serializing its report; it supplies no timing or learning claim.

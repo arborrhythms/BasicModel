@@ -1,0 +1,6 @@
+{
+  "node": "test/test_free_reconstruction.py::test_terminal_copies_share_one_explanation_but_different_ties_do_not",
+  "outcome": "passed",
+  "failure": "None",
+  "records": []
+}

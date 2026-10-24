@@ -12952,6 +12952,10 @@ class BasicModel(BaseModel):
         draws = torch.rand(B, T, device=event.device) if sample_actions else None
         departure_draw = (torch.rand(B, 1, device=event.device, dtype=event.dtype)
                           if exploit_actions is not None else None)
+        # The first menu keeps the zero-gradient edges of rejected operators,
+        # including their optimizer participation. Later menus use the same
+        # catalogue and bank; only the selected inverse needs another graph.
+        zero_menu = [None]
 
         def cond(t, stack, depth, emitted, count, actions, alternatives, progressing):
             return (t < T) & (depth > 0).any() & progressing
@@ -12961,13 +12965,18 @@ class BasicModel(BaseModel):
             parent = stack[ar, pos]
             live = depth > 0
             logits = language.generate_policy_logits(parent)
-            from Generative import inverse_menu
-            options, others, legal = inverse_menu(language, parent, live,
-                basis=basis, basis_valid=basis_valid, priming=basis_priming,
-                limit=candidate_limit, case_bank=case_bank,
-                constituents=constituents, constituent_valid=constituent_valid,
-                constituent_families=constituent_families,
-                require_symbols=require_symbols, terminal_valid=terminal_valid)
+            from Generative import inverse_menu, selected_inverse
+            selected_graph = torch.is_grad_enabled() and not torch.compiler.is_compiling()
+            first_graph = selected_graph and zero_menu[0] is None
+            with torch.set_grad_enabled(torch.is_grad_enabled() and (not selected_graph or first_graph)):
+                options, others, legal = inverse_menu(language, parent, live,
+                    basis=basis, basis_valid=basis_valid, priming=basis_priming,
+                    limit=candidate_limit, case_bank=case_bank,
+                    constituents=constituents, constituent_valid=constituent_valid,
+                    constituent_families=constituent_families,
+                    require_symbols=require_symbols, terminal_valid=terminal_valid)
+            if first_graph:
+                zero_menu[0] = (options.sum() + others.sum()) * 0
             is_binary = torch.arange(stop + 1, device=event.device) < R2
             legal = legal & (~is_binary[None] | (depth < N)[:, None])
             logits = logits.masked_fill(~legal, -torch.inf)
@@ -12991,6 +13000,11 @@ class BasicModel(BaseModel):
             left = (options * selected[..., None]).sum(1)
             right = (others * selected[..., None]).sum(1)
             missing = ~legal.gather(1, choice[:, None]).reshape(B)
+            if selected_graph:
+                left, right = selected_inverse(language, parent, choice, live & ~missing,
+                    basis=basis, basis_valid=basis_valid, priming=basis_priming,
+                    limit=candidate_limit, case_bank=case_bank, constituents=constituents,
+                    constituent_valid=constituent_valid, require_symbols=require_symbols)
             binary = live & (choice < R2) & (depth < N) & ~missing
             unary = live & (choice >= R2) & (choice < stop) & ~missing
             pop = live & (choice == stop) & ~missing
@@ -13024,6 +13038,8 @@ class BasicModel(BaseModel):
         out = emitted.gather(1, index[..., None].expand(B, T, D))
         keep = torch.arange(T, device=event.device)[None] < count[:, None]
         out = torch.where(keep[..., None], out, 0.)
+        if zero_menu[0] is not None:
+            out = out + zero_menu[0]
         result = (out, count, depth > 0, event.new_zeros(B))
         if return_candidates:
             return (*result, actions, alternatives)

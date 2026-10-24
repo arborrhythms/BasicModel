@@ -1,0 +1,72 @@
+{
+  "native": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 130,
+    "completed": 130,
+    "counts": {}
+  },
+  "operators": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 192,
+    "completed": 192,
+    "counts": {}
+  },
+  "identity-and-driver": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 183,
+    "completed": 183,
+    "counts": {}
+  },
+  "certificates": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 18,
+    "completed": 18,
+    "counts": {}
+  },
+  "decomposition-enabled": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 2,
+    "completed": 2,
+    "counts": {}
+  },
+  "decomposition-zero": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 2,
+    "completed": 2,
+    "counts": {}
+  },
+  "legacy-loss-smoke": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 25,
+    "completed": 25,
+    "counts": {}
+  },
+  "reconstruction": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 132,
+    "completed": 132,
+    "counts": {}
+  },
+  "regressions": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 110,
+    "completed": 110,
+    "counts": {}
+  },
+  "xor-standing": {
+    "exit": 0,
+    "reason": "passed",
+    "selected": 8,
+    "completed": 8,
+    "counts": {}
+  }
+}

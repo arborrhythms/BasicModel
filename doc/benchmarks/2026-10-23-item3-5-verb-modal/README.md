@@ -72,3 +72,36 @@ reproduced failure, corrected replay and withdrawn selected-face experiment.
 The new fixed-state reconstruction exit changes no learning budget,
 selection, objective or keep; the original lessons are regenerated on the
 next source. The shared and neutral basis simplifications are also exact.
+
+## Fourth swap/verb source — scoped gates passed, paired close failed
+
+Source `deb8bfbbc9c2f5b87e8e75f449eb8d75d3d67ee0`:
+[source audit](swap-verb/source-04/source-audit.json),
+[scoped results](swap-verb/source-04/gate-summary.json).
+All ten groups completed successfully (802 selected cases, including their
+existing prerequisite skips). This includes the unchanged XOR standing
+gate, both original decomposition arms, both pending-premise orders, G1–G3,
+and the reference, identity, operator and reconstruction groups. No prior
+source supplies any result here.
+
+Warm-up completed at 76 presentations and 38 paired updates. Stage 3
+completed seventeen training batches, then failed while closing a paired
+`lower`: the writer still required exact passthrough of the description.
+This is a production execution failure before a behavior gate, not failed
+learning evidence. The full run, keep readings and initial/last-batch/failure
+states remain under `lessons`; large captures are losslessly compressed
+with lengths and SHA-256 in
+[compressed-files.json](swap-verb/source-04/compressed-files.json).
+Specification §13 records the repair. Development 45–52 retains the keep
+extract, the non-reproducing whole-batch diagnostic, the two failing
+fixed-operation reproductions and the corrected checks. This repair changes
+no existing assertion and retires no test. The original-budget lesson
+sequence is restarted only on the next frozen source.
+
+The decoder repair retains rejected operators' zero gradients and verifies
+optimizer momentum against the full eager menu. New-test setup failures
+(the missing compiled gradient anchor and the compiled reference's existing
+unused-gradient materialization difference) remain in logs 50–51; the
+assertions are unchanged. Log 52 passes all 46 focused cases with one
+existing skip. The timing diagnostic's JSON serialization failure is
+retained separately and supplies no pass or timing claim.

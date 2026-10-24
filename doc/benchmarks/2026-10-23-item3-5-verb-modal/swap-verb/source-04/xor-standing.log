@@ -1,0 +1,8 @@
+[collect] 2 selectors; limit 900s, 8.0 GiB
+[collect] exit 0; 6.6s; peak 0.40 GiB
+[worker-000] 6 selectors; limit 900s, 8.0 GiB
+[worker-000] exit 0; 33.2s; peak 0.57 GiB
+[worker-001] 2 selectors; limit 900s, 8.0 GiB
+[worker-001] exit 0; 60.4s; peak 1.14 GiB
+Result: passed, exit 0; 8/8 cases completed.
+/Users/arogers/github/WikiOracle/basicmodel/output/item3-5-verb-modal-20261023/swap-verb/final/source-04/xor-standing/result.json
