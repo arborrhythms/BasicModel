@@ -1029,6 +1029,34 @@ not by a passing identity lesson.
      nouns, then mass nouns, then count nouns where the language has
      them. Until this lands, 3.5's order-1 stand-ins stay, and unit
      tests force parts of speech.
+   - **Certainty** (Alec, 2026-10-24; "if the only work is the certainty
+     work, let's act on it in item 3"): an order-0 concept is a point on the
+     hypersurface with one scalar certainty; a higher-order representation
+     is a region containing its members' points; certainty is orthogonal to
+     the positive and negative evidence (Alec), which stay the row's two
+     poles. Claude's reading of certainty, to confirm: the determinacy of
+     the content, how sharply the point is located, which grows with
+     witnessing (today `defined_code` over `witness_count`), one scalar per
+     point, never the evidence magnitude. *Alec, later: the mixture in
+     today's readers is right:* `Queries.extent` and `gain` read a lane's
+     norm, which is definedness times evidence, and "values of one are
+     well-defined and certainly categorized"; a support of 1 means the
+     concept is learned and the categorization certain. So no separation
+     is built; this bullet is the design record of the geometry, and the
+     only item-3 work left under it is an extent for higher-order regions
+     if that is ever asked for. Centroids stay the symbol side's; a
+     concept's meaning stays placed by context. *The geometry (Alec, 2026-10-24):* "the concept
+     vector magnitude approaches 1 as we learn it; the magnitude of the
+     candidate object has evidence, and the sum of the positive and
+     negative evidence determine its length; the dot product is then 1 if
+     we have only positive evidence, and are certain of the definition of
+     the concept." Certainty is the concept's magnitude, evidence the
+     candidate's magnitude split over the two orthogonal lane subspaces,
+     and the two multiply in the dot product; negative evidence lies in the
+     against lane, orthogonal to a positively defined concept, so it
+     lengthens the candidate without entering the dot (it lowers the
+     cosine). Audit of today's length and sphere readers in
+     [FutureWork](doc/FutureWork.md#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24).
    - **Layout and removal** (Alec, 2026-10-23: "the layout spec should be
      done with 3.0"): LTM0 one slot (ideas), LTM1 two tagged references
      that chain, no sentence row, the stored derivation and its readers

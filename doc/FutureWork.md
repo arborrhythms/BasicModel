@@ -1707,3 +1707,111 @@ sessions; it needs the percept part of rows to be retained and matched,
 the episodic memory of the stores decision (every mental event has a
 perceptual and a conceptual part; the percept part is episodic). Until
 then a re-read mints a new cover.
+
+## A cheaper forgetting pass: running luminosity on LTM (Alec, 2026-10-24)
+
+Alec: make the forgetting algorithm much cheaper, "probably by building a
+running luminosity measure on LTM."
+
+**What the pass costs today.** `Forgetting.retention_values` recomputes
+every term at each boundary pass over the whole store: luminosity by a
+pairwise cosine of all fused points in 128-row blocks (`points @ points.T`,
+with the same-order, same-scope and opposite-pole masks), quadratic in the
+store; coverage, when `<forgetCoverage>` is on, by a leave-one-out
+catuṣkoṭi coverage over all idea rows, quadratic again; deducibility by one
+relation-reader step over the other rows for each part and implication
+row; and age by `history_age` over each stream's rows. At a million rows
+(item 3's capacity figure) the pairwise term alone is on the order of
+10¹² multiply-adds per pass.
+
+**The proposal.** Keep luminosity as a column, maintained incrementally
+rather than recomputed: when a row is written or re-witnessed, compare it
+only against the rows its content already indexes to (the content
+postings by code, `rows_for_code`, or the priming surface's
+neighbourhood), in the same scope and order, and update the dissonance
+flag of the pair's weaker member; when a row is deleted, release the rows
+it alone made dissonant. Coverage, if kept, becomes a running sum of
+per-coordinate pole maxima with a per-row contribution, so leave-one-out
+is a subtraction, not a recount. Deducibility is cached at write (the
+supporting rows are known when the relation is written) and invalidated
+when a support is forgotten. The pass then reads four columns and sorts,
+linear in the store, and the retention order is unchanged because the
+same quantities are maintained. This belongs with item 1's throughput
+work, after the layout round fixes the row shape (one slot, chains), since
+the index the incremental update relies on changes there. Forgetting spec
+§3 defines the terms; the stage barrier of step-2 §42 and §49 and the
+2c performance note (iteration spec §19 note 5) are the other costs of
+the pass.
+
+## Concepts as regions, certainty from evidence, no sphere (Alec, 2026-10-24)
+
+Alec: "The field of concepts would be richer if it represented regions
+rather than projections, so I worry about using concept length as a
+certainty measure and projecting on the sphere rather than the unit ball."
+
+**Where length is read as certainty today.** `Queries.extent` reads a
+concept's `support_true` as the norm of its positive lane and
+`support_false` as the norm of its negative lane, clamped to [0, 1], and
+for a form-only configuration the norm of the whole vector; the `gain`
+executor (`ThoughtFaces.gain`) reads its gain as the vector's norm;
+`Interpret.activate_code` writes evidence into the vector by scaling the
+form by identification presence and each meaning lane by its evidence
+magnitude, so a lane's length *is* its evidence by construction (the
+interface law: a percept crosses as content plus evidence as magnitude).
+
+**Where the sphere is used.** `Forgetting.retention_values` normalizes all
+fused points and tests "same region" by cosine above `<forgetSimilarity>`;
+`DocumentCover.read`, `Language` 10229 and the expectation keys
+(`Expectation` 191) match by cosine or normalized dot; the identity
+candidate search of `IndependentComponents` normalizes its directions
+and basis. The attention q/k normalizations are attention mechanics, not
+concept reads.
+
+**What is already regional.** The codebook's `_unorm_ste` is a clamp to the
+unit cube [0, 1]^D, not a projection to the sphere; the percept towers'
+`_interval` gives a symbol lower and upper bounds (a box); `IdentityRows.
+meet_ratios` reads coverage as a region overlap (Σmin over mass);
+catuṣkoṭi coverage reads pole maxima. The evidence lanes `c_plus`,
+`c_minus` are stored as columns beside the vector.
+
+**The proposal.** A concept is a region inside the cube, a box with a
+lower and an upper bound per coordinate (or a center and an extent), as a
+percept already is in the towers; certainty is read only from the
+evidence columns, never from a vector's length; equality, dissonance and
+matching are region overlap and containment (the meet already written),
+never cosine; `activate_code` records evidence in the columns rather than
+scaling the lanes; `extent` and `gain` read the columns and the box's
+volume. The natural home is item 3's layout round, where the LTM0 entry
+is redefined (one slot): the slot becomes a box, and the readers above
+switch with it; before that, the three readers that project (forgetting's
+dissonance, the cover and expectation matches) can move to the meet
+without a layout change.
+
+*Alec, later the same day, reframing:* "it may be reasonable: a hypersurface
+with a scalar certainty if higher-order representations are regions
+containing those points. Perhaps we are losing only one dimension of 1024
+or so? And it makes distance measure a matmul instead of a pairwise
+Euclidean." Claude's reading, under discussion: an order-0 concept is a
+point on the sphere with a scalar certainty per lane (the radius is not
+lost, it is the certainty, so the projection loses nothing), and a
+higher-order concept is a region containing its members' points, for
+which a spherical cap (a center and an angular radius) keeps every test a
+matmul: point-in-cap is a dot product against a threshold, cap-in-cap an
+angle sum, and dissonance among points the existing `points @ points.T`.
+Boxes give coordinatewise containment but need min-plus products that no
+BLAS kernel computes; they stay the percept cube's mereology. The change
+to the layout is then one extent scalar per lane on rows of order one and
+above, not a doubled width; evidence stays in the columns.
+
+*Confirmed (Alec, 2026-10-24): "Your framing of certainty is correct."*
+An order-0 concept is a point on the hypersurface with a scalar certainty
+per lane, so the projection loses nothing; a higher-order representation
+is a region containing those points. This is the understanding; no
+representation changes now (Alec: "I don't want to change anything at
+this point, just understand"). Centroids remain the symbol side's
+(percepts and symbols), and a concept's meaning is placed by context.
+
+*Scheduled (Alec, 2026-10-24): "if the only work is the certainty work,
+let's act on it in item 3." This entry is now the audit behind todo item
+3's "Certainty" bullet; certainty and the positive/negative evidence are
+orthogonal (Alec).*
