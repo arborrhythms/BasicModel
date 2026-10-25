@@ -282,6 +282,8 @@ def test_real_runbatch_stages_l1_once_and_reports_it_separately(
     monkeypatch.setattr(leaf, "set_l1_proximal", stage)
     monkeypatch.setattr(optimizer, "step", step)
     for train in (True, False, True):
+        if train:
+            model.begin_presentation()
         before = layer.coefficients.detach().clone()
         result, _ = model.runBatch(
             train=train, batchNum=0, batchSize=2, split="train" if train else "test",

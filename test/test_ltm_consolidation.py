@@ -142,8 +142,10 @@ class TestProvisioning(unittest.TestCase):
         definitions = store.relations('definition').tolist()
         self.assertEqual(len(asserted), 3)
         self.assertFalse(definitions)  # No supplied object definitions.
-        self.assertEqual(len(store), len(asserted))
-        self.assertEqual(store.ideas().tolist(), asserted)
+        self.assertEqual(len(store), len(asserted) + 3)
+        self.assertEqual(sum(store.row(i)['kind'] == 'cover' for i in range(len(store))), 3)
+        self.assertEqual([i for i in store.ideas().tolist()
+                          if store.row(i)['kind'] != 'cover'], asserted)
         self.assertTrue((store.parts.refs[store.relations()] > 0).all())
 
     @pytest.mark.usefixtures('eager_reading')
@@ -647,7 +649,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             warnings.filterwarnings('ignore')
             m.store_truths([{'content': 'hello world', 'trust': .9}])
         self.assertTrue(bool((m._stm_post_depth == 1).all()))
-        self.assertEqual(len(store), before + 1)
+        self.assertEqual(len(store), before + 2)
         self.assertEqual(len(store.rows_of_origin(T.ORIGIN_USER)), 1)
 
     @pytest.mark.usefixtures('eager_reading')
@@ -685,7 +687,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view covers provisioned + user rows; sources carry the texts
         # clarifications reference.
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.role_mask[i].sum()) == 1 for i in range(len(store))))
+            int(store.role_mask[i].sum()) == 1 and store.row(i)['kind'] != 'cover'
+            for i in range(len(store))))
         self.assertIn("hello world", tl._sources)
         self.assertIn("loving there", tl._sources)
         self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
@@ -719,7 +722,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
             "provisioned rows persist across user resubmits")
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.role_mask[i].sum()) == 1 for i in range(len(store))))
+            int(store.role_mask[i].sum()) == 1 and store.row(i)['kind'] != 'cover'
+            for i in range(len(store))))
         self.assertIn("hello there", tl._sources)
         self.assertNotIn("hello world", tl._sources)
 

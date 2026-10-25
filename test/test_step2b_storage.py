@@ -65,7 +65,7 @@ def test_stored_question_is_refused_by_kind_without_a_mode_column():
     for owner in (store, restored):
         assert owner.row(row)['kind'] == 'question'
         assert owner.row(row)['evidence'] == (0., 0.)
-        with pytest.raises(ValueError, match='question or estimate'):
+        with pytest.raises(ValueError, match='question, estimate or cover'):
             owner.accept_fact(row)
         ordinary = owner.append_meaning(question, sentence_index=1)
         owner.accept_fact(ordinary)

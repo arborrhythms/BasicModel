@@ -426,12 +426,15 @@ def main(argv=None):
     def step(index):
         nonlocal corpus_cursor
         if corpus_batches is None:
+            model.begin_presentation()
             texts = [text] * args.batch
             batch_max_words = args.width
             sentence_count = args.batch
             hard_eos = [True] * args.batch
         else:
             slot = corpus_cursor % len(corpus_batches)
+            if slot == 0:
+                model.begin_presentation()
             texts = corpus_batches[slot]
             batch_max_words = corpus_batch_max_words[slot]
             sentence_count = corpus_sentence_counts[slot]

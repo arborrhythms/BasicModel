@@ -145,6 +145,7 @@ def run(mode, folder, epochs, control=None, *, through_stage=4):
                 initial=present(model,stage);attempted=kept=0;ce=[]
                 with (folder/(name+'.jsonl')).open('w') as log:
                     for epoch in range(epochs):
+                        model.begin_presentation()
                         report=present(model,stage,train=True,optimizer=optimizer)
                         backup=report['backup']
                         if backup is not None:

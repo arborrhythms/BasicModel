@@ -67,7 +67,8 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
         store = owner._closed_clause_store()
         records = occurrence_roots(owner, store)
         rows = list(range(len(records)))
-        assert len(rows) == 4
+        assert len(rows) == 8
+        assert sum(store.row(i)['kind'] == 'cover' for i in range(len(store))) == 4
         codes = occurrence_codes(records, 64, 3, store.slots)
         context = derived.occurrence_terms()
         postings = occurrence_memberships(owner, store)
@@ -96,7 +97,7 @@ def test_composition_preserves_form_kernel_and_uses_bilattice_without_normalizat
     layer.meaning_layout = (3, 7)
     left = torch.tensor([.2,.4,.8, .3,.9,.2,.8])
     right = torch.tensor([.6,.1,.5, .7,.4,.6,.1])
-    expected_form = layer.compose(left[:3],right[:3])
+    expected_form = (left[:3] + right[:3]) / 2
     output = layer.compose(left,right)
     torch.testing.assert_close(output[:3],expected_form,rtol=0,atol=0)
     torch.testing.assert_close(output[3:],compose(name,left[3:],right[3:]),rtol=0,atol=0)

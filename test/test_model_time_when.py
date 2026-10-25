@@ -169,6 +169,7 @@ def test_clock_increments_once_per_train_batch():
     opt = m.getOptimizer(lr=1e-4)
     N = 3
     for _ in range(N):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train",
                    optimizer=opt, batch_override=_one_batch(m))
     assert m.present() == N
@@ -205,6 +206,7 @@ def test_when_time_does_not_stamp_live_position_encoders():
     opt = m.getOptimizer(lr=1e-4)
     N = 3
     for _ in range(N):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train",
                    optimizer=opt, batch_override=_one_batch(m))
     # The source stamps document positions explicitly; model time serves
@@ -228,6 +230,7 @@ def test_when_time_round_trips_through_save_load():
     opt = m.getOptimizer(lr=1e-4)
     N = 5
     for _ in range(N):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train",
                    optimizer=opt, batch_override=_one_batch(m))
     assert m.present() == N
@@ -247,6 +250,7 @@ def test_old_checkpoint_without_when_time_loads_at_zero():
     m = _build_xor_model()
     opt = m.getOptimizer(lr=1e-4)
     for _ in range(2):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train",
                    optimizer=opt, batch_override=_one_batch(m))
     with tempfile.TemporaryDirectory() as d:

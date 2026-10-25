@@ -96,6 +96,7 @@ def test_real_packed_runbatch_trains_prediction_and_representation_with_teacher(
     monkeypatch.setattr(m, '_backward_training_loss', backward_probe)
     try:
         for weight in (0.1, 0.1, 0.):
+            m.begin_presentation()
             m.inter_loss_weight = weight
             # The effective model loss weight must stop Adam credit even if
             # the layer still has an enabled accumulation gate.
@@ -265,6 +266,7 @@ def test_real_runbatch_steps_sentence_trials_then_batch_only_objectives(monkeypa
     monkeypatch.setattr(model, "_backward_training_loss", inspect_backward)
     monkeypatch.setattr(optimizer, "step", inspect_step)
     for _ in range(2):
+        model.begin_presentation()
         loader = model.inputSpace.data.data_loader(split="train", num_streams=2)
         inputs, outputs = next(iter(loader))
         batch = (model.inputSpace.prepInput(inputs), model.outputSpace.prepOutput(outputs))

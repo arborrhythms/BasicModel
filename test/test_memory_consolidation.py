@@ -50,7 +50,7 @@ def test_reading_recurrence_counts_distinct_documents_not_reobservations(distinc
     from DocumentCover import open_cover
     for n in range(3):
         if n == 0 or distinct:
-            open_cover(owner, store, stream=0)
+            open_cover(owner, store, stream=0, document=('source', n if distinct else 0))
         row = store.write_clause(clause, document_key=('source', n if distinct else 0), sentence_index=n,
                                  stream=0, evidence=(1., 0.))
         reading = store.raw_meaning_of(row).role_refs[0][1]

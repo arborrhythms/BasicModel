@@ -31,6 +31,8 @@ def present(model, *, split, optimizer=None, batch_size=8, after_batch=None):
     inputs, outputs = getattr(data, split + '_input'), getattr(data, split + '_output')
     training = optimizer is not None
     model.train(training)
+    if training and split == 'train':
+        model.begin_presentation()
     model.symbolSpace.expectation.reset()
     memory = model._what_memory()
     if memory is not None:

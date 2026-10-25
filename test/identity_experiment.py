@@ -395,6 +395,8 @@ def observed_rows(model):
 def present_documents(model, docs, *, optimizer=None, labels=None, recovery_labels=None, log=None):
     from What import What
     training=optimizer is not None; results=[]; evidence=[]; atom_examples={}
+    if training:
+        model.begin_presentation()
     for offset in range(0,len(docs),4):
         batch=docs[offset:offset+4]; B=len(batch); addresses=[]; indices=[]
         split='train' if training else 'validation'

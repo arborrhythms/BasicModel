@@ -22,7 +22,7 @@ def test_identical_empty_meanings_do_not_require_identical_forms():
     assert not paired[:, 3:].any()
 
 
-@pytest.mark.parametrize('config,capacity', [('XOR_grammar', 6), ('MM_grammar', 8)])
+@pytest.mark.parametrize('config,capacity', [('XOR_grammar', 18), ('MM_grammar', 20)])
 def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capacity, monkeypatch):
     from reading_fixtures import keep_existing_references
     keep_existing_references(monkeypatch)
@@ -50,11 +50,11 @@ def test_small_inventory_pairs_words_without_allocating_letter_rows(config, capa
         assert owner.nVectors == capacity and cb.W.shape[0] == capacity
         assert len(word_rows) == 4
         assert admitted and admitted[-1] == word_rows
-        # A later grammatical part relation may symbolize an existing word
-        # object at order one. Such a row is not a concept for a letter.
+        # A kept relation may seat an argument at its parsed order, including
+        # zero. Covers and these arguments are concepts, never letter words.
         for row in set(owner._concept_allocator.layer()._tensor_row_keys) - word_rows:
             cid = owner.concept_id_at_row(row)
-            assert owner._concept_source_order(cid) > 0
+            assert 'concept' in owner._concept_allocator.symbol_types.get(cid, ())
             assert all(isinstance(part, tuple) and part[0] == 'sym'
                        for part in owner.concept_parts(cid))
         assert cb.mereology.context_width == 128

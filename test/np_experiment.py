@@ -316,6 +316,7 @@ def run(args):
                     for _ in range(EPOCHS):
                         list(batches(prior_rows,rng))
                 for epoch in range(EPOCHS):
+                    model.begin_presentation()
                     for indices in batches(train,rng):
                         present(train,indices,training=True,epoch=epoch)
                 assert updates['paired']==paired_updates and sum(len(row['ids']) for row in progress)==training_presentations

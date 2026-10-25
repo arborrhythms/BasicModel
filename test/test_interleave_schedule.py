@@ -35,6 +35,8 @@ def test_one_native_read_retains_shared_owner(tmp_path,monkeypatch,training,eage
     monkeypatch.setattr(ModelAttention,'read_code_field',read)
     texts=('a b','a c')
     for step,text in enumerate(texts*(2 if training else 1)):
+        if training and step % len(texts) == 0:
+            model.begin_presentation()
         raw=model.inputSpace.prepInput([text])
         model.runBatch(train=training,optimizer=opt,batchNum=step,batchSize=1,
             split='validation',batch_override=(raw,torch.empty(1,0)),

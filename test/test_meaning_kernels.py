@@ -25,6 +25,73 @@ def test_centroid_is_leaf_weighted_and_splits_exactly():
     torch.testing.assert_close(split_centroid(whole, pair, (1, 2)), leaves[2], atol=1e-15, rtol=0)
 
 
+def test_scalar_group_lookup_inside_nested_decoder_control_flow():
+    groups = VerbGroups(64)
+    value = torch.ones(64)
+
+    def run(value):
+        def cond(index, current):
+            return index < 2
+
+        def body(index, current):
+            def chosen(parent):
+                group = torch.zeros((), dtype=torch.long, device=parent.device)
+                return groups(group) @ parent
+            update = torch.cond(index == 0, chosen, lambda parent: parent.clone(), (current,))
+            return index + 1, update
+        return torch.while_loop(cond, body, (torch.tensor(0), value))[1]
+
+    torch.testing.assert_close(run(value), value, rtol=0, atol=0)
+
+
+def test_inverse_action_compiles_through_nested_control_flow_with_its_gradient():
+    from CompilerEffects import compile_inductor
+    action = MeaningAction(4).double()
+    # The loop's reverse pass carries a basis gradient with this layout.
+    # Give the fixture's parameter the same strides, as while_loop requires.
+    action.object_vectors = torch.nn.Parameter(
+        action.object_vectors.permute(2, 0, 1).contiguous().permute(1, 2, 0))
+    with torch.no_grad():
+        action.readout.fill_(.3)
+        action.object_vectors[0, 1, 0] = .2
+    value = torch.tensor([[.2, .4, .3, .6]], dtype=torch.float64, requires_grad=True)
+    verb = torch.tensor([[.3, .6, .2, .4]], dtype=torch.float64, requires_grad=True)
+
+    def chosen(current, context):
+        return action(current, context, inverse=True, object_value=context,
+                      object_present=torch.ones(1, dtype=torch.bool))
+
+    def run(value, verb):
+        def body(index, current):
+            # Both branches use the parameter with the same gradient layout;
+            # the unchosen branch must not introduce unrelated zero strides.
+            result = torch.cond(index == 0, chosen, lambda x, y: chosen(x, y) * .5,
+                                (current, verb))
+            return index + 1, result
+        return torch.while_loop(lambda i, x: i < 1, body, (torch.tensor(0), value))[1]
+
+    expected = chosen(value, verb)
+    leaves = (value, verb, action.readout, action.object_vectors)
+    expected_grad = torch.autograd.grad(expected.sum(), leaves)
+    actual = torch.compile(run, backend=compile_inductor, fullgraph=True)(value, verb)
+    actual_grad = torch.autograd.grad(actual.sum(), leaves)
+    torch.testing.assert_close(actual, expected, atol=1e-10, rtol=1e-10)
+    for found, wanted in zip(actual_grad, expected_grad):
+        torch.testing.assert_close(found, wanted, atol=1e-9, rtol=1e-9)
+
+
+def test_inverse_action_reports_an_unsuccessful_solve(monkeypatch):
+    action = MeaningAction(4)
+    solve = torch.linalg.solve_ex
+    def unsuccessful(*args, **kwargs):
+        value, info = solve(*args, **kwargs)
+        return value, torch.ones_like(info)
+    monkeypatch.setattr(torch.linalg, 'solve_ex', unsuccessful)
+    with pytest.raises(RuntimeError, match='inverse is singular'):
+        action(torch.full((1, 4), .3), torch.full((1, 4), .4), inverse=True,
+               object_value=torch.full((1, 4), .2), object_present=torch.ones(1, dtype=torch.bool))
+
+
 def test_an_explicit_numerical_width_does_not_inherit_a_paired_layout(paired):
     from Language import LiftLayer
     op = LiftLayer(3, 3)
@@ -71,6 +138,19 @@ def test_meaning_inverse_and_gradient_at_identity(paired):
     parent = op.compose_blocks(op.compose, a, b, counts=(2, 1))
     left, _ = op.reverse_blocks(parent, b, counts=(2, 1))
     torch.testing.assert_close(left, a, atol=1e-12, rtol=0)
+
+
+def test_given_parent_trains_the_meaning_inverse_without_a_form_kernel(paired):
+    from Language import SurfaceLayer
+    op = SurfaceLayer(12, 12).double()
+    a = torch.linspace(.15, .8, 12, dtype=torch.float64)
+    b = a.flip(0)
+    parent = op.compose_blocks(op.compose, a, b).detach()
+    left, _ = op.reverse_blocks(parent, b)
+    parameters = tuple(op.meaning_kernel.parameters())
+    gradients = torch.autograd.grad(left[4:].sum(), parameters, allow_unused=True)
+    assert any(value is not None and bool(value.abs().any()) for value in gradients)
+    torch.testing.assert_close(left[:4], a[:4], rtol=0, atol=1e-15)
 
 
 def test_other_catalogue_faces_use_the_same_centroid_contract(paired):

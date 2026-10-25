@@ -37,35 +37,52 @@ def latest(store, stream):
 
 
 @torch.no_grad()
-def open_cover(owner, store, *, stream):
-    """Write a fresh conceptual cover using the ordinary order-1 inventory."""
+def open_cover(owner, store, *, stream, document):
+    """Reuse the book's concept; write its cover in this presentation."""
     from Spaces import _concept_alloc_of
     from Meaning import ConceptualMeaning
-    if len(store) >= store.capacity:
-        raise OverflowError('LTM capacity exhausted before document cover')
-    owner._preflight_concept_row(1)
-    owner._preflight_concept_allocation(1, context='document cover')
-    symbol = owner.new_concept()
+    from Occurrence import document_digest
+    key = document_digest(document).hex()
+    symbol = store._cover_symbols.get(key)
     alloc = _concept_alloc_of(owner)
-    alloc.reference_orders[symbol] = 1
-    alloc.symbol_types.setdefault(symbol, set()).update(('concept', 'object'))
-    alloc.individuals.add(symbol)
-    seat = owner._csw_concept_row(1, symbol)
-    if seat is None:
-        raise RuntimeError('document cover inventory changed after preflight')
-    value = owner.similarity_codebook.W[seat]
-    generator = store._cover_generator
-    generator.set_state(store.cover_rng_state.cpu())
-    value.copy_(torch.rand(value.shape, dtype=value.dtype, device='cpu', generator=generator))
-    store.cover_rng_state.copy_(generator.get_state())
-    derived = getattr(owner.similarity_codebook, 'mereology', None)
-    if derived is not None:
-        value[derived.percept_width:derived.percept_event_width] = 0.
-    alloc.settle(symbol)
+    value = None
+    if symbol is not None:
+        seat = owner._csw_row_of(symbol)
+        if seat is None or symbol in alloc.retired:
+            raise RuntimeError('a mapped cover concept is unavailable')
+        value = owner.similarity_codebook.W[seat]
+    meaning = None if value is None else replace(
+        ConceptualMeaning.from_description(value[:store.nDim]), role_refs=(('sym', symbol), None, None))
+    previous = None if meaning is None else store._address_for_write(meaning, kind='cover',
+        document_key=('cover', store.address_domain, symbol),
+        content_key=document_digest(('cover', symbol)))[-1]
+    if previous is None and len(store) >= store.capacity:
+        raise OverflowError('LTM capacity exhausted before document cover')
+    if symbol is None:
+        owner._preflight_concept_row(1)
+        owner._preflight_concept_allocation(1, context='document cover')
+        symbol = owner.new_concept()
+        alloc.reference_orders[symbol] = 1
+        alloc.symbol_types.setdefault(symbol, set()).update(('concept', 'object'))
+        alloc.individuals.add(symbol)
+        seat = owner._csw_concept_row(1, symbol)
+        if seat is None:
+            raise RuntimeError('document cover inventory changed after preflight')
+        value = owner.similarity_codebook.W[seat]
+        generator = store._cover_generator
+        generator.set_state(store.cover_rng_state.cpu())
+        value.copy_(torch.rand(value.shape, dtype=value.dtype, device='cpu', generator=generator))
+        store.cover_rng_state.copy_(generator.get_state())
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if derived is not None:
+            value[derived.percept_width:derived.percept_event_width] = 0.
+        alloc.settle(symbol)
+        store._cover_symbols[key] = symbol
     meaning = replace(ConceptualMeaning.from_description(value[:store.nDim]),
                       role_refs=(('sym', symbol), None, None))
     row = store.append_meaning(meaning, kind='cover', order=1, stream=int(stream),
-        evidence=(1., 0.), document_key=('cover', store.address_domain, symbol))
+        evidence=(1., 0.), document_key=('cover', store.address_domain, symbol),
+        content_key=document_digest(('cover', symbol)))
     return store.occurrence_of(row)
 
 
@@ -87,7 +104,7 @@ def begin_sentence(model, slot, present):
                 or store.location(previous[2]) is None):
             if previous is not None:
                 owner.mtm.end_document(previous[2], store=store)
-            cover = open_cover(owner, store, stream=batch)
+            cover = open_cover(owner, store, stream=batch, document=document)
             if predictor is not None:
                 predictor.include_occurrence(batch, cover)
         else:

@@ -8817,6 +8817,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # a document must not change the chooser's global random draws.
         self._cover_generator = torch.Generator(device='cpu').manual_seed(0)
         self.register_buffer('cover_rng_state', self._cover_generator.get_state())
+        self._cover_symbols = {}  # document digest -> persistent conceptual cover
         # Content ('what') width a reasoning reader slices to (the leading
         # band of the event vector); defaults to the full width. Stored for
         # forward-compat -- this class keeps the FULL idea vectors.
@@ -9227,6 +9228,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                             "expectation": self.expectation_of(i)})
         return {"version": 6,
                 "namespace": self.address_domain,
+                "cover_symbols": dict(self._cover_symbols),
                 "records": records}
 
     def _migrate_estimate_rows(self, contexts, expectations, rows):
@@ -9276,6 +9278,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         namespace = self.address_domain
         if extras.get("namespace") != namespace:
             raise ValueError("truth semantic checkpoint occurrence namespace differs")
+        covers = extras.get('cover_symbols', {})
+        if (not isinstance(covers, dict) or any(not isinstance(key, str) or len(key) != 64
+                or any(char not in '0123456789abcdef' for char in key)
+                or type(symbol) is not int or symbol <= 0 for key, symbol in covers.items())
+                or len(set(covers.values())) != len(covers)):
+            raise ValueError('invalid document cover concept checkpoint')
         discarded = set(getattr(self, '_discarded_occurrences', ()))
         if discarded:
             # A removed legacy row cannot remain reachable through a surviving
@@ -9373,6 +9381,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._semantic_rows = incoming
         self._texts = texts
         self._expectation_rows = expectation_rows
+        self._cover_symbols = dict(covers)
         for identifier in migrated:
             self._update_semantic_fingerprint(rows[identifier])
         self.rebuild_leaf_postings()

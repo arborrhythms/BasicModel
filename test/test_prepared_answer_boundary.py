@@ -68,34 +68,29 @@ def test_prepared_answer_generates_more_words_than_the_captured_input(tmp_path, 
             understanding = _capture_program_probe(model, ["1", "2"])
             held = model.resolveAnswer(
                 understanding, (What.supervised(0), What.supervised(1)))
-            # Make an explicit concluded idea. A semantic input to generation
-            # can differ from the input sentence; its direction comes from the
-            # actual retained first word form. A randomly composed root may
-            # legitimately be erased by non; this probe supplies its own idea.
-            direction = understanding.sentence_records[-1].word_values[0, 0]
-            direction = torch.nn.functional.normalize(direction, dim=0)
-            assert bool(direction.abs().sum() > 0)
-            ideas = torch.zeros_like(held.conceptual_answer)
-            from Layers import cube_unchart
-            ideas[0, 0] = cube_unchart(direction)
-            ideas[1, 0] = cube_unchart(direction * .25)
-            held = replace(held, conceptual_answer=ideas)
+            # An independently concluded four-leaf union and one terminal.
+            # Paired forms are centroids; no additive lift inverse exists.
             language = model.languageSpace
             policy = language.generate_policy
-            choice = list(language._generate_binary_names).index("lift")
-            # Lift adds chart coordinates; its inverse halves the chart. Expand
-            # chart lengths 1 and .5, then emit .25: four leaves versus one.
+            choice = list(language._generate_binary_names).index("union")
+            operator = language._generate_binary_ops[choice]
+            form_width = operator.meaning_layout[0]
+            leaves = held.conceptual_answer.new_zeros(4, held.conceptual_answer.shape[-1])
+            leaves[torch.arange(4), torch.arange(4)] = .6
+            leaves[torch.arange(4), form_width + torch.arange(4)] = .5
+            halves = operator.compose(leaves[::2], leaves[1::2])
+            direction = operator.compose(halves[0], halves[1])
+            assert bool(direction.abs().sum() > 0)
+            ideas = torch.zeros_like(held.conceptual_answer)
+            ideas[0, 0] = direction
+            ideas[1, 0] = leaves[0]
+            held = replace(held, conceptual_answer=ideas)
             policy.weight.zero_()
             policy.bias.fill_(-1000)
             policy.bias[-1] = 0
-            policy.weight[choice].copy_(8 * direction[:policy.in_features])
-            policy.bias[choice] = -4 * direction[:policy.in_features].sum() - 1.5
-            bank=understanding.sentence_records[-1].primed
-            codes=cube_unchart(torch.stack((direction*.25,direction*.5,direction),0))[None].expand(2,-1,-1)
-            bank=replace(bank,codes=codes,rows=torch.arange(3)[None].expand(2,-1),
-                         weights=torch.ones(2,3),own=torch.ones(2,3,dtype=torch.bool),
-                         bytes=bank.bytes[:,:1].expand(-1,3,-1),byte_valid=bank.byte_valid[:,:1].expand(-1,3,-1))
-            understanding=replace(understanding,sentence_records=(replace(understanding.sentence_records[-1],primed=bank),))
+            policy.bias[choice] = 1
+            codes = torch.cat((leaves, halves))[None].expand(2, -1, -1)
+            understanding = _with_identity_bank(understanding, codes)
             construction = model.reverseOutput(understanding, held)
             lengths = (construction.concepts.abs().amax(-1) > 0).sum(-1)
         input_lengths = model.inputSpace._word_active_mask.sum(-1).tolist()
@@ -164,7 +159,7 @@ def test_prepared_concept_handoff_cuts_answer_state_gradient(tmp_path, monkeypat
         torch._dynamo.reset()
 
 
-def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_path, monkeypatch, eager_reading):
+def test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit(tmp_path, monkeypatch, eager_reading):
     from dataclasses import replace
 
     model = _native_answer_model(tmp_path, True)
@@ -174,15 +169,23 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
             understanding = _capture_program_probe(model, ["1", "2"])
             held = model.resolveAnswer(understanding, (What.supervised(0), What.supervised(1)))
             language = model.languageSpace
-            index = list(language._generate_binary_names).index("lift")
+            index = list(language._generate_binary_names).index("lower")
             operator = language._generate_binary_ops[index]
-            leaf = torch.full((2, held.conceptual_answer.shape[-1]), .08)
-            parent = operator.compose(leaf, leaf)
-            children = operator.generate(parent)
-            # The fixed policy needs readable terminals as well as an
-            # inverse. Duplicate equal codes would make STOP ambiguous.
-            torch.testing.assert_close(children[0], children[1], rtol=0, atol=0)
-            understanding = _with_identity_bank(understanding, children[0][:, None])
+            form_width = operator.meaning_layout[0]
+            marker = torch.full((2, held.conceptual_answer.shape[-1]), .5)
+            leaf = marker.clone()
+            marker[:, :form_width] = 0
+            leaf[:, :form_width] = 0
+            marker[:, 0] = .6
+            leaf[:, 1] = .6
+            operator.meaning_kernel.bias.fill_(-1)
+            parent = operator.compose(marker, leaf)
+            children = operator.reverse_blocks(parent, marker, reference_right=False)
+            # Distinct forms make the centroid split progress. The declared
+            # marker and content, not an invented balanced split, are recovered.
+            torch.testing.assert_close(children[0], marker, rtol=0, atol=0)
+            torch.testing.assert_close(children[1], leaf, rtol=0, atol=0)
+            understanding = _with_identity_bank(understanding, torch.stack((marker, leaf), 1))
             threshold = ((parent-.5).norm(dim=-1).min()
                          + torch.stack([(child-.5).norm(dim=-1).max() for child in children]).max()) / 2
             assert all(bool(((child-.5).norm(dim=-1) < threshold).all()) for child in children)
@@ -210,9 +213,9 @@ def test_answer_loss_trains_an_executed_shared_inverse_without_state_credit(tmp_
         assert parameters and all(id(p) in owned for p in parameters)
         gradients = torch.autograd.grad(loss, (state, *parameters), allow_unused=True, retain_graph=True)
         assert gradients[0] is None
-        assert any(g is not None and bool(g.abs().any()) for g in gradients[1:])
-        # The numerical inverse is differentiable for its reader, but the
-        # answer update is restricted to the reader's weights.
+        assert all(g is None or not bool(g.abs().any()) for g in gradients[1:])
+        # Meaning inverses remain reconstruction-owned. With fixed selected
+        # forms, a percept-only loss has no path through the meaning block.
         from ObjectiveOwnership import backward_owned
         backward_owned({'output': loss}, owners)
         assert all(p.grad is None for p in parameters)

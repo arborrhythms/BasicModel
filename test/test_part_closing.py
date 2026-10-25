@@ -296,7 +296,7 @@ def test_new_relation_argument_is_minted_and_unseatable_argument_fails(monkeypat
     # Remove this fixture's order-1 seats. The chooser is never consulted
     # and the atomic closing must refuse without a partial write.
     caps = f.cs._order_caps()
-    monkeypatch.setattr(f.cs, '_order_caps', lambda: [caps[0], 0, *caps[2:]])
+    monkeypatch.setattr(f.cs, '_order_caps', lambda: [caps[0], 0, f.cs.nVectors-caps[0]])
     alloc = f.cs._concept_allocator
     before = alloc.next_id, len(alloc.parts), len(f.store)
     with pytest.raises(RuntimeError, match='concept row pool: order=1'):
@@ -307,6 +307,29 @@ def test_new_relation_argument_is_minted_and_unseatable_argument_fails(monkeypat
     result = f.store.raw_meaning_of(row).role_refs[0][1]
     minted = int(f.store.parts.refs[result, 1])
     assert f.cs._csw_row_of(minted) is not None
+
+
+def test_relation_argument_uses_the_existing_unpartitioned_tail(monkeypatch):
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    native = f.noun('participant')
+    left = Composition(f.registry._payload(('sym', native)), reference=native)
+    argument = Composition(torch.eye(8)[3], order=1)
+    root = Composition(torch.maximum(left.point, argument.point), (left, argument),
+                       operation='verb', formal_name='verb', head_role=1)
+    clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
+                    composition=root)
+    capacity = f.cs.nVectors
+    shape = f.cs.similarity_codebook.W.shape
+    caps = (f.cs._order_caps()[0], 0)
+    monkeypatch.setattr(f.cs, '_order_caps', lambda: caps)
+    row = f.store.write_clause(clause)
+    result = f.store.raw_meaning_of(row).role_refs[0][1]
+    minted = int(f.store.parts.refs[result, 1])
+    assert sum(caps) <= f.cs._csw_row_of(minted) < capacity
+    assert f.cs.nVectors == capacity
+    assert f.cs.similarity_codebook.W.shape == shape
 
 
 def test_minted_surface_phrase_keeps_the_unminted_heads_word(monkeypatch):

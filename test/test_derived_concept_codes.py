@@ -53,7 +53,11 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
     assert not isinstance(cb.W, nn.Parameter)
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
-    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist())
+    store = owner._closed_clause_store()
+    covers = {owner._csw_row_of(store.raw_meaning_of(i).role_refs[0][1])
+              for i in range(len(store)) if store.row(i)['kind'] == 'cover'}
+    assert len(covers) == 2
+    assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | covers
     torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
     opt = model.getOptimizer(lr=.01)
     groups = model.objective_parameter_groups(opt)

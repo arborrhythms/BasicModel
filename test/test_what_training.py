@@ -253,6 +253,7 @@ def test_temporal_question_content_is_causally_used(synth_model):
     assert abs(untrained_straight - untrained_swapped) < 1e-6
 
     for _ in range(40):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=straight)
     cond = m.question_conditioner
@@ -317,6 +318,7 @@ def test_past_and_future_text_answers_are_scored_in_input_space(synth_discourse_
     batch = _batch(m, rows=2)
     # Prime the discourse ring so recall/prediction resolve.
     for _ in range(2):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch)
     # Rows 0,1 presented; ask for the row after each.
@@ -405,6 +407,7 @@ def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     questions = (What.supervised(0), What.supervised(1))
     history = []
     for _ in range(30):
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=questions)
         history.append({k: float(v.detach()) for k, v in m.primary_costs().items()
@@ -465,6 +468,7 @@ def test_supplied_text_answer_quality_improves_with_training(synth_discourse_con
         before = _surface_answer_cost(m, batch, questions)
         assert before > 0.0
         for _ in range(30):
+            m.begin_presentation()
             m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                        batch_override=batch, questions=questions)
             assert m._last_answer_mask.tolist() == [True, True]

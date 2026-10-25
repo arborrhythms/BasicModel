@@ -48,7 +48,11 @@
     <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
     <meaningWidth>128</meaningWidth>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
-    <nVectors>8</nVectors>
+    <!-- Presentation preallocation: 4 words + 4 distinct book covers +
+         8 possible argument mints (2 per two-word close) + 4 unused order-0
+         seats = 20. Fixed partition (8,4), tail 8; no runtime resizing.
+         Derivation and scope: verb-and-modal plan section 47. -->
+    <nVectors>20</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 

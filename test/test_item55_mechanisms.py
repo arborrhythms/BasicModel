@@ -75,7 +75,7 @@ def _stream_code_banks(tmp_path,monkeypatch):
             from ClauseRow import Clause
             from DocumentCover import open_cover
             for stream, value in enumerate((replace(meaning,roles=meaning.roles*.5),meaning)):
-                open_cover(owner, model.symbolSpace.ltm_store, stream=stream)
+                open_cover(owner, model.symbolSpace.ltm_store, stream=stream, document=('context', stream))
                 model.symbolSpace.ltm_store.write_clause(
                     Clause(value, point=value.roles[0], refs=(cid,-1,-1), order=0),
                     stream=stream, document_key=('context',stream), sentence_index=1)

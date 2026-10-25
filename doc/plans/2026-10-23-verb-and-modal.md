@@ -2158,3 +2158,773 @@ change. No existing assertion changes and no test is retired. Its six
 scoped files run once by hash, followed by the one default end-of-3.5 sweep
 under §38's disjoint harness protocol. Both lines wait for review through
 Alec; no publication or item-3.0 start is implied by this freeze.
+
+## 40. End sweep and scoped repairs (Codex, 2026-10-24)
+
+**Capacity rationale superseded by Alec's correction in §43.** The run
+results below remain historical evidence; counting each training presentation
+as a new book is not the storage contract.
+
+The single default sweep completes on `0bd65c5e2cd1594a8d2e517cbdbbc274751f379c`:
+6,504 selected and completed, 6,144 passed, 324 existing skips, 35 failures
+(33 call, two setup) and one non-strict XPASS. The source guard passes and
+the two execution groups cover the collection exactly once. The four call
+reports emitted by the existing flag-aggregation test count as one node;
+all raw reports remain. This is a failed sweep, not a green landing. Only
+scoped repair runs follow; no second full sweep is proposed.
+
+The read-only keep probes restore the original initial RNG exactly for
+all five replayed tests (tensor audit retained). Three unchanged eight-seat
+MM fixtures have four words and four covers occupying the whole inventory
+before the first kept close requests another concept. Both trials and the
+keep are retained: they tie and keep greedy. The 18-seat XOR allocation is
+a minimum for the three-presentation bootstrap, not a claim that a
+400-epoch training fixture fits. Two long-training setup failures exhaust
+covers before their quality assertions run. No capacity, presentation count,
+forcing, keep decision or objective is changed to hide these failures.
+The receipt carries these additional capacity decisions to Alec with the
+bounded allocation arithmetic; a larger number is not selected by trial
+and error.
+
+The reread probe corrects an initial diagnosis: its sixteen rows are four
+covers, four estimates, four observations and four thoughts, not twelve
+covers. Its test must select the four sentence observations before checking
+stable addresses, timestamps and the two witnesses. The first observation
+now has a preceding cover, hence expectation pairs also occur at the first
+sentence. General occurrence reads continue to include covers.
+
+Three independent production repairs need no assertion changes. A plain
+callable in an inverse fixture has no `__dict__`; the diagnostic activation
+preserver tolerates that interface. Structural adapters use the optional
+`meaning_layout` attribute for plain operation implementations. A scalar
+verb-group subscription inside nested `cond`/`while_loop` triggers Dynamo's
+`PendingUnbackedSymbolNotFound`; tensor `index_select` preserves values and
+gradients without extracting a scalar. The retained minimal reproduction
+fails on the sweep hash, and a regression exercises that same nested path.
+The two live-reference fixtures receive the current tree accessor and
+`timelines` argument; all their assertions stay.
+
+Other ports account explicitly for covers in provisioning/allocator counts,
+truth-only views, expectation history and the question refusal message, and
+use the published form centroid in the old form-kernel fixture. Every exact
+assertion and fixture change will be listed in the repair receipt. The two
+prepared-answer fixtures assume the retired additive paired `lift` inverse;
+they require current operator fixtures while retaining their boundary,
+length and credit checks. No test is retired. The sweep remains the source
+of every original failure; repair evidence is separate.
+
+## 41. Decoder diagnostics and remaining capacity decisions (Codex, 2026-10-24)
+
+**The capacity recommendation below is withdrawn by §43.** It described
+the implementation's repeated covers, not a legitimate book-cover lifetime.
+
+The first scoped repair run passes 203 cases with five existing skips and
+five failures. The toy decoder fixtures always returned a status tuple;
+the selected inverse now requests values alone. Port their declared
+`return_status` behavior, keeping all actions, gradients and assertions.
+The reread's second close retains eight estimates and eight thoughts, plus
+eight covers and the same four observation rows: the total is 28, not the
+initial port's 20. The failed 20-row port remains retained; the observation
+address/time/two-witness checks stay verbatim.
+
+The scalar basis repair exposes a second compiler defect. Its retained FX
+graph has 39 placeholders and 38 inputs: the extra placeholder is an unused
+`ForwardTokenAOTInput`. The matching library's `unlift_tokens` returns
+without removing an unused effect token when no top-level effect nodes
+remain. A global token-policy diagnostic does not repair it; no such global
+setting is applied. A native-root domain-check diagnostic is being tested
+without disabling any nested checks or changing the compiler backend.
+
+The prepared-answer diagnostics identify a production omission as well as
+the obsolete additive-lift fixture. `reverseOutput` passes
+`require_symbols=False` for an aligned carrier even when it has a meaning
+block. The swap requires a candidate bank for that meaning inverse, and the
+held bank is already present. A diagnostic supplying it restores the
+four-versus-one length check with a current union-centroid fixture. The
+production branch must use the bank for paired configurations regardless of
+alignment; pure-form aligned configurations keep their existing behavior.
+The shared-inverse fixture uses a current determiner kernel with distinct
+marker/content forms and a known marker, preserving the length, state-credit
+and parameter-ownership checks. Its obsolete full-vector equal-children
+setup is ported to the two explicitly supplied operands, not to a weaker
+boundary or a fabricated inverse. Exact ports and results accompany the
+repair receipt.
+
+Capacity decisions remain explicit. The three unchanged eight-seat MM
+word fixtures have no free row after four words and four covers. The
+400-epoch XOR fixture needs at least 1,600 cover seats for training alone,
+before evaluation and other concepts; the authorized 18-seat bound belongs
+to the three-presentation bootstrap. I recommend construction-time
+preallocation derived separately for each bounded consumer, with the full
+presentation budget and existing partition recorded. I do not recommend a
+new knob, a guessed margin, a shorter budget, a forced reading, or silent
+cover reuse. Increasing the expressly unchanged eight-seat configuration,
+or changing the fresh-cover rule, requires Alec's decision before applying
+it. The receipt states this limitation next to the original justifications.
+
+
+## 42. Sweep repairs and the scope of the capacity arithmetic (Codex, 2026-10-24)
+
+**The cover arithmetic and proposed freeze below are superseded by §43.**
+The independent repair results remain development evidence.
+
+The second scoped development run completes 58 cases: 38 pass, nineteen
+existing skips and one failure. Both prepared-answer ports pass, including
+the unchanged four-versus-one and two-versus-two length checks. The failure
+is in my bank condition: a pure-form bank can have `meaning_start` equal to
+its full width, not only None. Testing for a nonempty complement preserves
+the pure-form answer path; the original mixed-target mask and conditioner
+update assertions then pass unchanged in the third repair run.
+
+The prepared inverse's gradient port is explicit: after the swap a fixed
+selected form has no trainable form kernel. Its percept-only loss must not
+have a nonzero gradient to a meaning-only inverse. Rename that test to
+`test_percept_answer_keeps_meaning_inverse_and_state_out_of_credit` and
+replace its nonzero inverse-gradient assertion with zero-or-None. Keep
+its two emitted words, absent state gradient, reconstruction ownership and
+output-backward exclusion checks. Its independent marker and content replace
+the obsolete equal-children setup. A separate new test differentiates a
+meaning loss through the inverse of a given, detached parent and requires a
+nonzero meaning-kernel gradient. This changes a test expectation to the
+decided swap; it adds no detach or objective change to production.
+
+The root-domain-check compiler diagnostic also fails. The successful
+interface diagnostic identifies the complete AOT omission: one unused,
+explicitly described `ForwardTokenAOTInput` remains in the FX graph after
+its caller has already unlifted it, together with an empty constant output.
+Inductor receives 38 arguments for 39 placeholders. Removing that dead
+interface also requires removing its output-stride entry and shifting the
+user-output indices. `CompilerEffects` performs this narrow normalization
+only for reconstruction's Inductor callback. It neither removes live effects
+nor changes a backend, domain check, numerical value, parameter, gradient
+boundary or global compiler setting. Negative tests keep ordinary, live and
+already-complete interfaces untouched. The native compiled ingestion case
+passes; the eight-seat MM case now reaches its independent capacity failure.
+All failed intermediate compiler diagnostics remain retained.
+
+The capacity audit finds a second half of the existing-tail repair:
+`PartClosing.preflight` still permits only the higher-order partition while
+its writer also uses the unpartitioned tail. Align that preflight with the
+writer, without adding rows. A new relation-argument test checks the tail
+seat and unchanged capacity and bank shape. The old refusal fixture removes
+all order-1 seats, including the tail, by assigning the rest of its same
+physical inventory to another order; every assertion stays. The third scoped
+run completes 31 cases: 28 pass, two existing skips and the unchanged
+eight-seat exhaustion. No further capacity is applied.
+
+For Claude's review, the 18- and 16-seat figures are minima for the mandatory
+cover-plus-word inventory of the named bounded certificates under the
+existing partitions. They are not a promise that every possible derivation
+or every longer consumer fits. The explicit 32-row fixture has seven spare
+rows chosen by Alec. None is a new knob or a runtime resize. The long XOR
+budget implies 400 × 4 = 1,600 fresh cover allocations for training alone;
+that is workload accounting, not a chosen new simultaneous-capacity bound.
+The remaining ordinary concepts, evaluation presentations and reclamation
+behavior must be accounted for before selecting another construction value.
+The expressly unchanged eight-seat fixtures need Alec's decision. The
+recommendation is a documented per-consumer construction bound, without a
+shorter document, budget, forced parse, concealed reuse or guessed margin.
+
+The repaired source will freeze once after its short lesson smoke and exact
+assertion/fixture inventory. Scoped repair gates follow on that hash. The
+one complete sweep remains failed and is not repeated. Known capacity
+failures stay visible for review through Alec; no publication or item-3.0
+start is authorized by these repairs.
+
+## 43. A book cover is not an epoch allocation (Codex, 2026-10-24; for Claude through Alec)
+
+Alec corrects the preceding recommendation: “a book cover happens once at
+the beginning of LTM.” He also flags “storing the same LTM memories for
+multiple epochs” as “probable magic” and requests discussion with Claude
+after the run. The claim that 400 epochs over four documents *requires*
+1,600 covers is withdrawn. It counts allocations made by today's cursor;
+it does not justify a capacity, and an epoch does not establish a new book.
+The 18- and 16-seat recommendations used the same repeated-cover assumption
+and need reassessment. Their historical arithmetic and failed runs remain.
+No additional capacity is selected. The separately authorized 32-row fixture
+accounts for one eight-sentence document and its initial cover, not epochs.
+
+The code discrepancy is concrete. `DocumentCover.begin_sentence` calls
+`open_cover` when the document changes, the cursor restarts at an earlier or
+equal position, or the previous cover is missing. `end_document` removes
+the cursor entry. `open_cover` mints a fresh symbol and uses that symbol in
+the cover's write address; it has no retained-book reuse path. Thus another
+training presentation currently creates another cover even when the book
+and source sentences are the same. This behavior is a review finding, not
+an accepted interpretation of Alec's correction.
+
+The retained reread probes distinguish memory writes rather than assuming
+that every row duplicates. `Models._commit_sentence` gives the observation
+writer the existing document/position/content address. `OccurrenceRows`
+finds that address again. In the four-document fixture, one presentation
+has 16 rows: four covers, four estimates, four observations and four thoughts.
+The second presentation has 28: eight covers, eight estimates, the same four
+observations and eight thoughts. The observation addresses and `when` remain;
+their witness counts become two. The original failure, failed intermediate
+count port, passing development port and keep probes are all retained in
+the sweep receipt. The 28-row/eight-cover assertions describe the current
+implementation only; they must not become a certificate for repeated books.
+
+An existing lower-level test already guards row reuse:
+`test_four_occurrences_after_four_hundred_presentations_and_full_upsert`
+keeps four rows after 400 presentations, while requiring 400 witnesses
+per row and the latest value. It stays unchanged. The review therefore
+needs to distinguish row duplication from repeated evidence and state
+updates; replacing the cover allocation alone does not settle both.
+`LTM0.append_meaning` replaces the row's content and joins each evidence
+pole by maximum while incrementing `witness_count`; it does not add the
+same evidence numerically on every presentation. `MediumTermMemory.event`
+also replaces an existing `(occurrence, role)` event while its token is
+retained. The review concerns the actual lifecycle of these updates, not
+a claim that every memory mechanism blindly appends.
+
+**Discussion requested, with recommendation.** Keep the once-per-book cover
+decision fixed. Review the training replay boundary before sizing more
+storage: which LTM records should be reused, which genuinely new prediction
+or thought events may be stored, and whether replay should add witnesses,
+evidence, MTM events or recurrence/promotion credit. The implementation also
+needs to preserve the association between a reused sentence and its original
+cover in the `.when`-ordered segment model. My recommendation is to separate
+training presentations from new source events and make those write rules
+explicit, then reassess the affected preallocations and count ports against
+that contract. This is not a proposal to reset memory each epoch, change
+learning budgets, add a provenance sidecar or silently suppress writes.
+
+The native answer-credit diagnostic already in progress ended at its
+existing 1,800-second worker limit: exit 124, zero of one cases completed,
+5.02 GiB peak memory. It is an incomplete timeout, not an assertion result
+or a pass. Its log, initial state and process sample remain in
+`sweep/development/answer-credit-native*`; the source diff's file hashes
+were unchanged throughout. After the run, only the two configuration
+comments were corrected; their values remain 18 and 16. The prepared repair
+freeze is held for this review, with the working repairs and every failed
+run retained. No second sweep, publication or item-3.0 start follows from
+these development results. Alec continues to mediate the discussion with
+Claude.
+
+## 44. Claude's review of iteration 2, and the replay contract — 2026-10-24
+
+Reviewed: context spec §§15–16, iteration §§24–43, the line-6 receipt
+(first freeze `e9c53252aa` failed and retained; repair freeze
+`04c1132797`: 1,250 passed, twelve existing skips, no failures across
+fourteen groups, the six placements complete), the line-7 receipt
+(`0bd65c5e2c`: 22 passed, two existing skips), the end sweep on that hash
+(6,504 completed, 6,144 passed, 324 existing skips, 35 failures, one
+xpass), the 35 failing nodes, the preallocation rationale and its
+withdrawal, the uncommitted scoped repairs, and the cover and address code.
+
+**What stands.** Line 6 is built as §2b decided: covers as order-1
+concepts with cover rows in exact batch streams, segments by `.when`,
+readers excluding covers as propositions, the dedicated cover generator,
+the span-whole centroid for order-0 forms with its inverse, the surface
+inverses, and VP phases as idempotent case selection through `compound`
+and its absent-marker face (`compound_unary`, the unary face §12 allows,
+not a new rule). Codex's §25 self-correction was right: the affine kernel
+was an implementation choice, so replacing it with a learned case test
+was §39 work. The six placements and both smokes fail their learning
+targets and go to item 0 with no rescue; the placements' audit shows no
+case value ever reached a kept event, which, like iteration 1's corpus,
+puts the failure upstream of the teachers. Line 7 adds a certificate and
+nothing else. The declared centroid discrepancy (meaning-side fold) is
+recorded for item 3 as agreed. Seven test ports in line 6 are explained
+one by one in the receipt; no test is retired.
+
+**What blocks landing.** The sweep failed, and the repair freeze is rightly
+held, because most of the remaining failures turn on one unsettled rule:
+what a repeated presentation of the same source writes. Codex's
+implementation opens a fresh cover whenever the cursor restarts, and the
+reread probe shows a second presentation of four one-sentence documents
+adding four covers, four estimates and four thoughts (16 rows to 28) while
+the four observations are re-witnessed in place. Alec: "a book cover
+happens once at the beginning of LTM"; storing the same memories for
+several epochs is "probable magic." The capacity arithmetic built on
+repeated covers (18 and 16 seats, 1,600 covers for 400 epochs) was
+withdrawn by Codex on that correction, correctly.
+
+**The replay contract, recommended.** An epoch is the optimizer's repeat
+of a source, not a new experience. Every LTM write is addressed by its
+source, and a repeated presentation refreshes the row it already wrote,
+never appends:
+
+1. *Observations* already do this: `_address_for_write` keys a sentence by
+   document, position and content, so a re-read finds its row, joins the
+   evidence poles by maximum and increments `witness_count`, which is
+   definedness growing with exposure, the legitimate effect of repetition.
+2. *Covers* are addressed by the document, not by a minted symbol:
+   `open_cover` writes `document_key=('cover', domain, symbol)`, so a
+   re-presentation cannot find it and mints again. Address the cover by
+   the document key; `begin_sentence` reopens only when no cover row
+   exists at that address. One cover per book, found again at each
+   presentation, its `.when` unmoved, so the segment it heads is intact.
+3. *Estimates* are addressed with the prediction's content
+   (`_estimate_write_address`), which changes as parameters learn, so each
+   epoch appends a new estimate. Address them by document and position
+   alone, so the latest prediction replaces the earlier one.
+4. *Thoughts* likewise: an episode for the same question at the same
+   position replaces its row.
+5. *MTM* already replaces an event for the same occurrence and role while
+   the token lives; recurrence and promotion count distinct covers and
+   distinct rows, so epochs add no credit; the sixteen-close clock is
+   unaffected.
+
+With this, a store holds one record per source event however many epochs
+run, and no segment is disturbed, because no row moves and none is added.
+
+**Capacity, as a formula.** A fixture's concept inventory is admitted
+words, plus one cover per distinct document, plus the concepts its closes
+mint, plus the fixed partition's slack, computed and recorded per fixture;
+"preallocate more" is headroom above that floor, Alec's to choose, never a
+derivation from epochs. The 18 and 16 are recomputed on that basis, and
+the three eight-seat MM fixtures, which fill with four words and four
+covers, are sized by it too, since their contract (four documents) has
+not changed; the 400-epoch XOR fixture needs no cover beyond its four.
+
+**The remaining sweep failures** are the cover-count and form-rule ports
+Codex has in hand (round4a0's reread becomes 16 rows under the contract,
+not 28), the prepared-answer fixtures assuming the retired additive lift
+inverse, the toy decoder signatures, the compiler dead-token repair and
+the aligned-carrier bank condition. None reverses a decision.
+
+**Verdict:** not landable until the repair freeze; the replay contract
+above is the one decision needed before it, and the port list changes with
+it. Then one scoped repair freeze on the sweep's hash, the scoped repair
+gates, and the review of the whole iteration through Alec; the failed
+sweep stays as the record.
+
+## 45. Decided: a presentation begins with empty memories (Alec, 2026-10-24)
+
+Alec, asked what a repeated presentation of the same source should write:
+"If we know we will be running multiple epochs, probably just delete the
+LTM between runs (updating memories in place is probably best left to
+percepts/concepts)." Asked how fixture capacities are then justified:
+"See previous answer." This settles §43 and withdraws §44's refresh-in-place
+recommendation: an epoch is not an experience to be merged with the last
+one; it is the same experience again, and what persists between the two is
+only what learning changed, the percepts and concepts (parameters). The
+memories of the experience, every store, begin empty.
+
+**The boundary.** One model-level operation, called at the start of each
+training epoch in `BasicModel.runEpoch` (split `train`), beside the
+existing per-epoch `expectation.reset()` and `what_memory.reset()`, which
+are the same idea for two smaller memories. It empties:
+
+1. LTM0 of every row a presentation wrote (`ORIGIN_CONVERSATION`); rows
+   given rather than experienced, `ORIGIN_PROVISIONED` and `ORIGIN_USER`,
+   stay, since `provision_ltm` runs once. `LTM0.reset` where nothing is
+   provisioned, `clear_origin` otherwise; Codex chooses and writes why.
+2. LTM1 of every relation whose arguments are cleared LTM0 occurrences;
+   relations between concepts (`relate`) are concept structure and stay.
+3. MTM entirely (`restore(None)`): its identities were stitched from the
+   cleared occurrences. The cover cursor `_document_covers`, the thought
+   document-end flags, the forgetting counters (`forget_*`), the
+   consolidation recurrence record (distinct covers per concept) and any
+   other host-side cache holding an occurrence reference, which Codex
+   audits and lists in the receipt. Recurrence and promotion therefore
+   credit distinct documents within one presentation only; epochs add none.
+4. STM is per-sentence state and needs nothing.
+
+Direct training loops that re-present a source without `runEpoch`
+(`test_mm_xor._fit_xor`, the bootstrap certificates that present four
+documents three times) call the same boundary between presentations. A
+reread *within* one presentation is a real experience and keeps today's
+behavior: the address finds the row, poles join, `witness_count` grows;
+`test_four_occurrences_after_four_hundred_presentations_and_full_upsert`
+remains the store-level contract for that case and says nothing about
+training.
+
+**The cover concept persists; the cover row does not.** The cover is a
+concept and concepts never die; its seat could not be reused anyway
+(`ConceptAllocator.new_concept` is monotonic and `drop` keeps the row). So
+the model keeps a map from document to cover symbol, checkpointed beside
+`cover_rng_state`; `open_cover` mints only for a document not in the map,
+and after the boundary writes the document's cover row afresh at the same
+address `('cover', domain, symbol)`, with the new presentation's `.when`,
+so the segment it heads is whole. Concept reclamation leaves mapped cover
+concepts alone. One cover per book, for the life of the model.
+
+**Capacity, sized for one presentation.** Concept seats: admitted words,
+plus one cover per distinct document across the splits a fixture presents,
+plus the concepts its closes mint, plus the fixed partition's slack; LTM
+rows: one presentation's rows plus the provisioned seed. Each value is
+written beside its derivation; nothing is derived from an epoch count. The
+18 (`XOR_grammar`) and 16 (`MM_xor_loopback`) are recomputed on that basis,
+the three eight-seat `MM` fixtures are checked against it (four words and
+four covers fill eight exactly, so any minted concept needs a larger
+construction value with its justification), and the 400-epoch XOR fixture
+needs its four covers and no more. Resizing at runtime stays forbidden;
+headroom is preallocated at construction (§13 of the context spec).
+
+**Ports.** The reread probe in `test_operators_round4a0` describes the
+boundary: a second presentation after it has 16 rows again, the same four
+cover symbols, witness counts of one. [Amended 2026-10-24, §50: "16"
+described the retained draw's rows; the probe pins the four covers, four
+estimates and four observations and leaves the thought count to the live
+reading, which may lawfully be zero.] The retained 28-row assertions are
+the record of the behavior this decision replaces. Line 6's receipt gains
+the boundary's audit list; the repair freeze follows the remaining sweep
+ports (the prepared-answer lift-inverse fixtures, the toy decoder
+signatures, the compiler dead-token repair, the aligned-carrier bank
+condition) under §42's protocol: one lesson smoke, one freeze on the
+sweep's hash, scoped repair gates, no second sweep unless Alec asks.
+
+## 46. Presentation-boundary code audit and implementation (Codex, 2026-10-24)
+
+Read §§44–45 before continuing. §45's empty-memory boundary supersedes
+refresh-in-place; the unchanged store-level re-witnessing tests still describe
+reads inside a presentation. `BasicModel.begin_presentation` is the one
+model operation, called only at a training epoch's start (`optimizer` present,
+`split == 'train'`) beside the existing discourse resets. Direct `_fit_xor`
+calls it before each presentation. The three-presentation bootstrap already
+uses `runEpoch`, so it receives the boundary there, without a second reset.
+
+Use `LTM0.reset` when every row is conversational. With given knowledge,
+use `clear_origin(ORIGIN_CONVERSATION)`: it preserves user/provisioned rows
+and their transitive dependencies, instead of leaving dangling references
+or deleting supplied knowledge. Such dependencies retain the existing
+withdrawal semantics; the receipt counts actual removals and survivors.
+The model clock stays monotonic. All forgetting counters restart. LTM1 is
+still today's native two-argument table, not the deferred tagged layout:
+remove edges using a cleared occurrence handle and dependent outer edges,
+while preserving relations between concepts. No derivation/layout change is
+introduced with this boundary.
+
+The cache audit includes MTM identities/timelines/access clocks; the cover
+cursor; thought document-end and forgetting flags; discourse chains,
+pending estimates and the staged symbol bank; thought history/address sources;
+recall history; returned understandings, sentence fields and answer/thought
+records; reference mention supervision; component innovations, pending
+recurrence witnesses and event charts; allocator occurrence testimony; and
+the occurrence-derived conceptual read cache. Learned component columns,
+concept and percept parameters, grammatical occupations, definitions, the
+optimizer and the cover map/generator remain. Forward-name and slot postings
+are invalidated after row deletion; retained leaf postings are rebuilt.
+The exact attributes and the corresponding regression coverage go in the
+receipt. STM still starts in the sentence driver.
+
+The cover map belongs to LTM0 beside its existing generator. Its string
+document digests and native symbols use the existing non-tensor semantic
+sidecar (an optional validated field, with an empty legacy default); the
+generator remains in `state_dict`. This avoids a variable-size tensor
+column or an invented capacity. A mapped document reuses its concept and
+does not draw RNG. The new presentation writes a fresh row with a fresh
+`.when`; the cover's address uses its stable symbol as the content key so
+learning its vector cannot change its address. Reclamation explicitly
+protects mapped cover concepts even between presentations with no cover row.
+Direct cover fixtures will name their documents; the former fresh-cover
+on-reread assertion is ported to the decided same-book identity.
+
+The previous sweep repairs remain in the working tree. Their earlier
+development logs, the native answer-credit timeout, all failed freezes and
+the 28-row behavior are retained. Capacity derivations and development
+results follow in the next dated section before the one smoke and repair
+freeze. No publication or item-3.0 work is authorized by this change.
+
+
+## 47. Presentation capacities and development ports (Codex, 2026-10-24)
+
+The source-address audit calls `Occurrence.stage_sources` with the loaded XOR
+split addresses. Train, validation and test resolve to the **same four document
+keys**: `capacity-sources.json` retains each key and digest. A direct-input
+four-row fixture also supplies four immutable document keys. Neither the three
+bootstrap presentations nor 400 optimizer epochs multiplies that inventory.
+
+Recompute the construction sizes from four admitted words, four covers and room
+for eight operand concepts: each of the four two-word closes can require its two
+arguments to be seated. The root's Part edge does not itself need a bank seat
+(`PartClosing.prepare(..., as_argument=False)`); existing named arguments reuse
+their native seats. This is declared headroom for these presentations, not a
+claim of unbounded capacity for arbitrary later vocabulary or readings. If a
+new workload exceeds it, the existing preflight still fails loudly.
+
+- `XOR_grammar`: keep **18 = 4 words + 4 covers + 8 argument seats + 2 partition
+  slack**. `_order_caps()` is `(6, 3)`, with nine tail seats: four words leave
+  two order-0 seats unused, three covers fit order 1 and the fourth takes the
+  first tail seat, leaving eight for arguments of either order.
+- `MM_grammar`: **20 = 4 + 4 + 8 + 4 partition slack**, replacing eight.
+  Its partition is `(8, 4)` with eight tail seats; four unused order-0 seats
+  cannot substitute for an order-1 argument. This covers the three formerly
+  eight-seat definition/word/object-leaf fixtures, plus the same-config addendum
+  and direct training loop. The addendum's capacity parameter becomes 20;
+  its four-word, no-letter and content assertions stay.
+- `MM_xor_loopback`: **20 = 4 + 4 + 8 + 4 partition slack**, replacing the
+  historical 16, whose `(8, 4)` partition had only four tail argument seats.
+  Both configurations keep the eight-position output and all event widths.
+
+These are preallocations at construction, not resizes. There is no new numeric
+knob, seed, budget, forcing or objective. The former 18/16 calculations and the
+28-row reread are retained as superseded evidence. The one-presentation LTM
+capacity is unchanged; the boundary prevents rows accumulating across epochs.
+
+The round4a0 probe now selects the same four observation addresses after each
+training presentation, requires a new `.when`, exactly sixteen rows, the same
+four cover symbols, and witness count one on every row. Its old within-run
+`when` and two-witness expectations are replaced only at this epoch probe;
+`test_four_occurrences_after_four_hundred_presentations_and_full_upsert` stays
+byte-for-byte unchanged. Direct `open_cover` fixtures now supply the document
+identity they previously implied. The cursor reread assertion becomes the same
+cover; its row/address immutability checks remain.
+
+Development retains two new-test setup failures: the first mistakenly treated
+allocator `testimony_seen` as a set instead of its native dictionary; the second
+used an invented `_recall_history` rather than the production
+`_what_recall_sentence_history`. The fixture now uses the actual owners. These
+are same-round setup corrections, not changes to production semantics or any
+pre-existing assertion. All ten new boundary cases then pass. The earlier
+cover, consolidation and live reread runs are development observations only;
+source changes during development are recorded by the harness, never promoted
+as frozen gates. The exact ledger records every old-to-new assertion and every
+fixture edit; no test is retired.
+
+## 48. Retained presentation replay and the sixteen-row question (Codex, 2026-10-24)
+
+The new boundary and persistent cover map are implemented under §45. A fresh
+unforced development draw of the revised round4a0 probe retains **twelve rows**
+after each presentation, so the explicit sixteen-row assertion fails. The
+failure is retained in `sweep/development/presentation-final-dev`; the initial
+RNG is replayed without changing source or keep in `presentation-row-probe`,
+with both trials and their R/P/A components, and in `presentation-row-detail`,
+which observes the closing query and every written row. This fixture does not
+call `ReferenceClose.preview`; its capture has the initial RNG and complete
+journal outcomes, not a falsely claimed initial preview/model snapshot.
+
+Both kept readings compose `disjunction`. The first presentation ties R+A in
+all four rows and keeps greedy. The second keeps greedy on a tie in row 0 and
+on lower A in rows 1–3; R is zero in both trials throughout. Each committed
+field is an assertive idea with evidence `(1, 0)`, no open slots and no closing
+query. `ThoughtClosing.close` therefore starts no episode and writes no
+thought. The twelve rows are four covers, four estimates and four observations.
+The boundary removes all twelve, the same four cover symbols survive, all
+observation addresses are reused, all presentation times advance, and every
+new row has witness count one. The retained diagnosis is
+`presentation-row-diagnosis.json`; the old 16-to-28 draw stays unchanged.
+
+This is a lawful live reading, not a boundary omission: no decision requires a
+thought for a closed assertion. **Question for Alec through Claude:** may the
+probe require exactly four covers, estimates and observations, permit the
+question/inference rows actually produced by the live thought path, and require
+witness one on every retained row? Recommendation: accept that port, preserving
+the cover identities, observation addresses and advanced-time checks. Recompute
+the second presentation's observation indices because its live thought count
+can differ. `proposed-presentation-row-port.patch` gives the exact unapplied
+change. Sixteen is explicit in §45 and the hand-off, so it is not silently
+changed under §39. No keep, grammar, seed or thought forcing is proposed.
+The repair freeze and its one smoke remain held for this answer; independent
+repair development continues.
+
+The cache audit additionally found `_last_sentence_credit` (bind handles),
+`_last_closing_thoughts` (result witnesses), and `_thought_ordinals` (source
+addresses and presentation counters). The boundary now clears them and the new
+cache regression seeds and checks all three. Verb/modal group witnesses and
+reports also clear; their learned assignments, used bases and parameters stay.
+
+## 49. Remaining compiler repair and the native-operand port (Codex, 2026-10-24)
+
+The retained MM training draw reaches a second compiler defect after the
+preallocation repair: during reverse-mode tracing of a nested reconstruction
+branch, `linalg.solve` introduces an implicit `_linalg_check_errors` effect.
+AOT adds `tangents_token` to the branch signature without passing it (fifteen
+placeholders, fourteen arguments). `nested-token-graphs/0.py` and its JSON
+retain the failing signature. A diagnostic replacing that solve by
+`solve_ex(check_errors=False)` plus an explicit tensor status assertion passes
+the retained draw. `MeaningAction` now uses that equivalent solve and loud
+failure check; it changes no inverse, gradient boundary, backend or compiler
+global. The actual production repair passes the same MM training case in
+`presentation-independent-final`. The earlier dead forward-token normalization
+in `CompilerEffects` remains narrowly scoped and separately tested.
+
+The new focused nested-loop gradient certificate exposed its own setup issue:
+PyTorch requires both branches' gradient outputs and the loop's carried
+parameter gradients to have the same strides. Its unused-parameter branch
+first made a contiguous zero gradient, unlike the inverse's basis gradient.
+Making both branches exercise the inverse fixes the branch mismatch; the loop
+still requires the basis parameter's fixture layout to match that gradient.
+The fixture now uses that layout, with the same parameter values, selected
+branch, expected output and every output/gradient assertion. Both failed setup
+runs remain retained. No production stride change is made.
+
+With twenty native seats, the MM addendum's captured close seats an object at
+its parsed order zero. The assertion that every newly seated concept has
+`source_order > 0` was not a native-concept contract: completed arguments can
+have that order, without becoming letter inventory. Port it to require the
+allocator's `concept` type. Its four word identities, no-letter allocation,
+existing native Part symbol and full-width checks stay. Both configurations
+then pass in `presentation-final-dev`. This assertion port is listed verbatim
+in the receipt under §39; no grammar order, fixture word order or forcing is
+changed. The three formerly eight-seat MM fixtures retain every assertion.
+
+The final cache pass also clears the public thought result `_last_what_thinking`
+and the row-selection cache `_recall_brackets`. The truth assessment contains
+only three summary scalars, and other kept diagnostic costs/chooser counts
+contain no occurrence handles; they need no memory teardown. The machine-readable
+`presentation-audit.json` names every cleared owner and preserved state.
+
+Development completion for §49: the corrected focused inverse output/gradient
+case and the full boundary file pass **13/13** in `presentation-unit-final`,
+with source unchanged. The preceding `presentation-independent-final` has
+thirteen passes (including the native MM training replay) and the retained
+fixture-stride failure. These are development results only. The full exact
+port ledger, construction derivations, cache audit and every raw outcome are
+linked from `sweep/prepared-repair/README.md`. §48's answer remains required;
+no smoke, repair freeze, second sweep or publication is claimed.
+
+## 50. Claude's review of the boundary round (§§46–49) — 2026-10-24
+
+Reviewed: `PresentationMemory.begin` and its `runEpoch` call, the
+`DocumentCover`/`Layers`/`ConceptForgetting` diffs, `LTM1.retain`, the
+three configuration changes, the complete test diff (eleven assertion
+ports, eighteen fixture ports, three renames, two new files, nothing
+retired), the prepared-repair receipt with its audit list and derivations,
+and the development results (143 cases: 140 passed, one skip, the two
+failures §48 and §49 account for; the focused rerun 13/13).
+
+**Accepted as §45 asked.** One eager operation, `BasicModel.begin_presentation`,
+at a training epoch's start beside the two older per-epoch resets; direct
+`_fit_xor` calls it; the bootstrap receives it through `runEpoch`. LTM0 by
+`clear_origin(ORIGIN_CONVERSATION)` when given rows exist, else `reset`;
+LTM1 edges removed transitively through `retain`, which never renumbers its
+symbol-keyed rows, so concept relations survive byte for byte; MTM emptied;
+the cover cursor, forgetting counters, recurrence record, allocator
+testimony, component innovations, resolver mentions, discourse and thought
+caches, and the verb/modal group witnesses and reports cleared while learned
+assignments, bases and every parameter stay (the test compares all named
+parameters exactly). The boundary refuses inside a live sentence. The cover
+concept persists through a document-digest map on LTM0 in the semantic
+sidecar (validated: 64-hex keys, positive unique symbols, empty legacy
+default), with the stable symbol as the row's content key so learning the
+vector cannot move the address; a mapped book draws no RNG; reclamation
+protects mapped concepts even with no row. §45 said "beside `cover_rng_state`";
+the sidecar is the right home, since the state envelope is tensor-only.
+
+**Capacities.** The formula is words + distinct books + eight argument seats
+(two per two-word close, the maximum the closes can mint) + the fixed
+partition's slack, each value written beside its derivation: 18, 20, 20.
+`MM_grammar` moves from the eight seats it has had since the §14 addendum;
+that configuration was never fixed by Alec, and "just preallocate more"
+covers it. The 400-epoch fixture needs its four covers and no more.
+
+**The other repairs** are each a port to the decided mechanism, not a
+weakening: the prepared-answer fixtures rebuilt on union centroids and the
+determiner kernel after the additive lift inverse's retirement, with the
+answer loss now asserted to leave the operator's reconstruction-owned
+parameters untouched (the 2026-10-01 ownership decision, which the old
+"any gradient" assertion contradicted); the aligned carrier now receives
+the bank whenever it has a meaning block (a swap omission); `solve_ex` with
+an asynchronous status assertion and `index_select` for a scalar group
+(equivalent inverse, loud failure, compiles in nested control flow); the
+Inductor dead-token normalization, scoped to an unused, already-unlifted
+placeholder and tested in isolation; the MM addendum's seated argument
+tested for the allocator's `concept` type instead of a positive parsed
+order, which was never a native-concept contract.
+
+**§48 answered: accept the port.** "Sixteen" in §45 described the retained
+draw's rows; it was never a decision. Thoughts are written only where a
+close leaves a query, so their number follows the kept reading and the
+probe must not pin it (no seed is selected to make four). The probe pins
+what the boundary owns: exactly four covers with the same four symbols,
+four estimates, four observations at the same addresses with new `.when`,
+any other rows of kind question or inference, witness count one on every
+row. §45's wording is amended in place.
+
+**One finding, to fix before the freeze.** §45 requires every driver that
+re-presents a source without `runEpoch` to call the boundary; Codex
+applied this to `_fit_xor` only. Three drivers loop presentations through
+`runBatch` with no boundary: `test/constituent_experiment.py` (`for epoch in
+range(EPOCHS)`, the stage-4e placements), `test/attention_curriculum_gates.py`
+(`for epoch in range(epochs): present(model, stage, train=True, …)`), and
+`MathChainTraining.present` for a training split presented more than once
+(it resets `expectation` and `what_memory` itself, mirroring the old
+`runEpoch`, and stops there). Each calls `model.begin_presentation()`
+where a training presentation begins and never before an evaluation
+presentation, which must read the epoch's store; Codex grep-audits the
+remaining `runBatch` loops in `bin/` and `test/` and lists them in the
+receipt. The six placements are not rerun: they failed upstream of memory
+(no case value reached a kept event), they already belong to item 0, and
+item 0's retries will run under the boundary; their receipts gain the
+caveat that memories accumulated across their epochs.
+
+**Verdict.** Build and ports accepted; two small changes (the §48 port and
+the driver boundary calls), then §42's protocol unchanged: one short native
+lesson smoke, one repair freeze on the sweep's base, the scoped selections
+on that hash, no second sweep. The failed sweep stays the record. Then the
+whole-iteration review through Alec and, if green, publication closes 3.5.
+Watch items, not findings: `torch._assert_async` is untested on MPS here
+(the suite pins CPU); `CompilerEffects` reaches into `torch._functorch` and
+`compile_fx_inner`, so it is re-verified on any torch upgrade.
+
+
+## 51. Presentation-driver completion and approved probe — Codex, 2026-10-24
+
+Read §50 before changing the source. Apply the retained §48 patch exactly:
+four covers with the same symbols, four estimates, four observations with the
+same addresses and advanced `.when`, any remaining rows only question or
+inference, and witness one on every row. The old failures and keep probe stay.
+No thought count, seed, closure forcing or budget is selected.
+
+The requested boundaries are at `constituent_experiment`'s training epoch,
+`attention_curriculum_gates`' training epoch and `MathChainTraining.present`
+when both its optimizer and training split are present. The audit found the
+same missing boundary in `attention_field_gates`, `phase_experiment`,
+`np_experiment`, `identity_measurement`, `identity_experiment`, and the training
+word-bucket benchmark. The benchmark clears at the start of a corpus traversal
+(or each synthetic presentation), not at every brick. All evaluation paths
+keep the preceding training store; document premises and questions share one
+presentation. NP's earlier-stage RNG traversal does not present data and gains
+no boundary.
+
+Repeated complete-batch unit drivers also call the operation, with their
+assertions unchanged. The [112-call audit](../benchmarks/2026-10-24-item3-5-iteration2/sweep/development/runbatch-audit.json)
+records every direct call and its enclosing loops: 11 driver sites, 20 unit
+driver sites, 36 evaluation/ingestion calls, 40 single native calls and five
+calls continuing one presentation or using independent models. Indirect
+bootstrap, ordinary math-chain and `_fit_xor` owners are listed separately.
+The store-level 400-presentation upsert certificate is unchanged. A new
+multi-document driver regression checks one clear per training pass and
+preservation for evaluation. No assertion in an existing test is changed by
+these driver edits.
+
+Add the epoch-accumulation caveat to each of the six placement receipts and
+the aggregate receipt. Their raw records, fixed budgets and item-0 status
+remain. They are not rerun; item 0's retries use the boundary. The accepted
+cache teardown, cover map, capacities, inverse/compiler repairs and other
+ports from §§46–49 are unchanged.
+
+Development checks and one final short native lesson precede a single repair
+freeze on `0bd65c5e2c`. Run only the scoped repair selections on that hash,
+retaining every result; the failed full sweep remains the one sweep. The
+whole iteration then returns through Alec for Claude's review. No publication,
+WikiOracle bump or item-3.0 work is authorized in this round.
+
+
+## 52. Per-presentation prediction-count port — Codex, 2026-10-24
+
+The driver check completes 37 cases: 33 pass and four slow cases are skipped.
+Run those four explicitly with `RUN_SLOW=1`: three pass, and the expectation
+toggle test fails its `predicted_targets - count == int(enabled)` check with
+`2 - 0 == 1`. Its initial model, process/generator RNG, failure state and full
+log are retained in `sweep/development/presentation-drivers-slow-01*`.
+
+The boundary clears the cover cursor. `DocumentCover.begin_forward` then
+includes the re-written cover in the predictor's context before either of the
+two sentence targets. A training presentation therefore has two predictions
+when enabled and zero when disabled. This is the same cover contribution
+already accepted for the native-runtime expectation count in §50; suppressing
+it would reverse the cover/context decision. Under §39, port only the toggle
+assertion's right-hand side from `int(enabled)` to `2 * int(enabled)`, and add
+its count explanation. Owner identity, nonzero input loss, enabled/disabled
+parameter changes and optimizer ownership assertions remain verbatim. No
+production change follows this failure. This is the sole additional assertion
+port following the §50 acceptance; it qualifies §51's initial unchanged-
+assertion statement.
+
+Replay the failed initial process and corpus-generator states on this port:
+**1/1 passes**, recorded as `presentation-driver-count-replay`. The three
+other slow driver cases passed on their first draw. The separate final native
+lesson smoke precedes the freeze; no development result supplies a frozen
+pass. The six placements remain untouched.
+
+The final pre-freeze native lesson, `test_kept_readings_alone_supply_occupation_counts`,
+passes **1/1** with both paired training trials and the kept occupation checks
+unchanged. `presentation-final-smoke` retains its source guard, initial state,
+process log and result. The repair is ready for its single source freeze;
+the scoped runner refuses source changes or a second invocation of a completed
+group. Development passes are not promoted to frozen gates.

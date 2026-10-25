@@ -101,7 +101,10 @@ class VerbGroups(nn.Module):
 
     def forward(self, group):
         eye = torch.eye(self.vectors.shape[-1], device=self.vectors.device, dtype=self.vectors.dtype)
-        selected = householder(self.vectors[group.clamp(0, self.capacity-1)])
+        # Keep a scalar group as a tensor index inside nested cond/while
+        # graphs; scalar subscription otherwise extracts an unbacked integer.
+        vectors = self.vectors.index_select(0, group.clamp(0, self.capacity-1).reshape(-1))
+        selected = householder(vectors.reshape(*group.shape, *self.vectors.shape[1:]))
         return torch.where((group >= 0)[..., None, None], selected, eye)
 
     def observe(self, verb, occurrence, residuals, current):
@@ -229,7 +232,12 @@ class MeaningAction(nn.Module):
             action = (q * w.exp()[..., None, :]) @ q.transpose(-1, -2)
             mask = present[..., :, None] & present[..., None, :]
             restricted = torch.where(mask, action[..., None, :, :], 0.) + torch.diag_embed((~present).to(value))
-            changed = torch.linalg.solve(restricted, chart[..., None])[..., 0]
+            # Keep the solve and its failure check tensor-valued. The implicit
+            # linalg error effect adds an unthreaded token when AOT replays a
+            # nested reconstruction branch during backward.
+            solved, info = torch.linalg.solve_ex(restricted, chart[..., None], check_errors=False)
+            torch._assert_async((info == 0).all(), 'meaning action inverse is singular')
+            changed = solved[..., 0]
         else:
             projected = (q.transpose(-1, -2)[..., None, :, :] @ chart[..., None])[..., 0]
             changed = (q[..., None, :, :] @ (projected*w.exp()[..., None, :])[..., None])[..., 0]

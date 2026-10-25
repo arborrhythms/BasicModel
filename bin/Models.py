@@ -9556,7 +9556,9 @@ class BasicModel(BaseModel):
                                    else bank.case_bank.detached()),
                         whole_bank=None if bank is None else bank.form_wholes,
                         initial_depth=occupied.long().sum(-1),
-                        require_symbols=not self._aligned_serial_word_mode(),
+                        require_symbols=(not self._aligned_serial_word_mode()
+                            or (bank is not None and bank.meaning_start is not None
+                                and bank.meaning_start < bank.codes.shape[-1])),
                         constituents=None if structure is None else structure.constituents,
                         constituent_valid=None if structure is None else structure.constituent_valid,
                         constituent_families=None if structure is None else structure.constituent_families,
@@ -11990,6 +11992,9 @@ class BasicModel(BaseModel):
             from torch._dynamo.backends.registry import lookup_backend
             from torch._functorch import config as aot_config
             compiler = lookup_backend(backend)
+            if backend == "inductor":
+                from CompilerEffects import compile_inductor
+                compiler = compile_inductor
 
             def compile_reconstruction(graph, inputs):
                 # Read-only operator diagnostics read this graph more than once.
@@ -15324,6 +15329,11 @@ class BasicModel(BaseModel):
                     break
             self._thread.join(timeout=2.0)
 
+    def begin_presentation(self):
+        """Discard experience memory before another training presentation."""
+        from PresentationMemory import begin
+        return begin(self)
+
     def runEpoch(self, optimizer=None, batchSize=10, split="train",
                  max_batches=None):
         """Run one epoch over the dataset (training if optimizer given, eval if None).
@@ -15372,6 +15382,8 @@ class BasicModel(BaseModel):
 
         self.train(training)
         self.outputSpace.clearBatchResults()
+        if training and split == 'train':
+            self.begin_presentation()
         ss = self.symbolSpace
         if ss is not None and getattr(ss, 'expectation', None) is not None:
             ss.expectation.reset()

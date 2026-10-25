@@ -1186,3 +1186,11 @@ no value is clipped. Run 67 passes the 19 cover/inverse checks and the
 native lesson smoke. Run 69 passes 56 meaning-kernel, retained and free
 reconstruction, and surface checks (3 existing slow skips). Iteration §24
 records the separate compound/phase contract question submitted to Alec.
+
+## 17. Pointer: presentations and covers (2026-10-24)
+
+Alec decided that memories are deleted between training presentations of
+the same source; the cover concept persists per document and its row is
+rewritten into the empty store at each presentation. The boundary, its
+audit list and the capacity rule are in the iteration spec
+(`2026-10-23-verb-and-modal.md` §45).

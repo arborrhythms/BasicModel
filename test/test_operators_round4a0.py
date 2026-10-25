@@ -146,26 +146,33 @@ def test_legacy_checkpoint_rekeys_native_and_typed_edges():
     assert encoder.decode_index(restored.when[:2]).tolist() == [0, 1]
 
 
-def test_live_gate_reread_changes_clock_but_not_address_or_when():
+def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
         optimizer = model.getOptimizer(lr=.01)
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
         store = model.symbolSpace.ltm_store
-        rows = torch.arange(len(store))
+        rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
         assert len(rows) == 4
         expected = {sentence_key(tuple(text.split())) for text in
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
         assert {store.content_key(int(row)) for row in rows} == expected
         addresses, bands = store.address_keys[rows].clone(), store.when[rows].clone()
-        witnesses = store.witness_count[rows].clone()
+        covers = {store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
+                  if store.row(i)['kind'] == 'cover'}
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
-        assert len(store) == 4
+        kinds = [store.row(i)['kind'] for i in range(len(store))]
+        assert {kind: kinds.count(kind) for kind in ('cover', 'estimate', 'observation')} == {
+            'cover': 4, 'estimate': 4, 'observation': 4}
+        assert set(kinds) <= {'cover', 'estimate', 'observation', 'question', 'inference'}
+        assert {store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
+                if store.row(i)['kind'] == 'cover'} == covers
+        assert len(covers) == 4
+        rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
         assert torch.equal(store.address_keys[rows], addresses)
-        assert torch.equal(store.when[rows], bands)
-        assert (store.witness_count[rows] > witnesses).all()
-        assert store.witness_count[rows].tolist() == [2] * 4
+        assert not torch.equal(store.when[rows], bands)
+        assert store.witness_count[:len(store)].tolist() == [1] * len(store)
     finally:
         model.End()
 

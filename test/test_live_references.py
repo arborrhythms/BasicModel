@@ -209,6 +209,7 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
     prior = torch.tensor([.2, .3, .4, .5])
     query = torch.nn.Parameter(prior.clone())
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
+                            _tree_layer=lambda arity: layer,
                             _compose_binary_rules=(SimpleNamespace(reference_roles=('argin1',), reference_modes=(('argin1', 'particular'),)),),
                             _compose_unary_rules=(), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
@@ -306,8 +307,9 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     owner.mtm.open(occurrence, kind=None, when=0, value=prior)
     frame = SituationAddress(occurrence).read(store)
     stage = MTMOverlay.stage
-    def held_identity(resolver, frames, like, *, journal, words):
-        return stage(resolver, [(frame,)] * len(frames), like, journal=journal, words=words)
+    def held_identity(resolver, frames, like, *, journal, words, timelines):
+        return stage(resolver, [(frame,)] * len(frames), like, journal=journal, words=words,
+                     timelines=timelines)
     monkeypatch.setattr(MTMOverlay, 'stage', staticmethod(held_identity))
 
     def held(active, like):

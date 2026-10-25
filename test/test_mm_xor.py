@@ -147,6 +147,7 @@ class TestMMXorConvergence(unittest.TestCase):
                 warnings.filterwarnings("ignore")
                 loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
                 for _ in range(epochs):
+                    m.begin_presentation()
                     inp_items, out_items = next(iter(loader))
                     inp = m.inputSpace.prepInput(inp_items)
                     target = m.outputSpace.prepOutput(out_items)

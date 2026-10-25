@@ -215,7 +215,7 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
     from ReferenceContext import SituationAddress
     from DocumentCover import open_cover
     if not hasattr(f, 'cover'):
-        f.cover = open_cover(f.cs, f.store, stream=0)
+        f.cover = open_cover(f.cs, f.store, stream=0, document='timeline')
     clause=finish_clause(f.language,program,registry=f.registry)
     if question:
         clause=replace(clause,meaning=replace(clause.meaning,mode='interrogative'))

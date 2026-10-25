@@ -64,6 +64,7 @@ def protected_concepts(owner, store, retained=()):
                 protected.add(int(ref[1]))
     if store is not None:
         protected.update(_integers(store._semantic_rows))
+        protected.update(store._cover_symbols.values())
     interpretation = owner.__dict__.get('_interpret_operator')
     if interpretation is not None:
         protected.update(_integers(interpretation._pending))

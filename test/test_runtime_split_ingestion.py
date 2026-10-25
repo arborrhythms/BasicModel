@@ -68,6 +68,13 @@ def _model():
 
 
 class TestRuntimeSplitIngestion(unittest.TestCase):
+    def tearDown(self):
+        # Independent ingestion cases must not inherit another case's covers.
+        for model, _ in _CACHE:
+            model.End()
+            model.symbolSpace.soft_reset()
+        _CACHE.clear()
+
     @pytest.mark.usefixtures('eager_reading')
     def test_runepoch_runtime_split_no_raise(self):
         # Bug 1: this raised "runBatch: no batch_override supplied".

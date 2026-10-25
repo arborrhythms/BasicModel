@@ -128,7 +128,7 @@ def test_native_runtime_reports_pairs_without_accumulating_or_updating(tmp_path,
         assert discourse.consume_inter_loss() is None
         metrics = discourse.expectation_metrics()
         assert metrics["observations"] == 2
-        assert metrics["predicted_targets"] == 1
+        assert metrics["predicted_targets"] == 2  # The cover precedes the first sentence.
         assert metrics["activation_mse"] >= 0
         from ReferenceContext import SituationAddress
         assert all(isinstance(value, SituationAddress) for chain in discourse._inter_context for value in chain)
@@ -207,6 +207,7 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
     assert model.symbolSpace.expectation is None
     try:
         for enabled in (True, False, True):
+            model.begin_presentation()
             model.set_sentence_expectation(enabled)
             discourse = model.symbolSpace.expectation
             assert 'word' not in discourse.enabled_levels
@@ -220,7 +221,8 @@ def test_enable_after_disabled_construction_joins_optimizer_and_off_keeps_input_
             assert result.lossIn is not None
             changes = [not torch.equal(p, old) for p, old in zip(parameters, before)]
             assert any(changes) if enabled else not any(changes)
-            assert discourse.expectation_metrics()["predicted_targets"] - count == int(enabled)
+            # Each presentation starts with a cover, then both sentence targets.
+            assert discourse.expectation_metrics()["predicted_targets"] - count == 2 * int(enabled)
             owned = {id(p) for group in optimizer.param_groups for p in group["params"]}
             assert all(id(p) in owned for p in parameters)
     finally:
@@ -270,7 +272,8 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         assert all(row is not None and row >= before for row in roots)
         assert len({int(store.sentence_index[row]) for row in roots}) == 2
         assert all(store.row(row)['kind'] in ('observation', 'question') for row in roots)
-        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference') for row in rows)
+        assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference', 'cover') for row in rows)
+        assert sum(row['kind'] == 'cover' for row in rows) == 1
         assert not any(row['kind'] == 'estimate' for row in rows)
         assert all(int(store.meaning_of(i).role_mask.sum()) in (1, 3) for i in range(before, len(store)))
         assert not hasattr(store, 'clause_derivation')

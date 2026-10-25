@@ -30,17 +30,17 @@ def test_cover_generator_is_global_rng_neutral_advances_and_restores():
     resolver, store, _ = fixture()
     owner = resolver.components.owner
     global_state = torch.get_rng_state().clone()
-    first = open_cover(owner, store, stream=0)
+    first = open_cover(owner, store, stream=0, document='first')
     checkpoint = copy.deepcopy(store.state_dict())
     metadata = copy.deepcopy(store.semantic_extras())
-    second = open_cover(owner, store, stream=0)
+    second = open_cover(owner, store, stream=0, document='second')
     first_value = store.raw_meaning_of(store.location(first)).roles[0]
     second_value = store.raw_meaning_of(store.location(second)).roles[0].clone()
     assert not torch.equal(first_value, second_value)
     restored = LTM0(store.nDim, capacity=store.capacity)
     restored.load_state_dict(checkpoint)
     restored.load_semantic_extras(metadata)
-    resumed = open_cover(owner, restored, stream=0)
+    resumed = open_cover(owner, restored, stream=0, document='second')
     torch.testing.assert_close(restored.raw_meaning_of(restored.location(resumed)).roles[0],
                                second_value, rtol=0, atol=0)
     torch.testing.assert_close(torch.get_rng_state(), global_state, rtol=0, atol=0)
@@ -50,7 +50,7 @@ def test_cover_generator_is_global_rng_neutral_advances_and_restores():
 def test_cover_never_certifies_a_proposition():
     from Queries import ThoughtLTMCapability
     resolver, store, _ = fixture()
-    cover = open_cover(resolver.components.owner, store, stream=0)
+    cover = open_cover(resolver.components.owner, store, stream=0, document='body')
     query = store.raw_meaning_of(store.location(cover))
     reader = ThoughtLTMCapability(store=lambda: store, equal=lambda *_: 1., tau_id=.9)
     for reference in (cover, query.role_refs[0]):
@@ -69,7 +69,7 @@ def test_full_store_boundary_pass_precedes_the_next_document_cover(monkeypatch):
     from test_forgetting import config
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    cover = open_cover(owner, store, stream=0)
+    cover = open_cover(owner, store, stream=0, document='first')
     for position in range(store.capacity-1):
         append(store, atoms[0], position=position)
     assert len(store) == store.capacity
@@ -93,7 +93,7 @@ def test_full_store_boundary_pass_precedes_the_next_document_cover(monkeypatch):
     assert latest(store, 0) != cover and int(store.forget_passes) == 1
 
 
-def test_cursor_writes_one_fresh_cover_before_each_document_and_reread():
+def test_cursor_reuses_the_book_cover_on_a_reread():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     # The same recent-address owner production uses; no word or target.
@@ -117,7 +117,7 @@ def test_cursor_writes_one_fresh_cover_before_each_document_and_reread():
     assert not owner.mtm.entries
     before = store.when.clone(), store.address_keys.clone()
     begin_sentence(model, 2, torch.tensor([True]))
-    assert latest(store, 0) not in (first, second)
+    assert latest(store, 0) == second
     torch.testing.assert_close(store.when[:5], before[0][:5], rtol=0, atol=0)
     torch.testing.assert_close(store.address_keys[:5], before[1][:5], rtol=0, atol=0)
 
@@ -126,11 +126,11 @@ def test_equal_time_boundary_and_two_streams_keep_exact_ownership():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     store._model_present = lambda: 7
-    a = open_cover(owner, store, stream=0)
+    a = open_cover(owner, store, stream=0, document='first')
     a_row = append(store, atoms[0])
-    b = open_cover(owner, store, stream=1)
+    b = open_cover(owner, store, stream=1, document='second')
     b_row = append(store, atoms[1], stream=1)
-    c = open_cover(owner, store, stream=0)
+    c = open_cover(owner, store, stream=0, document='third')
     c_row = append(store, atoms[2], position=1)
     membership = segments(store)
     assert membership[a_row] == {a} and membership[b_row] == {b} and membership[c_row] == {c}
@@ -148,7 +148,7 @@ def test_end_document_retires_only_tokens_introduced_in_its_segment():
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     covers, tokens = [], []
     for n in range(2):
-        covers.append(open_cover(owner, store, stream=0))
+        covers.append(open_cover(owner, store, stream=0, document=('body', n)))
         row = append(store, atoms[n], position=n)
         token = store.occurrence_of(row)
         tokens.append(token)
@@ -166,10 +166,10 @@ def test_end_document_retires_only_tokens_introduced_in_its_segment():
 
 def test_cover_concept_reads_only_its_segment_under_the_shared_meter():
     resolver, store, atoms = fixture()
-    cover = open_cover(resolver.components.owner, store, stream=0)
+    cover = open_cover(resolver.components.owner, store, stream=0, document='first')
     first = append(store, atoms[0])
     append(store, atoms[1], position=1)
-    open_cover(resolver.components.owner, store, stream=0)
+    open_cover(resolver.components.owner, store, stream=0, document='second')
     append(store, atoms[2], position=2)
     query = store.raw_meaning_of(store.location(cover))
     meter = QueryWorkBudget(1)
@@ -186,7 +186,7 @@ def test_cover_is_an_ordinary_recent_candidate_with_no_lexical_name():
     from test_medium_term_memory import mention
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    cover = open_cover(owner, store, stream=0)
+    cover = open_cover(owner, store, stream=0, document='body')
     frame = SituationAddress(cover).read(store)
     symbol = store.raw_meaning_of(store.location(cover)).role_refs[0][1]
     records = resolver.individuals(resolver.accessible((frame,)))
@@ -208,7 +208,7 @@ def test_cover_is_an_ordinary_recent_candidate_with_no_lexical_name():
 
 def test_cover_lookup_uses_the_index_and_charges_before_body_reads(monkeypatch):
     resolver, store, atoms = fixture()
-    cover = open_cover(resolver.components.owner, store, stream=0)
+    cover = open_cover(resolver.components.owner, store, stream=0, document='body')
     append(store, atoms[0])
     query = store.raw_meaning_of(store.location(cover))
     def forbidden(*args, **kwargs):
@@ -222,7 +222,7 @@ def test_cover_lookup_uses_the_index_and_charges_before_body_reads(monkeypatch):
 
 def test_cover_region_does_not_certify_unrelated_content():
     resolver, store, atoms = fixture()
-    cover = open_cover(resolver.components.owner, store, stream=0)
+    cover = open_cover(resolver.components.owner, store, stream=0, document='body')
     append(store, atoms[0])
     query = ConceptualMeaning.from_description(atoms[1])
     result = read(store, query, references=(cover,), max_records=20, work=QueryWorkBudget(20))
@@ -233,7 +233,7 @@ def test_forgetting_protects_a_cover_for_the_pass_that_drops_its_last_member():
     from Forgetting import forget
     from test_forgetting import config
     resolver, store, atoms = fixture()
-    cover = open_cover(resolver.components.owner, store, stream=0)
+    cover = open_cover(resolver.components.owner, store, stream=0, document='body')
     body = store.occurrence_of(append(store, atoms[0]))
     cfg = config(high_water=2/store.capacity, low_water=1/store.capacity, min_interval=0)
     forget(store, cfg, document_boundary=True)

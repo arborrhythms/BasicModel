@@ -361,17 +361,20 @@ def test_answer_path_modules_join_the_live_optimizer_and_move(synth_config):
     opt = m.getOptimizer(lr=1e-2)
     batch = _batch(m)
     # First step builds the modules and registers them; second step moves them.
+    m.begin_presentation()
     m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                batch_override=batch)
     ids = {id(p) for g in opt.param_groups for p in g["params"]}
     synth = m.synthesis_parameters()
     assert synth and all(id(p) in ids for p in synth)
     before = [p.detach().clone() for p in synth]
+    m.begin_presentation()
     m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                batch_override=batch)
     assert any(not torch.equal(p.detach(), b) for p, b in zip(synth, before))
     # Registration happens once: no duplicate groups on later steps.
     n_groups = len(opt.param_groups)
+    m.begin_presentation()
     m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                batch_override=batch)
     assert len(opt.param_groups) == n_groups
@@ -483,8 +486,10 @@ def test_what_report_separates_families_and_thinking(synth_config):
     m = _build(synth_config)
     opt = m.getOptimizer(lr=1e-3)
     batch = _batch(m)
+    m.begin_presentation()
     m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                batch_override=batch)
+    m.begin_presentation()
     m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                batch_override=batch, trial_mode="predict")
     with torch.no_grad():
@@ -509,6 +514,7 @@ def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(synth_config, 
     opt = m.getOptimizer(lr=1e-2)
     batch = _batch(m)
     for _ in range(2):                          # builds + trains the answer path
+        m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch)
     assert m.synthesis_parameters()
@@ -544,6 +550,7 @@ def test_synthesized_answer_checkpoint_reloads_into_a_fresh_model(synth_config, 
     # added later.
     opt2 = fresh.getOptimizer(lr=1e-2)
     n_groups = len(opt2.param_groups)
+    fresh.begin_presentation()
     fresh.runBatch(train=True, batchSize=2, split="train", optimizer=opt2,
                    batch_override=_batch(fresh))
     ids = {id(p) for g in opt2.param_groups for p in g["params"]}

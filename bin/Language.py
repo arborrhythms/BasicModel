@@ -4958,7 +4958,7 @@ class _BinaryGrammarOpAdapter(nn.Module):
         # Keep that established tensor kernel (and its selected-op gradient
         # path) intact; a layer that actually consumes a grammar context
         # overrides the base method and is routed through the public call.
-        if self.gl.meaning_layout is not None:
+        if getattr(self.gl, 'meaning_layout', None) is not None:
             return invoke_structural_face(self.gl, (left, right), context=context, phase='compose')
         if (getattr(type(self.gl), 'compose_from_grammar_context', None)
                 is getattr(GrammarLayer, 'compose_from_grammar_context', None)):
@@ -4992,7 +4992,7 @@ class _UnaryGrammarOpAdapter(nn.Module):
     def forward_with_grammar_context(self, value, *, context):
         _structural_face_phase(
             self.gl, (value,), context=context, phase='compose')
-        if self.gl.meaning_layout is not None:
+        if getattr(self.gl, 'meaning_layout', None) is not None:
             return invoke_structural_face(self.gl, (value,), context=context, phase='compose')
         if (getattr(type(self.gl), 'compose_from_grammar_context', None)
                 is getattr(GrammarLayer, 'compose_from_grammar_context', None)):

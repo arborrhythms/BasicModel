@@ -156,6 +156,7 @@ def run(args):
                 reset(model, len(batch))
 
             for epoch in range(1 if pilot else EPOCHS):
+                model.begin_presentation()
                 order = curriculum_order(train, rng)
                 if pilot:
                     order = order[:16]

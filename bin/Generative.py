@@ -28,7 +28,7 @@ def preserve_operator_activations(function):
         saved = {}
         for op in (*language._generate_binary_ops, *language._generate_unary_ops):
             for module in (op.modules() if isinstance(op, torch.nn.Module) else (op,)):
-                if 'activation' in vars(module):
+                if 'activation' in getattr(module, '__dict__', {}):
                     saved[id(module)] = (module, module.activation)
         try:
             return function(language, *args, **kwargs)

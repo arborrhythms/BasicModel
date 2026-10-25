@@ -167,6 +167,7 @@ def main():
                     print(json.dumps(progress[-1]), flush=True)
                     reset(model, len(batch))
                 for epoch in range(protocol['epochs']):
+                    model.begin_presentation()
                     for offset in range(0, len(train), protocol['batch_size']):
                         present(train[offset:offset+protocol['batch_size']], True, epoch)
                 torch.save(snapshot(), args.out/'trained.pt')

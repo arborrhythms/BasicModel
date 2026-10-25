@@ -55,10 +55,11 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nInputDim>12</nInputDim>
-    <!-- Four documents evaluated twice require 8 covers plus 4 words.
-         Fixed partition (8, 4) + tail 4 gives 8 order-1 seats; 15 gives 7.
-         Preallocated at construction; the eight-wide output stays unchanged. -->
-    <nVectors>16</nVectors>
+    <!-- Presentation preallocation: 4 words + 4 distinct book covers across
+         splits + 8 possible argument mints (2 per two-word close) + 4 unused
+         order-0 seats = 20. Fixed partition (8,4), tail 8; not epoch counts.
+         Derivation and scope: verb-and-modal plan section 47. -->
+    <nVectors>20</nVectors>
 	    <!-- nDim is the codebook prototype content width. The right-half
 	         loopback widening was retired in favour of per-order input
 	         sourcing on ConceptualSpace.forward. Raised 2→4 in lockstep

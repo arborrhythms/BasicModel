@@ -24,10 +24,13 @@ def decoder(monkeypatch=None):
         _generate_unary_rule_ids=torch.tensor([1]), _generate_unary_names=('toy_negate',))
     language.generate_policy_logits = MethodType(LanguageSpace.generate_policy_logits, language)
     language.choose_generate = lambda logits: logits.argmax(-1)
-    language.reverse_binary_step = lambda parent, *a, **k: (
-        parent*.25, parent*.75, torch.zeros(parent.shape[0], dtype=torch.bool))
-    language.generate_unary_step = lambda parent, *a, **k: (
-        -parent, torch.zeros(parent.shape[0], dtype=torch.bool))
+    def binary(parent, *args, return_status=False, **kwargs):
+        pair = (parent*.25, parent*.75)
+        return (*pair, torch.zeros(parent.shape[0], dtype=torch.bool)) if return_status else pair
+    def unary(parent, *args, return_status=False, **kwargs):
+        return (-parent, torch.zeros(parent.shape[0], dtype=torch.bool)) if return_status else -parent
+    language.reverse_binary_step = binary
+    language.generate_unary_step = unary
     model = SimpleNamespace(languageSpace=language)
     model._output_generate_walk = MethodType(BasicModel._output_generate_walk, model)
     return model, policy
@@ -40,8 +43,8 @@ def test_single_departure_replays_prefix_and_is_greedy_after_it(monkeypatch, com
     model, policy = decoder(monkeypatch)
     # This prefix/suffix test has one eligible departure. Sampling among
     # several alternatives is covered separately by the review §10 probe.
-    model.languageSpace.generate_unary_step = lambda parent, *a, **k: (
-        -parent, torch.ones(parent.shape[0], dtype=torch.bool))
+    model.languageSpace.generate_unary_step = lambda parent, *a, return_status=False, **k: (
+        (-parent, torch.ones(parent.shape[0], dtype=torch.bool)) if return_status else -parent)
     event = torch.tensor([[[1., 2.], [3., 4.], [0., 0.]],
                           [[1., 2.], [3., 4.], [0., 0.]]], requires_grad=True)
     def pair(event):

@@ -13,7 +13,8 @@ def test_provisioning_retains_completed_fields_and_shared_row_ids():
     definitions = store.relations('definition').tolist()
     assert len(asserted) == 3
     assert not definitions, "reading a form does not invent a DEF object"
-    assert len(store) == len(asserted)
+    assert len(store) == len(asserted) + 3
+    assert sum(store.row(i)['kind'] == 'cover' for i in range(len(store))) == 3
     for row in asserted:
         assert int(store.meaning_of(row).role_mask.sum()) in (1, 3)
         assert not hasattr(store, 'clause_derivation')

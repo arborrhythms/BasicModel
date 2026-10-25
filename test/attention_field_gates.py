@@ -135,6 +135,7 @@ def run(mode,destination,epochs,control=None):
                 with (destination/(stage['name']+'.jsonl')).open('w') as log:
                     inputs=model.inputSpace.prepInput(stage['fields'])
                     for epoch in range(epochs):
+                        model.begin_presentation()
                         model.train()
                         with lesson(model,stage):
                             model.runBatch(train=True,optimizer=optimizer,batchSize=4,

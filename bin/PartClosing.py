@@ -327,7 +327,8 @@ class PartClosing:
                 bases = ((0, caps[0]), (sum(caps), int(self.owner.nVectors)-sum(caps)))
             else:
                 rung = min(order, len(caps)-1)
-                bases = ((sum(caps[:rung]), caps[rung]),)
+                bases = ((sum(caps[:rung]), caps[rung]),
+                         (sum(caps), int(self.owner.nVectors)-sum(caps)))
             seat = next((base+i for base, size in bases for i in range(size)
                          if base+i not in occupied), None)
             if seat is None:

@@ -263,6 +263,8 @@ def run(args):
         try:
             for epoch,(phase,selected) in enumerate(plans):
                 training=phase=='train'
+                if training:
+                    model.begin_presentation()
                 for offset in range(0,len(selected),args.batch_size):
                     batch=selected[offset:offset+args.batch_size]; B=len(batch)
                     # The model sees only the public text and opaque document
