@@ -24,7 +24,7 @@ from identity_measurement import load_split, summarize
 
 
 def singleton_report(model):
-    path = ROOT/'doc/benchmarks/2026-10-15-item6-corrected-warmup/run_warmup.py'
+    path = ROOT/'test/fixtures/2026-10-15-item6-corrected-warmup/run_warmup.py'
     spec = importlib.util.spec_from_file_location('singleton_measurement', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

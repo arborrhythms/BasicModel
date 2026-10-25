@@ -6,8 +6,8 @@ import torch
 
 def test_observer_counts_detached_compose_calls(monkeypatch):
     root = Path(__file__).resolve().parents[1]
-    monkeypatch.syspath_prepend(str(root / 'doc/benchmarks/2026-10-03-operators-attention'))
-    monkeypatch.syspath_prepend(str(root / 'doc/benchmarks/2026-10-07-operators-final'))
+    monkeypatch.syspath_prepend(str(root / 'test/fixtures/2026-10-03-operators-attention'))
+    monkeypatch.syspath_prepend(str(root / 'test/fixtures/2026-10-07-operators-final'))
     from round2_score_probe import observe_score_function
     from Language import OperationSelectionLayer
     layer = OperationSelectionLayer(d_model=4, chooser='mlp')

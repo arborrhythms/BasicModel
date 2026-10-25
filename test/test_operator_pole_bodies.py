@@ -8,7 +8,7 @@ import torch
 def test_saved_pole_bodies_and_current_decided_semantics():
     import Language
     root = Path(__file__).resolve().parents[1]
-    saved = json.loads((root/'doc/benchmarks/2026-10-05-operators-update/pole-bodies.json').read_text())
+    saved = json.loads((root/'test/fixtures/2026-10-05-operators-update/pole-bodies.json').read_text())
     source = (root/'bin/Language.py').read_text()
     current = {node.name: ast.get_source_segment(source, node)
                for node in ast.parse(source).body if isinstance(node, ast.ClassDef)}

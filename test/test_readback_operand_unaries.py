@@ -12,7 +12,7 @@ import pytest
 def test_saved_roots_follow_operand_unaries(monkeypatch, compiled):
     import Models
     from Language import LanguageSpace, ConjunctionLayer, NotLayer
-    folder = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-03-item6-9-free-readback/xor-ownership'
+    folder = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-03-item6-9-free-readback/xor-ownership'
     saved = torch.load(folder/'geometry-start-stage-1.pt', weights_only=True)
     codes = {int(row): code for row, code in zip(saved['rows'], saved['codes'])}
     pairs = [(0, 1), (0, 2), (4, 1), (4, 2)]

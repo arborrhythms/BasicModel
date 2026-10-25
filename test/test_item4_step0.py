@@ -62,7 +62,7 @@ def test_enabled_prime_is_uncapped_for_every_candidate_menu(count):
 def test_episode_state_audit_does_not_materialize_sparse_capacity(monkeypatch):
     import importlib.util
     from pathlib import Path
-    path = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-08-math-chain-repair-2/closing_episode_state.py'
+    path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-08-math-chain-repair-2/closing_episode_state.py'
     spec = importlib.util.spec_from_file_location('sparse_episode_audit', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

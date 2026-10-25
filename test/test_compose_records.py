@@ -20,7 +20,7 @@ def test_retained_trial_reconstructs_every_admitted_leaf(committed):
     from pathlib import Path
     from SentenceAttention import SentenceField
     root = Path(__file__).resolve().parents[1]
-    folder = root / 'doc/benchmarks/2026-10-10-item6/identity-corpus/development/passive-role-prototype/biased-failure-replay'
+    folder = root / 'test/fixtures/2026-10-10-item6/identity-corpus/development/passive-role-prototype/biased-failure-replay'
     saved = torch.load(folder / 'failure-context.pt', weights_only=True)
     context = json.loads((folder / 'failure-context.json').read_text())
     orders = [r['source_order'] for r in context['records']]

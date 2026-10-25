@@ -14,7 +14,7 @@ def observer_class():
 
 
 def episode_observer():
-    path = ROOT/'doc/benchmarks/2026-10-08-math-chain-repair-2/episode_state.py'
+    path = ROOT/'test/fixtures/2026-10-08-math-chain-repair-2/episode_state.py'
     spec = importlib.util.spec_from_file_location('episode_footprint', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

@@ -13,8 +13,8 @@ import traceback
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT/'bin'), str(ROOT/'test'),
-    str(ROOT/'doc/benchmarks/2026-10-23-item3-5-step2c/development'),
-    str(ROOT/'doc/benchmarks/2026-10-21-item3-5-reference-reconstruction')]
+    str(ROOT/'test/fixtures/2026-10-23-item3-5-step2c/development'),
+    str(ROOT/'test/fixtures/2026-10-21-item3-5-reference-reconstruction')]
 import numpy as np
 import pytest
 import torch

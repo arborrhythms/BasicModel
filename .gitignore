@@ -23,3 +23,9 @@ data/*.kv
 
 # transient local test/verification artifacts
 scratch_*
+
+# Generated evidence and receipts stay local; regression fixtures live in test/fixtures.
+/doc/benchmarks/
+/doc/checkpoints/
+/evidence/
+/receipts/

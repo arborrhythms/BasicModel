@@ -30,7 +30,7 @@ def test_scorer_compiles_with_ordinary_parameter_gradients():
 
 def test_retained_two_word_scorer_preserves_candidate_differences():
     from pathlib import Path
-    path = (Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-10-item6'
+    path = (Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-10-item6'
             '/identity-rst/validation/retained-scorer.pt')
     saved = torch.load(path, map_location='cpu', weights_only=True)
     context, candidates = saved['context'], saved['candidates']

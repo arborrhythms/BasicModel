@@ -12,7 +12,7 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
     from DerivationReconstruction import inverse_step
     from Layers import cube_unchart
     saved = torch.load(Path(__file__).resolve().parents[1] /
-        'doc/benchmarks/2026-10-10-item6/identity-r2/validation/retained-trials.pt',
+        'test/fixtures/2026-10-10-item6/identity-r2/validation/retained-trials.pt',
         map_location='cpu', weights_only=True)
     model = make_model(tmp_path, monkeypatch)
     try:

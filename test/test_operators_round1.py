@@ -46,7 +46,7 @@ def test_attention_uniform_departure_and_no_pathwise_credit(monkeypatch):
 def test_saved_review22_miss_has_exact_argmin_precedence():
     from Language import ConjunctionLayer, LanguageSpace
     from DecompositionChooser import DecompositionChooser
-    path = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-05-operators-update/review22-miss.json'
+    path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-05-operators-update/review22-miss.json'
     saved = json.loads(path.read_text())
     bank = torch.tensor(saved['codes'])[None].expand(4, -1, -1)
     roots = torch.tensor(saved['roots'])

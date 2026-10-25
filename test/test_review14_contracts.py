@@ -141,8 +141,8 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
     from pathlib import Path
     from bounded_tests import run_guarded, GIB
     root=Path(__file__).resolve().parents[1]
-    receipt=root/'doc/benchmarks/2026-10-07-operators-final'
-    prior=root/'doc/benchmarks/2026-10-03-operators-attention'
+    receipt=root/'test/fixtures/2026-10-07-operators-final'
+    prior=root/'test/fixtures/2026-10-03-operators-attention'
     env=os.environ.copy()
     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),

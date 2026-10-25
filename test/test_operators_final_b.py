@@ -85,7 +85,7 @@ def forced_prefix_certificate():
     from Language import OperationSelectionLayer, LanguageSpace
     from test_mm_xor import _fresh_model
     from MereologicalCodes import MereologicalCodes
-    path = Path(__file__).resolve().parents[1] / 'doc/benchmarks/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
+    path = Path(__file__).resolve().parents[1] / 'test/fixtures/2026-10-06-operators-round2c/disjunction-initial-rng.pt'
     original_forward, original_attend = OperationSelectionLayer.forward, OperationSelectionLayer.attend
     commit, begin = BasicModel._commit_sentence, MereologicalCodes.begin_forward
     reads, snapshots = [], []
