@@ -3245,3 +3245,62 @@ source's two red results stay failed historical records; no pass is promoted
 from them. Todo's head and receipt pointers now identify this source. Return
 through Alec for Claude's whole-iteration LAND review. No publication,
 WikiOracle bump or item-3.0 work; no LAND verdict is asserted here.
+
+## 62. Claude's LAND review of `75345f891e` — 2026-10-24
+
+Reviewed: §§58–61, the second repair commit (three source/test files), the
+two receipt-only commits after it, the repair-02 receipt and
+`summary.json` (every group `exit 0`, `selected == completed`, `failed: []`,
+source `75345f891e` on each), `frozen-source.json`, the new regression, and
+the `Queries.py` diff in full.
+
+**The repair is what §57 asked.** `_existing_symbol` is the liveness check
+(`placement`, not retired) that `_existing_row` now shares before its
+unchanged payload lookup; the operand dispatch and closed-`isPart` admission
+use the liveness check; the named-VP site keeps the row requirement because
+`form`/`_form_candidate` read its payload next, written in a comment. The
+four regression cases cover `isEqual` and closed `isPart` on an unseated
+Part with rows, bank and allocation compared exactly before and after,
+invalid and retired handles refused, and the vector reader still refusing
+the unseated live handle. The certificate port excludes a cover only when
+the record's address resolves to an LTM0 row, so an LTM1-only close stays a
+proposition; the test's eight-root, four-cover, centroid, gradient and
+distinctness assertions are verbatim. §59's fixture correction (object types
+the closed clause supplies in production) is same-round setup, assertions
+unchanged. The captured §55 draw replays green, now choosing `isPart`
+rather than `isEqual`, which the receipt says plainly; the direct regression
+certifies the `isEqual` dispatch.
+
+**Results.** The five groups the two changes reach: 588 passed, 41 skipped,
+zero failures (repairs 230/25, reference 234/7, drivers 116/9, driver-native
+4/0, structural-reference 4/0). The skips are the known prerequisites. The
+untouched groups stand on `a34325c85d`: presentation 114/1, capacity 7/0,
+inverse 13/0, XOR standing 8/0, both decomposition arms 2/2. The one
+end-of-3.5 sweep (`0bd65c5e2c`, 6,504 cases, 35 failures) is the record;
+its 35 are repaired here, no second sweep, nothing retired, the first
+repair's two red results kept as history.
+
+**LAND.** Iteration 2 lands at BasicModel `75345f891e` (production source;
+the receipt and review commits that follow it on main change no source).
+With iteration 1 (`f306fc28aa`) this closes item 3.5 as a mechanism landing:
+document covers and `.when` segments in batch-indexed stores, centroids on
+form and operations on meaning, VP phases as case selection, direct-operand
+occupations, the presentation boundary with persistent cover concepts, and
+the capacities written beside their derivations.
+
+**Carried out of 3.5.** To item 0, with budgets and no rescue: line 3's rerun
+(description 1/4), the modal corpus (0/4), the six phase placements (0/6,
+run before the boundary existed, caveat recorded). One diagnosis joins them:
+in every case the chooser never applied the operator the teacher needed
+(`adverb` to the marker; no case value reached a kept event), so the retry
+starts from operator choice, not from the teachers. To item 3.0: layout and
+removal ([spec](2026-10-23-layout-and-removal.md)), STM chunks, overlay and
+prepend retirement, the certainty design record, the centroid-versus-meaning
+fold discrepancy, the `Reading` rename. Watch items: `torch._assert_async`
+untested on MPS; `CompilerEffects` re-verified on any torch upgrade.
+
+**Publication (Alec).** BasicModel main is fourteen commits ahead of origin
+plus the LAND documentation; push it, then bump WikiOracle's `basicmodel`
+pointer to the pushed head and push. The `nanochat` pointer change in the
+WikiOracle tree is unrelated to 3.5 and is committed separately or not at
+all.

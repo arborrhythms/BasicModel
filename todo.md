@@ -17,16 +17,17 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Iteration 1 is published at BasicModel `f306fc28aa`, WikiOracle
-`319a793`. Iteration 2 (3.5 lines 6–7) awaits Claude's LAND review through
-Alec. Second repair source `75345f891e` applies §57's accepted domain and
-structural-reference repairs; its five scoped groups pass **588 cases with
-41 skips and zero failures**. The captured-draw replay and short native
-lesson smoke passed before the freeze. [Receipt and exact port](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/repair-02/README.md).
-The failed sweep and `a34325c85d`'s two red results remain retained. No
-existing assertion changed and no test was retired. The six placements
-are not rerun; item-0 retries use the presentation boundary. Work stays
-on main. No second sweep, publication, WikiOracle bump or item-3.0 work.
+**Current:** Item 3.5 is LANDED. Iteration 1 published at BasicModel
+`f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
+BasicModel `75345f891e` after Claude's LAND review
+([iteration spec §62](doc/plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
+the second repair's five scoped groups pass **588 cases with 41 skips and
+zero failures**; the one end-of-3.5 sweep (`0bd65c5e2c`, 35 failures) is
+repaired, nothing retired. [Receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/repair-02/README.md).
+Learning remainders (line 3's description 1/4, the modal corpus 0/4, the
+six placements 0/6) are item 0's with their budgets; layout/removal, STM
+chunks, overlay retirement and the certainty record are item 3.0's, which
+begins now. Publication: push BasicModel main, bump WikiOracle.
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -165,8 +166,10 @@ optional cold-start boundary learning certificate is also incomplete:
 runner bound during the original six epochs. Carry it to Item 0's learning
 evidence with that budget unchanged; it is not a step-1b mechanism pass.
 
-**Active mechanism:** Item **3.5**, on main after Item 4 publication,
-in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
+**Active mechanism:** Item **3.0**, layout and removal
+([spec](doc/plans/2026-10-23-layout-and-removal.md)), after 3.5 landed
+2026-10-24 at BasicModel `75345f891e`. *3.5's record:* it ran on main after
+Item 4 publication, in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
 continuation before identity; verb group element; tense/aspect and second
 difference; then the remaining 5.5 mechanisms. Each has its own receipt.
@@ -736,6 +739,13 @@ not by a passing identity lesson.
    lines 6–7 only**, reviewed against the code in spec §§20–21 and
    context-wholes §6; implementation is released. A short lesson smoke precedes each
    line's single freeze, then scoped gates and review through Alec.
+   *Iteration 2 landed 2026-10-24:* BasicModel `75345f891e`, Claude LAND
+   ([iteration spec §62](doc/plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
+   covers and `.when` segments, centroids on form, VP phases as case
+   selection, direct-operand occupations, the presentation boundary with
+   persistent cover concepts (Alec, §45), capacities 18/20/20 by derivation.
+   Six placements 0/6 → item 0 (run before the boundary; caveat recorded).
+   **3.5 closes as a mechanism landing; its learning remainder is item 0's.**
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
    [§15](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#15-identity-without-a-mixing-matrix-alec-2026-10-16)),
