@@ -1815,3 +1815,26 @@ this point, just understand"). Centroids remain the symbol side's
 let's act on it in item 3." This entry is now the audit behind todo item
 3's "Certainty" bullet; certainty and the positive/negative evidence are
 orthogonal (Alec).*
+
+## Runnable source-only archive (Alec, 2026-10-24)
+
+**Requested.** Produce an executable-style bundle of BasicModel's sources
+in the release archive, so running the model does not require the full
+development checkout. This is future packaging work, not a bundle already
+built or a change to the model.
+
+Build from an explicit list of required implementation sources, with a
+launcher, dependency versions, essential configuration/grammar/schema
+files and minimal run instructions. Record the source commit and included
+file hashes. Keep tests, test fixtures and experiment drivers, evidence,
+receipts, logs, checkpoints, training corpora, virtual environments and Git
+history out of the bundle. Any required external model or dataset is a
+declared input, not silently copied from the developer's machine.
+
+Choose the executable packaging and supported runtime when this item is
+specified; state which Python and native dependencies must be installed.
+Store the resulting bundle as an archive/release artifact outside the Git
+source tree. Gate it by unpacking into an empty directory outside the
+checkout, installing only the declared dependencies, and running the public
+entry point on a minimal input without access to the test tree, local
+evidence or cached development state.

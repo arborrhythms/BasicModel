@@ -27,7 +27,8 @@ repaired, nothing retired. [Receipt](doc/benchmarks/2026-10-24-item3-5-iteration
 Learning remainders (line 3's description 1/4, the modal corpus 0/4, the
 six placements 0/6) are item 0's with their budgets; layout/removal, STM
 chunks, overlay retirement and the certainty record are item 3.0's, which
-begins now. Publication: push BasicModel main, bump WikiOracle.
+begins now. Publication: push BasicModel main, bump WikiOracle. Hand-off for the
+next conversations: [2026-10-24-handoff-3-0](doc/plans/2026-10-24-handoff-3-0.md).
 
 **Historical step 1b review ledger (superseded by Current).**
 
