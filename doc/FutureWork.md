@@ -1838,3 +1838,113 @@ source tree. Gate it by unpacking into an empty directory outside the
 checkout, installing only the declared dependencies, and running the public
 entry point on a minimal input without access to the test tree, local
 evidence or cached development state.
+
+## Image modality: amplitude, measure and Kosko's cube (Alec, 2026-10-25)
+
+Alec: "That's a flaw in my model; it's missing a magnitude in subsymbolic
+computation, since we have only parts and wholes. But letters are a
+discrete training set." The image modality is future work, and Kosko's
+work is part of it (Alec, 2026-10-25).
+
+**Where magnitude is lost today.** (1) The join is idempotent: a word's
+form is the coordinatewise max of its parts ([Spaces, fold ladder](Spaces.md#fold-ladder)),
+so repeated constituents vanish and count lives only in occurrence rows.
+(2) Percept parthood is the clipped cosine
+([Mereology](Mereology.md#parthood-as-clipped-cosine-projection)),
+symmetric and blind to magnitude; the exact dominance `Ops.partOf` and
+`IdentityRows.meet_ratios` (Σmin over mass) are the readers that respect
+it. (3) A concept's length is its certainty
+([above](#concepts-as-regions-certainty-from-evidence-no-sphere-alec-2026-10-24)),
+so quantity cannot live there. For bytes none of this costs anything; a
+letter is present or absent.
+
+**Amplitude is presence (proposed as item 2.5).** Alec: "introduce
+amplitude as the degree of presence of that part or whole (e.g. r,g,b
+values) … All letters would then move to 0 or 1 amplitude, but later image
+values would be able to take advantage of the floating point range." The
+cube is already presence in `[0,1]` on a UNORM store
+([Spaces](Spaces.md#percept-presence)), so the change is a commitment and
+four readers, not a new carrier. A concept's magnitude stays its
+certainty. Claude's reading, under discussion:
+
+- *Rows hold support; occurrences hold amplitude.* A form stays the join
+  at full presence ("evidence selects, it does not scale"); the occurrence
+  row, the particular, carries the amplitude. Letters write 1.
+- *Amplitude is not evidence.* At the percept-to-concept seam the
+  amplitude pattern crosses as content and certainty comes from detection:
+  halving a percept's amplitude leaves its concept's certainty unchanged.
+  `Interpret.activate_code`, which scales the form by identification
+  presence, is the site; item 3's certainty work moves that evidence into
+  the columns first.
+- *Percept parthood is Kosko's subsethood,* `S(A, B) = M(A ∧ B) / M(A)`
+  with `M(A) = Σ a_i`. On `{0, 1}` the meet is the product, so
+  `M(A ∧ B) = A·B`, subsethood is `|A ∩ B| / |A|`, and it stays a matmul
+  over letters; on graded amplitudes Σmin is a min-sum kernel, or the
+  product t-norm keeps a matmul at the cost of a softer meet. Subsethood is
+  asymmetric, so the five-relation table Mereology reserves for an
+  asymmetric basis becomes live, and receipts that read the symmetric score
+  need review.
+- *The join stays max.* Amplitude is degree, not count; summing folds
+  belong to the image work below.
+
+Gate: on the letter fixtures every reading is unchanged except where the
+asymmetric score is read, and Kosko's fuzzy entropy of every letter
+percept is 0.
+
+**Kosko's cube.** The percept cube is Kosko's: fuzzy sets as points of the
+unit hypercube, with the sigma-count `M` as measure, `M(A △ B) = Σ|a_i − b_i|`
+as the fuzzy Hamming (ℓ1) distance, subsethood as above, and fuzzy entropy
+`E(A) = M(A ∧ Aᶜ) / M(A ∨ Aᶜ)` as the distance from the nearest corner
+(Kosko 1986, 1990, 1992). The complement `1 − x` is the cube's own
+([Spaces](Spaces.md#percept-complement)). One quantity gives the metric,
+the asymmetric part relation and a crispness measure.
+
+**Images (future).**
+
+- *σ adds; π multiplies.* Lights mix additively (white light is
+  R + G + B; `x ⊕ x = 2x`), filters and pigments multiplicatively
+  (transmittance `t₁·t₂`). Extents carry measures (radiance, area, count)
+  under a sum with the overlap correction
+  `M(A ∨ B) = M(A) + M(B) − M(A ∧ B)`, unbounded above for HDR; intents
+  keep `[0,1]` and the product (reflectance, saturation, opacity). The
+  algebra holding both is a vector lattice (Riesz space): the order for
+  part and whole, addition and scaling for quantity, joined by
+  `a ∨ b + a ∧ b = a + b`. Normalized RGB is `[0,1]` and UNORM8 is 8-bit
+  colour, so ordinary images need no range change.
+- *A whole's value is its total, not its centroid.* The total's direction
+  is its quality (chromaticity), its norm its quantity (luminance); the
+  centroid is total over area, a density, right for a surface and wrong
+  for a light. RGB is a basis, not white's parts: LMS is a quotient of
+  spectra (metamers), as meaning is of wordings
+  ([LLM equivalence](LLMEquivalence.md#the-version-basicmodel-is)).
+  Opponent channels are the two lanes; reddish-green is the forbidden
+  *both*.
+- *The basis comes before the mereology.* Meet and join mean overlap only
+  on coordinates of disjoint support (location × spectral band, a localized
+  wavelet or quadtree basis); dense mixed codes saturate.
+- *Space needs connection.* `.where` becomes a region with area, the fold
+  ladder a quadtree
+  ([multi-resolution tiling](#multi-resolution-where-tiling-future-work-alec-2026-10-02)),
+  and the five relations extend to RCC-8 (external connection, tangential
+  part), so a connected object is told from a scattered sum.
+- *Concepts.* Hue concepts are scale-invariant cones, so the order-0 point
+  with its certainty stands; quantity concepts (bright, many) read a
+  log-amplitude property in WholeSpace, never a concept's length.
+- *Number follows.* Count is the measure on discrete parts, an approximate
+  number sense is a noisy `log M` (Weber), and successor is one more unit
+  part, which grounds the opaque numerals' successor chain
+  ([Training, math suite](Training.md#the-generated-math-suite-what-it-exercises-and-what-it-cannot-2026-10-20)).
+- *Continuity survives the snap.* The codebook snap keeps its residual, so
+  quantization gives categorical perception without erasing continuity
+  ([§8](#8-recall-as-estimate-plus-residual)); exact-key matching gives way
+  to a log-scale tolerance for graded percepts.
+
+**References.** Kosko (1986), *Fuzzy entropy and conditioning*, Information
+Sciences 40. Kosko (1990), *Fuzziness vs. probability*, International
+Journal of General Systems 17. Kosko (1992), *Neural Networks and Fuzzy
+Systems*, Prentice Hall. Luxemburg & Zaanen (1971), *Riesz Spaces I*,
+North-Holland. Randell, Cui & Cohn (1992), *A spatial logic based on
+regions and connection*, KR '92. Gärdenfors (2000), *Conceptual Spaces*,
+MIT Press. Wyszecki & Stiles (1982), *Color Science*, Wiley. Dehaene
+(2003), *The neural basis of the Weber–Fechner law: a logarithmic mental
+number line*, Trends in Cognitive Sciences 7.
