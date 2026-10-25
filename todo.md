@@ -18,32 +18,17 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Iteration 1 is published at BasicModel `f306fc28aa`, WikiOracle
-`319a793`; its failed learning gates are carried to item 0. Iteration 2 is
-lines 6–7. Line 6's first frozen source `e9c53252aa` completed 1,185 scoped
-cases with five failures, and retained the corpus runtime stops. The
-[receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/README.md) documents the
-repairs, exact ports and all three construction-time preallocations. The
-repair and its short lesson smoke are complete; the new frozen source
-`04c1132797` passes all scoped groups (1,250 passed, 12 prerequisite skips);
-all six fixed-budget corpus placements complete and fail their learning
-gates, carried to item 0. The three same-draw replays and original launcher
-interruptions remain retained. Line 7 freezes at `0bd65c5e2c` after its
-3/3 smoke and passes 22 scoped cases with two prerequisite skips. The single
-end-of-3.5 sweep on that hash completes 6,504 cases with 35 failures; scoped
-repairs remain development work. Alec's §45 decision is implemented: the
-training presentation boundary clears experienced memories and occurrence
-caches while preserving learned concepts, given knowledge and the checkpointed
-book-cover map. §47 recomputes XOR 18, MM 20 and loopback 20 from one
-presentation, never epochs. Claude's §50 review accepts the build, capacities and ports; Alec's approved
-probe port now checks the four stable covers, estimates and observations,
-optional question/inference rows and witness one. The training-driver audit
-adds the missing boundaries, including the six-placement driver. Those old
-placements are not rerun; their receipts state that memories accumulated
-across epochs, and item 0 retries will use the boundary. The final lesson
-smoke, one repair freeze and guarded scoped gates precede whole-iteration
-review through Alec. The
-native answer-credit timeout and all failed development runs remain retained;
-there is no second sweep, publication or item-3.0 work. Work stays on main.
+`319a793`. Iteration 2 (3.5 lines 6–7) awaits whole-iteration review through
+Alec. Its one end sweep on `0bd65c5e2c` remains failed and retained. Repair
+source `a34325c85d` completes the scoped groups: **728 passed, 42 skipped,
+two unresolved failures**—the bootstrap truth-certificate domain (§53) and a
+structural-reference query exception (§55). Both captured draws reproduce;
+the proposals remain unapplied. [Receipt and exact ports](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/README.md).
+The presentation boundary, persistent book-cover map and 112-call driver
+audit are implemented; the final lesson smoke passed. The six placements
+are not rerun: their receipts disclose accumulated epoch memories, and their
+item-0 retries use the boundary. Work remains on main. No second sweep,
+publication, WikiOracle bump or item-3.0 work; this is not a landing verdict.
 
 **Historical step 1b review ledger (superseded by Current).**
 

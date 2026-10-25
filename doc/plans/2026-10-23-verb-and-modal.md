@@ -2928,3 +2928,139 @@ unchanged. `presentation-final-smoke` retains its source guard, initial state,
 process log and result. The repair is ready for its single source freeze;
 the scoped runner refuses source changes or a second invocation of a completed
 group. Development passes are not promoted to frozen gates.
+
+Repair freeze: `a34325c85da254066e1da243f58fa8363c50e285`, parent `0bd65c5e2c`. The source audit records
+49 changed or new code/config/test files. The guarded scoped runner starts
+from a clean source tree and checks every digest before and after each group.
+Only evidence and receipt updates follow the freeze.
+
+
+## 53. Frozen bootstrap exactness failure — Codex, 2026-10-24, for review through Alec
+
+On frozen source `a34325c85d`, the scoped repair group fails
+`test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate`
+at its unchanged final `report['exact']` assertion. The eight roots, four
+covers, evidence-weighted centroids, no-gradient checks and four distinct
+word meanings pass. The initial process RNG and journal capture are retained;
+the read-only replay reproduces the failure and adds the full pre-forward
+model, vocabulary, structure, row contents, certificate inputs and keep costs.
+No source/test change is made after this failure.
+
+The sole offending root is cover 0 (symbol 5), whose three sparse identity
+bits `[10, 17, 26]` are also covered by word 3's support. It has no true word
+membership, but the exhaustive certificate reports one false conjunction,
+nine false disjunctions, and four errors each for the two negative checks.
+There are no false negatives. The four proposition roots have zero errors.
+The code already documents that the exhaustive histogram counts Bloom false
+positives; the test's cover count port had also expanded this truth-certificate
+universe from the four propositions to eight roots. A cover is a referent,
+not proposition evidence, under the existing context decision.
+
+Both trials' four rows have R = A = 0, identical prediction components, and
+`tie:greedy` in every keep decision. There are no bind choices. This is not a
+wrong binding or an objective/keep issue. The [diagnosis](../benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/bootstrap-exact-probe/diagnosis.json)
+contains the exact values; both the failed gate and failed replay stay failed.
+An offline calculation on those same saved arrays, restricted to the four
+proposition roots, is exact. It is a diagnostic, never a gate pass.
+
+Recommendation for the whole-iteration review: restrict only the static
+truth-certificate's rows/extents to non-cover roots, keeping all eight-root,
+four-cover, centroid, weight, gradient, exactness and distinctness assertions
+verbatim. The [exact proposed patch](../benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/proposed-bootstrap-domain-port.patch)
+is **unapplied**. It changes the tested universe and is declared as a proposed
+port, not hidden as a passing result. No seed, code width, capacity, overlap
+threshold or assertion is changed to avoid the retained collision. The one
+repair freeze is preserved; the remaining disjoint scoped groups run on it
+before the requested review through Alec.
+
+
+## 54. Decomposition receipt-artifact correction — Codex, 2026-10-24
+
+Both zero-gain cases stop in the constructor adapter before exercising the
+model: the prepared receipt omitted `original-complete.grammar`, which the
+unchanged adapter reads to authenticate the original snapshot's named rows.
+The two launch errors and captures remain in `decomposition-zero`. Restore
+that exact archived file from `0bd65c5e2c:doc/benchmarks/2026-10-24-item3-5-iteration2/line6/source-02/original-complete.grammar`; SHA-256
+`4c296b2cc1d9100106212421fdf96ad775aae54793d368d738f9df59b718ea8e`. No source, test, snapshot, seed, parameter map,
+assertion or budget changes. The same-round setup correction is permitted by
+reconstruction §17 and step-2 §39. Record the retry separately as
+`decomposition-zero-retry`, followed by the not-yet-run enabled arm and
+remaining scoped groups. This repairs receipt packaging and does not create
+a second source freeze or erase either failed launch.
+
+The first retry's new group label was omitted from the runner's slow-test
+whitelist, so it records two skips and supplies no pass. The runner now
+enables slow tests for every `decomposition-*` label. The actual zero-arm
+retry is `decomposition-zero-runtime`, with the same two selectors, original
+snapshots/seeds and unchanged budgets. Both packaging failures remain listed;
+these are receipt-runner repairs only, on the same frozen production source.
+
+With the archived grammar restored and slow tests enabled, both original
+arms pass **2/2** on `a34325c85d`: `decomposition-zero-runtime` and
+`decomposition-enabled`. Their metrics authenticate the original snapshots,
+seeds, parameter-name map and surviving values. The first two setup errors
+and subsequent two slow skips remain separate historical attempts.
+
+
+## 55. Frozen structural-reference query exception — Codex, 2026-10-24, for review through Alec
+
+The driver group fails
+`test_native_worked_document_trains_unforced_without_numeric_oracles` during
+an explored thought suffix: `GrammaticalThoughtRegistry.execute` calls
+`_existing_row` for `isEqual`'s first `reference` operand, `('sym', 71)`.
+This is a production exception, not a fixture port, wrong answer, or learning
+remainder. The rest of that group completes; the four explicitly enabled
+native driver checks pass on the frozen source.
+
+The saved process RNG (Python, NumPy and Torch) and private corpus-generator
+state replay identically. Symbol 71 is live, allocated at order 0, not retired,
+and typed `object`; its LTM1 arguments are `[70, 68]`. It has no tensor payload
+in any allocated namespace. `_existing_row` therefore raises. The attempted
+operation is the structural `isEqual`, whose executor `ThoughtFaces.is_equal`
+only calls `ltm.relation_evidence('equal', left_reference, right_reference)`.
+It does not need the symbol's vector. The reference-kind dispatch is imposing
+a vector-row requirement on an allocated structural handle.
+
+The [diagnosis](../benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/query-payload-probe-02/diagnosis.json)
+links the current meaning, signature, allocator/Part evidence, both sentence
+trial records and the available keep costs. The thought explore suffix aborts
+before its pair can choose a kept result; no successful thought keep is claimed.
+Pre-batch model, vocabulary, structure and optimizer state are retained. The
+first probe accidentally serialized the optimizer object and failed on its
+local callback before execution; that failed diagnostic and partial file are
+retained. The corrected probe saves `optimizer.state_dict()` and reproduces
+the original production exception.
+
+Recommended mechanism repair: validate that reference-kind symbol operands
+are allocated and not retired, without requiring a vector row. Retain
+`_existing_row` for consumers that actually read a vector. An allocated Part
+reference should reach `isEqual`'s bounded evidence lookup; invalid/retired
+handles must still fail loudly. Do not allocate a seat, invent content, mask
+the menu or turn the exception into a learning skip. Add a regression for an
+unseated Part operand, unchanged rows/bank, and invalid/retired rejection.
+The [concrete proposed patch](../benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/proposed-query-reference-validation.patch)
+is **unapplied and unverified as a repair**. The single frozen source and all
+existing assertions stay unchanged for the requested whole-iteration review.
+
+## 56. Frozen scoped receipt — Codex, 2026-10-24
+
+Source `a34325c85da254066e1da243f58fa8363c50e285`, parent `0bd65c5e2c`:
+**728 passed, 42 skipped, two unresolved failures across the required scoped
+groups**. All groups complete on that hash; these totals count group results,
+including selectors shared by two scoped groups. §53's bootstrap exactness
+failure and §55's structural-reference exception remain failed. They are not
+relabelled as passes, fixture fixes or learning evidence. The original two
+missing-artifact failures and two disabled-slow skips are additional retained
+harness attempts; after the §54 correction both actual decomposition arms pass.
+
+The three small MM capacity cases, MM training case, two 400-epoch XOR fixtures,
+XOR standing gate, reference group, both decomposition arms, inverse group,
+presentation group and four enabled native-driver cases pass (with the
+recorded prerequisite skips). The final native lesson smoke passed before
+the single source freeze. The [receipt](../benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/README.md)
+contains the exact group table, source/cache/driver audits, every assertion
+port, all failures and the two unapplied proposals. No test was retired and
+no earlier-source result supplies a pass. No further source freeze, full
+sweep, six-placement rerun, publication, WikiOracle bump or item-3.0 work.
+Return this record through Alec for Claude's whole-iteration review; this
+source is not presented as ready to land.
