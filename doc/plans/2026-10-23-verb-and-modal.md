@@ -3064,3 +3064,68 @@ no earlier-source result supplies a pass. No further source freeze, full
 sweep, six-placement rerun, publication, WikiOracle bump or item-3.0 work.
 Return this record through Alec for Claude's whole-iteration review; this
 source is not presented as ready to land.
+
+## 57. Claude's whole-iteration review of `a34325c85d` — 2026-10-24
+
+Reviewed: §§51–56, the two commits (`a34325c85d` repair freeze, 49
+source/config/test files; `9f642b3d49` receipts), the prepared-repair
+receipt and group table (728 passed, 42 skipped, two failures), the driver
+insertions, the 112-call `runBatch` audit's dispositions, the two captured
+diagnoses with their RNG-identical replays, both unapplied patches, the
+`certificate`, `occurrence_roots`, `_existing_row`, `is_equal` and
+`relation_evidence` code, and the allocator's `new_concept`/`placement`.
+
+**Accepted.** The §48 probe port as approved. The driver boundaries: at each
+training epoch of the eleven driver sites, including the six-placement
+driver and the word-bucket benchmark at cursor slot zero; never before an
+evaluation presentation; the five continuing-presentation calls rightly
+left alone. The §52 count port (`2 * int(enabled)`) follows from the cover
+being in the predictor's context, which §50 already accepted. The §54
+receipt-packaging correction (the archived grammar restored byte-exact, slow
+tests enabled for the group) is harness, not source; both decomposition arms
+then pass. The six placements carry their accumulation caveat and are not
+rerun. The final native lesson smoke passed before the one freeze; the
+scoped runner refused source drift.
+
+**Not landable at this hash**: two red results, both reproduced from
+captures, both diagnosed correctly, both with the right proposal.
+
+*§53, bootstrap exactness.* `certificate` exhausts every word pair against
+every row in `codes`; line 6's port widened that universe from the four
+propositions to all eight roots, so a cover, which is a referent with no
+word membership and random identity bits, is scored for membership and
+collides with word 3's support in this draw (one false conjunction, nine
+false disjunctions; zero false negatives; the four propositions exact). A
+cover is not a proposition the certificate is about. Apply the proposed
+port, with one guard: filter by the row's kind only when `store.location`
+finds the record's address; a root that is not an LTM row (an LTM1 close)
+is a proposition and stays. The eight-root, four-cover, centroid,
+no-gradient and distinctness assertions stay verbatim.
+
+*§55, structural reference.* `GrammaticalThoughtRegistry.execute` admits a
+reference-kind operand through `_existing_row`, which demands a payload row;
+`ThoughtFaces.is_equal` only asks `relation_evidence` to match the reference
+against LTM1 rows' `role_refs`. Symbol 71 is a live allocated Part handle
+(`placement` 0, typed `object`, arguments `[70, 68]`) with no vector, so the
+dispatch rejects an operand its executor can use. This is a production bug
+the explore suffix exposed; it reverses nothing. Apply the proposed
+`_existing_symbol` (liveness: in `placement`, not retired — `new_concept`
+places every minted id, so structural symbols qualify) at the operand
+dispatch, keep `_existing_row` for every consumer that reads a vector
+(`_basis` callers, `AccessibleMind`, `ClauseRow`, `MemoryIndex`), and audit
+the two sibling admission sites at `Queries.py:1931` and `:2339`: the same
+distinction applies wherever the consumer does not read a vector; where it
+does, the row requirement stays, with the reason written. Add the
+regression Codex named: an unseated Part operand reaching `isEqual` with
+rows and bank unchanged, and invalid or retired handles still refused.
+Verify the repair on the captured draw before freezing.
+
+**Then** one second repair freeze on `a34325c85d`, and only the scoped groups
+the change can reach: `repairs` (the bootstrap certificate), `reference`
+(the `Queries` dispatch), `drivers` and `driver-native` (the math-chain
+smoke), plus the new regression; `presentation`, `capacity`, `inverse`,
+`xor-standing` and the decomposition arms are untouched by either change and
+are not rerun. No full sweep: the one end-of-3.5 sweep has run and its 35
+failures are repaired here. That hash returns for the LAND review; if green,
+Alec publishes (BasicModel on main, the WikiOracle bump), 3.5 closes, and
+item 3.0 begins.
