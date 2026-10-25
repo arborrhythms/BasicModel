@@ -501,13 +501,20 @@ def _argument(arguments, role):
     return arguments[slot]
 
 
-def _existing_row(space, reference):
-    """Read a concept row without lazy allocator creation or row assignment."""
+def _existing_symbol(space, reference):
+    """Validate a live handle; a structural reference needs no vector row."""
     ref = concept_reference(reference)
     allocator = getattr(space, '_concept_allocator', None)
     if (allocator is None or ref[1] not in allocator.placement
             or ref[1] in allocator.retired):
         raise ValueError('query concept reference is unavailable')
+    return ref
+
+
+def _existing_row(space, reference):
+    """Read a concept row without lazy allocator creation or row assignment."""
+    ref = _existing_symbol(space, reference)
+    allocator = space._concept_allocator
     layer = allocator._layers.get(0)
     if layer is None:
         raise ValueError('query conceptual reference store is unavailable')
@@ -1928,6 +1935,8 @@ class GrammaticalThoughtRegistry:
         if work is not None:
             work.require('reference')
         if self._predicate_name(identity) is None:
+            # A named VP is a payload-bearing binding: form and
+            # _form_candidate read it into the predicate role.
             _existing_row(self.space, reference)
         return reference
 
@@ -2336,7 +2345,9 @@ class GrammaticalThoughtRegistry:
                         continue
                     for slot in (0, 2):
                         reference = concept_reference(request.request.role_refs[slot])
-                        _existing_row(self.space, reference)
+                        # Closed isPart reads relation/taxonomy evidence by
+                        # handle; its operand values are already held.
+                        _existing_symbol(self.space, reference)
                 signature = self.signature_for(request.request, verify_reference=False)
                 for role, kind in zip(signature.occupied_roles, signature.argument_kinds):
                     if kind != 'description':
@@ -2453,7 +2464,7 @@ class GrammaticalThoughtRegistry:
                 elif reference is not None:
                     context.work.require('reference')
                     if reference[0] == 'sym':
-                        _existing_row(self.space, reference)
+                        _existing_symbol(self.space, reference)
                     else:
                         symbolic_reference(reference)
                     value = reference

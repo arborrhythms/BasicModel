@@ -81,7 +81,17 @@ def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate
             torch.testing.assert_close(value[:64],expected)
             assert not value[64:].any() and not value.requires_grad and n == len(containing)
             extents.append({rows.index(r) for r in containing}); values.append(value.numpy())
-        report = certificate(np.stack(values),torch.stack(list(codes.values())).numpy(),extents)
+        # Covers are referents, outside this proposition truth certificate.
+        # An LTM1-only close has no LTM0 location and remains a proposition.
+        sentences = []
+        for i, record in enumerate(records):
+            location = store.location(record['address'])
+            if location is None or store.row(location)['kind'] != 'cover':
+                sentences.append(i)
+        positions = {row: i for i, row in enumerate(sentences)}
+        report = certificate(np.stack(values),
+            torch.stack([codes[r] for r in sentences]).numpy(),
+            [{positions[r] for r in extent if r in positions} for extent in extents])
         assert report['exact'] and report['distinct_meanings'] == report['words'] == 4
         derived.begin_forward()
         assert len(derived._context) == 4 and not list(derived.parameters())

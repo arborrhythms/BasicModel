@@ -3129,3 +3129,84 @@ are not rerun. No full sweep: the one end-of-3.5 sweep has run and its 35
 failures are repaired here. That hash returns for the LAND review; if green,
 Alec publishes (BasicModel on main, the WikiOracle bump), 3.5 closes, and
 item 3.0 begins.
+
+## 58. Accepted domain and structural-reference repairs — Codex, 2026-10-24
+
+§57 was read before editing. Claude's review is committed unchanged as
+`55e59492ec`; the production base remains `a34325c85d`. The §53 port now
+restricts only the static truth certificate's universe to proposition roots:
+it asks `store.location` first, excludes a cover only when that location
+exists, and retains an LTM1-only close. All existing assertions in the test
+remain verbatim, including eight roots, four covers, the weighted centroid,
+no gradient and four distinct exact meanings. This is a declared domain port;
+neither the old failed capture nor its failed replay becomes a pass.
+
+For §55, `_existing_symbol` validates an allocated, non-retired handle.
+`GrammaticalThoughtRegistry.execute` uses it for a reference operand;
+`_existing_row` uses the same liveness check before its unchanged payload
+lookup. The sibling-site audit has two different dispositions:
+
+- `_reference` (old line 1931) keeps `_existing_row`. This authenticates
+  a named VP binding installed for the registry; both `form` and
+  `_form_candidate` immediately obtain its vector through `_payload` to
+  populate the predicate role. The existing canonical predicate-code branch
+  remains as it was.
+- `controller_candidates`' closed `isPart` admission (old line 2339) uses
+  `_existing_symbol`. `ThoughtFaces.is_part` reads relation evidence and,
+  if necessary, `capture_taxonomy`'s native endpoints/edges; neither requires
+  an operand payload. The request already holds its value. `part_row` may
+  obtain an optional presentation vector through `concept_point`, whose
+  `_existing_row` check and unavailable-value fallback remain intact. The menu's
+  existing closed-role and native-reference restrictions are unchanged.
+
+The vector consumers keep `_existing_row`: `ThoughtConceptualCapability.payload`,
+the legacy `_vector` path, `_payload`, taxonomy neighbor **answer** atoms,
+`AccessibleMind`, `ClauseRow`'s `concept_point`, and `MemoryIndex`'s configured
+code-row reader. The latter readers must have an actual row to index a bank;
+a structural handle alone cannot satisfy them. No seat is allocated, no
+content invented, and no candidate masked by this repair.
+
+The new `test_query_structural_references.py` exercises an unseated Part
+through `isEqual` and the sibling closed `isPart` menu, checks its native
+witness and both evidence poles with rows, bank and allocation unchanged,
+and refuses invalid and retired operands. It also keeps the vector-reader
+rejection for an unseated live handle. No existing assertion is changed and
+no test retired. The captured `query-payload-probe-02` draw is replayed before
+freeze; then one native lesson smoke, one second repair freeze, and only
+`repairs`, `reference`, `drivers`, `driver-native` and the new regression.
+Results are recorded in the next dated section. No publication or item-3.0
+work is part of this round.
+
+## 59. Structural regression fixture correction — Codex, 2026-10-24
+
+The first development run of the new four-case regression fails in its shared
+setup, before dispatch: bare `cs.reify_concept` creates the Part handle but
+does not populate `symbol_types[inner]`. Production's closed clause supplies
+that type. The fixture's direct `.add('object')` therefore raises `KeyError`.
+Supply the two object types through `setdefault(..., set()).add('object')`,
+retaining every assertion verbatim. This is the same-round fixture setup
+exception from reconstruction §17, under step-2 §39; no production behavior
+is changed. The four failed setup calls, initial states and full log remain
+in `sweep/repair-02/regression`; the corrected check has its own run directory.
+
+## 60. Second repair pre-freeze checks — Codex, 2026-10-24
+
+The corrected new regression passes **4/4**. The captured native driver
+`query-payload-probe-02` passes **1/1** with identical Python, NumPy, Torch
+and private corpus-generator RNG states. Its structural trace retains the
+same unseated symbol 71 with Part arguments `[70, 68]`. The sibling-menu
+repair now admits closed `isPart`, and this draw selects that operation on
+71 and 15; it returns without allocation or exception. It does **not** select
+the old `isEqual` request again, so the receipt does not claim an identical
+execution path. The direct new regression separately certifies `isEqual`'s
+unseated operand, native evidence and refusal/immutability behavior.
+
+One short native lesson smoke,
+`test_kept_readings_alone_supply_occupation_counts`, passes **1/1**. These
+pre-freeze logs stay developmental. The source audit records three changed
+source/test files against `a34325c85d`, verifies every existing assertion in
+`test_operators_round4a.py` verbatim, and inventories the one authorized
+domain port and all new assertions. Freeze this source once, then run the
+five §57 scoped groups on that hash with the source guard. No earlier pass
+supplies evidence for the new freeze; the completed sweep, decomposition,
+presentation, capacity, inverse, XOR and six-placement runs are not repeated.
