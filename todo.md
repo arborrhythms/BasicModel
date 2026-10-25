@@ -18,17 +18,15 @@ Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
 **Current:** Iteration 1 is published at BasicModel `f306fc28aa`, WikiOracle
-`319a793`. Iteration 2 (3.5 lines 6–7) awaits whole-iteration review through
-Alec. Its one end sweep on `0bd65c5e2c` remains failed and retained. Repair
-source `a34325c85d` completes the scoped groups: **728 passed, 42 skipped,
-two unresolved failures**—the bootstrap truth-certificate domain (§53) and a
-structural-reference query exception (§55). Both captured draws reproduce;
-the proposals remain unapplied. [Receipt and exact ports](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/prepared-repair/README.md).
-The presentation boundary, persistent book-cover map and 112-call driver
-audit are implemented; the final lesson smoke passed. The six placements
-are not rerun: their receipts disclose accumulated epoch memories, and their
-item-0 retries use the boundary. Work remains on main. No second sweep,
-publication, WikiOracle bump or item-3.0 work; this is not a landing verdict.
+`319a793`. Iteration 2 (3.5 lines 6–7) awaits Claude's LAND review through
+Alec. Second repair source `75345f891e` applies §57's accepted domain and
+structural-reference repairs; its five scoped groups pass **588 cases with
+41 skips and zero failures**. The captured-draw replay and short native
+lesson smoke passed before the freeze. [Receipt and exact port](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/repair-02/README.md).
+The failed sweep and `a34325c85d`'s two red results remain retained. No
+existing assertion changed and no test was retired. The six placements
+are not rerun; item-0 retries use the presentation boundary. Work stays
+on main. No second sweep, publication, WikiOracle bump or item-3.0 work.
 
 **Historical step 1b review ledger (superseded by Current).**
 

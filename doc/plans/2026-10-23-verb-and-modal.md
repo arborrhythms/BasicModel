@@ -3210,3 +3210,38 @@ domain port and all new assertions. Freeze this source once, then run the
 five §57 scoped groups on that hash with the source guard. No earlier pass
 supplies evidence for the new freeze; the completed sweep, decomposition,
 presentation, capacity, inverse, XOR and six-placement runs are not repeated.
+
+## 61. Second repair frozen receipt — Codex, 2026-10-24, for LAND review through Alec
+
+Source **`75345f891eb573d5573fd81e3bd0b48252f21813`**, the second repair
+on `a34325c85d`, completes only §57's five scoped groups: **588 passed,
+41 skipped, zero failures**. Repairs: 230/25; reference: 234/7; drivers:
+116/9; driver-native: 4/0; the new structural-reference regression: 4/0
+(passed/skipped). These totals count group results, including the native
+selectors shared by two groups. The source guard passes throughout and the
+three changed source/test files still match the freeze.
+
+Both formerly red selectors pass on this hash. The bootstrap domain port
+retains every existing assertion verbatim and keeps an LTM1-only root;
+the native worked document no longer rejects a live structural handle.
+The four new regression cases certify `isEqual`, closed `isPart`, unchanged
+rows/bank/allocation, and invalid/retired refusal. §60's captured-draw replay
+and short native lesson passed before this freeze. Its replay trace's
+`isPart` selection, rather than the original `isEqual`, remains explicit;
+the direct regression supplies the latter's dispatch check.
+
+The [receipt](../benchmarks/2026-10-24-item3-5-iteration2/sweep/repair-02/README.md)
+contains the raw results, source and admission audits, the one authorized
+domain port, every new assertion and the §59 fixture correction. No existing
+assertion changed and no test was retired. The four failed development
+setup calls and all older failures remain retained. Forty large tensor
+captures have lossless gzip archives with verified original hashes. The
+longest repair batch passes within its unchanged time limit; its read-only
+host sample is retained, with no source intervention or budget change.
+
+No presentation, capacity, inverse, XOR-standing, decomposition-arm,
+six-placement or full-sweep rerun. The previous failed sweep and previous
+source's two red results stay failed historical records; no pass is promoted
+from them. Todo's head and receipt pointers now identify this source. Return
+through Alec for Claude's whole-iteration LAND review. No publication,
+WikiOracle bump or item-3.0 work; no LAND verdict is asserted here.
