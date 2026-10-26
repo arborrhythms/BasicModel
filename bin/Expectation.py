@@ -180,11 +180,15 @@ class ActivationPredictor(nn.Module):
         hidden = int(hidden)
         if hidden < 1:
             raise ValueError('activation predictor hidden width must be positive')
-        self.context = nn.Sequential(nn.Linear(4 * self.width, hidden), nn.Tanh(),
+        # Mean + recent STM (2D), two field lanes (2D), and RowTime now (4).
+        # The final four coordinates have a fixed position at construction.
+        self.now_start = 4 * self.width
+        self.register_buffer('_empty_now', torch.zeros(1, 4), persistent=False)
+        self.context = nn.Sequential(nn.Linear(self.now_start + 4, hidden), nn.Tanh(),
                                      nn.Linear(hidden, 2 * self.width))
         self.local = nn.Linear(4, 2)
 
-    def forward(self, keys, context, activation=None):
+    def forward(self, keys, context, activation=None, now=None):
         keys, context = keys.detach(), context.detach()
         if keys.shape[-1] != self.width or context.shape != (keys.shape[0], 2 * self.width):
             raise ValueError('activation predictor requires native keys and field/STM context')
@@ -196,7 +200,10 @@ class ActivationPredictor(nn.Module):
         # context. A negative source is not interchangeable with its omission.
         field = torch.einsum('bnl,bnd->bld', activation, keys)
         field = field / activation.sum(1).clamp_min(1.)[..., None]
-        query = self.context(torch.cat((context, field.flatten(1)), -1)).reshape(keys.shape[0], 2, self.width)
+        now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
+        if now.shape != (keys.shape[0], 4):
+            raise ValueError('activation predictor now requires four RowTime coordinates per stream')
+        query = self.context(torch.cat((context, field.flatten(1), now), -1)).reshape(keys.shape[0], 2, self.width)
         scores = []
         for start in range(0, keys.shape[1], 1024):
             key = keys[:, start:start + 1024]

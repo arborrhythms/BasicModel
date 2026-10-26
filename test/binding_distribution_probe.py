@@ -11,40 +11,40 @@ def retained_bank_distributions(model):
     Supply stored context here without training or forcing a chooser action;
     the ordinary document audit remains separate and unchanged.
     """
-    from Layers import LTM0
-    from ReferenceContext import ReferenceBank
     language = model.languageSpace
     layer = language.language_layer.operation_layer
     like = next(layer.parameters())
     width = layer.d_model
     records = []
-    for order in (0, 2):  # Order-one binding belongs to the close-time resolver.
-        for count in (1, 4, 16):
-            # Distinct, nonnegative descriptions; no RNG draw or lexical hint.
-            points = torch.arange(1, (count+2)*width+1, device=like.device,
-                                  dtype=like.dtype).reshape(count+2, width)
+    for order in (0, 1, 2):
+        for count in (1, 4, 7):
+            # Eight shared chunks admit at most seven off-stack identities
+            # beside this mention. All retained candidates enter the menu.
+            points = torch.arange(1, (count+1)*width+1, device=like.device,
+                                  dtype=like.dtype).reshape(count+1, width)
             points = torch.nn.functional.normalize(points, dim=-1)
-            store = LTM0(width, capacity=count)
-            rows = [store.append_idea(point, order=order, document_key='retained-context',
-                                     sentence_index=i) for i, point in enumerate(points[:count])]
-            ids = store.row_ids[rows].to(device=like.device)[None]
-            bank = ReferenceBank(ids, points[:count][None], torch.ones_like(ids, dtype=torch.bool),
-                torch.zeros_like(ids, dtype=torch.bool), points[0][None],
-                torch.ones(1, device=like.device, dtype=torch.bool), column_ids=ids.flatten(),
-                interpreter=model._concept_owner().interpret,
-                associations=ids.new_empty(0, 2), orders=torch.full_like(ids, order),
-                close_references=True)
-            buffer = points[-2:][None]
-            identities = torch.arange(1, 3, device=like.device, dtype=torch.long)[None]
-            state = (buffer, ids.new_tensor([2]), torch.full_like(identities, order),
-                     torch.zeros_like(identities), identities, buffer.new_ones(1, 2))
-            scope = torch.stack((torch.zeros_like(identities), identities), -1)
-            with patch.object(language, '_reference_bank', bank, create=True), \
-                    binding_distributions() as observed, torch.no_grad():
-                language.choose_operation(state, torch.ones(1, device=like.device, dtype=torch.bool),
-                    slots=1, sample=False, reference_scope=scope, policy_grad=False)
+            import STMChunks as chunks
+            state = chunks.empty(1,8,width,device=like.device,dtype=like.dtype)
+            active = torch.ones(1,device=like.device,dtype=torch.bool)
+            ids = model._concept_owner().mtm.transient_ids[:count].to(like.device)
+            for index in range(count):
+                state,_ = chunks.deposit(state,points[index:index+1],active,
+                    order=order,identity=ids[index:index+1])
+            state,_ = chunks.deposit(state,points[-1:],active,stack=True,order=order)
+            from ReferenceContext import ReferenceBank
+            bank = ReferenceBank(torch.full((1,1),-1,device=like.device),like.new_zeros(1,1,width),
+                torch.zeros(1,1,dtype=torch.bool,device=like.device),torch.zeros(1,1,dtype=torch.bool,device=like.device),
+                like.new_zeros(1,width),torch.zeros(1,dtype=torch.bool,device=like.device))
+            scope = torch.zeros(1,8,2,dtype=torch.long,device=like.device)
+            scope[:,:,1] = -1
+            with binding_distributions() as observed, torch.no_grad():
+                with patch.object(language,'_reference_bank',bank,create=True):
+                    language.choose_operation(state,active,slots=1,sample=False,policy_grad=False,reference_scope=scope)
+            assert observed, 'the controlled field must expose its conditional bind menu'
             for item in observed:
-                item.update(context='controlled_retained_bank', stored_count=count, order=order)
+                item.update(context='controlled_retained_chunks',stored_count=count,order=order)
+                assert set(item['candidate_ids']) == {0,*ids.tolist()}
+                assert len(item['alternatives']) == count+1
             records.extend(observed)
     return records
 
@@ -57,7 +57,7 @@ def binding_distributions():
 
     def observed(module, x, **kwargs):
         data = kwargs.get('reference_data')
-        if not data or not data.get('binding_choices'):
+        if not data or not any(data.get('binary_bind',())):
             return original(module, x, **kwargs)
         # Observe the existing chooser before occupation/form priors,
         # reduction pressure and the expectation prime are added. Selection
@@ -80,37 +80,28 @@ def binding_distributions():
         logits = logits.masked_fill(~torch.isfinite(complete), -torch.inf)
         selected = result[2]['action'].detach().cpu()
         nr, width = len(data['binary_ops']), x.shape[1]
-        for label, positions, offset, arity in (
-                ('binary', width-1, 0, 2), ('unary', width, (width-1)*nr, 1)):
-            operations = data[label+'_ops']
-            choices = data[label+'_choices'].detach().cpu().tolist()
-            for row in range(len(x)):
-                for position in range(positions):
-                    groups = {}
-                    for column, operation in enumerate(operations):
-                        action = offset+position*len(operations)+column
-                        if not bool(torch.isfinite(logits[row, action])):
-                            continue
-                        values = choices[row][position][column]
-                        for role in range(arity):
-                            if values[role] == -1:
-                                continue  # this operand has no bind choice
-                            key = operation, role, values[1-role]
-                            group = groups.setdefault(key, {})
-                            assert values[role] not in group, 'retained candidate duplicated in softmax'
-                            group[values[role]] = action
-                    for (operation, role, other), group in groups.items():
-                        if not {0, -2}.issubset(group):
-                            continue
-                        alternatives = list(group)
-                        actions = list(group.values())
-                        probability = logits[row, actions].softmax(0)
-                        records.append(dict(row=row, position=position, arity=arity,
-                            operation=operation, role=role, other=other,
-                            alternatives=alternatives, probabilities=probability.tolist(),
-                            measured_term='chooser_content',
-                            complete_probabilities=complete[row, actions].softmax(0).tolist(),
-                            selected=int(selected[row]), actions=actions))
+        references = data['binary_refs'].detach().cpu()
+        chunks = data['binary_choices'].detach().cpu()
+        for row in range(len(x)):
+            for position in range(width-1):
+                actions = [position*nr+column for column,bind in enumerate(data['binary_bind'])
+                           if bind and torch.isfinite(logits[row,position*nr+column])]
+                if not actions:
+                    continue
+                alternatives = [int(chunks[row,position,action%nr,1])+1 for action in actions]
+                candidate_ids = [int(references[row,position,action%nr,1]) for action in actions]
+                assert len(set(alternatives)) == len(alternatives), 'retained candidate duplicated in softmax'
+                assert 0 in alternatives, 'bind dummy is missing'
+                if len(alternatives)==1:
+                    continue
+                probability = logits[row,actions].softmax(0)
+                records.append(dict(row=row,position=position,arity=2,
+                    operation=module.op_names.index('bind'),role=1,other=-1,
+                    alternatives=alternatives,probabilities=probability.tolist(),
+                    candidate_ids=candidate_ids,
+                    measured_term='chooser_content',
+                    complete_probabilities=complete[row,actions].softmax(0).tolist(),
+                    selected=int(selected[row]),actions=actions))
         return result
 
     with patch.object(OperationSelectionLayer, 'forward', observed):

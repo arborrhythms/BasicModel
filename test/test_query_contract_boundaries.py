@@ -14,8 +14,7 @@ from test_query_vp_boundaries import _context, _signature
 
 
 def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatch):
-    store = LTM0(8)
-    store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
+    store = LTM0(8, percept_width=0)
     meaning = ConceptualMeaning.from_description(torch.ones(8))
     for strength in (0.2, 0.8):
         store.append_meaning(meaning, trust=strength, sentence_index=len(store))
@@ -26,7 +25,7 @@ def test_query_limits_native_content_reads_and_reports_incompleteness(monkeypatc
         return original(index)
     monkeypatch.setattr(store, 'row', read)
     result = _signature('query', 'argin1').invoke(
-        _context(_cs(), store=store, max_records=1), replace(meaning, mode='interrogative'))
+        _context(_cs(), store=store, max_records=1), replace(meaning))
     assert rows == [0]
     assert result['value'][0]['trust'] == pytest.approx(0.2)
     assert result['records_scanned'] == 1
@@ -55,13 +54,12 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
 
 
 def test_unified_query_returns_complete_record_and_does_not_admit_observation():
-    store = LTM0(8)
-    store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
-    roles = torch.eye(8)[:3]
-    meaning = ConceptualMeaning.from_description(roles)
+    store = LTM0(8, percept_width=0)
+    meaning = ConceptualMeaning.from_description(torch.eye(8)[0])
+    roles = meaning.roles
     row = store.append_meaning(meaning, kind='observation', trust=0.9, sentence_index=len(store))
     context = _context(_cs(), store=store)
-    found = _signature('query', 'argin1').invoke(context, replace(meaning, mode='interrogative'))
+    found = _signature('query', 'argin1').invoke(context, replace(meaning))
     assert found['result_kind'] == 'set'
     assert found['evidence_kind'] == 'retrieval'
     assert len(found['value']) == 1

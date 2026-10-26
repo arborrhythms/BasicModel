@@ -177,7 +177,6 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
             reference = member.get('reference')
             if reference is not None:
                 seeds.append(reference)
-            seeds.extend(('row', code) for role in member.get('leaf_codes', ()) for code in role)
     if not seeds:
         return
     effect_round.claim(S.KNOWING)

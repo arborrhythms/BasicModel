@@ -40,8 +40,41 @@ def _serial_read(tmp_path, clock=0, offset=0):
         # The answer's public tensor is the completed conceptual value.
         answer = model._last_what_actual[0].what
         assert torch.is_tensor(answer), 'certificate needs an actual model answer'
+        addresses = {int(value): index for index,value in enumerate(store.address_keys[:len(store)])}
+        omissions = tuple(i for i in range(len(store))
+                          if '_omitted_symbol' in dict(store.raw_meaning_of(i).bindings))
+        def canonical(value):
+            if type(value) is int and value in addresses:
+                return ('row', addresses[value])
+            if isinstance(value, dict):
+                return {key:(('time-aware-logits',len(item)) if key == 'presence_logits'
+                             else canonical(item)) for key,item in value.items()}
+            if isinstance(value,(tuple,list)):
+                if value and all(isinstance(item,(tuple,list)) and len(item)==2
+                                 and isinstance(item[0],str) for item in value):
+                    marks = dict(value)
+                    if '_omitted_symbol' in marks:
+                        positive, negative = marks['_evidence_pair']
+                        assert positive == 0 and 0 <= negative <= 1
+                        return tuple((key, ('time-aware-omission', positive)
+                            if key == '_evidence_pair' else canonical(item)) for key,item in value)
+                if len(value) == 2 and value[0] == '_expected_symbols':
+                    # A predictor reads percept time. Its numeric forecast is
+                    # allowed to change; identities, orders and keys are not.
+                    return (value[0],tuple((canonical(identity),order,canonical(key),
+                        ('time-aware-logits',len(logits))) for identity,order,key,logits in value[1]))
+                return tuple(map(canonical,value))
+            return value
+        forecasts = tuple(i for i in range(len(store)) if i in omissions or
+                          store.KINDS[int(store.record_kind[i])] == 'estimate')
+        semantics = store.semantic_extras()
+        semantics = dict(semantics, records=tuple(record for i,record in enumerate(semantics['records'])
+                                                 if i not in forecasts))
         return dict(programs=[p.actions.detach().clone() for p in programs],
             rows={k:v.detach().clone() for k,v in store.state_dict().items()},
+            time_start=store.when_start,
+            omissions=omissions, forecasts=forecasts,
+            semantics=canonical(semantics),
             initial_rows=initial_rows, initial_clock=initial_clock, count=len(store),
             content=store.slots[:len(store)].detach().clone(), answer=answer.detach().clone())
     finally:
@@ -50,7 +83,7 @@ def _serial_read(tmp_path, clock=0, offset=0):
 
 
 def _stream_code_banks(tmp_path,monkeypatch):
-    """A genuine meaning complement makes the two stream contexts differ."""
+    """Both streams read the same online word context and preserve their bank axes."""
     from identity_experiment import make_model
     from CaseSelection import stage_case_bank,select_cases,fold_cases,search_cases
     from Meaning import ConceptualMeaning
@@ -79,9 +112,21 @@ def _stream_code_banks(tmp_path,monkeypatch):
                 model.symbolSpace.ltm_store.write_clause(
                     Clause(value, point=value.roles[0], refs=(cid,-1,-1), order=0),
                     stream=stream, document_key=('context',stream), sentence_index=1)
+            # Placement now consumes the kept reading online, not stored
+            # memberships. One word seat accumulates contexts across streams.
+            for form in ('context-a', 'context-b'):
+                other=owner.interpret.lookup_word((), (), form=form)
+                other_row=owner._csw_row_of(other)
+                owner._sentence_seen_rows[0].fill_(-1)
+                owner._sentence_seen_rows[0, :2] = torch.tensor([row,other_row])
+                owner.prime_seen(torch.tensor([[row,other_row]]))
+                book.mereology.observe_close(SimpleNamespace(
+                    word_rows=torch.tensor([row,other_row]), concept_ids=torch.tensor([cid,other])))
+            assert int(book.mereology.placement_witnesses[row]) == 2
+            assert bool(book.mereology.placement[row].ne(0).any())
             book.mereology.begin_forward()
             leaves=book.lookup_rows(torch.tensor([[row],[row]]),streams=True)
-            assert not torch.equal(leaves[0],leaves[1]),'fixture must exercise different occurrence contexts'
+            torch.testing.assert_close(leaves[0],leaves[1],rtol=0,atol=0)
             bank=stage_case_bank(owner,torch.tensor([[cid],[cid]]),limit=16)
             position=(bank.ids==cid).nonzero().item()
             assert torch.equal(bank.codes[:,position],leaves[:,0])
@@ -106,9 +151,23 @@ def _stream_code_banks(tmp_path,monkeypatch):
 def test_clock_independence(tmp_path):
     from RowTime import encoder
     baseline = None
+    measurements = []
     for clock in CLOCKS:
         value = _serial_read(tmp_path, clock=clock)
-        times = encoder().decode_index(value['rows']['when'][value['initial_rows']:value['count']])
+        # Entering chunks now carry current time (§1.6). The existing predictor
+        # and answer reader see that band; their numeric forecasts are allowed
+        # to vary. Keep their values in the certificate, not in content equality.
+        measurements.append(dict(clock=clock, answer=value['answer'].tolist(),
+            omission_rows=value['omissions'],
+            omission_evidence=value['rows']['c_minus'][list(value['omissions'])].tolist(),
+            forecast_content=value['rows']['slots'][list(value['forecasts'])].tolist(),
+            surprise=value['rows']['surprise'].tolist(),
+            recurrence_weights=value['rows']['recurrence_weights'].tolist()))
+        assert torch.isfinite(value['answer']).all()
+        start = value['time_start']
+        stamps = value['rows']['slots'][value['initial_rows']:value['count'],start:start+4]
+        stamped = stamps.ne(0).any(-1)
+        times = encoder().decode_index(stamps[stamped])
         assert times.numel() and int(value['rows']['model_clock']) == max(
             value['initial_clock'], int(times.max())+1)
         if baseline is None:
@@ -119,18 +178,53 @@ def test_clock_independence(tmp_path):
             torch.testing.assert_close(a,b,rtol=0,atol=0)
         assert value['rows'].keys() == baseline['rows'].keys()
         assert (value['initial_rows'],value['count']) == (baseline['initial_rows'],baseline['count'])
+        # Located content has different native hashes when its time changes;
+        # compare the retained references by the same physical-row isomorphism.
+        assert value['semantics'] == baseline['semantics']
+        assert value['omissions'] == baseline['omissions']
+        assert torch.equal(value['rows']['row_ids'],value['rows']['address_keys'])
+        assert len(set(value['rows']['row_ids'][:value['count']].tolist())) == value['count']
         for name in value['rows']:
             if name == 'model_clock':
                 continue  # Verified against the actual write times above.
-            if name == 'when':
+            if name in ('row_ids','address_keys','sentence_content_keys','semantic_fingerprint'):
+                continue  # Content addresses/hashes; semantic equality is checked above.
+            if name.startswith('recurrence_'):
+                # Summaries include the time-sensitive conceived absences.
+                assert value['rows'][name].shape == baseline['rows'][name].shape
+                if value['rows'][name].is_floating_point():
+                    assert torch.isfinite(value['rows'][name]).all()
+                continue
+            if name in ('surprise', 'c_minus'):
+                first, second = value['rows'][name].clone(), baseline['rows'][name].clone()
+                assert torch.isfinite(first).all()
+                if name == 'surprise':
+                    # Forecast error on the observed sentences reads the stamp.
+                    from Layers import LTM0
+                    rows = value['rows']['record_kind'].eq(LTM0.KINDS.index('observation')).nonzero().flatten()
+                elif name == 'c_minus':
+                    rows = list(value['omissions'])
+                assert first[rows].ge(0).all()
+                first[rows] = second[rows] = 0
+                torch.testing.assert_close(first,second,rtol=0,atol=0,msg=name)
+                continue
+            if name == 'slots':
                 before, after = value['initial_rows'], value['count']
                 torch.testing.assert_close(value['rows'][name][:before],baseline['rows'][name][:before],rtol=0,atol=0)
                 torch.testing.assert_close(value['rows'][name][after:],baseline['rows'][name][after:],rtol=0,atol=0)
-                expected = encoder().decode_index(baseline['rows'][name][before:after])+clock
+                earlier = baseline['rows'][name][before:after,start:start+4]
+                assert torch.equal(stamped,earlier.ne(0).any(-1))
+                expected = encoder().decode_index(earlier[stamped])+clock
                 torch.testing.assert_close(times,expected,rtol=0,atol=0)
+                first, second = value['rows'][name].clone(), baseline['rows'][name].clone()
+                first[before:after,start:start+4] = second[before:after,start:start+4] = 0
+                first[list(value['forecasts'])] = second[list(baseline['forecasts'])] = 0
+                torch.testing.assert_close(first,second,rtol=0,atol=0)
                 continue
             torch.testing.assert_close(value['rows'][name],baseline['rows'][name],rtol=0,atol=0,msg=name)
-        torch.testing.assert_close(value['answer'],baseline['answer'],rtol=0,atol=0)
+    import json
+    (tmp_path/'certificate.json').write_text(json.dumps(dict(
+        exact_content_and_programs=True, time_sensitive_reads=measurements),indent=2))
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -149,7 +243,7 @@ def test_stream_chain(tmp_path,monkeypatch):
     from Layers import LTM0, SymbolExpectation
     from Meaning import ConceptualMeaning
     from Occurrence import sentence_key
-    store = LTM0(4,capacity=8)
+    store = LTM0(12,capacity=8,percept_width=8)
     history = SimpleNamespace(_ltm_store=store)
     rows = {}
     for index in (1,2):
@@ -157,27 +251,27 @@ def test_stream_chain(tmp_path,monkeypatch):
             text = f'{document}{index}'.encode()
             with store.at_address(document,index,sentence_key((text,))):
                 rows[stream,index] = store.append_meaning(ConceptualMeaning.from_description(
-                    torch.full((4,),float(10*stream+index))),kind='observation',stream=stream)
+                    torch.full((12,),float(10*stream+index))),kind='observation',stream=stream)
     for stream in (0,1):
         chain = SymbolExpectation.get_stm_chain(history,b=stream)
         assert [int(item[1][0,0]) for item in chain] == [10*stream+1,10*stream+2]
         assert store.stream_rows(stream).tolist() == [rows[stream,1],rows[stream,2]]
-    before = store.when.clone()
+    before = store.slots[:,4:8].clone()
     for stream in (0,1):
         for index in (1,2):
             document = 'ab'[stream]
             with store.at_address(document,index,sentence_key((f'{document}{index}'.encode(),))):
                 assert store.append_meaning(ConceptualMeaning.from_description(
-                    torch.full((4,),float(10*stream+index))),kind='observation',stream=stream) == rows[stream,index]
+                    torch.full((12,),float(10*stream+index))),kind='observation',stream=stream) == rows[stream,index]
     assert len(store) == 4 and store.witness_count[:4].tolist() == [2]*4
-    torch.testing.assert_close(store.when,before,rtol=0,atol=0)
+    torch.testing.assert_close(store.slots[:,4:8],before,rtol=0,atol=0)
     assert store.sentence_index[:4].tolist() == [1,1,2,2]
-    torch.testing.assert_close(store.recency_weights(0),torch.tensor([.5,.5,1.,.5]))
+    torch.testing.assert_close(store.recency_weights(0),torch.tensor([.25, 1/3, .5, 1.]))
     # The same source can be experienced in both streams without relocating it.
     store.witness_stream(rows[0,1],1)
     assert store.stream_rows(0).tolist() == [0,2]
     assert store.stream_rows(1).tolist() == [0,1,3]
-    restored = LTM0(4,capacity=8)
+    restored = LTM0(12,capacity=8,percept_width=8)
     restored.load_state_dict(store.state_dict())
     assert torch.equal(restored.stream,store.stream)
     # The production closing supplies stream witnesses and model processing time.
@@ -198,17 +292,19 @@ def test_stream_chain(tmp_path,monkeypatch):
                 assert observations.numel()==2
                 if documents==('a','b'):
                     from RowTime import encoder
-                    assert encoder().decode_index(live.when[observations]).tolist() == [model.present()]*2
+                    assert encoder().decode_index(torch.stack([live.entry_when(int(row)) for row in observations])).tolist() == [model.present()]*2
                     before={key:getattr(live,key)[observations].clone()
-                            for key in ('row_ids','when','sentence_index')}
+                            for key in ('row_ids','sentence_index')}
+                    before_time=torch.stack([live.entry_when(int(row)) for row in observations])
                     witnesses=live.witness_count[observations].clone()
                     first=[live.stream_rows(b).tolist() for b in (0,1)]
                     assert set(first[0]).isdisjoint(first[1])
                 else:
+                    torch.testing.assert_close(torch.stack([live.entry_when(int(row)) for row in observations]),before_time,rtol=0,atol=0)
                     for key,value in before.items():
                         assert torch.equal(getattr(live,key)[observations],value)
                     assert (live.witness_count[observations]>witnesses).all()
-                    assert live.stream[observations].all()
+                    assert live.stream[observations, :2].all()
     finally:
         model.End()
     _stream_code_banks(tmp_path,monkeypatch)

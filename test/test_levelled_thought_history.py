@@ -13,8 +13,7 @@ def _meaning(seed=0, *, question=True, scope=None, bindings=None):
     roles = torch.arange(24, dtype=torch.float32).reshape(3, 8) / 24 + seed
     return ConceptualMeaning(
         roles,
-        torch.ones(3, dtype=torch.bool),
-        mode="interrogative" if question else "assertive",
+        torch.ones(3, dtype=torch.bool), sentence_kind="relation" if question else "idea",
         scope=scope or {},
         bindings=bindings or {},
     )
@@ -139,13 +138,13 @@ def test_episode_gradients_reach_earlier_roles_then_detach_after_step():
     memory = WhatInteractionMemory(capacity=32, detach_mode="episode")
     source = torch.randn(3, 8, requires_grad=True)
     question = ConceptualMeaning(
-        source, torch.ones(3, dtype=torch.bool), mode="interrogative"
+        source, torch.ones(3, dtype=torch.bool), sentence_kind="relation"
     )
     memory.begin_thought_episode(question, work_budget=8)
     child = replace(question, roles=question.roles * 2)
     memory.descend_thought(child)
     carried = memory.thought_state().contexts[-1].meaning
-    result = replace(carried, roles=carried.roles * 3, mode="assertive")
+    result = replace(carried, roles=carried.roles * 3)
     memory.return_thought(result)
     memory.finish_thought(result)
     memory.thought_history()[-1].meaning.roles.square().sum().backward()

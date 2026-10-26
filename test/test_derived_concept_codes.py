@@ -10,7 +10,7 @@ from test_review13_subspaces import fixture as native_fixture, word
 
 
 def fixture():
-    cs, cb, _, alloc = native_fixture()
+    cs, cb, _, alloc = native_fixture(batch_size=2)
     return cs, cb, alloc
 
 
@@ -21,16 +21,17 @@ def test_rows_conduct_to_other_words_without_crossing_batch_streams():
     a, b, c = [word(cs, [(p, 1.)]) for p in (4, 7, 8)]
     store = LTM0(3, capacity=8)
     cs.symbolSpace = SimpleNamespace(ltm_store=store)
-    root = cs.new_concept()
-    store.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b), symbol=root)
+    from ClauseRow import attach_clause_index
+    attach_clause_index(SimpleNamespace(), store, cs)
+    root = alloc.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b))
     row = store.append_meaning(ConceptualMeaning(torch.eye(3), torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea', role_refs=(('sym', root), None, None)), evidence=(1.,0.))
+         sentence_kind='idea', role_refs=(('sym', root), None, None)), evidence=(1.,0.))
     cs._priming_spread = .25
     # Existing diffusion transports standing energy before the new seen bump.
     cs.prime_seen(torch.tensor([[a],[c]]))
     surface = cs.prime_seen(torch.tensor([[a],[c]]))
     assert surface[0,b] > 1 and surface[1,b] == 1
-    assert cs._last_occurrence_priming['received'].gt(0).any()
+    assert not hasattr(cs, '_last_occurrence_priming')
     assert len(store) == 1
 
 
@@ -58,7 +59,9 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
               for i in range(len(store)) if store.row(i)['kind'] == 'cover'}
     assert len(covers) == 2
     assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | covers
-    torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
+    torch.testing.assert_close(atoms[rows>=0][..., :96], cb.lookup_rows(rows[rows>=0])[..., :96])
+    assert cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all()
+    assert not atoms[rows>=0][..., 104:].any()
     opt = model.getOptimizer(lr=.01)
     groups = model.objective_parameter_groups(opt)
     assert any(p is model.perceptualSpace.subspace.what.W for p in groups['reconstruction'])
@@ -86,18 +89,3 @@ def test_percept_lookup_checkpoint_has_no_independent_word_state():
     other_cb.load_state_dict(state)
     torch.testing.assert_close(other_cb.lookup_rows(other_row), cb.lookup_rows(row))
     assert all('W' != name for name, _ in other_cb.named_parameters())
-
-
-def test_actual_occurrences_activate_words_outside_the_current_sentence():
-    from test_mm_xor import _fresh_model
-    from MereologicalCodes import occurrence_memberships
-    model, _, _ = _fresh_model('data/XOR_grammar.xml')
-    text = ['hello world', 'hello there', 'loving world', 'loving there']
-    with torch.no_grad():
-        model.forward(model.inputSpace.prepInput(text))
-        model.forward(model.inputSpace.prepInput(text))
-    owner = model._concept_owner()
-    assert len(occurrence_memberships(owner, owner._closed_clause_store())) >= 4
-    assert owner._last_occurrence_priming['received'].gt(0).any()
-    bank = model._sentence_primed_bank
-    assert (bank.valid & ~bank.own & bank.byte_valid.any(-1)).any()

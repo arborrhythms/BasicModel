@@ -48,9 +48,9 @@ class ForcedGrammar:
                 kind = candidate.get('kind', resolver._derivation_symbol(identity))
                 words = names.get(kind, set())
                 if kind is not None and resolver.store.parts.contains(kind):
-                    from PartRead import expression_components
+                    from ChainRead import components
                     from QueryWork import QueryWorkBudget
-                    terms, _, incomplete = expression_components(resolver.store, (('sym', kind),),
+                    terms, _, incomplete = components(resolver.store, (('sym', kind),),
                         max_records=64, work=QueryWorkBudget(64))
                     reference, seen = ('sym', kind), set()
                     while not incomplete and reference not in seen:

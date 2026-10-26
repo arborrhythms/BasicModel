@@ -27,14 +27,15 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 
 def _stored_query(model, registry, part, whole):
     from Layers import LTM0
-    store=LTM0(8,capacity=16)
-    store.configure_leaf_index(read=lambda idea,limit,**kwargs:((7,),1,True))
+    store=LTM0(8, percept_width=0,capacity=16)
     model.symbolSpace.ltm_store=store
-    source=registry.form('part',part,whole,mode='assertive')
-    store.append_meaning(source,kind='fact',evidence=(.7,.1))
+    source=registry.form('part',part,whole)
+    from MemoryIndex import configure_model_index
+    configure_model_index(model,store)
+    row=store.append_relation(part[1],whole[1],truth_plus=.7,truth_minus=.1)
     with model._query_boundary_scope((0,)):
         context=model._thought_grammar_context(source,row=0,work=QueryWorkBudget(32),continuation=None)
-        return registry.form('query',store.occurrence_of(0),context=context)
+        return registry.form('query',store.occurrence_of(row),context=context)
 
 
 def test_open_relation_answer_preserves_every_member_without_another_reader():
@@ -47,7 +48,7 @@ def test_open_relation_answer_preserves_every_member_without_another_reader():
     cost=selected.work.spent
     answers=thought_answer_meanings(selected)
     assert len(answers)==1
-    assert answers[0].role_refs[0]==part and answers[0].role_refs[2]==whole
+    assert answers[0].role_refs[:2]==(part,whole)
     assert selected.work.spent==cost==memory.thought_state().work_spent
     checked=ThoughtResult.from_checkpoint(selected.result.checkpoint())
     restored=thought_answer_meanings(replace(selected,result=checked))
@@ -56,10 +57,28 @@ def test_open_relation_answer_preserves_every_member_without_another_reader():
     memory.end_what_episode()
 
 
-def test_subgoal_carries_the_typed_child_result_into_the_answer():
+def _open_goal(model, registry, part, whole):
+    from Layers import LTM0
+    from ClauseRow import attach_clause_index
+    from Meaning import ConceptualMeaning
+    from ThoughtReferences import with_slots
+    store = LTM0(8, capacity=16)
+    attach_clause_index(model, store, model.conceptualSpace)
+    model.symbolSpace.ltm_store = store
+    store.append_relation(part[1], whole[1], truth_plus=1.)
+    model.conceptualSpace._concept_allocator.singletons.add(whole[1])
+    content = registry.form('equal', part, whole)
+    content = replace(content, role_refs=(None, content.role_refs[1], whole),
+                      role_mask=torch.tensor([False, True, True]), bindings={'_equality': True})
+    return with_slots(content, (('referent', 0),), pair=(0., 0.), source_evidence=(0., 0.))
+
+
+def test_subgoal_carries_the_typed_child_result_into_the_answer(monkeypatch):
     from Output import thought_answer_meanings
     model, registry, memory, part, whole = _catalog_world()
-    inner = registry.form("isPart", part, whole)
+    inner = _open_goal(model, registry, part, whole)
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
     entry = memory.begin_thought_episode(inner, work_budget=2)
     reference = memory.thought_reference(entry)
     memory.finish_thought(inner)
@@ -72,7 +91,7 @@ def test_subgoal_carries_the_typed_child_result_into_the_answer():
         selected = model.run_selected_thought(outer, work_budget=128)
     assert selected.result.result_kind == "subgoal"
     assert isinstance(selected.result.value, ThoughtResult)
-    assert selected.result.value.semantic_id == "isPart"
+    assert selected.result.value.semantic_id == "query"
     answers = thought_answer_meanings(selected)
     assert len(answers) == 1
     assert answers[0].role_mask.tolist() == [True, True, True]
@@ -80,7 +99,7 @@ def test_subgoal_carries_the_typed_child_result_into_the_answer():
     assert answers[0].scope == inner.scope
     stored = ThoughtResult.from_checkpoint(selected.result.checkpoint())
     assert isinstance(stored.value, ThoughtResult)
-    assert stored.value.request.role_refs == inner.role_refs
+    assert stored.value.request.role_refs == selected.result.value.request.role_refs
     memory.end_what_episode()
 
 
@@ -101,7 +120,7 @@ def test_missing_code_is_incomplete_rather_than_a_zero_or_request_answer():
 def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch, kind):
     from contextlib import nullcontext
     from types import SimpleNamespace
-    from Understanding import AnswerProgram, Understanding
+    from Understanding import Reading, Understanding
     from What import What
     model, registry, memory, part, whole = _catalog_world()
     query = registry.form('isPart', part, whole)
@@ -110,10 +129,10 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     elif kind == 'concept':
         query = registry.form('exist', registry._payload(part))
     else:
-        from Layers import LTM0
-        model.symbolSpace.ltm_store = LTM0(8, capacity=16)
-        query = registry.form('ask', query)
-    entry = AnswerProgram(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
+        query = registry.form('ask', _open_goal(model, registry, part, whole))
+        from meaning_fixtures import replay_thought_plan
+        replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
+    entry = Reading(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
         leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
         targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))

@@ -17,7 +17,7 @@ from Output import AnswerDerivation
 from Queries import (
     GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature,
 )
-from Understanding import AnswerProgram, InputReconstruction, Understanding
+from Understanding import Reading, InputReconstruction, Understanding
 from What import What
 from reasoning import TruthGroundedReasoner
 from test_cs_symbol_table import _cs
@@ -232,7 +232,7 @@ def test_operand_occurrence_reads_require_permission_before_preparation(monkeypa
     vp = registry._reference(("conceptual-subgoal", "ask"))
     meaning = ConceptualMeaning(
         torch.ones(3, 8), torch.tensor([True, True, False]),
-        mode="interrogative", role_refs=(("ltm", "missing", 0), vp, None),
+         role_refs=(("ltm", "missing", 0), vp, None),
     )
     reads = []
     monkeypatch.setattr(

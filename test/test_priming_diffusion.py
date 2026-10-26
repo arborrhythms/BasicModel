@@ -13,6 +13,10 @@ def owner(points):
     return SimpleNamespace(
         similarity_codebook=SimpleNamespace(W=points, lookup_rows=lookup),
         _concept_allocator=SimpleNamespace(parts=LTM1(256)),
+        _priming_edge_src=torch.full((512,), -1, dtype=torch.long),
+        _priming_edge_dst=torch.full((512,), -1, dtype=torch.long),
+        _priming_edge_weight=torch.ones(512), _priming_edge_count=0,
+        _priming_edge_revision=None, _priming_edge_rebuilds=0,
         _closed_clause_store=lambda: None,
         _csw_row_of=lambda symbol: symbol - 1 if 0 < symbol <= len(points) else None)
 
@@ -38,7 +42,7 @@ def test_part_graph_follows_native_addresses_after_forgetting_and_load():
     parts = native._concept_allocator.parts
     parts.add(1, 2, symbol=100)
     parts.add(2, 3, symbol=101)
-    restored = LTM1(1)
+    restored = LTM1(parts.capacity)
     restored.load_state_dict(parts.state_dict())
     native._concept_allocator.parts = restored
     restored.remove(1, 2)

@@ -15,8 +15,8 @@ from Queries import ThoughtResult
 def _meaning(value=1, *, width=8):
     return ConceptualMeaning(
         torch.ones(3, width) * value,
-        torch.ones(3, dtype=torch.bool),
-        mode="interrogative",
+        torch.ones(3, dtype=torch.bool), sentence_kind="relation",
+
     )
 
 
@@ -48,7 +48,7 @@ def test_integrated_checkpoint_retains_the_one_memory_owner_and_active_history(t
     assert target.symbolSpace.what_memory is memory
     state = memory.thought_state()
     assert state is not None and state.level == 1 and state.work_spent == 1
-    assert memory.thought_history()[0].meaning.mode == "interrogative"
+    assert __import__("ThoughtReferences").has_open_slots(memory.thought_history()[0].meaning)
     assert memory.thought_state(b=1) is None
 
 
@@ -96,7 +96,7 @@ def test_typed_result_checkpoint_rehydrates_nested_meaning_evidence(tmp_path):
     nested_roles = torch.randn(3, 8, requires_grad=True)
     nested = ConceptualMeaning(
         nested_roles, torch.tensor([True, True, False]),
-        mode="assertive", polarity=False,
+         polarity=False,
         bindings={"source": "catalogue"}, scope={"document": "d1"})
     result = ThoughtResult(
         semantic_id="lookup", domain="ltm-lookup", result_kind="set",
@@ -112,7 +112,7 @@ def test_typed_result_checkpoint_rehydrates_nested_meaning_evidence(tmp_path):
     memory.finish_thought(
         request, result=result, evidence_kind="retrieval")
     memory.end_what_episode()
-    assert memory.thought_extras()["version"] == 4
+    assert memory.thought_extras()["version"] == 5
 
     source = _model(memory)
     path = tmp_path / "nested-result.ckpt"
@@ -126,13 +126,13 @@ def test_typed_result_checkpoint_rehydrates_nested_meaning_evidence(tmp_path):
         if record.kind == "thought" and record.operation == "lookup")
     restored = replayed.result.value[0]["meaning"]
     assert isinstance(restored, ConceptualMeaning)
-    assert restored.mode == "assertive" and restored.polarity is False
+    assert "mode" not in restored.metadata() and restored.polarity is False
     assert restored.bindings == nested.bindings and restored.scope == nested.scope
     assert not restored.roles.requires_grad
     torch.testing.assert_close(restored.roles, nested.roles.detach())
 
 
-def test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field():
+def test_v1_thought_history_checkpoint_is_rejected_before_reading_its_rows():
     """Older history has no typed result and restores as the same history."""
     source = _memory()
     legacy = source.thought_extras()
@@ -146,12 +146,12 @@ def test_v1_thought_history_checkpoint_remains_loadable_without_a_result_field()
             if "legacy" not in record:
                 record.pop("result")
     target = WhatInteractionMemory(batch=2, capacity=32, detach_mode="episode")
-    target.load_thought_extras(legacy)
-    assert target.thought_state().level == source.thought_state().level
-    assert all(record.result is None for record in target.thought_history())
+    with pytest.raises(ValueError, match="checkpoint"):
+        target.load_thought_extras(legacy)
+    assert target.thought_state() is None
 
 
-def test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result():
+def test_v2_thought_history_checkpoint_is_rejected_even_with_a_typed_result():
     """The v3 nested-evidence tag does not invalidate ordinary v2 results."""
     memory = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
     request = _meaning()
@@ -172,7 +172,7 @@ def test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result():
         evidence_kind="taxonomy")
     memory.end_what_episode()
     legacy = memory.thought_extras()
-    assert legacy["version"] == 4
+    assert legacy["version"] == 5
     legacy["version"] = 2
     legacy["namespace"] = "0123456789abcdef0123456789abcdef"
     for row in legacy["rows"]:
@@ -180,13 +180,9 @@ def test_v2_thought_history_checkpoint_remains_loadable_with_a_typed_result():
             record.pop("address", None)
 
     restored = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
-    restored.load_thought_extras(legacy)
-    replayed = next(
-        record for record in restored.thought_history()
-        if record.kind == "thought" and record.operation == "part")
-    assert replayed.result is not None
-    assert replayed.result.semantic_id == "part"
-    assert replayed.result.evidence["support_true"] == 1.0
+    with pytest.raises(ValueError, match="checkpoint"):
+        restored.load_thought_extras(legacy)
+    assert restored.thought_state() is None
 
 
 def test_restored_active_episode_keeps_new_computations_live_until_optimizer_boundary():
@@ -195,7 +191,7 @@ def test_restored_active_episode_keeps_new_computations_live_until_optimizer_bou
     memory.load_thought_extras(source.thought_extras())
     assert not memory.thought_state().contexts[-1].meaning.roles.requires_grad
     roles = torch.randn(3, 8, requires_grad=True)
-    value = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool), mode="assertive")
+    value = ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool), sentence_kind="relation")
     memory.commit_thought(value, operation="refine")
     assert memory.thought_history()[-1].meaning.roles.requires_grad
     memory.return_thought(value)
@@ -253,7 +249,7 @@ def test_occurrence_reads_are_row_local_and_keep_live_payloads():
 def test_trim_cannot_remove_an_occurrence_referenced_by_the_active_root():
     memory = WhatInteractionMemory(capacity=7)
     memory.begin_thought_episode(_meaning(), work_budget=3)
-    result = memory.finish_thought(replace(_meaning(2), mode="assertive"))
+    result = memory.finish_thought(replace(_meaning(2)))
     reference = memory.thought_reference(result)
     memory.end_what_episode()
     root = replace(_meaning(3), role_refs=(reference, None, None))

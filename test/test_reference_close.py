@@ -1,4 +1,5 @@
 """Fixed-operation, native-row closing certificates; no learned-parse claim."""
+from chunk_fixtures import context as chunk_context
 from types import SimpleNamespace
 from dataclasses import replace
 
@@ -13,11 +14,11 @@ from ReferenceContext import SituationFrame
 from part_fixtures import part_references, assert_part_references
 
 
-def fixture():
+def fixture(*, percept=False):
     from test_cs_sparse_weights import _cs
     from IdentityRows import point
     owner = _cs(nS=512, order=3, dim=12)
-    store = LTM0(12, capacity=512)
+    store = LTM0(12, capacity=512, percept_width=8 if percept else 0)
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
@@ -36,8 +37,11 @@ def form_exposure(resolver, cue, content):
     mint(owner, content, form=word)
 
 
-def close(resolver, point, predicate, mode, frames, *, document, sentence, selected=None):
+def close(resolver, point, predicate, mode, frames, *, document, sentence, selected=None,
+          dummy=False, dummy_if_missing=False):
     request = dict(mode=mode, leaves=(1,), cue=torch.zeros_like(point), predicate=predicate, role=0)
+    if dummy:
+        request['compose_bind'] = 0
     term = Composition(point, order=1)
     np = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
                 reference_request=request, composition=term)
@@ -58,7 +62,12 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
     clause = Clause(ConceptualMeaning.from_description(value), point=value,
                     children=(np,), refs=(('clause', 0), -1, -1), order=2,
                     composition=composition)
-    plan = resolver.preview(clause, frames)
+    plan = resolver.preview(clause, chunk_context(resolver, frames))
+    if dummy_if_missing and plan['items'][0]['selected'] is None:
+        # These complete mentions retain the compose menu's dummy outcome;
+        # an abstract thought's unresolved bind has no such recorded choice.
+        request['compose_bind'] = 0
+        plan = resolver.preview(clause, chunk_context(resolver, frames))
     if selected is not None:
         assert mode != 'mint'
         plan['items'][0]['selected'] = plan['items'][0]['candidates'][selected]
@@ -79,7 +88,7 @@ def current_identities(resolver, frames):
     store, bank = resolver.store, resolver.components.owner.similarity_codebook
     before = store.parts.refs.clone(), store.slots.clone(), bank.W.detach().clone()
     result = {address: identity
-              for identity, item in resolver.individuals(resolver.accessible(frames)).items()
+              for identity, item in resolver.individuals(resolver.accessible(chunk_context(resolver, frames))).items()
               for address in item['occurrences']}
     for actual, expected in zip((store.parts.refs, store.slots, bank.W), before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
@@ -91,7 +100,7 @@ def test_mint_uses_the_selected_member_order_instead_of_the_source_word_order():
     request = dict(mode='mint', leaves=(0,), cue=atoms[0], content=atoms[0], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
         order=1, reference_request=request, composition=Composition(atoms[0], order=0))
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     kept = resolver.prepare(clause, plan)
     assert kept.composition.order == 1
     before = len(resolver.components.individual_ids)
@@ -118,7 +127,8 @@ def test_recent_token_returns_at_its_kinds_native_conceptual_order(order):
     assert store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
     identity = store.occurrence_of(row)
     frame = SituationFrame.from_row(store.row(row))
-    records = resolver.accessible((frame,))
+    from chunk_fixtures import recall
+    records = resolver.accessible(recall(resolver, (frame,)))
     candidates = resolver.individuals(records)
     assert identity in candidates and kind not in candidates
     candidate = candidates[identity]
@@ -153,7 +163,7 @@ def same_kind_fourth_close(kind):
     # Evidence teaches exclusivity; no color/word identities enter the owner.
     for i in range(8):
         for point, pred, label in ((noun+black, runs, 'a'), (noun+white, sleeps, 'b')):
-            close(resolver, point, pred, 'bind', (), document=('exclusion', label), sentence=i)
+            close(resolver, point, pred, 'bind', (), document=('exclusion', label), sentence=i, dummy=True)
     for document, second, distinct in (('mint-pair', 'mint', True), ('one', 'bind', False),
                                       ('revisable', 'bind', True)):
         frames, occurrences = [], []
@@ -161,7 +171,7 @@ def same_kind_fourth_close(kind):
         for sentence, (content, predicate, mode) in enumerate(zip(contents,
                 (runs, sleeps, runs, sleeps), ('mint', second, 'bind', 'bind'))):
             frame, address, plan = close(resolver, content, predicate, mode, frames,
-                document=(document, kind), sentence=sentence)
+                document=(document, kind), sentence=sentence,dummy_if_missing=True)
             frames.append(frame); occurrences.append(address)
             if mode == 'mint':
                 assert plan['items'][0]['selected'][0] == 'new'
@@ -204,7 +214,7 @@ def test_bind_without_access_cannot_mint_and_old_rows_cannot_be_revised():
 def test_empty_close_has_no_policy_gradient_or_store_side_effect():
     resolver, store, atoms = fixture()
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=0)
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     assert float(plan['cost']) == 0 and not plan['cost'].requires_grad
     kept = resolver.prepare(clause, plan)
     assert kept is clause
@@ -273,7 +283,7 @@ def test_closing_credit_keeps_both_trial_graphs_and_learns_salience_and_form_cue
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], order=1,
                     reference_request=request)
-    plans = [resolver.preview(clause, frames) for _ in range(2)]
+    plans = [resolver.preview(clause, chunk_context(resolver, frames)) for _ in range(2)]
     optimizer = torch.optim.SGD(resolver.parameters(), lr=.01)
     for plan in plans:
         optimizer.zero_grad()
@@ -402,7 +412,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     component = f.cs.components
     resolver = component.reference_close
     f.cs._online_learning_frozen = True
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     before = component.individual_ids
     kept = resolver.prepare(clause, plan)
     assert component.individual_ids == before
@@ -416,7 +426,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     assert int(f.store.witness_count[f.store.location(identity)]) == 1 and not hasattr(component, 'nouns')
     occurrence = resolver.last_audit[0]['occurrence']
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == 1
-    restored = LTM0(8, capacity=64)
+    restored = LTM0(8, capacity=64, percept_width=0)
     restored.load_state_dict(f.store.state_dict())
     restored.load_semantic_extras(f.store.semantic_extras())
     assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()

@@ -79,8 +79,9 @@ def test_text_answers_are_loss_side_and_not_numeric_output_vectors():
     data.load('math_chain')
     question = next(i for i, value in enumerate(data.text_answers['train']) if value is not None)
     assert data.what(What.supervised(question)).what in NUMBER_WORDS
-    assert not data.what(What.supervised(next(i for i, value in enumerate(
-        data.text_answers['train']) if value is None))).available
+    quiet = data.what(What.supervised(next(i for i, value in enumerate(
+        data.text_answers['train']) if value is None)))
+    assert quiet.available and quiet.what == '' and quiet.provenance == 'silence'
     assert all(value.shape == (1,) and not bool(value.any()) for value in data.train_output)
     assert not hasattr(data, 'math_range')
     assert data.grammar_lessons == {'train': [], 'validation': [], 'test': []}
@@ -222,7 +223,8 @@ def test_selected_equality_credits_the_current_verb_and_not_an_arithmetic_label(
 def test_bound_answer_is_an_identity_not_a_nearest_numeral_class():
     from types import SimpleNamespace
     from Meaning import ConceptualMeaning
-    from ThoughtReferences import question, fill
+    from ThoughtReferences import fill
+    from meaning_fixtures import unsupported as question
     from BindingAnswers import matches
     goal = question(ConceptualMeaning.from_description(torch.ones(8)), (('referent', 0),))
     answer = fill(goal, dict(reference=('sym', 81), value=torch.ones(8),

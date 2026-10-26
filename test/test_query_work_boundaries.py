@@ -42,7 +42,7 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
     cs, registry, a, b, context = _world()
     del a, b, context
     store = LTM0(8)
-    description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+    description = ConceptualMeaning.from_description(torch.eye(8)[0])
     slot = store.append_meaning(description, kind="fact", trust=.6)
     context = _context(cs, store=store)
     question = registry.form("ask", store.occurrence_of(slot), context=context)
@@ -55,8 +55,8 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
 
 
 def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
-    from ThoughtReferences import question
-    meaning = question(ConceptualMeaning.from_description(torch.eye(8)[:3]), (('evidence', -1),))
+    from meaning_fixtures import unsupported as question
+    meaning = question(ConceptualMeaning.from_description(torch.eye(8)[0]), (('referent', 0),))
     meter = QueryWorkBudget(2)
     context = _context(_cs(), work=meter)
     query = _signature('ask', 'argin1')

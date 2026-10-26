@@ -89,7 +89,7 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
                                        stores[0].meaning_of(row).roles)
 
 
-def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeypatch):
+def test_completed_ask_program_offers_the_same_controller_without_inventing_holes(monkeypatch):
     cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
     model = BasicModel()
     model.spaces = []
@@ -100,6 +100,9 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
     object.__setattr__(model, "grammatical_thoughts", registry)
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         grammatical_thoughts=registry, what_memory=memory, ltm_store=store))
+    from Language import OperationSelectionLayer
+    model.shared_grammar = OperationSelectionLayer(d_model=cs.outputShape[-1], chooser='mlp')
+    model.symbolSpace.languageLayer = SimpleNamespace(operation_layer=model.shared_grammar)
     model.eval()
     from test_thought_model_fixture import force_requested_thought
     force_requested_thought(model)
@@ -107,9 +110,9 @@ def test_nested_what_from_a_completed_program_enters_the_same_controller(monkeyp
         results = model._run_selected_sentence_thoughts((sentence_state(language, entry, registry),), work_budget=128)
     assert len(results) == 1
     result = results[0][1]
-    assert result.result.result_kind == "subgoal"
-    assert result.result.value.semantic_id == "part"
-    assert any(record.kind == "descend" for record in result.records)
+    assert result.result.result_kind == "concept"
+    assert result.result.semantic_id == "part"
+    assert not any(record.kind == "descend" for record in result.records)
     assert result.work.spent == memory.thought_state().work_spent
     assert all(store.row(index)["kind"] != "fact" for index in range(len(store)))
     memory.end_what_episode()

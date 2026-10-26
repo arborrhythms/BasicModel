@@ -9,17 +9,18 @@ import json
 import torch
 from torch.nn import functional as F
 
-MODES = ('assertive', 'interrogative', 'unspecified')
 METADATA_BYTES = 64
-METADATA_WIDTH = 4 + 2 * (9 * METADATA_BYTES + 1)
+# One polarity, then binding/scope bytes: eight bits + occupancy per byte
+# and one overflow bit per field. No grammatical-mode coordinates remain.
+METADATA_WIDTH = 1 + 2 * (9 * METADATA_BYTES + 1)
 
 
 def context_width(width):
-    return 9 * width + 15 + 3 * METADATA_WIDTH + 2 * (3 * width + 10) + 3 * width + 7
+    return 9 * width + 15 + 3 * METADATA_WIDTH + 2 * (3 * width + 7) + 3 * width + 7
 
 
 def semantic_metadata(meanings):
-    """Mode, polarity and bounded, ordered binding/scope categorical bytes.
+    """Polarity and bounded, ordered binding/scope categorical bytes.
 
     Bytes are eight independent binary categories plus an occupancy bit, not
     a scalar ordinal. Each field has an explicit overflow bit. Native typed
@@ -58,7 +59,7 @@ def semantic_metadata(meanings):
         return torch.cat((values.reshape(-1), like.new_tensor([len(raw) > METADATA_BYTES])))
 
     return tuple(torch.cat((meaning.roles.new_tensor(
-        [meaning.mode == mode for mode in MODES] + [meaning.polarity]),
+        [meaning.polarity]),
         field(tuple(item for item in meaning.bindings if not (
             isinstance(item, tuple) and len(item) == 2 and item[0] in
             ('_evidence_pair', '_open_references', '_thought_witnesses',
@@ -77,7 +78,7 @@ def attend_meanings(query, records, *, incomplete=False, reader=None, work=None,
     """
     width = int(query.roles.shape[-1])
     if not records:
-        empty = query.roles.new_zeros(3 * width + 10)
+        empty = query.roles.new_zeros(3 * width + 7)
         empty[-1] = float(incomplete)
         return empty
     keys, values = [], []
@@ -89,8 +90,7 @@ def attend_meanings(query, records, *, incomplete=False, reader=None, work=None,
         roles = roles * mask[:, None]
         keys.append(roles.reshape(-1))
         values.append(torch.cat((roles.reshape(-1), mask, roles.new_tensor(
-            [meaning.mode == mode for mode in MODES]
-            + [meaning.polarity, float(trust), 1., float(incomplete)]))))
+            [meaning.polarity, float(trust), 1., float(incomplete)]))))
     keys = torch.stack(keys)
     q = (query.roles * query.role_mask.to(query.roles)[:, None]).reshape(-1)
     scores = F.normalize(keys, dim=-1) @ F.normalize(q, dim=0)

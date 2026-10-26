@@ -1,11 +1,13 @@
 """Fixed-operation identity certificates; no claim about learned parsing."""
+from chunk_fixtures import context as chunk_context
 from types import SimpleNamespace
 
 import pytest
 import torch
 
 from MediumTermMemory import MediumTermMemory
-from MTMOverlay import MTMOverlay
+import STMChunks as chunks
+from chunk_fixtures import Walk, choice, value as working_value
 from Spaces import LanguageOperationChoice
 
 
@@ -14,102 +16,103 @@ def address(number):
 
 
 def operations():
-    return MTMOverlay((SimpleNamespace(method_name='lift', clause_form='S'),),
-                      (SimpleNamespace(method_name='bind', head_role=1),))
+    return Walk((SimpleNamespace(method_name='bind',head_role=1),
+                 SimpleNamespace(method_name='lift',clause_form='S',head_role=2)), ())
 
 
-def choice(value, *, kind=2, identity=0):
-    batch = len(value)
-    ids = torch.zeros(batch, dtype=torch.long)
-    active = torch.ones(batch, dtype=torch.bool)
-    return LanguageOperationChoice(value, ids+kind, ids, ids, active,
-        value.new_ones(batch), ids, active, order=ids+1, identity=ids+identity)
+
+def select_bind(walk,state,mention,identity,column):
+    points,ids,indices,valid = chunks.bind_menu(state[0],mention[:,None])
+    selected = (ids[0,0] == identity) & valid[0,0]
+    at = int(selected.long().argmax())
+    assert selected.any()
+    operand = points[:,0,at]
+    result = torch.where((ids[:,0,at] == 0)[:,None],mention,operand)
+    chosen = choice(result,local=0,identity=identity,chunk=int(indices[0,0,at]),bind=True)
+    return walk.apply(state,chosen,torch.stack((mention,operand),1),column)
 
 
-def push(overlay, state, value, *, word, index, order=1, resolved=True):
-    return overlay.push(state, torch.ones(len(value), dtype=torch.bool), value,
-        word=torch.full((len(value),), word), order=torch.full((len(value),), order),
-        index=torch.tensor(index), words=8, resolved=torch.full((len(value),), resolved))
+
+def push(walk,state,value,*,word,index,order=1,resolved=True):
+    return walk.shift(state,value,word=word,index=index,order=order,resolved=resolved)
+
 
 
 def start(value):
-    overlay = operations()
-    state = overlay.empty(value[:, None].expand(-1, 8, -1), journal=16, words=8)
-    state = push(overlay, state, value, word=101, index=0)
-    state = overlay.apply(state, choice(value), torch.stack((value, value*0), 1),
-                          column=torch.tensor(0), words=8)
-    return overlay, state
+    walk = operations()
+    state = walk.empty(value,16)
+    state = push(walk,state,value,word=101,index=0)
+    return walk,select_bind(walk,state,value,0,0)
 
 
-def event(overlay, state, value, *, index, column):
-    state = push(overlay, state, torch.ones_like(value)*.2, word=202, index=index, order=0)
-    before = overlay.read(state[0], state[2][:, 1, 0:1])[:, 0]
-    return overlay.apply(state, choice(value, kind=1),
-        torch.stack((before, torch.ones_like(value)*.2), 1),
-        column=torch.tensor(column), words=8)
+
+def event(walk,state,value,*,index,column):
+    state = push(walk,state,torch.ones_like(value)*.2,word=202,index=index,order=0)
+    state_stm,live = chunks.refresh(state[0],chunks.stack_indices(state[0])[:,:2])
+    state = (state_stm,*state[1:])
+    return walk.apply(state,choice(value,local=1,head=2),torch.stack((live[:,1],live[:,0]),1),column)
+
 
 
 @pytest.mark.parametrize('compiled', (False, True))
 def test_second_verb_receives_first_result_through_bind_with_derivative(compiled):
-    first = torch.tensor([[.2, .7, .3]], requires_grad=True)
-    scale = torch.tensor(.6, requires_grad=True)
-    overlay, state = start(first)
+    first = torch.tensor([[.2,.7,.3]],requires_grad=True)
+    scale = torch.tensor(.6,requires_grad=True)
+    walk,state = start(first)
     if compiled:
-        overlay.apply = torch.compile(overlay.apply, backend='eager', fullgraph=True)
-    changed = first * scale
-    state = event(overlay, state, changed, index=1, column=1)
+        walk.apply = torch.compile(walk.apply,backend='eager',fullgraph=True)
+    changed = first*scale
+    state = event(walk,state,changed,index=1,column=1)
     mention = torch.zeros_like(first)
-    state = push(overlay, state, mention, word=303, index=2)
-    points, records, handles, _, available = overlay.menu(state, mention[:, None], torch.tensor([[0]]))
-    assert available[0, 0, 1] and handles[0, 0, 1] == 1
-    torch.testing.assert_close(records[:, 0, 1], changed)
-    bound = points[:, 0, 1]
-    state = overlay.apply(state, choice(bound, identity=1),
-        torch.stack((mention, records[:, 0, 1]), 1), column=torch.tensor(2), words=8)
-    second_scale = torch.tensor(.4, requires_grad=True)
-    received = overlay.refresh(state, mention[:, None], torch.tensor([[0]]))[:, 0]
-    second = received * second_scale
-    state = event(overlay, state, second, index=3, column=3)
-    torch.testing.assert_close(state[0][:, 0], first * scale * second_scale)
-    state[0][:, 0].sum().backward()
-    torch.testing.assert_close(first.grad, torch.full_like(first, .24))
-    torch.testing.assert_close(scale.grad, (first.detach()*second_scale.detach()).sum())
+    state = push(walk,state,mention,word=303,index=2)
+    points,ids,indices,available = chunks.bind_menu(state[0],mention[:,None])
+    selected = available & (ids == 512)
+    torch.testing.assert_close(points[selected],changed)
+    state = select_bind(walk,state,mention,512,2)
+    state_stm,live = chunks.refresh(state[0],chunks.at(state[0])[:,None])
+    state = state_stm,*state[1:]
+    second_scale = torch.tensor(.4,requires_grad=True)
+    state = event(walk,state,live[:,0]*second_scale,index=3,column=3)
+    held = working_value(state,512)
+    torch.testing.assert_close(held,first*scale*second_scale)
+    held.sum().backward()
+    torch.testing.assert_close(first.grad,torch.full_like(first,.24))
+    torch.testing.assert_close(scale.grad,(first.detach()*second_scale.detach()).sum())
     assert second_scale.grad > 0
 
 
+
 def test_latest_verb_replaces_state_and_two_aliases_share_description_join():
-    overlay, state = start(torch.tensor([[.1, .1, .1]]))
-    state = event(overlay, state, torch.tensor([[.8, .1, .1]]), index=1, column=1)
-    state = push(overlay, state, torch.zeros(1, 3), word=303, index=2)
-    old = overlay.read(state[0], torch.tensor([[1]]))[:, 0]
-    state = overlay.apply(state, choice(old, identity=1), torch.stack((old*0, old), 1),
-                          column=torch.tensor(2), words=8)
-    state = event(overlay, state, torch.tensor([[.1, .8, .1]]), index=3, column=3)
-    torch.testing.assert_close(state[0][0, 0], torch.tensor([.1, .8, .1]))
-    description = torch.tensor([[.1, .1, .9]])
-    state = push(overlay, state, description, word=404, index=4)
-    points, records, _, _, _ = overlay.menu(state, description[:, None], torch.tensor([[0]]))
-    snapshot = records[:, 0, 1].clone()
-    state = overlay.apply(state, choice(points[:, 0, 1], identity=1),
-        torch.stack((description, records[:, 0, 1]), 1), column=torch.tensor(4), words=8)
-    torch.testing.assert_close(snapshot, torch.tensor([[.1, .8, .1]]))
-    torch.testing.assert_close(overlay.refresh(state, torch.zeros(1, 2, 3), torch.tensor([[0, 1]])),
-        torch.tensor([[[.1, .8, .9], [.1, .8, .9]]]))
+    walk,state = start(torch.tensor([[.1,.1,.1]]))
+    state = event(walk,state,torch.tensor([[.8,.1,.1]]),index=1,column=1)
+    state = push(walk,state,torch.zeros(1,3),word=303,index=2)
+    state = select_bind(walk,state,torch.zeros(1,3),512,2)
+    state = event(walk,state,torch.tensor([[.1,.8,.1]]),index=3,column=3)
+    torch.testing.assert_close(working_value(state,512),torch.tensor([[.1,.8,.1]]))
+    description = torch.tensor([[.1,.1,.9]])
+    state = push(walk,state,description,word=404,index=4)
+    snapshot = working_value(state,512).clone()
+    state = select_bind(walk,state,description,512,4)
+    torch.testing.assert_close(snapshot,torch.tensor([[.1,.8,.1]]))
+    _,live = chunks.refresh(state[0],chunks.stack_indices(state[0])[:,:2])
+    torch.testing.assert_close(live,torch.tensor([[[.1,.8,.9],[.1,.8,.9]]]))
+
 
 
 @pytest.mark.parametrize('keep_second', (False, True))
 def test_trial_values_are_isolated_and_only_selected_values_commit(keep_second):
     from SentenceCompose import select_rows
-    overlay, original = start(torch.tensor([[.2, .3]]))
-    first = event(overlay, original, torch.tensor([[.8, .1]]), index=1, column=1)
-    second = event(overlay, original, torch.tensor([[.1, .9]]), index=1, column=1)
-    kept = select_rows(first, second, torch.tensor([keep_second]))
-    torch.testing.assert_close(original[0][0, 0], torch.tensor([.2, .3]))
+    walk,original = start(torch.tensor([[.2,.3]]))
+    first = event(walk,original,torch.tensor([[.8,.1]]),index=1,column=1)
+    second = event(walk,original,torch.tensor([[.1,.9]]),index=1,column=1)
+    kept = select_rows(first,second,torch.tensor([keep_second]))
+    torch.testing.assert_close(working_value(original,512),torch.tensor([[.2,.3]]))
     pool = MediumTermMemory()
-    pool.open(address(1), kind=None, when=1, value=original[0][0, 0])
-    pool.update(address(1), kept[0][0, 0], when=2)
-    torch.testing.assert_close(pool.value_of(address(1)), second[0][0, 0] if keep_second else first[0][0, 0])
+    pool.open(address(1),kind=None,when=1,value=working_value(original,512)[0])
+    pool.update(address(1),working_value(kept,512)[0],when=2)
+    torch.testing.assert_close(pool.value_of(address(1)),working_value(second if keep_second else first,512)[0])
     assert not pool.value_of(address(1)).requires_grad
+
 
 
 def test_names_events_checkpoint_and_reclamation_have_separate_ownership():
@@ -137,141 +140,101 @@ def test_frame_access_does_not_leak_a_native_individuals_other_stream_value():
     from dataclasses import replace
     from IdentityRows import mint
     from ReferenceContext import SituationFrame
-    from test_medium_term_memory import keep, mention
+    from test_medium_term_memory import keep,mention
     from test_reference_close import fixture
-    resolver, store, atoms = fixture()
+    resolver,store,atoms = fixture()
     pool = resolver.components.owner.mtm
-    native = mint(resolver.components.owner, atoms[0])
-    rows = [keep(resolver, mention(atoms[0], reference=native), position=index)[0] for index in (0, 1)]
-    first, second = map(store.occurrence_of, rows)
+    native = mint(resolver.components.owner,atoms[0])
+    # Independently opened streams own distinct working tokens even when
+    # both recall the same promoted native identity.
+    from Meaning import ConceptualMeaning
+    rows = [store.append_meaning(ConceptualMeaning.from_description(atoms[0]),
+        stream=index,sentence_index=index,document_key='streams',order=1) for index in (0,1)]
+    for index,row in enumerate(rows):
+        pool.open(store.occurrence_of(row),kind=native,native=native,when=index,value=atoms[0])
+    first,second = map(store.occurrence_of,rows)
     assert first != second and pool.token_of(first) != pool.token_of(second)
-    pool.update(first, atoms[1], when=20)
-    frames = [replace(SituationFrame.from_row(store.row(row)), symbol_ids=(native,),
-                      activations=((store.occurrence_of(row), native, 0),)) for row in rows]
-    staged = MTMOverlay.stage(resolver, [(frames[0],), (frames[1],)],
-        torch.zeros(2, 8, 12), journal=8, words=8)
-    for batch, expected in enumerate((atoms[1], atoms[0])):
-        current = staged[0][batch, staged[1][batch]]
-        assert len(current) > 0
-        torch.testing.assert_close(current, expected.expand_as(current), rtol=0, atol=0)
-    assert not resolver.individuals(resolver.accessible(()))
+    pool.update(first,atoms[1],when=20)
+    for row,expected in zip(rows,(atoms[1],atoms[0])):
+        frame = replace(SituationFrame.from_row(store.row(row)),symbol_ids=(native,),
+                        activations=((store.occurrence_of(row),native,0),))
+        state = chunk_context(resolver,(frame,))
+        records = resolver.accessible(state)
+        points = torch.stack([record['value'] for _,record in records.values()])
+        torch.testing.assert_close(points,expected.expand_as(points),rtol=0,atol=0)
+    assert not resolver.individuals(resolver.accessible(chunk_context(resolver)))
+
 
 
 @pytest.mark.parametrize('compiled', (False, True))
 def test_compose_bind_locations_share_the_operation_chooser_and_zero_dummy(compiled):
-    from Language import BindLayer, OperationSelectionLayer
+    from Language import BindLayer,OperationSelectionLayer
     from ReferenceContext import prepare_operands
-    rule = SimpleNamespace(method_name='bind', head_role=1)
-    layer = OperationSelectionLayer(d_model=2, ops=[], unary_ops=[BindLayer()])
+    rule=SimpleNamespace(method_name='bind',head_role=1)
+    layer=OperationSelectionLayer(d_model=2,ops=[BindLayer()],unary_ops=[])
     with torch.no_grad():
-        layer.apply_anchor.fill_(1)
+        layer.reduce_anchor.fill_(1)
         layer.stop_anchor.fill_(-100)
-    value = torch.tensor([[[.1, .2]]], requires_grad=True)
-    antecedent = torch.tensor([[[.8, .7], [.3, .4]]], requires_grad=True)
-    state = (antecedent, torch.ones(1, 2, dtype=torch.bool), torch.zeros(1, 1, 6, dtype=torch.long),
-             torch.tensor([[[2, 101, 1], [2, 102, 1]]]), torch.zeros(1, 1, 6, dtype=torch.long))
-    bank = SimpleNamespace()
-    def run(value, antecedent):
-        current = (antecedent, *state[1:])
-        ids = torch.zeros(1, 1, dtype=torch.long)
-        data = prepare_operands(value, ids-1, ids, ids, orders=ids+1,
-            rules=(), unary_rules=(rule,), bank=bank, live=None,
-            active=torch.ones_like(ids, dtype=torch.bool), identity_state=current, source=ids)
-        _, path, route = layer(value, reference_data=data, expectation_prime=torch.ones(1, 2))
-        return path, route['identity'], route['logits'], route['probabilities'], route['operands']
+    mention=torch.tensor([[[.1,.2],[0.,0.]]],requires_grad=True)
+    antecedent=torch.tensor([[[.8,.7],[.3,.4]]],requires_grad=True)
+    bank=SimpleNamespace()
+    def run(mention,antecedent):
+        state=chunks.empty(1,8,2)
+        for index in range(2):
+            state,_=chunks.deposit(state,antecedent[:,index],torch.tensor([True]),identity=100+index)
+        ids=torch.full((1,2),-1,dtype=torch.long)
+        active=torch.tensor([[True,False]])
+        data=prepare_operands(mention,ids,ids*0,ids*0,orders=ids+2,
+            rules=(rule,),unary_rules=(),bank=bank,live=None,active=active,chunk_state=state)
+        _,path,route=layer(mention,reference_data=data,expectation_prime=torch.ones(1,2),
+                           depth=torch.ones(1,dtype=torch.long))
+        return path,route['identity'],route['logits'],route['probabilities'],route['operands'],data['binary_valid']
     if compiled:
-        run = torch.compile(run, backend='aot_eager', fullgraph=True)
-    path, identity, logits, probabilities, operands = run(value, antecedent)
-    assert identity.tolist() == [1] and logits[0, 0] == 0
-    torch.testing.assert_close(path, antecedent[:, :1])
-    torch.testing.assert_close(operands[:, 0], value[:, 0])
-    torch.testing.assert_close(operands[:, 1], antecedent[:, 0])
-    torch.testing.assert_close(probabilities, logits.softmax(-1))
+        run=torch.compile(run,backend='aot_eager',fullgraph=True)
+    path,identity,logits,probabilities,operands,valid=run(mention,antecedent)
+    assert identity.tolist()==[100] and logits[0,0]==0 and int(valid.sum())==3
+    torch.testing.assert_close(path[:,:1],antecedent[:,:1])
+    torch.testing.assert_close(operands[:,0],mention[:,0])
+    torch.testing.assert_close(operands[:,1],antecedent[:,0])
+    torch.testing.assert_close(probabilities,logits.softmax(-1))
     path.sum().backward(retain_graph=True)
-    torch.testing.assert_close(antecedent.grad, torch.tensor([[[1., 1.], [0., 0.]]]))
-    assert layer.apply_anchor.grad is None or torch.count_nonzero(layer.apply_anchor.grad) == 0
-    (-probabilities[0, 1].log()).backward()
-    assert layer.apply_anchor.grad is not None and layer.apply_anchor.grad.abs().sum() > 0
+    torch.testing.assert_close(antecedent.grad,torch.tensor([[[1.,1.],[0.,0.]]]))
+    assert layer.reduce_anchor.grad is None or torch.count_nonzero(layer.reduce_anchor.grad)==0
+    (-probabilities[0,1].log()).backward()
+    assert layer.reduce_anchor.grad is not None and layer.reduce_anchor.grad.abs().sum()>0
     with torch.no_grad():
-        layer.apply_anchor.fill_(-10)
-    _, identity, logits, _, _ = run(value, antecedent)
-    assert identity.tolist() == [0] and logits[0, 0] == 0 and (logits[0, 1:] < 0).all()
+        layer.reduce_anchor.fill_(-10)
+    _,identity,logits,_,_,_=run(mention,antecedent)
+    assert identity.tolist()==[0] and logits[0,0]==0 and (logits[0,1:]<0).all()
+
 
 
 def test_compose_menu_uses_the_resolvers_observed_exclusions():
     from ClauseRow import Clause
     from Meaning import ConceptualMeaning
     from test_reference_close import fixture
-    resolver, store, atoms = fixture()
-    for index in (0, 1):
-        row = store.write_clause(Clause(ConceptualMeaning.from_description(atoms[index]),
-            point=atoms[index], order=1), document_key='supports', sentence_index=index)
-        store.witness_count[row] = 8
-    exclusions = torch.tensor(resolver.exclusion_pairs()).reshape(-1, 2)
-    state = (atoms[0].reshape(1, 1, -1), torch.ones(1, 1, dtype=torch.bool),
-             torch.zeros(1, 1, 6, dtype=torch.long), torch.tensor([[[2, 101, 1]]]),
-             torch.zeros(1, 1, 6, dtype=torch.long))
-    for own in (atoms[1], atoms[0], atoms[0]+atoms[1], atoms[1]*0):
-        *_, available = MTMOverlay.menu(state, own.reshape(1, 1, -1), torch.tensor([[0]]),
-                                       exclusions=exclusions)
-        assert available[0, 0, 0]
-        assert bool(available[0, 0, 1]) == (not resolver.exclusion_query()(own, atoms[0]))
+    resolver,store,atoms = fixture()
+    for index in (0,1):
+        row=store.write_clause(Clause(ConceptualMeaning.from_description(atoms[index]),
+            point=atoms[index],order=1),document_key='supports',sentence_index=index)
+        store.witness_count[row]=8
+    exclusions=torch.tensor(resolver.exclusion_pairs()).reshape(-1,2)
+    state=chunks.empty(1,8,12)
+    state,_=chunks.deposit(state,atoms[:1],torch.tensor([True]),identity=101)
+    for own in (atoms[1],atoms[0],atoms[0]+atoms[1],atoms[1]*0):
+        *_,available=chunks.bind_menu(state,own.reshape(1,1,-1),exclusions=exclusions)
+        assert available[0,0,0]
+        assert bool(available[0,0,1]) == (not resolver.exclusion_query()(own,atoms[0]))
+
 
 
 def recorded_identity_reading(f, tree, *, dummy_binds=()):
-    """Execute fixed grammar operations and capture the production tensor journal."""
+    """Fixed grammar operations through the production shared chunks/journal."""
+    from chunk_fixtures import record
     from dataclasses import replace
-    from ReferenceContext import result_order
-    entry = f.program(tree)
-    names = {f.words[name][0] for name in ('subject', 'alias') if name in f.words}
-    orders = torch.tensor([1 if int(word) in names else 0 for word in entry.word_ids])
-    entry = replace(entry, leaf_orders=orders, close_references=True)
-    overlay = MTMOverlay(f.binary, f.unary)
-    words, columns = len(entry.leaves), len(entry.actions)
-    state = overlay.empty(entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns)
-    stack, stamps, frames, refs, inputs = [], [], [], [], []
-    first, binds = 0, 0
-    for action, (kind, local, word) in enumerate(entry.actions.tolist()):
-        if kind == 0:
-            value = entry.leaves[word][None]
-            state = overlay.push(state, torch.tensor([True]), value,
-                word=entry.concept_ids[word:word+1], order=orders[word:word+1],
-                index=torch.tensor(word), words=words, resolved=torch.tensor([True]))
-            stack.insert(0, value); stamps.insert(0, int(orders[word]))
-            frames.append(value.new_zeros(3, 8)); refs.append((-1, -1))
-            continue
-        source = torch.arange(len(stack))[None]
-        live = overlay.refresh(state, torch.stack(stack, 1), source)
-        rule = (f.binary if kind == 1 else f.unary)[local]
-        operands = live[:, [1, 0]] if kind == 1 else torch.stack((live[:, 0], live[:, 0]*0), 1)
-        handle = 0
-        if rule.method_name == 'bind':
-            points, records, _, _, available = overlay.menu(state, live[:, :1], torch.tensor([[0]]))
-            handle = 0 if binds in dummy_binds else first
-            binds += 1
-            assert available[0, 0, handle]
-            result = f.operation(rule).compose(points[:, :, handle])[:, 0]
-            operands = torch.stack((live[:, 0], records[:, 0, handle]), 1)
-            if not first:
-                first = int(state[2][0, 0, 0])
-        else:
-            values = (operands[:, 0:1], operands[:, 1:2]) if kind == 1 else (operands[:, 0:1],)
-            result = f.operation(rule).compose(*values).reshape(1, -1)
-        arity = 2 if kind == 1 else 1
-        stamp = result_order(rule, tuple(reversed(stamps[:arity])))
-        selected = choice(result, kind=kind, identity=handle)._replace(
-            local_op=torch.tensor([local]), order=torch.tensor([stamp]))
-        inputs.append((rule.method_name, operands.clone(), result.clone()))
-        state = overlay.apply(state, selected, operands, column=torch.tensor(action), words=words)
-        if not first and getattr(rule, 'determiner_mode', None) in ('mint', 'bind'):
-            first = int(state[2][0, 0, 0])
-        del stack[:arity]; del stamps[:arity]
-        stack.insert(0, result); stamps.insert(0, stamp)
-        frames.append(torch.cat((operands, result[:, None]), 1)[0]); refs.append((-1, -1))
-    return replace(entry, operation_values=torch.stack(frames), operation_refs=torch.tensor(refs),
-        identity_origins=state[3][0], identity_actions=state[4][0], identity_values=state[0][0],
-        identity_leaves=torch.arange(1, words+1),
-        end_state=torch.stack((stack[0][0], stack[0][0]*0, stack[0][0]*0))), inputs, first
+    entry, inputs, handle = record(f,tree,dummy_binds=dummy_binds)
+    return replace(entry, leaf_evidence=torch.tensor([[1., 0.]]).expand(len(entry.leaves), 2)), inputs, handle
+
 
 
 def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(monkeypatch):
@@ -289,7 +252,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     torch.testing.assert_close(lifts[1][1][:, 0], torch.maximum(lifts[0][2], alias))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     assert not f.cs.mtm.entries and not plan['decisions']
     written = {}
@@ -331,16 +294,15 @@ def test_invalid_identity_checkpoint_does_not_replace_the_pool(corruption):
 
 
 def test_binding_an_unresolved_object_does_not_complete_its_verb():
-    overlay, state = start(torch.tensor([[.6, .2]]))
-    # A named object is present, but its value has not been resolved.
-    state = push(overlay, state, torch.tensor([[.1, .1]]), word=303, index=2, resolved=False)
-    state = overlay.apply(state, choice(torch.tensor([[.1, .1]])),
-        torch.tensor([[[.1, .1], [0., 0.]]]), column=torch.tensor(2), words=8)
-    state = push(overlay, state, torch.zeros(1, 2), word=404, index=3, resolved=False)
-    points, records, _, _, _ = overlay.menu(state, torch.zeros(1, 1, 2), torch.tensor([[0]]))
-    state = overlay.apply(state, choice(points[:, 0, 3], identity=3),
-        torch.stack((torch.zeros(1, 2), records[:, 0, 3]), 1), column=torch.tensor(3), words=8)
-    assert state[2][0, 0, 3] == 0
+    from ChunkJournal import IDENTITY,RESOLVED
+    walk,state=start(torch.tensor([[.6,.2]]))
+    state=push(walk,state,torch.tensor([[.1,.1]]),word=303,index=2,resolved=False)
+    unknown=int(state[1][0,0,IDENTITY])
+    state=select_bind(walk,state,torch.tensor([[.1,.1]]),0,2)
+    state=push(walk,state,torch.zeros(1,2),word=404,index=3,resolved=False)
+    state=select_bind(walk,state,torch.zeros(1,2),unknown,3)
+    assert state[1][0,0,RESOLVED] == 0
+
 
 
 @pytest.mark.parametrize('readmit', (False, True))
@@ -354,7 +316,7 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch,
         ('bind', (wrapper, ('lower_unary', 'subject'), 'tail')))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     assert len(plan['items']) == 2
     introduction, use = plan['items']
     assert introduction['mode'] == 'mint'
@@ -387,9 +349,11 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
     bound = Composition(value, children=(leaf,), operation='bind', head_role=1, order=0)
     closing = PartClosing(f.cs, f.store)
     assert not torch.equal(closing._point(reference), value)
-    assert closing._plan_term(bound, True) == reference
-    assert not any(record['seat'] for record in closing._plan)
-    assert closing._next == closing.alloc.next_id
+    before = int(closing.alloc.next_id), len(closing.parts)
+    record = closing._plan_term(bound, True)
+    assert record['reference'] == (closing.parts.SYMBOL, reference)
+    assert record['resolved']
+    assert (int(closing.alloc.next_id), len(closing.parts)) == before
 
 
 @pytest.mark.parametrize('open_sibling', (False, True))
@@ -398,10 +362,10 @@ def test_source_authority_closes_a_nested_region_without_hiding_a_free_role(open
     from ClauseRow import Clause
     from Meaning import ConceptualMeaning
     from ThoughtClosing import closing_question
-    from ThoughtReferences import needs_episode, open_slots, with_slots
+    from ThoughtReferences import has_open_slots, open_slots, with_slots
     value = replace(ConceptualMeaning.from_description(torch.ones(4)),
                     role_refs=(('sym', 1), None, None))
-    child = Clause(replace(value, mode='interrogative'), point=value.roles[0],
+    child = Clause(replace(value), point=value.roles[0],
                    refs=(1, -1, -1), evidence=(0., 0.))
     children = (child,)
     if open_sibling:
@@ -412,10 +376,10 @@ def test_source_authority_closes_a_nested_region_without_hiding_a_free_role(open
                     children=children, evidence=(1., 0.))
     query = closing_question(value, parent)
     if open_sibling:
-        assert query is not None and needs_episode(query)
+        assert query is not None and has_open_slots(query)
         assert open_slots(query) == (('referent', 0),)
     else:
-        assert query is None
+        assert query is not None and not open_slots(query)
 
 
 @pytest.mark.parametrize('role', (0, 2))
@@ -432,11 +396,11 @@ def test_compose_bind_pending_child_keeps_the_direct_question_role(monkeypatch, 
     child = replace(child, reference_request=dict(child.reference_request, compose_bind=0))
     pred = predicate_point('equal', atoms[0])
     value = ConceptualMeaning(torch.stack((atoms[0], pred, atoms[0])),
-        torch.ones(3, dtype=torch.bool), mode='interrogative', bindings={'_equality': True})
+        torch.ones(3, dtype=torch.bool),  bindings={'_equality': True})
     refs = [words['three'], ClausePredicate(pred, 'equal'), words['three']]
     refs[role] = ('clause', 0)
     parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(0., 0.))
-    plan = resolver.preview(parent, ())
+    plan = resolver.preview(parent, chunk_context(resolver, ()))
     prepared = resolver.prepare(parent, plan)
     written = {}
     row = store.write_clause(prepared, document_key='direct-question', written_rows=written)
@@ -453,7 +417,7 @@ def test_compose_bind_pending_child_keeps_the_direct_question_role(monkeypatch, 
 
 def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
     import copy
-    from MemoryIndex import configure_model_index, RowRemapObserver
+    from MemoryIndex import configure_model_index
     from test_clause_acceptance import SentenceFixture
     from Spaces import _concept_alloc_of
     f = SentenceFixture(monkeypatch)
@@ -472,9 +436,8 @@ def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
     torch.testing.assert_close(store._concept_point(symbol), torch.full((8,), .25))
     torch.testing.assert_close(f.store._concept_point(symbol), original)
     configure_model_index(model, store)
-    observers = owner.similarity_codebook._row_remap_observers
-    assert sum(isinstance(observer, RowRemapObserver) and observer.store() is store
-               for observer in observers) == 1
+    assert store._concept_owner() is owner
+    assert not hasattr(store, 'leaf_terms')
 
 
 def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
@@ -485,7 +448,7 @@ def test_transparent_wrapper_retains_one_completed_event(monkeypatch):
         ('lift', ('lower_unary', 'subject'), ('verb', 'move', ('lower', 'd', 'target')))))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
     row = f.store.write_clause(prepared, written_rows=written, document_key='wrapped-event', sentence_index=0)
@@ -518,7 +481,7 @@ def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, rol
     refs = [words['wrong'], ClausePredicate(pred, 'equal'), words['wrong']]
     refs[role] = ('clause', 0)
     parent = Clause(value, relation='equal', refs=tuple(refs), children=(child,), evidence=(1., 0.))
-    plan = resolver.preview(parent, (SituationFrame.from_row(store.row(first)),))
+    plan = resolver.preview(parent, chunk_context(resolver, (SituationFrame.from_row(store.row(first)),)))
     prepared = resolver.prepare(parent, plan)
     written = {}
     row = store.write_clause(prepared, document_key='resolved-question', written_rows=written)
@@ -528,7 +491,7 @@ def test_resolved_compose_bind_keeps_the_parent_relation_closed(monkeypatch, rol
     assert row[0] == 'sym' and store.parts.contains(row[1])
     assert store.meaning_of(row).role_refs[role] == ('sym', words['three'])
     assert not open_slots(store.meaning_of(row))
-    assert closing_question(store.meaning_of(row), prepared, store=store, written_rows=written) is None
+    assert not open_slots(closing_question(store.meaning_of(row), prepared, store=store, written_rows=written))
     unchanged(resolver, retained)
 
 
@@ -537,31 +500,33 @@ def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
     from dataclasses import replace
     from Meaning import ConceptualMeaning
     from ReferenceContext import SituationFrame
-    from ThoughtReferences import open_slots, with_slots
+    from ThoughtReferences import open_slots,with_slots
     from test_reference_close import fixture
-    from test_medium_term_memory import snapshot, unchanged
-    resolver, store, atoms = fixture()
-    row = store.append_meaning(ConceptualMeaning.from_description(atoms[0]), order=1,
-                               document_key='unminted', sentence_index=0, evidence=(1., 0.))
-    token = store.occurrence_of(row)
-    pool = resolver.components.owner.mtm
-    pool.open(token, kind=None, pending=pending, when=1, value=atoms[0])
-    raw = with_slots(replace(store.raw_meaning_of(row), bindings={'_forward_references': ((0, 101),)}),
-                     (('referent', 0),))
-    retained = snapshot(resolver)
-    read = store.read_reference_bindings(row, raw)
-    staged = MTMOverlay.stage(resolver, [(SituationFrame.from_row(store.row(row)),)],
-        atoms[0][None, None], words=1, journal=1)
-    assert bool(staged[3][0, 0, 2]) == (not pending)
-    assert bool(open_slots(read)) == pending
+    from test_medium_term_memory import snapshot,unchanged
+    from chunk_fixtures import prepend
+    resolver,store,atoms=fixture()
+    row=store.append_meaning(ConceptualMeaning.from_description(atoms[0]),order=1,
+        document_key='unminted',sentence_index=0,evidence=(1.,0.))
+    token=store.occurrence_of(row);pool=resolver.components.owner.mtm
+    pool.open(token,kind=None,pending=pending,when=1,value=atoms[0])
+    raw=with_slots(replace(store.raw_meaning_of(row),bindings={'_forward_references':((0,101),)}),(('referent',0),))
+    retained=snapshot(resolver)
+    read=store.read_reference_bindings(row,raw)
+    f=SimpleNamespace(cs=resolver.components.owner,store=store)
+    staged=prepend(f,(SituationFrame.from_row(store.row(row)),),1)
+    identity=pool.entries[token].transient
+    assert (staged[chunks.IDENTITY]==identity).any()
+    assert pool.entries[token].pending == pending
+    assert bool(open_slots(read))==pending
     if not pending:
-        assert read.role_refs[0] == token
-        torch.testing.assert_close(read.roles[0], atoms[0])
-    restored = MediumTermMemory()
+        assert read.role_refs[0]==token
+        torch.testing.assert_close(read.roles[0],atoms[0])
+    restored=MediumTermMemory(pool.capacity,n_vectors=int(pool.transient_ids[0]))
     restored.restore(pool.state())
-    assert restored.entries[token].pending == pending and restored.entries[token].kind is None
-    torch.testing.assert_close(restored.value_of(token), atoms[0])
-    unchanged(resolver, retained)
+    assert restored.entries[token].pending==pending and restored.entries[token].kind is None
+    torch.testing.assert_close(restored.value_of(token),atoms[0])
+    unchanged(resolver,retained)
+
 
 
 def test_pending_checkpoint_migration_and_validation_are_atomic():
@@ -578,8 +543,10 @@ def test_pending_checkpoint_migration_and_validation_are_atomic():
         entry.update(events=tuple(event[:4] for event in events), value=value)
         del entry['pending']
     restored = MediumTermMemory()
-    restored.restore(legacy)
-    assert restored.entries[first].pending and not restored.entries[second].pending
+    with pytest.raises(ValueError,match="version"):
+        restored.restore(legacy)
+    restored.restore(state)
+    assert not restored.entries[first].pending and not restored.entries[second].pending
     previous = restored.entries
     malformed = copy.deepcopy(state)
     malformed['entries'][0]['pending'] = 'false'
@@ -630,13 +597,18 @@ def test_nested_unresolved_operand_keeps_its_resolution_annotation(pending, wrap
     if pending and wrapped:
         occurrence = written[('occurrence', id(operand))]
         assert marks == ((2, occurrence),) and raw.role_refs[2] == occurrence
-        gist = store.raw_meaning_of(store.location(occurrence))
-        assert gist.role_refs == (None, None, None)
-        torch.testing.assert_close(gist.roles[0], operand.point, rtol=0, atol=0)
+        assert occurrence[0] == 'sym' and store.parts.contains(occurrence[1])
+        from ChainRead import point
+        from LTM1 import RELATION
+        assert point(store, (RELATION, occurrence[1])) is None
         retained = snapshot(resolver)
         _, restored, _, _, _ = world()
         restored.load_state_dict(copy.deepcopy(store.state_dict()))
         restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
+        restored.parts.load_state_dict(copy.deepcopy(store.parts.state_dict()))
+        from Spaces import _concept_alloc_of
+        _concept_alloc_of(restored._concept_owner()).singletons = copy.deepcopy(
+            _concept_alloc_of(store._concept_owner()).singletons)
         assert bindings(restored.raw_meaning_of(row))['_unresolved_operands'] == marks
         unchanged(resolver, retained)
     else:
@@ -671,7 +643,7 @@ def test_bind_training_never_updates_or_creates_a_concept_region(monkeypatch, ph
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[1]), point=atoms[1],
                     order=1, reference_request=request)
-    plan = resolver.preview(clause, frames)
+    plan = resolver.preview(clause, chunk_context(resolver, frames))
     selected = plan['items'][0]['selected']
     assert selected == plan['items'][0]['candidates'][1]
     prepared = resolver.prepare(clause, plan)
@@ -707,7 +679,7 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
     entry, inputs, handle = recorded_identity_reading(f, tree, dummy_binds=(0,) if dummy else ())
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     intro = next(item for item in plan['items'] if item['node'].identity['introduction']
                  and item['node'].identity['handle'] == handle)
     assert intro['node'].subject_word_id == -1
@@ -749,7 +721,7 @@ def test_two_relative_determinations_keep_distinct_objects(monkeypatch):
     entry, _, _ = recorded_identity_reading(f, ('sum', relative, relative))
     resolver = f.cs.components.reference_close
     clause = finish_clause(f.language, entry, registry=f.registry)
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     introductions = [item for item in plan['items'] if item['node'].identity['introduction']]
     assert len(introductions) == 2
     assert introductions[0]['node'].identity['handle'] != introductions[1]['node'].identity['handle']
@@ -770,7 +742,7 @@ def test_missing_determined_event_introduction_fails_loudly():
     resolver, store, atoms = fixture()
     value = ConceptualMeaning.from_description(atoms[0])
     node = Clause(value, point=atoms[0], identity=dict(handle=1, action=0,
-        event=(1, 1, 0, 101, -1, 1), origins=torch.tensor([[3, 0, 1]]), values=atoms[:1]))
+        event=(1, 1, 0, 101, -1, 1), origins=torch.tensor([[3, 0, 1]]), values=atoms[:1]), evidence=(1., 0.))
     row = store.write_clause(Clause(value, point=atoms[0]), document_key='lost-introduction')
     plan = dict(items=[], prepared_root=node)
     written = {('occurrence', id(node)): store.occurrence_of(row)}

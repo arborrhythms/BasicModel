@@ -75,7 +75,9 @@ def test_boundary_clears_experience_and_occurrence_caches_preserving_learning(gi
         for n, origin in ((1, store.ORIGIN_USER), (2, store.ORIGIN_PROVISIONED))]
     supplied_rows = [store.row(store.location(ref)) for ref in supplied]
     owner.mtm.open(experienced, kind=None, value=atoms[0], when=0)
-    owner._recurring_readings = {experienced: 1}
+    from MemoryConsolidation import recurrence_groups
+    recurrence_groups(store)
+    assert store.recurrence_used.any()
     owner.components._innovations[experienced] = atoms[0]
     owner.components.verbs._pending.append({'witnesses': {experienced}, 'direction': atoms[0]})
     owner.components.verbs._witnesses[1] = {experienced}
@@ -101,7 +103,8 @@ def test_boundary_clears_experience_and_occurrence_caches_preserving_learning(gi
     assert not owner.mtm.entries and not owner._concept_allocator.testimony_seen
     assert not owner.components._innovations and not owner.components.verbs._pending
     assert not owner.components.verbs._witnesses and not resolver.last_audit
-    assert not getattr(resolver, '_mentions', {}) and not getattr(owner, '_recurring_readings', {})
+    assert not getattr(resolver, '_mentions', {}) and not store.recurrence_used.any()
+    assert store.recurrence_readings.eq(-1).all()
     assert model._document_covers == {} and model._thought_document_ends == ()
     assert model._last_understanding is None and model._sentence_understandings == {}
     assert model._last_sentence_credit is None and model._last_closing_thoughts == ()
@@ -136,16 +139,12 @@ def test_given_knowledge_keeps_its_required_dependency_without_experience_author
 def test_boundary_removes_occurrence_relations_transitively_and_keeps_concept_relations():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
-    # Today's LTM1 accepts positive native handles; the deferred tagged
-    # layout will also represent the other half of the signed address space.
-    from Occurrence import address_key, document_digest, native_content_key
-    point = ConceptualMeaning.from_description(atoms[0])
-    key = next(n for n in range(100) if address_key(document_digest(n), 0, native_content_key(point)) > 0)
-    occurrence = write(store, atoms[0], key)
+    from LTM1 import OCCURRENCE, SYMBOL, RELATION
+    occurrence = write(store, atoms[0], 'dependency')
     left, right = owner.new_concept(), owner.new_concept()
     store.parts.add(left, right, symbol=400, truth_plus=1.)
-    store.parts.add(occurrence[2], right, symbol=401, truth_plus=.5)
-    store.parts.add(401, left, symbol=402, truth_plus=.5)
+    store.parts.add((OCCURRENCE, occurrence[2]), (SYMBOL, right), symbol=401, truth_plus=.5)
+    store.parts.add((RELATION, 401), (SYMBOL, left), symbol=402, truth_plus=.5)
     before = {name: value.clone() for name, value in store.parts.row(400).items()}
     report = begin(model_for(owner, store))
     assert report['relations_removed'] == 2 and store.parts.indices().tolist() == [400]
@@ -155,15 +154,15 @@ def test_boundary_removes_occurrence_relations_transitively_and_keeps_concept_re
 
 def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     from ConceptForgetting import protected_concepts
-    resolver, store, _ = fixture()
+    resolver, store, _ = fixture(percept=True)
     owner = resolver.components.owner
     first = open_cover(owner, store, stream=0, document='book')
     symbol = store.raw_meaning_of(store.location(first)).role_refs[0][1]
-    when = store.when[store.location(first)].clone()
+    when = store.entry_when(store.location(first)).clone()
     rng = store.cover_rng_state.clone()
     begin(model_for(owner, store))
     assert not len(store) and symbol in protected_concepts(owner, store)
-    restored = LTM0(store.nDim, capacity=store.capacity)
+    restored = LTM0(store.nDim, capacity=store.capacity, percept_width=store.percept_width)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     # A learned cover vector cannot change the address of that book.
@@ -172,7 +171,7 @@ def test_cover_survives_empty_memory_checkpoint_and_reuses_symbol_without_rng():
     second = open_cover(owner, restored, stream=2, document='book')
     assert first == second and len(restored) == 1
     assert restored.raw_meaning_of(0).role_refs[0] == ('sym', symbol)
-    assert not torch.equal(restored.when[0], when)
+    assert not torch.equal(restored.entry_when(0), when)
     assert restored.witness_count[0] == 1 and restored.stream_rows(2).tolist() == [0]
     torch.testing.assert_close(restored.cover_rng_state, rng, rtol=0, atol=0)
     open_cover(owner, restored, stream=2, document='other book')

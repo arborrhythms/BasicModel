@@ -94,6 +94,32 @@ def test_chart_consumers_stay_in_cube_after_both_signs_of_learning():
                                rtol=1e-5, atol=1e-6)
 
 
+def test_question_conditioner_preserves_signed_chunk_percepts_and_content_gradients():
+    from Models import BasicModel
+    from Layers import cube_translate
+    model = BasicModel()
+    model._readback_percept_width = 2
+    model._image_form_width = 10
+    answer = torch.tensor([[[0.] * 12, [.2, .3, -1., .5, -3., 2., -4., 3., -.5, 1., .4, .6]]],
+                          requires_grad=True)
+    module = model._question_conditioner(12, device=answer.device, dtype=answer.dtype)
+    context = torch.ones(1, module.in_features)
+    with torch.no_grad():
+        module.weight.fill_(.01)
+    actual = model._condition_answer_on_question(answer, context)
+    torch.testing.assert_close(actual[:, 0], answer[:, 0], rtol=0, atol=0)
+    torch.testing.assert_close(actual[..., 2:10], answer[..., 2:10], rtol=0, atol=0)
+    content = torch.cat((answer[:, 1, :2], answer[:, 1, 10:]), -1)
+    delta = module(context)
+    expected = cube_translate(content, torch.cat((delta[:, :2], delta[:, 10:]), -1))
+    torch.testing.assert_close(torch.cat((actual[:, 1, :2], actual[:, 1, 10:]), -1), expected)
+    actual[:, 1].sum().backward()
+    assert module.weight.grad[:2].abs().sum() > 0
+    assert module.weight.grad[10:].abs().sum() > 0
+    assert torch.count_nonzero(module.weight.grad[2:10]) == 0
+    torch.testing.assert_close(answer.grad[:, 1, 2:10], torch.ones(1, 8), rtol=0, atol=0)
+
+
 @pytest.mark.parametrize('gain', (0., .5, 1.))
 def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
     from types import SimpleNamespace
@@ -105,8 +131,11 @@ def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
         gain, 1e-6, 'clip', identities=torch.tensor([1,2]))
     host = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
-    state = (values, torch.tensor([2]), torch.ones(1,2,dtype=torch.long), torch.zeros(1,2,dtype=torch.long),
-             torch.full((1,2),-1,dtype=torch.long), torch.zeros(1,2))
+    import STMChunks as chunks
+    state = chunks.empty(1,8,4)
+    for index in (1,0):
+        state,_ = chunks.deposit(state,values[:,index],torch.tensor([True]),
+                                  stack=True,order=1,grammar_order=0)
     calls = []
     hook = layer.chooser.register_forward_pre_hook(lambda *_: None)
     original = layer._stacked_reduced
@@ -123,7 +152,7 @@ def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
     torch.testing.assert_close(calls[0], torch.ones(1,2), atol=0, rtol=0)
     if gain:
         torch.testing.assert_close(calls[1], torch.full((1,2),1-gain), atol=0, rtol=0)
-    torch.testing.assert_close(state[0], values, rtol=0, atol=0)
+    torch.testing.assert_close(chunks.stack_view(state)[0][:,:2], values, rtol=0, atol=0)
 
 
 def test_union_is_an_exact_join_including_cube_rails():

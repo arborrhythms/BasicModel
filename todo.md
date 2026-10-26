@@ -19,16 +19,58 @@ lines below keep the numbers their items had when they landed.
 
 **Current:** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
-BasicModel `75345f891e` after Claude's LAND review
+BasicModel `75345f891e` (published main
+`4f136f76faabafc24397765f4ffe90d01d3dc4bc`, WikiOracle
+`69f82f5f77a3980020841fe859a09afb7733e7be`) after Claude's LAND review
 ([iteration spec §62](doc/plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
 the second repair's five scoped groups pass **588 cases with 41 skips and
 zero failures**; the one end-of-3.5 sweep (`0bd65c5e2c`, 35 failures) is
 repaired, nothing retired. [Receipt](doc/benchmarks/2026-10-24-item3-5-iteration2/sweep/repair-02/README.md).
+History note (2026-10-25): history after `f306fc28aa` was rewritten before the push (`537523ae04`); `75345f891e`, `a34325c85d` and `f095569a1f` are respectively `2067dbc25a`, `3561f39aa0` and `31c3e4a59e` on origin.
 Learning remainders (line 3's description 1/4, the modal corpus 0/4, the
 six placements 0/6) are item 0's with their budgets; layout/removal, STM
-chunks, overlay retirement and the certainty record are item 3.0's, which
-begins now. Publication: push BasicModel main, bump WikiOracle. Hand-off for the
-next conversations: [2026-10-24-handoff-3-0](doc/plans/2026-10-24-handoff-3-0.md).
+chunks, overlay retirement and the certainty record are item 3.0's.
+**Item 3.0 steps 1–3 are committed (Alec’s hand-off); step 1 is approved** ([Claude's review, layout §13](doc/plans/2026-10-23-layout-and-removal.md#13-claudes-review-of-step-1-source-34848e154f--2026-10-25), 2026-10-25):
+layout/removal source SHA256 `34848e154f0fa9912223d4117136d7eb63657cefaeca94a76c6574559a73819e`,
+**911 passed, seven existing prerequisite skips, zero failures**.
+[Receipt](doc/benchmarks/2026-10-25-item3-0-layout/README.md) records the initial
+freeze's diagnostic failure, exact repair, ports and explicit retirements.
+**Step 2, placement, is approved and committed**
+([Claude's review, placement §21](doc/plans/2026-10-25-item3-0-step2-placement.md#21-claudes-review-of-step-2-source-1e94238b57--2026-10-25)):
+source SHA256 `1e94238b57c99ba2b1003de2467e6f6acf543b68dc425263bed708509677d55e`,
+**1,003 passes, seven standing prerequisite skips under the documented protocol**.
+The [local receipt](doc/benchmarks/2026-10-25-item3-0-placement/README.md)
+(README SHA256 `a2342de738bd35354ed5ad26c2ffd996c024226e8887e2643b83fb3c31ec8dc2`)
+retains two original standing-fixture failures, their explicit measurement ports,
+the transient-cache observer port and the resource stop. The pre-existing
+unforced compound-case shape defect is retained in that receipt. Step 2 replaces
+the interim context update. **Step 3's repair is approved**
+([Claude's review, STM-chunks §27](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#27-claudes-review-of-the-repair-source-4b7fa2aaf7--2026-10-25-approved-with-two-items-before-the-commit)),
+source `4b7fa2aaf7`: 1,113 passes, seven standing prerequisite skips,
+32/32 complete premise readings. Its two closing items are recorded in
+[§§28–29](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25):
+placement's greedy coverage is also 1.0, so the **6/8 companion flag is
+item 0's learning work**; estimates now carry zero time without consuming
+an arrival tick, while current time remains a predictor input.
+Closing source `cd49a1e84534d6c92f074276e2cfc57fccd1226a876bad4dce5905c6d6b3107d`
+passed **1,113 cases with seven standing prerequisite skips and zero test failures**, plus one smoke ([closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
+The rejected source, failed percept certificate, first repair freeze and
+[approved repair's results](doc/benchmarks/2026-10-25-item3-0-stm-chunks/repair-resumed/final/README.md)
+remain separate. Step 4 source `44ea10180c` was rejected in §17: silence
+entered the sentence keep comparison. Alec's decided repair excludes silence
+from A while retaining its output training. Repair source
+`acac0b3448f5a265f62a64bab6d0368563df0ab1ecb15d76d4990428ddc9d1f1`
+finishes **1,490 passed, one failed, eight standing skips**, plus the smoke
+([spec §§18–19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#18-asked-rows-alone-contribute-to-the-keep-comparison--codex-2026-10-25),
+[repair receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
+Gates 1–5 and both decomposition arms pass; companions are **6/8**, with
+different failed questions from step 3. Gate 6 remains not met: the unchanged
+two-stream premise-completeness assertion fails on stream 0, sentence 2,
+kept by reconstruction alone. No learning-side disposition is approved;
+item 0's accepted step 3 flag stays separate. Alec requests committing and
+pushing the completed repair on main. Step 4 review, step 5 and the one
+end-of-3.0 sweep remain.
+[Handoff](doc/plans/2026-10-24-handoff-3-0.md).
 
 **Historical step 1b review ledger (superseded by Current).**
 
@@ -167,9 +209,23 @@ optional cold-start boundary learning certificate is also incomplete:
 runner bound during the original six epochs. Carry it to Item 0's learning
 evidence with that budget unchanged; it is not a step-1b mechanism pass.
 
-**Active mechanism:** Item **3.0**, layout and removal
-([spec](doc/plans/2026-10-23-layout-and-removal.md)), after 3.5 landed
-2026-10-24 at BasicModel `75345f891e`. *3.5's record:* it ran on main after
+**Active mechanism:** Item **3.0**. Step 1 is approved
+([layout §13](doc/plans/2026-10-23-layout-and-removal.md#13-claudes-review-of-step-1-source-34848e154f--2026-10-25));
+step 2, placement, is approved in §21 and committed
+([receipt](doc/benchmarks/2026-10-25-item3-0-placement/README.md),
+[spec §21](doc/plans/2026-10-25-item3-0-step2-placement.md));
+[step 3's repair is approved in §27](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#27-claudes-review-of-the-repair-source-4b7fa2aaf7--2026-10-25-approved-with-two-items-before-the-commit).
+The closing replay moves the 6/8 companion residual to item 0; the decided
+estimate now has zero time and consumes no tick. Closing source
+`cd49a1e845` passes 1,113 cases with seven standing skips; both regressions, the unported clock test and the percept certificate pass ([receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
+Step 4's §17 repair source `acac0b3448` finishes **1,490 passes, one failure
+and eight standing skips** ([spec §19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#19-repair-measurements-and-commit-instruction--codex-2026-10-25),
+[receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
+The new comparison regression and both decomposition arms pass; companions
+are 6/8. Gate 6's two-stream premise-completeness failure remains for review.
+Alec requests the combined steps 1–4 commit and pushes on main. Step 5 and
+the end-of-item sweep remain.
+3.5 landed 2026-10-24 at BasicModel `75345f891e`. *3.5's record:* it ran on main after
 Item 4 publication, in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
 continuation before identity; verb group element; tense/aspect and second
@@ -740,12 +796,15 @@ not by a passing identity lesson.
    lines 6–7 only**, reviewed against the code in spec §§20–21 and
    context-wholes §6; implementation is released. A short lesson smoke precedes each
    line's single freeze, then scoped gates and review through Alec.
-   *Iteration 2 landed 2026-10-24:* BasicModel `75345f891e`, Claude LAND
+   *Iteration 2 landed 2026-10-24:* reviewed BasicModel `75345f891e`; published
+   main `4f136f76faabafc24397765f4ffe90d01d3dc4bc`, WikiOracle
+   `69f82f5f77a3980020841fe859a09afb7733e7be`, Claude LAND
    ([iteration spec §62](doc/plans/2026-10-23-verb-and-modal.md#62-claudes-land-review-of-75345f891e--2026-10-24)):
    covers and `.when` segments, centroids on form, VP phases as case
    selection, direct-operand occupations, the presentation boundary with
    persistent cover concepts (Alec, §45), capacities 18/20/20 by derivation.
    Six placements 0/6 → item 0 (run before the boundary; caveat recorded).
+   History note (2026-10-25): history after `f306fc28aa` was rewritten before the push (`537523ae04`); `75345f891e`, `a34325c85d` and `f095569a1f` are respectively `2067dbc25a`, `3561f39aa0` and `31c3e4a59e` on origin.
    **3.5 closes as a mechanism landing; its learning remainder is item 0's.**
 
    *From item 6* ([plan §16.3](doc/plans/2026-10-10-item-6-stored-idea-generativity.md#163-disposition-close-item-6-as-a-mechanism-landing),
@@ -1063,7 +1122,37 @@ not by a passing identity lesson.
      chunks. Lands with placement from the priming surface and the
      geometric channel, which it needs; it also removes the per-forward
      scans of the whole store (placement's context means, priming's
-     membership pairs). [Spec](doc/plans/2026-10-23-layout-and-removal.md);
+     membership pairs). Step 1 is approved ([Claude's review, layout §13](doc/plans/2026-10-23-layout-and-removal.md#13-claudes-review-of-step-1-source-34848e154f--2026-10-25)); Alec commits source SHA256
+     `34848e154f0fa9912223d4117136d7eb63657cefaeca94a76c6574559a73819e`
+     ([receipt](doc/benchmarks/2026-10-25-item3-0-layout/README.md)); the interim
+     context source and [remaining scans](doc/benchmarks/2026-10-25-item3-0-layout/remaining-scans.md)
+     are addressed by [step 2: placement](doc/plans/2026-10-25-item3-0-step2-placement.md#20-frozen-measurement-and-review-handoff--codex-2026-10-25),
+     approved by Claude in placement §21; Alec commits source SHA256
+     `1e94238b57c99ba2b1003de2467e6f6acf543b68dc425263bed708509677d55e`:
+     **1,003 passes and seven standing prerequisite skips under the documented
+     protocol**, with two original fixture failures and all measurement ports
+     retained in the [local receipt](doc/benchmarks/2026-10-25-item3-0-placement/README.md).
+     **Step 3's repair is approved in §27**, source `4b7fa2aaf7`
+     ([review](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#27-claudes-review-of-the-repair-source-4b7fa2aaf7--2026-10-25-approved-with-two-items-before-the-commit),
+     [approved repair receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/repair-resumed/final/README.md)).
+     Both closing items are implemented: placement's unchanged replay has
+     greedy coverage 1.0 too, carrying the 6/8 companion residual to item 0;
+     estimates carry zero time, keep current time as input and consume no
+     arrival tick. Closing source `cd49a1e845` passes **1,113 cases with seven
+     standing prerequisite skips and zero test failures**, plus the smoke
+     ([§§28–29](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25),
+     [closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
+     Prior failed and approved results remain separate. Step 4's rejected
+     `44ea10180c` is repaired at `acac0b3448`: **1,490 passes, one failure,
+     eight standing skips**, plus the smoke ([spec §19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#19-repair-measurements-and-commit-instruction--codex-2026-10-25),
+     [receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
+     Silence still trains output but contributes no sentence-comparison A.
+     The new case and both decomposition arms pass; companions are 6/8.
+     Gate 6's two-stream premise-completeness failure is unchanged and awaits
+     review, separate from item 0's accepted step 3 flag. Alec requests the
+     combined steps 1–4 commit and pushes on main.
+     Step 4 review, step 5 and the end-of-item sweep remain.
+     [Spec](doc/plans/2026-10-23-layout-and-removal.md);
      decisions in [step-2 spec §§70–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
      *Decided later the same day (Alec; in the spec):* every mental event
      has a perceptual and a conceptual part; episodic memory is the
@@ -1585,6 +1674,21 @@ not by a passing identity lesson.
    no learning claim; preserve it and declare the corrected measurement
    before running ([closing receipt](doc/benchmarks/2026-10-09-item6-2-closing/README.md),
    [protocol corrections](doc/benchmarks/2026-10-08-math-chain-repair-2/protocol-corrections-14-13.json)).
+
+   **Item 3.0 step-3 companion residual: 6/8, learning-side** (STM-chunks
+   §27, replay §28). The length-1 question of document 1 in both arms keeps
+   an explored `whole` over greedy `surface` under the existing R+A rule.
+   On placement's untouched archive, the same greedy program already has
+   coverage 1.0; its explored path also has 1.0 and loses on iterations.
+   The chunk path's explored coverage 0.75 wins. No reader repair or forced
+   keep is warranted by the decided replay criterion. Preserve seed
+   **4199722147**, original snapshot and budget **512** for this residual;
+   length 2 remains correct in both arms at seed **2428440506**, budget
+   **768**. All 32 premise readings remain complete. Measure the chooser
+   and reconstruction objective's learned choice at item 0, without
+   substituting the standing existence proof for companion accuracy
+   ([replay and closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md),
+   [decision and diagnosis](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25)).
 
    **6.1's learning gates** also remain at item 0's checkpoint: supplied
    answers and asked parts; free reading in the lesson's order on permuted

@@ -1,7 +1,7 @@
 """Document covers in exact batch streams; membership is an ordered segment.
 
 Only the presentation cursor remembers which document is open. Durable reads
-use the retained cover, stream and RowTime columns, never source provenance.
+use the retained cover, stream and percept time, never source provenance.
 """
 from dataclasses import replace
 
@@ -14,7 +14,7 @@ def segments(store, stream=None):
     result = {}
     if 'cover' not in store.KINDS or not len(store):
         return result
-    times = encoder().decode_index(store.when[:len(store)]).tolist()
+    times = encoder().decode_index(torch.stack([store.entry_when(row) for row in range(len(store))])).tolist()
     streams = range(store.stream.shape[1]) if stream is None else (int(stream),)
     cover_kind = store.KINDS.index('cover')
     for batch in streams:
@@ -75,7 +75,9 @@ def open_cover(owner, store, *, stream, document):
         store.cover_rng_state.copy_(generator.get_state())
         derived = getattr(owner.similarity_codebook, 'mereology', None)
         if derived is not None:
-            value[derived.percept_width:derived.percept_event_width] = 0.
+            derived.remember_content(seat, value)
+            value[derived.percept_width:] = 0.
+            derived.placement_dirty[seat] = True
         alloc.settle(symbol)
         store._cover_symbols[key] = symbol
     meaning = replace(ConceptualMeaning.from_description(value[:store.nDim]),
@@ -135,10 +137,9 @@ def read(store, description, *, references=(), max_records, work, role_mask=None
             continue
         row = store.location(reference) if reference[:1] == ('ltm',) else None
         candidates = () if row is None else (row,)
-        if reference[:1] == ('sym',) and store._index_code_row is not None:
-            code = store._index_code_row(reference)
-            if code is not None:
-                candidates = store.rows_for_code(code, role=0)
+        if reference[:1] == ('sym',):
+            candidates = tuple(row for row in range(len(store))
+                if dict(store._semantic_rows.get(int(store.address_keys[row]), {}).get('bindings', ())).get('_identity') == reference)
         for row in candidates:
             if int(store.record_kind[row]) == store.KINDS.index('cover'):
                 selected.add(store.occurrence_of(row))
@@ -161,9 +162,10 @@ def read(store, description, *, references=(), max_records, work, role_mask=None
         if record['kind'] in ('cover', 'estimate', 'question'):
             continue
         meaning = record['meaning']
+        constraints = {key: value for key, value in description.bindings if not key.startswith('_')}
         if (meaning is None or bool((mask & ~meaning.role_mask).any())
                 or not store._scope_contains(description.scope, meaning.scope)
-                or not store._scope_contains(description.bindings, meaning.bindings)):
+                or not store._scope_contains(constraints, meaning.bindings)):
             continue
         similarity = torch.nn.functional.cosine_similarity(description.roles.to(meaning.roles),
                                                            meaning.roles, dim=-1)

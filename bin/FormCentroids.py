@@ -122,12 +122,15 @@ def capture(program, bank, batch, positions, language):
             stamps[-2:] = reversed(stamps[-2:])
             span = (-1, -1)
             order = -1
-        elif kind == 2:
-            at = len(stack)-1-max(0, word)
+        elif kind == 2 or (kind == 1 and
+                language._compose_binary_rules[operation].method_name == 'bind'):
+            field_bind = kind == 1
+            at = len(stack)-1-(0 if field_bind else max(0, word))
             part = stack[at]
             pair = (len(part), 0)
             span = (min(part), max(part)+1)
-            order = result_order(language._compose_unary_rules[operation], (stamps[at],))
+            order = (stamps[at] if field_bind else result_order(
+                language._compose_unary_rules[operation], (stamps[at],)))
             if program.timeline_actions is not None:
                 order = int(program.timeline_actions[index, 0])
             stamps[at] = order

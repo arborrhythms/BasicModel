@@ -24,7 +24,7 @@ class SymbolField:
             return
         values, depth = state[:2]
         keys = self.owner._bank_keys.to(values)[None].expand(len(values), -1, -1)
-        occupied = torch.arange(values.shape[1], device=values.device)[None] < depth[:, None]
+        occupied = values.ne(0).any(-1)
         context = ActivationPredictor.context_from(values, occupied)
         source = symbol_activations(keys, values, occupied, self.source_lanes,
             identities=state[4], bank_ids=self.owner._bank_addresses)
@@ -36,8 +36,8 @@ class SymbolField:
         if self.pending is None:
             return state
         keys, logits, _, _ = self.pending
-        values, depth, orders, grammar, identities, activation = state
-        present = torch.arange(values.shape[1], device=values.device)[None] < depth[:, None]
+        values, depth, orders, grammar, identities, activation = state[:6]
+        present = values.ne(0).any(-1)
         occupied = present & rows[:, None]
         observed = symbol_activations(keys, values, occupied, lanes,
             identities=identities, bank_ids=self.owner._bank_addresses)

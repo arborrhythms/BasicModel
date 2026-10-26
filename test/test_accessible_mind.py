@@ -6,52 +6,18 @@ import torch
 
 from Layers import LTM0
 from Meaning import ConceptualMeaning
-from index_fixtures import append_indexed, one_hot_unfold, restore_index
+from index_fixtures import append_content
 
 
 def _meaning(a=0, b=1, *, width=8, scope=()):
     roles = torch.zeros(3, width)
     roles[0, a] = 1
-    roles[2, b] = 1
-    return ConceptualMeaning(roles, torch.tensor([True, False, True]),
-        role_refs=(("sym", a + 1), None, ("sym", b + 1)), scope=scope)
+    roles[0, b] = 1
+    return ConceptualMeaning(roles, torch.tensor([True, False, False]), scope=scope)
 
 
-def test_leaf_index_retrieves_an_old_row_by_any_derivation_leaf():
-    store = LTM0(8, capacity=32)
-    first = append_indexed(store, _meaning(), terms=((3, 17, 9), (), (6,)))
-    for i in range(20):
-        append_indexed(store, _meaning(2, 3), terms=((40 + i,), (), (70 + i,)))
-    assert store.rows_for_code(17, role=0) == (first,)
-    assert store.rows_for_code(17, role=2) == ()
-    assert store.rows_for_code(1000) == ()
-    assert store.leaf_terms(first, 0) == (3, 9, 17)
 
 
-def test_leaf_column_growth_is_amortized_and_checkpoint_append_is_safe():
-    import io
-    store = LTM0(8, capacity=256)
-    pointers = set()
-    for _ in range(128):
-        append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
-        pointers.add(id(store._leaf_postings[3, 0]))
-    assert len(pointers) <= 5, "append must not copy the entire leaf history"
-    checkpoint = io.BytesIO()
-    torch.save(store.state_dict(), checkpoint)
-    checkpoint.seek(0)
-    state = torch.load(checkpoint, weights_only=True)
-    assert not any(key.startswith("posting_") for key in state)
-    assert "leaf_complete" not in state
-    restored = LTM0(8, capacity=256)
-    restored.load_state_dict(state)
-    restored.load_semantic_extras(store.semantic_extras())
-    restore_index(store, restored)
-    row = append_indexed(restored, _meaning(), terms=((9,), (), (10,)))
-    assert restored.leaf_terms(127, 0) == (3, 17)
-    assert restored.leaf_terms(row, 0) == (9,)
-    restored.reset()
-    row = append_indexed(restored, _meaning(), terms=((11,), (), (12,)))
-    assert restored.leaf_terms(row, 0) == (11,)
 
 
 def test_thought_effect_uses_cached_row_identity(monkeypatch):
@@ -67,55 +33,19 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
         raise AssertionError("thought must not rebuild the dictionary reverse map")
     monkeypatch.setattr(type(cs), "_csw_rows", property(forbidden))
     result = ThoughtResult('ask', 'conceptual-subgoal', 'set', 'retrieval', _meaning(),
-        MappingProxyType({'frames': ({'leaf_codes': ((row,), (), ())},)}))
+        MappingProxyType({'frames': ({'reference': ('sym', member)},)}))
     for _ in range(2):
         apply_thought_effect(SimpleNamespace(conceptualSpace=cs), result, row=0, work=QueryWorkBudget(32))
     assert cs.subspace._concept_activations[row, 0, 0, 0] == 1
 
 
-def test_index_checkpoint_compaction_and_codebook_remap():
-    import copy
-    store = LTM0(8, capacity=8)
-    old = append_indexed(store, _meaning(), terms=((3, 17), (), (6,)))
-    kept = append_indexed(store, _meaning(2, 3), terms=((17, 40), (), (70,)))
-    store.set_origin(old, store.ORIGIN_USER)
-    reference = store.occurrence_of(kept)
-    restored = LTM0(8, capacity=8)
-    restored.load_state_dict(copy.deepcopy(store.state_dict()))
-    restored.load_semantic_extras(store.semantic_extras())
-    restore_index(store, restored)
-    assert restored.rows_for_code(17) == (0, 1)
-    assert restored.clear_origin(store.ORIGIN_USER) == 1
-    assert restored.occurrence_of(0) == reference
-    assert restored.rows_for_code(3) == ()
-    assert restored.rows_for_code(17) == (0,)
-    restored.remap_leaf_codes({17: 2, 40: 4, 70: 7})
-    assert restored.leaf_terms(0, 0) == (2, 4)
-    assert restored.rows_for_code(17) == ()
-    assert restored.rows_for_code(2) == (0,)
-    restored.reset()
-    assert not restored.rows_for_code(2)
 
 
-def test_no_derivation_uses_bounded_unfold_instead_of_snapping_the_root():
-    store = LTM0(8, capacity=4)
-    calls = []
-    def unfold(idea, limit, **kwargs):
-        calls.append((idea.clone(), limit))
-        return (11, 23), 3, True
-    store.configure_leaf_index(read=unfold)
-    idea = torch.full((1, 8), .23, requires_grad=True)
-    meaning = ConceptualMeaning.from_description(idea)
-    row = store.append_meaning(meaning, sentence_index=len(store))
-    assert store.leaf_terms(row, 0) == (11, 23)
-    assert len(calls) == 1 and not calls[0][0].requires_grad
-    assert bool(store.leaf_complete[row].all())
 
 
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
-    store = LTM0(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+    store = LTM0(8, percept_width=0, capacity=32)
     for i in range(12):
         store.append_meaning(_meaning(scope={"where": (i, i + 1)}), stream=0, sentence_index=len(store))
     work = QueryWorkBudget(5)
@@ -126,19 +56,6 @@ def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     assert 'work_budget' in result['incomplete']
 
 
-def test_priming_adds_code_disjoint_rows_without_write_position_contiguity():
-    store = LTM0(8, capacity=8)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
-    first = append_indexed(store, _meaning(), terms=((90,), (), (91,)), stream=0)
-    second = append_indexed(store, _meaning(), terms=((92,), (), (93,)), stream=1)
-    third = append_indexed(store, _meaning(), terms=((94,), (), (95,)), stream=1)
-    cue = _meaning()
-    assert not store.cued_rows(cue)['value']
-    found = store.cued_rows(cue, primed=(90, 94))['value']
-    assert [row['index'] for row in found] == [first, third]
-    found = store.cued_rows(cue, primed=(90, 94), retrieved=(store.occurrence_of(second),))['value']
-    assert [row['index'] for row in found] == [first, third]
-    assert not any(row['contiguous'] for row in found)
 
 
 def test_subsystem_permissions_and_structural_capability_refusal():
@@ -178,8 +95,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
-    store = LTM0(8, capacity=32)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+    store = LTM0(8, percept_width=0, capacity=32)
     fact = _meaning()
     oldest = store.append_meaning(fact, trust=.2, sentence_index=len(store))
     for _ in range(20):
@@ -187,7 +103,7 @@ def test_query_retrieves_every_old_cued_frame_without_an_implicit_write():
     newest = store.append_meaning(fact, trust=.3, sentence_index=len(store))
     context = _context(_cs(), store=store)
     cue = replace(fact, role_mask=torch.tensor([True, False, False]),
-                  role_refs=(fact.role_refs[0], None, None), mode='interrogative')
+                  role_refs=(fact.role_refs[0], None, None))
     found = _signature('query', 'argin1').invoke(context, cue)
     assert len(found['frames']) == 1
     assert {frame['occurrence'] for frame in found['frames']} == {
@@ -220,28 +136,15 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     from test_normal_thought_controller import _catalog_world
     from Queries import ThoughtResult
     model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = LTM0(8, capacity=32)
-    fact = registry.form('part', part, whole, mode='assertive')
+    store = model.symbolSpace.ltm_store = LTM0(8, percept_width=0, capacity=32)
+    fact = replace(ConceptualMeaning.from_description(torch.eye(8)[0]),
+                   role_refs=(part, None, None))
     from MemoryIndex import configure_model_index
-    from Queries import _existing_row
-    from ClauseRow import predicate_relation
     configure_model_index(model, store)
-    terms = tuple((_existing_row(registry.space, ref),)
-                  if predicate_relation(ref[1]) == 'operator' else ()
-                  for ref in fact.role_refs)
-    # Force the terminal inverse for these three numerical atoms. The test
-    # concerns retrieval effects, not training a generate policy.
-    def unfold(value, limit, **kwargs):
-        matches = (fact.roles == value).all(-1).nonzero().flatten()
-        return (terms[int(matches[0])], 1, True) if limit and len(matches) else ((), 0, False)
-    store.configure_leaf_index(read=unfold)
-    oldest = append_indexed(store, fact, terms=terms, trust=.7)
+    oldest = append_content(store, fact, trust=.7)
     for _ in range(20):
-        append_indexed(store, replace(fact, roles=fact.roles + 20,
-                                    role_refs=(('sym', 500), None, ('sym', 501))),
-                       terms=((500,), (), (501,)), trust=.1)
-    cue = replace(fact, mode='interrogative', role_mask=torch.tensor([True, True, False]),
-                  role_refs=(part, fact.role_refs[1], None))
+        append_content(store, ConceptualMeaning.from_description(torch.eye(8)[1]), trust=.1)
+    cue = replace(fact)
     cue_row = store.append_meaning(cue, kind='question', sentence_index=len(store))
     with model._query_boundary_scope((0,)):
         meter = QueryWorkBudget(256)
@@ -307,25 +210,8 @@ def test_budget_changes_context_and_forces_closure():
     assert memory.thought_state().finished and result.work.spent <= 2
 
 
-def test_codebook_compaction_notifies_the_live_ltm_index(monkeypatch):
-    from MemoryIndex import configure_model_index
-    from test_selected_relation_meaning import _program_owner
-    cs, _, registry, language, _, _, _, _ = _program_owner(monkeypatch)
-    store = LTM0(8, capacity=4)
-    host = SimpleNamespace(conceptualSpace=cs, languageSpace=language,
-                           grammatical_thoughts=registry)
-    configure_model_index(host, store)
-    append_indexed(store, _meaning(), terms=((3, 6), (), (9,)))
-    cs.similarity_codebook.remove([1, 4])
-    assert store.leaf_terms(0, 0) == (2, 4)
-    assert store.leaf_terms(0, 2) == (7,)
 
 
-def test_completed_forest_indexes_each_actual_slot_by_unfolding():
-    store = LTM0(8, capacity=4)
-    field = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool))
-    row = append_indexed(store, field, terms=((10,), (6, 8), (12,)))
-    assert tuple(store.leaf_terms(row, slot) for slot in range(3)) == ((10,), (6, 8), (12,))
 
 
 def test_structural_context_keeps_live_values_but_rejects_owner_escape():
@@ -340,30 +226,6 @@ def test_structural_context_keeps_live_values_but_rejects_owner_escape():
     torch.testing.assert_close(value.grad, torch.ones_like(value))
 
 
-def test_normal_priming_uses_boosted_rows_not_the_identity_mask(monkeypatch):
-    from dataclasses import replace
-    from QueryWork import QueryWorkBudget
-    from test_normal_thought_controller import _catalog_world
-    from test_query_vp_boundaries import _signature
-    model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = LTM0(8, capacity=4)
-    fact = registry.form('part', part, whole, mode='assertive')
-    append_indexed(store, fact, terms=((50,), (51,), (52,)))
-    cue = replace(fact, role_mask=torch.tensor([True, False, False]),
-                  role_refs=(part, None, None), mode='interrogative')
-    priming = torch.ones(1, 64)
-    monkeypatch.setattr(model._concept_owner(), 'priming_weights', lambda **kw: priming)
-    def retrieve():
-        with model._query_boundary_scope((0,)):
-            context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(64), continuation=None)
-            # Isolate the native priming cue from numerical generation.
-            store._index_read=lambda *_a,**_k:((),0,True)
-            return _signature('query', 'argin1').invoke(context, cue)['frames']
-    assert not retrieve()
-    priming[0, 50] = 1.5
-    assert len(retrieve()) == 1
-    priming.fill_(1.)
-    assert not retrieve()
 
 
 def test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant():
@@ -379,53 +241,8 @@ def test_narrowed_descriptor_cannot_keep_the_original_taxonomy_grant():
     assert context.primed_symbols is None
 
 
-def test_legacy_index_rebuild_uses_real_rows_and_shares_truth(monkeypatch):
-    import copy
-    from dataclasses import replace
-    from MemoryIndex import configure_model_index
-    from test_selected_relation_meaning import _program_owner
-    cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
-    meaning = registry.form('part', a, b, mode='assertive')
-    original = LTM0(8, capacity=4)
-    original.append_meaning(meaning, kind='fact', order=2, sentence_index=len(original))
-    original.append_meaning(meaning, kind='observation', order=2, sentence_index=len(original))
-    state = copy.deepcopy(original.state_dict())
-    for key in ('posting_codes', 'posting_roles', 'posting_rows', 'leaf_complete', 'index_stream'):
-        state.pop(key, None)
-    state['index_stream'] = torch.tensor([-1, 7, -1, -1])
-    store = LTM0(8, capacity=4)
-    store.load_state_dict(state)
-    store.load_semantic_extras(original.semantic_extras())
-    from Queries import _existing_row
-    cs.prime_seen(torch.tensor([_existing_row(cs, a), _existing_row(cs, b)]))
-    configure_model_index(SimpleNamespace(conceptualSpace=cs, languageSpace=language,
-                                         grammatical_thoughts=registry), store)
-    from Queries import _existing_row
-    assert store.leaf_terms(0, 0) == (_existing_row(cs, a),)
-    assert not hasattr(store, 'index_stream')
-    found = store.cued_rows(replace(meaning, mode='interrogative'), stream=0)
-    assert [row['index'] for row in found['value']] == [0, 1]
 
 
-def test_rows_written_before_owner_binding_never_index_allocator_ids(monkeypatch):
-    from MemoryIndex import configure_model_index
-    from Queries import _existing_row
-    from test_selected_relation_meaning import _program_owner
-    cs, _, registry, language, _, _, a, b = _program_owner(monkeypatch)
-    meaning = registry.form('part', a, b, mode='assertive')
-    store = LTM0(8, capacity=4)
-    store.append_meaning(meaning, order=2, sentence_index=len(store))
-    append_indexed(store, meaning, terms=((3, 7), (), (11,)), order=2)
-    assert store.leaf_terms(0, 0) == ()
-    assert not bool(store.leaf_complete[0, 0])
-    from Queries import _existing_row
-    cs.prime_seen(torch.tensor([_existing_row(cs, a), _existing_row(cs, b)]))
-    configure_model_index(SimpleNamespace(conceptualSpace=cs, languageSpace=language,
-                                         grammatical_thoughts=registry), store)
-    assert store.leaf_terms(0, 0) == (_existing_row(cs, a),)
-    assert store.leaf_terms(0, 2) == (_existing_row(cs, b),)
-    assert store.leaf_terms(1, 0) == (_existing_row(cs, a),)
-    assert store.leaf_terms(1, 2) == (_existing_row(cs, b),)
 
 
 def test_nested_writes_are_shared_across_batch_positions():
@@ -433,8 +250,7 @@ def test_nested_writes_are_shared_across_batch_positions():
     child = _meaning()
     parent = replace(child, role_mask=torch.tensor([True, False, False]),
                      role_refs=(('constituent', 0), None, None), constituents=(child,))
-    store = LTM0(8, capacity=4)
-    store.configure_leaf_index(code_row=lambda ref: ref[1] - 1, read=one_hot_unfold)
+    store = LTM0(8, percept_width=0, capacity=4)
     store.append_meaning(parent, kind='observation', stream=2, sentence_index=len(store))
     assert not hasattr(store, 'index_stream')
     first = store.cued_rows(child, stream=0)['value']

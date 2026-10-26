@@ -115,9 +115,9 @@ def query(context, arguments):
 
 
 def ask(context, arguments):
-    from ThoughtReferences import needs_episode
+    from ThoughtReferences import has_open_slots
     requested = arguments['argin1']
-    if needs_episode(requested) and callable(context.continuation):
+    if has_open_slots(requested) and callable(context.continuation):
         return returned_subgoal(context.continuation(requested))
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
     found = context.ltm.best_match(requested, max_records=context.max_records,

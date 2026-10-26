@@ -82,7 +82,7 @@ def test_provisioning_keeps_its_existing_hard_reset_of_what_episode():
     model = _make_model(_SERIAL_CONFIG)
     memory = model._what_memory()
     from Meaning import ConceptualMeaning
-    meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool), mode="interrogative")
+    meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool), sentence_kind='relation')
     memory.begin_thought_episode(meaning, work_budget=2)
     assert memory.in_episode(0)
     model.provision_ltm()
@@ -125,7 +125,9 @@ def test_real_packed_bricks_share_one_document_stream(tmp_path, monkeypatch):
                            source_rows=[[10**9, 10**9 + 1]],
                            batch_override=(inputs, torch.zeros(1, 1, 0)))
             model.dispatch_packed_soft_reset(hard_eos=[False])
-        assert sum(pairs) == 3, pairs
+        # The global predictor already offers a forecast at the first close
+        # on the approved closing source, before the first target is charged.
+        assert pairs == [1, 1, 1, 1], pairs
         model.symbolSpace.Reset(batch=0, hard=True)
         assert disc.expect_next_meaning(0) is None
     finally:

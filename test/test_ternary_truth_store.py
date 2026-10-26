@@ -1,19 +1,4 @@
-"""Truth / Ideas consolidation -- stage 1: the unified ternary tensor store
-(doc/specs/mereological-order-raising.md "Two consolidation questions"; Alec
-2026-06-18).
-
-``LTM0`` combines the LTM end-state chain and the
-RelativeTruthStore into ONE tensor of ``(NP1, VP, NP2)`` rows (full idea
-vectors; Null = zero) + stream membership + a per-row scalar trust:
-
-  * NP . .   = an IDEA (absolute truth)
-  * NP VP .  = a unary predication
-  * NP VP NP = an IDEA-RELATION-IDEA (relative truth)
-
-Storage-only foundation: nothing constructs it yet, so the class is verified
-in isolation here (registered buffers => persists across a state_dict
-round-trip; trust stays a SEPARATE column, never baked into the magnitude).
-"""
+"""Unary ideas, tagged relations, evidence, capacity and checkpoint contracts."""
 
 from __future__ import annotations
 
@@ -53,10 +38,10 @@ class TestSchema(unittest.TestCase):
         r = s.append_idea(_v(1), trust=0.6)
         self.assertEqual(r, 0)
         row = s.row(0)
-        self.assertTrue(torch.equal(row['np1'], _v(1)))
-        self.assertTrue(torch.equal(row['vp'], torch.zeros(_D)))   # Null
-        self.assertTrue(torch.equal(row['np2'], torch.zeros(_D)))  # Null
-        self.assertEqual(int(s.role_mask[r].sum()),1)
+        self.assertTrue(torch.equal(row['meaning'].roles[0], _v(1)))
+        self.assertTrue(torch.equal(row['meaning'].roles[1], torch.zeros(_D)))   # Null
+        self.assertTrue(torch.equal(row['meaning'].roles[2], torch.zeros(_D)))  # Null
+        self.assertEqual(int(s.raw_meaning_of(r).role_mask.sum()),1)
         self.assertAlmostEqual(row['trust'], 0.6, places=6)
 
     def test_relation_has_two_native_symbol_arguments(self):
@@ -67,19 +52,19 @@ class TestSchema(unittest.TestCase):
         self.assertEqual(len(s),0)
         self.assertEqual(len(s.parts),1)
         torch.testing.assert_close(row['meaning'].roles[0],_v(1))
-        torch.testing.assert_close(row['meaning'].roles[2],_v(0,0,1))
+        torch.testing.assert_close(row['meaning'].roles[1],_v(0,0,1))
 
     def test_unary_content_is_an_idea_and_supplies_no_part_pair(self):
         s=_store();s.append_idea(_v(.2,.3))
         self.assertEqual(len(s.parts),0)
-        self.assertTrue(torch.equal(s.row(0)['np1'],_v(.2,.3)))
+        self.assertTrue(torch.equal(s.row(0)['meaning'].roles[0],_v(.2,.3)))
 
     def test_unscaled_storage_evidence_is_separate(self):
         from part_fixtures import part
         s=_store();edge=part(s,_v(.2),_v(0,0,.4),evidence=(.5,0.))
         row=s.row(edge)
         torch.testing.assert_close(row['meaning'].roles[0],_v(.2))
-        torch.testing.assert_close(row['meaning'].roles[2],_v(0,0,.4))
+        torch.testing.assert_close(row['meaning'].roles[1],_v(0,0,.4))
         self.assertAlmostEqual(row['trust'],.5,places=6)
 
 
@@ -132,12 +117,12 @@ class TestCapacityAndWidth(unittest.TestCase):
         s = _store()
         long = torch.arange(_D + 3, dtype=torch.float32)   # longer than nDim
         s.append_idea(long)
-        self.assertTrue(torch.equal(s.row(0)['np1'], long[:_D]))
+        self.assertTrue(torch.equal(s.row(0)['meaning'].roles[0], long[:_D]))
         short = torch.tensor([7.0])                        # shorter than nDim
         s.append_idea(short)
         exp = torch.zeros(_D)
         exp[0] = 7.0
-        self.assertTrue(torch.equal(s.row(1)['np1'], exp))
+        self.assertTrue(torch.equal(s.row(1)['meaning'].roles[0], exp))
 
 
 class TestPersistence(unittest.TestCase):
@@ -151,7 +136,7 @@ class TestPersistence(unittest.TestCase):
         self.assertEqual(len(fresh),1);self.assertEqual(len(fresh.parts),1)
         self.assertAlmostEqual(fresh.row(0)['trust'],.3,places=6)
         self.assertAlmostEqual(fresh.row(edge)['trust'],-.4,places=6)
-        torch.testing.assert_close(fresh.row(edge)['meaning'].roles[2],_v(0,0,1))
+        torch.testing.assert_close(fresh.row(edge)['meaning'].roles[1],_v(0,0,1))
 
     def test_reset_clears(self):
         s = _store()
@@ -228,9 +213,9 @@ class TestOriginProvenance(unittest.TestCase):
         self.assertEqual(len(s), 2)
         # survivors keep order, vectors, trust, rel_type, stream, text
         r0, r1 = s.row(0), s.row(1)
-        self.assertTrue(torch.equal(r0['np1'], _v(1)))
+        self.assertTrue(torch.equal(r0['meaning'].roles[0], _v(1)))
         self.assertEqual(r0['origin'], T.ORIGIN_CONVERSATION)
-        self.assertTrue(torch.equal(r1['np1'], _v(.3)))
+        self.assertTrue(torch.equal(r1['meaning'].roles[0], _v(.3)))
         self.assertAlmostEqual(r1['trust'], 0.3, places=6)
         self.assertEqual(r1['text'], "p")
         # vacated tail rows are zeroed

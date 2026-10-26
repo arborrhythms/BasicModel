@@ -43,32 +43,30 @@ def test_interpret_calls_bind_and_bare_forward_choices_share_the_chooser():
     assert [int(item[1][0,0]) for item in minted if bool(item[3][0,0])] == [-1]
 
 
-def test_driver_batch_groups_resize_priming_before_reads_without_broadcast():
+def test_driver_batch_groups_share_constructed_priming_without_broadcast():
     from MathChainTraining import document_batches
     from math_chain_corpus import MathChainCorpus, flatten
     from test_priming_energy import _chain_cs
-    cs, _, _ = _chain_cs()
+    cs, _, _ = _chain_cs(batch_size=8)
     _, _, addresses = flatten(MathChainCorpus().presentation()['train'], supplied=False)
     sizes = [len(rows) for rows, end in document_batches(addresses, 8) if end]
     assert {2, 3, 8}.issubset(sizes)
     # A provisioning write must not leak row zero into the first batch.
     cs.prime_seen(torch.tensor([[3]]))
-    previous = 1
+    pointer = cs._priming_boosts.data_ptr()
     for batch in sizes:
+        cs._priming_boosts.fill_(1.)
         weights = cs.priming_weights(batch=batch)
         assert weights.shape == (batch, cs._priming_dim())
-        if batch != previous:
-            assert torch.equal(weights, torch.ones_like(weights))
+        assert torch.equal(weights, torch.ones_like(weights))
+        assert cs._priming_boosts.data_ptr() == pointer
         cs.prime_seen(torch.arange(batch)[:, None] + 8)
         weights = cs.priming_weights(batch=batch)
         for row in range(batch):
             assert weights[row, row + 8] > 1
-            if batch != previous:
-                assert all(weights[other, row + 8] == 1 for other in range(batch) if other != row)
-        previous = batch
-    cs._priming_boosts = torch.ones(5)
-    with pytest.raises(ValueError, match='surface'):
-        cs.priming_weights(batch=8)
+            assert all(weights[other, row + 8] == 1 for other in range(batch) if other != row)
+    with pytest.raises(RuntimeError, match='capacity'):
+        cs.priming_weights(batch=9)
 
 
 def test_unfold_reads_the_readers_priming_row():
@@ -91,15 +89,15 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
     from ThoughtReferences import with_slots, bindings, open_slots
     from test_clause_storage import clause_store
     store, _ = clause_store()
-    meaning = with_slots(ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool),
-        role_refs=(None, ('sym', 3), ('sym', 2))), (('referent', 0),), pair=(1., 0.))
+    meaning = with_slots(ConceptualMeaning.from_description(torch.eye(4)[0]),
+        (('referent', 0),), pair=(1., 0.))
     data = dict(meaning.bindings, _forward_references=((0, 17),))
     meaning = replace(meaning, bindings=data)
-    premise = replace(meaning, role_refs=(None, ('sym', 3), ('sym', 1)),
+    premise = replace(meaning, role_refs=(('sym', 1), None, None),
         bindings=dict(data, _equality=True))
     if not forward_first:
-        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
-    row = store.append_meaning(meaning, document_key='pending', evidence=(1.,0.))
+        arrival = store.append_meaning(premise, kind='observation', document_key='arrival', evidence=(1.,0.))
+    row = store.append_meaning(meaning, kind='question', document_key='pending', evidence=(1.,0.))
     address = store.occurrence_of(row)
     raw = store.raw_meaning_of(row)
     document, position = store.document_keys[row].clone(), store.sentence_index[row].clone()
@@ -111,7 +109,7 @@ def test_pending_relation_fills_in_place_in_both_arrival_orders(forward_first):
         extras = store.semantic_extras()
         store.load_state_dict(store.state_dict())
         store.load_semantic_extras(extras)
-        arrival = store.append_meaning(premise, document_key='arrival', evidence=(1.,0.))
+        arrival = store.append_meaning(premise, kind='observation', document_key='arrival', evidence=(1.,0.))
     # This direct storage fixture supplies the kept bind explicitly. Equality
     # rows alone stopped being a binder at §10.4; source rows stay immutable.
     pool = store._concept_owner().mtm
@@ -159,7 +157,7 @@ def test_proposal_menu_never_offers_taxonomy_with_occurrence_operands():
 def test_answer_rendering_does_not_reopen_a_completed_closing():
     from test_normal_thought_controller import _catalog_world
     from Understanding import SentenceEndState
-    from ThoughtReferences import question
+    from meaning_fixtures import unsupported as question
     model, registry, _, part, whole = _catalog_world()
     source = question(registry.form('isPart', part, whole), (('evidence', -1),))
     field = SentenceEndState(source, query=source, thought_completed=True)
@@ -169,7 +167,8 @@ def test_answer_rendering_does_not_reopen_a_completed_closing():
 
 def test_later_binding_cannot_fill_from_an_absent_role():
     from Meaning import ConceptualMeaning
-    from ThoughtReferences import question,fill,open_slots
+    from ThoughtReferences import fill, open_slots
+    from meaning_fixtures import unsupported as question
     source=question(ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool)),
                     (('referent',2),))
     supplied=ConceptualMeaning.from_description(torch.ones(4))

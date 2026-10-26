@@ -1,7 +1,8 @@
 """A fixed unresolved operand cannot stand for another region by similarity."""
 from dataclasses import replace
 import pytest
-from ThoughtReferences import bindings, question, fill, open_slots
+from ThoughtReferences import bindings, fill, open_slots
+from meaning_fixtures import unsupported as question
 from test_thought_binding import equality
 
 @pytest.mark.parametrize('same_reference', (False,True))

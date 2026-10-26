@@ -55,6 +55,14 @@ def _make_model(config, *, stateless=None):
     Models.TheData.load("xor")
     m.eval()
     if config == _SERIAL_CONFIG:
+        # This provisioning fixture asserts fully resolved idea rows. Supply
+        # its vocabulary's objects before reading; the close never mints them.
+        import xml.etree.ElementTree as ET
+        from test_definition_rows import admit
+        texts = [node.attrib['text'] for node in ET.parse(config).findall('.//truth')]
+        for form in dict.fromkeys(' '.join(texts + ['hello world loving there']).split()):
+            admit(m, form)
+        m._fixture_admitted_definitions = tuple(m.symbolSpace.ltm_store.relations('definition').tolist())
         # Storage/provenance fixtures require a completed parse. Exercise
         # real operators with one controlled binary choice and eligible STOP.
         chooser = m.symbolSpace.languageLayer.operation_layer.chooser
@@ -141,7 +149,7 @@ class TestProvisioning(unittest.TestCase):
         asserted = store.rows_of_origin(T.ORIGIN_PROVISIONED).tolist()
         definitions = store.relations('definition').tolist()
         self.assertEqual(len(asserted), 3)
-        self.assertFalse(definitions)  # No supplied object definitions.
+        self.assertTrue(definitions)  # Objects were explicitly supplied by setup.
         self.assertEqual(len(store), len(asserted) + 3)
         self.assertEqual(sum(store.row(i)['kind'] == 'cover' for i in range(len(store))), 3)
         self.assertEqual([i for i in store.ideas().tolist()
@@ -168,7 +176,7 @@ class TestProvisioning(unittest.TestCase):
         # The REAL parse lands a non-zero NP1 for every row (no all-zero row,
         # and no mean-pool placeholder -- it is the actual parsed end-state).
         for i in store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist():
-            self.assertGreater(float(store.row(i)["np1"].norm()), 0.0)
+            self.assertGreater(float(store.row(i)['meaning'].roles[0].norm()), 0.0)
 
     @pytest.mark.usefixtures('eager_reading')
     def test_provision_idempotent_count_via_runepoch_trigger(self):
@@ -231,27 +239,20 @@ class TestObserveWrites(unittest.TestCase):
         r = store.row(0)
         self.assertEqual(r['meaning'].role_mask.tolist(), [True, False, False])
         self.assertAlmostEqual(r["trust"], 0.5, places=5)
-        self.assertAlmostEqual(float(r["np1"][0]), .3, places=5)
+        self.assertAlmostEqual(float(r['meaning'].roles[0][0]), .3, places=5)
 
-    def test_relative_depth3_slot_mapping(self):
-        from Layers import LTM0 as T
+    def test_working_roles_require_composition_before_a_durable_write(self):
         m = _make_model(_ON_CONFIG)
-        m.symbolSpace.ltm_store.reset()
-        D = m.symbolSpace.ltm_store.nDim
-        # newest-at-slot-0: slot0=idea2, slot1=idea1, slot2=predicate.
+        store = m.symbolSpace.ltm_store
+        store.reset()
+        D = store.nDim
         p = torch.zeros(3, D)
-        p[0, 0] = 1.0   # idea2 (newest)
-        p[1, 1] = 1.0   # idea1
-        p[2, 2] = 1.0   # predicate (oldest)
-        store = self._drive_observe(m, [3], [p], [0.9])
-        self.assertEqual(len(store), 1)
-        r = store.row(0)
-        self.assertTrue(r['meaning'].role_mask.all())
-        self.assertAlmostEqual(r["trust"], 0.9, places=5)
-        # NP1=idea1, VP=predicate, NP2=idea2.
-        self.assertAlmostEqual(float(r["np1"][1]), 1.0, places=5)
-        self.assertAlmostEqual(float(r["vp"][2]), 1.0, places=5)
-        self.assertAlmostEqual(float(r["np2"][0]), 1.0, places=5)
+        p[0, 0], p[1, 1], p[2, 2] = 1., 1., 1.
+        before = store.slots.clone()
+        with self.assertRaisesRegex(ValueError, 'stores one idea'):
+            self._drive_observe(m, [3], [p], [0.9])
+        self.assertEqual(len(store), 0)
+        torch.testing.assert_close(store.slots, before, rtol=0, atol=0)
 
     def test_none_tet_defaults_zero_trust(self):
         m = _make_model(_ON_CONFIG)
@@ -373,7 +374,7 @@ class TestSurviveResetAndPersistence(unittest.TestCase):
     def test_state_dict_keys_present(self):
         m = _make_model(_ON_CONFIG)
         sd = m.state_dict()
-        for suffix in ("slots", "role_mask", "stream", "c_plus", "c_minus", "count"):
+        for suffix in ("slots", "percept_layout", "stream", "c_plus", "c_minus", "count"):
             self.assertIn(
                 f"symbolSpace.subspace.ltm_store.{suffix}", sd,
                 f"ltm_store.{suffix} must ride the state_dict")
@@ -460,32 +461,22 @@ class TestStoreBackedChain(unittest.TestCase):
         self.assertAlmostEqual(t0, 0.5, places=5)
         self.assertAlmostEqual(t1, 0.6, places=5)
 
-    def test_get_stm_chain_relation_slot_reconstruction(self):
-        # A relation row -> depth 3, payload = [np1, vp, np2]
-        # (INFIX = [idea1, predicate, idea2], the store's native order;
-        # Alec 2026-06-18 -- idea1 may be present without a predicate).
-        from Layers import LTM0 as T
+    def test_get_stm_chain_reads_a_compressed_idea_as_one_vector(self):
         m = _make_model(_SERIAL_CONFIG)
-        store = m.symbolSpace.ltm_store
-        disc = m.symbolSpace.expectation
+        store, disc = m.symbolSpace.ltm_store, m.symbolSpace.expectation
         store.reset()
         D = store.nDim
-        np1 = torch.zeros(D); np1[0] = 1.0       # idea1
-        vp = torch.zeros(D); vp[1] = 1.0         # predicate
-        np2 = torch.zeros(D); np2[2] = 1.0       # idea2
-        store.append_meaning(ConceptualMeaning.from_payload(
-            torch.stack((np1, vp, np2)), depth=3, layout='infix'),
-            kind='observation', trust=.7, stream=0)
+        point = torch.zeros(D)
+        point[:3] = torch.tensor([.2, .4, .6])
+        row = store.append_idea(point, trust=.7, stream=0)
         chain = disc.get_stm_chain()
         self.assertEqual(len(chain), 1)
-        d, p, t = chain[0]
-        self.assertEqual(d, 3)
-        self.assertEqual(tuple(p.shape), (3, D))
-        # INFIX: slot 0 = np1 (idea1), slot 1 = vp (predicate), slot 2 = np2.
-        self.assertAlmostEqual(float(p[0, 0]), 1.0, places=5)   # np1 (idea1)
-        self.assertAlmostEqual(float(p[1, 1]), 1.0, places=5)   # vp (predicate)
-        self.assertAlmostEqual(float(p[2, 2]), 1.0, places=5)   # np2 (idea2)
-        self.assertAlmostEqual(t, 0.7, places=5)
+        depth, payload, trust = chain[0]
+        self.assertEqual(depth, 1)
+        self.assertEqual(tuple(payload.shape), (1, D))
+        torch.testing.assert_close(payload[0], store.slots[row])
+        self.assertFalse(bool(payload[1:].any()))
+        self.assertAlmostEqual(trust, .7, places=5)
 
     def test_get_stm_chain_respects_n_window(self):
         m = _make_model(_SERIAL_CONFIG)
@@ -674,7 +665,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertAlmostEqual(r1["trust"], -0.5, places=5)
         self.assertEqual(r0["text"], "hello world")
         self.assertEqual(r1["text"], "loving there")
-        self.assertGreater(float(r0["np1"].norm()), 0.0,
+        self.assertGreater(float(r0['meaning'].roles[0].norm()), 0.0,
                            "real parse, not a placeholder")
 
     @pytest.mark.usefixtures('eager_reading')
@@ -687,7 +678,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view covers provisioned + user rows; sources carry the texts
         # clarifications reference.
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.role_mask[i].sum()) == 1 and store.row(i)['kind'] != 'cover'
+            store.row(i)['kind'] != 'cover'
             for i in range(len(store))))
         self.assertIn("hello world", tl._sources)
         self.assertIn("loving there", tl._sources)
@@ -722,7 +713,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             len(store.rows_of_origin(T.ORIGIN_PROVISIONED)), n_prov,
             "provisioned rows persist across user resubmits")
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.role_mask[i].sum()) == 1 and store.row(i)['kind'] != 'cover'
+            store.row(i)['kind'] != 'cover'
             for i in range(len(store))))
         self.assertIn("hello there", tl._sources)
         self.assertNotIn("hello world", tl._sources)
@@ -773,7 +764,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         # The view keeps reading only the user TruthSet surface.
         tl.sync_from_ltm()
         self.assertEqual(int(tl.count.item()), sum(
-            int(store.role_mask[i].sum()) == 1 for i in user + prov))
+            1 for i in user + prov))
 
 
 # -- load-time LTM revive, gated by <stateless> ----------------------------

@@ -158,7 +158,7 @@ def capture_arrival(request, monkeypatch):
                 # Freeze the native rows before the test's finally/End.
                 write('failure-store.json', snapshot(model))
                 write('failure-batch.json', dict(batch=batch, observations=args[4]))
-                from PartRead import expression_components
+                from ChainRead import components
                 from QueryWork import QueryWorkBudget
                 import sys
                 trace = sys.exc_info()[2]
@@ -168,7 +168,7 @@ def capture_arrival(request, monkeypatch):
                         value = local['value']
                         roots = tuple(ref for ref in value.role_refs
                                       if ref is not None and ref[0] in ('sym', 'ltm'))
-                        terms, scanned, incomplete = expression_components(
+                        terms, scanned, incomplete = components(
                             model.symbolSpace.ltm_store, roots, max_records=256,
                             work=QueryWorkBudget(256))
                         write('failure-expression.json', dict(scanned=scanned,

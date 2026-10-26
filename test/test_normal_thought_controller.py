@@ -78,14 +78,15 @@ def test_normal_controller_selects_a_catalog_operation_not_used_by_the_parse(mon
         choices.append(actions)
         if len(choices) == 1:
             return next(a for a in actions if a is not None and a.semantic_id == 'equal')
-        assert None not in actions
+        assert None in actions
         return None
     monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
-    with model._query_boundary_scope((0,)), pytest.raises(ValueError, match='conclude'):
-        model.run_selected_thought(question, work_budget=16)
+    with model._query_boundary_scope((0,)):
+        result = model.run_selected_thought(question, work_budget=16)
+    assert result.meaning.role_refs == question.role_refs
     executed = [r.result for r in memory.thought_history() if r.result is not None]
     assert executed[0].semantic_id == 'equal'
-    assert 'equal' in [a.semantic_id for a in choices[0]]
+    assert 'equal' in [a.semantic_id for a in choices[0] if a is not None]
     assert 0. <= executed[0].support_true <= 1.
     memory.end_what_episode()
 
@@ -169,8 +170,7 @@ def test_typed_prediction_result_is_detached_before_history_or_checkpoint():
     """Prediction evidence stays a hard boundary inside ordinary history."""
     memory = WhatInteractionMemory(batch=1, capacity=16, detach_mode="episode")
     request = ConceptualMeaning(
-        torch.ones(3, 8), torch.ones(3, dtype=torch.bool),
-        mode="interrogative")
+        torch.ones(3, 8), torch.ones(3, dtype=torch.bool), sentence_kind="relation")
     roles = torch.randn(3, 8, requires_grad=True)
     logits = torch.randn(3, requires_grad=True)
     checked = ThoughtResult(
@@ -208,14 +208,23 @@ def test_typed_prediction_result_is_detached_before_history_or_checkpoint():
     assert not replayed.result.value.presence_logits.requires_grad
 
 
-def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
-    model, registry, memory, part, whole = _world()
+def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence(monkeypatch):
+    from test_item6_2_thinking import world
+    model, registry, store, (part, whole, _) = world()
+    memory = model._what_memory()
+    store.append_relation(part[1], whole[1], truth_plus=1.)
     from QueryWork import QueryWorkBudget
 
-    inner = registry.form("isPart", part, whole)
+    from meaning_fixtures import unsupported
+    store._concept_owner()._concept_allocator.singletons.add(whole[1])
+    inner = registry.form('equal', part, whole)
+    inner = unsupported(replace(inner, role_refs=(None,inner.role_refs[1],whole),
+        role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
     prior = memory.begin_thought_episode(inner, work_budget=2)
     memory.finish_thought(inner, support_true=0.0, evidence_kind="subgoal")
     memory.end_what_episode()
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(model, monkeypatch, ["ask", "query", None, None])
     with model._query_boundary_scope((0,)):
         outer = registry.form(
             "ask", memory.thought_reference(memory.thought_history()[0]),
@@ -234,11 +243,11 @@ def test_what_subgoal_descends_executes_returns_and_causally_carries_evidence():
         "begin", "thought", "descend", "thought", "thought", "return", "thought", "finish",
     ]
     assert latest[1].meaning.role_refs == outer.role_refs
-    assert latest[3].meaning.role_refs == inner.role_refs
+    assert latest[3].result.request.constituents[0].role_refs == inner.role_refs
     assert latest[5].support_true == 1
     assert any(ref[0] == "thought" for ref in latest[5].sources)
     assert [record.operation for record in latest if record.kind == "thought"] == [
-        "ask", "isPart", "conclude", "conclude"]
+        "ask", "query", "conclude", "conclude"]
     memory.end_what_episode()
 
 
@@ -288,10 +297,10 @@ def test_completed_compose_program_enters_normal_controller_before_legacy_thinki
     assert len(selected) == 1
     row, result = selected[0]
     assert row == 0
-    from ThoughtReferences import needs_episode, open_slots
+    from ThoughtReferences import has_open_slots, open_slots
     operations = [r.operation for r in result.records if r.kind == 'thought']
     assert operations[0] == 'part'
-    if needs_episode(result.meaning):
+    if has_open_slots(result.meaning):
         assert result.work.remaining == 0 and 'conclude' not in operations
     else:
         assert operations[-1] == 'conclude'
@@ -310,7 +319,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
     the checked ``concept`` result without coercing that result into a truth or
     answer seed.
     """
-    from Understanding import AnswerProgram
+    from Understanding import Reading
     from test_selected_relation_meaning import _program_owner
 
     cs, grammar, _legacy_registry, language, leaves, _program, _part, _whole = (
@@ -349,7 +358,7 @@ def test_completed_unary_concept_program_enters_the_normal_controller(
 
     assert len(selected) == 1
     row, result = selected[0]
-    assert row == 0 and result.meaning.mode == "assertive"
+    assert row == 0 and not hasattr(result.meaning, "mode")
     assert result.result is not None
     assert result.result.semantic_id == "exist"
     assert result.result.result_kind == "concept"
@@ -549,8 +558,7 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
         3 * width, dtype=program().leaves.dtype).reshape(3, width)
     estimate_roles.requires_grad_()
     request = ConceptualMeaning(
-        torch.zeros_like(estimate_roles), torch.tensor([True, True, True]),
-        mode="interrogative")
+        torch.zeros_like(estimate_roles), torch.tensor([True, True, True]))
     checked = ThoughtResult(
         semantic_id="arma", domain="discourse-prediction",
         result_kind="prediction", evidence_kind="estimate",
@@ -739,13 +747,18 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
             "normal resolution invoked the legacy surface reasoner"),
     )
 
+    from meaning_fixtures import replay_first_choice
+    replay_first_choice(model, monkeypatch, -1)
     result = model.resolveAnswer(
         Understanding(sentence_states=(sentence_state(language, program(), registry),)),
         WhatQuestion.inference(0, prompt="is the part in the whole?"),
     )
 
-    assert result.selected_thoughts == ()
+    assert len(result.selected_thoughts) == 1
+    assert result.selected_thoughts[0][1].records == ()
+    assert result.selected_thoughts[0][1].work.spent == 0
     assert result.source == "identity"
+    torch.testing.assert_close(result.conceptual_answer[0], sentence_state(language, program(), registry).meaning.roles)
     assert memory.thought_history() == []
 
 

@@ -102,7 +102,8 @@ class LiveConstituents:
 
     @torch.no_grad()
     def observe(self, state, rows, support):
-        values, depth = state[:2]
+        import STMChunks
+        values,depth = STMChunks.stack_view(state)[:2]
         for b in rows.nonzero().flatten().tolist():
             for slot, value in enumerate(values[b, :int(depth[b])].detach()):
                 if support is not None and int(support[b, slot].count_nonzero()) < 2:

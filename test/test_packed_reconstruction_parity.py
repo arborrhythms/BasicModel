@@ -92,6 +92,9 @@ def measure_layout(model, rows, *, packed):
                     batch_override=(raw, torch.empty(len(rows), 0)),
                     questions=tuple(What.present(b, split="validation") for b in range(len(rows))))
             isp = model.inputSpace
+            end_depth = model._tensor_final_end_depth.abs().clamp(1,3)
+            retained_root = model._tensor_final_end_slots[torch.arange(len(rows)),end_depth-1]
+            torch.testing.assert_close(model._stm_single_S,retained_root,rtol=0,atol=0)
             active, ids = isp._word_active_mask, isp._packed_sentence_ids
             understood = model._last_understanding
             for b, row in enumerate(rows):
@@ -104,8 +107,18 @@ def measure_layout(model, rows, *, packed):
                     root = (captured_sentence["end"][b] if last
                             else captured_sentence["roots"][b, slot].reshape(3, -1))
                     program = readings[slot][b]
+                    from PrependedSymbols import word_view
+                    head = int(mask.nonzero()[0])
+                    stamp = torch.cat((word_view(isp,'symbol_where')[b,head],
+                                       word_view(isp,'symbol_when')[b,head])).detach().clone()
+                    start = model.symbolSpace.ltm_store.when_start-4
+                    torch.testing.assert_close(root[0,start:start+8],stamp,rtol=0,atol=0)
+                    content = root.clone()
+                    content[:,start:start+8] = 0
                     records[b, sentence] = {
                         "root": root.clone(),
+                        "content_root": content,
+                        "head_stamp": stamp,
                         "program_root": program.end_state.detach().clone(),
                         "actions": program.actions.detach().clone(),
                         "reference": model._tensor_pushed_ideas[b, mask].detach().clone(),
@@ -131,35 +144,60 @@ def warm_vocabulary(model, rows):
 
 @pytest.mark.slow
 @pytest.mark.parametrize("initialization", range(3))
-def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, initialization):
-    # Repeated ambient initializations, never a selected or pinned seed.
-    model = build_model(tmp_path)
-    # Ragged packs include a row ending at the first sentence slot, repeated
-    # words and a later sentence with a multi-digit unit split.
+def test_native_packing_preserves_each_sentence_and_owned_program(tmp_path, initialization, monkeypatch, eager_reading):
+    # Three ambient initializations; each arm replays the same captured state.
+    # Separate owners prevent either arm's online learning or working memory
+    # from becoming the other's starting state. No initialization is selected.
+    import random
+    import numpy as np
+    from Language import OperationSelectionLayer
+    from operation_fixtures import selected_action
+    forward = OperationSelectionLayer.forward
+    def compose(layer, value, **kwargs):
+        refs = kwargs.get('reference_data')
+        binary = tuple(range(layer.r_reduce)) if refs is None else refs['binary_ops']
+        unary = tuple(range(layer.r_apply)) if refs is None else refs['unary_ops']
+        stop = (value.shape[1]-1)*len(binary)+value.shape[1]*len(unary)
+        depth = kwargs.get('depth', torch.full((len(value),),value.shape[1]))
+        action = torch.where(depth > 1, binary.index(layer.op_names.index('sum')), stop)
+        with selected_action(layer, action):
+            return forward(layer, value, **kwargs)
+    monkeypatch.setattr(OperationSelectionLayer, 'forward', compose)
+    rng = random.getstate(), np.random.get_state(), torch.get_rng_state()
     rows = [["9 plus 1", "14 plus 1"], ["2 plus 1"]]
-    try:
-        model._install_unit_span_fn()
-        warm_vocabulary(model, rows)
-        # Each layout starts with the same SEEN history. End/reset preserves
-        # priming by design; running the second arm on the first one's history
-        # changes the activated candidate bank even at unchanged parameters.
-        surfaces = [(space, getattr(space, '_priming_boosts', None)) for space in model.spaces]
-        snapshots = [(space, None if value is None else value.clone()) for space, value in surfaces]
-        packed = measure_layout(model, rows, packed=True)
-        for space, value in snapshots:
-            object.__setattr__(space, '_priming_boosts', None if value is None else value.clone())
-        single = measure_layout(model, rows, packed=False)
-        for key, actual in packed.items():
-            expected = single[key]
-            assert not actual["truncated"] and not expected["truncated"]
-            for name in ("reference", "actions", "root", "recovered", "byte_cost"):
-                torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
-                                           msg=lambda msg: f"{key} {name}: {msg}")
-            torch.testing.assert_close(actual["program_root"], actual["root"], atol=0, rtol=0)
-    finally:
-        model.End()
-        model.symbolSpace.soft_reset()
-        torch._dynamo.reset()
+    results = []
+    for packed in (True, False):
+        random.setstate(rng[0]); np.random.set_state(rng[1]); torch.set_rng_state(rng[2])
+        model = build_model(tmp_path)
+        model.candidate_attention = None  # declared source-order control
+        try:
+            model._install_unit_span_fn()
+            warm_vocabulary(model, rows)
+            model.begin_presentation()
+            results.append(measure_layout(model, rows, packed=packed))
+        finally:
+            model.End()
+            model.symbolSpace.soft_reset()
+            torch._dynamo.reset()
+    packed, single = results
+    for key, actual in packed.items():
+        expected = single[key]
+        # An untrained native chooser can lose content on either source.
+        # Packing must preserve that outcome too, not assume a decoder lesson.
+        torch.testing.assert_close(actual["truncated"], expected["truncated"], atol=0, rtol=0)
+        # Input offsets and arrival times belong to each presentation. The
+        # raw root's stamp was checked against its own head above; compare
+        # the remaining content across the two layouts at the same tolerance.
+        for name in ("reference", "actions", "content_root", "recovered", "byte_cost"):
+            torch.testing.assert_close(actual[name], expected[name], atol=ATOL, rtol=RTOL,
+                                       msg=lambda msg: f"{key} {name}: {msg}")
+        torch.testing.assert_close(actual["program_root"], actual["root"], atol=0, rtol=0)
+    import json
+    (tmp_path/'certificate.json').write_text(json.dumps(dict(
+        initialization=initialization, packing_parity=True,
+        stamps={str(key):dict(packed=value['head_stamp'].tolist(),single=single[key]['head_stamp'].tolist())
+                for key,value in packed.items()},
+        truncated={str(key):bool(value['truncated']) for key,value in packed.items()}), indent=2))
 
 
 def test_excluded_byte_candidate_preserves_value_and_gradient():

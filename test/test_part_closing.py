@@ -1,4 +1,5 @@
 """The kept close consumes a derivation, never a reconstructed STM identity."""
+from chunk_fixtures import context as chunk_context
 import pytest
 import torch
 from test_clause_acceptance import SentenceFixture
@@ -10,7 +11,7 @@ def test_relative_close_is_one_part_edge_and_rewitnesses_its_two_lanes(monkeypat
     before = len(f.cs._concept_allocator.parts)
     location = f.store.write_clause(clause, evidence=(.7, .2))
     assert location[0] == 'sym'
-    assert len(f.store) == 1
+    assert len(f.store) == 0
     assert len(f.store.parts) == before + 1
     row = f.store.row(location)
     assert row['refs'].tolist() == [f.noun('a'), f.noun('b')]
@@ -29,33 +30,56 @@ def test_word_composition_is_not_a_definition_without_an_object_argument(monkeyp
     assert word_a not in f.cs.definitions.objects(word_b)
 
 
-def test_absolute_close_keeps_only_the_concept_and_derivation_pairs(monkeypatch):
+def test_absolute_close_keeps_one_idea_without_derivation_pairs(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', 'a', ('verb', 'v', 'b')))
     before = len(f.store.parts)
     row = f.store.write_clause(clause, evidence=(.9, 0.))
     assert isinstance(row, int)
-    torch.testing.assert_close(f.store.slots[row, 0], clause.point)
-    assert not f.store.slots[row, 1:].any()
+    torch.testing.assert_close(f.store.slots[row], clause.point)
     root = f.store.raw_meaning_of(row).role_refs[0]
-    assert root[0] == 'sym' and f.store.parts.contains(root[1])
+    assert root == ('sym', f.noun('a'))
     assert not hasattr(f.store, 'refs')
-    assert len(f.store.parts) == before + 2
+    assert len(f.store.parts) == before
     assert not any(key.startswith('_individual') for key, _ in f.store.meaning_of(row).bindings)
 
 
-def test_complete_derivation_capacity_failure_has_no_prefix(monkeypatch):
+def test_complete_idea_capacity_failure_has_no_prefix(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', 'a', ('verb', 'v', 'b')))
     alloc = f.cs._concept_allocator
-    alloc.parts.capacity = alloc.next_id
+    f.store.count.fill_(f.store.capacity)
     before = alloc.next_id, len(alloc.parts), len(f.store)
     with pytest.raises(OverflowError):
         f.store.write_clause(clause)
     assert (alloc.next_id, len(alloc.parts), len(f.store)) == before
 
 
-def test_nested_terminal_mint_keeps_its_word_and_admitted_occupation(monkeypatch):
+def test_sentence_projection_keeps_its_own_entry_after_an_embedded_mention(monkeypatch):
+    from dataclasses import replace
+    from ClauseRow import Clause, Composition
+    from Meaning import ConceptualMeaning
+    f = SentenceFixture(monkeypatch)
+    # The same unresolved head appears first as a working mention and then
+    # under a projecting wrapper. Only the sentence owns external testimony.
+    point = torch.eye(8)[0]
+    head = Composition(point)
+    mention = Clause(ConceptualMeaning.from_description(point), point=point,
+                     composition=head, reference_request={'mode':'bind'})
+    root = Composition(point, (head,), operation='project', head_role=1)
+    clause = replace(mention, composition=root, companions=(mention,), reference_request=None)
+    written = {}
+    row = f.store.write_clause(clause, document_key='entry', sentence_index=0,
+                               evidence=(.7,.2), written_rows=written)
+    embedded = written[id(mention)]
+    assert isinstance(row,int) and isinstance(embedded,int) and row != embedded
+    assert f.store.KINDS[int(f.store.record_kind[row])] == 'observation'
+    assert f.store.KINDS[int(f.store.record_kind[embedded])] == 'unverified'
+    assert not f.store.entry_when(embedded).any()
+    assert f.store.row(row)['evidence'] == pytest.approx((.7,.2))
+
+
+def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -67,21 +91,15 @@ def test_nested_terminal_mint_keeps_its_word_and_admitted_occupation(monkeypatch
     root = Composition(value, (left, right), operation='verb', formal_name='verb', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=root)
     row = f.store.write_clause(clause, evidence=(.8, .1))
-    root_id = f.store.raw_meaning_of(row).role_refs[0][1]
-    a, minted = f.store.parts.refs[root_id].tolist()
-    assert a == participant and minted != word
-    assert f.cs.definitions.words(minted) == (word,)
-    assert f.store.parts.find(minted, word) is not None
-    counts = f.language.parts_of_speech.counts[minted]
-    assert counts['verb_argin2'] == 1
-    # One existing owner serializes the new symbol's type as an occupation.
-    from PartsOfSpeech import PartsOfSpeech
-    restored = PartsOfSpeech(f.language.parts_of_speech.arguments)
-    restored.set_extra_state(f.language.parts_of_speech.get_extra_state())
-    assert restored.counts[minted] == counts
+    from LTM1 import SYMBOL
+    assert row[0] == 'sym'
+    assert f.store.parts.references(row[1]) == ((SYMBOL, participant), (SYMBOL, word))
+    assert f.store.parts.rows_referencing(SYMBOL, word) == (row[1],)
+    assert not f.cs.definitions.objects(word)
+    assert not f.language.parts_of_speech.counts
 
 
-def test_bound_terminal_admits_its_new_word_without_reminting_the_object(monkeypatch):
+def test_bound_terminal_keeps_its_object_without_defining_a_new_word(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -91,8 +109,8 @@ def test_bound_terminal_admits_its_new_word_without_reminting_the_object(monkeyp
     term = Composition(point, reference=identity, word_id=word)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
     f.store.write_clause(clause, evidence=(.8, .1))
-    assert f.cs.definitions.objects(word) == (identity,)
-    assert f.store.parts.find(identity, word) is not None
+    assert f.cs.definitions.objects(word) == ()
+    assert f.store.parts.find(identity, word) is None
     assert f.store._concept_point(identity) is not None
 
 
@@ -105,7 +123,7 @@ def test_self_reference_of_a_word_with_an_object_use_is_not_a_definition(monkeyp
     # remains legal; it is not a definition of itself.
     alloc.symbol_types[word].add('object')
     edge = f.store.parts.add(word, word, truth_plus=1.)
-    assert 'definition' not in f.store.parts.readings(edge, alloc.symbol_types.get)
+    assert 'definition' not in f.store.parts.readings(edge, lambda ref: alloc.symbol_types.get(ref[1], ()))
     assert f.cs.definitions.objects(word) == (obj,)
     assert f.store.parts.find(word, word) == edge
 
@@ -148,7 +166,7 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     bank = f.cs.similarity_codebook.W.detach().clone()
     row = f.store.write_clause(clause)
     assert isinstance(row, int) and int(f.store.order[row]) == 1
-    torch.testing.assert_close(f.store.slots[row, 0], root.point)
+    torch.testing.assert_close(f.store.slots[row], root.point)
     assert f.store.raw_meaning_of(row).role_refs[0] == ('sym', kind)
     assert f.store.location(f.store.occurrence_of(row)) is not None
     # The description is the new referent, not a relation argument. Its
@@ -156,8 +174,7 @@ def test_new_referent_closes_as_an_unminted_occurrence(monkeypatch):
     assert (f.cs._concept_allocator.next_id, len(f.store.parts)) == before
     torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
     counts = f.language.parts_of_speech.counts
-    assert counts[marker]['lower_argin1'] == 1
-    assert counts[kind]['lower_argin2'] == counts[kind]['lower_argout1'] == 1
+    assert not counts  # only observe_kept(reading) updates occupations
 
 
 def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
@@ -184,9 +201,8 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
                     composition=root)
     row = f.store.write_clause(clause)
     assert {word: dict(parts.counts[word]) for word in words} == expected
-    composite = f.store.raw_meaning_of(row).role_refs[0][1]
-    assert composite not in words
-    assert parts.counts[composite] == {'intersection_argout1': 1}
+    assert row[0] == 'sym'
+    assert row[1] not in parts.counts
     assert parts.counts[words[1]]['lower_argout1'] == 1
     assert parts.counts[words[1]]['intersection_argin1'] == 1
 
@@ -221,7 +237,8 @@ def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch
             symbol_ids=written[('symbols', id(clause))],
             activations=written[('activations', id(clause))]))
     resolver = f.cs.components.reference_close
-    identities = resolver.individuals(resolver.accessible(frames))
+    from chunk_fixtures import recall
+    identities = resolver.individuals(resolver.accessible(recall(resolver, frames)))
     assert len(set(addresses)) == 2 and set(identities) == set(addresses)
     assert (alloc.next_id, len(f.store.parts)) == before
     torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
@@ -246,9 +263,10 @@ def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(
     value = torch.maximum(point, predicate)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, children=(np,),
         composition=Composition(value, (term, Composition(predicate, reference=verb)),
-                                operation='verb', formal_name='verb', head_role=1))
+                                operation='lift', formal_name='lift', head_role=2))
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, (SituationFrame.from_row(f.store.row(first)),))
+    from chunk_fixtures import recall
+    plan = resolver.preview(clause, recall(resolver, (SituationFrame.from_row(f.store.row(first)),)))
     assert plan['items'][0]['selected'] == address
     kept = resolver.prepare(clause, plan)
     bank = f.cs.similarity_codebook.W.detach().clone()
@@ -257,14 +275,15 @@ def test_pronoun_at_occurrence_closes_verb_over_antecedent_kind_without_seating(
     row = f.store.write_clause(kept, document_key='pronoun', sentence_index=1,
                                written_rows=written)
     resolver.commit(plan, row, written, document='pronoun', position=1, training=False)
-    edge = f.store.raw_meaning_of(row).role_refs[0][1]
-    assert f.store.parts.refs[edge].tolist() == [kind, verb]
+    assert isinstance(row, int)
+    torch.testing.assert_close(f.store.slots[row], value)
+    assert dict(f.store.raw_meaning_of(row).bindings)['_identity'] == address
     assert resolver.last_audit[0]['reference'] == address
     assert dict(f.cs._concept_allocator.layer()._tensor_rows) == seats
     torch.testing.assert_close(f.cs.similarity_codebook.W, bank, rtol=0, atol=0)
 
 
-def test_inline_lower_rejects_content_change_without_a_partial_close(monkeypatch):
+def test_inline_lower_retains_its_kept_journal_value(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -277,12 +296,12 @@ def test_inline_lower_rejects_content_change_without_a_partial_close(monkeypatch
     clause = Clause(ConceptualMeaning.from_description(changed), point=changed, composition=term)
     alloc = f.cs._concept_allocator
     before = alloc.next_id, len(f.store.parts), len(f.store)
-    with pytest.raises(ValueError, match='preserve its description exactly'):
-        f.store.write_clause(clause)
-    assert (alloc.next_id, len(f.store.parts), len(f.store)) == before
+    row = f.store.write_clause(clause)
+    torch.testing.assert_close(f.store.slots[row], changed)
+    assert (alloc.next_id, len(f.store.parts)) == before[:2]
 
 
-def test_new_relation_argument_is_minted_and_unseatable_argument_fails(monkeypatch):
+def test_new_relation_argument_needs_an_occurrence_and_no_concept_seat(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -293,23 +312,19 @@ def test_new_relation_argument_is_minted_and_unseatable_argument_fails(monkeypat
                        operation='verb', formal_name='verb', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
-    # Remove this fixture's order-1 seats. The chooser is never consulted
-    # and the atomic closing must refuse without a partial write.
+    # The occurrence value needs no order-1 concept seat.
     caps = f.cs._order_caps()
     monkeypatch.setattr(f.cs, '_order_caps', lambda: [caps[0], 0, f.cs.nVectors-caps[0]])
-    alloc = f.cs._concept_allocator
-    before = alloc.next_id, len(alloc.parts), len(f.store)
-    with pytest.raises(RuntimeError, match='concept row pool: order=1'):
-        f.store.write_clause(clause)
-    assert (alloc.next_id, len(alloc.parts), len(f.store)) == before
-    monkeypatch.setattr(f.cs, '_order_caps', lambda: caps)
+    seats = set(f.cs._concept_allocator.layer()._tensor_row_keys)
     row = f.store.write_clause(clause)
-    result = f.store.raw_meaning_of(row).role_refs[0][1]
-    minted = int(f.store.parts.refs[result, 1])
-    assert f.cs._csw_row_of(minted) is not None
+    from LTM1 import OCCURRENCE
+    tag, address = f.store.parts.references(row[1])[1]
+    assert tag == OCCURRENCE
+    torch.testing.assert_close(f.store.point_of_row(address), argument.point)
+    assert set(f.cs._concept_allocator.layer()._tensor_row_keys) == seats
 
 
-def test_relation_argument_uses_the_existing_unpartitioned_tail(monkeypatch):
+def test_relation_argument_does_not_use_the_concept_tail(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -325,14 +340,15 @@ def test_relation_argument_uses_the_existing_unpartitioned_tail(monkeypatch):
     caps = (f.cs._order_caps()[0], 0)
     monkeypatch.setattr(f.cs, '_order_caps', lambda: caps)
     row = f.store.write_clause(clause)
-    result = f.store.raw_meaning_of(row).role_refs[0][1]
-    minted = int(f.store.parts.refs[result, 1])
-    assert sum(caps) <= f.cs._csw_row_of(minted) < capacity
+    from LTM1 import OCCURRENCE
+    tag, address = f.store.parts.references(row[1])[1]
+    assert tag == OCCURRENCE and f.store.index_of_row(address) is not None
+    assert f.cs._csw_row_of(address) is None
     assert f.cs.nVectors == capacity
     assert f.cs.similarity_codebook.W.shape == shape
 
 
-def test_minted_surface_phrase_keeps_the_unminted_heads_word(monkeypatch):
+def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
@@ -347,8 +363,7 @@ def test_minted_surface_phrase_keeps_the_unminted_heads_word(monkeypatch):
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
                     composition=root)
     row = f.store.write_clause(clause)
-    result = f.store.raw_meaning_of(row).role_refs[0][1]
-    minted = int(f.store.parts.refs[result, 0])
-    assert f.cs._csw_row_of(minted) is not None
-    assert f.cs.definitions.words(minted) == (word,)
-    assert f.store.parts.find(minted, word) is not None
+    from LTM1 import SYMBOL
+    assert f.store.parts.references(row[1])[0] == (SYMBOL, word)
+    assert not f.cs.definitions.objects(word)
+    assert f.store.parts.find(word, native) == row[1]

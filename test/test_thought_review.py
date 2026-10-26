@@ -8,7 +8,7 @@ from test_normal_thought_controller import _catalog_world
 
 
 @pytest.mark.parametrize('change', [
-    {'polarity': False}, {'mode': 'assertive'},
+    {'polarity': False}, {'bindings': {'context': ('sym', 998)}},
     {'bindings': {'subject': ('sym', 999)}}, {'scope': {'place': 'workshop'}},
 ])
 def test_semantic_metadata_changes_the_controller_input(change):
@@ -79,11 +79,12 @@ def test_memory_attention_is_bounded_metered_and_row_local():
     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode='episode')
     model.symbolSpace.what_memory = memory
     store = model.symbolSpace.ltm_store = LTM0(8, capacity=16)
-    question = registry.form('part', part, whole)
-    fact = replace(question, mode='assertive')
+    from ThoughtReferences import with_slots
+    question = registry.form('isPart', whole, open_roles=('argin1',))
+    fact = __import__("Meaning").ConceptualMeaning.from_description(question.roles[0])
     store.append_meaning(fact, kind='fact', trust=.8)
     private = store.append_meaning(replace(fact, roles=fact.roles + 30), kind='observation')
-    memory.begin_thought_episode(question, b=0, work_budget=128)
+    memory.begin_thought_episode(with_slots(question, (('referent',0),)), b=0, work_budget=128)
     memory.begin_thought_episode(replace(question, roles=question.roles + 20), b=1, work_budget=128)
     with model._query_boundary_scope((0,)):
         work = QueryWorkBudget(128)
@@ -110,21 +111,21 @@ def test_policy_selects_nested_what_part_and_receives_actual_episode_credit(dept
     """A real grammar softmax completes a departure inside nested asks."""
     from test_item6_2_thinking import credit_chain_world, run
     from Queries import ThoughtOperationCandidate
-    from ThoughtReferences import needs_episode, open_slots
+    from ThoughtReferences import has_open_slots, open_slots
     import ThoughtStream
     model, registry, store, goal, menu = credit_chain_world(monkeypatch)
     base_menu = ThoughtStream.candidates
     outer = goal
     for _ in range(depth): outer = registry.form('ask', outer)
     def nested(registry, root, active, current, records, descriptions=()):
-        if not needs_episode(current): return ()
+        if not has_open_slots(current): return ()
         name = registry.signature_for(root, verify_reference=False).operation.semantic_id
         if name == 'ask':
             return (ThoughtOperationCandidate(registry.operation_spec('ask'), root, ()),)
         return base_menu(registry, root, active, current, records, descriptions)
     monkeypatch.setattr(ThoughtStream, 'candidates', nested)
     selected = run(model, outer, work_budget=128,
-        score=lambda result: dict(reconstruction=float(needs_episode(result.meaning)), answer=0.))
+        score=lambda result: dict(reconstruction=float(has_open_slots(result.meaning)), answer=0.))
     assert not open_slots(selected.meaning)
     assert max(record.level for record in selected.records) == depth
     assert sum(record.kind == 'descend' for record in selected.records) == depth

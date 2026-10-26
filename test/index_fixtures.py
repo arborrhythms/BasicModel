@@ -32,32 +32,8 @@ def one_hot_unfold(value, limit, **kwargs):
     return ((row,), 1, True) if limit and torch.equal(value, expected) else ((), 0, False)
 
 
-def append_indexed(store, meaning, *, terms, **kwargs):
-    """Supply a forced grammar for this write; retain only inverted postings."""
-    # Each call in these retrieval fixtures denotes a distinct source row.
-    kwargs.setdefault('document_key', 'index-fixture')
+def append_content(store, meaning, **kwargs):
+    """Each retrieval fixture write denotes one distinct source idea."""
+    kwargs.setdefault('document_key', 'content-fixture')
     kwargs.setdefault('sentence_index', len(store))
-    prior = store._index_read
-    mapping = {tuple(value.detach().tolist()): tuple(codes)
-               for value, live, codes in zip(meaning.roles, meaning.role_mask, terms) if live}
-    grammar = getattr(store, '_fixture_unfolding', {})
-    grammar.update(mapping)
-    store._fixture_unfolding = grammar
-    def unfold(value, limit, **_kwargs):
-        codes = mapping.get(tuple(value.detach().tolist()), ())
-        return codes, min(1, limit), bool(limit)
-    store._index_read = unfold
-    try:
-        return store.append_meaning(meaning, **kwargs)
-    finally:
-        store._index_read = prior or one_hot_unfold
-
-
-def restore_index(source, restored):
-    """Restore the fixture's numerical reader after rows and sidecar load."""
-    mapping = dict(source._fixture_unfolding)
-    def unfold(value, limit, **kwargs):
-        codes = mapping.get(tuple(value.detach().tolist()), ())
-        return codes, min(1, limit), bool(limit)
-    restored.configure_leaf_index(read=unfold)
-    restored.reindex_meanings()
+    return store.append_meaning(meaning, **kwargs)

@@ -77,6 +77,9 @@ def record_reading(language, entry):
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         rule = rules[local]
+        field_bind = rule.method_name == 'bind'
+        if field_bind:
+            arity = 1
         operands = stack[-arity:]
         del stack[-arity:]
         name = rule.method_name
@@ -88,8 +91,10 @@ def record_reading(language, entry):
             else:
                 operations[kind, local] = (cls(width, width) if name in
                     ('lift', 'verb', 'lower', 'surface', 'preposition', 'sum', 'implies') else cls())
-        result = operations[kind, local].compose(
-            *(value.reshape(1, 1, -1) for value, _ in operands)).reshape(-1)
+        arguments = [value.reshape(1,1,-1) for value,_ in operands]
+        if field_bind:
+            arguments.append(torch.zeros_like(arguments[0]))
+        result = operations[kind, local].compose(*arguments).reshape(-1)
         head = getattr(rule, 'head_role', 0)
         if not head and name in ('lower', 'bind', 'surface', 'preposition'):
             head = 2
@@ -117,7 +122,7 @@ def sentence_state(language, entry, registry):
     from Meaning import ConceptualMeaning
     query = language.program_meaning(entry, registry)
     return SentenceEndState(ConceptualMeaning.from_description(entry.end_state[0]),
-        query=query if query is not None and query.mode == 'interrogative' else None)
+        query=query)
 
 
 from contextlib import contextmanager
@@ -229,6 +234,15 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     from Layers import WhatInteractionMemory
     owner.symbolSpace.what_memory = WhatInteractionMemory(batch=1,capacity=32,detach_mode='episode')
     owner.attention_budget = 0
+    from Language import OperationSelectionLayer
+    if not hasattr(owner, 'shared_grammar'):
+        owner.shared_grammar = OperationSelectionLayer(d_model=width, chooser='mlp')
+        select = owner.shared_grammar.select_logits
+        def skip(logits, **options):
+            options['replay_action'] = torch.tensor([logits.shape[-1]-1], device=logits.device)
+            return select(logits, **options)
+        owner.shared_grammar.select_logits = skip
+    owner.symbolSpace.languageLayer = SimpleNamespace(operation_layer=owner.shared_grammar)
     owner.document_expectation_gain = getattr(owner, 'document_expectation_gain', 0.)
     owner.expectation_gain = getattr(owner, 'expectation_gain', 0.)
     owner.training = False
@@ -245,18 +259,21 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     for name in ('_assert_queries_outside_sentence','_assert_query_boundary',
                  '_query_boundary_scope','_committed_thought_scope',
                  'run_selected_thought','_run_selected_thought_once',
+                 '_choose_selected_thought_action','_selected_thought_chooser',
                  '_what_memory','_end_finished_selected_thought_episodes',
                  '_recall_sentence_history','_check_recall_batch'):
         setattr(owner,name,MethodType(getattr(BasicModel,name),owner))
     owner._sentence_understandings = {}
     owner._last_sentence_understanding = None
 
-    owner._clause_end_state = BasicModel._clause_end_state
+    owner._clause_end_state = MethodType(BasicModel._clause_end_state,owner)
     owner._discard_sentence_record = BasicModel._discard_sentence_record
     owner._sentence_observation = lambda *args, **kwargs: BasicModel._sentence_observation(owner, *args, **kwargs)
-    stm = (entry.end_state[None], torch.ones(1, dtype=torch.long),
-           torch.zeros(1, 3, dtype=torch.long), torch.zeros(1, 3, dtype=torch.long),
-           torch.full((1, 3), -1, dtype=torch.long), torch.ones(1, 3))
+    import STMChunks
+    stm = STMChunks.empty(1,8,width,device=entry.leaves.device,dtype=entry.leaves.dtype)
+    for index in reversed(range(3)):
+        if bool(entry.end_state[index].ne(0).any()):
+            stm,_ = STMChunks.deposit(stm,entry.end_state[index:index+1],torch.tensor([True]),stack=True,order=0)
     lang = [torch.zeros(1, 1) for _ in range(23)]
     lang[6] = torch.zeros(1, sid + 1, width)
     lang[10] = entry.end_state.reshape(1, 1, 3 * width).expand(1, sid + 1, -1).clone()

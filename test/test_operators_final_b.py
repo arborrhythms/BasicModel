@@ -119,9 +119,12 @@ def forced_prefix_certificate():
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
             R=m._last_sentence_credit['components'][:,0,0].tolist(),
+            content_cost=(m._sentence_cost_registry._value(
+                m._sentence_cost_registry._terms['reconstruction.content'])
+                * m.loss.reconstruction_scale).detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
-            form_snapshot=id(m._concept_owner().similarity_codebook.mereology._form_context)))
+            form_snapshot=id(m._concept_owner().similarity_codebook.mereology._forms)))
         return commit(m,state,sid,active,*args)
     with torch.random.fork_rng(), patch.object(OperationSelectionLayer,'forward',disjunction), \
          patch.object(OperationSelectionLayer,'attend',narrowing), patch.object(BasicModel,'_commit_sentence',capture), \
@@ -151,18 +154,42 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     assert len(report['reads']) == 2
     assert report['reads'][1]['meaning_norm'] > 0
     for read in report['reads']:
-        assert read['multisets'] == 4 and read['residual'] == [0.]*4 and read['R'] == [0.]*4
+        assert read['multisets'] == 4 and read['residual'] == [0.]*4
+        # Distinct negative meanings can be erased by disjunction's meet.
+        # Exact lexical recovery cannot waive that existing content charge.
+        assert read['R'] == read['content_cost']
+    assert report['reads'][0]['R'] == [0.]*4
+    assert report['reads'][1]['R'][2] > 0
 
 
-def test_both_training_trials_share_bootstrap_snapshot():
+def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     try:
+        derived = model._concept_owner().similarity_codebook.mereology
+        snapshots, costs = [], []
+        path_cost = model._sentence_path_cost
+        def capture(*args, **kwargs):
+            bank = model._sentence_primed_bank
+            snapshots.append((id(bank), bank.codes.detach().clone(),
+                              derived.placement.clone(), derived.placement_witnesses.clone()))
+            return path_cost(*args, **kwargs)
+        monkeypatch.setattr(model, '_sentence_path_cost', capture)
         optimizer = model.getOptimizer(lr=.01)
         for _ in range(3):
+            snapshots.clear()
             model.runEpoch(optimizer=optimizer, batchSize=4, split='train', max_batches=1)
+            assert len(snapshots) == 2
+            assert snapshots[0][0] == snapshots[1][0]
+            for before, after in zip(snapshots[0][1:], snapshots[1][1:]):
+                torch.testing.assert_close(before, after, atol=0, rtol=0)
             for audit in model._sentence_credit_audits:
-                assert not audit['components'][..., 0].any()
-        assert model._concept_owner().similarity_codebook.mereology.context_audit()
+                reconstruction = audit['components'][..., 0]
+                assert torch.isfinite(reconstruction).all() and reconstruction.ge(0).all()
+                costs.append(reconstruction.tolist())
+        assert derived.context_audit()
+        import json
+        (tmp_path/'certificate.json').write_text(json.dumps(dict(
+            paired_snapshot_equality=True, reconstruction_costs=costs), indent=2))
     finally:
         model.End(); model.symbolSpace.soft_reset()

@@ -1,4 +1,5 @@
 """Step 1b: regions have one native owner; indexes cannot retain stale values."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import torch
 import pytest
@@ -88,10 +89,11 @@ def test_mtm_holds_current_content_and_native_witnesses_are_live_queries():
     # Identity reads do not invoke an event chart, including after a row edit.
     resolver.components._ready = lambda: (_ for _ in ()).throw(AssertionError('identity chart'))
     with torch.no_grad(): owner.similarity_codebook.W[owner._csw_row_of(cid)].copy_(a[1])
-    candidates = resolver.individuals(resolver.accessible((frame,)))
+    candidates = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     torch.testing.assert_close(point(owner,cid),a[1],rtol=0,atol=0)
     torch.testing.assert_close(candidates[cid]['content'],a[0],rtol=0,atol=0)
     store.parts.remove_symbol(cid)
+    store.reset()
     assert witness_count(owner,cid) == 0
 
 
@@ -103,7 +105,7 @@ def test_forgetting_and_reinterpretation_never_refold_a_native_identity():
     # Read only the surviving occurrence, as after forgetting. Its working
     # interpretation must leave the original native code intact.
     original = store.slots.clone(), store.parts.refs.clone()
-    resolver.individuals(resolver.accessible((second,)))
+    resolver.individuals(resolver.accessible(chunk_context(resolver, (second,))))
     torch.testing.assert_close(point(resolver.components.owner,cid),a[0]+a[1])
     torch.testing.assert_close(store.slots,original[0],rtol=0,atol=0)
     torch.testing.assert_close(store.parts.refs,original[1],rtol=0,atol=0)
@@ -132,7 +134,7 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
     held=discourse._inter_context[0][-1]
     assert isinstance(held,SituationAddress) and not any(torch.is_tensor(v) for v in vars(held).values())
     assert discourse._inter_context_ids[0][-1] is None and discourse._inter_context_lanes[0][-1] is None
-    store.slots[row,0].copy_(observed[1])
+    store.slots[row].copy_(observed[1])
     torch.testing.assert_close(discourse.situation_references()[0].roles[0],observed[1])
     store._index_occurrences.clear()
     assert discourse.situation_references() == ()
@@ -141,20 +143,20 @@ def test_stm_retains_addresses_and_reads_reinterpretation_without_a_copy():
 
 def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon():
     from RowTime import encoder,HORIZON
-    store=LTM0(4,capacity=8)
+    store=LTM0(12,capacity=8,percept_width=8)
     tick=[731]
     object.__setattr__(store,'_model_present',lambda:tick[0])
-    row=store.append_idea(torch.ones(4),document_key='first',sentence_index=9000)
-    assert int(encoder().decode_index(store.when[row])) == 731
+    row=store.append_idea(torch.ones(12),document_key='first',sentence_index=9000)
+    assert int(encoder().decode_index(store.entry_when(row))) == 731
     tick[0]+=1
-    other=store.append_idea(torch.ones(4),document_key='second',sentence_index=0)
-    assert int(encoder().decode_index(store.when[other])) == 732
-    torch.testing.assert_close(store.slots[row],store.slots[other],rtol=0,atol=0)
+    other=store.append_idea(torch.ones(12),document_key='second',sentence_index=0)
+    assert int(encoder().decode_index(store.entry_when(other))) == 732
+    torch.testing.assert_close(store.slots[row,8:],store.slots[other,8:],rtol=0,atol=0)
     trials=torch.tensor([0,731,1000000,HORIZON-1,HORIZON])
     torch.testing.assert_close(encoder().decode_index(encoder().encode(trials)),trials,rtol=0,atol=0)
     tick[0]=HORIZON+1
     with pytest.raises(OverflowError,match='horizon'):
-        store.append_idea(torch.ones(4),document_key='third')
+        store.append_idea(torch.ones(12),document_key='third')
 
 
 def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_time():
@@ -175,10 +177,11 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
     store.append_idea(a[0])
-    saved=store.state_dict();saved.pop('model_clock')
-    target=LTM0(12,capacity=512);target.load_state_dict(saved)
-    assert not target.when.any()
-    torch.testing.assert_close(target.slots,store.slots,rtol=0,atol=0)
+    saved=store.state_dict();saved['truth_schema']=torch.tensor(10)
+    target=LTM0(12,capacity=512,percept_width=0)
+    with pytest.raises(ValueError, match='version'):
+        target.load_state_dict(saved)
+    assert len(target) == 0
 
 
 @pytest.mark.parametrize('native_bank', (False, True))
@@ -193,7 +196,7 @@ def test_loader_permanently_rejects_signed_identity_without_modifying_the_row(na
         with torch.no_grad():
             owner.similarity_codebook.W[owner._csw_row_of(identity),0] = -.125
     else:
-        store.slots[row, 0, 0] = -.125
+        store.slots[row, 0] = -.125
     held = store.slots.clone()
     native = point(resolver.components.owner, identity).clone()
     with pytest.raises(ValueError, match='native concept coordinates'):

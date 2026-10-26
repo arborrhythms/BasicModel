@@ -35,7 +35,7 @@ SITES = {
     'bin/Language.py': {'SymbolSpace.commit_word_reference_slab': ['evidence']},
     'bin/ClauseJournal.py': {'finish_clause': ['pair', 'evidence']},
     'bin/ClauseRow.py': {'ClauseRows.write_clause': ['evidence']},
-    'bin/Understanding.py': {'AnswerProgram.__post_init__': []},
+    'bin/Understanding.py': {'Reading.__post_init__': []},
     'bin/Layers.py': {'LTM0.append_meaning': ['evidence']},
     'bin/MeaningCodes.py': {'exchange': [], 'compose': []},
 }

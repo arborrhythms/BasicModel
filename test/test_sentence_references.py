@@ -9,7 +9,7 @@ from reading_fixtures import finish_reading
 from Layers import MeaningExpectation
 from ReferenceContext import SituationFrame
 from reading_fixtures import resolve_reading_references as resolve_occurrences
-from Understanding import AnswerProgram
+from Understanding import Reading
 from test_clause_storage import clause_store, idea_clause
 from test_sentence_expectation import layer, observe
 
@@ -20,7 +20,7 @@ def language_and_program(mode='particular'):
     language = SimpleNamespace(_compose_binary_rules=(rule,), _compose_unary_rules=(),
         forward_binary_step=lambda a, b, *_: (a + b) * .5)
     leaves = torch.eye(4)[[0, 2]]
-    program = AnswerProgram(rows=torch.tensor([0, 2]), word_rows=torch.tensor([0, 2]),
+    program = Reading(rows=torch.tensor([0, 2]), word_rows=torch.tensor([0, 2]),
         activations=torch.ones(2), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
         targets=torch.tensor([0, 1, 1]),
@@ -97,7 +97,7 @@ def test_predictor_context_carries_address_and_reads_only_that_retained_row():
     discourse.detach_prediction_context()
     anchors = discourse.situation_references(0)
     assert len(anchors) == 1 and anchors[0].row_id == int(store.row_ids[row])
-    torch.testing.assert_close(anchors[0].point, store.slots[row, 0])
+    torch.testing.assert_close(anchors[0].point, store.slots[row])
     discourse._ltm_store = None
     assert discourse.situation_references(0) == ()
     discourse._ltm_store = store

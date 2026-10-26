@@ -208,38 +208,41 @@ def test_deep_meaning_projection_accepts_configured_sentences():
 
 
 def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
-    # One staged frame, two words, and a three-column operation journal.
-    origins = torch.zeros(1, 6, 3, dtype=torch.long)
-    origins[0, 1] = torch.tensor([4, 0, 1])
-    trace = SimpleNamespace(_choice_values=torch.zeros(1, 3, 12),
-        _identity_state=(torch.zeros(1, 6, 4), torch.zeros(1, 6, dtype=torch.bool),
-            torch.zeros(1, 2, 6, dtype=torch.long), origins,
-            torch.zeros(1, 3, 6, dtype=torch.long)))
-    observed = []
-    def resolve(owner, rows, ids, actions, *, leaf_orders, admit):
+    from chunk_fixtures import Walk,choice
+    from MediumTermMemory import MediumTermMemory
+    walk=Walk((SimpleNamespace(method_name='sum',head_role=0),),())
+    state=walk.empty(torch.ones(1,4),3)
+    state=walk.shift(state,torch.ones(1,4),word=101,index=0,order=1)
+    state=walk.shift(state,torch.ones(1,4),word=102,index=1,order=2)
+    state=walk.apply(state,choice(torch.ones(1,4),head=0,order=2),torch.ones(1,2,4),2)
+    trace=SimpleNamespace(_choice_values=state[3],_chunk_state=state[0],
+        _chunk_scope=state[1],_choice_transactions=state[2])
+    observed=[]
+    def resolve(owner,rows,ids,actions,*,leaf_orders,admit):
         observed.append(leaf_orders.clone())
-        return ids.clone(), torch.full_like(ids, -1)
-    model = SimpleNamespace(_reconstruction_stack=lambda: trace,
-        inputSpace=SimpleNamespace(),
-        symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0, 2]])),
+        return ids.clone(),torch.full_like(ids,-1)
+    model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
+        symbolSpace=SimpleNamespace(_word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
-        _concept_owner=lambda: object())
-    program = (torch.tensor([[0, 1]]),
-        torch.tensor([[[0, -1, 0], [0, -1, 1], [1, 0, -1]]]),
-        torch.tensor([[0, 0, 0]]), torch.tensor([[0, 1, 2]]))
-    entry, = BasicModel._program_entries(model, program, torch.zeros(1, 2, 4),
-        torch.tensor([[10, 11]]), torch.tensor([[10, 11]]), torch.ones(1, 2),
-        torch.zeros(1, 3, 4), concept_ids=torch.tensor([[101, 102]]))
-    assert entry.leaf_orders.tolist() == [1, 2]
-    assert observed[0].tolist() == [1, 2]
-    assert entry.identity_leaves.tolist() == [2, 3]
-    assert entry.concept_ids.tolist() == [101, 102]
-    assert model.symbolSpace._word_reference_orders.tolist() == [[0, 2]]
+        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512)))
+    program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),
+             torch.tensor([[0,0,0]]),torch.tensor([[0,1,2]]))
+    entry,=BasicModel._program_entries(model,program,torch.zeros(1,2,4),
+        torch.tensor([[10,11]]),torch.tensor([[10,11]]),torch.ones(1,2),
+        torch.zeros(1,3,4),concept_ids=torch.tensor([[101,102]]))
+    assert entry.leaf_orders.tolist()==[1,2]
+    assert observed[0].tolist()==[1,2]
+    assert entry.identity_leaves.tolist()==[1,0]
+    assert entry.identity_ids.tolist()==[512]
+    assert entry.concept_ids.tolist()==[101,102]
+    assert model.symbolSpace._word_reference_orders.tolist()==[[0,2]]
+
 
 
 def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, eager_reading):
     from Models import FunctionalPeerSTM
-    from MTMOverlay import MTMOverlay
+    import ChunkJournal
+    import STMChunks
     from test_compiled_word_chunk import _tiny_canonical_model
     from What import What
     model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8',
@@ -248,19 +251,19 @@ def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, e
         architecture_overrides={'answerSynthesis': False})
     model._tensor_peer_while_eager = True
     model._chart_compose_per_word = lambda: None
-    resolve, push = FunctionalPeerSTM.resolve_top_reference, MTMOverlay.push
+    resolve, push = FunctionalPeerSTM.resolve_top_reference, ChunkJournal.push
     expected, observed = [], []
     def resolved(*args, **kwargs):
         result = resolve(*args, **kwargs)
-        expected.append(result[2][:, 0].clone())
+        expected.append(STMChunks.stack_view(result)[2][:, 0].clone())
         return result
-    def opening(state, active, value, **kwargs):
+    def opening(state, scope, active, **kwargs):
         if active.any():
-            torch.testing.assert_close(kwargs['order'][active], expected[-1][active], rtol=0, atol=0)
+            torch.testing.assert_close(STMChunks.stack_view(state)[2][:,0][active], expected[-1][active], rtol=0, atol=0)
             observed.append(True)
-        return push(state, active, value, **kwargs)
+        return push(state, scope, active, **kwargs)
     monkeypatch.setattr(FunctionalPeerSTM, 'resolve_top_reference', staticmethod(resolved))
-    monkeypatch.setattr(MTMOverlay, 'push', staticmethod(opening))
+    monkeypatch.setattr(ChunkJournal, 'push', opening)
     try:
         raw = model.inputSpace.prepInput(['a b'])
         model.runBatch(train=False, batchSize=1, split='validation',

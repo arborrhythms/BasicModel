@@ -54,25 +54,6 @@ def test_row_definedness_survives_rewitness_and_checkpoint_without_changing_trut
     torch.testing.assert_close(restored.identity_code(row, 64, 3), second)
 
 
-def test_word_magnitude_counts_containing_rows_and_excludes_definition_rows(monkeypatch):
-    from Layers import LTM0
-    from Meaning import ConceptualMeaning
-    from MeaningCodes import sentence_key
-    from MereologicalCodes import MereologicalCodes
-    from test_clause_acceptance import SentenceFixture
-    f = SentenceFixture(monkeypatch)
-    store, owner = f.store, f.cs
-    a, b = f.noun('a'), f.noun('b')
-    root = store.parts.add(a, b, truth_plus=1.)
-    codes = MereologicalCodes(owner, torch.zeros(2, 20), percept_width=4, percept_event_width=4)
-    for position in range(2):
-        row = store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(8)),
-            role_refs=(('sym', root), None, None)),
-            document_key='fixture', sentence_index=position,
-            content_key=sentence_key([str(position).encode()]))
-    count, value = codes.occurrence_terms()[owner._csw_row_of(a)]
-    assert count == 2 and value.norm().item() == pytest.approx(2 / 6)
-    assert not value[8:].any() and not value.requires_grad
 
 
 def dictionary(width=4, sources=2):

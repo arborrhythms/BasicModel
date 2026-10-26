@@ -87,7 +87,8 @@ def test_foreign_width_query_fails_before_the_taxonomy_executor(monkeypatch):
 
 
 def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
-    from ThoughtReferences import question, with_slots
+    from ThoughtReferences import with_slots
+    from meaning_fixtures import unsupported as question
     calls = []
     content = ConceptualMeaning.from_description(torch.ones(8))
     cs = _cs()
@@ -95,11 +96,11 @@ def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
         value=value, meaning=value, support_true=0., support_false=0.))
     _signature('ask', 'argin1').invoke(context, content)
     assert not calls
-    requested = question(content, (('evidence', -1),))
+    requested = question(content, (('referent', 0),))
     result = _signature('ask', 'argin1').invoke(context, requested)
-    assert result['value'].mode == 'interrogative' and len(calls) == 1
+    assert __import__('ThoughtReferences').open_slots(result['value']) and len(calls) == 1
     torch.testing.assert_close(calls[0].roles, requested.roles)
-    bound = replace(with_slots(requested, (), pair=(1., 0.)), mode='interrogative')
+    bound = replace(with_slots(requested, (), pair=(1., 0.)))
     _signature('ask', 'argin1').invoke(context, bound)
     assert len(calls) == 1
 
@@ -139,7 +140,7 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
 def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     cs, _, registry, _, _, _ = _world()
     store = LTM0(8)
-    description = ConceptualMeaning.from_description(torch.eye(8)[:3])
+    description = ConceptualMeaning.from_description(torch.eye(8)[0])
     first = store.append_meaning(description, sentence_index=len(store))
     second = store.append_meaning(description, sentence_index=len(store))
     context = _context(cs, store=store, max_records=1)

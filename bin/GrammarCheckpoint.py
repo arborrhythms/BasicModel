@@ -57,11 +57,10 @@ def align(model, state, old):
     from IdentityRows import migrate_checkpoint
     migrate_checkpoint(model, result, live, drift, transforms)
     from Layers import LTM0
-    from RowTime import migrate
     for name, module in model.named_modules(remove_duplicate=False):
         if isinstance(module, LTM0) and name+'.slots' in result:
-            if migrate(module, result, name+'.'):
-                drift[name+'.when'] = dict(action='historical model time unknown; source-position phasor retired')
+            if int(result.get(name+'.truth_schema', -1)) != 13:
+                raise ValueError('pre-layout LTM checkpoint; replay its producing lesson')
     from Language import MarkerUnaryLayer
     identities = {name+'.marker' for name, module in model.named_modules(remove_duplicate=False)
                   if isinstance(module, MarkerUnaryLayer)

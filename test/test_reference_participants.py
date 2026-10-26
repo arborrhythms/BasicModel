@@ -1,4 +1,5 @@
 """Only the kept parse's participant constituents can enter a bind menu."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
 import weakref
@@ -46,7 +47,7 @@ def test_positive_marker_or_predicate_is_never_an_arrival_candidate(monkeypatch,
     assert words['wrong'] not in names
     assert candidates and all(node.subject_word_id != words['wrong'] for node in candidates)
     assert all(node.composition.reference not in (marker_reference, words['wrong']) for node in candidates)
-    plan = resolver.preview(clause, (SituationFrame.from_row(store.row(pending)),))
+    plan = resolver.preview(clause, chunk_context(resolver, (SituationFrame.from_row(store.row(pending)),)))
     assert all(item['node'].reference_request.get('forward_identity') != words['wrong']
                for item in plan['items'])
     assert plan['arrivals']
@@ -62,7 +63,7 @@ def test_an_objectless_marker_leaf_without_a_participant_position_has_no_site():
     leaf = named(atoms[1], words['wrong'])
     leaf = replace(leaf, reference_request=dict(leaf.reference_request, leaf=True))
     held = snapshot(resolver)
-    plan = resolver.preview(leaf, ())
+    plan = resolver.preview(leaf, chunk_context(resolver, ()))
     assert not plan['items'] and resolver._arrival_constituents(leaf) == (set(), [])
     assert not resolver.components.owner.mtm.entries
     unchanged(resolver, held)
@@ -83,8 +84,8 @@ def test_the_journal_never_adds_a_standalone_provisional_word_to_the_object_menu
     assert not plan['items'] and not f.cs.mtm.entries
     held = snapshot(f.resolver)
     frame = SituationFrame.from_row(f.store.row(row))
-    assert not f.resolver.accessible((frame,))
-    assert not f.resolver.preview(named(f.atoms[0], word), (frame,))['items'][0]['candidates']
+    assert not f.resolver.accessible(chunk_context(f.resolver, (frame,)))
+    assert not f.resolver.preview(named(f.atoms[0], word), chunk_context(f.resolver, (frame,)))['items'][0]['candidates']
     unchanged(f.resolver, held)
 
 
@@ -106,13 +107,21 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     tree = Composition(atoms[0], (
         Composition(atoms[0], reference=words['three']),
         Composition(atoms[1], reference=words['wrong'])), operation='lift', head_role=2)
-    row = store.write_clause(Clause(ConceptualMeaning.from_description(atoms[0]),
-        point=atoms[0], composition=tree), document_key='participants')
+    written = {}
+    clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0], composition=tree)
+    row = store.write_clause(clause, document_key='participants', written_rows=written)
     frame = replace(SituationFrame.from_row(store.row(row)),
-                    symbol_ids=(words['three'], words['wrong']))
+                    symbol_ids=written['symbols', id(clause)])
+    # The ordinary field reads an identity's retained role history. Writing
+    # a resolved expression alone no longer creates an accessible individual.
+    occurrence = store.occurrence_of(row)
+    pool = resolver.components.owner.mtm
+    pool.open(occurrence,kind=words['three'],native=words['three'],when=0,value=atoms[0])
+    pool.event(occurrence,occurrence,verb=words['wrong'],role=0,when=0)
     held = snapshot(resolver)
-    records = resolver.accessible((frame,))
-    assert words['three'] in records and words['wrong'] not in records
+    records = resolver.accessible(chunk_context(resolver, (frame,)))
+    identities = resolver.individuals(records)
+    assert words['three'] in identities and words['wrong'] not in identities
     unchanged(resolver, held)
 
 
@@ -136,7 +145,7 @@ def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypat
     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
     expected = int(order == 1 and position == 'participant')
     held = snapshot(f.resolver)
-    plan = f.resolver.preview(clause, ())
+    plan = f.resolver.preview(clause, chunk_context(f.resolver, ()))
     assert len(plan['items']) == expected
     if expected:
         node = plan['items'][0]['node']
@@ -146,27 +155,6 @@ def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypat
     _, committed = keep(f.resolver, clause)
     assert len(committed['items']) == expected
     assert len(f.cs.mtm.entries) == expected
-
-
-def test_retained_argument_classification_uses_only_its_own_occupations(monkeypatch):
-    from PartRead import argument_reader
-    from Spaces import _concept_alloc_of
-    from test_bind_thought import native
-    f = native(monkeypatch)
-    marker, head = f.noun('m'), f.noun('n')
-    occupations = f.language.parts_of_speech
-    occupations.add(marker, 'surface_argin1')
-    occupations.add(head, 'surface_argin2')
-    _concept_alloc_of(f.cs).symbol_types.setdefault(marker, set()).add('object')
-    def no_definition_read(*args, **kwargs):
-        raise AssertionError('argument classification read lexical definitions')
-    monkeypatch.setattr(type(f.cs.definitions), 'words', no_definition_read)
-    operation, is_marker = argument_reader(f.store)
-    assert is_marker(marker, set())
-    assert operation((marker, head)).method_name == 'surface'
-    word = f.words['m'][0]
-    assert not is_marker(word, set())
-    assert operation((word, head)) is None
 
 
 def test_bind_wrapper_keeps_the_verb_participant_and_excludes_its_predicate():

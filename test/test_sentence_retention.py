@@ -21,14 +21,13 @@ def comparison(store, source):
 def test_idea_closing_keeps_estimate_surprise_and_index_in_the_existing_owner():
     store, _ = clause_store()
     first = store.write_clause(idea_clause())
-    store.configure_leaf_index(read=lambda field, limit, **kwargs: ((11, 12, 13), 1, True))
     target = store.write_clause(idea_clause(), expectation=comparison(store, first), document_key='next')
-    assert len(store) == 3 and target == 2
+    assert len(store) == 3 and target == 1
     pair = store.expectation_pair(target)
     assert pair['source_occurrences'] == (store.occurrence_of(first),)
     assert pair['surprise'] >= 0
     assert 'kind_logit' not in store.expectation_of(1)
-    assert tuple(store.leaf_terms(target, role) for role in range(3)) == ((11, 12, 13), (), ())
+    torch.testing.assert_close(store.slots[target], idea_clause().point)
 
 
 def test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claims():
@@ -40,7 +39,7 @@ def test_repeated_relation_can_retain_multiple_estimates_without_duplicate_claim
     assert store.relations().tolist() == [target[1]]
     store._validate_expectation_links()
     # Re-reading the same thought address refreshes its one retained estimate.
-    assert len(store) == 3
+    assert len(store) == 2
     for index in (1,):
         assert store.expectation_pair(index)['observation_occurrence'] == store.occurrence_of(target)
 
@@ -55,13 +54,12 @@ def test_capacity_requires_room_for_new_estimate_and_observation():
     assert len(store) == store.capacity - 1
 
 
-def test_narrow_idea_retains_no_implicit_operand_reference():
+def test_narrow_idea_retains_its_identity_without_a_predicate_operand():
     store, _ = clause_store()
     first = store.write_clause(idea_clause())
     second = store.write_clause(idea_clause(refs=(int(store.row_ids[first]), 3, -1)))
     assert not hasattr(store, 'refs')
-    assert not any(ref is not None and ref[0] == 'ltm'
-                   for ref in store.meaning_of(second).role_refs)
+    assert store.meaning_of(second).role_refs == (store.occurrence_of(first), None, None)
 
 
 def test_invalid_prediction_does_not_publish_embedded_clauses():

@@ -10,33 +10,16 @@ import torch
 
 
 
-def test_membership_priming_shares_degree_budget_and_is_detached(monkeypatch):
-    import MereologicalCodes
+def test_edge_priming_shares_degree_budget_and_is_detached():
     from Priming import diffuse
-    from util import TheXMLConfig
-    from Layers import LTM0
-    from Meaning import ConceptualMeaning
-    store = LTM0(4, capacity=4)
-    store.append_meaning(ConceptualMeaning.from_description(torch.ones(4)))
-    owner = SimpleNamespace(_closed_clause_store=lambda: store)
-    import PartRead
-    monkeypatch.setattr(PartRead, 'occurrence_roots',
-        lambda *_: [dict(address=store.occurrence_of(0))])
-    monkeypatch.setattr(MereologicalCodes, 'occurrence_memberships', lambda *_, **kw: {0: {0}, 2: {0}})
-    monkeypatch.setitem(TheXMLConfig.data.setdefault('ConceptualSpace', {}), 'membershipPriming', True)
+    owner = SimpleNamespace()
     surface = torch.tensor([[4., 1., 1.]])
     before = torch.get_rng_state().clone()
     edges = (torch.tensor([0]), torch.tensor([1]), torch.tensor([2.]))
     diffuse(owner, surface, edges, .3, torch.tensor([True]))
-    torch.testing.assert_close(surface, torch.tensor([[3.25, 1.6, 1.15]]))
+    torch.testing.assert_close(surface, torch.tensor([[3.1, 1.9, 1.]]))
     assert torch.equal(before, torch.get_rng_state()) and not surface.requires_grad
     assert surface.sum() == pytest.approx(6.)
-    monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'membershipPriming', False)
-    old = surface.clone()
-    diffuse(owner, surface, edges, .3, torch.tensor([True]))
-    assert owner._last_occurrence_priming['edges'] == 0
-    assert surface[0, 1] > old[0, 1]  # recorded Part still conducts
-    assert surface.sum() == pytest.approx(old.sum())
 
 
 def test_bilattice_rule_survives_operator_rename():
@@ -60,13 +43,13 @@ def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['hello world', 'loving there']))
         derived = model._concept_owner().similarity_codebook.mereology
-        assert derived.occurrence_terms()
+        assert derived.context_audit()
         from MereologicalCodes import MereologicalCodes
         monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'meaningWidth', 0)
-        off = MereologicalCodes(derived.owner, torch.zeros(1, derived.code_width),
+        off = MereologicalCodes(derived.owner, torch.zeros_like(derived.owner.similarity_codebook.W),
             percept_width=derived.percept_width, percept_event_width=derived.percept_event_width)
-        assert off.context_width == 0 and off.occurrence_terms() == {}
-        rows = sorted(derived.occurrence_terms())
+        assert off.context_width == 0 and off.context_audit() == []
+        rows = [record['row'] for record in derived.context_audit()]
         derived.begin_forward()
         active, absent = derived.derive(rows), off.derive(rows)
         torch.testing.assert_close(active[:, :104], absent[:, :104])
@@ -95,17 +78,17 @@ def test_determiner_marker_has_no_content_and_binding_uses_an_address():
     torch.testing.assert_close(bound[0], kind)
 
 
-def test_determiner_mints_distinct_occurrence_and_universal_stays_high(monkeypatch):
+def test_determined_sentences_keep_distinct_occurrences_and_universal_stays_high(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', ('lower', 'a', 'cat'), 'sleeps'))
     writes_a, writes_b = {}, {}
     a = f.store.write_clause(clause, document_key='first', sentence_index=1, written_rows=writes_a)
     b = f.store.write_clause(clause, document_key='second', sentence_index=1, written_rows=writes_b)
-    first, second = writes_a[id(clause.children[0])], writes_b[id(clause.children[0])]
-    assert f.store.occurrence_of(first) != f.store.occurrence_of(second)
+    assert id(clause.children[0]) not in writes_a and id(clause.children[0]) not in writes_b
     assert f.store.occurrence_of(a) != f.store.occurrence_of(b)
-    torch.testing.assert_close(f.store.slots[first], f.store.slots[second])
+    torch.testing.assert_close(f.store.slots[a], f.store.slots[b])
+    assert len(f.store) == 2
     universal = next(r for r in f.grammar.rules_upward if r.determiner_mode == 'kind')
     from ReferenceContext import binding_spec
     assert universal.order_delta == 0 and binding_spec(universal, 'argin2', 2) == (2, 'kind')
@@ -118,7 +101,7 @@ def test_definition_sentence_joins_identities_beside_the_interpret_definition(mo
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('equal', 'bachelor', 'unmarried-man'))
     first = f.store.write_clause(clause, document_key='definition', sentence_index=1)
-    assert len(f.store) == 1 and first[0] == 'sym'
+    assert len(f.store) == 0 and first[0] == 'sym'
     row = f.store.row(first)
     assert row['refs'].tolist() == [f.noun('bachelor'), f.noun('unmarried-man')]
     assert row['readings'] == ('equality',)
@@ -146,7 +129,7 @@ def test_parameterized_form_map_cannot_read_or_normalize_the_meaning_complement(
     torch.testing.assert_close(changed[:, 4:], a[:, 4:] * .7)
 
 
-def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
+def test_determiner_lowering_keeps_order_without_minting_a_composing_argument(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import finish_reading
     from Language import LanguageSpace
@@ -167,10 +150,11 @@ def test_determiner_kept_closing_is_the_only_mint_and_lowers_once(monkeypatch):
     written = {}
     row = f.store.write_clause(clause, document_key='determiner', sentence_index=1,
                                written_rows=written)
-    child = written[id(clause.children[0])]
-    assert isinstance(child, int) and f.store.row(child)['order'] == 1
+    assert id(clause.children[0]) not in written
+    assert f.store.row(row)['order'] == 1 and len(f.store) == 1
+    assert not len(f.store.parts) - before
     root = f.store.raw_meaning_of(row).role_refs[0]
-    assert root[0] == 'sym' and f.store.parts.contains(root[1])
+    assert root == ('sym', f.noun('cat'))
     assert not f.cs.components.individual_ids
 
 

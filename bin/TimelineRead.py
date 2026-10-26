@@ -116,81 +116,34 @@ def read(store, description, *, max_records, work, fallback):
         return dict(groups=tuple(groups), records_scanned=scanned,
                     incomplete=tuple(dict.fromkeys(incomplete)), retained=False, order=order)
 
-    # Expiry removes branch organization, not ideas. The old derivation
-    # reader supplies subject/predicate correspondence until its removal round.
+    # Expired histories can expose only surviving semantic references. A
+    # compressed idea has no recoverable subject/predicate decomposition.
     if phase is not None:
         return dict(groups=((),), records_scanned=scanned,
                     incomplete=('phase_history_expired',), retained=True, order=order)
-    from PartRead import argument_reader
-    operation, _ = argument_reader(store, incomplete)
-    roots = set()
-    if isinstance(reference, int):
-        roots.add(reference)
-    else:
-        index = store.location(reference)
-        if index is not None:
-            root = store.raw_meaning_of(index).role_refs[0]
-            if root and root[0] == 'sym':
-                roots.add(root[1])
-    clean = replace(description, bindings={k:v for k,v in data.items() if not k.startswith('_')})
-    found = fallback(clean)
-    scanned = found['records_scanned']
-    incomplete.extend(found['incomplete'])
-    candidates = list(found['value'])
-    # A retained subject can have no content postings (an anonymous or
-    # wholly changed state). Follow its native reference under the same
-    # record bound instead of treating a nearest vector as its event.
-    if not candidates:
-        for index in range(len(store)):
-            if scanned >= max_records or not work.consume('record'):
-                incomplete.append('event_read_limit')
-                break
-            scanned += 1
-            candidates.append(dict(store.row(index), index=index))
-    visited = {}
-    def pair(symbol):
-        nonlocal scanned
-        if symbol in visited:
-            return visited[symbol]
-        if scanned >= max_records or not work.consume('record'):
-            incomplete.append('event_read_limit')
-            return None, None
-        scanned += 1
-        args = tuple(store.parts.refs[symbol].tolist()) if store.parts.contains(symbol) else ()
-        result = (args, operation(args) if args else None)
-        visited[symbol] = result
-        return result
-    def event_of(symbol):
-        seen = set()
-        while symbol not in seen:
-            seen.add(symbol)
-            args, rule = pair(symbol)
-            if not args or rule is None:
-                return None
-            if rule.clause_form == 'S':
-                predicate, followed = args[1], set()
-                while predicate not in followed:
-                    followed.add(predicate)
-                    children, head = pair(predicate)
-                    if not children or head is None or not head.head_role:
-                        break
-                    predicate = children[head.head_role-1]
-                return args[0], owner.components.reference_close._event_symbol(predicate)
-            if not rule.head_role:
-                return None
-            symbol = args[rule.head_role-1]
-        return None
+    from LTM1 import RELATION, SYMBOL
+    from ChainRead import envelope
+    roots = {reference if isinstance(reference, tuple) else ('sym', reference)}
     records = []
-    for row in candidates:
-        if row['occurrence'] in excluded or row['kind'] in ('estimate', 'question', 'cover'):
+    for row in store.parts.indices().tolist():
+        if scanned >= max_records or not work.consume('record'):
+            incomplete.append('event_read_limit'); break
+        scanned += 1
+        left, right = store.parts.references(row)
+        if envelope(store, left) not in roots:
             continue
-        raw = store.raw_meaning_of(row['index']).role_refs[0]
-        if raw and raw[0] == 'sym':
-            event = event_of(raw[1])
-            if event is not None and event[0] in roots and event[1] == verb:
-                records.append(dict(row, match=1.))
+        if right[0] == RELATION:
+            predicate = store.parts.references(right[1])[0]
+        else:
+            predicate = right
+        if predicate[0] != SYMBOL or owner.components.reference_close._event_symbol(predicate[1]) != verb:
+            continue
+        item = store.part_row(row)
+        if item['occurrence'] not in excluded and any(item['evidence']):
+            records.append(dict(item, index=('sym', row), match=1.))
     return dict(groups=(tuple(records),), records_scanned=scanned,
-                incomplete=tuple(dict.fromkeys(incomplete)), retained=True, order=order)
+                incomplete=tuple(dict.fromkeys((*incomplete, 'compressed_event_detail_unavailable'))),
+                retained=True, order=order)
 
 
 def evidence(found, description, *, every=False):

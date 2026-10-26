@@ -280,6 +280,15 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
             alloc.reclaimed_seats += 1
         _clear_code_moments(model, owner.similarity_codebook.W, row)
         owner.similarity_codebook.W[row].zero_()
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if derived is not None:
+            derived.placement[row].zero_()
+            derived.placement_witnesses[row] = 0
+            derived.placement_keys[row].zero_()
+            derived.placement_keyed[row] = False
+            derived.placement_dirty[row] = True
+            derived._form_valid[row] = False
+            derived._centroid_cache = None
     meaning = getattr(owner.similarity_codebook, 'mereology', None)
     if remove and meaning is not None:
         meaning.begin_forward()

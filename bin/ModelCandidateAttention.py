@@ -58,8 +58,8 @@ def _fit(value, batch, count, width, like):
 
 def _heat(space, batch, width, like):
     method = getattr(space, 'priming_weights', None)
-    # A read inside a compiled loop must not resize or republish owner state.
-    value = method() if callable(method) else None
+    # A prefix view of the constructed slab neither resizes nor republishes it.
+    value = method(batch=batch) if callable(method) else None
     if value is None:
         return like.new_ones(batch, width)
     if value.ndim != 2 or value.shape[1] > width:
@@ -150,12 +150,13 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
             depth = torch.zeros(B, device=values.device, dtype=torch.long)
             reference_rows = torch.full((B, memory.capacity), -1, device=values.device, dtype=torch.long)
     else:
-        buffer, depth, _, _, reference_rows, _ = stm
+        buffer, depth, _, _, reference_rows, _ = stm[:6]
     K, D = int(cs.stm.capacity), int(cs.stm.concept_dim)
-    occupied = torch.arange(K, device=values.device)[None] < depth[:, None]
+    occupied = buffer.ne(0).any(-1)
     contents = _fit(buffer, B, K, D, values) * occupied[..., None]
-    spatial = cs.where.to(values)[None].expand(B, -1, -1)
-    temporal = (buffer[..., -4:] if int(cs.nWhen) else values.new_zeros(B, K, 4))
+    shared = cs.stm.state if stm is None else stm
+    spatial = shared[11].to(values)
+    temporal = shared[12].to(values)
     symbolic_heat = heat[:, sum(sizes[:2]):]
     salience = symbolic_heat.gather(1, reference_rows.clamp(0, sizes[2] - 1))
     salience = torch.where(occupied & (reference_rows >= 0), salience, 0.)

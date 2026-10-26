@@ -61,7 +61,7 @@ def thought_answer_meanings(selected):
             raise ValueError("prediction answer differs from the full role shape")
         return (ConceptualMeaning(value.roles.detach(),
                 torch.ones(3, dtype=torch.bool, device=value.roles.device),
-                mode="unspecified", bindings=value.bindings, scope=value.scope),)
+                bindings=value.bindings, scope=value.scope),)
     if checked.result_kind in ("code", "concept"):
         value = checked.value
         if value is None:
@@ -72,7 +72,7 @@ def thought_answer_meanings(selected):
                              torch.zeros_like(value)))
         return (ConceptualMeaning(
             roles, torch.tensor([True, False, False], device=value.device),
-            mode="assertive", role_refs=(checked.evidence.get("reference"), None, None),
+            role_refs=(checked.evidence.get("reference"), None, None),
             bindings=request.bindings, scope=request.scope),)
     if checked.result_kind != "set":
         raise ValueError(f"unsupported thought answer kind {checked.result_kind!r}")
@@ -93,7 +93,7 @@ def thought_answer_meanings(selected):
         slot = opened[0]
         roles, mask, refs = request.roles.clone(), request.role_mask.clone(), list(request.role_refs)
         roles[slot], mask[slot], refs[slot] = value.detach(), True, reference
-        answers.append(ConceptualMeaning(roles, mask, mode="assertive",
+        answers.append(ConceptualMeaning(roles, mask,
             polarity=request.polarity, role_refs=tuple(refs),
             bindings=request.bindings, scope=request.scope).detached())
     return tuple(answers)

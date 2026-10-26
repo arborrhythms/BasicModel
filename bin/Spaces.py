@@ -5,6 +5,7 @@ spaces that move between raw inputs, percepts, concepts, symbols, syntax,
 and outputs.  The same module also carries the project utilities used to
 load datasets, resolve config paths, plot results, and save reports.
 """
+from PrependedSymbols import word_view
 
 import math, os, warnings
 from collections import namedtuple
@@ -71,8 +72,8 @@ from space_carrier import SpaceCarrierMixin
 
 
 LanguageOperationChoice = namedtuple(
-    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline",
-    defaults=(None, None, None, None, None, None))
+    "LanguageOperationChoice", "candidate kind position local_op applied probability action valid alternatives log_probability alternative_count order identity timeline head_role stack_arity chunk",
+    defaults=(None, None, None, None, None, None, None, None, None))
 """One immutable operation/location choice; only ConceptualSpace applies it."""
 
 
@@ -3273,6 +3274,15 @@ class Codebook(Tensor):
         r = int(row)
         W.data[r, :] = (1.0 - ema_f) * W.data[r, :] + ema_f * folded
         return folded
+
+    def placement_extras(self):
+        derived = getattr(self, 'mereology', None)
+        return None if derived is None else derived.placement_extras()
+
+    def load_placement_extras(self, saved):
+        derived = getattr(self, 'mereology', None)
+        if derived is not None:
+            derived.load_placement_extras(saved)
 
     def ramsification_extras(self):
         """Sparse JSON-friendly dump of the fold table for the
@@ -7647,6 +7657,12 @@ class Space(SpaceCarrierMixin, nn.Module):
         self.spaceShape   = spaceShape   # [nVectors, nDim]  -- codebook / internal basis
         self.outputShape  = outputShape  # [nOutput,  nOutputDim]
         self.nVectors     = spaceShape[0]  # codebook size
+        # One energy row per configured stream, one column per constructed seat.
+        # Smaller batches use a prefix view; no runtime batch/inventory can grow it.
+        self.nStreams = int(TheXMLConfig.training('batchSize', 1))
+        if self.nStreams < 1 or int(self.nVectors) < 0:
+            raise ValueError('priming construction requires positive streams and a nonnegative inventory')
+        self.register_buffer('_priming_boosts', torch.ones(self.nStreams, int(self.nVectors)), persistent=False)
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
         # Resolve nInputDim/nOutputDim:
         #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1]),
@@ -7968,18 +7984,16 @@ class Space(SpaceCarrierMixin, nn.Module):
 
     def _priming_surface(self, V, device=None, batch=None):
         """One persistent seen/desire surface for each batch stream."""
-        old = getattr(self, '_priming_boosts', None)
-        B = int(batch if batch is not None else old.shape[0] if old is not None else 1)
-        if old is None or old.shape[0] != B:
-            surface = torch.ones(B, int(V), device=device)
-        elif old.shape[1] != int(V):
-            surface = torch.ones(B, int(V), device=device or old.device)
-            count = min(int(V), old.shape[1])
-            surface[:, :count] = old[:, :count].to(surface)
-        else:
-            surface = old.to(device=device) if device is not None else old
-        object.__setattr__(self, '_priming_boosts', surface)
-        return surface
+        target = self._priming_target()
+        if target is not self:
+            return target._priming_surface(V, device=device, batch=batch)
+        surface = self._priming_boosts
+        B = surface.shape[0] if batch is None else int(batch)
+        if int(V) != surface.shape[1] or not 0 < B <= surface.shape[0]:
+            raise RuntimeError('priming surface exceeds constructed stream/inventory capacity; resizing is forbidden')
+        if device is not None and torch.device(device) != surface.device:
+            raise RuntimeError('priming surface must move with its constructed owner')
+        return surface[:B]
 
     def _priming_edges(self):
         """``(src, dst, |w|)`` diffusion graph over this Space's priming
@@ -8036,7 +8050,7 @@ class Space(SpaceCarrierMixin, nn.Module):
         valid = (rows >= 0) & (rows < V) & active[:, None]
         surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
         surface.clamp_(min=0.)
-        return self._bounded_priming(surface)
+        return self.relevance_weights(batch=B)
 
     @torch.no_grad()
     def prime_desire(self, rows, valence=1.0, bump=1.0):
@@ -8053,7 +8067,7 @@ class Space(SpaceCarrierMixin, nn.Module):
         surface.scatter_add_(1, rows.long().clamp(0, V-1),
                              valid.to(surface) * float(valence) * float(bump))
         surface.clamp_(min=0.)
-        return self._bounded_priming(surface)
+        return self.relevance_weights(batch=rows.shape[0])
 
     def _bounded_priming(self, surface):
         """Normalize positive energy for retrieval; neutral is always one.
@@ -8072,28 +8086,24 @@ class Space(SpaceCarrierMixin, nn.Module):
         positive = excess.clamp_min(0) / scale * (maximum - 1)
         return 1 + positive + excess.clamp_max(0)
 
-    def priming_weights(self, *, batch=None):
-        """The per-stream quadratic priming surface ``[B, V]`` over the CANONICAL
-        codebook rows (neutral 1.0), or ``None`` when never written."""
+    def placement_context(self, batch=0):
+        """Stored SEEN/DESIRE excess, before the read-only geometric channel."""
         target = self._priming_target()
-        surface = getattr(target, '_priming_boosts', None)
-        if surface is not None:
-            if surface.ndim != 2:
-                raise ValueError('priming requires a [batch, vocabulary] surface')
-            if batch is not None:
-                if type(batch) is not int or batch < 1:
-                    raise ValueError('priming requires the current positive batch size')
-                surface = target._priming_surface(target._priming_dim(),
-                    device=surface.device, batch=batch)
-                if surface.shape != (batch, target._priming_dim()):
-                    raise ValueError('priming surface differs from the current batch')
-        return target._bounded_priming(surface)
+        surface = target._priming_surface(target._priming_dim())
+        if not 0 <= int(batch) < len(surface):
+            raise RuntimeError('placement stream exceeds the constructed surface')
+        return (surface[int(batch)].detach() - 1).clamp_min(0)
 
+    def priming_weights(self, *, batch=None):
+        return self.relevance_weights(batch=batch)
+
+    @torch.no_grad()
     def relevance_weights(self, *, batch=None):
-        """This tower's relevance IS its priming surface (Architecture
-        sec C, simplified law: one quadratic; SEEN + DESIRED/HATED are
-        its two write channels). ``None`` when dark (byte-identical)."""
-        return self.priming_weights(batch=batch)
+        """Bounded consumer energy after conceptual overlap, without a write."""
+        target = self._priming_target()
+        surface = target._priming_surface(target._priming_dim(), batch=batch)
+        from Priming import geometric
+        return target._bounded_priming(surface + geometric(target, surface))
 
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
@@ -8710,10 +8720,16 @@ class Space(SpaceCarrierMixin, nn.Module):
         brick-vectorization handoff.
         """
         if hard:
+            registered = getattr(self, '_sentence_seen_rows', None)
+            if registered is not None:
+                if batch is None:
+                    registered.fill_(-1)
+                elif 0 <= int(batch) < len(registered):
+                    registered[int(batch)].fill_(-1)
             surface = getattr(self, '_priming_boosts', None)
             if surface is not None:
                 if batch is None:
-                    object.__setattr__(self, '_priming_boosts', None)
+                    surface.fill_(1.)
                 elif 0 <= int(batch) < surface.shape[0]:
                     surface[int(batch)].fill_(1.)
         for layer in self.layers:
@@ -8860,6 +8876,39 @@ class InputSpace(Space):
             )
             return basis
         raise RuntimeError(f"Unexpected dataType {self.model_type!r}")
+
+    def configure_symbol_entries(self, streams, words, prepend, width):
+        from PrependedSymbols import SymbolEntries
+        self.symbol_entries = SymbolEntries(streams, words, prepend, width)
+
+    def word_symbols(self, name):
+        entries = getattr(self, 'symbol_entries', None)
+        return None if entries is None else entries.read(name, words=True)
+
+    def _symbol_property(name):
+        def read(self):
+            entries = getattr(self, 'symbol_entries', None)
+            return None if entries is None else entries.read(name)
+        def write(self, value):
+            entries = getattr(self, 'symbol_entries', None)
+            if entries is None:
+                if value is not None:
+                    raise ValueError('symbol entries must be constructed before staging')
+                return
+            entries.stage_words(name, value)
+        return property(read, write)
+
+    _ar_word_concept_ids = _symbol_property('concept_ids')
+    _ar_word_concept_rows = _symbol_property('concept_rows')
+    _ar_word_concept_orders = _symbol_property('concept_orders')
+    _ar_word_object_ids = _symbol_property('object_ids')
+    _ar_word_object_rows = _symbol_property('object_rows')
+    _ar_word_object_orders = _symbol_property('object_orders')
+    _ar_word_symbol_where = _symbol_property('symbol_where')
+    _ar_word_symbol_when = _symbol_property('symbol_when')
+    _ar_concept_lookup_rows = _symbol_property('lookup_rows')
+    _ar_concept_lookup_atoms = _symbol_property('lookup_atoms')
+    _ar_concept_lookup_sentence_ids = _symbol_property('lookup_sentence_ids')
 
     def __init__(self, inputShape, spaceShape, outputShape, model_type="numeric"):
 
@@ -10060,14 +10109,14 @@ class InputSpace(Space):
 
     def word_concept_rows_at(self, p):
         """Return word ``p``'s staged CS codebook rows ``[B]``."""
-        rows = self._ar_word_concept_rows
+        rows = word_view(self, 'concept_rows')
         if rows is None or p < 0 or p >= rows.shape[1]:
             return None
         return rows[:, p]
 
     def word_concept_orders_at(self, p):
         """Return word ``p``'s actual staged subsymbolic orders ``[B]``."""
-        orders = self._ar_word_concept_orders
+        orders = word_view(self, 'concept_orders')
         if orders is None or p < 0 or p >= orders.shape[1]:
             return None
         return orders[:, p]
@@ -12784,11 +12833,11 @@ class ConceptualSpace(Space):
         self.stm_capacity = int(stm_capacity)
         self.concept_dim = int(concept_dim)
         self.stm = ShortTermMemory(
-            batch=1, capacity=stm_capacity, concept_dim=concept_dim)
+            batch=self.nStreams, capacity=stm_capacity, concept_dim=concept_dim)
         from MediumTermMemory import MediumTermMemory
         self.mtm = MediumTermMemory(int(TheXMLConfig.space(
             section, "mtmCapacity", default=64)), horizon=int(TheXMLConfig.space(
-            section, "mtmHorizon", default=16)))
+            section, "mtmHorizon", default=16)), n_vectors=self.nVectors)
         # CSLang is the ConceptualSpace-owned language transaction lane.  It
         # is an ownership name for the existing STM, not a second registered
         # module: LanguageSpace owns grammar/tree choice, while this CS-owned
@@ -12961,6 +13010,31 @@ class ConceptualSpace(Space):
         if derived_similarity_codebook and getattr(_sim_cb, 'mereology', None) is None:
             _sim_cb.enable_derived_codes(self)
         self.similarity_codebook = _sim_cb
+        # At most two directed edges per taxonomy pair; LTM1 fixes partsCap.
+        parts_cap = _concept_alloc_of(self).parts.capacity
+        self.register_buffer('_priming_edge_src', torch.full((2*parts_cap,), -1, dtype=torch.long), persistent=False)
+        self.register_buffer('_priming_edge_dst', torch.full((2*parts_cap,), -1, dtype=torch.long), persistent=False)
+        self.register_buffer('_priming_edge_weight', torch.ones(2*parts_cap), persistent=False)
+        self._priming_edge_count = 0
+        self._priming_edge_revision = None
+        self._priming_edge_rebuilds = 0
+        # Each vocabulary row can bridge to every constructed native tower
+        # seat. Explicit nVectors bounds win; non-codebook towers inherit their
+        # declared input/output inventory. One pair of buffers holds both towers.
+        part_cap = int(TheXMLConfig.space('PartSpace', 'nVectors', 0) or self.inputShape[0])
+        whole_cap = int(TheXMLConfig.space('WholeSpace', 'nVectors', 0) or self.nVectors)
+        bridge_cap = int(self.nVectors) * (part_cap + whole_cap)
+        self.register_buffer('_priming_bridge_src', torch.full((bridge_cap,), -1, dtype=torch.long), persistent=False)
+        self.register_buffer('_priming_bridge_dst', torch.full((bridge_cap,), -1, dtype=torch.long), persistent=False)
+        self._priming_bridge_counts = (0, 0)
+        self._priming_bridge_revision = None
+        self._priming_bridge_rebuilds = 0
+        # A sentence cannot exceed the declared serial word capacity; legacy
+        # nonserial fixtures use their input slot count as the same bound.
+        # W sentence words plus at most mtmPrepend promoted leading entries.
+        seen_cap = int(TheXMLConfig.get('architecture.serialWordCapacity', default=None) or self.inputShape[0])
+        seen_cap += int(TheXMLConfig.space('ConceptualSpace','mtmPrepend',default=8))
+        self.register_buffer('_sentence_seen_rows', torch.full((self.nStreams, seen_cap), -1, dtype=torch.long), persistent=False)
         self.layers.append(_sim_cb)
         self.params = self.params + list(_sim_cb.parameters())
         from IndependentComponents import IndependentComponents
@@ -13181,45 +13255,8 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def apply_language_choice(state, choice):
-        """Apply a single binary or unary choice, preserving every other slot."""
-        buffer, depth, orders, grammar, rows, activations = state
-        B, K, D = buffer.shape
-        binary = choice.applied & (choice.kind == 1)
-        unary = choice.applied & (choice.kind == 2)
-        pos = choice.position.clamp(0, K - 1)
-        rewrite = unary[:, None] & (torch.arange(K, device=buffer.device)[None, :] == pos[:, None])
-        out = torch.where(rewrite[..., None], choice.candidate[:, None], buffer)
-        out_grammar = torch.where(rewrite & (grammar >= 0), grammar + 1, grammar)
-        out_rows = torch.where(rewrite, -1, rows)
-        out_activations = torch.where(rewrite, 0., activations)
-        out_orders = (orders if choice.order is None else
-                      torch.where(rewrite, choice.order[:, None], orders))
-        if K >= 2:
-            parent_order = torch.where((orders[:, 0] >= 0) & (orders[:, 1] >= 0),
-                                       orders[:, :2].amax(1), -1)
-            if choice.order is not None:
-                parent_order = choice.order
-            parent_grammar = torch.where((grammar[:, 0] >= 0) & (grammar[:, 1] >= 0),
-                                         grammar[:, :2].amax(1) + 1, -1)
-            def fold(slab, parent, fill):
-                shifted = torch.cat((parent[:, None], slab[:, 2:], torch.full_like(slab[:, :1], fill)), 1)
-                gate = binary.reshape(B, *([1] * (slab.ndim - 1)))
-                return torch.where(gate, shifted, slab)
-            out = fold(out, choice.candidate, 0)
-            out_orders = fold(out_orders, parent_order, -1)
-            out_grammar = fold(out_grammar, parent_grammar, -1)
-            out_rows = fold(out_rows, torch.full_like(rows[:, 0], -1), -1)
-            out_activations = fold(out_activations, torch.zeros_like(activations[:, 0]), 0)
-        # STOP preserves the value and its operand gradient. Compose logits
-        # learn only from the sentence's detached paired-cost surrogate.
-        out = torch.where((choice.valid & (choice.kind == 0))[:, None, None], buffer, out)
-        transpose = choice.applied & (choice.kind == 3)
-        def swap(slab):
-            if K < 2:
-                return slab
-            swapped = torch.cat((slab[:,1:2], slab[:,:1], slab[:,2:]), 1)
-            return torch.where(transpose.reshape(B, *([1]*(slab.ndim-1))), swapped, slab)
-        return swap(out), depth - binary.long(), swap(out_orders), swap(out_grammar), swap(out_rows), swap(out_activations)
+        import STMChunks
+        return STMChunks.apply_choice(state, choice)
 
 
     def _stm_set_all_slots(self, slab):
@@ -13626,21 +13663,14 @@ class ConceptualSpace(Space):
 
     @staticmethod
     def apply_phrase_rows(state, phrase_row, applied):
-        """A chunk on an admitted pair references the phrase's own row at
-        the folded slot 0 (contract 7) so later reads and the answer path
-        use it; pure over the six CS-owned STM tensors."""
-        (buffer, depth, orders, grammar_orders,
-         concept_rows, concept_activations) = state
-        B = int(buffer.shape[0])
-        snap = torch.logical_and(applied.reshape(B), phrase_row.reshape(B) >= 0)
-        top = torch.where(snap, phrase_row.reshape(B), concept_rows[:, 0])
-        top_act = torch.where(
-            snap, torch.ones_like(concept_activations[:, 0]),
-            concept_activations[:, 0])
-        return (
-            buffer, depth, orders, grammar_orders,
-            torch.cat((top.reshape(B, 1), concept_rows[:, 1:]), dim=1),
-            torch.cat((top_act.reshape(B, 1), concept_activations[:, 1:]), dim=1))
+        import STMChunks
+        index = STMChunks.at(state)
+        valid = applied.reshape(-1).bool() & (phrase_row >= 0) & (index >= 0)
+        result = list(state)
+        result[4] = STMChunks.write(state[4], index, phrase_row, valid)
+        result[5] = STMChunks.write(state[5], index, torch.ones_like(phrase_row,dtype=state[5].dtype), valid)
+        return tuple(result)
+
 
     def _drain_chunk_proposal_slab(self):
         """Move the tensor proposals of the finished presentation into the
@@ -13818,17 +13848,16 @@ class ConceptualSpace(Space):
         if not hard:
             stm = getattr(self, 'stm', None)
             if stm is not None:
-                stm.clear(b=batch)
+                stm.clear(b=batch, hard=False)
             return
         sub = getattr(self, 'subspace', None)
         if sub is not None and getattr(sub, 'event', None) is not None:
             sub.event.setW(None)
-        # Sentence-boundary STM clear: per-batch idea stack drops
-        # everything from the just-finished sentence; the next
-        # sentence starts with an empty STM.
+        # The next parse starts empty; recalled identities and kept sentence
+        # entries remain in the shared working set until recency evicts them.
         stm = getattr(self, 'stm', None)
         if stm is not None:
-            stm.clear(b=batch)
+            stm.clear(b=batch, hard=False)
         # Stage 10: clear the per-stage PARALLEL residual-lift cache so
         # a reverse called between Reset and the next forward doesn't
         # pick up stale data. ``_forward_body`` clears it again at the
@@ -15427,11 +15456,15 @@ class ConceptualSpace(Space):
         them afresh into the bounded attended field.
         """
         alloc = _concept_alloc_of(self)
+        previous_rows = len(alloc.layer()._tensor_row_keys)
         if int(concept_id) in alloc.retired:
             raise ValueError('a retired concept cannot be assigned a new storage row')
         if int(order) > 0 and alloc.order_of(concept_id) < int(order):
             alloc.reference_orders[int(concept_id)] = int(order)
             alloc.placement[int(concept_id)] = int(order)
+            components = getattr(self, 'components', None)
+            if components is not None:
+                components._basis_revision = None
         caps = self._order_caps()
         ly = alloc.layer(0)
         if getattr(self, '_concept_binding', 'mixing') == 'aligned':
@@ -15501,6 +15534,13 @@ class ConceptualSpace(Space):
                     f"CS {region} exhausted ({cap} rows): concept "
                     f"{int(concept_id)} gets records only, no weighted "
                     f"reading (overflow #{n})", RuntimeWarning)
+        if row is not None and len(ly._tensor_row_keys) != previous_rows:
+            self._priming_edge_revision = None
+            derived = getattr(self.similarity_codebook, 'mereology', None)
+            if derived is not None:
+                derived._form_valid[row] = False
+                derived.placement_dirty[row] = True
+                derived._centroid_cache = None
         if row is not None:
             from ConceptForgetting import warn_capacity
             warn_capacity(self)
@@ -16745,34 +16785,49 @@ class ConceptualSpace(Space):
         surface = self.priming_weights(batch=batch)
         if surface is None:
             return
-        # A symbol's admitted form carries its surface references even before
-        # it has an object. Defined objects read the same form through Part.
-        bridge = {}
         allocator = _concept_alloc_of(self)
-        for word in self._word_definition_ids():
-            description = allocator.word_descriptions.get(word) or self.interpret._pending.get(word)
-            if description is None:
-                continue
-            parts = tuple(dict.fromkeys(p for group in description['parts'] for p in group))
-            for obj in (*self.definitions.objects(word),
-                        *((word,) if self.interpret.no_object(word) else ())):
-                bridge[obj] = (parts, description['wholes'])
-        sources = [[], []]
-        destinations = [[], []]
-        for identity, (parts, whole) in bridge.items():
-            row = self._csw_row_of(identity)
-            if row is None or row >= surface.shape[1]:
-                continue
-            whole = () if whole is None else whole if isinstance(whole, tuple) else (whole,)
-            for index, targets in enumerate((parts, whole)):
-                sources[index].extend([row] * len(targets))
-                destinations[index].extend(int(target) for target in targets)
-        for index, space in enumerate((ps_space, ws_space)):
-            if space is None or not sources[index] or space._priming_dim() <= 0:
+        revision = (allocator.parts.symbol_revision, id(allocator.word_descriptions),
+                    len(allocator.word_descriptions), self.interpret._description_revision,
+                    id(allocator.layer()._tensor_row_keys), len(allocator.layer()._tensor_row_keys))
+        if revision != self._priming_bridge_revision:
+            bridge = {}
+            for word in self._word_definition_ids():
+                description = allocator.word_descriptions.get(word) or self.interpret._pending.get(word)
+                if description is None:
+                    continue
+                parts = tuple(dict.fromkeys(p for group in description['parts'] for p in group))
+                for obj in (*self.definitions.objects(word),
+                            *((word,) if self.interpret.no_object(word) else ())):
+                    bridge[obj] = (parts, description['wholes'])
+            pairs = [set(), set()]
+            for identity, targets in bridge.items():
+                row = self._csw_row_of(identity)
+                if row is None or row >= surface.shape[1]:
+                    continue
+                for index, values in enumerate(targets):
+                    values = () if values is None else values if isinstance(values, tuple) else (values,)
+                    pairs[index].update((row, int(value)) for value in values)
+            count = sum(map(len, pairs))
+            if count > len(self._priming_bridge_src):
+                raise RuntimeError('priming tower bridge exceeds its constructed vocabulary capacity')
+            offset = 0
+            for group in pairs:
+                if group:
+                    src, dst = self._priming_bridge_src.new_tensor(sorted(group)).T
+                    self._priming_bridge_src[offset:offset+len(group)].copy_(src)
+                    self._priming_bridge_dst[offset:offset+len(group)].copy_(dst)
+                    offset += len(group)
+            self._priming_bridge_counts = tuple(map(len, pairs))
+            self._priming_bridge_revision = revision
+            self._priming_bridge_rebuilds += 1
+        offset = 0
+        for count, space in zip(self._priming_bridge_counts, (ps_space, ws_space)):
+            src = self._priming_bridge_src[offset:offset+count]
+            dst = self._priming_bridge_dst[offset:offset+count]
+            offset += count
+            if space is None or not count or space._priming_dim() <= 0:
                 continue
             V = space._priming_dim()
-            src = torch.tensor(sources[index], device=surface.device, dtype=torch.long)
-            dst = torch.tensor(destinations[index], device=surface.device, dtype=torch.long)
             valid = (dst >= 0) & (dst < V)
             target = space._priming_surface(V, device=surface.device, batch=surface.shape[0])
             decay = float(getattr(space, '_priming_decay', .9))
@@ -17130,7 +17185,11 @@ class ConceptualSpace(Space):
         row = store.part_row(idx)
         old = float(row['trust'])
         sd = max(1, min(int(store.content_width), int(store.nDim)))
-        a_unscaled, b_unscaled = row['meaning'].roles[0, :sd], row['meaning'].roles[2, :sd]
+        from ChainRead import point
+        operands = [point(store, reference) for reference in store.parts.references(idx)]
+        if any(value is None for value in operands):
+            return old
+        a_unscaled, b_unscaled = (value[:sd] for value in operands)
         thr = float(parthood_threshold)
         relevant = 0
         supporting = 0
@@ -17154,7 +17213,7 @@ class ConceptualSpace(Space):
             raise ValueError('verification evidence weight must be in [0, 1]')
         positive = max(float(store.parts.truth_plus[idx]), w if supporting else 0.)
         negative = max(float(store.parts.truth_minus[idx]), w if supporting < relevant else 0.)
-        store.parts.add(*store.parts.refs[idx].tolist(), truth_plus=positive,
+        store.parts.add(*store.parts.refs[idx].tolist(), ref_kinds=store.parts.ref_kinds[idx].tolist(), truth_plus=positive,
                         truth_minus=negative, witness=False)
         return positive - negative
 
@@ -18668,7 +18727,7 @@ class ConceptualSpace(Space):
         return self.subspace
 
     def vocab_extras(self):
-        """Schema-2 non-tensor state owned by ConceptualSpace.
+        """Schema-3 non-tensor state owned by ConceptualSpace.
 
         Concept allocation and sparse mereology ride in the model's structural
         sidecar.  This companion stores the learned grammatical-category map
@@ -18677,10 +18736,10 @@ class ConceptualSpace(Space):
         migration lossless while ensuring it is never replayed as properties.
         """
         extras = {
-            "version": 2,
+            "version": 3,
             "role": "conceptual_structure",
             "mtm": self.mtm.state(),
-            "recurring_readings": dict(self.__dict__.get("_recurring_readings", {})),
+            "placement": self.similarity_codebook.placement_extras(),
         }
         fold_support = getattr(self, "_concept_fold_support", None)
         if isinstance(fold_support, dict) and fold_support:
@@ -18700,15 +18759,13 @@ class ConceptualSpace(Space):
         therefore preserve it verbatim under CS for a later explicit importer,
         while restoring category evidence whose ids already name concepts.
         """
-        if not isinstance(extras, dict):
-            return
+        if not isinstance(extras, dict) or extras.get('version') != 3 or not isinstance(extras.get('mtm'), dict):
+            raise ValueError('conceptual checkpoint requires version 3 with the transient identity pool')
 
+        self.similarity_codebook.load_placement_extras(extras.get('placement'))
         self.mtm.restore(extras.get('mtm'), device=self.similarity_codebook.W.device)
-        recurring = extras.get('recurring_readings', {})
-        if not isinstance(recurring, dict) or any(type(key) is not int or key <= 0 or
-                type(value) is not int or value <= 0 for key, value in recurring.items()):
-            raise ValueError('invalid recurring-reading checkpoint')
-        self._recurring_readings = dict(recurring)
+        if extras.get('recurring_readings'):
+            raise ValueError('item 3.0 placement requires angular recurrence in the LTM0 checkpoint')
         # Legacy document provenance is not a membership reader. Covers
         # are retained rows; no source sidecar is restored.
 

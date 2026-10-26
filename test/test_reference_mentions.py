@@ -1,4 +1,5 @@
 """Known referents train existing form/content weights, never a new scorer."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 
 import torch
@@ -6,7 +7,8 @@ import torch
 from ClauseRow import Clause
 from Layers import Error
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, question
+from ThoughtReferences import bindings
+from meaning_fixtures import unsupported as question
 from test_reference_close import fixture, close, form_exposure
 
 
@@ -22,7 +24,7 @@ def context():
     request = dict(mode='bind', leaves=(0,), cue=atoms[4], predicate=atoms[6], role=0)
     clause = Clause(ConceptualMeaning.from_description(atoms[0]), point=atoms[0],
                     order=1, reference_request=request)
-    return resolver, store, atoms, resolver.preview(clause, frames)
+    return resolver, store, atoms, resolver.preview(clause, chunk_context(resolver, frames))
 
 
 def test_mention_objective_marginalizes_all_correct_antecedents_and_updates_only_form_content():

@@ -1,3 +1,4 @@
+from dataclasses import replace
 """Complete descriptions, evidence provenance, and checkpoint ownership."""
 from types import SimpleNamespace
 
@@ -10,8 +11,10 @@ from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN, BOTH
 
 def _meaning(width=6, **metadata):
     from Meaning import ConceptualMeaning
-    return ConceptualMeaning.from_payload(
-        torch.eye(width)[:3], depth=3, layout="infix", **metadata)
+    refs = metadata.get('role_refs', (None, None, None))
+    if refs[0] is not None:
+        metadata['bindings'] = {**metadata.get('bindings', {}), '_identity': refs[0]}
+    return replace(ConceptualMeaning.from_description(torch.eye(width)[0]), **metadata)
 
 
 def _evaluate(store, description):
@@ -38,7 +41,7 @@ def test_actual_observation_writers_keep_roles_without_asserting_world_facts(mon
     else:
         assert store.row(row)['refs'].tolist() == [f.noun('cats'), f.noun('animals')]
     # All references are bound; (0, 0) is ignorance, not a free variable.
-    assert store.row(row).get("kind") == ("observation" if depth == 1 else "unverified")
+    assert store.row(row).get("kind") == "unverified"
     from ThoughtReferences import open_slots
     assert not open_slots(meaning)
     result = _evaluate(store, meaning)
@@ -55,13 +58,9 @@ def test_legacy_checkpoint_does_not_invent_fact_status_for_conversation_rows():
     old_keys = {"slots", "rel_type", "timestamp", "trust", "count", "origin", "_next_ts"}
     old_state = {k: v.clone() for k, v in source.state_dict().items() if k in old_keys}
     restored = LTM0(6, capacity=8)
-    with pytest.warns(UserWarning, match='unknown order'):
+    with pytest.raises(ValueError, match='layout checkpoint version'):
         restored.load_state_dict(old_state, strict=True)
-    assert len(restored) == 2
-    assert restored.row(0)['origin'] == source.ORIGIN_CONVERSATION
-    result = _evaluate(restored, idea)
-    assert result["posture"] == UNKNOWN
-    assert result["support_true"] == result["support_false"] == 0
+    assert len(restored) == 0
 
 
 @pytest.mark.parametrize("field", ["bindings", "scope", "role_refs"])
@@ -69,12 +68,12 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
     initial = {
         "bindings": {"subject": ("sym", 7)},
         "scope": {"where": ("sym", 11)},
-        "role_refs": (("sym", 1), ("sym", 2), ("sym", 3)),
+        "role_refs": (("sym", 1), None, None),
     }
     changed = {
         "bindings": {"subject": ("sym", 8)},
         "scope": {"where": ("sym", 12)},
-        "role_refs": (("sym", 1), ("sym", 2), ("sym", 4)),
+        "role_refs": (("sym", 4), None, None),
     }
     description = _meaning(**initial)
     store = LTM0(6, capacity=8)
@@ -84,14 +83,10 @@ def test_full_description_metadata_changes_which_referent_is_requested(field):
     assert _evaluate(store, _meaning(**initial))["posture"] == UNKNOWN
 
 
-@pytest.mark.parametrize("kind,mode", [
-    ("question", "interrogative"),
-    ("estimate", "assertive"),
-    ("observation", "unspecified"),
-])
-def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
+@pytest.mark.parametrize("kind", ["question", "estimate", "observation"])
+def test_unaccepted_records_cannot_certify_their_own_referents(kind):
     store = LTM0(6, capacity=8)
-    store.append_meaning(_meaning(mode=mode), kind=kind, trust=1.0, sentence_index=len(store))
+    store.append_meaning(_meaning(), kind=kind, trust=1.0, sentence_index=len(store))
     result = _evaluate(store, _meaning())
     assert result["posture"] == UNKNOWN
     assert result["support_true"] == result["support_false"] == 0
@@ -99,8 +94,8 @@ def test_unaccepted_records_cannot_certify_their_own_referents(kind, mode):
 
 def test_question_cannot_be_written_as_accepted_fact():
     store = LTM0(6, capacity=8)
-    with pytest.raises(ValueError, match="interrogative|question"):
-        store.append_meaning(_meaning(mode="interrogative"), kind="fact", trust=1, sentence_index=len(store))
+    with pytest.raises(ValueError, match="open references"):
+        store.append_meaning(_meaning(sentence_kind="relation"), kind="fact", trust=1, sentence_index=len(store))
     assert len(store) == 0
 
 
@@ -134,15 +129,15 @@ def test_repeated_evidence_does_not_inflate_partial_support():
 
 def test_live_description_owns_values_but_fact_storage_detaches():
     from Meaning import ConceptualMeaning
-    source = torch.eye(6)[:3].clone().requires_grad_()
-    description = ConceptualMeaning.from_payload(source, depth=3, layout="infix")
+    source = torch.eye(6)[0].clone().requires_grad_()
+    description = ConceptualMeaning.from_description(source)
     gradient = torch.autograd.grad(description.roles.square().sum(), source)[0]
     torch.testing.assert_close(gradient, 2 * source)
     store = LTM0(6, capacity=8)
     row = store.append_meaning(description, kind="fact", trust=.8, sentence_index=len(store))
     with torch.no_grad():
         source.zero_()
-    torch.testing.assert_close(description.roles, torch.eye(6)[:3])
+    torch.testing.assert_close(description.roles[0], torch.eye(6)[0])
     stored = store.row(row)["meaning"]
     assert not stored.roles.requires_grad
     torch.testing.assert_close(stored.roles, description.roles)
@@ -195,6 +190,7 @@ def test_actual_model_checkpoint_preserves_scoped_fact_identity(tmp_path):
         row = store.append_meaning(description, kind="fact", trust=-.8, sentence_index=len(store))
         store.set_origin(row, store.ORIGIN_USER, text="negative scoped witness")
         expected_ref = store.row(row)["occurrence"]
+        description = store.meaning_of(row)
         path = str(tmp_path / "scoped-fact.pt")
         source.save_weights(path)
         restored = _make_model(_ON_CONFIG, stateless=False)

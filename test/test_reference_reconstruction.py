@@ -1,4 +1,5 @@
 """A closing bind's uncovered description reaches R and chooser credit."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -54,8 +55,8 @@ def test_bind_departure_changes_r_keep_and_the_resolvers_score_function():
     with torch.no_grad():
         resolver.policy.zero_()
     before = snapshot(resolver)
-    greedy = resolver.preview(node, (frame,))
-    explore = resolver.preview(node, (frame,), departure=0)
+    greedy = resolver.preview(node, chunk_context(resolver, (frame,)))
+    explore = resolver.preview(node, chunk_context(resolver, (frame,)), departure=0)
     assert greedy['items'][0]['own_object']
     selected = explore['items'][0]
     assert not selected['own_object'] and selected['selected'] in selected['candidates']
@@ -80,7 +81,7 @@ def test_same_close_alias_charges_the_bound_mention_and_not_the_mint():
     clause = Clause(ConceptualMeaning.from_description(a[0]+a[1]), point=a[0]+a[1],
         children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
     before = snapshot(resolver)
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     assert plan['items'][0]['mode'] == 'mint'
     assert plan['items'][1]['selected'] == ('new', 0) and not plan['items'][1]['own_object']
     assert 'value' not in plan['individuals'][('new', 0)]
@@ -111,7 +112,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     clause = Clause(ConceptualMeaning.from_description(a[0]), point=a[0],
         children=(first, second), refs=(('clause', 0), -1, ('clause', 1)))
     before, pool = snapshot(resolver), dict(owner.mtm.entries)
-    same = resolver.preview(clause, ())
+    same = resolver.preview(clause, chunk_context(resolver, ()))
     assert first.composition.order == second.composition.order == 1
     assert same['items'][0]['own_object'] and same['items'][0]['anonymous']
     assert same['items'][1]['selected'] == ('new', 0)
@@ -144,7 +145,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     address = SituationAddress(store.occurrence_of(row),
         symbols=written.get(('symbols', id(kept)), ()),
         activations=written.get(('activations', id(kept)), ()))
-    later = resolver.preview(site(0), (address.read(store),))
+    later = resolver.preview(site(0), chunk_context(resolver, (address.read(store),)))
     assert later['items'][0]['selected'] == token and not later['items'][0]['own_object']
     assert later['items'][0]['features'][0, :2].gt(0).all()
     torch.testing.assert_close(later['individuals'][token]['value'], record['value'], rtol=0, atol=0)
@@ -158,7 +159,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
 def test_registration_sums_sites_and_includes_zero_cost_active_rows(weight):
     resolver, store, a, words, _ = world()
     first, _ = keep(resolver, mention(a[0], reference=words['three']))
-    plan = resolver.preview(description(a, words, a[0]+a[1]), (SituationFrame.from_row(store.row(first)),))
+    plan = resolver.preview(description(a, words, a[0]+a[1]), chunk_context(resolver, (SituationFrame.from_row(store.row(first)),)))
     assert not plan['items'][0]['own_object']
     twice = dict(plan, items=plan['items']*2)
     empty = dict(plan, items=[])
@@ -177,16 +178,16 @@ def test_unpriced_endings_and_covering_candidates_have_zero_reference_cost(endin
     first, _ = keep(resolver, mention(a[0], reference=words['three']))
     frame = SituationFrame.from_row(store.row(first))
     if ending == 'own':
-        plan = resolver.preview(description(a, words, a[1]), ())
+        plan = resolver.preview(description(a, words, a[1]), chunk_context(resolver, ()))
     elif ending == 'mint':
-        plan = resolver.preview(mention(a[1], reference=words['wrong']), (frame,))
+        plan = resolver.preview(mention(a[1], reference=words['wrong']), chunk_context(resolver, (frame,)))
     elif ending == 'gap':
-        plan = resolver.preview(mention(a[1], mode='elision'), (frame,))
+        plan = resolver.preview(mention(a[1], mode='elision'), chunk_context(resolver, (frame,)))
     elif ending == 'empty':
-        plan = resolver.preview(named(a[0], words['x']), (frame,), departure=0)
+        plan = resolver.preview(named(a[0], words['x']), chunk_context(resolver, (frame,)), departure=0)
         assert not plan['items'][0]['own_object']
     else:
-        plan = resolver.preview(description(a, words, a[0]), (frame,))
+        plan = resolver.preview(description(a, words, a[0]), chunk_context(resolver, (frame,)))
         assert not plan['items'][0]['own_object']
         if ending == 'arrival':
             # An arrival is outside the closing-item sum, even with uncovered content.

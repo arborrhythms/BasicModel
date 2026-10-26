@@ -1,411 +1,208 @@
-"""Consume a kept composition into the common native-symbol Part store.
-
-The temporary derivation supplies argument order. Neither that derivation nor
-a working identity is retained on an LTM0 occurrence.
-"""
+"""Plan semantic compression from the kept journal; never retain its derivation."""
 import torch
-
+from dataclasses import replace
 from ClauseRow import Composition
-from Layers import assert_cube
+from Meaning import ConceptualMeaning
+from LTM1 import OCCURRENCE, SYMBOL, RELATION
 from Spaces import _concept_alloc_of
 
 
 class PartClosing:
-    # These operations assert a relation between concepts. A description
-    # fold or a determiner introduction does not itself require identities
-    # for its operands; it retains a pair only when both already have them.
-    _relations = frozenset(('lift', 'part', 'assertPart', 'whole', 'implies', 'equal', 'verb'))
+    _assertions = frozenset(('part', 'assertPart', 'whole', 'implies', 'equal'))
 
     def __init__(self, owner, store):
         self.owner, self.store = owner, store
         self.alloc = _concept_alloc_of(owner)
         self.parts = self.alloc.parts
-        layout = getattr(owner.similarity_codebook, 'mereology', None)
-        self._inline_lower = (layout is None or
-                              layout.code_width == layout.percept_event_width)
-        self.symbols = {}
-        self.edges = []
-        self._terms = {}
-        self._plan = []
-        self._planned = {}
-        self._pairs = {}
-        self._definitions = {}
-        self._word_origins = {}
-        self._occupations = []
-        self._next = int(self.alloc.next_id)
-        self._ready = False
-        self._committed = False
-        self._seated = set()
+        self._terms, self._planned, self._entries = {}, {}, {}
+        self.symbols, self.edges = {}, []
         self.when = None
+        self.content_key = None
 
     def _point(self, symbol):
-        if symbol is None:
+        if symbol in (None, -1, 0):
             return None
         row = self.owner._csw_row_of(int(symbol))
         return None if row is None else self.owner.similarity_codebook.lookup_rows(row).detach()
 
-    @torch.no_grad()
-    def _seat(self, symbol, term, types=()):
-        if symbol in self._seated:
-            return symbol
-        self.alloc.symbol_types.setdefault(int(symbol), set()).update(types)
-        self.alloc.symbol_types[int(symbol)].add('concept')
-        self.alloc.reference_orders.setdefault(int(symbol), int(term.order))
-        row = self.owner._csw_row_of(int(symbol))
-        if row is None:
-            self.owner._preflight_concept_row(int(term.order))
-            row = self.owner._csw_concept_row(int(term.order), int(symbol))
-        if row is None:
-            raise RuntimeError('a closing symbol has no native conceptual seat')
-        point = assert_cube(term.point.detach())
-        bank = self.owner.similarity_codebook
-        if point.shape != bank.W[row].shape:
-            raise ValueError('a minted composing argument requires its full concept-space value')
-        bank.W[row].copy_(point.to(bank.W))
-        self.alloc.settle(int(symbol))
-        self._seated.add(symbol)
-        return int(symbol)
+    def _reference(self, value):
+        reference = value.reference
+        if reference in (-1, 0, None):
+            reference = value.word_id
+        if reference in (-1, 0, None):
+            return None
+        location = self.store.location(reference)
+        if isinstance(location, int):
+            return OCCURRENCE, int(self.store.address_keys[location])
+        if isinstance(location, tuple):
+            return RELATION, location[1]
+        if reference > 0 and (self._point(reference) is not None or reference in self.alloc.symbol_types):
+            return SYMBOL, reference
+        return None
 
-    def _native(self, reference):
-        reference = int(reference)
-        return reference > 0 and reference in self.alloc.placement and reference not in self.alloc.retired
-
-    def _reserve(self):
-        symbol = self._next
-        self._next += 1
-        return symbol
-
-    def _plan_term(self, value, as_argument):
-        pending, active = [(value, as_argument, False)], set()
-        while pending:
-            term, argument, ready = pending.pop()
-            if id(term) in self._planned:
-                self._plan_one(term, argument)
-                continue
-            if ready:
-                active.remove(id(term))
-                self._plan_one(term, argument)
-                continue
-            if id(term) in active:
-                raise ValueError('recursive composing object')
-            active.add(id(term))
-            pending.append((term, argument, True))
-            dependencies = [(child, term.operation in self._relations) for child in term.children]
-            if term.binding is not None:
-                dependencies.append((term.binding, True))
-            pending.extend((child, needed, False) for child, needed in reversed(dependencies))
-        return self._planned[id(value)]['symbol']
-
-    def _plan_one(self, value, as_argument):
+    def _plan_term(self, value, as_argument=False):
+        """A pure journal walk: no argument mint, definition or composing edge."""
         if id(value) in self._planned:
-            record = self._planned[id(value)]
-            if record.get('alias') is not None:
-                record['symbol'] = self._plan_term(record['alias'], as_argument)
-                record['types'] = self._planned[id(record['alias'])]['types']
-                return record['symbol']
-            if self._inline_lower and value.formal_name == 'lower' and len(value.children) == 2:
-                head = value.children[value.head_role - 1]
-                record['symbol'] = self._plan_term(head, as_argument)
-                record['types'] = self._planned[id(head)]['types']
-                return record['symbol']
-            if as_argument and record['symbol'] is None:
-                record['symbol'] = self._reserve()
-            record['seat'] |= (as_argument and value.binding is None
-                               and record['symbol'] is not None and not self._native(record['symbol'])
-                               and self._point(record['symbol']) is None)
-            return record['symbol']
-        if (value.operation == 'bind' and len(value.children) == 1
-                and value.binding is None and value.reference in (-1, 0)):
-            child = value.children[0]
-            if value.order == child.order and torch.equal(value.point, child.point):
-                # A dummy preserves the carried reference even when its
-                # working content is the lexical row rather than that bank row.
-                symbol = self._plan_term(child, as_argument)
-                held = self._planned[id(child)]
-                record = dict(value=value, symbol=symbol, edge=held['edge'], pair=held['pair'],
-                    types=held['types'], seat=False, alias=child)
-                self._planned[id(value)] = record
-                self._plan.append(record)
-                return symbol
-        children = tuple(self._plan_term(child, value.operation in self._relations)
-                         for child in value.children)
-        reference = (self._plan_term(value.binding, True) if value.binding is not None else
-                     value.reference if self._native(value.reference) else None)
-        edge, pair, types = None, None, ('object',)
-        if not children:
-            if reference is None:
-                location = self.store.location(value.reference)
-                if isinstance(location, int):
-                    reference = self.owner.components.reference_close._derivation_symbol(
-                        self.store.occurrence_of(location))
-            if (reference is None and value.reference > 0
-                    and self.store.location(value.reference) is None):
-                raise ValueError('a closing argument names an unavailable native reference')
-            if reference is None and as_argument:
-                reference = self._reserve()
-        elif len(children) == 1:
-            # A unary face changes the working concept/order. It supplies no
-            # ordered pair; any encompassing binary operation mints that value
-            # when it actually needs a distinct argument.
-            if reference is None and as_argument:
-                child = self._point(children[0])
-                if child is not None and torch.equal(child.to(value.point), value.point):
-                    reference = children[0]
-                else:
-                    reference = self._reserve()
-                types = ('kind',) if value.order > 1 else ('object',)
-            child_record = self._planned[id(value.children[0])]
-            edge, pair = child_record['edge'], child_record['pair']
-        elif len(children) == 2:
-            if self._inline_lower and value.formal_name == 'lower':
-                head = value.children[value.head_role - 1]
-                if not torch.equal(value.point, head.point):
-                    raise ValueError('inline lowering must preserve its description exactly')
-                reference = self._plan_term(head, as_argument)
-                record = dict(value=value, symbol=reference, edge=None, pair=None,
-                              types=self._planned[id(head)]['types'], seat=False)
-                self._planned[id(value)] = record
-                self._plan.append(record)
-                return reference
-            # A paired lower has its own form centroid and learned meaning.
-            # Like the other grammatical folds, it retains its operands and
-            # is seated only when a containing relation needs that value.
-            part, whole = children
-            if value.operation == 'whole':
-                part, whole = whole, part
-            # The pair retains the derivation. Its result needs a bank seat
-            # only if a containing relation uses that result as an argument.
-            if part is not None and whole is not None:
-                pair = (part, whole)
-                edge = self._pairs.get(pair, self.parts.find(*pair))
-                if edge is None:
-                    edge = self._reserve()
-                    self._pairs[pair] = edge
-            types = ('situation',) if value.operation in (
-                'lift', 'part', 'assertPart', 'whole', 'implies', 'equal') else ('object',)
-            if value.operation == 'verb':
-                types = (*types, 'state')
-                child_types = set(self.alloc.symbol_types.get(children[1], ()))
-                for child_record in self._plan:
-                    if child_record['symbol'] == children[1]:
-                        child_types.update(child_record['types'])
-                if 'situation' in child_types:
-                    types = (*types, 'speech_individual')
-            if reference is None:
-                reference = edge
-                if reference is None and as_argument:
-                    reference = self._reserve()
+            return self._planned[id(value)]
+        children = tuple(self._plan_term(child, True) for child in value.children)
+        reference = self._reference(value)
+        if children and value.operation not in (*self._assertions, 'lift', 'verb'):
+            if value.head_role:
+                children = (children[value.head_role-1],)
+            if len(children) == 1 and reference is None:
+                reference = children[0]['reference']
+        if value.binding is not None:
+            children = (self._plan_term(value.binding, True),)
+            reference = children[0]['reference']
+        selected_bind = value.operation == 'bind' and reference is not None
+        if children and not selected_bind:
+            resolved = all(child['resolved'] for child in children)
         else:
-            raise ValueError('a composition has one or two arguments')
-        record = dict(value=value, symbol=reference, edge=edge, pair=pair, types=types,
-                      seat=as_argument and value.binding is None and reference is not None
-                      and not self._native(reference)
-                      and self._point(reference) is None)
+            resolved = reference is not None and reference[0] == SYMBOL
+            if reference is not None and reference[0] == OCCURRENCE:
+                token = self.owner.mtm.token_of(('ltm', self.store.address_domain, reference[1]))
+                resolved = token is not None and not self.owner.mtm.entries[token].pending
+                if token is None:
+                    row = self.store.index_of_row(reference[1])
+                    marks = dict(self.store.raw_meaning_of(row).bindings)
+                    resolved = not bool(marks.get('_open_references') or marks.get('_forward_references'))
+            if resolved and reference[0] == SYMBOL:
+                # A bare, uninterpreted word is a name, not its own object.
+                resolved = not self.owner.interpret.no_object(reference[1]) and not (
+                    'word' in self.alloc.symbol_types.get(reference[1], ()) and self._point(reference[1]) is None)
+        identity = reference
+        if value.operation in self._assertions and len(children) == 2:
+            # A semantic pair has references and evidence, not an idea value.
+            # Its containing pair therefore remains a chain as well.
+            resolved = False
+        if children and not selected_bind:
+            child = children[-1 if value.operation == 'verb' else 0]
+            identity = child.get('identity') or child['reference']
+        record = dict(value=value, reference=reference, identity=identity,
+                      children=children, resolved=resolved)
         self._planned[id(value)] = record
-        self._plan.append(record)
-        return reference
-
-    def _definition(self, symbol, word, evidence, *, marker=False):
-        if marker or symbol is None or not self._native(word) or word == symbol:
-            return
-        if ('word' in self.alloc.symbol_types.get(symbol, ())
-                or symbol in self.owner.definitions.word_ids):
-            return
-        interpreter = getattr(self.owner, 'interpret', None)
-        description = self.alloc.word_descriptions.get(word)
-        if description is None and interpreter is not None:
-            description = interpreter._pending.get(word)
-        if description is None:
-            raise ValueError('a word-derived mint requires its admitted word description')
-        pair = symbol, word
-        edge = self._pairs.get(pair, self.parts.find(*pair))
-        if edge is None:
-            edge = self._reserve()
-            self._pairs[pair] = edge
-        self._definitions[pair] = edge, description, evidence
-
-    def _word_origin(self, value):
-        # Surface/form attachments keep their head's lexical use. If that
-        # phrase is minted as a relation argument, its definition belongs to
-        # the minted phrase even while the description remains unminted.
-        while (value.word_id < 0 and value.children and value.head_role
-               and value.operation not in self._relations):
-            value = value.children[value.head_role-1]
-        return value.word_id
-
-    def prepare(self, clause):
-        term = self._terms.setdefault(id(clause), self.clause_term(clause))
-        pending, visited = [term], set()
-        width = self.owner.similarity_codebook.W.shape[-1]
-        while pending:
-            value = pending.pop()
-            if id(value) in visited:
-                continue
-            visited.add(id(value))
-            if value.point.shape != (width,):
-                raise ValueError('closing arguments require the full concept-space width')
-            assert_cube(value.point)
-            pending.extend(value.children)
-        # A determiner's new referent is a working concept, then an LTM0
-        # occurrence. Only use as a relation argument requires minting here;
-        # recurrence promotion belongs to the later occurrence owner.
-        self._plan_term(term, False)
-        # Follow derivation order, never the process-dependent ordering of
-        # Python object IDs, when assigning the native definition handles.
-        for record in self._plan:
-            value = record['value']
-            if id(value) in visited:
-                word = self._word_origin(value)
-                if self._native(word):
-                    self._word_origins[id(value)] = word, clause.evidence
-        if clause.minted or bool(clause.reference_request and
-                                 clause.reference_request.get('mode') == 'mint'):
-            if self._native(clause.subject_word_id):
-                self._word_origins[id(term)] = int(clause.subject_word_id), clause.evidence
-
-    def preflight(self):
-        # A surface argument contributes form, not a noun definition. The
-        # kept plan supplies this position even when the word has an object.
-        markers = set()
-        pending = [record['value'].children[0] for record in self._plan
-                   if record['value'].operation == 'surface'
-                   and len(record['value'].children) == 2]
-        while pending:
-            term = pending.pop()
-            if id(term) not in markers:
-                markers.add(id(term))
-                pending.extend(term.children)
-        for term, (word, evidence) in self._word_origins.items():
-            record = self._planned[term]
-            if record['seat'] or self._point(record['symbol']) is not None:
-                self._definition(record['symbol'], word, evidence, marker=term in markers)
-        ref = self.store.__dict__.get('_occupation_owner')
-        occupations = None if ref is None else ref()
-        # The kept program already counts every carried word, including a
-        # lower's head at its parent's input. Closing owns only the additional
-        # nonword handles. This is count ownership, not a grammar decision.
-        words = {record['value'].word_id for record in self._plan}
-        def is_word(symbol):
-            return symbol in words or 'word' in self.alloc.symbol_types.get(symbol, ())
-        for record in self._plan:
-            value = record['value']
-            # Only an admitted formal operation supplies distributional
-            # occupations. A direct semantic pair invents no grammar role.
-            name = value.formal_name
-            if name is None or occupations is None:
-                continue
-            for role, child in enumerate(value.children, 1):
-                symbol = self._planned[id(child)]['symbol']
-                if symbol is not None and not is_word(symbol):
-                    argument = f'{name}_argin{role}'
-                    if argument not in occupations.index:
-                        raise ValueError(f'undeclared closing occupation: {argument}')
-                    self._occupations.append((symbol, argument))
-            if record['symbol'] is not None and not is_word(record['symbol']):
-                argument = f'{name}_argout1'
-                if argument in occupations.index:
-                    self._occupations.append((record['symbol'], argument))
-        new_edges = set(self._pairs.values())
-        seats = {record['symbol'] for record in self._plan if record['seat']}
-        count = self._next - int(self.alloc.next_id) - len(new_edges - seats)
-        if self._next > self.parts.capacity:
-            raise OverflowError('LTM2 symbol capacity exhausted before closing')
-        self.owner._preflight_concept_allocation(count, context='complete Part closing')
-        # Reserve physical seats together. A collection of individually
-        # possible admissions must not leave a prefix when their pool fills.
-        layer, caps = self.alloc.layer(), self.owner._order_caps()
-        occupied = set(layer._tensor_row_keys)
-        planned = set()
-        for record in self._plan:
-            symbol, order = record['symbol'], int(record['value'].order)
-            if not record['seat'] or symbol in planned:
-                continue
-            planned.add(symbol)
-            if getattr(self.owner, '_concept_binding', 'mixing') == 'aligned':
-                bases = ((0, int(self.owner.nVectors)),)
-            elif order == 0:
-                bases = ((0, caps[0]), (sum(caps), int(self.owner.nVectors)-sum(caps)))
-            else:
-                rung = min(order, len(caps)-1)
-                bases = ((sum(caps[:rung]), caps[rung]),
-                         (sum(caps), int(self.owner.nVectors)-sum(caps)))
-            seat = next((base+i for base, size in bases for i in range(size)
-                         if base+i not in occupied), None)
-            if seat is None:
-                raise RuntimeError(
-                    f'complete Part closing exceeds a concept row pool: order={order}, '
-                    f'pools={bases}, occupied={len(occupied)}, planned={len(planned)}')
-            occupied.add(seat)
-        self._ready = True
-
-    @torch.no_grad()
-    def _commit(self):
-        if not self._ready:
-            raise RuntimeError('Part closing must preflight its complete derivation')
-        if self._committed:
-            return
-        # Allocate handles in the order planned, before seating any content.
-        start = int(self.alloc.next_id)
-        for expected in range(start, self._next):
-            if self.alloc.new_concept() != expected:
-                raise RuntimeError('native symbol allocation changed during closing')
-        for record in self._plan:
-            value, symbol, edge = record['value'], record['symbol'], record['edge']
-            if record['pair'] is not None and len(value.children) == 2:
-                self.parts.add(*record['pair'], symbol=edge, when=self.when)
-                self.edges.append(edge)
-                self.alloc.symbol_types.setdefault(edge, set()).update(record['types'])
-                if value.operation == 'equal':
-                    # Equality constructs membership in a singleton. The
-                    # argument's type supplies that reading on later access.
-                    self.alloc.singletons.add(record['pair'][1])
-            if record['seat']:
-                self._seat(symbol, value, record['types'])
-            self.symbols[id(value)] = symbol
-        for (symbol, word), (edge, description, evidence) in self._definitions.items():
-            self.alloc.symbol_types.setdefault(symbol, set()).add('object')
-            self.alloc.symbol_types.setdefault(word, set()).add('word')
-            self.alloc.word_descriptions[word] = description
-            self.parts.add(symbol, word, symbol=edge, when=self.when,
-                           truth_plus=evidence[0], truth_minus=evidence[1], witness=False)
-            self.owner.definitions.add(edge)
-            interpreter = self.owner.interpret
-            interpreter._pending.pop(word, None)
-            interpreter._field_pending.discard(word)
-        ref = self.store.__dict__.get('_occupation_owner')
-        occupations = None if ref is None else ref()
-        if occupations is not None:
-            for symbol, argument in self._occupations:
-                occupations.add(symbol, argument)
-        self._committed = True
+        return record
 
     def clause_term(self, clause):
         if clause.composition is not None:
             return clause.composition
-        # Direct callers supply their already-completed operands. They do not
-        # get a fabricated derivation of an absolute point.
         if clause.relation is None:
             reference = clause.refs[0]
             return Composition(clause.point, order=clause.order,
-                               reference=reference if type(reference) is int else -1)
+                reference=reference if type(reference) is int else -1)
         terms = []
         for role in (0, 2):
             ref = clause.refs[role]
             if isinstance(ref, tuple):
-                terms.append(self.clause_term(clause.children[ref[1]]))
+                child = clause.children[ref[1]]
+                terms.append(self._terms.get(id(child)) or self.clause_term(child))
             else:
-                point = self._point(ref) if self._native(ref) else clause.meaning.roles[role]
-                terms.append(Composition(point, reference=ref, order=clause.order))
-        # Direct relation construction names its resulting native concept by
-        # the encompassing argument, exactly the Part operator's point face.
-        return Composition(terms[1].point, tuple(terms), operation=clause.relation,
-                           order=clause.order)
+                point = self._point(ref)
+                terms.append(Composition(clause.meaning.roles[role] if point is None else point,
+                                         reference=ref, order=clause.order))
+        return Composition(terms[1].point, tuple(terms), operation=clause.relation, order=clause.order)
 
-    def close(self, clause, *, pair=(0., 0.), when=None, surprise=-1.):
-        self._commit()
-        term = self._terms[id(clause)]
-        record = self._planned[id(term)]
-        if record['edge'] is not None:
-            self.parts.add(*record['pair'], truth_plus=pair[0], truth_minus=pair[1],
-                           when=when, surprise=surprise, witness=False)
-        return record['edge'] if clause.relation is not None else self.symbols[id(term)]
+    def prepare(self, clause):
+        term = self._terms.setdefault(id(clause), self.clause_term(clause))
+        record = self._plan_term(term)
+        # A direct absolute field is already a completed idea, unless its
+        # semantic binding explicitly declares a pending name or open slot.
+        record['order'] = clause.order
+        record['metadata'] = clause.meaning
+        record['mention'] = clause.reference_request is not None
+        marks = dict(clause.meaning.bindings)
+        if clause.composition is None and clause.relation is None:
+            record['resolved'] = not bool(marks.get('_forward_references') or marks.get('_open_references'))
+        if clause.minted or (clause.reference_request or {}).get('mode') == 'mint':
+            record['resolved'] = True
+        if marks.get('_forward_references') or any(k != 'evidence' for k, _ in marks.get('_open_references', ())):
+            record['resolved'] = False
+        return record
+
+    def preflight(self):
+        # At worst every binary semantic term is a relation and every leaf or
+        # compressed child an occurrence. Reserve the whole transaction first.
+        relations = sum(len(r['children']) == 2 and (not r['resolved'] or r['value'].operation in self._assertions)
+                        for r in self._planned.values())
+        if int(self.alloc.next_id) + relations > self.parts.capacity:
+            raise OverflowError('LTM1 construction capacity exhausted before close')
+        self.owner._preflight_concept_allocation(0, context='semantic closing')
+
+    def prediction_point(self, record):
+        """One entry value: the compressed idea or the chain's head idea."""
+        if record['resolved'] and record['value'].operation not in self._assertions:
+            return record['value'].point
+        for child in record['children']:
+            point = self.prediction_point(child)
+            if point is not None:
+                return point
+        reference = record['reference']
+        if reference is not None:
+            from ChainRead import point, head_idea
+            return head_idea(self.store, reference[1]) if reference[0] == RELATION else point(self.store, reference)
+        return record['value'].point if not record['children'] else None
+
+    def _write(self, record, *, pair=(0., 0.), sentence=False, kind='unverified',
+               metadata=None, address=None, stream=-1, surprise=-1., force=False, from_trust=False):
+        term = record['value']
+        # A sentence entry owns its kind, address and time even when its
+        # projected head was already written as an embedded working mention.
+        if id(term) in self._entries and not sentence:
+            return self._entries[id(term)]
+        children = record['children']
+        if metadata is None:
+            metadata = record.get('metadata')
+        assertion = term.operation in self._assertions and len(children) == 2
+        if (not sentence and not force and record['reference'] is not None
+                and (not children or term.operation not in (*self._assertions, 'lift', 'verb'))):
+            result = record['reference']
+        elif (record['resolved'] and not assertion) or not children or (force and (term.binding is not None or record.get('mention'))):
+            marks = {} if metadata is None else dict(metadata.bindings)
+            reference = record['identity']
+            if term.binding is not None:
+                reference = self._entries.get(id(term.binding), reference)
+            if term.operation in ('lift', 'verb') and children:
+                child = children[0 if term.operation == 'lift' else -1]
+                reference = child['reference']
+                if reference is None or reference[0] != OCCURRENCE:
+                    reference = self._entries.get(id(child['value'])) or reference
+            if reference is not None and not (reference[0] == SYMBOL and self.owner.interpret.no_object(reference[1])):
+                from ChainRead import envelope
+                marks.setdefault('_identity', envelope(self.store, reference))
+            value = replace(ConceptualMeaning.from_description(self.store._fit(term.point)),
+                bindings=marks, scope=() if metadata is None else metadata.scope,
+                polarity=True if metadata is None else metadata.polarity)
+            if address is None:
+                from Occurrence import native_content_key
+                address = dict(document_key=('operand', self.content_key),
+                    sentence_index=list(self._planned).index(id(term)), content_key=native_content_key(value))
+            row = self.store.append_meaning(value, kind=kind, evidence=pair, order=record.get('order', term.order),
+                stream=stream, surprise=surprise,
+                when=self.when if sentence else False, **(address or {}))
+            result = OCCURRENCE, int(self.store.address_keys[row])
+        elif len(children) == 1:
+            result = self._write(children[0], pair=pair, sentence=sentence, kind=kind,
+                                 metadata=metadata, address=address, stream=stream, surprise=surprise,
+                                 from_trust=from_trust)
+        else:
+            left, right = (self._write(child, stream=stream) for child in children)
+            if term.operation == 'whole':
+                left, right = right, left
+            if from_trust and metadata is not None and not metadata.polarity:
+                pair = pair[::-1]
+            row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
+                when=self.when if sentence else None, surprise=surprise, witness=sentence)
+            self.edges.append(row)
+            if assertion and term.operation == 'equal':
+                self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
+            result = RELATION, row
+        self._entries[id(term)] = result
+        self.symbols[id(term)] = result[1] if result[0] == SYMBOL else None
+        return result
+
+    def close(self, clause, *, pair=(0., 0.), sentence=False, kind='unverified',
+              address=None, stream=-1, surprise=-1., force=False, from_trust=False):
+        record = self._planned[id(self._terms[id(clause)])]
+        return self._write(record, pair=pair, sentence=sentence, kind=kind,
+            metadata=clause.meaning, address=address, stream=stream, surprise=surprise,
+            force=force, from_trust=from_trust)

@@ -1,10 +1,10 @@
 """Equality substitution over the rows already read by an episode.
 
-There is no store, vocabulary or operation evaluator here. A proof uses
-native identities, the two cached operands of an ended point, or the three
-roles of a relative row, and positive equalities in checked serial results.
+There is no store or vocabulary here. A proof uses positive witnessed
+equalities and the conceptual values admitted by checked identity reads.
 """
 from dataclasses import replace
+import torch
 
 from ThoughtReferences import bindings, evidence_pair, fill, open_slots, with_slots
 
@@ -13,15 +13,17 @@ def equality(meaning):
     return bool(bindings(meaning).get('_equality'))
 
 
-def integrate(goal, result, previous):
+def integrate(goal, result, previous, *, isomorphic=None):
     if not equality(goal):
         return None
     frames = result.evidence.get('frames', ())
     if not frames:
         return goal
-    terms, edges = {}, {}
+    edges = {}
+    evaluated, evaluations = {}, {}
     for item in (*previous, result):
-        terms.update(item.evidence.get('components', {}))
+        evaluated.update(item.evidence.get('evaluation_values', {}))
+        evaluations.update(item.evidence.get('evaluations', {}))
     for item in previous:
         values = item.evidence.get('frames', ())
         returned = item.evidence.get('returned_meaning')
@@ -45,32 +47,26 @@ def integrate(goal, result, previous):
             return None
         if left == right:
             return (), 1.
+        a, b = evaluated.get(left), evaluated.get(right)
+        if (a is not None and b is not None and a.shape == b.shape
+                and bool(a.ne(0).any()) and torch.allclose(a, b, rtol=1e-6, atol=1e-7)):
+            # These are already evaluated values, with form/time removed by
+            # the checked reader. No hidden component tree is reconstructed.
+            return (), 1.
         key = left, right
         if key in visiting or len(visiting) >= 64:
             return None
         visiting = visiting | {key}
+        a, b = evaluations.get(left), evaluations.get(right)
+        if a is not None and b is not None and isomorphic is not None:
+            found = equivalent(a['identity'], b['identity'], visiting)
+            if found is not None and isomorphic(a, b):
+                return found
         for other, witnesses, support in edges.get(left, ()):
             found = equivalent(other, right, visiting)
             if found is not None:
                 return (*witnesses, *found[0]), min(support, found[1])
-        a, b = terms.get(left), terms.get(right)
-        for term, own, other in ((a, left, right), (b, right, left)):
-            if term is not None and term.get('reference') not in (None, own):
-                found = equivalent(term['reference'], other, visiting)
-                if found is not None:
-                    return found
-        if a is None or b is None or a['kind'] != b['kind']:
-            return None
-        operands_a, operands_b = a['operands'], b['operands']
-        if not operands_a or len(operands_a) != len(operands_b):
-            return None
-        proof, strength = (), 1.
-        for first, second in zip(operands_a, operands_b):
-            found = equivalent(first, second, visiting)
-            if found is None:
-                return None
-            proof, strength = (*proof, *found[0]), min(strength, found[1])
-        return proof, strength
+        return None
 
     free = [role for kind, role in open_slots(goal) if kind == 'referent']
     bound = [role for kind, role in bindings(goal).get('_bound_roles', ()) if kind == 'referent']

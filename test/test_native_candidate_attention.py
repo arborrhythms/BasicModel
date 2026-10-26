@@ -9,15 +9,18 @@ def test_attention_priming_read_never_resizes_or_republishes_its_source(tmp_path
     space = model.perceptualSpace
     owner = space._priming_target()
     width = owner._priming_dim()
-    surface = torch.ones(1, width)
-    object.__setattr__(owner, '_priming_boosts', surface)
+    surface = owner._priming_boosts
+    pointer = surface.data_ptr()
+    surface.fill_(1.)
     result = _heat(space, 2, width, surface)
     assert result.shape == (2, width) and result.eq(1).all()
     assert owner._priming_boosts is surface
     surface[0, 0] = 2.
-    with pytest.raises(ValueError, match='current batch'):
-        _heat(space, 2, width, surface)
-    assert owner._priming_boosts is surface and surface[0, 0] == 2.
+    result = _heat(space, 2, width, surface)
+    assert result[0,0] == 2 and result[1,0] == 1
+    with pytest.raises(RuntimeError, match='resizing is forbidden'):
+        _heat(space, len(surface)+1, width, surface)
+    assert owner._priming_boosts.data_ptr() == pointer and surface[0,0] == 2.
 
 
 def test_answer_boundary_credits_only_admission_parameters():

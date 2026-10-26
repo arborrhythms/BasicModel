@@ -27,46 +27,6 @@
       "now": "Live focus uses word subdivisions within the existing sentence interval; stored sentence coordinates remain unchanged."
     },
     {
-      "file": "bin/ClauseRow.py",
-      "function": "ClauseRows.write_clause",
-      "attributes": [
-        "when"
-      ],
-      "role": "retained model-time provenance",
-      "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
-    },
-    {
-      "file": "bin/DocumentCover.py",
-      "function": "segments",
-      "attributes": [
-        "when"
-      ],
-      "role": "document segment index",
-      "previous_absolute_time": false,
-      "now": "Orders retained covers and members within each exact batch stream by model RowTime, with store order breaking equal-stamp ties."
-    },
-    {
-      "file": "bin/Forgetting.py",
-      "function": "forget_parts",
-      "attributes": [
-        "when"
-      ],
-      "role": "retained model-time provenance",
-      "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
-    },
-    {
-      "file": "bin/LTM1.py",
-      "function": "LTM1.add",
-      "attributes": [
-        "when"
-      ],
-      "role": "retained model-time provenance",
-      "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
-    },
-    {
       "file": "bin/Language.py",
       "function": "SymbolSpace._publish_symbol_snapshot",
       "attributes": [
@@ -81,36 +41,6 @@
       "function": "SymbolSubSpace.forwardSymbols",
       "attributes": [
         "nWhen"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.append_meaning",
-      "attributes": [
-        "when"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.reset",
-      "attributes": [
-        "when"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.row",
-      "attributes": [
-        "when"
       ],
       "role": "carrier",
       "previous_absolute_time": false,
@@ -209,6 +139,16 @@
     },
     {
       "file": "bin/Models.py",
+      "function": "BasicModel._clause_end_state",
+      "attributes": [
+        "when"
+      ],
+      "role": "shared chunk provenance",
+      "previous_absolute_time": false,
+      "now": "Keeps the written sentence reference and time stamp in its recent off-stack chunk."
+    },
+    {
+      "file": "bin/Models.py",
       "function": "BasicModel._commit_sentence",
       "attributes": [
         "when",
@@ -233,16 +173,6 @@
       "function": "BasicModel._masked_event_loss",
       "attributes": [
         "nWhen"
-      ],
-      "role": "carrier",
-      "previous_absolute_time": false,
-      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/Models.py",
-      "function": "BasicModel._program_entries",
-      "attributes": [
-        "_ar_word_symbol_when"
       ],
       "role": "carrier",
       "previous_absolute_time": false,
@@ -281,13 +211,13 @@
     },
     {
       "file": "bin/PartClosing.py",
-      "function": "PartClosing._commit",
+      "function": "PartClosing._write",
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Reads or transports a working percept time band; LTM storage is versioned and sentence-only.",
       "attributes": [
         "when"
-      ],
-      "role": "retained model-time provenance",
-      "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
+      ]
     },
     {
       "file": "bin/PerceptField.py",
@@ -301,23 +231,14 @@
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
     },
     {
-      "file": "bin/Queries.py",
-      "function": "ThoughtLTMCapability.relation_evidence",
-      "previous_absolute_time": false,
-      "now": "Read model-time event endpoints on the shared thought meter; compare within one document, and refuse an unknown legacy time.",
-      "attributes": [
-        "when"
-      ]
-    },
-    {
-      "file": "bin/ReferenceClose.py",
-      "function": "ReferenceClose.accessible",
+      "file": "bin/PrependedSymbols.py",
+      "function": "stage",
       "attributes": [
         "when"
       ],
-      "role": "retained model-time provenance",
+      "role": "shared chunk provenance",
       "previous_absolute_time": false,
-      "now": "Reads the common row model-time band; no identity operator consumes it."
+      "now": "Stamps the prepended identity at the present RowTime while retaining its last mention location."
     },
     {
       "file": "bin/ReferenceContext.py",
@@ -327,16 +248,6 @@
       "attributes": [
         "when"
       ]
-    },
-    {
-      "file": "bin/RowTime.py",
-      "function": "stamp",
-      "attributes": [
-        "when"
-      ],
-      "role": "writer",
-      "previous_absolute_time": false,
-      "now": "New rows stamp model processing time in a separate sinusoidal column; re-witnessing preserves the first stamp."
     },
     {
       "file": "bin/SentenceAttention.py",
@@ -353,8 +264,7 @@
       "file": "bin/SentenceAttention.py",
       "function": "SentenceField.place",
       "attributes": [
-        "when",
-        "when_encoding"
+        "when"
       ],
       "role": "attention field read",
       "previous_absolute_time": false,
@@ -917,6 +827,16 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/ReferenceClose.py",
+      "function": "ReferenceClose.accessible",
+      "attributes": [
+        "when"
+      ],
+      "role": "working identity history",
+      "previous_absolute_time": false,
+      "now": "Orders the retained MTM mention and event histories of identities reached through the shared chunks."
     }
   ],
   "dynamic_readers": [
@@ -937,18 +857,6 @@
       "function": "WhenRangeEncoding / WhenStartDurationEncoding",
       "previous_absolute_time": true,
       "now": "Legacy standalone codecs retained for explicit old encodings; the model uses DocumentWhenEncoding."
-    },
-    {
-      "file": "bin/Layers.py",
-      "function": "LTM0.recent",
-      "previous_absolute_time": false,
-      "now": "Reads the timestamp column (absolute model time), never the when band."
-    },
-    {
-      "file": "bin/MereologicalCodes.py",
-      "function": "MereologicalCodes.occurrence_terms",
-      "previous_absolute_time": false,
-      "now": "Recency still reads timestamp; meanings remain empty in the 4a-0 gate configuration."
     },
     {
       "file": "bin/AccessibleMind.py",
@@ -993,12 +901,6 @@
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
     },
     {
-      "file": "bin/MemoryIndex.py",
-      "function": "LeafCodeIndex._scope_contains",
-      "previous_absolute_time": false,
-      "now": "Compares explicit conceptual scope intervals named when; this is separate from the event band and remains unchanged."
-    },
-    {
       "file": "bin/Models.py",
       "function": "BaseModel._collect_structural_extras",
       "previous_absolute_time": false,
@@ -1027,18 +929,6 @@
       "function": "BasicModel._forward_body",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
-    },
-    {
-      "file": "bin/Occurrence.py",
-      "function": "OccurrenceRows._resize_checkpoint_rows",
-      "previous_absolute_time": true,
-      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
-    },
-    {
-      "file": "bin/Occurrence.py",
-      "function": "OccurrenceRows._migrate_address_tensors",
-      "previous_absolute_time": true,
-      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
     },
     {
       "file": "bin/PerceptField.py",
@@ -1099,6 +989,191 @@
       "function": "SpaceCarrierMixin._carrier_basis",
       "previous_absolute_time": false,
       "now": "Selects, validates, copies or restores the band through a runtime field name. No clock interpretation; event bands now carry the source-relative bracket."
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "read_stamp / write_stamp",
+      "previous_absolute_time": false,
+      "now": "Reads or writes the four clock coordinates in an idea percept or a chain percept."
+    },
+    {
+      "file": "bin/EntryRead.py",
+      "function": "recall_time",
+      "previous_absolute_time": false,
+      "now": "Finds sentence stamps nearest the supplied time within the window and shared work budget."
+    },
+    {
+      "file": "bin/Forgetting.py",
+      "function": "history_age",
+      "previous_absolute_time": false,
+      "now": "Derives age from the containing sentence percept stamp."
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "OccurrenceRows.recency_weights",
+      "previous_absolute_time": false,
+      "now": "Derives recency from percept time, not stream position."
+    }
+  ],
+  "layout_removed_readers": [
+    {
+      "file": "bin/ClauseRow.py",
+      "function": "ClauseRows.write_clause",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/DocumentCover.py",
+      "function": "segments",
+      "attributes": [
+        "when"
+      ],
+      "role": "document segment index",
+      "previous_absolute_time": false,
+      "now": "Orders retained covers and members within each exact batch stream by model RowTime, with store order breaking equal-stamp ties."
+    },
+    {
+      "file": "bin/Forgetting.py",
+      "function": "forget_parts",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/LTM1.py",
+      "function": "LTM1.add",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.append_meaning",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.reset",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.row",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
+    },
+    {
+      "file": "bin/PartClosing.py",
+      "function": "PartClosing._commit",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/Queries.py",
+      "function": "ThoughtLTMCapability.relation_evidence",
+      "previous_absolute_time": false,
+      "now": "Read model-time event endpoints on the shared thought meter; compare within one document, and refuse an unknown legacy time.",
+      "attributes": [
+        "when"
+      ]
+    },
+    {
+      "file": "bin/ReferenceClose.py",
+      "function": "ReferenceClose.accessible",
+      "attributes": [
+        "when"
+      ],
+      "role": "retained model-time provenance",
+      "previous_absolute_time": false,
+      "now": "Reads the common row model-time band; no identity operator consumes it."
+    },
+    {
+      "file": "bin/RowTime.py",
+      "function": "stamp",
+      "attributes": [
+        "when"
+      ],
+      "role": "writer",
+      "previous_absolute_time": false,
+      "now": "New rows stamp model processing time in a separate sinusoidal column; re-witnessing preserves the first stamp."
+    }
+  ],
+  "layout_added_readers": [
+    [
+      "bin/PartClosing.py",
+      "PartClosing._write"
+    ]
+  ],
+  "layout_removed_dynamic_readers": [
+    {
+      "file": "bin/Layers.py",
+      "function": "LTM0.recent",
+      "previous_absolute_time": false,
+      "now": "Reads the timestamp column (absolute model time), never the when band."
+    },
+    {
+      "file": "bin/MereologicalCodes.py",
+      "function": "MereologicalCodes.occurrence_terms",
+      "previous_absolute_time": false,
+      "now": "Recency still reads timestamp; meanings remain empty in the 4a-0 gate configuration."
+    },
+    {
+      "file": "bin/MemoryIndex.py",
+      "function": "LeafCodeIndex._scope_contains",
+      "previous_absolute_time": false,
+      "now": "Compares explicit conceptual scope intervals named when; this is separate from the event band and remains unchanged."
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "OccurrenceRows._resize_checkpoint_rows",
+      "previous_absolute_time": true,
+      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+    },
+    {
+      "file": "bin/Occurrence.py",
+      "function": "OccurrenceRows._migrate_address_tensors",
+      "previous_absolute_time": true,
+      "now": "Migration/resize reconstructs unit brackets from saved relative positions or explicit legacy ordinals; timestamps are preserved separately."
+    }
+  ],
+  "chunk_removed_readers": [
+    {
+      "file": "bin/Models.py",
+      "function": "BasicModel._program_entries",
+      "attributes": [
+        "_ar_word_symbol_when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
     }
   ]
 }

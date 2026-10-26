@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-from Understanding import AnswerProgram
+from Understanding import Reading
 from test_output_path_supervised import _native_answer_model
 from test_output_walk import _capture_program_probe
 
@@ -17,9 +17,9 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
         with capture_readings(model) as readings, torch.no_grad():
             held = _capture_program_probe(model, ['1 plus 2', '3 plus 4'])
             source = model.inputSpace
-            expected = torch.where(source._ar_word_object_rows >= 0,
-                                   source._ar_word_object_ids,
-                                   source._ar_word_concept_ids)
+            expected = torch.where(source.word_symbols('object_rows') >= 0,
+                                   source.word_symbols('object_ids'),
+                                   source.word_symbols('concept_ids'))
             active = source._ar_grammar_leaf_mask
             assert bool((expected[active] > 0).any())
             programs = readings[0]
@@ -43,7 +43,7 @@ def test_real_sentence_capture_owns_native_object_ids_across_later_staging(tmp_p
 
 
 def test_legacy_program_rows_are_never_reinterpreted_as_native_concept_ids():
-    program = AnswerProgram(
+    program = Reading(
         rows=torch.tensor([7, 3]), word_rows=torch.tensor([4, 6]),
         activations=torch.ones(2), leaves=torch.ones(2, 8),
         actions=torch.empty(0, 3, dtype=torch.long), targets=torch.tensor([0, 1]),
@@ -60,6 +60,7 @@ def test_missing_object_identity_cannot_fall_back_to_a_different_word_referent()
         _ar_word_concept_ids=torch.tensor([[101, 102, 103]]),
         _ar_word_object_ids=torch.tensor([[201, -1, -1]]))
     model = SimpleNamespace(inputSpace=source)
+    source.word_symbols = lambda name: getattr(source, '_ar_word_'+name)
     ids = BasicModel._word_symbol_concept_ids(model)
     assert ids.tolist() == [[201, 102, -1]]
 
@@ -72,5 +73,6 @@ def test_fractional_staged_identity_is_not_silently_truncated_into_a_referent():
         _ar_word_object_rows=torch.tensor([[11]]),
         _ar_word_concept_ids=torch.tensor([[101]]),
         _ar_word_object_ids=torch.tensor([[201.9]]))
+    source.word_symbols = lambda name: getattr(source, '_ar_word_'+name)
     with pytest.raises(TypeError, match='integer|identity|IDs'):
         BasicModel._word_symbol_concept_ids(SimpleNamespace(inputSpace=source))

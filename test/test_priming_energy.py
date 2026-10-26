@@ -27,10 +27,10 @@ sys.path.insert(0, "bin")
 from recon_bench import _build_model, _resolve_config
 
 
-def _chain_cs():
+def _chain_cs(*, batch_size=2):
     """Native Part chain 3 -> A -> 5 -> B -> 6, with disjoint content."""
     from test_cs_sparse_weights import _cs, _mint_row
-    cs = _cs(nS=16, order=1)
+    cs = _cs(nS=16, order=1, batch_size=batch_size)
     for i in range(8):
         assert _mint_row(cs, 0, 100 + i) == i
     rA = _mint_row(cs, 1, 301)
@@ -43,7 +43,7 @@ def _chain_cs():
         cs.similarity_codebook.W.zero_()
         for i, row in enumerate((3, rA, 5, rB, 6)):
             cs.similarity_codebook.W[row, i] = 1.
-    object.__setattr__(cs, "_priming_boosts", None)
+    cs._priming_boosts.fill_(1.)
     object.__setattr__(cs, "_priming_spread", 0.5)
     object.__setattr__(cs, "_priming_decay", 1.0)   # isolate the transfer law
     return cs, rA, rB
@@ -158,7 +158,7 @@ def test_cs_to_ps_projection_live():
     mapped = {int(p) for definition in bridge for group in definition['parts'] for p in group}
     hot = set((b_ps > 1.0).any(0).nonzero().reshape(-1).tolist())
     assert hot and hot <= mapped, (sorted(hot)[:8], sorted(mapped)[:8])
-    assert m.perceptualSpace.priming_weights() is None
+    assert m.perceptualSpace.priming_weights().eq(1).all()
 
 
 @pytest.mark.slow
@@ -194,7 +194,7 @@ def test_projection_bounded_across_epochs():
 def test_one_canonical_surface_per_tower():
     """Per-stage WS/CS delegate to the ONE canonical surface (terminal WS,
     native concept owner): a write through any stage is visible through every other,
-    and it is the same tensor object."""
+    and every stage shares the same stored tensor."""
     import torch as _t
     m = _projected_model(epochs=1)
     ws_c = m.wholeSpaces[-1]
@@ -202,14 +202,15 @@ def test_one_canonical_surface_per_tower():
         assert ws._priming_target() is ws_c
     for cs in m.conceptualSpaces:
         assert cs._priming_target() is m._concept_owner()
-    object.__setattr__(ws_c, "_priming_boosts", None)
+    ws_c._priming_boosts.fill_(1.)
     m.wholeSpaces[0].prime_seen(_t.tensor([1]), decay=1.0)
     b0 = m.wholeSpaces[0].priming_weights()
     bc = ws_c.priming_weights()
-    assert b0 is bc, "delegation must land on the one canonical tensor"
+    torch.testing.assert_close(b0, bc, rtol=0, atol=0)
+    assert m.wholeSpaces[0]._priming_target()._priming_boosts is ws_c._priming_boosts
     assert float(bc[0, 1]) > 1.0
-    assert getattr(m.wholeSpaces[0], "_priming_boosts", None) is None, (
-        "no per-stage surface may exist on a delegating tower")
+    assert bool(m.wholeSpaces[0]._priming_boosts.eq(1).all()), (
+        "a delegating tower must leave its unused local slab neutral")
 
 
 

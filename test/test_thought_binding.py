@@ -4,7 +4,8 @@ import torch
 import pytest
 
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, evidence_pair, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, with_slots
+from meaning_fixtures import unsupported as question
 from ThoughtBinding import integrate
 
 
@@ -38,23 +39,27 @@ def test_substitution_requires_the_returned_premise_and_keeps_its_witness():
     name, operand, value, answer, modifier = [('sym', n) for n in range(1, 6)]
     compound, rewritten = ('ltm', 'test', 6), ('ltm', 'test', 7)
     premise, binding, license = [('ltm', 'test', n) for n in (8, 9, 10)]
-    components = {compound: dict(kind='lift', operands=(operand, modifier)),
-                  rewritten: dict(kind='lift', operands=(value, modifier))}
-    first = read(name, compound, premise, components=components)
-    goal = integrate(question(equality(None, name), (('referent', 0),)), first, ())
+    components = {compound: dict(kind='lift', identity=operand),
+                  rewritten: dict(kind='lift', identity=value)}
+    first = read(name, compound, premise)
+    first.evidence['evaluations'] = components
+    def apply(goal, result, previous):
+        return integrate(goal,result,previous,isomorphic=lambda a,b:a['kind']==b['kind'])
+    goal = apply(question(equality(None, name), (('referent', 0),)), first, ())
     step = read(rewritten, answer, license, components=components, pair=(.6, .1))
-    assert integrate(goal, step, (first,)) is goal
-    bound = integrate(goal, step, (first, read(operand, value, binding, pair=(.7, 0.))))
+    assert apply(goal, step, (first,)) is goal
+    bound = apply(goal, step, (first, read(operand, value, binding, pair=(.7, 0.))))
     assert bound.role_refs[0] == answer
     assert bindings(bound)['_derived_binding']
     assert bindings(bound)['_thought_witnesses'] == (premise, binding, license)
     assert evidence_pair(bound) == (.6, .1)
-    weak = integrate(goal, read(rewritten, answer, license, components=components, pair=(.9, .9)),
+    weak = apply(goal, read(rewritten, answer, license, components=components, pair=(.9, .9)),
                      (first, read(operand, value, binding, pair=(.4, 0.))))
     assert evidence_pair(weak) == (.4, .4)
     wrong_operation = {**components, rewritten: dict(components[rewritten], kind='other')}
-    wrong = read(rewritten, answer, license, components=wrong_operation)
-    assert integrate(goal, wrong, (first, read(operand, value, binding))) is goal
+    wrong = read(rewritten, answer, license)
+    wrong.evidence['evaluations'] = wrong_operation
+    assert apply(goal, wrong, (first, read(operand, value, binding))) is goal
 
 
 def test_missing_cached_operand_is_not_a_structural_proof():
@@ -72,14 +77,21 @@ def test_conclusion_does_not_publish_unreferenced_working_constituents(monkeypat
     from ThoughtStream import write
     import Occurrence
     store, (a, b, predicate) = native_store(width=3, points=torch.eye(3))
-    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+    def signature(value, **kwargs):
+        if int(value.role_mask.sum()) != 3:
+            raise ValueError('an idea is not a relative clause')
+        return SimpleNamespace(operation=SimpleNamespace(semantic_id='isEqual'))
+    registry = SimpleNamespace(signature_for=signature)
+    model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store), grammatical_thoughts=registry)
     monkeypatch.setattr(Occurrence, 'source_at', lambda *args: ('document', 0))
     unused = with_slots(ConceptualMeaning.from_description(torch.eye(3)[1]), (), pair=(1., 0.))
+    unused = replace(unused, role_refs=(('sym', b),None,None))
     concluded = replace(equality(('sym', a), ('sym', b)), constituents=(unused,))
     before = len(store)
     index = write(model, concluded, row=0)
-    assert len(store) == before + 1
-    assert store.meaning_of(index).role_refs == concluded.role_refs
+    assert len(store) == before
+    assert store.parts.references(index[1])[0][1] == a
+    assert store.parts.references(index[1])[1][1] == b
 
 
 @pytest.mark.parametrize('producer', ('query', 'bind'))
@@ -101,7 +113,8 @@ def test_a_read_binding_publishes_a_proof_occurrence_without_composing_a_part(mo
     index = write(model, meaning, row=0)
     assert (len(store), len(store.parts)) == (counts[0] + 1, counts[1])
     assert store.row(index)['kind'] == 'inference'
-    assert store.meaning_of(index).role_refs == meaning.role_refs
+    assert store.meaning_of(index).role_refs == (meaning.role_refs[2], None, None)
+    assert bindings(store.meaning_of(index))['_bound_references'] == ((0, meaning.role_refs[0]),)
     assert bindings(store.meaning_of(index))['_thought_witnesses'] == (('sym', a),)
 
 
@@ -181,7 +194,10 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
     result = write(f.model, concluded, row=0)[1]
     assert f.store.parts.contains(result)
     pair = f.store.parts.row(result)
-    assert pair['refs'].tolist() == ([a, b] if role == 0 else [b, a])
+    assert pair['refs'].tolist() == ([address[2], b] if role == 0 else [b, address[2]])
+    from LTM1 import OCCURRENCE, SYMBOL
+    assert pair['ref_kinds'].tolist() == ([OCCURRENCE, SYMBOL] if role == 0 else [SYMBOL, OCCURRENCE])
     assert (pair['truth_plus'], pair['truth_minus']) == pytest.approx((.8, .1))
-    assert f.store.raw_meaning_of(len(f.store)-1).role_refs == (('sym', result), None, None)
+    assert len(f.store) == row + 1  # the relation is owned by LTM1
+    assert f.store.raw_meaning_of(row).role_refs == (('sym', a), None, None)
     torch.testing.assert_close(f.store.slots[row], original, rtol=0, atol=0)

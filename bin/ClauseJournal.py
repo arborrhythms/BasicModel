@@ -106,6 +106,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             stack.append(stack.pop(-1-unary_position))
         arity = 2 if kind == 1 else 1
         catalog = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+        if kind == 1 and 0 <= local < len(catalog) and catalog[local].method_name == 'bind':
+            arity = 1  # the right field operand is off the parse stack
         if kind not in (1, 2) or not 0 <= local < len(catalog) or len(stack) < arity:
             raise ValueError('invalid clause derivation')
         operands = tuple(stack[-arity:])
@@ -242,7 +244,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             parent['close_request'] = request
         if program.identity_actions is not None:
             handle, subject, _, _, selected, _ = parent['identity_event']
-            if (handle > 0 and not subject and selected <= 0 and parent['order'] == 1
+            if (handle > 0 and not subject and selected <= 0
+                    and (parent['order'] == 1 or catalog[local].method_name == 'bind')
                     and int(program.identity_origins[handle-1, 0]) == 3):
                 introductions.setdefault(handle, parent)
                 if introductions[handle] is parent and not parent['has_point']:
@@ -340,7 +343,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             case_value=(program.case_values[action] if action is not None and program.case_selected is not None
                        and bool(program.case_selected[action]) else None),
             leaf_count=len(node['leaves']),
-            origins=program.identity_origins, values=program.identity_values)
+            origins=program.identity_origins, ids=program.identity_ids, values=program.identity_values)
 
     composition_cache = {}
     def composition(node):
@@ -356,11 +359,19 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 continue
             rule = current['rule']
             from PartsOfSpeech import operation_name
+            reference = int(current.get('forward_identity', current['ref'])
+                if current['ref'] in (-1, 0) else current['ref'])
+            event = current.get('identity_event')
+            if event is not None and rule.method_name == 'bind' and event[4] > 0:
+                # This is the chooser's selected identity, already used by
+                # the numerical journal. Its lexical child is only the cue.
+                origin = program.identity_origins[event[0]-1]
+                if int(origin[0]) in (1, 2):
+                    reference = int(origin[1])
             composition_cache[key] = Composition(
                 point=current['composed_value'],
                 children=tuple(composition_cache[id(child)] for child in current['children']),
-                reference=int(current.get('forward_identity', current['ref'])
-                    if current['ref'] in (-1, 0) else current['ref']),
+                reference=reference,
                 operation=None if rule is None else rule.method_name,
                 head_role=0 if rule is None else getattr(rule, 'head_role', 0),
                 order=max(0, int(current.get('mint_order', current['order']))),
@@ -455,11 +466,33 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         (*language._compose_binary_rules, *language._compose_unary_rules))
 
     def recover(root, *, top=False):
+        # Ask belongs to the kept head, including the lexical early returns.
+        # An ask inside an operand does not erase its enclosing assertion.
+        current, asked = root, False
+        while True:
+            rule = current['rule']
+            asked = asked or getattr(rule, 'method_name', None) == 'ask'
+            if not current['children'] or getattr(rule, 'clause_form', None) == 'S' or getattr(rule, 'relation_kind', None) is not None:
+                break
+            role = getattr(rule, 'head_role', 0)
+            if not role and len(current['children']) == 1:
+                role = 1
+            if not role:
+                break
+            current = current['children'][role - 1]
+        result = recover_content(root, top=top)
+        if asked:
+            from ThoughtReferences import bindings, with_slots
+            result = replace(result, evidence=(0., 0.), meaning=with_slots(result.meaning,
+                bindings(result.meaning).get('_open_references', ()), pair=(0., 0.),
+                source_evidence=(0., 0.)))
+        return result
+
+    def recover_content(root, *, top=False):
         # Syntactic assertion polarity is a grammar property. Identification
         # evidence remains a pair, including both and neither, through storage.
         polarity = True
         excluded = False
-        mode = 'assertive'
         def close_member(item, *, referent=True):
             own_request = item.get('close_request', {})
             if not item['has_point'] and not (own_request.get('introduction') or 'compose_bind' in own_request):
@@ -477,7 +510,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     break
                 current = current['children'][role - 1]
                 request = current.get('close_request')
-            if request is None or item['order'] != 1:
+            if request is None or (item['order'] != 1 and 'compose_bind' not in request):
                 return None
             if program.identity_actions is not None:
                 request = dict(request, compose_bind=request.get('compose_bind', 0))
@@ -503,7 +536,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             relative = request.get('introduction', False)
             description = item['children'][(getattr(item['rule'], 'head_role', 0) or 1)-1] if relative else None
             return Clause(ConceptualMeaning.from_description(point), point=point,
-                subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=1,
+                subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=item['order'],
                 children=(recover(description),) if relative else (),
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
                 reference_request=request, composition=composition(item), identity=identity_record(item))
@@ -516,7 +549,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 polarity = not polarity
             if getattr(node['rule'], 'polarity_effect', None) == 'exclude':
                 excluded = True
-            mode = getattr(node['rule'], 'meaning_mode', None) or mode
             node = head(node['children'][0], clause=True)
         if not node['children'] and not node['has_point'] and store is not None:
             index = store.location(node['ref'])
@@ -648,7 +680,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                                  predicate.to(zero), zero if right is None else right))
             mask = torch.tensor([True, True, right is not None or right_ref != -1],
                                 device=roles.device)
-            described = ConceptualMeaning(roles, mask, polarity=polarity, mode=mode)
+            described = ConceptualMeaning(roles, mask, polarity=polarity)
             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
                           (left_ref, concept(operands[1]), -1))
             factored_refs = left_ref, predicate_ref, right_ref
@@ -684,7 +716,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             children = contextual
         else:
             described = replace(ConceptualMeaning.from_description(value(root)),
-                                mode=mode, polarity=polarity)
+                                polarity=polarity)
             references = (node['ref'], -1, -1)
         equality = relation == 'equal'
         if equality:
@@ -765,8 +797,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             data = bindings(described)
             data['_formation_records'] = formations
             described = replace(described, bindings=data)
-        if mode == 'interrogative':
-            evidence['evidence'] = (0., 0.)
         from ThoughtReferences import with_slots
         opened = tuple(('relation' if role == 1 else 'referent', role)
                        for role, item in enumerate(role_nodes) if item is not None
@@ -865,7 +895,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         for node in ordered:
             handle, request = node.get('identity_handle', 0), node.get('close_request', {})
             if (handle in required and handle not in owners and request
-                    and request.get('compose_bind', 0) <= 0 and node['order'] == 1
+                    and request.get('compose_bind', 0) <= 0
+                    and (node['order'] == 1 or 'compose_bind' in request)
                     and id(composition(node)) in noun_terms):
                 ended = recover(node)
                 if ended.reference_request is not None:
@@ -912,7 +943,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             if probe.role_refs[1] is not None:
                 try:
                     operation = registry.signature_for(
-                        replace(probe, mode='interrogative')).operation.semantic_id
+                        probe).operation.semantic_id
                 except ValueError:
                     pass
         if operation not in relative:
@@ -920,7 +951,6 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 raise ValueError('three slots have no selected relative clause')
             operation = 'operator'
         meaning = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool, device=program.leaves.device),
-                                    mode="assertive" if meaning is None else meaning.mode,
                                     polarity=True if meaning is None else meaning.polarity)
         if operation == 'whole':
             operation = 'part'

@@ -12,17 +12,17 @@ def test_provisioning_retains_completed_fields_and_shared_row_ids():
     asserted = store.rows_of_origin(store.ORIGIN_PROVISIONED).tolist()
     definitions = store.relations('definition').tolist()
     assert len(asserted) == 3
-    assert not definitions, "reading a form does not invent a DEF object"
+    assert tuple(definitions) == model._fixture_admitted_definitions, "reading cannot invent another DEF object"
     assert len(store) == len(asserted) + 3
     assert sum(store.row(i)['kind'] == 'cover' for i in range(len(store))) == 3
     for row in asserted:
-        assert int(store.meaning_of(row).role_mask.sum()) in (1, 3)
+        assert int(store.meaning_of(row).role_mask.sum()) == 1
         assert not hasattr(store, 'clause_derivation')
         assert int(store.row_ids[row]) not in (-1, 0)
         assert store.row(row)['kind'] == 'fact'
     for row in definitions:
-        assert store.part_row(row)['kind'] == 'unverified'
-        assert store.part_row(row)['evidence'] == (0., 0.)
+        assert store.part_row(row)['kind'] == 'observation'
+        assert store.part_row(row)['evidence'] == (1., 0.)
 
 
 def test_truthset_asserts_only_outer_ends_including_deduplicated_roots():

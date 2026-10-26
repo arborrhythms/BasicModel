@@ -1,4 +1,5 @@
 """Regressions from the review of the frozen anonymous-binding source."""
+from chunk_fixtures import context as chunk_context
 import torch
 
 from ReferenceContext import SituationFrame
@@ -27,7 +28,7 @@ def test_native_arrival_without_synthetic_occurrence_joins_its_working_entry(mon
     frame = SituationFrame(1, torch.stack((atoms[0], atoms[0]*0, atoms[0]*0)),
         torch.tensor([True, False, False]), -1, atoms[0], symbol_ids=(individual,))
     clause = equality(atoms[1], words['x'], words['wrong'])
-    plan = resolver.preview(clause, (SituationFrame.from_row(store.row(pending)), frame))
+    plan = resolver.preview(clause, chunk_context(resolver, (SituationFrame.from_row(store.row(pending)), frame)))
     before, entries = snapshot(resolver), dict(resolver.components.owner.mtm.entries)
     prepared = resolver.prepare(clause, plan)
     assert not prepared.companions and individual not in plan['arrival_written']
@@ -66,7 +67,7 @@ def test_new_document_cannot_refine_a_same_stream_site_outside_its_frames(monkey
     force_named(resolver, monkeypatch, words['three'])
 
     def close(clause, document):
-        plan = resolver.preview(clause, (), document=document, position=0, stream=0)
+        plan = resolver.preview(clause, chunk_context(resolver, ()), document=document, position=0, stream=0)
         prepared = resolver.prepare(clause, plan)
         written = {}
         row = store.write_clause(prepared, document_key=document, sentence_index=0,
@@ -111,7 +112,7 @@ def test_refining_from_a_pooled_candidate_keeps_its_earlier_use_and_full_content
 def test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists():
     resolver, store, atoms, words, _ = world()
     clause = named(atoms[0], words['x'])
-    plan = resolver.preview(clause, (), stream=0)
+    plan = resolver.preview(clause, chunk_context(resolver, ()), stream=0)
     prepared = resolver.prepare(clause, plan)
     written = {}
     pending = store.write_clause(prepared, document_key='initial-stream', stream=0,
@@ -119,16 +120,16 @@ def test_arrival_readers_exclude_scoped_rows_before_a_new_stream_column_exists()
     resolver.commit(plan, pending, written, document='initial-stream', position=0, training=False)
     token = store.occurrence_of(pending)
     retained, entry = snapshot(resolver), resolver.components.owner.mtm.entries[token]
-    assert store.stream.shape[1] == 1 and store.stream[pending, 0]
+    assert store.stream.shape[1] == store.capacity and store.stream[pending, 0]
     arrival = equality(atoms[0], words['x'], words['three'])
-    individuals = resolver.individuals(resolver.accessible((SituationFrame.from_row(store.row(pending)),)))
+    individuals = resolver.individuals(resolver.accessible(chunk_context(resolver, (SituationFrame.from_row(store.row(pending)),))))
     for stream in (1, 2, 7):
         assert resolver.pending_names(arrival, individuals, stream) == ()
         result = dict(items=[], records={token: (pending, 1.)})
         resolver._arrival_plan(arrival, result, individuals, stream=stream)
         assert result['arrivals'] == []
         assert resolver.components.owner.mtm.entries[token] is entry
-        assert store.stream.shape[1] == 1
+        assert store.stream.shape[1] == store.capacity
         unchanged(resolver, retained)
 
 
@@ -138,7 +139,7 @@ def test_arrival_readers_keep_unscoped_rows_available_to_a_new_stream():
     token = store.occurrence_of(pending)
     assert not store.stream[pending].any()
     arrival = equality(atoms[0], words['x'], words['three'])
-    individuals = resolver.individuals(resolver.accessible((SituationFrame.from_row(store.row(pending)),)))
+    individuals = resolver.individuals(resolver.accessible(chunk_context(resolver, (SituationFrame.from_row(store.row(pending)),))))
     retained = snapshot(resolver)
     stream = store.stream.shape[1]
     assert resolver.pending_names(arrival, individuals, stream) == (words['x'],)

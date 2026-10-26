@@ -4,10 +4,10 @@ import torch
 from torch import nn
 
 
-def fixture():
+def fixture(*, meaning_pairs=1, batch_size=1):
     from test_cs_sparse_weights import _cs
     from Spaces import Codebook, _concept_alloc_of
-    cs = _cs(nS=32, order=0)
+    cs = _cs(nS=32, order=0, batch_size=batch_size)
     ps = Codebook()
     ps.W = nn.Parameter(torch.zeros(16, 3))
     with torch.no_grad():
@@ -16,9 +16,9 @@ def fixture():
     object.__setattr__(cs, '_model', SimpleNamespace(perceptualSpace=SimpleNamespace(
         subspace=SimpleNamespace(what=ps), nDim=3)))
     cb = Codebook()
-    cb.W = nn.Parameter(torch.zeros(32, 5))
+    cb.W = nn.Parameter(torch.zeros(32, 3+2*meaning_pairs))
     cs.similarity_codebook = cb
-    cb.enable_derived_codes(cs, percept_width=3, content_width=5)
+    cb.enable_derived_codes(cs, percept_width=3, content_width=3+2*meaning_pairs)
     cs._online_learning_frozen = False
     return cs, cb, ps, _concept_alloc_of(cs)
 
@@ -55,7 +55,7 @@ def test_group_uses_native_perceptual_fold_without_letter_concept_rows():
     assert set(alloc.layer()._tensor_row_keys) == {grouped, single}
 
 
-def test_occurrence_mean_is_confined_to_detached_context_coordinates():
+def test_close_placement_is_confined_to_detached_context_coordinates():
     from Layers import LTM0
     from Meaning import ConceptualMeaning
     cs, cb, ps, _ = fixture()
@@ -67,17 +67,22 @@ def test_occurrence_mean_is_confined_to_detached_context_coordinates():
     root = torch.tensor([9.,8.,7.,.2,.4], requires_grad=True)
     roles = torch.stack((root, root*0, root*0))
     row = store.append_meaning(ConceptualMeaning(roles, torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea', role_refs=(('sym', part), None, None)),
+         sentence_kind='idea', role_refs=(('sym', part), None, None)),
         evidence=(0.,0.))
+    reading = SimpleNamespace(word_rows=torch.tensor([a,b]), concept_ids=None)
+    cs._sentence_seen_rows[0, :2] = torch.tensor([a,b])
+    cs.prime_seen(torch.tensor([[a,b]]))
+    cb.mereology.observe_close(reading)
     codes = cb.lookup_rows(torch.tensor([a,b]))
     torch.testing.assert_close(codes[:,:3], ps.W[[4,7]])
     torch.testing.assert_close(codes[:,3:], torch.tensor([[1/5,0.],[1/5,0.]]))
     assert not codes.requires_grad
     assert root.grad is None and not store.slots.requires_grad
     newer = store.append_meaning(ConceptualMeaning(roles*2, torch.tensor([True,False,False]),
-        mode='assertive', sentence_kind='idea', role_refs=(('sym', part), None, None)),
+         sentence_kind='idea', role_refs=(('sym', part), None, None)),
         evidence=(0.,0.))
-    mean = (root.detach()/2 + 2*root.detach())/1.5
+    cs.prime_seen(torch.tensor([[a,b]]))
+    cb.mereology.observe_close(reading)
     torch.testing.assert_close(cb.lookup_rows(a)[:3], ps.W[4])
     torch.testing.assert_close(cb.lookup_rows(a)[3:], torch.tensor([2/6,0.]))
     assert len(store) == 2
@@ -105,8 +110,10 @@ def test_actual_serial_code_uses_ninety_six_native_coordinates_and_a_separate_bi
     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
-    torch.testing.assert_close(atoms[rows>=0], cb.lookup_rows(rows[rows>=0]))
-    assert not cb.lookup_rows(rows[rows>=0])[...,96:].any()
+    torch.testing.assert_close(atoms[rows>=0][..., :96], cb.lookup_rows(rows[rows>=0])[..., :96])
+    assert not atoms[rows>=0][...,104:].any()
+    assert cb.lookup_rows(rows[rows>=0])[...,104:].any()
+    assert bool(cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all())
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
     parameter = model.perceptualSpace.subspace.what.W
     assert any(p is parameter for p in groups['reconstruction'])

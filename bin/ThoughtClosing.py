@@ -3,20 +3,24 @@ from dataclasses import replace
 import torch
 
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, evidence_pair, fill, from_closing, needs_episode, open_slots, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, fill, from_closing, has_open_slots, open_slots, with_slots
 
 
 def closing_question(meaning, clause, parsed=None, program=None, *, store=None, written_rows=None):
     """Preserve a binder's nulls, including a lexical idea with no referent.
 
-    Numerical ideas are already their own conceptual contents. Surface mode
-    is evidence only: a known pair and all bound roles close even a wh-row.
+    Numerical ideas are already their own conceptual contents. A filled
+    reference remains closed independently of the surface form.
     """
     # The numerical journal has not installed its canonical role references.
     # Its selected native/child refs, rather than those temporary nulls,
     # determine whether the operation actually left an operand unfilled.
     index = None if written_rows is None else written_rows.get(id(clause))
+    if isinstance(index, tuple) and index[:1] == ('sym',) and not store.parts.contains(index[1]):
+        return None  # a referenced concept is not a second sentence entry
     committed = None if store is None or index is None else store.raw_meaning_of(index)
+    if written_rows is not None:
+        committed = written_rows.get(('meaning', id(clause)), committed)
     if committed is not None:
         # At this boundary the chosen open formation still owns its binder.
         # The row now closing cannot use its own complement to suppress that
@@ -32,7 +36,7 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         # its completed constituents. Ask on that existing inner row.
         for child in clause.children:
             nested = closing_question(child.meaning, child, store=store, written_rows=written_rows)
-            if nested is not None:
+            if nested is not None and has_open_slots(nested):
                 # An enclosing assertion contains the unresolved operand; it
                 # is not independent evidence for that operand's referent.
                 # Keep both current handles when a relation also has an
@@ -46,27 +50,24 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
                 if occurrence is not None:
                     excluded.append(occurrence)
                 # The inner operand does not carry independent source
-                # authority. Its enclosing close supplies that authority and
-                # the live question mode, just as for a direct root hole.
-                source = parsed if parsed is not None else clause.meaning
+                # authority. Its enclosing close supplies that authority,
+                # just as for a direct root hole.
                 data.update(_query_exclude=tuple(dict.fromkeys(excluded)),
                             _source_evidence=tuple(clause.evidence))
-                nested = with_slots(replace(nested, mode=source.mode, bindings=data),
+                nested = with_slots(replace(nested, bindings=data),
                     open_slots(nested), pair=clause.evidence)
                 # Inheriting the source's authority can close an unsupported
                 # region without filling any role. Only a remaining question
                 # belongs in the completed field; inspect other children too.
-                if needs_episode(nested):
+                if has_open_slots(nested):
                     return nested
     source = parsed if parsed is not None else meaning
     if committed is not None:
-        # Storage does not retain grammatical mode. The live closing still
-        # supplies it, while its row supplies the canonical references.
-        source = replace(committed, mode=(parsed if parsed is not None else clause.meaning).mode)
+        # The committed row supplies the canonical references.
+        source = committed
     if (committed is None and parsed is not None and torch.equal(parsed.roles, meaning.roles)
             and torch.equal(parsed.role_mask, meaning.role_mask)):
         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)
-    surface_open = source.mode == 'interrogative'
     slots = list(dict.fromkeys((*open_slots(source), *clause_open)))
     if clause_open:
         refs = list(source.role_refs)
@@ -83,8 +84,8 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         slots.append(('referent', 0))
     pair = evidence_pair(committed) if committed is not None else clause.evidence
     source = with_slots(source, slots, pair=pair)
-    if surface_open and tuple(pair) == (0., 0.):
-        source = question(source, slots)
+    if tuple(pair) == (0., 0.):
+        source = with_slots(source, slots, pair=(0., 0.), source_evidence=(0., 0.))
     result = from_closing(source, evidence=pair)
     if committed is not None:
         data = bindings(result)
@@ -98,7 +99,7 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         if event is not None and clause.identity.get('case_value') is not None:
             from TimelineRead import phase_request
             result = phase_request(result, clause.identity['case_value'])
-    return result if needs_episode(result) else None
+    return result
 
 
 def absence(model, row, observed, image=None):
@@ -130,17 +131,16 @@ def absence(model, row, observed, image=None):
 
 
 def close(model, fields, *, sentence, ready, score=None, images=None):
-    """Exactly one root episode per open closing, then the presented binding."""
+    """Offer one root episode at every close, then retain its presented binding."""
     results = []
     for row in ready:
         field = fields[row]
-        if field.query is None:
+        if not has_open_slots(field.query if field.query is not None else field.meaning):
             absence(model, row, field.meaning, None if images is None else images.get(row))
-            continue
         previous = getattr(model, '_thought_image', None)
         model._thought_image = None if images is None else images.get(row)
         try:
-            result = model.run_selected_thought(field.query, row=row,
+            result = model.run_selected_thought(field.query if field.query is not None else field.meaning, row=row,
                 work_budget=getattr(model, 'attention_budget', 32),
                 score=None if score is None else lambda result,row=row:score(row,result))
         finally:
@@ -150,7 +150,7 @@ def close(model, fields, *, sentence, ready, score=None, images=None):
                 model._thought_image = previous
         results.append((row, result))
         fields[row] = replace(field, thought_completed=True)
-        if not open_slots(result.meaning):
+        if result.records and not open_slots(result.meaning):
             # The answer is the binding; retain the original source field's
             # address separately from the newly concluded inference.
             if int(result.meaning.role_mask.sum()) in (1, 3):

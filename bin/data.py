@@ -996,8 +996,9 @@ class Data():
                           self._what_split_values(question.split, "output"))
                 value = self._what_value_at(
                     values, question.where, split=question.split, role="output")
-                if value is None:
-                    return WhatAnswer.unavailable(question, "this sentence has no supplied answer")
+                if (value is None or isinstance(value, (str, bytes, list, tuple)) and len(value) == 0
+                        or torch.is_tensor(value) and value.numel() == 0):
+                    return WhatAnswer.silence(question)
                 return WhatAnswer(
                     question=question, what=value, provenance="data",
                     source_where=question.where)

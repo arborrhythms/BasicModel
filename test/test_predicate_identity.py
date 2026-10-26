@@ -6,7 +6,7 @@ from ClauseRow import predicate_identity
 from reading_fixtures import finish_reading
 from Language import Grammar
 from Queries import GrammaticalThoughtRegistry
-from Understanding import AnswerProgram
+from Understanding import Reading
 from test_cs_symbol_table import _cs
 from test_clause_acceptance import SentenceFixture
 from test_sentence_identity import inventory
@@ -18,8 +18,12 @@ def test_closing_and_registry_share_predicate(monkeypatch, relation, component):
     f = SentenceFixture(monkeypatch)
     tree = (('part', 'cat', 'animal') if relation == 'part' else
             ('implies', ('lift', 'cat', 'runs'), ('lift', 'dog', 'sleeps')))
-    row = f.store.write_clause(f.clause(tree))
-    stored = f.store.meaning_of(row)
+    clause = f.clause(tree)
+    written = {}
+    row = f.store.write_clause(clause, written_rows=written)
+    # The predicate belongs to the live grammatical view; the stored pair
+    # has only its two tagged operands.
+    stored = written['meaning', id(clause)]
     reference = f.registry.clause_reference(relation)
     if component == 'reference':
         assert stored.role_refs[1] == reference == ('sym', predicate_identity(relation))
@@ -74,9 +78,9 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     right = f.store.write_clause(f.clause(('lift', 'dog', 'sleeps')))
     reference = f.registry.clause_reference(relation)
     point = f.registry._payload(reference)
-    leaves = torch.stack((f.store.slots[left, 0], point, f.store.slots[right, 0]))
+    leaves = torch.stack((f.store.slots[left], point, f.store.slots[right]))
     refs = torch.tensor([int(f.store.row_ids[left]), reference[1], int(f.store.row_ids[right])])
-    entry = AnswerProgram(rows=torch.full((3,), -1), word_rows=torch.full((3,), -1),
+    entry = Reading(rows=torch.full((3,), -1), word_rows=torch.full((3,), -1),
         word_ids=torch.full((3,), -1), activations=torch.ones(3), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [0, -1, 2]]),
         targets=torch.tensor([-1]), end_state=leaves, concept_ids=refs)
@@ -86,8 +90,10 @@ def test_first_three_slot_predicate_occurrence(monkeypatch, relation, use_regist
     assert f.store.parts.refs.shape[-1] == 2
     arguments = f.store.row(row)['refs'].tolist()
     assert reference[1] not in arguments
-    for role, argument, source in zip((0, 2), arguments, (left, right)):
-        retained = f.store.raw_meaning_of(source)
-        assert retained.role_refs[0] == ('sym', argument)
-        torch.testing.assert_close(retained.roles[0], leaves[role])
+    from LTM1 import OCCURRENCE
+    assert f.store.parts.ref_kinds[row[1]].tolist() == [OCCURRENCE, OCCURRENCE]
+    assert arguments == [int(f.store.address_keys[source]) for source in (left, right)]
+    for role, source in zip((0, 2), (left, right)):
+        torch.testing.assert_close(f.store.slots[source], leaves[role])
+    assert dict(f.cs._csw_rows) == before
     assert f.cs._csw_row_of(reference[1]) is None

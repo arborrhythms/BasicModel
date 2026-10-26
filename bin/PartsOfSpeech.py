@@ -97,7 +97,10 @@ class PartsOfSpeech(nn.Module):
             if not 0 <= local < len(rules):
                 raise ValueError('occupation journal has an invalid operation')
             rule = rules[local]
-            if kind == 2:
+            field_bind = kind == 1 and rule.method_name == 'bind'
+            if field_bind:
+                position = 0
+            if kind == 2 or field_bind:
                 if not 0 <= position < len(stack):
                     raise ValueError('occupation journal has an invalid unary position')
                 at = len(stack) - 1 - position
@@ -117,7 +120,7 @@ class PartsOfSpeech(nn.Module):
             for i, carried in enumerate(results):
                 for word in carried:
                     self.add(word, f'{name}_argout{i+1}')
-            if kind == 2:
+            if kind == 2 or field_bind:
                 stack[at] = results[0]
             else:
                 stack[-2:] = results
@@ -160,7 +163,7 @@ def update_flow(words, choice, binary_flow, unary_flow):
         selected = (words[:, 1:2] * ((mask & 1) != 0)[:, None, None]
                     + words[:, :1] * ((mask & 2) != 0)[:, None, None])
         folded = torch.cat((selected, words[:, 2:], torch.zeros_like(words[:, :1])), 1)[:, :K]
-        result = torch.where((choice.applied & (choice.kind == 1))[:, None, None], folded, words)
+        result = torch.where((choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True))[:, None, None], folded, words)
         swapped = torch.cat((words[:, :2].flip(1), words[:, 2:]), 1)
         result = torch.where((choice.applied & (choice.kind == 3))[:, None, None], swapped, result)
     if unary_flow:

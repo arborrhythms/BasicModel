@@ -1,4 +1,4 @@
-"""Document-relative addresses, re-witnessing, and lossless reference migration."""
+"""Document-relative addresses, re-witnessing, and versioned layout checkpoints."""
 import copy
 import json
 from pathlib import Path
@@ -14,7 +14,7 @@ from Occurrence import address_key, document_digest, sentence_key
 
 
 def meaning(value=1.):
-    return ConceptualMeaning.from_description(torch.full((4,), float(value)))
+    return ConceptualMeaning.from_description(torch.full((12,), float(value)))
 
 
 def write(store, document='book', position=0, value=1., evidence=(0., 0.)):
@@ -31,7 +31,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
               'sentence_key((b"the",b"cat"))))')
     assert key == int(subprocess.check_output([sys.executable, '-c', source], text=True))
     assert torch.equal(rng, torch.get_rng_state())
-    left, right = LTM0(4, 8), LTM0(4, 8)
+    left, right = LTM0(12, 8, percept_width=8), LTM0(12, 8, percept_width=8)
     a, b = write(left), write(right)
     assert left.occurrence_of(a) == right.occurrence_of(b)
     assert not {'occurrence_id', '_next_occurrence', '_occurrence_namespace'} & set(left.state_dict())
@@ -39,7 +39,7 @@ def test_address_is_full_int64_content_based_and_rng_independent():
 
 
 def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
-    store = LTM0(4, 4)
+    store = LTM0(12, 4, percept_width=8)
     for epoch in range(400):
         for row in range(4):
             assert write(store, ('xor', row), value=epoch + 1.) == row
@@ -52,23 +52,23 @@ def test_four_occurrences_after_four_hundred_presentations_and_full_upsert():
 
 
 def test_rereading_replaces_vectors_refreshes_time_and_joins_poles():
-    store = LTM0(4, 4)
+    store = LTM0(12, 4, percept_width=8)
     row = write(store, value=2., evidence=(.8, .1))
-    band = store.when[row].clone()
+    band = store.entry_when(row).clone()
     assert write(store, value=3., evidence=(.2, .7)) == row
-    torch.testing.assert_close(store.slots[row, 0], torch.full((4,), 3.))
+    torch.testing.assert_close(store.slots[row, :4], torch.full((4,), 3.))
     assert store.row(row)['evidence'] == pytest.approx((.8, .7))
     assert int(store.witness_count[row]) == 2
-    assert torch.equal(band, store.when[row])
+    assert torch.equal(band, store.entry_when(row))
     assert write(store, 'other-document') == 1
     assert write(store, position=1) == 2
     assert list(store._index_occurrences) == store.address_keys[:3].tolist()
 
 
 def test_full_store_can_rewitness_both_existing_prediction_pair_addresses():
-    store = LTM0(4, 2)
+    store = LTM0(12, 2, percept_width=8)
     from meaning_fixtures import symbol_prediction, estimate_meaning
-    predicted = estimate_meaning(symbol_prediction(torch.ones(1,4), torch.full((1,2),.5)))
+    predicted = estimate_meaning(symbol_prediction(torch.ones(1,12), torch.full((1,2),.5)))
     arguments = dict(presence_logits=torch.zeros(3), document='turn')
     first = store.append_expectation_pair(predicted, meaning(1.), **arguments)
     assert first == (0, 1) and len(store) == store.capacity
@@ -88,7 +88,7 @@ def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
 
 
 def test_references_and_content_keys_survive_compaction_and_checkpoint():
-    store = LTM0(4, 8)
+    store = LTM0(12, 8, percept_width=8)
     removed = write(store, 'discard')
     store.set_origin(removed, store.ORIGIN_USER)
     source = write(store, 'kept')
@@ -100,55 +100,32 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
     assert store._index_occurrences[reference] == 0
     assert store.meaning_of(1).role_refs[0] == reference
     assert not hasattr(store, 'refs')
-    restored = LTM0(4, 8)
+    restored = LTM0(12, 8, percept_width=8)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     restored.load_semantic_extras(copy.deepcopy(store.semantic_extras()))
     assert restored._index_occurrences[reference] == 0
     assert restored.content_key(0) == sentence_key((b'the', b'cat'))
 
 
-def test_legacy_checkpoint_rekeys_native_and_typed_edges():
-    store = LTM0(4, 8)
-    source = write(store)
-    child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
-                             role_refs=(store.occurrence_of(source), None, None))
-    target = store.append_meaning(child, kind='observation', document_key='child')
-    state, extras = copy.deepcopy(store.state_dict()), copy.deepcopy(store.semantic_extras())
-    namespace = '1234567890abcdef1234567890abcdef'
-    old_ref = ('ltm', namespace, 0)
-    extras['version'], extras['namespace'] = 4, namespace
-    for i, record in enumerate(extras['records']):
-        record['id'] = i
-        if i == target:
-            record['context']['role_refs'] = (old_ref, None, None)
-        state['semantic_fingerprint'][i] = torch.tensor(store._context_fingerprint(
-            record['context'], record['text'], record['expectation']), dtype=torch.uint8)
-    for name in ('address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index', 'witness_count'):
-        state.pop(name)
-    state['occurrence_id'] = torch.tensor([0, 1, -1, -1, -1, -1, -1, -1])
-    state['_next_occurrence'] = torch.tensor(2)
-    state['_occurrence_namespace'] = torch.tensor(list(bytes.fromhex(namespace)), dtype=torch.uint8)
-    state['row_ids'][:2] = torch.tensor([2**62, 2**62 + 1])
-    state['refs'] = torch.full((store.capacity, 3), -1, dtype=torch.long)
-    state['refs'][target, 0] = 2**62
-    state['stream'] = torch.zeros(store.capacity,2,dtype=torch.bool)
-    state['stream'][0,0] = state['stream'][1,1] = True
-    restored = LTM0(4, 8)
-    restored.load_state_dict(state)
-    restored.load_semantic_extras(extras)
-    reference = restored.occurrence_of(0)
-    assert restored.meaning_of(1).role_refs[0] == reference
-    assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
-    assert restored.stream[:2].tolist() == [[True, False], [False, True]]
-    assert restored.remap_legacy_references({'history': (old_ref,)}) == {'history': (reference,)}
-    from Spaces import WhenEncoding
-    encoder = WhenEncoding(n_when=4).set_capacity(8)
-    assert encoder.decode_index(restored.when[:2]).tolist() == [0, 1]
+def test_pre_layout_checkpoint_is_rejected_without_migration():
+    store = LTM0(12, 8, percept_width=8)
+    write(store)
+    state = copy.deepcopy(store.state_dict())
+    state['truth_schema'].fill_(10)
+    restored = LTM0(12, 8, percept_width=8)
+    before = copy.deepcopy(restored.state_dict())
+    with pytest.raises(ValueError, match='layout checkpoint version'):
+        restored.load_state_dict(state)
+    for name, value in before.items():
+        torch.testing.assert_close(restored.state_dict()[name], value, rtol=0, atol=0)
 
 
 def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
     from test_mm_xor import _fresh_model
     model, _, data = _fresh_model('data/XOR_grammar.xml')
+    from test_definition_rows import admit
+    for form in ('hello', 'world', 'there', 'loving'):
+        admit(model, form)
     try:
         optimizer = model.getOptimizer(lr=.01)
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
@@ -158,7 +135,7 @@ def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
         expected = {sentence_key(tuple(text.split())) for text in
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
         assert {store.content_key(int(row)) for row in rows} == expected
-        addresses, bands = store.address_keys[rows].clone(), store.when[rows].clone()
+        addresses, bands = store.address_keys[rows].clone(), torch.stack([store.entry_when(int(row)) for row in rows]).clone()
         covers = {store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
                   if store.row(i)['kind'] == 'cover'}
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
@@ -171,7 +148,7 @@ def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
         assert len(covers) == 4
         rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
         assert torch.equal(store.address_keys[rows], addresses)
-        assert not torch.equal(store.when[rows], bands)
+        assert not torch.equal(torch.stack([store.entry_when(int(row)) for row in rows]), bands)
         assert store.witness_count[:len(store)].tolist() == [1] * len(store)
     finally:
         model.End()
@@ -180,7 +157,7 @@ def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
 def test_thought_references_are_source_addresses_not_history_counters():
     from Layers import WhatInteractionMemory
     first, second = WhatInteractionMemory(), WhatInteractionMemory()
-    question = ConceptualMeaning(meaning().roles, meaning().role_mask, mode='interrogative')
+    question = ConceptualMeaning(meaning().roles, meaning().role_mask, sentence_kind='relation')
     for owner in (first, second):
         owner._address_sources = {0: (('conversation', 'alice', 7), 0)}
     left = first.begin_thought_episode(question)
@@ -246,7 +223,7 @@ def test_prepared_dataset_value_retains_its_source_after_cursor_advances():
 
 def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
     from reasoning import TruthGroundedReasoner
-    store = LTM0(4, 2)
+    store = LTM0(12, 2, percept_width=0)
     value = meaning()
     row = store.append_meaning(value, kind='fact', evidence=(.8, 0.))
     assert store.append_meaning(value, kind='fact', evidence=(0., .9)) == row
@@ -257,20 +234,14 @@ def test_rewitness_keeps_poles_and_the_round3a_net_existence_read():
     assert len(result['candidates']) == 1
 
 
-def test_checkpoint_can_grow_capacity_without_changing_an_address():
-    source = LTM0(4, 2)
+def test_checkpoint_rejects_a_different_constructed_capacity():
+    source = LTM0(12, 2, percept_width=8)
     write(source, 'one', position=1)
     write(source, 'two', position=1)
-    restored = LTM0(4, 8)
-    restored.load_state_dict(copy.deepcopy(source.state_dict()))
-    restored.load_semantic_extras(copy.deepcopy(source.semantic_extras()))
-    assert restored.capacity == 8 and len(restored) == 2
-    assert restored.occurrence_of(1) == source.occurrence_of(1)
-    from RowTime import encoder
-    torch.testing.assert_close(restored.when[:2], source.when[:2], rtol=0, atol=0)
-    assert encoder().decode_index(restored.when[:2]).tolist() == [0, 1]
-    assert write(restored, 'three') == 2
-    assert int(encoder().decode_index(restored.when[2])) == 2
+    restored = LTM0(12, 8, percept_width=8)
+    with pytest.raises(ValueError, match='capacity/width'):
+        restored.load_state_dict(copy.deepcopy(source.state_dict()))
+    assert restored.capacity == 8 and not len(restored)
 
 
 def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
@@ -285,7 +256,7 @@ def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
 
 
 def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
-    store = LTM0(4, 2)
+    store = LTM0(12, 2, percept_width=8)
     row = write(store)
     before = copy.deepcopy(store.state_dict())
     reference = store.occurrence_of(row)
@@ -294,7 +265,8 @@ def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
     kept = store.append_meaning(value, kind='observation', document_key='book',
         content_key=sentence_key((b'the', b'cat')))
     assert kept == row and store.meaning_of(row).role_refs[0] == reference
-    assert store.read_structure(reference)['incomplete'] == ('cycle',)
+    # The self identity is a binding, not a composing cycle.
+    assert store.read_structure(reference)['incomplete'] == ()
     for name in ('c_plus', 'c_minus'):
         torch.testing.assert_close(store.state_dict()[name], before[name], rtol=0, atol=0)
 

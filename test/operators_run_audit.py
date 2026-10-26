@@ -30,7 +30,7 @@ def storage_snapshot(model):
         sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
         content_keys=[store.content_key(int(row)).hex() for row in sentences],
         witness_counts=store.witness_count[sentences].detach().cpu().tolist(),
-        when=store.when[sentences].detach().cpu().tolist(),
+        when=torch.stack([store.entry_when(int(row)) for row in sentences]).detach().cpu().tolist(),
         all_witness_counts=store.witness_count[:n].detach().cpu().tolist())
 
 

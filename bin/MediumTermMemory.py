@@ -41,6 +41,8 @@ class Token:
     native: int | None = None
     pending: bool = False
     symbol: int | None = None
+    transient: int | None = None
+    where: torch.Tensor | None = None
 
     @property
     def value(self):
@@ -60,11 +62,11 @@ class MediumTermMemory:
     """An introducing occurrence owns one value; names share that identity.
 
     Mutation belongs to a kept close. The pool ends the sentence's graph;
-    trial-local values live in the numerical identity overlay instead.
+    trial-local values live in the shared STM chunks.
     Mention membership, used by the settled-join guard, excludes events.
     """
 
-    def __init__(self, capacity=64, horizon=16):
+    def __init__(self, capacity=64, horizon=16, *, n_vectors=1):
         if capacity < 1:
             raise ValueError('mtmCapacity must be positive')
         if type(horizon) is not int or horizon < 1:
@@ -74,6 +76,42 @@ class MediumTermMemory:
         self.closes, self.accesses = {}, {}
         self.entries = {}
         self.names = {}
+        # One reserved id for each possible unpromoted MTM token. These lie
+        # beyond nVectors, never in the codebook, and are reused only after
+        # their owner expires or acquires a durable symbol.
+        self.transient_ids = torch.arange(int(n_vectors), int(n_vectors)+self.capacity, dtype=torch.long)
+        self.transient_used = torch.zeros(self.capacity, dtype=torch.bool)
+
+    def _allocate_id(self, requested=None):
+        available = ~self.transient_used
+        if requested is not None:
+            available &= self.transient_ids == int(requested)
+        seats = available.nonzero().flatten()
+        if not len(seats):
+            raise RuntimeError('identity transient id pool exhausted or requested id already in use')
+        index = int(seats[0])
+        self.transient_used[index] = True
+        return int(self.transient_ids[index])
+
+    def _release_id(self, entry):
+        if entry.transient is not None:
+            self.transient_used[self.transient_ids == entry.transient] = False
+
+    @staticmethod
+    def _where(where, previous=None):
+        if where is None:
+            return torch.zeros(4) if previous is None else previous.detach().clone()
+        if not torch.is_tensor(where) or where.shape != (4,) or not torch.isfinite(where).all():
+            raise ValueError('identity where requires four finite percept coordinates')
+        return where.detach().clone()
+
+    def promote(self, token, symbol):
+        key = self.token_of(token)
+        if key is None:
+            raise ValueError('promotion requires a retained token')
+        entry = self.entries[key]
+        self._release_id(entry)
+        self.entries[key] = replace(entry, symbol=int(symbol), transient=None)
 
     @staticmethod
     def _value(value):
@@ -87,7 +125,7 @@ class MediumTermMemory:
         if name is not None:
             return name.token
         if isinstance(occurrence, int):
-            candidates = [key for key, entry in self.entries.items() if occurrence in (entry.native, entry.symbol)]
+            candidates = [key for key, entry in self.entries.items() if occurrence in (entry.native, entry.symbol, entry.transient)]
             return candidates[0] if len(candidates) == 1 else None
         return next((key for key, entry in self.entries.items()
                      if any(event.occurrence == occurrence and event.role == 0
@@ -101,7 +139,7 @@ class MediumTermMemory:
         token = self.token_of(reference)
         return None if token is None else self.entries[token].value
 
-    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None):
+    def open(self, occurrence, *, kind, when, value, reading=None, native=None, pending=None, where=None, transient=None):
         value = self._value(value)
         pending = kind is None if pending is None else pending
         if type(pending) is not bool or (pending and kind is not None):
@@ -112,22 +150,24 @@ class MediumTermMemory:
             entry = self.entries[occurrence]
             self.entries[occurrence] = entry.with_actual(count=entry.count + 1,
                 when=when, value=torch.maximum(entry.value.to(value), value),
-                pending=entry.pending and pending)
+                pending=entry.pending and pending, where=self._where(where, entry.where))
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
         if len(self.entries) >= self.capacity:
             # Capacity retires an identity, not the occurrence row that may
             # still witness an event owned by another retained identity.
             self._detach(min(self.entries, key=lambda key: self.entries[key].when))
-        self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),), native=native, pending=pending)
+        identity = self._allocate_id(transient)
+        self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),),
+            native=native, pending=pending, transient=identity, where=self._where(where))
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
 
-    def bind(self, antecedent, occurrence, *, kind, when, value=None, reading=None):
+    def bind(self, antecedent, occurrence, *, kind, when, value=None, reading=None, where=None):
         token = self.token_of(antecedent)
         if token is None:
             # Losing track does not resurrect an evicted introduction.
-            return self.open(occurrence, kind=kind, when=when, value=value, reading=reading)
+            return self.open(occurrence, kind=kind, when=when, value=value, reading=reading, where=where)
         if self.token_of(occurrence) != token:
             self._detach(occurrence)
         entry = self.entries[token]
@@ -138,7 +178,7 @@ class MediumTermMemory:
         self.entries[token] = entry.with_actual(occurrences=uses,
             kind=kind if entry.kind is None else entry.kind,
             pending=entry.pending and kind is None,
-            count=entry.count + 1, when=when, value=joined)
+            count=entry.count + 1, when=when, value=joined, where=self._where(where, entry.where))
         previous = self.names.get(occurrence)
         self.names[occurrence] = Name(token, previous.reading if reading is None and previous else reading)
         return token
@@ -206,6 +246,7 @@ class MediumTermMemory:
         if name is not None:
             token, entry = name.token, self.entries[name.token]
             if token == occurrence:
+                self._release_id(entry)
                 del self.entries[token]
                 self.accesses.pop(token, None)
                 for address in entry.occurrences:
@@ -245,6 +286,7 @@ class MediumTermMemory:
         for stream, clock in self.accesses.pop(source, {}).items():
             retained = self.accesses.setdefault(target, {})
             retained[stream] = max(clock, retained.get(stream, 0))
+        self._release_id(previous)
         del self.entries[source]
         return target
 
@@ -293,11 +335,12 @@ class MediumTermMemory:
                 snapshot(event.before), snapshot(event.basis), event.taught,
                 snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught,
                 snapshot(event.case_value))
-        return dict(version=7, closes=tuple(self.closes.items()),
+        return dict(version=8, transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
+            closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
             entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when,
-            native=entry.native, pending=entry.pending, symbol=entry.symbol,
+            native=entry.native, pending=entry.pending, symbol=entry.symbol, transient=entry.transient, where=snapshot(entry.where),
             timelines=tuple((tuple(map(event_state, timeline.events)), snapshot(timeline.value))
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
@@ -307,9 +350,14 @@ class MediumTermMemory:
         if state is None:
             self.entries, self.names = {}, {}
             self.closes, self.accesses = {}, {}
+            self.transient_used.zero_()
             return
-        if not isinstance(state, dict) or state.get('version') not in (1, 2, 3, 4, 5, 6, 7):
-            raise ValueError('unsupported identity checkpoint')
+        if not isinstance(state, dict) or state.get('version') != 8:
+            raise ValueError('identity checkpoint requires transient pool version 8')
+        ids, used = state.get('transient_ids'), state.get('transient_used')
+        if (not torch.is_tensor(ids) or ids.dtype != torch.long or not torch.equal(ids.cpu(), self.transient_ids)
+                or not torch.is_tensor(used) or used.dtype != torch.bool or used.shape != self.transient_used.shape):
+            raise ValueError('identity transient pool disagrees with construction')
         if state['version'] >= 6 and 'documents' in state:
             raise ValueError('identity checkpoint contains retired document provenance')
         def address(value):
@@ -317,6 +365,9 @@ class MediumTermMemory:
                     and isinstance(value[1], str) and type(value[2]) is int)
         def symbol(value):
             return value is None or type(value) is int and value > 0
+        def sentence(value):
+            return address(value) or (isinstance(value, tuple) and len(value) == 2
+                and value[0] == 'sym' and type(value[1]) is int and value[1] > 0)
         if not all(isinstance(state.get(field), (tuple, list)) for field in ('entries', 'names')):
             raise ValueError('identity checkpoint requires entries and names')
         entries, names = {}, {}
@@ -376,13 +427,14 @@ class MediumTermMemory:
                     modifiers=tuple(self._value(item).to(value) for item in event.modifiers),
                     basis=self._value(event.basis).to(value) if torch.is_tensor(event.basis) else event.basis)
                     for event in events)
-                if (any(not address(event.occurrence) or event.role not in (0, 2) or
+                if (any(not sentence(event.occurrence) or event.role not in (0, 2) or
                         type(event.verb) is not int or event.verb <= 0 or type(event.when) is not int
                         for event in events) or len({(event.occurrence, event.role) for event in events}) != len(events)):
                     raise ValueError('invalid identity checkpoint event')
                 timelines.append(Timeline(events, value))
             entries[key] = Token(uses, record['kind'], record['count'], record['when'],
-                                 tuple(timelines), record['native'], pending, record.get('symbol'))
+                                 tuple(timelines), record['native'], pending, record.get('symbol'),
+                                 record.get('transient'), self._where(record.get('where')))
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
@@ -406,5 +458,12 @@ class MediumTermMemory:
                         type(clock) is not int or not 0 <= clock <= clocks[stream]
                         for stream, clock in value.items()) for key, value in accesses.items())):
                 raise ValueError('invalid identity checkpoint expiry metadata')
+        claimed = [entry.transient for entry in entries.values() if entry.symbol is None]
+        if (any(type(identity) is not int or identity not in self.transient_ids.tolist() for identity in claimed)
+                or len(claimed) != len(set(claimed))
+                or any(entry.transient is not None for entry in entries.values() if entry.symbol is not None)
+                or not torch.equal(used.cpu(), torch.tensor([int(identity) in claimed for identity in self.transient_ids]))):
+            raise ValueError('identity checkpoint transient assignments are inconsistent')
+        self.transient_used.copy_(used.cpu())
         self.entries, self.names = entries, names
         self.closes, self.accesses = clocks, accesses

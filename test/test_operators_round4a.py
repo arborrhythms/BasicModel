@@ -50,51 +50,21 @@ def test_content_address_is_independent_of_store_and_persists_with_occurrences()
     assert restored.content_key(0) == keys[0]
 
 
-def test_one_presentation_bootstraps_detached_context_and_exact_gate_certificate():
-    configuration = 'XOR_grammar'
+def test_one_presentation_updates_detached_context_at_the_close():
     from test_mm_xor import _fresh_model
-    from MereologicalCodes import occurrence_memberships
-    from PartRead import occurrence_roots, occurrence_codes
-    from MeaningCodes import defined_code, certificate
-    model, _, _ = _fresh_model(f'data/{configuration}.xml')
+    model, _, _ = _fresh_model('data/XOR_grammar.xml')
     try:
         with torch.no_grad():
             model.forward(model.inputSpace.prepInput(['hello world','hello there','loving world','loving there']))
-        owner = model._concept_owner()
-        derived = owner.similarity_codebook.mereology
+        derived = model._concept_owner().similarity_codebook.mereology
         assert derived.context_width == 128 and derived.meaning_pairs == 64 and derived.meaning_ones == 3
-        assert not derived._context  # snapshot predates this first presentation
-        store = owner._closed_clause_store()
-        records = occurrence_roots(owner, store)
-        rows = list(range(len(records)))
-        assert len(rows) == 8
-        assert sum(store.row(i)['kind'] == 'cover' for i in range(len(store))) == 4
-        codes = occurrence_codes(records, 64, 3, store.slots)
-        context = derived.occurrence_terms()
-        postings = occurrence_memberships(owner, store)
-        extents, values = [], []
-        for word, (n, value) in sorted(context.items()):
-            containing = sorted(set(rows) & postings[word])
-            weights = torch.stack([records[r]['weight'] for r in containing])
-            expected = (torch.stack([codes[r] for r in containing])*weights[:,None]).sum(0)/weights.sum()
-            expected = defined_code(expected, len(containing))
-            torch.testing.assert_close(value[:64],expected)
-            assert not value[64:].any() and not value.requires_grad and n == len(containing)
-            extents.append({rows.index(r) for r in containing}); values.append(value.numpy())
-        # Covers are referents, outside this proposition truth certificate.
-        # An LTM1-only close has no LTM0 location and remains a proposition.
-        sentences = []
-        for i, record in enumerate(records):
-            location = store.location(record['address'])
-            if location is None or store.row(location)['kind'] != 'cover':
-                sentences.append(i)
-        positions = {row: i for i, row in enumerate(sentences)}
-        report = certificate(np.stack(values),
-            torch.stack([codes[r] for r in sentences]).numpy(),
-            [{positions[r] for r in extent if r in positions} for extent in extents])
-        assert report['exact'] and report['distinct_meanings'] == report['words'] == 4
+        context = derived.context_audit()
+        assert len(context) == 4
+        for record in context:
+            assert record['placement_witnesses'] == 2 and record['direction_norm'] == pytest.approx(1.)
+            assert not derived.placement.requires_grad
         derived.begin_forward()
-        assert len(derived._context) == 4 and not list(derived.parameters())
+        assert len(derived.context_audit()) == 4 and not list(derived.parameters())
     finally:
         model.End(); model.symbolSpace.soft_reset()
 
@@ -225,40 +195,3 @@ def test_live_trial_predictor_has_one_kept_target_step(monkeypatch):
         assert optimizer.state[parameter]['step']==1
     finally:
         model.End();model.symbolSpace.soft_reset()
-
-
-def test_occurrence_membership_recency_def_exclusion_and_snapshot_are_preserved(monkeypatch):
-    from Layers import LTM0
-    from Meaning import ConceptualMeaning
-    from MereologicalCodes import MereologicalCodes
-    from MeaningCodes import defined_code
-    from dataclasses import replace
-    from test_clause_acceptance import SentenceFixture
-    f = SentenceFixture(monkeypatch)
-    owner, store = f.cs, f.store
-    a, b = f.noun('a'), f.noun('b')
-    first = store.parts.add(a, b, truth_plus=1.)
-    second = store.parts.add(b, a, truth_plus=1.)
-    derived=MereologicalCodes(owner,torch.zeros(2,20),percept_width=4,percept_event_width=4)
-    # Two absolute occurrences and a three-role pending description. A DEF
-    # is a Part edge and cannot enter the LTM1 occurrence bootstrap.
-    for i in range(3):
-        from Occurrence import sentence_key
-        meaning = (replace(ConceptualMeaning.from_description(torch.full((8,), i/3)),
-                role_refs=(('sym', (first, second)[i]), None, None))
-            if i < 2 else ConceptualMeaning(torch.full((3,8), .5), torch.ones(3,dtype=torch.bool)))
-        row=store.append_meaning(meaning,
-            content_key=sentence_key([str(i).encode()]), document_key='fixture', sentence_index=i)
-    # Neither inverse postings nor the composed slot supply membership.
-    store._leaf_postings.clear()
-    terms=derived.occurrence_terms()
-    arow, brow = owner._csw_row_of(a), owner._csw_row_of(b)
-    assert set(terms)=={arow,brow} and terms[arow][0]==2
-    codes=torch.stack([store.identity_code(r,8,derived.meaning_ones) for r in [0,1]])
-    assert not torch.equal(codes[0],codes[1])
-    weights=store.recency_weights()[:2]
-    expected=(codes*weights[:,None]).sum(0)/weights.sum()
-    expected=defined_code(expected, 2)
-    torch.testing.assert_close(terms[arow][1],torch.cat((expected,torch.zeros(8))))
-    store.slots[:,0,4:]=99. # composed meanings cannot feed their own bootstrap
-    torch.testing.assert_close(derived.occurrence_terms()[arow][1],terms[arow][1])

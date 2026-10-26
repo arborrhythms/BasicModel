@@ -7,7 +7,8 @@ import torch
 
 from Layers import LTM0
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, evidence_pair, fill, open_slots, question
+from ThoughtReferences import bindings, evidence_pair, fill, open_slots, with_slots
+from meaning_fixtures import unsupported as question
 from ThoughtStream import write
 
 
@@ -54,10 +55,13 @@ def test_fill_rebases_into_nonempty_goal_and_keeps_nested_ownership():
     assert goal.constituents == (existing,) and goal.role_refs[0] is None
     store = LTM0(4, capacity=8)
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
-    index = write(model, resolved, row=0)
+    idea = replace(atom(), role_refs=(resolved.role_refs[0],None,None),
+        constituents=resolved.constituents, scope=(('existing',resolved.role_refs[2]),))
+    idea = with_slots(idea, (), pair=evidence_pair(resolved))
+    index = write(model, idea, row=0)
     assert len(store) == 4
     root = store.meaning_of(index)
-    assert root.role_refs[2] == store.occurrence_of(0)
+    assert root.scope == (('existing',store.occurrence_of(0)),)
     assert root.role_refs[0] == store.occurrence_of(2)
     assert store.meaning_of(2).role_refs[0] == store.occurrence_of(1)
     assert store.meaning_of(2).scope == (('child', store.occurrence_of(1)),)

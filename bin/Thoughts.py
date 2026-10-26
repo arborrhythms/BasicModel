@@ -35,6 +35,7 @@ class ThoughtRecord:
     semantic_delta: float = 0.0
     result: ThoughtResult | None = None
     address: int | None = None
+    opened_by_chooser: bool = False
 
     def __post_init__(self):
         for name in ("id", "episode", "level", "cost", "budget"):
@@ -53,10 +54,11 @@ class ThoughtRecord:
             raise TypeError("thought content requires a complete ConceptualMeaning")
         if self.kind in ("begin", "thought", "descend") and self.meaning is None:
             raise ValueError("thought content cannot be empty")
-        from ThoughtReferences import needs_episode
-        if self.kind in ("begin", "descend") and not needs_episode(self.meaning):
+        from ThoughtReferences import has_open_slots
+        if self.kind in ("begin", "descend") and not (has_open_slots(self.meaning)
+                or (self.kind == "begin" and self.opened_by_chooser)):
             raise ValueError(
-                "a thinking context requires a free variable or an unsupported interrogative region"
+                "a thinking context requires an open slot or a chooser-opened root"
             )
         for name in ("support_true", "support_false"):
             value = float(getattr(self, name))
@@ -487,7 +489,7 @@ class LevelledThoughtHistory:
             self._episode_live[b].extend(stored)
         return stored[0]
 
-    def begin_thought_episode(self, meaning, *, b=0, work_budget=32):
+    def begin_thought_episode(self, meaning, *, b=0, work_budget=32, opened_by_chooser=False):
         b = self._thought_row(b)
         state = self.thought_state(b=b)
         if state is not None and not state.finished:
@@ -504,7 +506,8 @@ class LevelledThoughtHistory:
             raise ValueError("thought work budget must be a non-negative integer")
         identifier = self._thought_next_id
         record = ThoughtRecord(
-            identifier, identifier, "begin", 0, meaning, budget=work_budget
+            identifier, identifier, "begin", 0, meaning, budget=work_budget,
+            opened_by_chooser=opened_by_chooser
         )
         events = [record]
         if work_budget == 0:
@@ -682,7 +685,7 @@ class LevelledThoughtHistory:
                 values.append(value)
             rows.append(values)
         return {
-            "version": 4,
+            "version": 5,
             "namespace": self._thought_namespace,
             "next_id": self._thought_next_id,
             "batch": self.batch,
@@ -691,9 +694,8 @@ class LevelledThoughtHistory:
 
     def load_thought_extras(self, extras):
         """Validate every row before restoring history; rebuild context by replay."""
-        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4):
+        if not isinstance(extras, dict) or extras.get("version") != 5:
             raise ValueError("unsupported thought history checkpoint")
-        version = extras["version"]
         rows = extras.get("rows")
         batch = extras.get("batch")
         if (
@@ -703,34 +705,9 @@ class LevelledThoughtHistory:
             or len(rows) != batch
         ):
             raise ValueError("invalid thought history rows")
-        from Occurrence import ADDRESS_DOMAIN, address_key, document_digest, native_content_key, sentence_key
+        from Occurrence import ADDRESS_DOMAIN
         namespace = extras.get('namespace')
-        if version < 4:
-            if not isinstance(namespace, str) or len(namespace) != 32:
-                raise ValueError('invalid thought occurrence namespace')
-            document = document_digest(('legacy-thought-checkpoint', namespace))
-            mapping = {}
-            rows = [[dict(raw) for raw in row] for row in rows]
-            for row in rows:
-                for raw in row:
-                    if 'legacy' in raw:
-                        continue
-                    content = (native_content_key(ConceptualMeaning(**raw['meaning']))
-                               if raw['meaning'] is not None else sentence_key((raw['kind'].encode(),)))
-                    key = address_key(document, int(raw['id']), content)
-                    mapping[('thought', namespace, raw['id'])] = ('thought', ADDRESS_DOMAIN, key)
-                    raw['address'] = key
-            def remap(value):
-                if isinstance(value, dict):
-                    return {key: remap(item) for key, item in value.items()}
-                if isinstance(value, (tuple, list)):
-                    if len(value) == 3 and value[0] == 'thought' and isinstance(value[1], str):
-                        return mapping.get(tuple(value), tuple(value))
-                    return type(value)(remap(item) for item in value)
-                return value
-            rows = remap(rows)
-            namespace = ADDRESS_DOMAIN
-        elif namespace != ADDRESS_DOMAIN:
+        if namespace != ADDRESS_DOMAIN:
             raise ValueError('invalid thought address format')
         counter = extras.get("next_id")
         if type(counter) is not int or counter < 0:
@@ -761,8 +738,6 @@ class LevelledThoughtHistory:
                     meaning = ConceptualMeaning(**meaning).detached()
                 raw_result = value.pop("result", None)
                 if raw_result is not None:
-                    if version < 2:
-                        raise ValueError("legacy thought checkpoint has a typed result")
                     result = ThoughtResult.from_checkpoint(raw_result)
                 else:
                     result = None

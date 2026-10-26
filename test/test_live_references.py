@@ -61,8 +61,8 @@ def test_grammar_order_resolution_survives_the_numerical_journal():
     assert field.refs[0] == 7
 
 
-@pytest.mark.parametrize('identity_state', [None, ()], ids=['ordinary', 'identity'])
-def test_existing_kind_point_is_resolved_before_the_operator(identity_state):
+@pytest.mark.parametrize('chunk_state', [None, ()], ids=['ordinary', 'identity'])
+def test_existing_kind_point_is_resolved_before_the_operator(chunk_state):
     from types import SimpleNamespace
     from ReferenceContext import prepare_operands
     value = torch.tensor([[[1., 0., 0., 0.]]])
@@ -78,7 +78,7 @@ def test_existing_kind_point_is_resolved_before_the_operator(identity_state):
     result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
                               torch.tensor([[0]]), orders=torch.tensor([[2]]),
                               rules=(), unary_rules=(rule,), bank=bank, live=None,
-                              active=torch.tensor([[True]]), identity_state=identity_state)
+                              active=torch.tensor([[True]]), chunk_state=chunk_state)
     torch.testing.assert_close(result['unary'][0, 0, 0], kind, rtol=0, atol=0)
     assert result['unary_refs'][0, 0, 0, 0] == 7
     assert result['unary_ops'] == (0,)
@@ -105,7 +105,7 @@ def test_identity_operand_keeps_order_one_and_implicit_literals(order, literal, 
                            reference_modes=() if mode is None else (('argin1', mode),))
     result = prepare_operands(value, torch.tensor([[1]]), torch.tensor([[0]]),
         torch.tensor([[0]]), orders=torch.tensor([[order]]), rules=(), unary_rules=(rule,),
-        bank=bank, live=None, active=torch.tensor([[True]]), identity_state=())
+        bank=bank, live=None, active=torch.tensor([[True]]), chunk_state=())
     torch.testing.assert_close(result['unary'][0, 0, 0],
                                typed if expected == 7 else value[0, 0], rtol=0, atol=0)
     assert result['unary_refs'][0, 0, 0, 0] == expected
@@ -137,7 +137,7 @@ def test_identity_journal_keeps_the_implicit_typed_reference_and_point(order, op
     options = prepare_operands(entry.leaves[None], entry.concept_ids[None],
         torch.zeros(1, 2, dtype=torch.long), torch.arange(2)[None], orders=orders,
         rules=(rule,), unary_rules=(), bank=bank, live=None,
-        active=torch.ones(1, 2, dtype=torch.bool), identity_state=())
+        active=torch.ones(1, 2, dtype=torch.bool), chunk_state=())
     left, right = options['left'][0, 0, 0], options['right'][0, 0, 0]
     result = (left + right) * .5
     frames = entry.leaves.new_zeros(3, 3, 4)
@@ -203,21 +203,27 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
 
     class Sum(torch.nn.Module):
         def forward(self, left, right): return left+right
-    layer = OperationSelectionLayer(d_model=4, ops=(Sum(),), chooser='mlp')
+    class Difference(torch.nn.Module):
+        def forward(self,left,right): return left-right
+    layer = OperationSelectionLayer(d_model=4, ops=(Sum(), Difference()), chooser='mlp')
     first = torch.tensor([1., 0., 0., 0.])
     second = torch.tensor([0., 0., 1., 0.])
     prior = torch.tensor([.2, .3, .4, .5])
     query = torch.nn.Parameter(prior.clone())
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
                             _tree_layer=lambda arity: layer,
-                            _compose_binary_rules=(SimpleNamespace(reference_roles=('argin1',), reference_modes=(('argin1', 'particular'),)),),
+                            _compose_binary_rules=(SimpleNamespace(reference_roles=('argin1',), reference_modes=(('argin1', 'particular'),)),)*2,
                             _compose_unary_rules=(), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
                                                           torch.tensor([[False]]), query[None], torch.tensor([True])))
-    buffer = torch.stack((second, first, torch.zeros_like(first)))[None]
-    state = (buffer, torch.tensor([2]), torch.tensor([[1, 1, -1]]), torch.zeros(1, 3, dtype=torch.long),
-             torch.tensor([[2, 0, -1]]), torch.ones(1, 3))
-    scope = torch.tensor([[[0, 3], [0, 1], [0, -1]]])
+    import STMChunks as chunks
+    state=chunks.empty(1,8,4)
+    state,_=chunks.deposit(state,prior[None],torch.tensor([True]),identity=5)
+    state,_=chunks.deposit(state,first[None],torch.tensor([True]),identity=5,order=1,stack=True)
+    state,_=chunks.deposit(state,second[None],torch.tensor([True]),order=1,stack=True)
+    scope=torch.zeros(1,8,2,dtype=torch.long)
+    scope[:,:,1]=-1
+    scope[0,:2,1]=torch.tensor([3,5])
 
     def choose(state, scope):
         return LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=1, reference_scope=scope)
@@ -261,26 +267,30 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
     rules[op] = rules[op]._replace(clause_form='S', head_role=1, order_delta=0)
     language._compose_binary_rules = tuple(rules)
-    from MTMOverlay import MTMOverlay
-    language.identity_overlay = MTMOverlay(rules, language._compose_unary_rules)
-    bind = next(i for i, r in enumerate(language._compose_unary_rules) if r.method_name == 'bind')
+    from ChunkJournal import ChunkJournal
+    language.chunk_journal = ChunkJournal(rules,language._compose_unary_rules)
+    bind = next(i for i, r in enumerate(language._compose_binary_rules) if r.method_name == 'bind')
     layer = language._tree_layer(2)
     original = layer.forward
     routes = []
+    bind_done = False
 
     def forced(x, **kwargs):
+        nonlocal bind_done
         reference = kwargs.get('reference_data')
         binary = tuple(range(layer.r_reduce)) if reference is None else reference['binary_ops']
         unary = tuple(range(layer.r_apply)) if reference is None else reference['unary_ops']
         stop = (x.shape[1]-1)*len(binary)+x.shape[1]*len(unary)
-        # Bind the first participant before the VP reads it. Once joined,
-        # its own held location is excluded by the ordinary identity menu.
+        # This fixed reading binds the first participant once, then stops
+        # until its predicate arrives. Offering a current identity is legal.
         from operation_fixtures import selected_action
-        column = next(i for i, local in enumerate(unary)
-                      if local == bind and int(reference['unary_identity'][0, 0, i]) == 1)
-        target = (x.shape[1]-1)*len(binary) + column
-        selected = torch.where(kwargs['depth'] >= 2, binary.index(op),
-            torch.where(reference['unary_valid'][:, 0, column], target, stop))
+        columns=[i for i,local in enumerate(binary) if local==bind]
+        eligible=reference['binary_valid'][:,0,columns] & (reference['binary_refs'][:,0,columns,1]>0)
+        at=eligible.long().argmax(-1)
+        target=torch.tensor(columns)[at]
+        selected=torch.where(kwargs['depth']>=2,binary.index(op),
+            torch.where(eligible.any(-1) & (not bind_done),target,stop))
+        bind_done |= bool(((selected == target) & eligible.any(-1)).any())
         with selected_action(layer, selected):
             result = original(x, **kwargs)
         routes.append(result[2])
@@ -298,19 +308,15 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     cid = int(store.row_ids[index])
     from Spaces import _concept_alloc_of
     from ReferenceContext import SituationAddress
-    from MTMOverlay import MTMOverlay
     owner = model._concept_owner()
     owner.interpret.lookup_word(tuple(map(ord, 'alpha')), (), form='alpha')
     for word in owner.word_concepts('alpha'):
         _concept_alloc_of(owner).reference_orders[word] = 1
     occurrence = store.occurrence_of(index)
-    owner.mtm.open(occurrence, kind=None, when=0, value=prior)
+    owner.mtm.open(occurrence, kind=None, when=0, value=prior, pending=False)
     frame = SituationAddress(occurrence).read(store)
-    stage = MTMOverlay.stage
-    def held_identity(resolver, frames, like, *, journal, words, timelines):
-        return stage(resolver, [(frame,)] * len(frames), like, journal=journal, words=words,
-                     timelines=timelines)
-    monkeypatch.setattr(MTMOverlay, 'stage', staticmethod(held_identity))
+    # The live pool is prepended by the production boundary; no frame
+    # overlay staging override supplies the identity anymore.
 
     def held(active, like):
         B = active.shape[0]
@@ -333,19 +339,31 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         view = observed[-1]
         entry = view['entries'][0]
         clause = view['clauses'][0]
-        actions = entry.actions[:, 0] == 1
+        actions = (entry.actions[:, 0] == 1) & (entry.actions[:,1] == op)
         assert int(actions.sum()) == len(entry.leaves)-1
         frame = entry.operation_values[actions][-1]
-        torch.testing.assert_close(frame[0], torch.maximum(entry.leaves[0], prior), rtol=0, atol=0)
+        content_width=store.when_start-4
+        torch.testing.assert_close(frame[0,:content_width],
+            torch.maximum(entry.leaves[0],prior)[:content_width],rtol=0,atol=0)
+        # Prepended occurrences now carry their own current percept bands.
+        assert torch.isfinite(frame[0,content_width:]).all()
         # A fixed projection evaluated as a single word or a bank GEMM can
         # differ by float32 accumulation order; it retains the same direction.
-        torch.testing.assert_close(frame[1], entry.leaves[-1], rtol=1e-6, atol=2e-7)
+        torch.testing.assert_close(frame[1,:content_width], entry.leaves[-1,:content_width], rtol=1e-6, atol=2e-7)
+        torch.testing.assert_close(frame[1,store.when_start:], entry.symbol_when[-1],rtol=0,atol=0)
         assert entry.identity_actions[actions][-1, 1].item() == 1
         assert clause.children[0].identity['handle'] == 1
         assert tuple(entry.identity_origins[0, :2].tolist()) == (2, occurrence[-1])
         torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
-        torch.testing.assert_close(
-            model._sentence_fields[0][0].end_state[0], clause.point, rtol=0, atol=0)
+        # Thought may complete a different working field after the close.
+        # The shared recent chunk retains the written sentence's own value.
+        import STMChunks as chunks
+        state = model.conceptualSpace.stm.state
+        written = model._sentence_fields[0][0].row_id
+        recent = state[chunks.REFS][0,:,0,1] == written
+        assert recent.sum() == 1 and state[chunks.STACK][0,recent].eq(-1).all()
+        torch.testing.assert_close(state[0][0,recent][0,:content_width],clause.point[:content_width],rtol=0,atol=0)
+        torch.testing.assert_close(state[chunks.WHEN][0,recent][0],store.entry_when(store.location(written)),rtol=0,atol=0)
         assert not torch.equal(entry.leaves[0], prior)
         active = model.inputSpace._word_active_mask
         # This held referent has no lexical realization in the primed bank.

@@ -14,8 +14,8 @@ from test_query_vp_boundaries import _context, _signature
 
 
 def _meaning():
-    return ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
-                             scope={"place": "workshop"})
+    return replace(ConceptualMeaning.from_description(torch.eye(8)[0]),
+                   scope={"place": "workshop"})
 
 
 def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
@@ -23,16 +23,15 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
         cs._csw_concept_row(0, ref[1])
-    store = LTM0(8)
+    store = LTM0(8, percept_width=0)
     from index_fixtures import one_hot_unfold
-    store.configure_leaf_index(code_row=lambda ref: _existing_row(cs, ref), read=one_hot_unfold)
-    idea = replace(_meaning(), role_refs=refs)
+    idea = replace(_meaning(), role_refs=(refs[0], None, None))
     first = store.append_meaning(idea, kind="fact", trust=0.6, sentence_index=len(store))
     second = store.append_meaning(idea, kind="fact", trust=-0.4, sentence_index=len(store))
     store.set_origin(first, store.ORIGIN_PROVISIONED, text="teacher")
     store.set_origin(second, store.ORIGIN_USER, text="witness")
     result = _signature('query', 'argin1').invoke(
-        _context(cs, store=store), replace(idea, mode='interrogative'))
+        _context(cs, store=store), replace(idea))
     assert sorted(item['trust'] for item in result['value']) == pytest.approx([.6])
     for item in result['value']:
         torch.testing.assert_close(item['meaning'].roles, idea.roles)
@@ -86,9 +85,9 @@ def test_removed_quantize_raises_without_symbol_snapping():
 
 
 def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
-    from ThoughtReferences import question
+    from meaning_fixtures import unsupported as question
     cs = _cs()
-    store = LTM0(8)
+    store = LTM0(8, percept_width=0)
     retained = ConceptualMeaning.from_description(torch.ones(8))
     row = store.append_meaning(retained, kind='observation', evidence=(1., 0.))
     memory = SimpleNamespace(retrieved_frames=lambda **kwargs: (store.row(row),))
@@ -101,8 +100,8 @@ def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
 
 
 def test_ask_preserves_the_complete_open_question_and_schedules_same_controller():
-    from ThoughtReferences import question as opened
-    question=opened(_meaning(),(('evidence',-1),))
+    from meaning_fixtures import unsupported as opened
+    question=opened(_meaning(),(('referent',0),))
     calls=[]
     result=_signature('ask','argin1').invoke(_context(_cs(),continuation=lambda value:
         calls.append(value) or dict(value=value,meaning=value,support_true=0.,support_false=0.,result_kind='subgoal')),question)
@@ -159,7 +158,8 @@ def test_global_expectation_retains_all_roles_without_a_thought_operation():
 @pytest.mark.parametrize('reverse', (False, True))
 def test_query_returns_only_the_completed_direction_of_an_unresolved_equality(monkeypatch, reverse):
     from Queries import ThoughtLTMCapability
-    from ThoughtReferences import bindings, question
+    from ThoughtReferences import bindings
+    from meaning_fixtures import unsupported as question
     from test_thought_binding import equality
     name, unresolved = ('sym', 1), ('ltm', 'test', 2)
     meaning = equality(name, unresolved)

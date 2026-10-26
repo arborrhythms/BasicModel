@@ -80,7 +80,7 @@ def mint(owner, content, *, form=None):
         owner._preflight_concept_allocation(1, context='identity fold cache')
     except RuntimeError:
         return None
-    content = coordinates(owner, content)
+    content = carrier(owner, content)
     alloc = allocator(owner)
     identity = owner.new_concept()
     alloc.reference_orders[identity] = 1
@@ -88,6 +88,11 @@ def mint(owner, content, *, form=None):
     row = owner._csw_concept_row(1, identity)
     if row is None:
         raise RuntimeError('identity inventory changed after allocation preflight')
+    derived = getattr(owner.similarity_codebook, 'mereology', None)
+    if derived is not None:
+        derived.remember_content(row, content)
+        content[derived.percept_width:] = 0
+        derived.placement_dirty[row] = True
     owner.similarity_codebook.W[row].copy_(content)
     if form is None:
         alloc.individuals.add(identity)
@@ -98,13 +103,24 @@ def mint(owner, content, *, form=None):
 
 def witnesses(owner, identity):
     parts = allocator(owner).parts
-    rows = parts.indices()
-    return tuple(rows[(parts.refs[rows] == int(identity)).any(-1)].tolist())
+    return parts.rows_referencing(parts.SYMBOL, int(identity))
 
 
 def witness_count(owner, identity):
     parts = allocator(owner).parts
-    return sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
+    count = sum(int(parts.access_count[row]) for row in witnesses(owner, identity))
+    store = owner._closed_clause_store()
+    if store is not None:
+        # Compression keeps the identity binding; its sentence is a witness
+        # even though no composing Part row survives.
+        for row in range(len(store)):
+            reference = dict(store.raw_meaning_of(row).bindings).get('_identity')
+            token = owner.mtm.token_of(reference)
+            entry = owner.mtm.entries.get(token)
+            if reference == ('sym', identity) or (entry is not None and identity in (entry.native, entry.symbol)):
+                if int(store.order[row]) != 1:
+                    count += int(store.witness_count[row])
+    return count
 
 
 def form_identity(owner, cue):

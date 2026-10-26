@@ -3,6 +3,7 @@
 The generator supplies the structure and antecedent. These are mechanism
 gates, not claims about learned parsing or reference resolution.
 """
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import json
 import os
@@ -40,8 +41,11 @@ def native(monkeypatch):
     return f
 
 
-def keep(f, clause, *, training=False):
-    plan = f.resolver.preview(clause, tuple(f.frames))
+def keep(f, clause, *, training=False, dummy=False):
+    plan = f.resolver.preview(clause, chunk_context(f.resolver, tuple(f.frames)))
+    if dummy:
+        for item in plan['items']:
+            item['selected'] = None
     kept = f.resolver.prepare(clause, plan)
     written = {}
     sentence = f.next_sentence
@@ -65,7 +69,7 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
                    predicate=predicate, content=content)
     term = Composition(content, order=1)
     constituent = Clause(ConceptualMeaning.from_description(content), point=content, order=1,
-                         reference_request=request, composition=term)
+                         reference_request=request, composition=term, evidence=(1., 0.))
     # The supplied predicate is an admitted native symbol, as it is in a
     # recorded grammar program. A composed value alone does not mint it.
     key = tuple(predicate.tolist())
@@ -81,7 +85,7 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
     tree = Composition(point, (term, verb),
                        operation='lift' if role == 0 else 'verb', order=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, order=1,
-                    children=(constituent,), composition=tree)
+                    children=(constituent,), composition=tree, evidence=(1., 0.))
     row, plan = keep(f, clause, training=training)
     return plan['written'][id(plan['items'][0]['written_node'])], plan
 
@@ -188,7 +192,9 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     # object role in its containing intransitive clause.
     frames = tuple(f.frames)
     f.frames.clear()
-    row, plan = keep(f, clause)
+    # The live pool now accompanies the chunks. Select the dummy explicitly
+    # for this certificate of a forward reference left open by the reading.
+    row, plan = keep(f, clause, dummy=True)
     from ThoughtClosing import closing_question
     query = closing_question(f.store.meaning_of(row), plan['prepared_root'],
         program=program, store=f.store, written_rows=plan['written'])
@@ -285,8 +291,9 @@ def test_bind_keeps_self_and_containing_identities_without_rewriting_occurrences
     before = f.store.slots[missing].clone()
     # Self-reference is legal. Every candidate has a finite content point;
     # reading an identity must not recursively expand its own reference.
-    # Both the open NP and its containing sentence are retained concepts.
-    expected = {target, f.store.occurrence_of(f.store.location(f.frames[-1].row_id))}
+    # The open NP has a value; its unresolved containing chain has none.
+    expected = {target}
+    assert f.store.parts.contains(f.frames[-1].row_id)
     child = target
     for position in range(2):
         meaning = replace(ConceptualMeaning.from_description(f.atoms[0]),

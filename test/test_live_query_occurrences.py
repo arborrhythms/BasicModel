@@ -24,12 +24,12 @@ def _world():
     question = ConceptualMeaning(
         source,
         torch.ones(3, dtype=torch.bool),
-        mode="interrogative",
+
         scope={"place": "workshop"},
         bindings={"x": ("sym", 7)},
     )
-    from ThoughtReferences import question as open_question
-    question = open_question(question, (('evidence', -1),))
+    from meaning_fixtures import unsupported as open_question
+    question = open_question(question, (('referent', 0),))
     entry = memory.begin_thought_episode(question, work_budget=8)
     model = SimpleNamespace(conceptualSpace=cs, symbolSpace=SimpleNamespace(what_memory=memory))
     context = _context(
@@ -72,7 +72,7 @@ def test_thought_read_after_restore_retains_all_roles_binding_scope_and_mode():
     context = replace(context, continuation=lambda value: seen.append(value) or dict(value=value, meaning=value, support_true=.5, support_false=0.))
     result = registry.execute(registry.form("ask", reference, context=context), context)
     assert result.value is not seen[0]
-    assert seen[0].mode == "interrogative"
+    assert __import__("ThoughtReferences").evidence_pair(seen[0]) == (0., 0.)
     assert seen[0].scope == (("place", "workshop"),)
     assert dict(seen[0].bindings)["x"] == ("sym", 7)
     torch.testing.assert_close(seen[0].roles, memory.thought_history()[0].meaning.roles)

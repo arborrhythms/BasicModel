@@ -160,7 +160,7 @@ def assert_selected_wording(model, curriculum):
                 mistakes.append((row["text"], "invented relation"))
             continue
         refs = tuple(("sym", int(program.concept_ids[i])) for i in row["operands"])
-        expected = model.grammatical_thoughts.form(row["form"], *refs, mode="assertive")
+        expected = model.grammatical_thoughts.form(row["form"], *refs)
         if meaning is None or meaning.role_refs != expected.role_refs:
             names = [model.languageSpace._compose_binary_rules[int(action[1])].method_name
                      for action in program.actions if int(action[0]) == 1]

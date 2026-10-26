@@ -26,12 +26,12 @@ def test_part_stores_native_addresses_and_reads_current_concept_content():
     store, points = clause_store()
     row = store.write_clause(part_clause())
     assert store.row(row)['refs'].tolist() == [1, 2]
-    assert len(store) == 1
+    assert len(store) == 0
     owner = store._concept_owner()
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(1)].fill_(.25)
     torch.testing.assert_close(store.meaning_of(row).roles[0], torch.full((4,), .25))
-    torch.testing.assert_close(store.meaning_of(row).roles[2], points[2])
+    torch.testing.assert_close(store.meaning_of(row).roles[1], points[2])
 
 
 def test_no_clause_derivation_or_factored_target_is_checkpointed():
@@ -52,7 +52,7 @@ def test_no_clause_derivation_or_factored_target_is_checkpointed():
 
 def test_finishing_uses_actual_operands_and_result_without_running_an_operator():
     from ClauseJournal import finish_clause
-    from Understanding import AnswerProgram
+    from Understanding import Reading
 
     def forbidden(*args, **kwargs):
         raise AssertionError('finishing replayed an operator')
@@ -65,7 +65,7 @@ def test_finishing_uses_actual_operands_and_result_without_running_an_operator()
                                       [-4., -3., -2., -1.]])
     frames = torch.zeros(3, 3, 4)
     frames[2] = torch.stack((left, right, result))
-    program = AnswerProgram(rows=torch.tensor([0, 1]), word_rows=torch.tensor([0, 1]),
+    program = Reading(rows=torch.tensor([0, 1]), word_rows=torch.tensor([0, 1]),
         activations=torch.ones(2), leaves=torch.zeros(2, 4), concept_ids=torch.tensor([1, 2]),
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
         targets=torch.tensor([0, 1, 1]), end_state=torch.stack((result, result * 0, result * 0)),
@@ -152,14 +152,14 @@ def test_part_reading_comes_from_argument_types_without_a_middle_column():
 
 def test_idea_caches_the_operand_addresses_recorded_before_fusion():
     from ClauseJournal import finish_clause
-    from Understanding import AnswerProgram
+    from Understanding import Reading
 
     language = SimpleNamespace(_compose_binary_rules=[SimpleNamespace(method_name='lift',
         clause_form='S', head_role=0, reference_modes=(), lhs='S')], _compose_unary_rules=[])
     left, right, result = torch.arange(12, dtype=torch.float32).reshape(3, 4)
     frames = torch.zeros(3, 3, 4)
     frames[2] = torch.stack((left, right, result))
-    entry = AnswerProgram(rows=torch.tensor([0, 1]), word_rows=torch.tensor([0, 1]),
+    entry = Reading(rows=torch.tensor([0, 1]), word_rows=torch.tensor([0, 1]),
         activations=torch.ones(2), leaves=torch.stack((left, right)), concept_ids=torch.tensor([1, 2]),
         reference_ids=torch.tensor([7, 8]), actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1]]),
         targets=torch.tensor([0, 1, 1]), end_state=torch.stack((result, result * 0, result * 0)),
@@ -183,6 +183,18 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
     model.reconstruct_in_loop = False
     model.loss.reconstruction_scale = 0.
     model.stateless = False
+    publish = model._publish_sentence_scratch
+    observed_layouts = []
+    def scratch(state):
+        stm,lang,_ = state
+        case = any(getattr(getattr(op,'gl',op),'case_head_role',0)
+            and getattr(getattr(op,'gl',op),'meaning_layout',None) is not None
+            for op in model.languageSpace._tree_layer(2).ops)
+        assert len(stm) == 13 and stm[0].shape[1] == 8
+        assert len(lang) == 26+(6 if case else 0)
+        observed_layouts.append((len(stm),len(lang)))
+        return publish(state)
+    monkeypatch.setattr(model,'_publish_sentence_scratch',scratch)
     from What import What
     try:
         inputs = model.inputSpace.prepPackedInput([['1 plus 2']])
@@ -201,6 +213,7 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
         assert (trace._choice_refs == -1).all()
         assert model._open_sentence_slot is None
         assert not hasattr(ended, 'actions')
+        assert observed_layouts
     finally:
         model.End()
         model.symbolSpace.soft_reset()
@@ -231,7 +244,7 @@ def test_program_meaning_reads_ended_points_from_their_rows(monkeypatch):
 @pytest.mark.parametrize("unary", [False, True])
 def test_deep_clause_retains_exact_values_references_and_gradients(unary):
     from ClauseJournal import finish_clause
-    from Understanding import AnswerProgram
+    from Understanding import Reading
     words = 1200
     rows=[(0,-1,0)]
     if unary:
@@ -244,7 +257,7 @@ def test_deep_clause_retains_exact_values_references_and_gradients(unary):
     frames=torch.ones(len(rows),3,2)
     frames[-1]=torch.tensor([[4.,5.],[6.,7.],[8.,9.]])
     end=torch.tensor([[8.,9.],[0.,0.],[0.,0.]],requires_grad=True)
-    program=AnswerProgram(rows=torch.arange(words),word_rows=torch.arange(words),
+    program=Reading(rows=torch.arange(words),word_rows=torch.arange(words),
         leaves=torch.ones(words,2),activations=torch.ones(words),actions=actions,
         concept_ids=torch.arange(1,words+1),targets=torch.zeros(len(rows),dtype=torch.long),
         end_state=end,operation_values=frames)

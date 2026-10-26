@@ -159,7 +159,7 @@
            Bind: contextual missing/controlled-NP resolution (control/raising). -->
       <rule>preposition_argout1 = preposition.forward(preposition_argin1, preposition_argin2)</rule>
 
-      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
+      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
     </compose>
 
     <!-- Boundary thoughts are an explicit model policy. Negation and the

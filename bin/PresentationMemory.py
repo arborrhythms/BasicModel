@@ -54,16 +54,18 @@ def begin(model):
             store.clear_origin(store.ORIGIN_CONVERSATION)
         else:
             store.reset()
+        store.clear_recurrence()
         removed = before - set(store.address_keys[:len(store)].tolist())
         parts = store.parts
-        invalid = set(removed)
+        from LTM1 import OCCURRENCE, RELATION
+        invalid = {(OCCURRENCE, key) for key in removed}
         while True:
             found = {row for row in parts.indices().tolist()
-                     if row not in removed_parts and any(int(ref) in invalid for ref in parts.refs[row])}
+                     if row not in removed_parts and any(ref in invalid for ref in parts.references(row))}
             if not found:
                 break
             removed_parts.update(found)
-            invalid.update(found)
+            invalid.update((RELATION, row) for row in found)
         if removed_parts:
             parts.retain([row for row in parts.indices().tolist() if row not in removed_parts])
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence',
@@ -73,10 +75,9 @@ def begin(model):
                      '_forward_postings', '_forward_by_address', 'last_forgetting_report',
                      'last_part_forgetting_report'):
             store.__dict__.pop(name, None)
-        store.rebuild_leaf_postings()
+        store.rebuild_addresses()
     seen = set()
     for item in owners:
-        item.__dict__.pop('_recurring_readings', None)
         alloc = getattr(item, '_concept_allocator', None)
         if alloc is not None and id(alloc) not in seen:
             seen.add(id(alloc))
@@ -96,10 +97,6 @@ def begin(model):
             for name in ('last_verb_teacher', 'last_modal_teacher'):
                 resolver.__dict__.pop(name, None)
         derived = getattr(getattr(item, 'similarity_codebook', None), 'mereology', None)
-        if derived is not None:
-            derived._context = None
-            for name in ('_contexts', '_unseen_context', '_form_context'):
-                derived.__dict__.pop(name, None)
         # Knowing's eager carrier can retain an occurrence after its thought
         # history has gone. Sentence STM itself is initialized by the driver.
         carrier = getattr(item, 'subspace', None)

@@ -983,7 +983,15 @@ class ThoughtLTMCapability:
                     records_scanned=1, incomplete=())
 
     def best_match(self, pattern, *, max_records, work, references=()):
-        """One best matching row, with its poles and its own occurrence witness."""
+        """One content match, or all nearest sentence entries for a time-only cue."""
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        if store is not None and store.when_start is not None:
+            start = store.when_start
+            cue = pattern.roles.clone()
+            when = cue[0, start:start+4].clone()
+            cue[0, start:start+4] = 0
+            if bool(when.ne(0).any()) and not bool(cue.ne(0).any()):
+                return self.query(None, when=when, max_records=max_records, work=work)
         from ThoughtReferences import bindings, open_slots, unresolved_operands_match
         timelines = self._timeline_read(pattern, max_records=max_records, work=work, references=references)
         if timelines is not None:
@@ -997,8 +1005,10 @@ class ThoughtLTMCapability:
         if relation == 'truth':
             return self.premise_evidence(pattern.role_refs[0], max_records=max_records, work=work)
         if relation is not None:
+            excluded = tuple(dict.fromkeys((*data.get('_query_exclude', ()),
+                *((data['_query_occurrence'],) if data.get('_query_occurrence') is not None else ()))))
             result = self.relation_evidence(relation, pattern.role_refs[0],
-                pattern.role_refs[2], max_records=max_records, work=work, excluded=data.get('_query_exclude', ()))
+                pattern.role_refs[2], max_records=max_records, work=work, excluded=excluded)
             if data.get('_query_components'):
                 result = self._with_components(result, max_records=max_records, work=work)
             return result
@@ -1045,14 +1055,70 @@ class ThoughtLTMCapability:
                     records_scanned=found['records_scanned'], incomplete=found['incomplete'])
 
     def _with_components(self, result, *, max_records, work):
-        """Read the typed Part expression under the existing work meter."""
+        """Read chains and their identity-bound values on the same meter."""
         store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from PartRead import expression_components
-        components, scanned, missing = expression_components(store,
+        from ChainRead import components as read_components
+        components, scanned, missing = read_components(store,
             [frame['occurrence'] for frame in result.get('frames', ())],
             max_records=max_records, work=work, scanned=result.get('records_scanned', 0))
-        incomplete = (*result.get('incomplete', ()), *missing)
+        incomplete = [*result.get('incomplete', ()), *missing]
+        from ChainRead import envelope
+        from IdentityRows import coordinates
+        from ThoughtReferences import bindings
+        owner = store._concept_owner()
+        references = dict.fromkeys(ref for frame in result.get('frames', ())
+            for ref in frame['meaning'].role_refs if ref is not None)
+        references.update(dict.fromkeys(ref for item in components.values() for ref in item['operands']))
+        values, identities, evaluations = {}, {}, {}
+        for reference in references:
+            location = store.location(reference)
+            if isinstance(location, tuple):
+                continue  # a chain has no composed value
+            if scanned >= max_records or not work.consume('record'):
+                incomplete.append('identity_read_limit')
+                break
+            scanned += 1
+            if location is None:
+                value = store._concept_point(reference[1]) if reference[0] == 'sym' else None
+            else:
+                value = store.slots[location]
+                meaning = store.raw_meaning_of(location)
+                identity = bindings(meaning).get('_identity')
+                if identity is not None:
+                    token = owner.mtm.token_of(identity)
+                    entry = owner.mtm.entries.get(token)
+                    held = None if entry is None or entry.pending else owner.mtm.value_of(token)
+                    if held is not None:
+                        identities[reference] = dict(reference=token,
+                            meaning=ConceptualMeaning.from_description(held.detach()))
+                    before = store._concept_point(identity[1]) if identity[0] == 'sym' else None
+                    after = value
+                    if entry is not None:
+                        for event in reversed(entry.events):
+                            if scanned >= max_records or not work.consume('record'):
+                                incomplete.append('identity_read_limit')
+                                break
+                            scanned += 1
+                            if event.occurrence == reference and event.role == 0:
+                                before, after = event.before, event.after
+                                break
+                    if before is not None and after is not None:
+                        # Event operands now arrive from stamped chunks.
+                        # The content kernel consumed neither percept band;
+                        # its numerical witness must use that same input.
+                        before,after = before.detach().clone(),after.detach().clone()
+                        if store.when_start is not None:
+                            start,end = store.when_start-4,store.when_start+4
+                            before[start:end] = 0
+                            after[start:end] = 0
+                        evaluations[reference] = dict(identity=identity,
+                            before=before, after=after,
+                            native=identity[0] == 'sym')
+            if value is not None:
+                values[reference] = coordinates(owner, value).clone()
         return dict(result, components=components, records_scanned=scanned,
+                    evaluation_values=values, identities=identities,
+                    evaluations=evaluations,
                     incomplete=tuple(dict.fromkeys(incomplete)))
 
     def truth_evidence(self, description, *, max_records, work):
@@ -1121,7 +1187,7 @@ class ThoughtLTMCapability:
             reverse = relation == 'equal' and (left is None or refs[2] == left) and (right is None or refs[0] == right)
             if direct or reverse:
                 temporal = ()
-                if relation == 'implies' and all(store.parts.contains(ref[1]) for ref in (refs[0], refs[2])):
+                if relation == 'implies' and all(store.location(ref) is not None for ref in (refs[0], refs[2])):
                     # Composed situations have their own retained .when.
                     # Read the endpoints on this meter; rule insertion time
                     # cannot stand in for their order.
@@ -1131,7 +1197,7 @@ class ThoughtLTMCapability:
                             incomplete.append('temporal_work_budget')
                             break
                         scanned += 1
-                        times.append(store.parts.when[ref[1]])
+                        times.append(store.entry_when(store.location(ref)))
                     if len(times) != 2:
                         continue
                     times = torch.stack(times)
@@ -1184,12 +1250,19 @@ class ThoughtLTMCapability:
             value, scanned = memory.resolve_thought(
                 reference, b=row, max_records=max_records, work=work)
             return value.detached(), scanned
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        from Layers import LTM0
+        if (isinstance(reference, tuple) and len(reference) == 2
+                and reference[0] == 'sym' and type(reference[1]) is int):
+            if (isinstance(store, LTM0) and store.parts.contains(reference[1])
+                    and max_records):
+                work.require('record')
+                return store.meaning_of(reference).detached(), 1
+            raise ValueError('description chain reference is unavailable within the query read limit')
         if (not isinstance(reference, tuple) or len(reference) != 3
                 or reference[0] != 'ltm' or not isinstance(reference[1], str)
                 or type(reference[2]) is not int or reference[2] in (-1, 0)):
             raise TypeError('description argument requires an existing occurrence reference')
-        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
-        from Layers import LTM0
         if (not isinstance(store, LTM0)
                 or store.address_domain != reference[1]):
             raise ValueError('description occurrence namespace is unavailable')
@@ -1203,8 +1276,33 @@ class ThoughtLTMCapability:
                 return value.detached(), 1
         raise ValueError('description occurrence is unavailable within the query read limit')
 
-    def query(self, pattern, *, max_records, work):
-        return self.best_match(pattern, max_records=max_records, work=work)
+    def query(self, pattern=None, *, when=None, window=1, max_records, work):
+        if when is None:
+            found = self.best_match(pattern, max_records=max_records, work=work)
+            if found.get('chunks_loaded'):
+                return found
+            store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+            frames = found.get('frames',())
+            missing = () if store is None else store.recall_chunks(frames,work=work,
+                stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'))
+            return dict(found,chunks_loaded=True,
+                incomplete=tuple(dict.fromkeys((*found.get('incomplete',()),*missing))))
+        if pattern is not None and bool(pattern.roles.ne(0).any()):
+            raise ValueError('time-only query requires a blank description')
+        store = object.__getattribute__(self, '_ThoughtLTMCapability__store')()
+        found = store.recall_time(when, max_records=max_records, work=work, window=window)
+        missing = store.recall_chunks(found['value'], work=work,
+            stream=object.__getattribute__(self, '_ThoughtLTMCapability__row'))
+        frames = found['value']
+        discourse = object.__getattribute__(self, '_ThoughtLTMCapability__discourse')
+        if discourse is not None:
+            for frame in frames:
+                discourse.include_occurrence(object.__getattribute__(self, '_ThoughtLTMCapability__row'), frame['occurrence'])
+        return dict(found, frames=frames, result_kind='set', chunks_loaded=True,
+            support_true=max((row['evidence'][0] for row in frames), default=0.),
+            support_false=max((row['evidence'][1] for row in frames), default=0.),
+            witnesses=tuple(row['occurrence'] for row in frames),
+            incomplete=tuple(dict.fromkeys((*found['incomplete'], *missing))))
 
     def lookup(self, *args, **kwargs):
         raise ValueError('lookup is retired; use query')
@@ -1371,10 +1469,6 @@ def _ask(context, arguments):
     references = tuple(reference for role, reference in context.operand_references
                        if role == 'argin1' and reference and reference[0] == 'ltm') if isinstance(
                            context, ThoughtGrammarContext) else ()
-    if references:
-        question = replace(question, mode='interrogative')
-    if question.mode != 'interrogative':
-        raise ValueError('query what requires an interrogative conceptual question')
     if isinstance(context, ThoughtGrammarContext):
         options = dict(max_records=context.max_records, work=context.work)
         if references:
@@ -1725,11 +1819,19 @@ def _occurrence_description(context, reference):
         return memory.resolve_thought(
             reference, b=context.row, max_records=context.max_records,
             work=context.work)
+    store = context.reasoner.reasoning_store()
+    if (isinstance(reference, tuple) and len(reference) == 2
+            and reference[0] == 'sym' and type(reference[1]) is int):
+        if (isinstance(store, LTM0) and store.parts.contains(reference[1])
+                and context.max_records):
+            if context.work is not None:
+                context.work.require('record')
+            return store.meaning_of(reference), 1
+        raise ValueError('description chain reference is unavailable within the query read limit')
     if (not isinstance(reference, tuple) or len(reference) != 3
             or reference[0] != 'ltm' or not isinstance(reference[1], str)
             or type(reference[2]) is not int or reference[2] in (-1, 0)):
         raise TypeError('description argument requires an existing occurrence reference')
-    store = context.reasoner.reasoning_store()
     if (not isinstance(store, LTM0)
             or store.address_domain != reference[1]):
         raise ValueError('description occurrence namespace is unavailable')
@@ -2018,7 +2120,7 @@ class GrammaticalThoughtRegistry:
         return slots[role]
 
     def form(self, semantic_id, *arguments, open_roles=(),
-             mode='interrogative', polarity=True, bindings=(), scope=(),
+             polarity=True, bindings=(), scope=(),
              context=None):
         """Form a canonical thought request without executing or allocating.
 
@@ -2127,22 +2229,23 @@ class GrammaticalThoughtRegistry:
         mask = torch.tensor(
             [bool('argin1' in occupied_roles), True, bool('argin2' in occupied_roles)],
             dtype=torch.bool, device=vp_payload.device)
-        result = ConceptualMeaning(torch.stack(payloads), mask, mode=mode,
+        result = ConceptualMeaning(torch.stack(payloads), mask,
             polarity=polarity, role_refs=tuple(references), bindings=bindings,
             scope=scope, constituents=tuple(constituents))
-        if mode == 'interrogative':
-            from ThoughtReferences import question
-            slots = tuple(('referent', self._slot_for_operand(role)) for role in canonical_open_roles)
-            result = question(result, slots)
+        from ThoughtReferences import with_slots
+        slots = tuple(('referent', self._slot_for_operand(role)) for role in canonical_open_roles)
+        result = with_slots(result, slots, pair=(0., 0.), source_evidence=(0., 0.))
         return result
 
-    @staticmethod
-    def _is_description_reference(reference):
+    def _is_description_reference(self, reference):
         """Whether metadata names an existing owned occurrence, without reading it."""
         if not isinstance(reference, tuple) or not reference:
             return False
         if reference[0] == 'thought':
             return True
+        if len(reference) == 2 and reference[0] == 'sym' and type(reference[1]) is int:
+            from Spaces import _concept_alloc_of
+            return _concept_alloc_of(self.space).parts.contains(reference[1])
         return (len(reference) == 3 and reference[0] == 'ltm'
                 and isinstance(reference[1], str)
                 and type(reference[2]) is int and reference[2] not in (-1, 0))
@@ -2224,7 +2327,7 @@ class GrammaticalThoughtRegistry:
              bool('argin2' in operation.operand_roles and 'argin2' not in open_roles)],
             dtype=torch.bool, device=vp_payload.device)
         return ConceptualMeaning(
-            torch.stack(payloads), mask, mode=source.mode,
+            torch.stack(payloads), mask,
             polarity=source.polarity,
             role_refs=tuple(references), bindings=source.bindings,
             scope=source.scope)

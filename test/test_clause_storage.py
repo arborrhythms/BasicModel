@@ -19,7 +19,8 @@ def test_end_row_has_shared_references_and_field_coordinates():
     store = LTM0(4, capacity=8)
     assert not hasattr(store, 'refs')
     assert 'refs' not in store.state_dict()
-    assert store.when.shape == (8, 4)
+    assert store.slots.shape == (8, 4)
+    assert not hasattr(store, 'when') and not hasattr(store, 'role_mask')
 
 
 def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
@@ -36,7 +37,7 @@ def test_both_evidence_poles_survive_checkpoint_separately_from_neither():
 
 def test_relation_has_no_kind_column_or_catch_all():
     from LTM1 import LTM1
-    assert LTM1.columns == ('refs','truth_plus','truth_minus','access_count','surprise','when')
+    assert LTM1.columns == ('refs','ref_kinds','truth_plus','truth_minus','access_count','surprise','percept')
     assert not any(name.startswith('REL_') for name in vars(LTM0))
 
 
@@ -87,8 +88,7 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     clause = idea_clause()
     row = store.write_clause(clause, trust=.7)
     assert len(store) == 1 and not len(store.parts)
-    torch.testing.assert_close(store.slots[row, 0], clause.point)
-    assert not bool(store.slots[row, 1:].any())
+    torch.testing.assert_close(store.slots[row], clause.point)
     torch.testing.assert_close(store.meaning_of(row).roles[0], clause.point)
     assert store.meaning_of(row).role_mask.tolist() == [True, False, False]
     assert not hasattr(store, 'refs')
@@ -96,20 +96,19 @@ def test_compound_idea_stores_only_fused_point_without_factored_target():
     from Occurrence import document_digest
     assert int(store.sentence_index[row]) == 0
     assert bytes(store.document_keys[row].tolist()) == document_digest(('direct', 'observation'))
-    encoding = WhenEncoding(n_when=4).set_capacity(store.capacity)
-    assert int(encoding.decode_index(store.when[row])) == 0
+    assert not store.entry_when(row).any()  # this fixture declares no percept band
 
 
-def test_recursive_absolute_clauses_each_write_one_idea():
+def test_recursive_absolute_clauses_compress_to_one_sentence_idea():
     store, _ = clause_store()
     inner = idea_clause()
     middle = idea_clause(children=(inner,))
     outer = idea_clause(children=(middle,))
     from Occurrence import sentence_key
     with store.at_address('nested-document', 0, sentence_key((b'nested',))):
-        assert store.write_clause(outer, trust=.7) == 2
-    assert store.ideas().tolist() == [0, 1, 2]
-    assert store.trust[:3].tolist() == pytest.approx([0., 0., .7])
+        assert store.write_clause(outer, trust=.7) == 0
+    assert store.ideas().tolist() == [0]
+    assert store.trust[:1].tolist() == pytest.approx([.7])
     assert not hasattr(store, 'refs')
 
 
@@ -125,7 +124,7 @@ def test_attribution_keeps_inner_claim_unasserted_then_direct_assertion_updates_
     assert store.row(child_row)['evidence'] == (0.,0.)
     assert store.row(row)['refs'].tolist() == [4,child_row[1]]
     assert store.write_clause(child, trust=.8, evidence=(.8,0.)) == child_row
-    assert len(store) == 2 and len(store.parts) == 2
+    assert len(store) == 0 and len(store.parts) == 2
     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
     store.parts.truth_plus[row[1]] = 0
     assert store.row(child_row)['evidence'] == pytest.approx((.8,0.))
@@ -137,13 +136,15 @@ def test_second_order_implication_names_two_part_symbols():
     outer = Clause(left.meaning, relation='implies',
         refs=(('clause',0),4,('clause',1)), children=(left,right))
     row = store.write_clause(outer, evidence=(.9,0.))
-    assert len(store) == 3 and len(store.parts) == 3
+    assert len(store) == 0 and len(store.parts) == 3
     first, second = store.relation_operands(row)
     assert first['refs'].tolist() == [1,2] and second['refs'].tolist() == [1,4]
     assert first['evidence'] == second['evidence'] == (0.,0.)
     assert store.row(row)['readings'] == ('conditional',)
-    matches = store.consequents_by_row(first['row_id'], reading='implies')
-    assert matches[0][:2] == (row[1],second['row_id'])
+    from LTM1 import RELATION
+    matches = store.consequents_by_row((RELATION, first['row_id']), reading='implies')
+    assert matches[0][:2] == (row[1], (RELATION, second['row_id']))
+    assert store.parts.stratum(row[1]) == 2
 
 
 def test_equality_is_one_singleton_membership_and_never_merges_native_content():
@@ -210,14 +211,15 @@ def test_retired_relation_columns_are_rejected_without_dropping_rows():
     assert len(restored) == 0
 
 
-def test_native_provisioned_content_survives_a_schema_stamp_upgrade():
+def test_native_provisioned_content_requires_its_layout_version():
     store = LTM0(4,capacity=8)
     row = store.append_idea(torch.ones(4),evidence=(.8,0.))
     store.set_origin(row,store.ORIGIN_PROVISIONED)
     state = store.state_dict();state.pop('truth_schema')
-    restored = LTM0(4,capacity=8);restored.load_state_dict(state)
-    assert len(restored) == 1 and restored.origin[0] == store.ORIGIN_PROVISIONED
-    assert restored.row(0)['evidence'] == pytest.approx((.8,0.))
+    restored = LTM0(4,capacity=8)
+    with pytest.raises(ValueError, match='layout checkpoint version'):
+        restored.load_state_dict(state)
+    assert len(restored) == 0 and store.origin[row] == store.ORIGIN_PROVISIONED
 
 
 def test_verification_keeps_conflicting_observations_as_two_poles():
@@ -235,7 +237,7 @@ def test_invalid_parent_never_partially_writes_its_child():
     child = part_clause()
     outer = idea_clause(torch.full((4,),-.1),children=(child,),refs=(1,('clause',0),-1))
     before = store._concept_owner()._concept_allocator.next_id
-    with pytest.raises(RuntimeError,match='identity map'):
+    with pytest.raises(ValueError,match='native concept coordinates'):
         store.write_clause(outer)
     assert len(store) == len(store.parts) == 0
     assert store._concept_owner()._concept_allocator.next_id == before
@@ -244,7 +246,7 @@ def test_invalid_parent_never_partially_writes_its_child():
 def test_retired_relation_checkpoint_is_rejected_with_dependents_intact():
     store = LTM0(4,capacity=8)
     old = store.append_idea(torch.ones(4))
-    child = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
+    child = replace(ConceptualMeaning.from_description(torch.ones(4)),
         role_refs=(store.occurrence_of(old),None,None))
     store.append_meaning(child,kind='question')
     state=store.state_dict();state['rel_type']=torch.tensor([0,1,0,0,0,0,0,0])
@@ -258,7 +260,7 @@ def test_observation_writer_accepts_a_completed_field_without_a_program():
     from Models import _append_observed_meaning
     store,_=clause_store();field=part_clause()
     row=_append_observed_meaning(store,field)
-    assert len(store)==1 and store.row(row)['refs'].tolist()==[1,2]
+    assert len(store)==0 and len(store.parts)==1 and store.row(row)['refs'].tolist()==[1,2]
 
 
 def test_full_store_can_update_an_existing_relation():
@@ -274,7 +276,7 @@ def test_full_store_can_update_an_existing_relation():
 def test_query_returns_end_clause_content_and_preserves_both_poles():
     from test_query_vp_boundaries import _world, _context
     cs, _grammar, registry, _a, _b, _ = _world()
-    store = LTM0(8, capacity=8)
+    store = LTM0(8, capacity=8, percept_width=0)
     from ClauseRow import attach_clause_index
     attach_clause_index(SimpleNamespace(),store,cs)
     point = torch.arange(8.).float() / 8

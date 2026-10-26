@@ -73,7 +73,9 @@ def train_readers(model,trials):
     for presented,comparison,trace in trials:
         # Compose's exposure rule: presented reader sees the kept binding;
         # comparison reader sees both trials when a departure was available.
+        # Per-trial exposure is distinct from the named loss priority: a
+        # batch can contain both a single read and a pair of half exposures.
         model.errors.merge(presented, prefix='thought_answer.',
-                           weight=1. if trace is None else trace.get('reader_weight',0.))
+                           exposure=1. if trace is None else trace.get('reader_weight',0.))
         model.errors.merge(comparison, prefix='thought_comparison.',
-                           weight=1. if trace is None else trace.get('comparison_weight',0.))
+                           exposure=1. if trace is None else trace.get('comparison_weight',0.))

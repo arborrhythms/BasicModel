@@ -1,4 +1,5 @@
 """Unpriced objects, a zero-logit dummy, and sentence-level bind departures."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 
 import pytest
@@ -20,7 +21,7 @@ def test_noun_without_candidates_opens_its_own_object_at_the_kept_close():
     resolver, store, atoms, words, _ = world()
     clause = noun(atoms, words)
     before = snapshot(resolver)
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     kept = resolver.prepare(clause, plan)
     unchanged(resolver, before)
     assert not resolver.components.owner.mtm.entries
@@ -64,8 +65,8 @@ def test_bind_departure_takes_next_option_and_has_the_shared_r_plus_a_credit():
     draw = departure(None, torch.zeros(1, 0, dtype=torch.bool), active=torch.tensor([True]),
                      binds=torch.ones(1, 1, dtype=torch.bool))
     assert draw['walk'].tolist() == [3] and draw['bind_round'].tolist() == [0]
-    greedy = resolver.preview(noun(atoms, words), frames)
-    explore = resolver.preview(noun(atoms, words), frames, departure=int(draw['bind_round'][0]))
+    greedy = resolver.preview(noun(atoms, words), chunk_context(resolver, frames))
+    explore = resolver.preview(noun(atoms, words), chunk_context(resolver, frames), departure=int(draw['bind_round'][0]))
     a, b = greedy['decisions'][0], explore['decisions'][0]
     assert a['selected'] == 1 and b['selected'] == b['next'] == 0 and b['departed']
     torch.testing.assert_close(a['logits'], b['logits'])
@@ -105,8 +106,8 @@ def test_supplied_referent_judges_the_trials_bind_without_writing_the_pool():
     meaning = with_slots(clause.meaning, (('referent', 0),), pair=(0., 0.))
     frame = SituationFrame.from_row(store.row(first))
     before, entries = snapshot(resolver), dict(resolver.components.owner.mtm.entries)
-    greedy = resolver.preview(clause, (frame,))
-    explore = resolver.preview(clause, (frame,), departure=0)
+    greedy = resolver.preview(clause, chunk_context(resolver, (frame,)))
+    explore = resolver.preview(clause, chunk_context(resolver, (frame,)), departure=0)
     assert cost(model, resolver.answer_meaning(greedy, meaning), 'three') == 0
     assert cost(model, resolver.answer_meaning(explore, meaning), 'three') == 1
     unchanged(resolver, before)

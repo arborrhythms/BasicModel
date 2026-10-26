@@ -16,34 +16,35 @@ def config(**kwargs):
 
 
 def append(store, index, *, trust=.5, surprise=1., stream=0, origin=0, evidence=None):
-    row = store.append_idea(torch.tensor([1., 0., 0., 0.]), trust=trust,
+    point = torch.zeros(store.nDim); point[-4] = 1.
+    row = store.append_idea(point, trust=trust,
                            sentence_index=index, stream=stream, surprise=surprise, evidence=evidence)
     store.set_origin(row, origin)
     return row
 
 
 def full_store():
-    store = LTM0(4, capacity=10)
+    store = LTM0(12, capacity=10, percept_width=8)
     for i in range(8):
         append(store, i)
     return store
 
 
-def test_age_is_per_stream_and_rewitnessing_does_not_refresh():
-    store = LTM0(4, capacity=10)
+def test_age_uses_percept_time_and_rewitnessing_does_not_refresh():
+    store = LTM0(12, capacity=10, percept_width=8)
     append(store, 0, stream=0)
     append(store, 1, stream=1)
     append(store, 2, stream=0)
     append(store, 3, stream=0)
     append(store, 4, stream=1)
-    torch.testing.assert_close(history_age(store), torch.tensor([2., 1., 1., 0., 0.]))
+    torch.testing.assert_close(history_age(store), torch.tensor([4., 3., 2., 1., 0.]))
     append(store, 0, stream=0)
     assert len(store) == 5
-    assert history_age(store)[0] == 2
+    assert history_age(store)[0] == 4
     store.witness_stream(0, 2)
-    assert history_age(store)[0] == 0  # strongest position across its witnesses
+    assert history_age(store)[0] == 4  # stream access does not rewrite event time
     append(store, 5, stream=-1)
-    assert history_age(store)[5] == 0  # legacy/unknown age is not a global clock
+    assert history_age(store)[5] == 0  # the latest sentence is present even without a stream
 
 
 def test_trigger_interval_and_age_select_oldest_without_moving_addresses():
@@ -88,13 +89,13 @@ def test_source_trust_is_separate_from_both_evidence():
     assert store.source_trust[row] == pytest.approx(-.4)
 
 
-def test_three_role_sentences_forget_lower_surprise_at_equal_trust_and_age():
+def test_ideas_forget_lower_surprise_at_equal_trust_and_age():
     store = LTM0(4, capacity=2)
-    meaning = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool))
+    meaning = ConceptualMeaning.from_description(torch.tensor([1., 0., 0., 0.]))
     for stream, surprise in enumerate((.9, .05)):
         store.append_meaning(meaning, trust=.5, surprise=surprise, stream=stream,
                              document_key=f'document-{stream}')
-    assert store.role_mask[:2].all()
+    assert store.slots.shape == (2, 4)
     terms = retention_values(store, config())
     torch.testing.assert_close(terms['age'], torch.zeros(2))
     torch.testing.assert_close(terms['trust'], torch.full((2,), .5))
@@ -127,42 +128,32 @@ def test_protected_and_live_roots_survive_and_block_unsafe_target():
         torch.testing.assert_close(before[key], store.state_dict()[key])
 
 
-def linked_store(*, child_is_relation=False):
-    store = LTM0(4, capacity=4)
-    child = (store.append_meaning(ConceptualMeaning(torch.eye(4)[:3],
-        torch.ones(3, dtype=torch.bool)), trust=0., sentence_index=0)
-        if child_is_relation else append(store, 0, trust=0.))
+def linked_store():
+    store = LTM0(4, capacity=4, percept_width=0)
+    child = append(store, 0, trust=0.)
     ref = store.occurrence_of(child)
-    roles = torch.tensor([[1., 0., 0., 0.], [0., 1., 0., 0.], [1., 0., 0., 0.]])
-    parent = store.append_meaning(ConceptualMeaning(roles, torch.ones(3, dtype=torch.bool),
-        role_refs=(ref, ('sym', 27), None)), trust=.9, stream=0, sentence_index=1)
+    parent = store.append_meaning(replace(ConceptualMeaning.from_description(torch.ones(4)),
+        role_refs=(ref, None, None)), trust=.9, stream=0, sentence_index=1)
     append(store, 2, trust=.7)
     append(store, 3, trust=.8)
     return store, ref, store.occurrence_of(parent)
 
 
-def test_idea_coarsens_parent_and_releases_its_child_next_pass():
-    for relation in (False, True):
-        store, child, parent = linked_store(child_is_relation=relation)
-        root = store.meaning_of(1)
-        cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
-        with pytest.warns(RuntimeWarning, match='low water'):
-            report = forget(store, cfg, document_boundary=True)
-        assert store.index_of_row(child[2]) is not None
-        assert report['cascade'] == 0 and bool(store.forget_pending)
-        if relation:
-            assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0
-        else:
-            index = store.index_of_row(parent[2])
-            assert index is not None and not hasattr(store, 'refs')
-            assert store.meaning_of(index).role_refs[0] is None
-            torch.testing.assert_close(store.meaning_of(index).roles, root.roles)
-            assert report['coarsened'] == 1
-        report = forget(store, cfg, document_boundary=True)
-        assert store.index_of_row(child[2]) is None
-        assert report['cascade'] == 0 and report['target_reached']
-        if not relation:
-            torch.testing.assert_close(store.meaning_of(store.index_of_row(parent[2])).roles, root.roles)
+def test_idea_deletion_releases_its_identity_next_pass():
+    store, child, parent = linked_store()
+    cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
+    # The identity is protected by the dependency snapshot. Its parent has
+    # its own value; deleting that parent releases the identity next pass.
+    store.source_trust[1] = 0.
+    with pytest.warns(RuntimeWarning, match='low water'):
+        report = forget(store, cfg, document_boundary=True,
+                        retained_occurrences=tuple(store.occurrence_of(i) for i in (2, 3)))
+    assert store.index_of_row(child[2]) is not None
+    assert store.index_of_row(parent[2]) is None and report['coarsened'] == 0
+    assert report['cascade'] == 0 and bool(store.forget_pending)
+    report = forget(store, cfg, document_boundary=True)
+    assert store.index_of_row(child[2]) is None
+    assert report['cascade'] == 0 and report['target_reached']
 
 
 def test_live_parent_pins_its_child():
@@ -182,7 +173,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
     assert result['wording'] == 8 and result['after'] == 8
     torch.testing.assert_close(store.slots, before)
     assert all(store.text_of(row) is None for row in range(8))
-    restored = LTM0(4, capacity=10)
+    restored = LTM0(12, capacity=10, percept_width=8)
     restored.load_state_dict(store.state_dict())
     restored.load_semantic_extras(store.semantic_extras())
     assert int(restored.forget_passes) == 1
@@ -213,18 +204,17 @@ def test_pair_unlinking_preserves_observation_and_restores_cleanly():
     restored.load_semantic_extras(store.semantic_extras())
 
 
-def test_transitive_row_is_expendable_but_its_proof_survives():
+def test_transitive_row_has_its_own_utility():
     from LTM1 import LTM1
-    from Forgetting import part_supports, forget_parts
+    from Forgetting import forget_parts
     store = LTM1(capacity=5)
-    rows = [store.add(left, right, truth_plus=1)
-            for left, right in ((10, 20), (20, 30), (10, 30))]
-    store.add(40, 50, truth_plus=.5)
+    rows = [store.add(left, right, truth_plus=1, surprise=utility)
+            for left, right, utility in ((10, 20, .1), (20, 30, .2), (10, 30, .9))]
+    low = store.add(40, 50, truth_plus=.5, surprise=0.)
     cfg = config(trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
-    assert part_supports(store) == {rows[2]: [frozenset(rows[:2])]}
     forget_parts(store, cfg)
-    assert not store.contains(rows[2])
-    assert all(store.contains(ref) for ref in rows[:2])
+    assert store.contains(rows[2]) and store.contains(rows[1])
+    assert not store.contains(rows[0]) and not store.contains(low)
 
 
 def test_epoch_trigger_and_disabled_setting():
@@ -235,16 +225,16 @@ def test_epoch_trigger_and_disabled_setting():
     assert forget(store, cfg, epoch_boundary=True)['after'] == 5
 
 
-def test_legacy_checkpoint_does_not_infer_trust_from_evidence():
+def test_partial_checkpoint_cannot_infer_missing_trust_or_forgetting_state():
     store = full_store()
     state = copy.deepcopy(store.state_dict())
     del state['source_trust']
     for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff'):
         del state[name]
-    restored = LTM0(4, capacity=10)
-    restored.load_state_dict(state)
-    assert not restored.source_trust.any()
-    torch.testing.assert_close(restored.c_plus, store.c_plus)
+    restored = LTM0(12, capacity=10, percept_width=8)
+    with pytest.raises(ValueError, match='checkpoint column'):
+        restored.load_state_dict(state)
+    assert len(restored) == 0
 
 
 def test_boundary_rebuilds_truth_and_preserves_predictor_tensors(monkeypatch):
@@ -295,7 +285,7 @@ def test_automatic_hook_runs_after_backward_and_honors_serving_mode(monkeypatch,
     from Models import BasicModel
     store = full_store()
     leaf = torch.tensor(2., requires_grad=True)
-    loss = (store.slots[:8].clone() * leaf).sum()
+    loss = (store.slots[:8, 8:].clone() * leaf).sum()
     calls = []
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store, what_memory=None,
         expectation=None, truth_layer=SimpleNamespace(sync_from_ltm=lambda: calls.append(len(store)), compact=True)),
@@ -389,15 +379,8 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
         restored.End()
 
 
-def test_scope_prevents_false_deduction_or_dissonance():
+def test_scope_prevents_false_dissonance():
     store = full_store()
-    from Forgetting import part_supports
-    # A quoted situation has its own symbol; its edge does not give the
-    # unquoted middle argument a second outgoing hop.
-    store.parts.add(10, 20, truth_plus=1)
-    store.parts.add(200, 30, truth_plus=1)
-    conclusion = store.parts.add(10, 30, truth_plus=1)
-    assert conclusion not in part_supports(store.parts)
     store.set_evidence(3, 1., 0.)
     store.set_evidence(4, 0., 1.)
     store.source_trust[3:5] = torch.tensor([1., .5])
@@ -425,7 +408,7 @@ def test_invalid_configuration_fails_before_a_pass(kwargs):
 def test_packed_and_single_presentations_keep_the_same_stream_history():
     snapshots = []
     for packing in (1, 4):
-        store = LTM0(4, capacity=10)
+        store = LTM0(12, capacity=10, percept_width=8)
         for first in range(0, 8, packing):
             for sentence in range(first, min(8, first + packing)):
                 append(store, sentence, surprise=sentence / 8)
@@ -438,28 +421,23 @@ def test_packed_and_single_presentations_keep_the_same_stream_history():
     assert snapshots[0][1] == snapshots[1][1]
 
 
-def test_legacy_source_trust_can_load_into_a_larger_inventory():
+def test_checkpoint_cannot_resize_the_constructed_inventory():
     store = full_store()
-    state = copy.deepcopy(store.state_dict())
-    state['trust'] = state.pop('source_trust')
-    restored = LTM0(4, capacity=20)
-    restored.load_state_dict(state)
-    torch.testing.assert_close(restored.source_trust[:8], store.source_trust[:8])
-    assert not restored.source_trust[8:].any()
+    restored = LTM0(12, capacity=20, percept_width=8)
+    with pytest.raises(ValueError, match='capacity/width'):
+        restored.load_state_dict(store.state_dict())
+    assert len(restored) == 0 and restored.capacity == 20
 
 
-def test_losing_a_proof_raises_pending_conclusions_utility():
-    from Forgetting import part_supports, forget_parts
+def test_conflicting_proof_does_not_change_another_rows_utility():
+    from Forgetting import forget_parts
     from LTM1 import LTM1
     store = LTM1(capacity=5)
     proof = store.add(10, 20, truth_plus=1)
     store.add(20, 30, truth_plus=1)
     conclusion = store.add(10, 30, truth_plus=1)
     low = store.add(40, 50, surprise=0.)
-    assert conclusion in part_supports(store)
-    # Conflicting evidence joins the same edge, rather than a second row.
     store.add(10, 20, truth_minus=1, witness=False)
-    assert conclusion not in part_supports(store)
     cfg = config(low_water=.6, trust_weight=0, utility_weight=1, luminosity_weight=0, age_weight=0)
     forget_parts(store, cfg)
     assert store.contains(proof) and store.contains(conclusion)
@@ -490,6 +468,6 @@ def test_compaction_preserves_protected_row_columns_and_optional_metadata():
         torch.testing.assert_close(getattr(store, name)[row], value, msg=name)
     # Point-only rows remain recoverable from tensor state without a sidecar.
     assert not store.metadata_required[:len(store)].any()
-    restored = LTM0(4, capacity=10)
+    restored = LTM0(12, capacity=10, percept_width=8)
     restored.load_state_dict(store.state_dict())
     assert all(restored.meaning_of(i) is not None for i in range(len(restored)))

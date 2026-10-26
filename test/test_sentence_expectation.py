@@ -127,12 +127,15 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
                                    discourse=packed, sid=sid, document='a')
         costs.append(cost)
     for t in range(2):
-        streaming.predict_and_observe_stm_end_state([3], [meanings[t].roles],
-            layout='infix', role_masks=[meanings[t].role_mask],
+        closed = finish_reading(f.language, entries[t], registry=f.registry)
+        # Layout step 1's observation is one fused idea; grammatical roles
+        # remain the pre-close witness, not the stored/context row layout.
+        streaming.predict_and_observe_stm_end_state([1], [closed.point[None]],
+            layout='infix', role_masks=[torch.tensor([True,False,False])],
             sentence_kinds=['idea'], documents=['a'],
-            evidence=[finish_reading(f.language, entries[t], registry=f.registry).evidence])
+            evidence=[closed.evidence])
         if consolidated:
-            rows = [i for i in range(len(f.store)) if f.store.row(i)['kind'] == 'observation']
+            rows = [i for i in range(len(f.store)) if f.store.row(i)['kind'] == 'unverified']
             streaming.bind_observation_occurrence(0, f.store.occurrence_of(rows[t]))
     assert streaming._inter_loss_count == 1
     torch.testing.assert_close(costs[1].mean(), streaming.consume_inter_loss())
@@ -144,10 +147,13 @@ def test_streaming_and_packed_boundary_use_same_full_roles(monkeypatch, consolid
         # with the streaming path because its context contains observations
         # only; the durable owner retains the auditable pair separately.
         kinds = [packed._ltm_store.row(i)['kind'] for i in range(len(packed._ltm_store))]
-        assert kinds.count('observation') == 2
+        assert kinds.count('unverified') == 2
         assert kinds.count('estimate') == 1
         estimate_index = kinds.index('estimate')
-        assert kinds[estimate_index+1] == 'observation'
+        pair = packed._ltm_store.expectation_pair(estimate_index)
+        observation_index = packed._ltm_store.location(pair['observation_occurrence'])
+        assert kinds[observation_index] == 'unverified'
+        assert pair['observation_occurrence'] == packed._ltm_store.occurrence_of(rows[1])
         assert packed._ltm_store.expectation_pair(estimate_index)['source_occurrences'] == (packed._ltm_store.row(0)['occurrence'],)
         # Future context reads the committed fused point through its address.
         torch.testing.assert_close(packed._ltm_store.meaning_of(0).roles[0], entries[0].end_state[0])
@@ -282,10 +288,16 @@ def test_truth_ingestion_preserves_all_external_row_contexts_and_losses():
         disc.predict_and_observe_stm_end_state(
             [1, 1], [torch.full((1, d), value), torch.full((1, d), -value)])
     before = [disc.expect_next_meaning(b).roles.detach().clone() for b in range(2)]
+    before_inputs = [tuple(value.clone() for value in disc._inter_last_meaning[b].inputs[:3]) for b in range(2)]
     loss_count = disc._inter_loss_count
     model.provision_ltm()
     assert disc._batch == 2
     assert disc._inter_loss_count == loss_count
     assert [len(c) for c in disc._inter_context] == [2, 2]
     for b in range(2):
-        torch.testing.assert_close(disc.expect_next_meaning(b).roles, before[b])
+        prediction = disc.expect_next_meaning(b)
+        for value, prior in zip(disc._inter_last_meaning[b].inputs[:3], before_inputs[b]):
+            torch.testing.assert_close(value, prior, rtol=0, atol=0)
+        assert bool(torch.isfinite(prediction.roles).all())
+        store = model.symbolSpace.ltm_store
+        assert torch.count_nonzero(prediction.roles[0,store.when_start:store.when_start+4]) == 0

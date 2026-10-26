@@ -174,25 +174,23 @@ def test_other_catalogue_faces_use_the_same_centroid_contract(paired):
 def test_journal_leaf_counts_drive_the_structural_face(paired):
     from types import SimpleNamespace
     from Language import ProductLayer
-    from MTMOverlay import MTMOverlay
-    from test_identity_threading import choice
-    overlay = MTMOverlay((SimpleNamespace(method_name='product', head_role=0),), ())
-    op = ProductLayer(12, 12)
-    values = torch.linspace(.1, .8, 36).reshape(3, 12)
-    state = overlay.empty(values[None], words=3, journal=2)
-    for index in (0, 1):
-        state = overlay.push(state, torch.tensor([True]), values[index:index+1],
-            word=torch.tensor([index+1]), order=torch.tensor([0]), index=torch.tensor(index),
-            words=3, resolved=torch.tensor([True]))
-    pair = op.compose(values[0:1], values[1:2])
-    state = overlay.apply(state, choice(pair, kind=1), values[:2][None], column=torch.tensor(0), words=3)
-    state = overlay.push(state, torch.tensor([True]), values[2:3], word=torch.tensor([3]),
-        order=torch.tensor([0]), index=torch.tensor(2), words=3, resolved=torch.tensor([True]))
-    counts = (state[2][:, 1, 6], state[2][:, 0, 6])
-    assert (int(counts[0]), int(counts[1])) == (2, 1)
-    result = op.compose_from_grammar_context((pair, values[2:3]),
-        context=SimpleNamespace(leaf_counts=counts, action_context=None))
-    torch.testing.assert_close(result[0, :4], values[:, :4].mean(0))
+    from chunk_fixtures import Walk,choice
+    from ChunkJournal import LEAVES
+    walk=Walk((SimpleNamespace(method_name='product',head_role=0),),())
+    op=ProductLayer(12,12)
+    values=torch.linspace(.1,.8,36).reshape(3,12)
+    state=walk.empty(values[:1],2)
+    for index in (0,1):
+        state=walk.shift(state,values[index:index+1],word=index+1,order=0,index=index)
+    pair=op.compose(values[0:1],values[1:2])
+    state=walk.apply(state,choice(pair,head=0),values[:2][None],0)
+    state=walk.shift(state,values[2:3],word=3,order=0,index=2)
+    counts=(state[1][:,1,LEAVES],state[1][:,0,LEAVES])
+    assert (int(counts[0]),int(counts[1])) == (2,1)
+    result=op.compose_from_grammar_context((pair,values[2:3]),
+        context=SimpleNamespace(leaf_counts=counts,action_context=None))
+    torch.testing.assert_close(result[0,:4],values[:,:4].mean(0))
+
 
 
 @pytest.mark.parametrize('compiled', (False, True))
@@ -360,14 +358,11 @@ def test_paired_lower_closes_its_composed_value_without_aliasing_the_description
                         composition=root, order=root.order)
         written = {}
         row = store.write_clause(clause, written_rows=written)
-        symbol = store.raw_meaning_of(row).role_refs[0][1]
-        if as_argument:
-            symbol = int(store.parts.refs[symbol, 0])
-            torch.testing.assert_close(owner.similarity_codebook.lookup_rows(owner._csw_row_of(symbol)),
-                                       point, rtol=0, atol=0)
-        assert symbol not in [term.reference for term in terms]
-        assert store.parts.refs[symbol].tolist() == [term.reference for term in terms]
-        torch.testing.assert_close(store.slots[row, 0], root.point, rtol=0, atol=0)
+        # The landed layout compresses resolved composition into one idea.
+        # The composed value remains its own point, not a kind/Part alias.
+        assert isinstance(row,int) and len(store.parts) == 0
+        torch.testing.assert_close(store.slots[row,:store.when_start],root.point[:store.when_start],rtol=0,atol=0)
+        assert written[id(clause)] == row
         assert not torch.equal(point, points[1])
     finally:
         model.End()

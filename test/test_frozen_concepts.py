@@ -115,5 +115,5 @@ def test_set_reading_primes_the_concept():
         assert getattr(m, "_reading_desire", None) is None
     finally:
         m.relevance_on = False
-        object.__setattr__(cs0, "_priming_boosts", None)
+        cs0._priming_boosts.fill_(1.)
         object.__setattr__(m, "_reading_desire", None)

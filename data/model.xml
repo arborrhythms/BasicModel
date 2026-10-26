@@ -501,7 +501,14 @@
   <ConceptualSpace>
     <!-- Active bipolar complement. Zero disables meaning; storage geometry stays fixed. -->
     <meaningWidth>128</meaningWidth>
-    <membershipPriming>true</membershipPriming>
+    <placementRate>0.1</placementRate>
+    <placementNegatives>5</placementNegatives>
+    <placementNegativeWeight>1.0</placementNegativeWeight>
+    <geometricSpread>0.05</geometricSpread>
+    <geometricNeighbours>8</geometricNeighbours>
+    <recurrenceAngle>15</recurrenceAngle>
+    <mtmPrepend>8</mtmPrepend>
+    <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
     <primingMaxBoost>2.0</primingMaxBoost>
     <readerBlockNormalization>true</readerBlockNormalization>
     <!-- Deterministic room between the part and property-whole bounds. -->

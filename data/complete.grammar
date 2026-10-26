@@ -177,7 +177,7 @@
       <rule>preposition_unary_argout1 = preposition_unary.forward(preposition_unary_argin1)</rule>
       <rule>surface_unary_argout1 = surface_unary.forward(surface_unary_argin1)</rule>
       <rule>compound_unary_argout1 = compound_unary.forward(compound_unary_argin1)</rule>
-      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
+      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
     </compose>
 
     <!-- Explicit boundary allow-list. Structural declarations alone never

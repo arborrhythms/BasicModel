@@ -37,17 +37,17 @@ def test_definition_rejects_a_word_object_and_keeps_both_forms():
 def test_live_zero_evidence_question_opens_after_its_row_is_written(relative, parsed):
     from dataclasses import replace
     from ThoughtClosing import closing_question
-    from ThoughtReferences import evidence_pair, needs_episode, open_slots
+    from ThoughtReferences import evidence_pair, has_open_slots, open_slots
     from test_clause_storage import clause_store, idea_clause, part_clause
     store, _ = clause_store()
     clause = part_clause() if relative else idea_clause()
-    clause = replace(clause, meaning=replace(clause.meaning, mode='interrogative'))
+    clause = replace(clause, meaning=replace(clause.meaning))
     written = {}
     row = store.write_clause(clause, evidence=(0., 0.), written_rows=written)
     query = closing_question(store.meaning_of(row), clause,
         clause.meaning if parsed else None, store=store, written_rows=written)
-    assert query is not None and query.mode == 'interrogative'
-    assert needs_episode(query) and open_slots(query) == ()
+    assert query is not None and not hasattr(query, 'mode')
+    assert not has_open_slots(query) and open_slots(query) == ()
     assert evidence_pair(query) == (0., 0.)
     assert 'grammatical_mode' not in store.state_dict()
 
@@ -56,7 +56,7 @@ def test_stored_question_is_refused_by_kind_without_a_mode_column():
     store = LTM0(4, capacity=4)
     question = ConceptualMeaning.from_description(torch.ones(4))
     from dataclasses import replace
-    row = store.append_meaning(replace(question, mode='interrogative'), kind='question')
+    row = store.append_meaning(replace(question), kind='question')
     state = copy.deepcopy(store.state_dict())
     assert 'grammatical_mode' not in state and not hasattr(store, 'MODES')
     restored = LTM0(4, capacity=4)
@@ -76,19 +76,26 @@ def test_stored_question_is_refused_by_kind_without_a_mode_column():
 def test_held_content_without_a_thought_signature_has_no_expectation_holes(relation):
     from dataclasses import replace
     from Queries import QueryWorkBudget
-    from test_negative_expectation import _anticipating_model
-    model, _, meaning = _anticipating_model()
-    registry = model.grammatical_thoughts
-    if relation:
-        # An ordinary concept in the VP slot is not a registered operation.
-        roles = meaning.roles.clone()
-        roles[1] = roles[0]
-        held = replace(meaning, roles=roles,
-            role_refs=(meaning.role_refs[0], meaning.role_refs[0], meaning.role_refs[2]))
-    else:
-        held = ConceptualMeaning.from_description(meaning.roles[0])
-    store = model.symbolSpace.ltm_store
-    index = store.append_meaning(held, kind='observation', sentence_index=len(store))
+    from test_normal_thought_controller import _catalog_world
+    from test_sentence_expectation import observe
+    from Layers import SymbolExpectation
+    from MemoryIndex import configure_model_index
+    model, registry, _, part, whole = _catalog_world()
+    meaning = registry.form('part', part, whole)
+    store = LTM0(8, capacity=64, percept_width=0)
+    model.symbolSpace.ltm_store = store
+    configure_model_index(model, store)
+    discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
+    discourse.set_symbol_bank(torch.eye(8))
+    discourse._ltm_store = store
+    model.symbolSpace.expectation = discourse
+    held = ConceptualMeaning.from_description(meaning.roles[0])
+    prior = store.append_meaning(held, kind='observation')
+    observe(discourse, held.roles)
+    discourse.bind_observation_occurrence(0, store.occurrence_of(prior))
+    # A stored pair exposes actual operands, without a grammatical VP slot.
+    index = (store.append_relation(part[1], whole[1]) if relation else
+             store.append_meaning(held, kind='observation', sentence_index=1))
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(meaning, row=0,
             work=QueryWorkBudget(64), continuation=None)
@@ -106,23 +113,23 @@ def test_negative_trust_derived_pair_reverses_only_on_the_relation_edge():
     clause = part_clause()
     clause = replace(clause, meaning=replace(clause.meaning, polarity=False))
     edge = store.write_clause(clause, trust=.7)
-    assert len(store) == 1
+    assert len(store) == 0
     assert store.row(edge)['evidence'] == pytest.approx((0., .7))
-    assert store.row(0)['evidence'] == pytest.approx((.7, 0.))
-    assert not store.raw_meaning_of(0).polarity
-    torch.testing.assert_close(store.slots[0, 0], clause.meaning.roles[2])
+    assert store.parts.refs[edge[1]].tolist() == [1, 2]
 
 
 def test_pending_forgetting_pressure_survives_restore_below_high_water():
     from Forgetting import forget
     from test_forgetting import linked_store, config
-    store, child, parent = linked_store(child_is_relation=True)
+    store, child, parent = linked_store()
+    store.source_trust[1] = 0.
     cfg = config(trust_weight=1, utility_weight=0, luminosity_weight=0, age_weight=0)
     with pytest.warns(RuntimeWarning, match='low water'):
-        report = forget(store, cfg, document_boundary=True)
+        report = forget(store, cfg, document_boundary=True,
+                        retained_occurrences=tuple(store.occurrence_of(i) for i in (2, 3)))
     assert report['after'] == 3 and store.index_of_row(parent[2]) is None
     assert store.index_of_row(child[2]) is not None and bool(store.forget_pending)
-    restored = LTM0(4, capacity=4)
+    restored = LTM0(4, capacity=4, percept_width=0)
     restored.load_state_dict(store.state_dict())
     restored.load_semantic_extras(store.semantic_extras())
     assert bool(restored.forget_pending)

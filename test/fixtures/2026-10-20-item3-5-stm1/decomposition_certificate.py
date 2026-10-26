@@ -19,7 +19,8 @@ from math_chain_ordinary import ordinary_model, train_documents
 import closing_episode_state as footprint
 from forced_decomposition_grammar import ForcedDecompositionGrammar
 from math_chain_corpus import ChainDocument
-from ThoughtReferences import bindings, question, open_slots
+from ThoughtReferences import bindings, open_slots
+from meaning_fixtures import unsupported as question
 from ThoughtStream import query_pattern
 from Queries import ThoughtOperationCandidate
 import ThoughtStream
@@ -82,11 +83,10 @@ def run(folder, successors=1):
                 selected = query_request(registry, root, sources[doc, assignments[name]])
             elif name in licenses and not returned:
                 region = current.role_refs[0]
-                components = reads[0].result.evidence.get('components', {})
-                compound = components.get(region)
-                if compound and compound['operands']:
-                    subject = compound['operands'][0]
-                    atom = components.get(subject)
+                identity = reads[0].result.evidence.get('identities', {}).get(region)
+                if identity is not None:
+                    subject = identity['reference']
+                    atom = identity
                     if atom is not None:
                         roles = root.roles.clone()
                         roles[2] = atom['meaning'].roles[0]
@@ -118,7 +118,11 @@ def run(folder, successors=1):
             field = model._sentence_fields[0][row]
             sources[address['document'], address['sentence']] = store.meaning_of(store.location(field.row_id))
         (folder/'progress.json').write_text(json.dumps(dict(rows=observed,episodes=episodes,menus=menus,
-            source_readings={str(key): value.role_refs for key,value in sources.items()}),indent=2)+'\n')
+            source_readings={str(key): value.role_refs for key,value in sources.items()},
+            storage=[dict(address=store.occurrence_of(i), order=int(store.order[i]), bindings=dict(store.raw_meaning_of(i).bindings)) for i in range(len(store))],
+            chains=[dict(handle=i, refs=store.parts.references(i)) for i in store.parts.indices().tolist()],
+            identities=[dict(key=key, kind=entry.kind, pending=entry.pending, names=[(str(occ), name.reading) for occ,name in model._concept_owner().mtm.names.items() if name.token==key]) for key,entry in model._concept_owner().mtm.entries.items()]),indent=2)+'\n')
+        torch.save({key: value.roles for key, value in sources.items()}, folder/'source-values.pt')
 
     def episode(original, model, meaning, **kwargs):
         before = footprint.snapshot(model)

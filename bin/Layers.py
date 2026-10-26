@@ -29,7 +29,7 @@ from contextlib import contextmanager
 from Meaning import ConceptualMeaning, canonical_role_payload
 from ClauseRow import ClauseRows
 from Occurrence import OccurrenceRows, AddressIndex
-from MemoryIndex import LeafCodeIndex
+from EntryRead import EntryRead
 from Thoughts import LevelledThoughtHistory, ThoughtRecord
 
 epsilon = 1e-7  # to avoid log(0)
@@ -2477,10 +2477,17 @@ class GrammarLayer(Layer):
     relation_kind = None
     scope_transparent = False
     polarity_effect = None
-    meaning_mode = None
     same_reference_idempotent = False
     predicate_identity = None
     meaning_layout = None
+    percept_band = None
+
+    def content_operand(self, value):
+        """Percept coordinates are positions, not cube membership evidence."""
+        if self.percept_band is None or value.shape[-1] != self.percept_band[2]:
+            return value
+        start,end,_ = self.percept_band
+        return torch.cat((value[...,:start],torch.zeros_like(value[...,start:end]),value[...,end:]),-1)
     meaning_rule = None
     meaning_head_role = 0
     determiner_mode = None
@@ -2647,6 +2654,8 @@ class GrammarLayer(Layer):
         if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
             form_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
             code_width = int(TheXMLConfig.space('ConceptualSpace', 'nDim'))
+            if form_width >= 8 and code_width >= form_width and nInput in (0,code_width):
+                self.percept_band = (form_width-8,form_width,code_width)
             if code_width > form_width and nInput in (0, code_width):
                 self.meaning_layout = (form_width, code_width)
                 width = code_width - form_width
@@ -5928,7 +5937,7 @@ class ConceptAllocator:
             # parent and a word's objects are not its composing constituents.
             edge = self.parts.find(part, whole)
             return 'definition' not in self.parts.readings(
-                edge, lambda ref: self.symbol_types.get(ref, ()))
+                edge, lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ())
         return list(dict.fromkeys((*raw,
                 *(('part', ('sym', part)) for part in self.parts.parts(cid)
                   if structural(part, cid)),
@@ -7518,11 +7527,9 @@ class TruthLayer(Layer):
 
     def _flatten_ltm_row(self, store, idx: int) -> torch.Tensor:
         """Read an idea's fused point, conformed to the content width."""
-        if int(store.role_mask[idx].sum()) != 1:
-            raise ValueError("a relation has no luminosity point")
         cw = max(1, min(int(getattr(store, 'content_width', store.nDim)),
                         int(store.nDim)))
-        vec = store.slots[idx, 0, :cw]
+        vec = store.slots[idx, :cw]
         if cw == self.nDim:
             return vec
         out = vec.new_zeros(self.nDim)
@@ -7556,7 +7563,7 @@ class TruthLayer(Layer):
         fact_kind = store.KINDS.index('fact')
         idx_list = [i for i in idxs.tolist()
                     if int(store.record_kind[i]) == fact_kind
-                    and int(store.role_mask[i].sum()) == 1][:self.max_truths]
+][:self.max_truths]
         self.truths.zero_()
         sources, trusts = [], []
         for row_i in idx_list:
@@ -8792,15 +8799,12 @@ class TruthLayer(Layer):
         print("TruthLayer tests passed.")
 
 
-class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
-    """Durable clause rows with shared references and independent evidence.
+class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
+    """Durable ideas: one paired event vector and independent evidence.
 
-    An idea stores one fused point without its reading derivation. A
-    relation stores three reference slots, with null point operands for
-    referenced relations. Only part, implication and operator relations are
-    admitted by the closing. Trust is external provenance; c_plus and c_minus
-    retain the two evidence poles independently. Tensor columns checkpoint
-    with state_dict; semantic_extras holds reference and provenance metadata.
+    LTM1 owns semantic chains. No role table or composition derivation is
+    retained here. Semantic bindings preserve identity, scope and provenance;
+    the percept band owns the sentence's model-time stamp.
     """
 
     ORIGIN_CONVERSATION = 0
@@ -8809,7 +8813,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference", "cover")
 
-    def __init__(self, nDim: int, capacity: int = 1024, content_width=None):
+    def __init__(self, nDim: int, capacity: int = 1024, content_width=None, *, percept_width=None,
+                 stream_capacity=None, recurrence_capacity=None):
         super().__init__(nDim, nDim)
         self.nDim = int(nDim)
         self.capacity = int(capacity)
@@ -8822,9 +8827,35 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # band of the event vector); defaults to the full width. Stored for
         # forward-compat -- this class keeps the FULL idea vectors.
         self.content_width = int(content_width) if content_width else self.nDim
-        # ONE tensor: [capacity, 3, nDim] -- slot 0 = NP1, 1 = VP, 2 = NP2.
-        self.register_buffer('slots', torch.zeros(capacity, 3, nDim))
-        self.register_buffer('stream', torch.zeros(capacity, 0, dtype=torch.bool))
+        # One idea per declared seat; the existing percept ends in four time coordinates.
+        self.percept_width = int(percept_width if percept_width is not None else nDim)
+        if not 0 <= self.percept_width <= self.nDim or self.capacity <= 0:
+            raise ValueError('invalid LTM0 construction layout')
+        self.when_start = self.percept_width - 4 if self.percept_width >= 8 else None
+        self.register_buffer('percept_layout', torch.tensor(self.percept_width, dtype=torch.long))
+        self.register_buffer('slots', torch.zeros(capacity, nDim))
+        # Production supplies ConceptualSpace.recurrenceCapacity, default nVectors:
+        # one fixed summary seat per allowed reading, independent of episode count.
+        # Standalone stores without a concept owner use their declared row bound.
+        self.recurrence_capacity = capacity if recurrence_capacity is None else int(recurrence_capacity)
+        if self.recurrence_capacity <= 0:
+            raise ValueError('recurrenceCapacity must be positive')
+        reading_cap = self.recurrence_capacity
+        self.register_buffer('recurrence_version', torch.tensor(2, dtype=torch.long))
+        self.register_buffer('recurrence_codes', torch.zeros(reading_cap, nDim))
+        self.register_buffer('recurrence_documents', torch.zeros(reading_cap, dtype=torch.long))
+        self.register_buffer('recurrence_weights', torch.zeros(reading_cap))
+        self.register_buffer('recurrence_used', torch.zeros(reading_cap, dtype=torch.bool))
+        self.register_buffer('recurrence_symbols', torch.full((reading_cap,), -1, dtype=torch.long))
+        # One assignment per episode row; compaction moves these with the ideas.
+        self.register_buffer('recurrence_readings', torch.full((capacity,), -1, dtype=torch.long))
+        self._recurrence_identities = [None] * reading_cap
+        # A batch must fit at least one close per stream in the declared
+        # store. This bounds stream ids by capacity unless configured tighter.
+        stream_capacity = capacity if stream_capacity is None else int(stream_capacity)
+        if stream_capacity <= 0:
+            raise ValueError('LTM0 stream capacity must be positive')
+        self.register_buffer('stream', torch.zeros(capacity, int(stream_capacity), dtype=torch.bool))
         self.register_buffer('order', torch.full((capacity,), -1, dtype=torch.long))
         self.register_buffer('c_plus', torch.zeros(capacity))
         self.register_buffer('c_minus', torch.zeros(capacity))
@@ -8834,9 +8865,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.register_buffer('forget_cutoff', torch.tensor(0.))
         self.register_buffer('forget_pending', torch.tensor(False))
         self.register_buffer('row_ids', torch.full((capacity,), -1, dtype=torch.long))
-        self.register_buffer('when', torch.zeros(capacity, 4))
+        # At most one observation id per LTM0 seat, rebuilt only after a write.
+        self.register_buffer('_observation_ids', torch.full((capacity,), -1, dtype=torch.long), persistent=False)
+        self._observation_revision = None
+        self._observation_count = 0
         self.register_buffer('model_clock', torch.tensor(0, dtype=torch.long))
-        self.register_buffer('truth_schema', torch.tensor(10, dtype=torch.long))
+        self.register_buffer('truth_schema', torch.tensor(13, dtype=torch.long))
         self.register_buffer('surprise', torch.full((capacity,), -1.))
         self.register_buffer('count', torch.tensor(0, dtype=torch.long))
         # Per-row writer provenance (ORIGIN_*); default 0 = conversation so
@@ -8850,7 +8884,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # Semantic provenance is separate from origin and signed evidence.
         # Scope/reference metadata rides the model's versioned sidecar; the
         # flag prevents a tensor-only restore from forgetting required scope.
-        self.register_buffer('role_mask', torch.zeros(capacity, 3, dtype=torch.bool))
         self.register_buffer('record_kind', torch.zeros(capacity, dtype=torch.long))
         self.register_buffer('polarity', torch.ones(capacity, dtype=torch.bool))
         self.register_buffer('address_keys', torch.full((capacity,), -1, dtype=torch.long))
@@ -8865,16 +8898,32 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # rows themselves. It is sidecar data, not a second LTM: occurrence
         # IDs, role vectors and evidence kind remain in the buffers above.
         self._expectation_rows = {}
-        self._init_leaf_index()
+        self._index_occurrences = AddressIndex()
         from LTM1 import LTM1
         object.__setattr__(self, 'parts', LTM1())
+
+    def clear_recurrence(self):
+        """Discard presentation evidence; promoted concepts keep their own seats."""
+        for name in ('recurrence_codes', 'recurrence_documents', 'recurrence_weights', 'recurrence_used'):
+            getattr(self, name).zero_()
+        self.recurrence_symbols.fill_(-1)
+        self.recurrence_readings.fill_(-1)
+        self._recurrence_identities[:] = [None] * self.recurrence_capacity
+
+    def observation_ids(self):
+        revision = (id(self.row_ids), self.row_ids._version, self.record_kind._version, len(self))
+        if revision != self._observation_revision:
+            rows = (self.record_kind[:len(self)] == self.KINDS.index('observation')).nonzero().flatten()
+            self._observation_count = len(rows)
+            self._observation_ids[:len(rows)].copy_(self.row_ids[rows])
+            self._observation_revision = revision
+        return self._observation_ids[:self._observation_count]
 
     @staticmethod
     def _context_fingerprint(context, text, expectation=None):
         """Bind sidecar content to its tensor-owned occurrence without duplicating it."""
         context = context or {}
-        content = {"role_refs": context.get("role_refs", (None, None, None)),
-                   "bindings": context.get("bindings", ()),
+        content = {"bindings": context.get("bindings", ()),
                    "scope": context.get("scope", ()), "text": text}
         # Legacy records keep their old fingerprint exactly. Only rows that
         # actually carry expectation provenance add this key.
@@ -9012,8 +9061,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     def occurrence_of(self, idx):
         """Stable identity; compaction changes a row index, not its occurrence."""
         if isinstance(idx, tuple) and idx[:1] == ('sym',):
-            if not self.parts.contains(idx[1]):
-                raise IndexError('unavailable Part symbol')
+            if not self.parts.contains(idx[1]) and (not callable(getattr(self, '_concept_point', None)) or self._concept_point(idx[1]) is None):
+                raise IndexError('unavailable native entry')
             return idx
         i = int(idx)
         if not 0 <= i < len(self):
@@ -9075,9 +9124,8 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     def _validate_constituent_graph(contexts, namespace):
         """Validate local semantic links before replacing owner metadata.
 
-        All local references must resolve among the proposed records.  Only
-        role references create structural edges; bindings and scopes are roots
-        for retention but do not turn into hidden syntax. Cyclic references
+        All local references must resolve among the proposed records.
+        Bindings and scopes retain their records without hidden syntax. Cyclic references
         are legal. Readers terminate at repeated occurrences; neither a cycle
         nor a successful binding grants evidence to the referenced row.
         """
@@ -9087,12 +9135,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                    for ref in references
                    if ref[:2] == ('ltm', namespace)):
                 raise ValueError("semantic context occurrence is unavailable")
-            for _, reference in LTM0._role_occurrence_references(
-                    context.get("role_refs", (None, None, None))):
-                if reference[:2] == ('ltm', namespace):
-                    if reference[2] not in contexts:
-                        raise ValueError(
-                            "semantic constituent occurrence is unavailable")
     def _validate_local_references(self, meaning):
         """Reject dangling local references before append mutates any buffer."""
         namespace = self.address_domain
@@ -9110,81 +9152,44 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
 
     def read_structure(self, reference, *, max_nodes=128, max_depth=16,
                        max_records=1024):
-        """Derive a bounded, detached view of an occurrence's structure.
-
-        The tensors and semantic sidecar above remain authoritative.  Node,
-        grammatical-depth, and physical-record scan bounds are independent;
-        incomplete structure is named rather than flattened or inferred.
-        """
-        for name, value in (("max_nodes", max_nodes),
-                            ("max_depth", max_depth),
+        """Read actual chain references; an idea has no stored derivation."""
+        for name, value in (("max_nodes", max_nodes), ("max_depth", max_depth),
                             ("max_records", max_records)):
             if type(value) is not int or value < 0:
                 raise ValueError(f"{name} must be a non-negative integer")
-        if (not isinstance(reference, tuple) or len(reference) != 3
-                or reference[0] not in ('ltm', 'thought')
-                or not isinstance(reference[1], str)
-                or type(reference[2]) is not int or reference[2] in (-1, 0)):
-            raise ValueError("structure requires an occurrence reference")
-
-        namespace = self.address_domain
-        records_scanned = min(len(self), max_records)
-        indices = {
-            int(self.address_keys[index]): index
-            for index in range(records_scanned)
-        }
-        incomplete, occurrences, rows, edges = [], [], [], []
-        visited, active = set(), set()
-        pending = [(reference, 0, False)]
+        if not isinstance(reference, tuple) or reference[:1] not in (('ltm',), ('sym',)):
+            raise ValueError('structure requires an idea or chain reference')
+        from ChainRead import envelope
+        incomplete, occurrences, rows, edges, visited = [], [], [], [], set()
+        pending, scanned = [(reference, 0)], 0
         while pending:
-            current, depth, exiting = pending.pop()
-            if exiting:
-                active.remove(current)
-                continue
-            if current in active:
-                incomplete.append("cycle")
-                continue
-            if depth > max_depth:
-                incomplete.append("depth_limit")
-                continue
+            current, depth = pending.pop()
             if current in visited:
                 continue
+            if depth > max_depth:
+                incomplete.append('depth_limit'); continue
             if len(visited) >= max_nodes:
-                incomplete.append("node_limit")
-                continue
-            if current[:2] != ('ltm', namespace):
-                incomplete.append("unavailable_owner")
-                continue
-            index = indices.get(current[2])
+                incomplete.append('node_limit'); break
+            if scanned >= max_records:
+                incomplete.append('record_limit'); break
+            index = self.location(current)
             if index is None:
-                incomplete.append(
-                    "record_limit" if records_scanned < len(self)
-                    else "unavailable_reference")
-                continue
-            value = {
-                key: item.detach().clone() if torch.is_tensor(item) else item
-                for key, item in self.row(index).items()
-            }
-            meaning = value["meaning"]
-            if meaning is None:
-                incomplete.append("unavailable_metadata")
-                continue
+                incomplete.append('unavailable_reference'); continue
+            scanned += 1
             visited.add(current)
-            active.add(current)
-            occurrences.append(current)
-            rows.append(value)
-            children = self._occurrence_references(meaning)
-            edges.extend((current, role, child) for role, child in children)
-            pending.append((current, depth, True))
-            pending.extend((child, depth + 1, False)
-                           for _, child in reversed(children))
-        return {
-            "occurrences": tuple(occurrences),
-            "rows": tuple(rows),
-            "edges": tuple(edges),
-            "records_scanned": records_scanned,
-            "incomplete": tuple(dict.fromkeys(incomplete)),
-        }
+            value = {key: item.detach().clone() if torch.is_tensor(item) else item
+                     for key, item in self.row(index).items()}
+            if value['meaning'] is None:
+                incomplete.append('unavailable_metadata'); continue
+            occurrences.append(current); rows.append(value)
+            if isinstance(index, tuple):
+                from LTM1 import SYMBOL
+                children = [(role, envelope(self, ref)) for role, ref in
+                    enumerate(self.parts.references(index[1])) if ref[0] != SYMBOL]
+                edges.extend((current, role, child) for role, child in children)
+                pending.extend((child, depth + 1) for _, child in reversed(children))
+        return dict(occurrences=tuple(occurrences), rows=tuple(rows), edges=tuple(edges),
+                    records_scanned=scanned, incomplete=tuple(dict.fromkeys(incomplete)))
 
     def meaning_of(self, idx):
         """An owned detached value, or None when required context is missing."""
@@ -9202,14 +9207,11 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         context = self._semantic_rows.get(identifier)
         if bool(self.metadata_required[i]) and context is None:
             return None
-        if not bool(self.role_mask[i].any()):
-            return None
-        return ConceptualMeaning(
-            self.slots[i].detach(), self.role_mask[i],
-            polarity=bool(self.polarity[i]),
-            sentence_kind=(None if self.KINDS[int(self.record_kind[i])] == 'estimate' else
-                           'idea' if int(self.role_mask[i].sum()) == 1 else 'relation'),
-            **(context or {}))
+        from dataclasses import replace
+        value = ConceptualMeaning.from_description(self.slots[i].detach())
+        value = replace(value, polarity=bool(self.polarity[i]), sentence_kind='idea', **(context or {}))
+        identity = dict(value.bindings).get('_identity')
+        return replace(value, role_refs=(identity, None, None)) if identity is not None else value
 
     def semantic_extras(self):
         """Versioned context/provenance beside the existing tensor state.
@@ -9226,96 +9228,33 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             records.append({"id": identifier, "context": dict(context or {}),
                             "text": self.text_of(i),
                             "expectation": self.expectation_of(i)})
-        return {"version": 6,
+        return {"version": 10,
                 "namespace": self.address_domain,
+                "recurrence_identities": tuple(self._recurrence_identities),
                 "cover_symbols": dict(self._cover_symbols),
                 "records": records}
 
-    def _migrate_estimate_rows(self, contexts, expectations, rows):
-        """Convert pre-Item-4 role estimates once, after authenticating their sidecar.
-
-        Preserve the historical raw observations and retention scores. The old
-        role confidences become positive-lane activation priors on exact keys;
-        the linked observation's distinct keys complete the archived bank. No
-        current reader interprets a role-vector estimate.
-        """
-        changed = []
-        for identifier, provenance in expectations.items():
-            if provenance['kind'] != 'estimate':
-                continue
-            changed.append(identifier)  # also authenticates removed kind metadata
-            context = contexts[identifier]
-            bindings = dict(context['bindings'])
-            if '_expected_symbols' in bindings:
-                continue
-            row = rows[identifier]
-            mask = self.role_mask[row]
-            predicted = self.slots[row][mask]
-            keys = list(predicted.unbind(0))
-            target = provenance['intended_occurrence']
-            if target is not None:
-                actual = rows[target[2]]
-                keys.extend(self.slots[actual][self.role_mask[actual]].unbind(0))
-            if not keys:
-                raise ValueError('historical estimate has no identity keys')
-            keys = torch.unique(torch.stack(keys), dim=0)
-            logits = keys.new_full((len(keys), 2), -30.)
-            if len(predicted):
-                distances = torch.cdist(predicted, keys, compute_mode='donot_use_mm_for_euclid_dist')
-                confidence = keys.new_tensor(provenance['presence_logits'])[mask]
-                logits[:, 0].scatter_reduce_(0, distances.argmin(-1), confidence, reduce='amax')
-            bindings['_expected_symbols'] = tuple((-1, -1, tuple(key), tuple(logit))
-                for key, logit in zip(keys.cpu().tolist(), logits.cpu().tolist()))
-            contexts[identifier] = dict(context, bindings=tuple(bindings.items()))
-        return changed
-
     def load_semantic_extras(self, extras):
         """Restore metadata only onto the matching durable occurrences."""
-        if not isinstance(extras, dict) or extras.get("version") not in (1, 2, 3, 4, 5, 6):
-            raise ValueError("unsupported truth semantic checkpoint version")
-        extras = self._migrate_address_extras(extras)
-        version = extras["version"]
+        if not isinstance(extras, dict) or extras.get('version') != 10:
+            raise ValueError('unsupported LTM0 semantic checkpoint version')
         namespace = self.address_domain
-        if extras.get("namespace") != namespace:
-            raise ValueError("truth semantic checkpoint occurrence namespace differs")
+        if extras.get('namespace') != namespace:
+            raise ValueError('truth semantic checkpoint occurrence namespace differs')
+        identities = extras.get('recurrence_identities')
+        if (not isinstance(identities, (tuple, list)) or len(identities) != self.recurrence_capacity
+                or any(ref is not None and not (
+                    isinstance(ref, (tuple, list)) and (
+                        len(ref) == 2 and ref[0] == 'sym' and type(ref[1]) is int and ref[1] > 0
+                        or len(ref) == 3 and tuple(ref[:2]) == ('ltm', namespace)
+                        and type(ref[2]) is int and ref[2] not in (-1, 0))) for ref in identities)):
+            raise ValueError('invalid angular-recurrence identity checkpoint')
         covers = extras.get('cover_symbols', {})
         if (not isinstance(covers, dict) or any(not isinstance(key, str) or len(key) != 64
                 or any(char not in '0123456789abcdef' for char in key)
                 or type(symbol) is not int or symbol <= 0 for key, symbol in covers.items())
                 or len(set(covers.values())) != len(covers)):
             raise ValueError('invalid document cover concept checkpoint')
-        discarded = set(getattr(self, '_discarded_occurrences', ()))
-        if discarded:
-            # A removed legacy row cannot remain reachable through a surviving
-            # observation, prediction pair, or stored row reference.
-            records = extras.get('records', ())
-            changed = True
-            while changed:
-                changed = False
-                for record in records:
-                    identifier = int(record['id'])
-                    if identifier in discarded:
-                        continue
-                    refs = self._context_occurrence_references(record.get('context') or {})
-                    refs += self._expectation_references(record.get('expectation'))
-                    if any(tuple(ref[:2]) == ('ltm', namespace) and ref[2] in discarded for ref in refs):
-                        discarded.add(identifier)
-                        changed = True
-            count = len(self)
-            keep = self.count.new_tensor([i for i in range(count)
-                if int(self.address_keys[i]) not in discarded])
-            if len(keep) != count:
-                import warnings
-                warnings.warn('Dropping dependent rows whose legacy truth references were retired.',
-                              UserWarning, stacklevel=2)
-                with torch.no_grad():
-                    self.compact_leaf_rows(keep)
-                    for name, value in self._buffers.items():
-                        if value is not None and value.ndim and value.shape[0] == self.capacity:
-                            value[:len(keep)] = value[keep]
-                    self.count.fill_(len(keep))
-                    self.rebuild_leaf_postings()
-            self._discarded_occurrences = discarded
         rows = {int(self.address_keys[i]): i for i in range(len(self))}
         if len(rows) != len(self):
             raise ValueError("duplicate truth occurrence identity")
@@ -9328,35 +9267,23 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                 raise ValueError("truth semantic checkpoint has an unavailable or duplicate occurrence")
             i = rows[identifier]
             context = record.get("context") or {}
-            if not isinstance(context, dict) or set(context) - {"role_refs", "bindings", "scope"}:
+            if not isinstance(context, dict) or set(context) - {"bindings", "scope"}:
                 raise ValueError("invalid truth semantic context")
             if 'clause' in record:
                 raise ValueError('a current truth checkpoint cannot contain a clause derivation')
             stored_context = dict(context)
-            meaning = ConceptualMeaning(
-                self.slots[i].detach(), self.role_mask[i],
+            from dataclasses import replace
+            meaning = replace(ConceptualMeaning.from_description(self.slots[i].detach()),
                 polarity=bool(self.polarity[i]), **stored_context)
             incoming[identifier] = {key: meaning.metadata()[key]
-                                    for key in ("role_refs", "bindings", "scope")}
+                                    for key in ("bindings", "scope")}
             text = record.get("text")
             if text is not None and not isinstance(text, str):
                 raise ValueError("truth source text must be a string")
             texts[i] = text
-            if version == 1:
-                if "expectation" in record:
-                    raise ValueError("legacy truth semantic checkpoint has expectation provenance")
-                expectation = None
-            else:
-                if "expectation" not in record:
-                    raise ValueError("truth semantic checkpoint omits expectation provenance")
-                source_expectation = record["expectation"]
-                if version < 6 and source_expectation is not None:
-                    source_expectation = dict(source_expectation)
-                    retired_kind = source_expectation.pop('kind_logit', None)
-                    if retired_kind is not None and (not isinstance(retired_kind, (int, float))
-                            or not math.isfinite(float(retired_kind))):
-                        raise ValueError('invalid historical estimate kind')
-                expectation = self._normalise_expectation_provenance(source_expectation, namespace)
+            if 'expectation' not in record:
+                raise ValueError('truth semantic checkpoint omits expectation provenance')
+            expectation = self._normalise_expectation_provenance(record['expectation'], namespace)
             if expectation is not None:
                 expectation_rows[identifier] = expectation
             if (meaning.has_context or text is not None or expectation is not None) and not bool(self.metadata_required[i]):
@@ -9364,7 +9291,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             if record.get('definition') is not None:
                 raise ValueError('retired definition rows cannot be loaded as LTM1')
             fingerprint_values = self._context_fingerprint(incoming[identifier], text,
-                record.get('expectation') if version < 6 else expectation)
+                expectation)
             fingerprint = self.semantic_fingerprint.new_tensor(fingerprint_values)
             if not torch.equal(fingerprint, self.semantic_fingerprint[i]):
                 raise ValueError("truth semantic content differs from its checkpoint fingerprint")
@@ -9374,7 +9301,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         # to the owner.  A corrupt sidecar cannot leave a partly-restored graph.
         self._validate_constituent_graph(incoming, namespace)
         self._validate_expectation_links(expectation_rows)
-        migrated = self._migrate_estimate_rows(incoming, expectation_rows, rows) if version < 6 else ()
         for identifier, provenance in expectation_rows.items():
             if provenance['kind'] == 'estimate' and '_expected_symbols' not in dict(incoming[identifier]['bindings']):
                 raise ValueError('estimate checkpoint lacks its symbol-bank prior')
@@ -9382,94 +9308,51 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self._texts = texts
         self._expectation_rows = expectation_rows
         self._cover_symbols = dict(covers)
-        for identifier in migrated:
-            self._update_semantic_fingerprint(rows[identifier])
-        self.rebuild_leaf_postings()
-        # The Part table and concept owner may still be restoring. Their
-        # binding hook regenerates all terms after the complete load.
-        self._leaf_needs_owner_reindex = True
+        self._recurrence_identities[:] = [None if ref is None else tuple(ref) for ref in identities]
+        self.rebuild_addresses()
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
-        retired = state_dict.pop(prefix + 'rel_type', None)
-        if retired is not None and bool(retired[:int(state_dict.get(prefix + 'count', 0))].any()):
-            raise ValueError('retired three-position relations require regeneration; no LTM2 conversion is defined')
-        stream = state_dict.get(prefix + 'stream')
-        if stream is not None:
-            self.stream = self.stream.new_zeros(self.capacity, stream.shape[1])
-        legacy_trust = state_dict.pop(prefix + 'trust', None)
-        if legacy_trust is not None:
-            state_dict.setdefault(prefix + 'source_trust', legacy_trust)
-        # Input position belongs to percepts, not retained occurrences.
-        state_dict.pop(prefix + 'where', None)
-        state_dict.pop(prefix + 'grammatical_mode', None)
-        self._resize_checkpoint_rows(state_dict, prefix)
-        # Legacy checkpoints retain their recorded pair. The retired scalar
-        # was provenance, so it must not silently overwrite that evidence.
-        state_dict.setdefault(prefix + 'source_trust', torch.zeros_like(self.source_trust))
-        state_dict.setdefault(prefix + 'cover_rng_state',
-                              torch.Generator(device='cpu').manual_seed(0).get_state())
-        for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
-            state_dict.setdefault(prefix + name, torch.zeros_like(getattr(self, name)))
-        # Checkpoint schema migration only: the removed clock has no live reader.
-        state_dict.pop(prefix + 'timestamp', None)
-        state_dict.pop(prefix + '_next_ts', None)
-        state_dict.setdefault(prefix + 'stream', torch.zeros_like(self.stream))
-        # Older checkpoints did not score surprise: unknown is not perfect.
-        state_dict.setdefault(prefix + 'surprise', torch.full_like(self.surprise, -1.))
-        old_schema = prefix + 'truth_schema' not in state_dict
-        # Scalar trust cannot reconstruct missing identification evidence.
-        state_dict.setdefault(prefix + 'c_plus', torch.zeros_like(self.c_plus))
-        state_dict.setdefault(prefix + 'c_minus', torch.zeros_like(self.c_minus))
-        if prefix + 'order' not in state_dict:
-            import warnings
-            warnings.warn('Legacy LTM rows have unknown order; decoding requires an explicit order stamp.',
-                          UserWarning, stacklevel=2)
-            state_dict[prefix + 'order'] = torch.full_like(self.order, -1)
-        state_dict[prefix + 'truth_schema'] = self.truth_schema.clone()
-        for name in ('row_ids', 'when', 'truth_schema'):
-            state_dict.setdefault(prefix + name, getattr(self, name).clone())
-
-        semantic_keys = (
-            'record_kind', 'role_mask', 'polarity',
-            'metadata_required', 'semantic_fingerprint')
-        present = [prefix + name in state_dict for name in semantic_keys]
-        if any(present) and not all(present):
-            error_msgs.append(f"{prefix}incomplete semantic checkpoint; cannot recover evidence scope")
-            return
-        # Legacy conversation records had no evidence kind.
-        # Only the explicitly accepted TruthSet origins establish fact status.
-        if prefix + "record_kind" not in state_dict:
-            slots = state_dict.get(prefix + "slots", self.slots)
-            count = int(state_dict.get(prefix + "count", self.count))
-            origins = state_dict.get(prefix + "origin", self.origin).to(slots.device)
-            kinds = torch.full(self.record_kind.shape, self.KINDS.index("unverified"), dtype=torch.long, device=slots.device)
-            accepted = ((origins == self.ORIGIN_PROVISIONED) | (origins == self.ORIGIN_USER))
-            kinds[:count] = torch.where(accepted[:count], self.KINDS.index("fact"), self.KINDS.index("unverified"))
-            mask = torch.zeros(self.role_mask.shape, dtype=torch.bool, device=slots.device)
-            mask[:count] = slots[:count].ne(0).any(-1)
-            mask[:count, 0] = True
-            migrations = {
-                "record_kind": kinds, "role_mask": mask,
-                "polarity": torch.ones_like(self.polarity),
-                "metadata_required": torch.zeros_like(self.metadata_required),
-                "semantic_fingerprint": torch.zeros_like(self.semantic_fingerprint),
-            }
-            migrations["semantic_fingerprint"][:count] = self.semantic_fingerprint.new_tensor(
-                self._context_fingerprint({}, None))
-            for name, value in migrations.items():
-                state_dict[prefix + name] = value
-        self._migrate_address_tensors(state_dict, prefix)
-        state_dict.pop(prefix + 'refs', None)
-        from RowTime import migrate
-        migrate(self, state_dict, prefix)
-        self._semantic_rows = {}
-        self._texts = []
-        self._expectation_rows = {}
-        self._discarded_occurrences = set()
+        if int(state_dict.get(prefix + 'truth_schema', -1)) != 13:
+            raise ValueError('unsupported LTM0 layout checkpoint version; regenerate pre-layout memories')
+        if int(state_dict.get(prefix + 'recurrence_version', -1)) != 2:
+            raise ValueError('unsupported item 3.0 recurrenceCapacity checkpoint version')
+        slots = state_dict.get(prefix + 'slots')
+        if slots is None or slots.shape != self.slots.shape:
+            raise ValueError('LTM0 checkpoint capacity/width differs from construction')
+        if state_dict.get(prefix + 'stream', self.stream).shape != self.stream.shape:
+            raise ValueError('LTM0 checkpoint stream capacity differs from construction')
+        if int(state_dict.get(prefix + 'percept_layout', -1)) != self.percept_width:
+            raise ValueError('LTM0 checkpoint percept layout differs from construction')
+        for name in ('rel_type', 'refs', 'role_mask', 'when'):
+            if prefix + name in state_dict:
+                raise ValueError('retired LTM0 layout column in checkpoint')
+        for name, expected in self.named_buffers(recurse=False):
+            if name in self._non_persistent_buffers_set:
+                continue
+            value = state_dict.get(prefix + name)
+            if value is None or value.shape != expected.shape or value.dtype != expected.dtype:
+                raise ValueError('LTM0 layout checkpoint column differs from construction: ' + name)
+            if value.is_floating_point() and not bool(torch.isfinite(value).all()):
+                raise ValueError('nonfinite LTM0 checkpoint column: ' + name)
+        count = int(state_dict[prefix + 'count'])
+        readings = state_dict[prefix + 'recurrence_readings']
+        used = state_dict[prefix + 'recurrence_used']
+        if (bool(((readings < -1) | (readings >= self.recurrence_capacity)).any())
+                or bool((readings[count:] != -1).any())
+                or not bool(used[readings[readings >= 0]].all())
+                or bool((state_dict[prefix + 'recurrence_documents'] < 0).any())
+                or bool((state_dict[prefix + 'recurrence_weights'] < 0).any())
+                or bool(((state_dict[prefix + 'recurrence_symbols'] == 0)
+                         | (state_dict[prefix + 'recurrence_symbols'] < -1)).any())):
+            raise ValueError('invalid angular-recurrence checkpoint')
+        keys = state_dict[prefix + 'address_keys'][:count].tolist()
+        if not 0 <= count <= self.capacity or len(set(keys)) != count or any(key in (-1, 0) for key in keys):
+            raise ValueError('invalid LTM0 checkpoint addresses/count')
+        self._semantic_rows, self._expectation_rows, self._texts = {}, {}, []
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                       missing_keys, unexpected_keys, error_msgs)
-        self.rebuild_leaf_postings()
+        self.rebuild_addresses()
 
     @torch.no_grad()
     def accept_fact(self, idx):
@@ -9527,6 +9410,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             **child_addresses[id(value)])[-1] is None for value in order[:-1])
         if new_children + reserve > self.capacity - len(self):
             raise OverflowError(f'LTM capacity {self.capacity} exhausted; forgetting is required')
+        from ThoughtReferences import has_open_slots
         bound, references = {}, {}
         for value in order:
             def remap(item):
@@ -9540,7 +9424,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             bound[id(value)] = result
             if value is not meaning:
                 index = self.append_meaning(result,
-                    kind="question" if result.mode == "interrogative" else "unverified",
+                    kind="question" if has_open_slots(result) else "unverified",
                     stream=stream, **child_addresses[id(value)])
                 if index < 0:  # preflight above reserves the complete graph
                     raise RuntimeError("constituent capacity changed during append")
@@ -9550,7 +9434,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
     @torch.no_grad()
     def append_meaning(self, meaning, *, kind="fact",
                        trust=0.0, stream=-1, surprise=-1., evidence=None, order=0,
-                       document_key=None, sentence_index=0, content_key=None, address=None):
+                       document_key=None, sentence_index=0, content_key=None, address=None, when=True):
         """Commit a complete description with explicit evidential provenance."""
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_meaning requires a ConceptualMeaning")
@@ -9558,12 +9442,15 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             raise ValueError("meaning width differs from the truth store")
         if kind not in self.KINDS:
             raise ValueError(f"unknown evidence kind {kind!r}")
-        if kind == "fact" and meaning.mode != "assertive":
-            raise ValueError("a fact requires assertive meaning, not an interrogative question")
+        from ThoughtReferences import has_open_slots
+        if kind == "fact" and has_open_slots(meaning):
+            raise ValueError("a fact cannot have open references")
         if not math.isfinite(float(trust)):
             raise ValueError("fact trust must be finite")
         if type(stream) is not int or stream < -1:
             raise ValueError("index stream must be a row or shared (-1)")
+        if stream >= self.stream.shape[1]:
+            raise OverflowError('stream exceeds LTM0 construction capacity')
         surprise = float(surprise)
         if not math.isfinite(surprise) or not (surprise == -1. or 0. <= surprise <= 1.):
             raise ValueError("surprise must be unknown (-1) or in [0, 1]")
@@ -9576,7 +9463,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             evidence = tuple(map(float, evidence))
         if len(evidence) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in evidence):
             raise ValueError('evidence poles must be finite and in [0, 1]')
-        terms, complete = self._meaning_leaf_terms(meaning, order=order, stream=None if stream < 0 else stream)
         identifier, document, position, content, previous = self._address_for_write(
             meaning, kind=kind, document_key=document_key, sentence_index=sentence_index,
             content_key=content_key, key=address)
@@ -9592,10 +9478,16 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             contexts = dict(self._semantic_rows)
             contexts[identifier] = meaning.metadata()
             self._validate_constituent_graph(contexts, self.address_domain)
-        if previous is not None:
-            self._drop_row_postings(n)
-        self.slots[n].copy_(meaning.roles)
-        self.role_mask[n].copy_(meaning.role_mask)
+        # Multiple working roles are not a durable layout. Estimates use their
+        # unary envelope; other writers must supply the actual composed idea.
+        occupied = meaning.role_mask.nonzero().flatten()
+        if len(occupied) != 1 and kind != 'estimate':
+            raise ValueError('LTM0 stores one idea; write semantic pairs through write_clause')
+        from RowTime import read_stamp, stamp, write_stamp
+        # Re-witnessing preserves the original event time, independently of
+        # the content carrier supplied by this reading.
+        original_stamp = read_stamp(self, n).clone() if previous is not None else None
+        self.slots[n].copy_(meaning.roles[int(occupied[0])])
         self.c_plus[n], self.c_minus[n] = evidence
         if previous is None or abs(float(trust)) >= abs(float(self.source_trust[n])):
             self.source_trust[n] = max(-1., min(1., float(trust)))
@@ -9609,14 +9501,15 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.document_keys[n] = self.document_keys.new_tensor(list(document))
         self.sentence_content_keys[n] = self.sentence_content_keys.new_tensor(list(content))
         self.sentence_index[n] = position
-        from RowTime import stamp
-        if previous is None:
-            self.when[n] = stamp(self)
+        write_stamp(self, n, original_stamp if previous is not None else
+                    stamp(self) if when is True else when)
         self.witness_count[n] += 1
-        self._semantic_rows[identifier] = {key: meaning.metadata()[key]
-                                          for key in ("role_refs", "bindings", "scope")}
+        context = {key: meaning.metadata()[key] for key in ('bindings', 'scope')}
+        if meaning.role_refs[0] is not None:
+            context['bindings'] = tuple(sorted(dict(context['bindings'], _identity=meaning.role_refs[0]).items()))
+        self._semantic_rows[identifier] = context
         self._update_forward_index(identifier)
-        self.metadata_required[n] = (meaning.has_context or (previous is not None and self.text_of(n) is not None)
+        self.metadata_required[n] = (bool(context['bindings'] or context['scope']) or (previous is not None and self.text_of(n) is not None)
                                      or identifier in self._expectation_rows)
         self._ensure_texts(n + 1)
         if previous is None:
@@ -9625,7 +9518,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.witness_stream(n, stream)
         if previous is None:
             self.count.fill_(n + 1)
-        self._append_leaf_terms(n, terms, complete, stream)
+        self._index_occurrences[identifier] = n
         return n
 
     @torch.no_grad()
@@ -9633,11 +9526,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                         stream=None, document=None, trust=0.0):
         """Append one explicit prediction without granting fact authority.
 
-        The estimate's complete role vectors and predicted occupancy live in
-        the ordinary ternary row.  Its confidence, source occurrences and
+        The estimate's entry vector lives in the ordinary idea row. Its
+        symbol-bank prior, confidence, source occurrences and
         intended observation are sidecar provenance bound to that same row.
         No arriving observation is accepted here, so this method cannot make
-        a prediction self-confirming.
+        a prediction self-confirming. An estimate carries no time and
+        consumes no arrival tick.
         """
         if not isinstance(meaning, ConceptualMeaning):
             raise TypeError("append_estimate requires a ConceptualMeaning")
@@ -9663,8 +9557,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                for reference in self._expectation_references(provenance)):
             raise ValueError("estimate source occurrence is unavailable")
         index = self.append_meaning(
-            meaning, kind="estimate", trust=trust,
+            meaning, kind="estimate", trust=trust, when=False,
             **self._estimate_write_address(meaning, document=document, stream=stream))
+        # Re-witnessing ordinarily preserves an entry's original stamp;
+        # an estimate is untimed even if an earlier witness carried one.
+        from RowTime import write_stamp
+        write_stamp(self, index, False)
         identifier = int(self.address_keys[index])
         self._expectation_rows[identifier] = provenance
         self.metadata_required[index] = True
@@ -9696,7 +9594,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             raise IndexError("expectation link row is unavailable")
         if self.KINDS[int(self.record_kind[estimate])] != "estimate":
             raise ValueError("expectation link must start at an estimate")
-        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question", "fact"):
+        if self.KINDS[int(self.record_kind[observation])] not in ("observation", "question", "fact", "unverified"):
             raise ValueError("expectation link must end at an external observation")
         estimate_id = int(self.address_keys[estimate])
         observation_id = int(self.address_keys[observation])
@@ -9826,12 +9724,10 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         observation = self.raw_meaning_of(observation_index)
         if estimate is None or observation is None:
             raise ValueError("expectation pair has unavailable semantic metadata")
-        if observation_ref[0] == 'sym':
+        if '_expectation_observation' in dict(estimate.bindings):
             from dataclasses import replace
             recorded = dict(estimate.bindings).get('_expectation_observation')
-            if recorded is None:
-                raise ValueError('Part estimate lacks its frozen observation target')
-            observation = replace(observation, bindings=dict(recorded))
+            observation = replace(observation, bindings=dict(observation.bindings, **dict(recorded)))
         estimate_provenance = self.expectation_of(estimate_index)
         if estimate_provenance is None or estimate_provenance["kind"] != "estimate":
             raise ValueError("expectation pair lacks estimate provenance")
@@ -9906,8 +9802,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             raise IndexError(f"row {idx} of {n}")
         i = int(idx)
         return {
-            'np1': self.slots[i, 0], 'vp': self.slots[i, 1],
-            'np2': self.slots[i, 2],
+            'point': self.slots[i],
             'stream': tuple(self.stream[i].nonzero().flatten().tolist()),
             'trust': float(self.trust[i].item()),
             'source_trust': float(self.source_trust[i].item()),
@@ -9915,7 +9810,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             'evidence': (float(self.c_plus[i]), float(self.c_minus[i])),
             'corners': self.corners(i),
             'row_id': int(self.row_ids[i]),
-            'when': self.when[i].clone(),
+            'when': self.entry_when(i).clone(),
             'surprise': float(self.surprise[i].item()),
             'origin': int(self.origin[i].item()),
             'text': self.text_of(i),
@@ -9941,7 +9836,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                                 if required in self.part_row(row)['readings']])
 
     def ideas(self):
-        return (self.role_mask[:len(self)].sum(-1) == 1).nonzero().flatten()
+        return torch.arange(len(self), device=self.slots.device)
 
     @property
     def trust(self):
@@ -10146,14 +10041,12 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
                     owner.mtm.forget(self.occurrence_of(index))
         self._ensure_texts(count)
         texts = [self._texts[i] for i in rows]
-        self.compact_leaf_rows(keep)
-        columns = ('slots', 'surprise', 'origin', 'role_mask', 'record_kind',
+        columns = ('slots', 'surprise', 'origin', 'record_kind',
                    'polarity', 'address_keys', 'document_keys',
                    'sentence_content_keys', 'sentence_index', 'witness_count',
                    'metadata_required', 'semantic_fingerprint', 'c_plus', 'c_minus',
-                   'source_trust', 'row_ids', 'when', 'order', 'stream',
-                   'leaf_complete')
-        minus_one = {'surprise', 'address_keys', 'sentence_index', 'row_ids', 'order'}
+                   'source_trust', 'row_ids', 'order', 'stream', 'recurrence_readings')
+        minus_one = {'surprise', 'address_keys', 'sentence_index', 'row_ids', 'order', 'recurrence_readings'}
         for name in columns:
             values = getattr(self, name)
             values[:size] = values[keep]
@@ -10163,7 +10056,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
             setattr(self, name, {key: value for key, value in getattr(self, name).items() if key in alive})
         self._texts = texts + [None] * (len(self._texts) - size)
         self.count.fill_(size)
-        self.rebuild_leaf_postings()
+        self.rebuild_addresses()
         self._validate_expectation_links()
         rebuild = getattr(self, '_rebuild_taxonomy', None)
         if rebuild is not None:
@@ -10178,7 +10071,6 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.count.zero_()
         self.origin.zero_()
         self._texts = []
-        self.role_mask.zero_()
         self.record_kind.zero_()
         self.polarity.fill_(True)
         self.address_keys.fill_(-1)
@@ -10190,6 +10082,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.semantic_fingerprint.zero_()
         self._semantic_rows = {}
         self._expectation_rows = {}
+        self.clear_recurrence()
         self.source_trust.zero_()
         for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence', 'forget_cutoff', 'forget_pending'):
             getattr(self, name).zero_()
@@ -10197,9 +10090,7 @@ class LTM0(OccurrenceRows, ClauseRows, LeafCodeIndex, Layer):
         self.c_minus.zero_()
         self.row_ids.fill_(-1)
         self.order.fill_(-1)
-        self.when.zero_()
-        self.leaf_complete.zero_()
-        self._leaf_postings, self._index_occurrences = {}, AddressIndex()
+        self._index_occurrences = AddressIndex()
         # Re-reading the same source after reset recomputes the same address. A held reference
         # cannot silently bind to a later fact at the same physical row.
 
@@ -10744,6 +10635,9 @@ class SymbolExpectation(Layer):
         # It is not mixed into an observation or supervised as a slot target.
         index = logits.sigmoid().amax(-1).argmax()
         roles = torch.cat((keys[index:index+1], keys.new_zeros(2, self.concept_dim)), 0)
+        store = self._ltm_store
+        if store is not None and store.when_start is not None:
+            roles[0, store.when_start:store.when_start+4] = 0
         presence = torch.cat((logits[index].amax().reshape(1), logits.new_full((2,), -30.)))
         return MeaningExpectation(roles, presence, bindings, scope,
                                   keys, logits, ids, orders)
@@ -10755,9 +10649,27 @@ class SymbolExpectation(Layer):
         if self._external_observations_suspended or not self.expectation_enabled:
             return None
         b = int(b)
+        from RowTime import encoder, HORIZON
+        store = self._ltm_store
+        present = None if store is None else getattr(store, '_model_present', None)
+        tick = 0 if store is None else int(store.model_clock) if present is None else int(present())
+        if not 0 <= tick <= HORIZON:
+            raise OverflowError('expectation time exceeds the declared RowTime horizon')
+        now = encoder().encode(tick).to(next(self._inter_predictor.parameters())).reshape(1, 4)
         pending = self._inter_last_meaning[b]
         if not refresh and pending is not None:
-            return pending.prediction
+            if len(pending.inputs) == 4 and torch.equal(pending.inputs[3], now):
+                return pending.prediction
+            # Retain the same observed sources, but every call supplies now.
+            # A returned estimate never becomes the next call's context.
+            inputs = (*pending.inputs[:3], now)
+            prediction = self._prediction(inputs, pending.prediction.symbol_ids,
+                pending.prediction.symbol_orders, bindings=pending.prediction.bindings,
+                scope=pending.prediction.scope)
+            if record:
+                from dataclasses import replace
+                self._inter_last_meaning[b] = replace(pending, prediction=prediction, inputs=inputs)
+            return prediction
         if len(self._inter_context[b]) != len(self._inter_context_occurrences[b]):
             raise RuntimeError('expectation context occurrence view is out of sync')
         chain, lanes, identities, occurrences = self._read_context(b)
@@ -10777,6 +10689,7 @@ class SymbolExpectation(Layer):
             identities = (identities[:-1] + [symbol_identities(m) for m in frames]
                           + identities[-1:])[-self._inter_chain_window:]
         inputs, ids, orders = self._bank_inputs(chain, lanes, identities)
+        inputs = (*inputs, now)
         bindings, scope = (), ()
         if self._ltm_store is not None and occurrences and occurrences[-1] is not None:
             index = self._ltm_store._index_occurrences.get(occurrences[-1])
@@ -11106,10 +11019,10 @@ class SymbolExpectation(Layer):
                 indices = indices[-int(n):]
             result = []
             for i in indices.tolist():
-                occupied = store.role_mask[i].nonzero(as_tuple=True)[0]
+                occupied = torch.tensor([0], device=store.slots.device)
                 if occupied.numel():
                     depth = int(occupied[-1]) + 1
-                    result.append((depth, store.slots[i, :depth].clone(), float(store.trust[i])))
+                    result.append((depth, store.slots[i:i+1].clone(), float(store.trust[i])))
             return result
         bi = int(b)
         if bi < 0 or bi >= len(self._stm_end_states):
@@ -13765,54 +13678,53 @@ class ShortTermMemory(Layer):
 
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__(nInput=0, nOutput=0)
-        # Constructor sizes seed standalone tests; attached SymbolSubSpace
-        # owns the live buffers.
+        import STMChunks
+        # Construction bound: nStreams × stmCapacity (default eight) × D.
+        # The same thirteen tensors serve parsing, recent entries and recall.
         self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
         self._init_concept_dim = int(concept_dim)
-        self._init_batch = int(batch)
-        # Standalone fallback until attach_word_subspace routes to SymbolSubSpace.
+        self._init_batch = self._active_batch = int(batch)
         self._word_subspace = None
-        # Plain attributes keep STM state out of nn.Module buffers and traces.
-        object.__setattr__(
-            self, '_live_buffer',
-            torch.zeros(self._init_batch, self._init_capacity,
-                        self._init_concept_dim))
-        object.__setattr__(
-            self, '_live_depth',
-            torch.zeros(self._init_batch, dtype=torch.long))
-        # Parallel provenance slabs. ``_live_orders`` is the actual
-        # subsymbolic/concept order of each idea; ``_live_grammar_orders`` is
-        # the syntactic derivation depth. Keeping them separate prevents a
-        # grammatical REDUCE from relabelling a word's mereological order.
-        object.__setattr__(
-            self, '_live_orders',
-            torch.full((self._init_batch, self._init_capacity), -1,
-                       dtype=torch.long))
-        object.__setattr__(
-            self, '_live_grammar_orders',
-            torch.full((self._init_batch, self._init_capacity), -1,
-                       dtype=torch.long))
-        # Exact sparse concept provenance for each occupied idea.  A row of
-        # ``-1`` means the dense payload has no single durable concept-row
-        # identity (for example, it is the result of a grammatical
-        # transformation).  Activations carry the coefficient of the named
-        # lexical row; they are zero whenever the row is unknown.
-        object.__setattr__(
-            self, '_live_concept_rows',
-            torch.full((self._init_batch, self._init_capacity), -1,
-                       dtype=torch.long))
-        object.__setattr__(
-            self, '_live_concept_activations',
-            torch.zeros(self._init_batch, self._init_capacity))
+        for name, value in zip(STMChunks.FIELDS, STMChunks.empty(
+                batch, self._init_capacity, concept_dim)):
+            object.__setattr__(self, '_live_'+name, value)
         self._live_capacity = self._init_capacity
         self._live_max_depth_host = 0
+        # Scope reserves 2 clause flags/references + 12 journal head fields;
+        # whole provenance reserves 3 indices + 2 span endpoints. Prefix
+        # views may expose the legacy widths, never shrink these owners.
+        from ChunkJournal import empty_scope
+        self._scope_columns, self._whole_columns = 2, 3
+        self._live_clause_state = empty_scope(self._live_buffer)
+        self._live_wholes = torch.full((batch, self._init_capacity, 5), -1, dtype=torch.long)
+        # One unary-history entry per constructed chunk and depth per stream.
+        self._live_last_unary = torch.full((batch, self._init_capacity), -1, dtype=torch.long)
+        self._live_unary_history_depth = torch.zeros(batch,dtype=torch.long)
+
+    @property
+    def state(self):
+        import STMChunks
+        return tuple(getattr(self, '_live_'+name)[:self._active_batch] for name in STMChunks.FIELDS)
+
+    def set_state(self, state):
+        import STMChunks
+        if len(state) != len(STMChunks.FIELDS):
+            raise ValueError('STM requires the thirteen-tensor shared chunk state')
+        batch = state[0].shape[0]
+        self.ensure_batch(batch)
+        for name, value in zip(STMChunks.FIELDS, state):
+            previous = getattr(self, '_live_'+name)
+            if value.shape[1:] != previous.shape[1:]:
+                raise ValueError('STM chunk shape exceeds its construction')
+            full = value if batch == self._init_batch else torch.cat((value, previous[batch:].to(value)), 0)
+            self._assign_live(self, '_live_'+name, full)
+        if not torch.compiler.is_compiling():
+            self._max_depth_host = int(state[1].max())
 
     def attach_word_subspace(self, word_subspace):
-        """Route STM accessors to the owning ``SymbolSubSpace`` buffers."""
+        if int(word_subspace._idea_capacity) != self._init_capacity or int(word_subspace._stm_payload_dim) != self._init_concept_dim:
+            raise ValueError('attached STM owner disagrees with the constructed chunk shape')
         object.__setattr__(self, '_word_subspace', word_subspace)
-        # Grow the owner to the constructor-requested capacity if needed.
-        if hasattr(word_subspace, 'idea_ensure_capacity'):
-            word_subspace.idea_ensure_capacity(self._init_capacity)
 
     # -- per-forward live working buffer ---------------------------------
     # Fresh, plain-attribute tensors avoid torch.compile input mutation.
@@ -13856,70 +13768,91 @@ class ShortTermMemory(Layer):
 
     @property
     def _buffer(self):
-        return self._live_buffer
+        return self._live_buffer[:self._active_batch]
 
     @_buffer.setter
     def _buffer(self, value):
-        self._assign_live(self, '_live_buffer', value)
-        # A wholesale carrier replacement invalidates provenance unless the
-        # caller immediately installs the correspondingly transformed slabs.
-        # Internal functional updates do exactly that; external legacy writes
-        # therefore degrade safely to "unknown" instead of inheriting orders
-        # from unrelated ideas.
-        if torch.is_tensor(value) and hasattr(self, '_live_orders'):
-            shape = tuple(value.shape[:2])
-            object.__setattr__(
-                self, '_live_orders',
-                torch.full(shape, -1, dtype=torch.long, device=value.device))
-            object.__setattr__(
-                self, '_live_grammar_orders',
-                torch.full(shape, -1, dtype=torch.long, device=value.device))
-            object.__setattr__(
-                self, '_live_concept_rows',
-                torch.full(shape, -1, dtype=torch.long, device=value.device))
-            object.__setattr__(
-                self, '_live_concept_activations',
-                torch.zeros(shape, dtype=value.dtype, device=value.device))
+        if value.shape != self._buffer.shape:
+            raise ValueError('STM buffer cannot resize after construction')
+        full = value if self._active_batch == self._init_batch else torch.cat((value, self._live_buffer[self._active_batch:].to(value)), 0)
+        self._assign_live(self, '_live_buffer', full)
 
     @property
     def _depth(self):
-        return self._live_depth
+        return self._live_depth[:self._active_batch]
 
     @_depth.setter
     def _depth(self, value):
-        self._assign_live(self, '_live_depth', value)
+        self._set_member('depth', value)
 
     @property
     def _orders(self):
-        return self._live_orders
+        return self._live_orders[:self._active_batch]
 
     @_orders.setter
     def _orders(self, value):
-        self._assign_live(self, '_live_orders', value)
+        self._set_member('orders', value)
 
     @property
     def _grammar_orders(self):
-        return self._live_grammar_orders
+        return self._live_grammar_orders[:self._active_batch]
 
     @_grammar_orders.setter
     def _grammar_orders(self, value):
-        self._assign_live(self, '_live_grammar_orders', value)
+        self._set_member('grammar_orders', value)
 
     @property
     def _concept_rows(self):
-        return self._live_concept_rows
+        return self._live_concept_rows[:self._active_batch]
 
     @_concept_rows.setter
     def _concept_rows(self, value):
-        self._assign_live(self, '_live_concept_rows', value)
+        self._set_member('concept_rows', value)
 
     @property
     def _concept_activations(self):
-        return self._live_concept_activations
+        return self._live_concept_activations[:self._active_batch]
 
     @_concept_activations.setter
     def _concept_activations(self, value):
-        self._assign_live(self, '_live_concept_activations', value)
+        self._set_member('concept_activations', value)
+
+    def _set_member(self, name, value):
+        previous = getattr(self, '_live_'+name)
+        if value.shape != previous[:self._active_batch].shape:
+            raise ValueError('STM metadata cannot resize after construction')
+        full = value if self._active_batch == self._init_batch else torch.cat(
+            (value, previous[self._active_batch:].to(value)), 0)
+        self._assign_live(self, '_live_'+name, full)
+
+    @property
+    def _clause_state(self):
+        return self._live_clause_state[:self._active_batch,:,:self._scope_columns]
+
+    @_clause_state.setter
+    def _clause_state(self, value):
+        if value.ndim != 3 or value.shape[-1] not in (2,14):
+            raise ValueError('STM clause scope exceeds its constructed provenance width')
+        columns = value.shape[-1]
+        padded = torch.nn.functional.pad(value,(0,14-columns))
+        self._set_member('clause_state',padded)
+        self._scope_columns = columns
+
+    @property
+    def _last_unary(self):
+        return self._live_last_unary[:self._active_batch]
+
+    @_last_unary.setter
+    def _last_unary(self, value):
+        self._set_member('last_unary',value)
+
+    @property
+    def _unary_history_depth(self):
+        return self._live_unary_history_depth[:self._active_batch]
+
+    @_unary_history_depth.setter
+    def _unary_history_depth(self, value):
+        self._set_member('unary_history_depth',value)
 
     @property
     def _max_depth_host(self):
@@ -13944,87 +13877,39 @@ class ShortTermMemory(Layer):
         return ss._stm_payload_dim
 
     def begin_forward(self, batch, device=None, dtype=None):
-        """Allocate a fresh per-forward STM buffer on the requested device."""
-        batch = int(batch)
-        cap = int(self.capacity)
-        dim = int(self.concept_dim)
-        # Do not read the old buffer here; that would make it a traced input.
-        if dtype is None:
-            dtype = torch.float32
-        self._buffer = torch.zeros(
-            batch, cap, dim, device=device, dtype=dtype)
-        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
-        self._orders = torch.full(
-            (batch, cap), -1, dtype=torch.long, device=device)
-        self._grammar_orders = torch.full(
-            (batch, cap), -1, dtype=torch.long, device=device)
-        self._concept_rows = torch.full(
-            (batch, cap), -1, dtype=torch.long, device=device)
-        self._concept_activations = torch.zeros(
-            (batch, cap), dtype=dtype, device=device)
-        self._max_depth_host = 0
+        """Start another forward in the same constructed shared working set."""
+        import STMChunks
+        self.ensure_batch(batch)
+        for name in STMChunks.FIELDS:
+            value = getattr(self, '_live_'+name)
+            target = dtype if value.is_floating_point() and dtype is not None else value.dtype
+            self._assign_live(self, '_live_'+name, value.detach().to(device=device, dtype=target))
+        gate = torch.ones(batch, dtype=torch.bool, device=self._buffer.device)
+        self.set_state(STMChunks.soft_reset_rows(self.state, gate))
         from ClauseScope import ClauseScope
-        self._clause_state = ClauseScope.empty(self._buffer)
+        self._clause_state = ClauseScope.reset(self._clause_state[:batch].to(self._buffer.device), gate)
 
     def ensure_clause_state(self):
         from ClauseScope import ClauseScope
         value = getattr(self, '_clause_state', None)
-        if (not torch.is_tensor(value) or value.shape != (*self._buffer.shape[:2], 2)
-                or value.device != self._buffer.device):
-            value = ClauseScope.empty(self._buffer)
+        if not torch.is_tensor(value) or value.shape[:2] != self._buffer.shape[:2]:
+            raise ValueError('STM clause scope disagrees with its construction')
+        if value.device != self._buffer.device:
+            value = value.to(self._buffer.device)
             self._clause_state = value
         return value
 
     def ensure_order_state(self):
-        """Return shape/device-aligned concept and grammar order slabs.
-
-        A few older tests and checkpoint adapters assign ``_buffer``
-        directly. Treat such a replacement as provenance-unknown instead of
-        retaining a stale order slab with a coincidentally compatible prefix.
-        """
-        buf = self._buffer
-        shape = tuple(buf.shape[:2])
-        orders = self._orders
-        grammar = self._grammar_orders
-        if (orders is None or tuple(orders.shape) != shape
-                or orders.device != buf.device):
-            orders = torch.full(
-                shape, -1, dtype=torch.long, device=buf.device)
-            self._orders = orders
-        if (grammar is None or tuple(grammar.shape) != shape
-                or grammar.device != buf.device):
-            grammar = torch.full(
-                shape, -1, dtype=torch.long, device=buf.device)
-            self._grammar_orders = grammar
-        return orders, grammar
+        for slab in (self._orders, self._grammar_orders):
+            if slab.shape != self._buffer.shape[:2] or slab.device != self._buffer.device:
+                raise ValueError('STM order state disagrees with its construction')
+        return self._orders, self._grammar_orders
 
     def ensure_reference_state(self):
-        """Return row/activation slabs aligned with the live STM payload.
-
-        Wholesale legacy writes to ``_buffer`` deliberately reset these
-        slabs.  This helper also repairs old checkpoint/test adapters that
-        supplied only the payload and order metadata.
-        """
-        buf = self._buffer
-        shape = tuple(buf.shape[:2])
-        rows = self._concept_rows
-        activations = self._concept_activations
-        if (rows is None or tuple(rows.shape) != shape
-                or rows.device != buf.device or rows.dtype != torch.long):
-            rows = torch.full(
-                shape, -1, dtype=torch.long, device=buf.device)
-            self._concept_rows = rows
-        if (activations is None or tuple(activations.shape) != shape
-                or activations.device != buf.device
-                or activations.dtype != buf.dtype):
-            activations = torch.zeros(
-                shape, dtype=buf.dtype, device=buf.device)
-        # Unknown rows never retain a coefficient. Apply this tensorially so
-        # the invariant is equally true in eager and compiled execution.
-        activations = torch.where(
-            rows >= 0, activations, torch.zeros_like(activations))
-        self._concept_activations = activations
-        return rows, activations
+        for slab in (self._concept_rows, self._concept_activations):
+            if slab.shape != self._buffer.shape[:2] or slab.device != self._buffer.device:
+                raise ValueError('STM reference state disagrees with its construction')
+        return self._concept_rows, self._concept_activations
 
     @staticmethod
     def _coerce_order_rows(value, batch, device, *, default=-1):
@@ -14077,32 +13962,9 @@ class ShortTermMemory(Layer):
     # ``begin_forward`` correctly.
 
     def ensure_batch(self, batch):
-        """Resize the idea-stack to ``batch`` rows. Idempotent."""
-        batch = int(batch)
-        buf = self._buffer
-        if buf is not None and int(buf.shape[0]) == batch:
-            return
-        device = buf.device if buf is not None else None
-        dtype = buf.dtype if buf is not None else torch.float32
-        self._buffer = torch.zeros(
-            batch, int(self.capacity), int(self.concept_dim),
-            device=device, dtype=dtype)
-        self._depth = torch.zeros(batch, dtype=torch.long, device=device)
-        self._orders = torch.full(
-            (batch, int(self.capacity)), -1,
-            dtype=torch.long, device=device)
-        self._grammar_orders = torch.full(
-            (batch, int(self.capacity)), -1,
-            dtype=torch.long, device=device)
-        self._concept_rows = torch.full(
-            (batch, int(self.capacity)), -1,
-            dtype=torch.long, device=device)
-        self._concept_activations = torch.zeros(
-            (batch, int(self.capacity)), dtype=dtype, device=device)
-        self._max_depth_host = 0
-        self._wholes = torch.full(
-            (batch, int(self.capacity), 3), -1,
-            dtype=torch.long, device=device)
+        if not 0 < int(batch) <= self._init_batch:
+            raise ValueError('STM batch exceeds its constructed nStreams')
+        self._active_batch = int(batch)
 
     # -- slot-whole provenance (meronomy fold-ladder plan, Phase 2b) --------
     # One fixed-shape slab ``_wholes`` ``[B, capacity, 3]`` of longs mirrors
@@ -14115,22 +13977,25 @@ class ShortTermMemory(Layer):
 
     @property
     def _wholes(self):
-        return self.__dict__.get('_live_wholes')
+        return self._live_wholes[:self._active_batch,:,:self._whole_columns]
 
     @_wholes.setter
     def _wholes(self, value):
-        self._assign_live(self, '_live_wholes', value)
+        if value.ndim != 3 or value.shape[-1] not in (3,5):
+            raise ValueError('STM whole provenance exceeds its constructed width')
+        columns = value.shape[-1]
+        self._set_member('wholes',torch.nn.functional.pad(value,(0,5-columns),value=-1))
+        self._whole_columns = columns
 
     def ensure_whole_state(self):
-        """Return the ``[B, capacity, 3]`` provenance slab aligned with the
-        live STM payload (allocated empty when a legacy write dropped it)."""
+        """Return the active view of the constructed whole/span provenance."""
         buf = self._buffer
-        shape = (int(buf.shape[0]), int(buf.shape[1]), 3)
         wholes = getattr(self, "_wholes", None)
-        if (not torch.is_tensor(wholes) or tuple(wholes.shape) != shape
-                or wholes.device != buf.device or wholes.dtype != torch.long):
-            wholes = torch.full(
-                shape, -1, dtype=torch.long, device=buf.device)
+        if (not torch.is_tensor(wholes) or wholes.shape[:2] != buf.shape[:2]
+                or wholes.dtype != torch.long):
+            raise ValueError('STM whole provenance disagrees with its construction')
+        if wholes.device != buf.device:
+            wholes = wholes.to(buf.device)
             self._wholes = wholes
         return wholes
 
@@ -14245,222 +14110,40 @@ class ShortTermMemory(Layer):
 
 
     def ensure_capacity(self, capacity):
-        """Grow the per-slot capacity to at least ``capacity`` (grow-only)."""
-        capacity = int(capacity)
-        buf = self._buffer
-        old_cap = int(buf.shape[1]) if buf is not None else 0
-        if capacity <= old_cap:
-            # Keep the standalone capacity record in sync (grow-only) so
-            # ``self.capacity`` reflects the request when not attached.
-            if self._word_subspace is None and capacity > self._live_capacity:
-                self._live_capacity = capacity
-            return
-        device = buf.device
-        B = int(buf.shape[0])
-        orders, grammar = self.ensure_order_state()
-        concept_rows, concept_activations = self.ensure_reference_state()
-        new_buf = torch.zeros(
-            B, capacity, int(self.concept_dim),
-            device=device, dtype=buf.dtype)
-        if old_cap > 0:
-            new_buf[:, :old_cap, :] = buf
-        self._buffer = new_buf
-        new_orders = torch.full(
-            (B, capacity), -1, dtype=torch.long, device=device)
-        new_grammar = torch.full(
-            (B, capacity), -1, dtype=torch.long, device=device)
-        new_concept_rows = torch.full(
-            (B, capacity), -1, dtype=torch.long, device=device)
-        new_concept_activations = torch.zeros(
-            (B, capacity), dtype=buf.dtype, device=device)
-        if old_cap > 0:
-            new_orders[:, :old_cap] = orders[:, :old_cap]
-            new_grammar[:, :old_cap] = grammar[:, :old_cap]
-            new_concept_rows[:, :old_cap] = concept_rows[:, :old_cap]
-            new_concept_activations[:, :old_cap] = (
-                concept_activations[:, :old_cap])
-        self._orders = new_orders
-        self._grammar_orders = new_grammar
-        self._concept_rows = new_concept_rows
-        self._concept_activations = new_concept_activations
-        wholes = getattr(self, "_wholes", None)
-        new_wholes = torch.full(
-            (B, capacity, 3), -1, dtype=torch.long, device=device)
-        if torch.is_tensor(wholes) and old_cap > 0:
-            new_wholes[:, :old_cap] = wholes[:, :old_cap]
-        self._wholes = new_wholes
-        if self._word_subspace is None:
-            self._live_capacity = capacity
+        if int(capacity) > self._init_capacity:
+            raise ValueError('STM cannot resize its constructed stmCapacity')
 
-    def push(self, b, idea, order=None, grammar_order=None,
-             concept_row=None, concept_activation=None):
-        # Newest-at-slot-0: write the new idea at slot 0 and shift the
-        # existing occupants RIGHT. Overflow RAISES (strict-bound
-        # primitive; the rolling-window drop is _stm_shift_and_push).
-        cap = int(self.capacity)
-        depth = int(self._depth[b].item())
-        if depth >= cap:
-            raise RuntimeError(
-                f"ShortTermMemory.push: row {b} is at capacity "
-                f"({cap}); reduce before pushing further.")
-        buf = self._buffer
-        orders, grammar = self.ensure_order_state()
-        concept_rows, concept_activations = self.ensure_reference_state()
-        if depth > 0:
-            buf[b, 1:depth + 1] = buf[b, 0:depth].clone()
-            orders[b, 1:depth + 1] = orders[b, 0:depth].clone()
-            grammar[b, 1:depth + 1] = grammar[b, 0:depth].clone()
-            concept_rows[b, 1:depth + 1] = (
-                concept_rows[b, 0:depth].clone())
-            concept_activations[b, 1:depth + 1] = (
-                concept_activations[b, 0:depth].clone())
-        buf[b, 0] = idea
-        orders[b, 0] = int(-1 if order is None else order)
-        grammar[b, 0] = int(-1 if grammar_order is None else grammar_order)
-        inserted_row = self._coerce_concept_rows(
-            concept_row, 1, buf.device)
-        concept_rows[b, 0] = inserted_row[0]
-        concept_activations[b, 0] = self._coerce_concept_activations(
-            concept_activation, 1, buf.device, buf.dtype,
-            inserted_row)[0]
-        self._depth[b] = depth + 1
-        if depth + 1 > self._max_depth_host:
-            self._max_depth_host = depth + 1
+    def push(self, b, idea, order=None, grammar_order=None, concept_row=None, concept_activation=None):
+        gate = torch.arange(self._active_batch, device=self._buffer.device) == int(b)
+        if self.is_full(b):
+            raise RuntimeError('ShortTermMemory.push: all chunks are on the stack; reduce before pushing')
+        ideas = idea.to(self._buffer)[None].expand(self._active_batch, -1)
+        self.push_step_masked(ideas, gate, order, grammar_order, concept_row, concept_activation)
 
-    def push_step(self, ideas, orders=None, grammar_orders=None,
-                  concept_row=None, concept_activation=None):
-        # Newest-at-slot-0: shift RIGHT by one slot, write slot 0.
-        buf = self._buffer
-        cap = int(buf.shape[1])
-        order_slab, grammar_slab = self.ensure_order_state()
-        concept_slab, activation_slab = self.ensure_reference_state()
-        B = int(buf.shape[0])
-        order_rows = self._coerce_order_rows(
-            orders, B, buf.device)
-        grammar_rows = self._coerce_order_rows(
-            grammar_orders, B, buf.device)
-        concept_rows = self._coerce_concept_rows(
-            concept_row, B, buf.device)
-        concept_activations = self._coerce_concept_activations(
-            concept_activation, B, buf.device, buf.dtype, concept_rows)
-        if cap > 1:
-            buf[:, 1:cap] = buf[:, 0:cap - 1].clone()
-            order_slab[:, 1:cap] = order_slab[:, 0:cap - 1].clone()
-            grammar_slab[:, 1:cap] = grammar_slab[:, 0:cap - 1].clone()
-            concept_slab[:, 1:cap] = concept_slab[:, 0:cap - 1].clone()
-            activation_slab[:, 1:cap] = (
-                activation_slab[:, 0:cap - 1].clone())
-        buf[:, 0] = ideas
-        order_slab[:, 0] = order_rows
-        grammar_slab[:, 0] = grammar_rows
-        concept_slab[:, 0] = concept_rows
-        activation_slab[:, 0] = concept_activations
-        self._depth = self._depth + 1
-        self._max_depth_host = self._max_depth_host + 1
+    def push_step(self, ideas, orders=None, grammar_orders=None, concept_row=None, concept_activation=None):
+        self.push_step_masked(ideas, torch.ones(ideas.shape[0], dtype=torch.bool, device=ideas.device),
+                              orders, grammar_orders, concept_row, concept_activation)
+
+    def push_step_masked(self, ideas, gate_b_1, orders=None, grammar_orders=None, concept_row=None, concept_activation=None):
+        batch = ideas.shape[0]
+        self.ensure_batch(batch)
+        rows = self._coerce_concept_rows(concept_row, batch, ideas.device)
+        state = self.functional_push_step_masked(self.state, ideas, gate_b_1,
+            self._coerce_order_rows(orders, batch, ideas.device),
+            self._coerce_order_rows(grammar_orders, batch, ideas.device), rows,
+            self._coerce_concept_activations(concept_activation, batch, ideas.device, ideas.dtype, rows))
+        moved = state[1] > self._depth
+        self.set_state(state)
         from ClauseScope import ClauseScope
-        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
-            torch.ones(B, dtype=torch.bool, device=buf.device), torch.full_like(concept_rows, -1))
-
-    def push_step_masked(self, ideas, gate_b_1, orders=None,
-                         grammar_orders=None, concept_row=None,
-                         concept_activation=None):
-        # Newest-at-slot-0 masked push: gated rows shift RIGHT + write
-        # slot 0; un-gated rows are unchanged.
-        B, D = ideas.shape
-        buf = self._buffer
-        order_slab, grammar_slab = self.ensure_order_state()
-        concept_slab, activation_slab = self.ensure_reference_state()
-        inserted_orders = self._coerce_order_rows(
-            orders, B, buf.device)
-        inserted_grammar = self._coerce_order_rows(
-            grammar_orders, B, buf.device)
-        inserted_rows = self._coerce_concept_rows(
-            concept_row, B, buf.device)
-        inserted_activations = self._coerce_concept_activations(
-            concept_activation, B, buf.device, buf.dtype, inserted_rows)
-        state = self.functional_push_step_masked(
-            buf, self._depth, order_slab, grammar_slab,
-            concept_slab, activation_slab,
-            ideas, gate_b_1, inserted_orders, inserted_grammar,
-            inserted_rows, inserted_activations)
-        (self._buffer, self._depth, self._orders,
-         self._grammar_orders, self._concept_rows,
-         self._concept_activations) = state
-        from ClauseScope import ClauseScope
-        self._clause_state = ClauseScope.push(self.ensure_clause_state(),
-            gate_b_1.reshape(B).bool(), torch.full_like(inserted_rows, -1))
+        self._clause_state = ClauseScope.push(self.ensure_clause_state(), moved, torch.full_like(rows,-1))
 
     @staticmethod
-    def functional_push_step_masked(
-            buffer, depth, orders, grammar_orders,
-            concept_rows, concept_activations,
-            ideas, gate_b_1, inserted_orders, inserted_grammar_orders,
-            inserted_concept_rows, inserted_concept_activations):
-        """Return a masked newest-first push without mutating an STM object.
-
-        This is the tensor-state primitive used by compiled recurrent
-        schedulers.  Every input and output has fixed metadata, so it is safe
-        to carry through :func:`torch.while_loop`; the ordinary
-        :meth:`push_step_masked` method above is now only the owning-space
-        commit wrapper around this computation.
-
-        ``gate_b_1`` contains one boolean per batch row.  Gated rows shift
-        right and install the supplied value/provenance at slot zero.
-        Ungated rows are bit-identical, including their depth and every
-        provenance slab.
-        """
-        if buffer.dim() != 3 or ideas.dim() != 2:
-            raise ValueError(
-                "functional STM push expects buffer [B,K,D] and ideas [B,D]")
-        B, cap, D = buffer.shape
-        if tuple(ideas.shape) != (B, D):
-            raise ValueError(
-                "functional STM push idea shape must match buffer batch/dim")
-        slab_shape = (B, cap)
-        for name, slab in (
-                ("orders", orders),
-                ("grammar_orders", grammar_orders),
-                ("concept_rows", concept_rows),
-                ("concept_activations", concept_activations)):
-            if tuple(slab.shape) != slab_shape:
-                raise ValueError(
-                    f"functional STM push {name} must have shape {slab_shape}")
-
-        gate_bool = gate_b_1.reshape(B).to(
-            device=buffer.device, dtype=torch.bool)
-        gate_col = gate_bool.reshape(B, 1, 1)
-        gate_slab = gate_bool.reshape(B, 1)
-
-        # Concatenation expresses the shift without slice assignment.  Besides
-        # being easier for functionalization to prove alias-free, it works for
-        # capacity one without a Python special case in the captured body.
-        shifted_buffer = torch.cat(
-            (ideas.unsqueeze(1), buffer[:, :cap - 1, :]), dim=1)
-        shifted_orders = torch.cat(
-            (inserted_orders.reshape(B, 1),
-             orders[:, :cap - 1]), dim=1)
-        shifted_grammar = torch.cat(
-            (inserted_grammar_orders.reshape(B, 1),
-             grammar_orders[:, :cap - 1]), dim=1)
-        shifted_rows = torch.cat(
-            (inserted_concept_rows.reshape(B, 1),
-             concept_rows[:, :cap - 1]), dim=1)
-        shifted_activations = torch.cat(
-            (inserted_concept_activations.reshape(B, 1),
-             concept_activations[:, :cap - 1]), dim=1)
-
-        next_buffer = torch.where(gate_col, shifted_buffer, buffer)
-        next_orders = torch.where(gate_slab, shifted_orders, orders)
-        next_grammar = torch.where(
-            gate_slab, shifted_grammar, grammar_orders)
-        next_rows = torch.where(gate_slab, shifted_rows, concept_rows)
-        next_activations = torch.where(
-            gate_slab, shifted_activations, concept_activations)
-        next_depth = torch.clamp(
-            depth + gate_bool.to(dtype=depth.dtype), max=cap)
-        return (
-            next_buffer, next_depth, next_orders, next_grammar,
-            next_rows, next_activations)
+    def functional_push_step_masked(state, ideas, gate_b_1, inserted_orders, inserted_grammar_orders,
+                                    inserted_concept_rows, inserted_concept_activations):
+        import STMChunks
+        return STMChunks.deposit(state, ideas, gate_b_1, stack=True,
+            order=inserted_orders, grammar_order=inserted_grammar_orders,
+            row=inserted_concept_rows, activation=inserted_concept_activations)[0]
 
     @staticmethod
     def functional_snapshot_mask(buffer, depth, active_rows=None):
@@ -14488,161 +14171,74 @@ class ShortTermMemory(Layer):
                     device=occupied.device, dtype=torch.bool))
         return buffer, occupied
 
-    def push_window_batch(self, ideas, orders=None, grammar_orders=None,
-                          concept_rows=None, concept_activations=None):
-        # Newest-at-slot-0: shift RIGHT by W; write the window REVERSED
-        # into slots [0, W) so the window's newest position lands at 0.
-        B, W, D = ideas.shape
-        if W == 0:
-            return
-        buf = self._buffer
-        cap = int(buf.shape[1])
-        order_slab, grammar_slab = self.ensure_order_state()
-        concept_slab, activation_slab = self.ensure_reference_state()
-        if orders is None:
-            order_window = torch.full(
-                (B, W), -1, dtype=torch.long, device=buf.device)
-        elif torch.is_tensor(orders):
-            order_window = orders.to(
-                device=buf.device, dtype=torch.long).reshape(B, W)
-        else:
-            order_window = torch.full(
-                (B, W), int(orders), dtype=torch.long, device=buf.device)
-        if grammar_orders is None:
-            grammar_window = torch.full(
-                (B, W), -1, dtype=torch.long, device=buf.device)
-        elif torch.is_tensor(grammar_orders):
-            grammar_window = grammar_orders.to(
-                device=buf.device, dtype=torch.long).reshape(B, W)
-        else:
-            grammar_window = torch.full(
-                (B, W), int(grammar_orders), dtype=torch.long,
-                device=buf.device)
-        if concept_rows is None:
-            concept_window = torch.full(
-                (B, W), -1, dtype=torch.long, device=buf.device)
-        elif torch.is_tensor(concept_rows):
-            concept_window = concept_rows.to(
-                device=buf.device, dtype=torch.long).reshape(B, W)
-        else:
-            concept_window = torch.full(
-                (B, W), int(concept_rows), dtype=torch.long,
-                device=buf.device)
-        if concept_activations is None:
-            activation_window = torch.zeros(
-                (B, W), dtype=buf.dtype, device=buf.device)
-        elif torch.is_tensor(concept_activations):
-            activation_window = concept_activations.to(
-                device=buf.device, dtype=buf.dtype).reshape(B, W)
-        else:
-            activation_window = torch.full(
-                (B, W), float(concept_activations), dtype=buf.dtype,
-                device=buf.device)
-        activation_window = torch.where(
-            concept_window >= 0, activation_window,
-            torch.zeros_like(activation_window))
-        if cap > W:
-            buf[:, W:cap] = buf[:, 0:cap - W].clone()
-            order_slab[:, W:cap] = order_slab[:, 0:cap - W].clone()
-            grammar_slab[:, W:cap] = grammar_slab[:, 0:cap - W].clone()
-            concept_slab[:, W:cap] = concept_slab[:, 0:cap - W].clone()
-            activation_slab[:, W:cap] = (
-                activation_slab[:, 0:cap - W].clone())
-        buf[:, 0:W] = torch.flip(ideas, dims=[1])
-        order_slab[:, 0:W] = torch.flip(order_window, dims=[1])
-        grammar_slab[:, 0:W] = torch.flip(grammar_window, dims=[1])
-        concept_slab[:, 0:W] = torch.flip(concept_window, dims=[1])
-        activation_slab[:, 0:W] = torch.flip(activation_window, dims=[1])
-        self._depth = self._depth + W
-        self._max_depth_host = self._max_depth_host + int(W)
+    def push_window_batch(self, ideas, orders=None, grammar_orders=None, concept_rows=None, concept_activations=None):
+        for i in range(ideas.shape[1]):
+            def item(value):
+                return value[:, i] if torch.is_tensor(value) else value
+            self.push_step(ideas[:, i], item(orders), item(grammar_orders), item(concept_rows), item(concept_activations))
 
     def pop(self, b):
-        # Newest-at-slot-0: pop slot 0, shift the rest LEFT.
-        depth = int(self._depth[b].item())
-        if depth == 0:
+        import STMChunks
+        index = STMChunks.at(self.state)
+        if int(index[b]) < 0:
             return None
-        buf = self._buffer
-        orders, grammar = self.ensure_order_state()
-        concept_rows, concept_activations = self.ensure_reference_state()
-        idea = buf[b, 0].clone()
-        if depth > 1:
-            buf[b, 0:depth - 1] = buf[b, 1:depth].clone()
-            orders[b, 0:depth - 1] = orders[b, 1:depth].clone()
-            grammar[b, 0:depth - 1] = grammar[b, 1:depth].clone()
-            concept_rows[b, 0:depth - 1] = (
-                concept_rows[b, 1:depth].clone())
-            concept_activations[b, 0:depth - 1] = (
-                concept_activations[b, 1:depth].clone())
-        buf[b, depth - 1].zero_()
-        orders[b, depth - 1] = -1
-        grammar[b, depth - 1] = -1
-        concept_rows[b, depth - 1] = -1
-        concept_activations[b, depth - 1] = 0
-        self._depth[b] = depth - 1
+        idea = self._buffer[b, index[b]].clone()
+        rows = torch.arange(self._active_batch, device=index.device) == int(b)
+        positions = torch.arange(self.capacity, device=index.device)[None]
+        state = list(STMChunks.clear(self.state, rows[:, None] & (positions == index[:, None])))
+        state[STMChunks.STACK] = torch.where(rows[:, None] & (state[STMChunks.STACK] >= 0),
+                                            state[STMChunks.STACK]-1, state[STMChunks.STACK])
+        self.set_state(tuple(state))
         return idea
 
     def peek(self, b, n=0):
-        # Newest-at-slot-0: the n-th-from-newest item is at slot n.
-        depth = int(self._depth[b].item())
-        if depth <= n:
+        import STMChunks
+        indices = STMChunks.at(self.state, n)
+        if int(indices[b]) < 0:
             return None
-        return self._buffer[b, n]
+        gate = torch.arange(self._active_batch, device=indices.device) == int(b)
+        self.set_state(STMChunks.read(self.state, indices, gate))
+        return self._buffer[b, indices[b]]
 
     def snapshot(self, detach=False):
-        buf = self._buffer
-        if buf is None:
+        import STMChunks
+        width = min(int(self._max_depth_host), self.capacity)
+        if width <= 0:
             return None
-        B = int(buf.shape[0])
-        if B == 0:
-            return None
-        max_depth = int(self._max_depth_host)
-        if max_depth == 0:
-            return None
-        cap = int(self.capacity)
-        if max_depth > cap:
-            max_depth = cap
-        snap = buf[:, :max_depth, :]
-        if detach:
-            snap = snap.detach().clone()
-        else:
-            snap = snap.clone()
-        return snap
+        value = STMChunks.stack_view(self.state)[0][:, :width]
+        return value.detach().clone() if detach else value.clone()
 
     def snapshot_orders(self, detach=False):
-        """Return concept/subsymbolic orders aligned with ``snapshot()``."""
-        self.ensure_order_state()
-        max_depth = min(int(self._max_depth_host), int(self.capacity))
-        if max_depth <= 0:
+        import STMChunks
+        width = min(int(self._max_depth_host), self.capacity)
+        if width <= 0:
             return None
-        snap = self._orders[:, :max_depth]
-        return snap.detach().clone() if detach else snap.clone()
+        value = STMChunks.stack_view(self.state)[2][:, :width]
+        return value.detach().clone() if detach else value.clone()
 
     def snapshot_grammar_orders(self, detach=False):
-        """Return syntactic derivation depths aligned with ``snapshot()``."""
-        self.ensure_order_state()
-        max_depth = min(int(self._max_depth_host), int(self.capacity))
-        if max_depth <= 0:
+        import STMChunks
+        width = min(int(self._max_depth_host), self.capacity)
+        if width <= 0:
             return None
-        snap = self._grammar_orders[:, :max_depth]
-        return snap.detach().clone() if detach else snap.clone()
+        value = STMChunks.stack_view(self.state)[3][:, :width]
+        return value.detach().clone() if detach else value.clone()
 
     def snapshot_concept_rows(self, detach=False):
-        """Return exact concept-row references aligned with ``snapshot()``."""
-        self.ensure_reference_state()
-        max_depth = min(int(self._max_depth_host), int(self.capacity))
-        if max_depth <= 0:
+        import STMChunks
+        width = min(int(self._max_depth_host), self.capacity)
+        if width <= 0:
             return None
-        snap = self._concept_rows[:, :max_depth]
-        return snap.detach().clone() if detach else snap.clone()
+        value = STMChunks.stack_view(self.state)[4][:, :width]
+        return value.detach().clone() if detach else value.clone()
 
     def snapshot_concept_activations(self, detach=False):
-        """Return lexical-row coefficients aligned with ``snapshot()``."""
-        self.ensure_reference_state()
-        max_depth = min(int(self._max_depth_host), int(self.capacity))
-        if max_depth <= 0:
+        import STMChunks
+        width = min(int(self._max_depth_host), self.capacity)
+        if width <= 0:
             return None
-        snap = self._concept_activations[:, :max_depth]
-        return snap.detach().clone() if detach else snap.clone()
+        value = STMChunks.stack_view(self.state)[5][:, :width]
+        return value.detach().clone() if detach else value.clone()
 
     def size(self, b):
         return int(self._depth[b].item())
@@ -14653,37 +14249,15 @@ class ShortTermMemory(Layer):
     def is_empty(self, b):
         return self.size(b) == 0
 
-    def clear(self, b=None):
-        buf = self._buffer
-        if buf is None:
-            return
+    def clear(self, b=None, *, hard=True):
+        import STMChunks
+        gate = torch.ones(self._active_batch, dtype=torch.bool, device=self._buffer.device) if b is None else (
+            torch.arange(self._active_batch, device=self._buffer.device) == int(b))
+        state = (STMChunks.clear(self.state, gate[:, None].expand_as(self.state[STMChunks.STACK])) if hard
+                 else STMChunks.soft_reset_rows(self.state, gate))
+        self.set_state(state)
         from ClauseScope import ClauseScope
-        reset = torch.ones(buf.shape[0], dtype=torch.bool, device=buf.device) if b is None else (
-            torch.arange(buf.shape[0], device=buf.device) == int(b))
-        self._clause_state = ClauseScope.reset(self.ensure_clause_state(), reset)
-        if b is None:
-            buf.zero_()
-            self._depth.zero_()
-            self.ensure_order_state()
-            self._orders.fill_(-1)
-            self._grammar_orders.fill_(-1)
-            self.ensure_reference_state()
-            self._concept_rows.fill_(-1)
-            self._concept_activations.zero_()
-            self._max_depth_host = 0
-            return
-        b = int(b)
-        if b < 0 or b >= int(buf.shape[0]):
-            return
-        buf[b].zero_()
-        self._depth[b] = 0
-        self.ensure_order_state()
-        self._orders[b].fill_(-1)
-        self._grammar_orders[b].fill_(-1)
-        self.ensure_reference_state()
-        self._concept_rows[b].fill_(-1)
-        self._concept_activations[b].zero_()
-        self._max_depth_host = int(self._depth.max().item())
+        self._clause_state = ClauseScope.reset(self.ensure_clause_state(), gate)
 
     # -- STM shift/reduce driver (formerly stm_driver.STMDriver) -----------
 
@@ -16659,9 +16233,14 @@ class Error:
         registry.squared('squared', pred, target, mask=mask)
         return registry.total()
 
-    def merge(self, other, *, prefix='', weight=1., objective=None, trained=None, detach=False, row=None):
-        """Import named constituents, retaining their baselines and ownership."""
-        if float(weight) == 0.:
+    def merge(self, other, *, prefix='', weight=1., objective=None, trained=None, detach=False, row=None, exposure=1.):
+        """Import constituents, retaining their baselines and ownership.
+
+        Exposure scales each numerator or penalty value, independently of the
+        named term's priority. Its baseline and active count remain the same,
+        preserving the existing loss when every trial has the same exposure.
+        """
+        if float(weight) == 0. or float(exposure) == 0.:
             return
         for name, source in other._terms.items():
             if source['category'] in other._disabled:
@@ -16670,6 +16249,8 @@ class Error:
             for key in ('values', 'numerators', 'baselines', 'entries'):
                 if key in rec:
                     rec[key] = [v.detach() if detach else v for v in rec[key]]
+                    if key in ('values', 'numerators') and float(exposure) != 1.:
+                        rec[key] = [v * float(exposure) for v in rec[key]]
                     if row is not None:
                         if self.row_mask is None:
                             raise ValueError('an indexed merge requires a row registry')

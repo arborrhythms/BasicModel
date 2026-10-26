@@ -11,17 +11,15 @@ from ThoughtReferences import bindings, open_slots
 def references(meaning):
     if open_slots(meaning):
         return ()
-    roles = [role for kind, role in bindings(meaning).get('_bound_roles', ())
-             if kind == 'referent']
-    return tuple((meaning.role_refs[role], meaning.roles[role]) for role in roles
-                 if meaning.role_refs[role] is not None)
+    return _bound_references(meaning)
 
 
 def _bound_references(meaning):
     roles = [role for kind, role in bindings(meaning).get('_bound_roles', ())
              if kind == 'referent']
-    return tuple((meaning.role_refs[role], meaning.roles[role]) for role in roles
-                 if meaning.role_refs[role] is not None)
+    retained = dict(bindings(meaning).get('_bound_references', ()))
+    return tuple((reference, meaning.roles[role]) for role in roles
+                 if (reference := retained.get(role, meaning.role_refs[role])) is not None)
 
 
 def matches(model, meaning, word):
@@ -46,14 +44,10 @@ def _matches(model, meaning, word, values):
                 return True
             if store is None or not store.parts.contains(reference[1]):
                 return False
-            from PartRead import expression_components
-            from QueryWork import QueryWorkBudget
-            terms, _, incomplete = expression_components(store, (reference,),
-                max_records=64, work=QueryWorkBudget(64))
-            target = terms.get(reference, {}).get('head_reference')
-            if incomplete or target is None or target == reference:
-                return False
-            reference = target
+            from ChainRead import envelope
+            # A chain exposes its actual head reference. An idea offers no
+            # stored decomposition; finer identity requires reconstruction.
+            reference = envelope(store, store.parts.references(reference[1])[0])
             continue
         if reference[0] == 'constituent':
             current = current.constituents[reference[1]]
@@ -61,6 +55,21 @@ def _matches(model, meaning, word, values):
             index = store._index_occurrences.get(reference)
             if index is None:
                 return False
+            owner = model._concept_owner()
+            token = owner.mtm.token_of(reference)
+            entry = owner.mtm.entries.get(token)
+            if entry is not None and not entry.pending:
+                from ChainRead import envelope
+                # Follow the last actual assertion about this identity. A
+                # later change ends this equality's authority over its value.
+                event = next((event for event in reversed(entry.events) if event.role == 0), None)
+                if event is not None and event.occurrence[0] == 'sym' and store.parts.contains(event.occurrence[1]):
+                    row = store.part_row(event.occurrence[1])
+                    if 'equality' in row['readings'] and row['evidence'][0] > 0:
+                        left, right = (envelope(store, item) for item in store.parts.references(event.occurrence[1]))
+                        if owner.mtm.token_of(left) == token:
+                            reference = right
+                            continue
             if int(store.row_ids[index]) in known:
                 return True
             current = store.meaning_of(index)

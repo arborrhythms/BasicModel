@@ -86,7 +86,7 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     from Models import BasicModel
     from Meaning import ConceptualMeaning
     from Layers import Error
-    from ThoughtReferences import question
+    from meaning_fixtures import unsupported as question
     from What import What, WhatAnswer, ReferentTarget
     base = question(ConceptualMeaning.from_description(torch.ones(4)))
     correct = replace(base, role_refs=(('sym', 5), None, None),
@@ -101,7 +101,8 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     model = SimpleNamespace(inputSpace=SimpleNamespace(data=data), _concept_owner=lambda: owner,
         symbolSpace=SimpleNamespace(ltm_store=None), _sentence_answer_questions=questions)
     surface = torch.tensor([2., 0., .1, .2], requires_grad=True)
-    def reader(model, *args, registry=None):
+    def reader(model, *args, registry=None, asked_only=False):
+        assert asked_only
         model._sentence_answer_raw_cost = surface
         model._sentence_answer_predictions = surface[:, None]
         registry.add('surface', surface, objective='output')
@@ -120,7 +121,7 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
     from types import SimpleNamespace
     from What import What, WhatAnswer, ReferentTarget
     from Meaning import ConceptualMeaning
-    from ThoughtReferences import question
+    from meaning_fixtures import unsupported as question
     from ThoughtAnswer import scorer
     import BindingAnswers
     meaning = question(ConceptualMeaning.from_description(torch.ones(4)), (('referent', 0),))
@@ -136,7 +137,8 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
 
 def test_open_region_with_only_negation_offers_conclude(monkeypatch):
     from test_item6_2_thinking import world, run
-    from ThoughtReferences import question, open_slots
+    from ThoughtReferences import open_slots
+    from meaning_fixtures import unsupported as question
     from Queries import ThoughtOperationCandidate
     import ThoughtStream
     model, registry, store, (a, b, c) = world()

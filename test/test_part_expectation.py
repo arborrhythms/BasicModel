@@ -28,12 +28,12 @@ def test_closing_audit_survives_bank_changes_and_checkpoint(monkeypatch, relativ
     torch.testing.assert_close(pair['residual'], target-logits.sigmoid())
     assert pair['source_occurrences'] == (f.store.occurrence_of(source),)
     assert pair['surprise'] == pytest.approx(comparison.surprise)
-    assert len(f.store.parts.columns) == 6
+    assert len(f.store.parts.columns) == 7  # tagged references and percept, no separate clock
     # The mutable current bank is not the historical target's owner.
     with torch.no_grad():
         f.cs.similarity_codebook.W.fill_(.25)
     state, extras = copy.deepcopy(f.store.state_dict()), copy.deepcopy(f.store.semantic_extras())
-    restored = LTM0(8, capacity=64)
+    restored = LTM0(8, capacity=64, percept_width=0)
     attach_clause_index(f.model, restored, f.cs)
     restored.load_state_dict(state)
     restored.load_semantic_extras(extras)

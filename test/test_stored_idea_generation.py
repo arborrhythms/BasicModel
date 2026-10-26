@@ -128,26 +128,12 @@ def test_nontaxonomic_cue_does_not_enter_concept_order_reader(reference):
     from Meaning import ConceptualMeaning
     from Taxonomy import concept_reference
     store = LTM0(4, capacity=2)
-    calls = []
-    def code_row(reference):
-        calls.append(reference)
-        return concept_reference(reference)[1] - 1
-    unfolded = []
-    def unfold(value, allowance, **kw):
-        unfolded.append((value.clone(), kw['order']))
-        return (), 0, False
-    store.configure_leaf_index(code_row=code_row, order_of=lambda _: 2,
-        read=unfold)
     cue = ConceptualMeaning(torch.ones(3, 4), torch.tensor([True, False, False]),
                             role_refs=(reference, None, None))
+    # Content reads do not unfold or send reference-shaped values to an
+    # order reader. An empty store supplies no result for any cue domain.
     result = store.cued_rows(cue)
-    assert result['value'] == ()
-    assert calls == []
-    assert len(unfolded) == 1 and unfolded[0][1] == 0
-    torch.testing.assert_close(unfolded[0][0], cue.roles[0])
-    from dataclasses import replace
-    store.cued_rows(replace(cue, role_refs=(('sym', 1), None, None)))
-    assert calls == [('sym', 1)] and unfolded[-1][1] == 2
+    assert result['value'] == () and result['records_scanned'] == 0
 
 
 @pytest.mark.parametrize('compiled', [False, True])
@@ -190,8 +176,11 @@ def test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons():
     snapshot = LiveConstituents(words, torch.ones(1, 4, dtype=torch.bool), 2)
     for n in (1, 2, 3, 4):
         value = words[:, :n].sum(1).requires_grad_()[:, None]
-        support = torch.tensor([[[i < n for i in range(4)]]])
-        snapshot.observe((value, torch.tensor([1])), torch.tensor([True]), support)
+        import STMChunks as chunks
+        state,_ = chunks.deposit(chunks.empty(1,8,4),value[:,0],torch.tensor([True]),stack=True)
+        support = torch.zeros(1,8,4,dtype=torch.bool)
+        support[:,0] = torch.tensor([i < n for i in range(4)])
+        snapshot.observe(state, torch.tensor([True]), support)
         assert not snapshot.codes.requires_grad
     assert snapshot.valid.tolist() == [[True, True]]
     torch.testing.assert_close(snapshot.codes[0, 0], words[0, :3].sum(0))

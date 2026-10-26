@@ -68,7 +68,7 @@ def test_symbol_space_owns_memory_lifecycle(memory_config):
     assert memory is model.symbolSpace.what_memory
     from Meaning import ConceptualMeaning
     x = torch.ones(3, 2, requires_grad=True)
-    meaning = ConceptualMeaning(x, torch.ones(3, dtype=torch.bool), mode="interrogative")
+    meaning = ConceptualMeaning(x, torch.ones(3, dtype=torch.bool), sentence_kind="relation")
     memory.begin_thought_episode(meaning, work_budget=2)
     stored = memory.thought_history()[0]
     assert stored.meaning.roles.requires_grad

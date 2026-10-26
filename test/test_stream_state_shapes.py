@@ -202,4 +202,4 @@ def test_document_reset_clears_only_the_finished_rows_priming():
     Space.Reset(space, batch=0, hard=True)
     torch.testing.assert_close(space._priming_boosts, torch.tensor([[1., 1.], [4., 5.]]))
     Space.Reset(space, hard=True)
-    assert space._priming_boosts is None
+    assert bool(space._priming_boosts.eq(1).all())

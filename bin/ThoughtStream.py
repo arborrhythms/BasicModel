@@ -3,7 +3,7 @@ from dataclasses import replace
 from collections import deque
 import torch
 
-from ThoughtReferences import bindings, evidence_pair, fill, needs_episode, open_slots, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, fill, has_open_slots, open_slots, with_slots
 
 
 def slots(records):
@@ -56,9 +56,9 @@ def query_pattern(goal, kind, left, right, values=None, excluded=()):
     data = bindings(goal)
     data['_query_relation'] = kind
     data['_query_exclude'] = tuple(excluded)
-    return question(replace(goal, roles=roles, role_mask=mask,
+    return with_slots(replace(goal, roles=roles, role_mask=mask,
                             role_refs=refs, bindings=data),
-                    (('referent', 2),) if right is None else ())
+                    (('referent', 2),) if right is None else (), pair=(0., 0.), source_evidence=(0., 0.))
 
 
 def candidates(registry, root, active, current, records, descriptions=()):
@@ -120,7 +120,7 @@ def candidates(registry, root, active, current, records, descriptions=()):
     return tuple(requests)
 
 
-def integrate(registry, goal, result, records):
+def integrate(registry, goal, result, records, *, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
@@ -146,7 +146,11 @@ def integrate(registry, goal, result, records):
     if kind is None:
         if result.semantic_id in ('query', 'ask'):
             from ThoughtBinding import integrate as bind_region
-            aligned = bind_region(goal, result, tuple(item for item in slots(records) if item is not result))
+            from IdeaEvaluation import isomorphic
+            store = getattr(registry.space, '_closed_clause_store', lambda: None)()
+            kernels = getattr(store, '_evaluation_kernels', ())
+            aligned = bind_region(goal, result, tuple(item for item in slots(records) if item is not result),
+                isomorphic=lambda left, right: isomorphic(kernels, left, right, work))
             if aligned is not None:
                 return aligned
             return fill(goal, result, witnesses=witnesses, operation=result.semantic_id)
@@ -201,8 +205,6 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     if store is None:
         return None
-    if not needs_episode(meaning) and evidence_pair(meaning) == (0., 0.):
-        return None
     registry = getattr(model, 'grammatical_thoughts', None)
     def operation(value):
         name = relation(registry, value) if registry is not None else None
@@ -212,15 +214,26 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             except (ValueError, TypeError):
                 pass
         return name
-    # A kept relational derivation is admitted as a whole. In particular, an
-    # exhausted, source-supported variable is still a trial-local constituent
-    # here. Its use as a Part argument mints it in the same preflighted close;
-    # writing it first as an LTM0 occurrence would lose its native identity.
+    # A kept assertion or unresolved question uses the ordinary semantic
+    # pair writer. Its operands keep their existing identities.
     # A query/bind conclusion records its witnessed proof occurrence. The
     # relation it read is not a newly selected composing operation, and its
     # working binding must not mint another Part or grammatical occupation.
     read_binding = bindings(meaning).get('_producing_operation') in ('query', 'bind')
-    if (not needs_episode(meaning) and not read_binding
+    data = bindings(meaning)
+    if read_binding and data.get('_chain_view') and not data.get('_bound_roles'):
+        # An unchanged recalled chain keeps its own entry and percept time.
+        # A filled working variable still takes the inference path below.
+        for reference in data.get('_thought_witnesses', ()):
+            location = store.location(reference)
+            if not isinstance(location, tuple):
+                continue
+            retained = store.meaning_of(location)
+            if (retained.role_refs == meaning.role_refs
+                    and torch.equal(retained.role_mask, meaning.role_mask)
+                    and torch.equal(retained.roles, meaning.roles)):
+                return location
+    if (int(meaning.role_mask.sum()) > 1 and (has_open_slots(meaning) or not read_binding)
             and operation(meaning) in ('part', 'equal', 'implies')):
         from ClauseRow import Clause, Composition, predicate_identity
         active, clauses = set(), {}
@@ -233,7 +246,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                 raise ValueError('thought constituent cycle or depth limit')
             active.add(id(value))
             store._validate_local_references(value)
-            children = tuple(clause(child) for child in value.constituents)
+            children = [clause(child) for child in value.constituents]
             name = operation(value)
             if name in ('part', 'equal', 'implies'):
                 refs = []
@@ -251,15 +264,24 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                         if type(location) is not int:
                             raise ValueError('a concluded Part argument names an unavailable occurrence')
                         refs.append(int(store.row_ids[location]))
+                    elif reference is None and ('referent', role) in open_slots(value):
+                        from Meaning import ConceptualMeaning
+                        data = {'_open_references': (('referent', 0),)}
+                        forwards = tuple((0, name) for slot, name in bindings(value).get('_forward_references', ()) if slot == role)
+                        if forwards:
+                            data['_forward_references'] = forwards
+                        pending = replace(ConceptualMeaning.from_description(value.roles[role]), bindings=data)
+                        refs.append(('clause', len(children)))
+                        children.append(Clause(pending, point=value.roles[role]))
                     else:
                         raise ValueError('a concluded Part argument requires a symbol, occurrence or its derivation')
                 result = Clause(value, relation=name,
-                    refs=(refs[0], predicate_identity(name), refs[1]), children=children,
+                    refs=(refs[0], predicate_identity(name), refs[1]), children=tuple(children),
                     evidence=evidence_pair(value))
             else:
                 point = value.roles[0]
                 minted = bindings(value).get('_producing_operation') == 'mint'
-                result = Clause(value, point=point, children=children, minted=minted,
+                result = Clause(value, point=point, children=tuple(children), minted=minted,
                     order=1 if minted else 0, evidence=evidence_pair(value),
                     composition=Composition(point, order=1 if minted else 0))
             active.remove(id(value))
@@ -271,7 +293,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         turn = ('thought', document, sentence)
         ordinals = model.__dict__.setdefault('_thought_ordinals', {})
         ordinal = ordinals.get(turn, 0)
-        result = store.write_clause(clause(meaning), kind='inference',
+        result = store.write_clause(clause(meaning), kind='question' if has_open_slots(meaning) else 'unverified' if evidence_pair(meaning) == (0., 0.) else 'inference',
             evidence=evidence_pair(meaning), stream=row, document_key=turn,
             sentence_index=ordinal)
         ordinals[turn] = ordinal + 1
@@ -312,7 +334,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         for position in sorted(needed):
             child = meaning.constituents[position]
             if id(child) not in bound:
-                value = child if needs_episode(child) or evidence_pair(child) != (0., 0.) else question(child)
+                value = child if has_open_slots(child) or evidence_pair(child) != (0., 0.) else with_slots(child, open_slots(child), pair=(0., 0.), source_evidence=(0., 0.))
                 index = write(model, value, row=row, _active=active, _bound=bound)
                 bound[id(child)] = store.occurrence_of(index)
             references[position] = bound[id(child)]
@@ -329,19 +351,48 @@ def write(model, meaning, *, row, _active=None, _bound=None):
         active.remove(id(original))
     else:
         active.remove(id(meaning))
-    kind = 'question' if needs_episode(meaning) else 'inference'
-    if kind == 'inference' and evidence_pair(meaning) == (0., 0.):
-        return None
+    kind = 'question' if has_open_slots(meaning) else 'unverified' if evidence_pair(meaning) == (0., 0.) else 'inference'
     from Occurrence import source_at
     slot = int(getattr(model, '_open_sentence_slot', 0) or 0)
     document, sentence = source_at(model, row, slot)
     turn = ('thought', document, sentence)
     ordinals = model.__dict__.setdefault('_thought_ordinals', {})
     ordinal = ordinals.get(turn, 0)
+    identity, point = None, None
+    if int(meaning.role_mask.sum()) > 1:
+        # A checked binding's result is the value of its filled variable.
+        # The other working roles are the request, not durable structure.
+        data = bindings(meaning)
+        filled = [role for tag, role in data.get('_bound_roles', ()) if tag == 'referent']
+        if has_open_slots(meaning) or not filled:
+            raise ValueError('a multi-role thought requires a semantic chain or a checked binding')
+        role = filled[-1]
+        point = meaning.roles[role]
+        identity = meaning.role_refs[2-role] if data.get('_equality') and role in (0, 2) else meaning.role_refs[role]
+        data['_bound_roles'] = (('referent', 0),)
+        # The bound answer and the identity whose value changed are distinct
+        # semantic bindings. Neither is a grammatical component of the idea.
+        data['_bound_references'] = ((0, meaning.role_refs[role]),)
+        data['_open_references'] = ()
+        data.pop('_forward_references', None)
+        data.pop('_chain_view', None)
+        if identity is not None:
+            data['_identity'] = identity
+        from Meaning import ConceptualMeaning
+        meaning = replace(ConceptualMeaning.from_description(point), bindings=data,
+            scope=meaning.scope, polarity=meaning.polarity)
     result = store.append_meaning(meaning, kind=kind, evidence=evidence_pair(meaning),
         stream=row, document_key=turn, sentence_index=ordinal, trust=0.)
     if result is not None and result != -1:
         ordinals[turn] = ordinal+1
+        owner_ref = store.__dict__.get('_concept_owner')
+        owner = None if owner_ref is None else owner_ref()
+        mtm = None if owner is None else owner.mtm
+        token = None if mtm is None or identity is None else mtm.token_of(identity)
+        if token is not None and point is not None:
+            from RowTime import encoder
+            mtm.update(token, point, when=int(encoder().decode_index(store.entry_when(result))))
+            mtm.entries[token] = replace(mtm.entries[token], pending=False)
     return result
 
 
@@ -368,8 +419,22 @@ def commit(model, result, *, row):
     result = replace(result, meaning=resolved_witnesses(result.meaning))
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     occurrence = bindings(result.meaning).get('_query_occurrence')
-    prior = None if store is None else store._index_occurrences.get(occurrence)
-    if prior is not None and needs_episode(result.meaning):
+    prior = None if store is None or occurrence is None else store.location(occurrence)
+    if prior is not None:
+        retained = store.meaning_of(prior)
+        current = result.meaning
+        if (retained is not None and retained.role_refs == current.role_refs
+                and retained.polarity == current.polarity and retained.scope == current.scope
+                and retained.sentence_kind == current.sentence_kind
+                and evidence_pair(retained) == evidence_pair(current)
+                and open_slots(retained) == open_slots(current)
+                and torch.equal(retained.role_mask, current.role_mask)
+                and torch.equal(retained.roles, current.roles)):
+            # Any selected operation can leave the source unchanged. Reuse
+            # that entry by its content, including a chain whose predicate
+            # is not executable; preserve its original percept stamp.
+            return prior
+    if prior is not None and has_open_slots(result.meaning):
         # An unresolved working read does not rewrite its source or create
         # another copy of the same question.
         return prior
@@ -387,7 +452,7 @@ def commit(model, result, *, row):
         field = fields[row]
         prior = None if field is None else store.index_of_row(field.row_id)
         if (prior is not None and store.KINDS[int(store.record_kind[prior])] == 'question'
-                and torch.equal(store.slots[prior], result.meaning.roles)):
+                and torch.equal(store.slots[prior], result.meaning.roles[0])):
             index = prior
     if index is None:
         index = write(model, result.meaning, row=row)

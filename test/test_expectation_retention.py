@@ -1,6 +1,7 @@
 """Reviewer probe for integrated plan §8.7 estimate/observation ownership."""
 
 import copy
+from dataclasses import replace
 from types import SimpleNamespace
 
 import torch
@@ -18,9 +19,8 @@ def _meaning(value, *, scope=()):
         [0.0, value, 0.0, 0.0],
         [0.0, 0.0, value, 0.0],
     ])
-    return ConceptualMeaning(
-        roles, torch.tensor([True, True, True]), mode="unspecified",
-        scope=scope)
+    # A direct durable fixture is one fused idea after layout step 1.
+    return replace(ConceptualMeaning.from_description(roles.mean(0)), scope=scope)
 
 
 def _discourse():
@@ -34,7 +34,7 @@ def _discourse():
 
 def _observe(discourse, meaning, document):
     discourse.predict_and_observe_stm_end_state(
-        [3], [meaning.roles], documents=[document], layout="infix",
+        [int(meaning.role_mask.sum())], [meaning.roles], documents=[document], layout="infix",
         role_masks=[meaning.role_mask])
 
 
@@ -123,6 +123,7 @@ def test_retained_estimates_do_not_enter_the_generic_ltm_chain():
         SimpleNamespace(_ltm_store=store))
     assert estimate_row >= 0
     assert len(chain) == 2
-    torch.testing.assert_close(chain[0][1], source.roles)
-    torch.testing.assert_close(chain[1][1], _meaning(2.0).roles)
+    torch.testing.assert_close(chain[0][1], source.roles[source.role_mask])
+    actual = _meaning(2.0)
+    torch.testing.assert_close(chain[1][1], actual.roles[actual.role_mask])
     assert store.row(observed_row)["kind"] == "observation"

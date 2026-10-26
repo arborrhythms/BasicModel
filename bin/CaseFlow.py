@@ -55,8 +55,10 @@ def push(state, bank, head, active):
 def apply(state, bank, choice, operands, rules, unary_rules, operations, *, column, unary_ops=()):
     """Carry the selected head and record the same learned case test once."""
     batch, slots = state[0].shape[:2]
-    binary = choice.kind == 1
-    unary = choice.kind == 2
+    binary_rule = choice.kind == 1
+    field_bind = binary_rule & (choice.stack_arity == 1) if choice.stack_arity is not None else torch.zeros_like(binary_rule)
+    binary = binary_rule & ~field_bind
+    unary = (choice.kind == 2) | field_bind
     position = choice.position.clamp(0, slots-1)[:, None]
     left = tuple(torch.where(binary.reshape(batch, *([1]*(value.ndim-2))),
                              value[:, min(1, slots-1)], gather(value, position)[:, 0])

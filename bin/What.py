@@ -157,6 +157,11 @@ class WhatAnswer:
             raise ValueError("answer kind must be referent or sentence")
 
     @classmethod
+    def silence(cls, question: WhatQuestion):
+        return cls(question=question, what="", provenance="silence",
+                   source_where=question.where, text="")
+
+    @classmethod
     def unavailable(cls, question: WhatQuestion, reason: str,
                     *, provenance: str = "data"):
         return cls(question=question, what=None, available=False,

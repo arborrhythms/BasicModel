@@ -255,7 +255,7 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
 
     closed = registry.form("isPart", part, whole)
     open_part = registry.form("isPart", whole, open_roles=("argin1",))
-    assert closed.mode == "interrogative"
+    assert not __import__("ThoughtReferences").open_slots(closed)
     assert closed.role_mask.tolist() == [True, True, True]
     assert closed.role_refs[0] == part and closed.role_refs[2] == whole
     assert open_part.role_mask.tolist() == [False, True, True]
@@ -328,7 +328,7 @@ def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
         ("conceptual-identity", "equal"))
     assert equal.request.role_refs[0] == part
     assert equal.request.role_refs[2] == whole
-    assert equal.request.mode == "interrogative"
+    assert __import__("ThoughtReferences").evidence_pair(equal.request) == (0., 0.)
 
 
 def test_thought_execution_receives_the_common_context_and_only_capability_views():
@@ -778,12 +778,13 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
     object.__setattr__(language, "_symbol_space", SimpleNamespace(subspace=owner))
     object.__setattr__(
         language, "_language_layer_ref", SimpleNamespace(operation_layer=reducer))
+    language._compose_binary_rules = (SimpleNamespace(head_role=1),)
+    language._compose_unary_rules = ()
     buffer = torch.rand(1, 2, 4)
-    state = (
-        buffer, torch.tensor([2]), torch.zeros(1, 2, dtype=torch.long),
-        torch.zeros(1, 2, dtype=torch.long), torch.full((1, 2), -1, dtype=torch.long),
-        torch.ones(1, 2),
-    )
+    import STMChunks as chunks
+    state = chunks.empty(1,8,4)
+    for value in buffer.unbind(1):
+        state,_ = chunks.deposit(state,value,torch.tensor([True]),stack=True)
     choice = language.choose_operation(
         state, torch.ones(1, dtype=torch.bool), slots=1)
     assert choice.candidate.shape == (1, 4)
@@ -891,7 +892,7 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     description = ConceptualMeaning(
-        torch.ones(3, 8), torch.tensor([True, True, True]), mode="interrogative")
+        torch.ones(3, 8), torch.tensor([True, True, True]))
     occurrence = ("ltm", "fixture", 1)
 
     class LTMRead:
@@ -983,8 +984,7 @@ def test_model_boundary_builds_the_common_thought_context_without_a_reasoner(mon
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         discourse=None, what_memory=None))
     meaning = ConceptualMeaning(
-        torch.ones(3, 8, requires_grad=True), torch.tensor([True, True, True]),
-        mode="interrogative")
+        torch.ones(3, 8, requires_grad=True), torch.tensor([True, True, True]))
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(
             meaning, row=0, work=QueryWorkBudget(8), continuation=None)
@@ -1051,7 +1051,7 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     import torch
     from Language import LanguageSpace
     from Queries import GrammaticalThoughtRegistry
-    from Understanding import AnswerProgram
+    from Understanding import Reading
 
     grammar = Grammar()
     grammar.configure({
@@ -1081,7 +1081,7 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     object.__setattr__(owner, "_compose_binary_rules", (whole_rule,))
     object.__setattr__(owner, "_compose_unary_rules", (what_rule,))
     leaves = torch.stack((torch.full((8,), -0.25), torch.full((8,), 0.75)))
-    program = AnswerProgram(
+    program = Reading(
         rows=torch.tensor([3, 5]), word_rows=torch.tensor([7, 9]),
         activations=torch.tensor([-0.25, 0.75]), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1], [2, 0, -1]]),
@@ -1089,8 +1089,8 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
         concept_ids=torch.tensor([whole[1], part[1]]))
 
     meaning = owner.program_meaning(program, registry)
-    expected = registry.form("part", part, whole, mode="interrogative")
-    assert meaning is not None and meaning.mode == "interrogative"
+    expected = registry.form("part", part, whole)
+    assert meaning is not None and not hasattr(meaning, "mode")
     assert meaning.role_refs == expected.role_refs
     torch.testing.assert_close(meaning.roles[0], leaves[1])
     torch.testing.assert_close(meaning.roles[2], leaves[0])

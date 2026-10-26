@@ -155,6 +155,10 @@ def attach_clause_index(model, store, space):
                        None if occupations is None else weakref.ref(occupations))
     object.__setattr__(store, '_part_read_rules', tuple(
         getattr(language, '_compose_binary_rules', ())))
+    # The declared inverse catalogue is fixed when the owner is attached.
+    # Evaluation keeps no reconstructed tree or additional durable payload.
+    object.__setattr__(store, '_evaluation_kernels', tuple(
+        getattr(language, '_generate_binary_ops', ())))
 
     store_ref = weakref.ref(store)
     object.__setattr__(space, '_clause_store_ref', store_ref)
@@ -165,7 +169,7 @@ def attach_clause_index(model, store, space):
     def concept_point(cid):
         owner = space_ref()
         try:
-            return _basis(owner)[_existing_row(owner, ('sym', cid))]
+            return owner.similarity_codebook.lookup_rows(_existing_row(owner, ('sym', cid)))
         except ValueError:
             return None
 
@@ -196,54 +200,105 @@ class ClauseRows:
 
     @torch.no_grad()
     def part_row(self, symbol, *, reading=None):
-        """Read an LTM1 edge into a temporary grammatical view.
-
-        Only the two arguments and the six Part columns are durable. The
-        grammatical operator in this view is chosen from the argument types.
-        """
+        """Build a temporary working view from the two tagged references."""
+        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        from ChainRead import envelope, point, head_idea
+        from Spaces import _concept_alloc_of
+        from ThoughtReferences import with_slots
         symbol = int(symbol)
         part = self.parts.row(symbol)
         owner = self._concept_owner()
-        from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(owner)
-        def types(identity):
-            result = set(alloc.symbol_types.get(identity, ()))
-            if identity in alloc.singletons:
+        def types(reference):
+            kind, value = reference
+            result = set(alloc.symbol_types.get(value, ())) if kind == SYMBOL else set()
+            if (value if kind == SYMBOL else reference) in alloc.singletons:
                 result.add('singleton')
-            if alloc.order_of(identity) > 1:
+            if kind == SYMBOL and alloc.order_of(value) > 1:
                 result.add('kind')
+            if kind == OCCURRENCE:
+                row = self.index_of_row(value)
+                if row is not None:
+                    if bool(self.entry_when(row).ne(0).any()):
+                        result.add('situation')
+                    if self.when_start is not None and bool(self.slots[row, self.when_start-4:self.when_start].ne(0).any()):
+                        result.add('spatial')
+            if kind == RELATION:
+                result.add('situation')
+                if bool(self.parts.percept[value, :4].ne(0).any()):
+                    result.add('spatial')
             return result
         readings = self.parts.readings(symbol, types)
-        if reading is None:
-            reading = ('implies' if 'conditional' in readings else
-                       'equal' if 'equality' in readings else 'part')
-        if reading == 'implies' and 'conditional' not in readings:
-            raise ValueError('a conditional requires two situation arguments')
-        if reading == 'equal' and 'equality' not in readings:
-            raise ValueError('equality requires singleton membership')
-        left, right = part['refs'].tolist()
+        relation = ('implies' if 'conditional' in readings else
+                    'equal' if 'equality' in readings else 'part' if readings else None)
+        if reading is not None:
+            if reading == 'implies' and 'conditional' not in readings:
+                raise ValueError('a conditional requires two situation arguments')
+            if reading == 'equal' and 'equality' not in readings:
+                raise ValueError('equality requires singleton membership')
+            relation = reading
+        left, right = self.parts.references(symbol)
         roles = self.slots.new_zeros(3, self.nDim)
-        for role, reference in ((0, left), (2, right)):
-            value = self._concept_point(reference)
+        mask = torch.zeros(3, dtype=torch.bool, device=roles.device)
+        refs = [None, None, None]
+        def place(slot, reference):
+            value = point(self, reference)
             if value is not None:
-                roles[role] = self._fit(value)
-        # This is an operation request, not an identity coordinate or a
-        # third LTM1 column. It disappears with the read.
-        roles[1] = predicate_point(reading, roles[1])
+                roles[slot] = self._fit(value)
+            refs[slot] = envelope(self, reference)
+            mask[slot] = True
+        place(0, left)
+        if relation is not None:
+            place(2, right)
+            roles[1] = predicate_point(relation, roles[1]); mask[1] = True
+            refs[1] = ('sym', predicate_identity(relation))
+        elif right[0] == RELATION:
+            predicate, obj = self.parts.references(right[1])
+            place(1, predicate); place(2, obj)
+        else:
+            place(1, right)
+        marks = {'_equality': True} if relation == 'equal' else {}
+        opened, forwards, sites, unresolved = [], [], [], []
+        for role, reference in enumerate(refs):
+            if reference is None:
+                continue
+            if reference[0] == 'sym':
+                if owner.interpret.no_object(reference[1]):
+                    opened.append(('referent', role))
+                    forwards.append((role, reference[1]))
+                elif self.parts.contains(reference[1]):
+                    child = self.part_row(reference[1])['meaning']
+                    if any(k != 'evidence' for k, _ in dict(child.bindings).get('_open_references', ())):
+                        unresolved.append((role, reference))
+                continue
+            index = self.location(reference)
+            if not isinstance(index, int):
+                continue
+            child = self.raw_meaning_of(index)
+            if child is None:
+                continue
+            data = dict(child.bindings)
+            if any(tag != 'evidence' for tag, _ in data.get('_open_references', ())):
+                opened.append(('referent', role))
+            forwards.extend((role, name) for _, name in data.get('_forward_references', ()))
+            sites.extend((role, dict(site, role=role)) for _, site in data.get('_reference_sites', ()))
+        if forwards:
+            marks['_forward_references'] = tuple(forwards)
+        if sites:
+            marks['_reference_sites'] = tuple(sites)
+        if unresolved:
+            marks['_unresolved_operands'] = tuple(unresolved)
         pair = tuple(float(part[name]) for name in ('truth_plus', 'truth_minus'))
-        from ThoughtReferences import with_slots
-        meaning = with_slots(ConceptualMeaning(roles,
-            torch.ones(3, dtype=torch.bool, device=roles.device),
-            role_refs=(('sym', left), ('sym', predicate_identity(reading)), ('sym', right)),
-            sentence_kind='relation',
-            bindings={'_equality': True} if reading == 'equal' else {}),
-            (), pair=pair)
-        return dict(part, meaning=meaning, occurrence=('sym', symbol),
-            row_id=symbol, refs=part['refs'].clone(), readings=readings,
-            evidence=pair, trust=pair[0]-pair[1], source_trust=0.,
-            kind='observation' if any(pair) else 'unverified', order=alloc.order_of(symbol),
-            stream=(), pending=False,
-            metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None)
+        # A chain view exposes only its actual operands. An absent third
+        # grammatical role is not a missing referent manufactured by storage.
+        marks['_chain_view'] = True
+        meaning = with_slots(ConceptualMeaning(roles, mask, role_refs=tuple(refs),
+            sentence_kind='relation', bindings=marks), opened, pair=pair)
+        return dict(part, meaning=meaning, head_point=head_idea(self, symbol), occurrence=('sym', symbol), row_id=symbol,
+            refs=part['refs'].clone(), readings=readings, evidence=pair,
+            trust=pair[0]-pair[1], source_trust=0., when=part['percept'][4:].clone(),
+            kind='question' if opened else 'observation' if any(pair) else 'unverified', order=0, stream=(), pending=False,
+            metadata_complete=True, expectation=self.expectation_of(('sym', symbol)), text=None, origin=0)
 
     def location(self, reference):
         """Find either an LTM0 occurrence or a native LTM1 symbol."""
@@ -337,10 +392,10 @@ class ClauseRows:
         """Read a concept/idea point; a relation explicitly has no point."""
         slot = self.slot_of_reference(reference)
         if slot is not None:
-            return self.slots[slot]
+            return self.slots[slot[0]]
         index = self.index_of_row(reference)
         if index is not None:
-            return self.slots[index, 0] if int(self.role_mask[index].sum()) == 1 else None
+            return self.slots[index]
         resolve = getattr(self, '_concept_point', None)
         if resolve is None:
             raise ValueError('shared concept index is not attached')
@@ -358,236 +413,184 @@ class ClauseRows:
     def write_clause(self, clause, *, trust=None, origin=None, stream=-1, kind='observation',
                     evidence=None, text=None, expectation=None, document_key=None,
                     sentence_index=0, content_key=None, written_rows=None):
-        """Close concepts into LTM0 and the derivation's argument pairs into LTM1.
-
-        Wide working identities are never stored on occurrence rows. A completed
-        relative field keeps its occurrence beside its native Part symbol and
-        returns the symbol; an absolute or still-open field returns its occurrence.
-        Both have the common row/read interface.
-        """
+        """Compress resolved semantic journal compositions, retaining only open chains."""
         import math
         from PartClosing import PartClosing
-        from ThoughtReferences import bindings, open_slots, with_slots
+        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        from RowTime import stamp
+        from Occurrence import native_content_key
+        from ThoughtReferences import bindings
         if not isinstance(clause, Clause):
             raise TypeError('write_clause requires a completed field')
         if document_key is not None:
-            from Occurrence import native_content_key
-            with self.at_address(document_key, sentence_index,
-                                 content_key or native_content_key(clause.meaning)):
-                return self.write_clause(clause, trust=trust, origin=origin, stream=stream,
-                    kind=kind, evidence=evidence, text=text, expectation=expectation,
-                    written_rows=written_rows)
+            with self.at_address(document_key, sentence_index, content_key or native_content_key(clause.meaning)):
+                return self.write_clause(clause, trust=trust, origin=origin, stream=stream, kind=kind,
+                    evidence=evidence, text=text, expectation=expectation, written_rows=written_rows)
         authority = self.__dict__.get('_clause_assertion')
         if authority is not None:
-            if clause.meaning.mode == 'interrogative':
-                raise ValueError('a TruthSet cannot assert an interrogative clause')
-            trust, origin, text = authority['trust'], authority['origin'], authority['text']
+            if (bindings(clause.meaning).get('_open_references') or
+                    (clause.relation is not None and any(ref in (-1, 0) for ref in clause.refs))):
+                raise ValueError('a TruthSet cannot assert a clause with open references')
+            trust, origin, text = (authority[name] for name in ('trust', 'origin', 'text'))
             kind = 'fact'
         if trust is not None and not math.isfinite(float(trust)):
             raise ValueError('clause provenance must be finite')
         if kind not in self.KINDS or type(stream) is not int or stream < -1:
             raise ValueError('invalid clause evidence kind or stream')
+        if stream >= self.stream.shape[1]:
+            raise OverflowError('stream exceeds LTM0 construction capacity')
         if text is not None and not isinstance(text, str):
             raise ValueError('truth source text must be a string')
-        owner = self.__dict__.get('_concept_owner')
-        if owner is None or owner() is None:
+        owner_ref = self.__dict__.get('_concept_owner')
+        owner = None if owner_ref is None else owner_ref()
+        if owner is None:
             raise ValueError('clause admission requires its native concept owner')
-        closing = PartClosing(owner(), self)
-        context = self.__dict__.get('_write_address')
-        nodes, visiting, visited = [], set(), set()
+        closing = PartClosing(owner, self)
+        nodes, seen, visiting = [], set(), set()
         def visit(value):
             if id(value) in visiting:
                 raise ValueError('a temporary derivation cannot contain an object cycle')
-            if id(value) in visited:
+            if id(value) in seen:
                 return
             visiting.add(id(value))
-            for child in value.children:
+            for child in (*value.children, *value.companions):
                 visit(child)
-            visiting.remove(id(value)); visited.add(id(value)); nodes.append(value)
-            for companion in value.companions:
-                visit(companion)
+            visiting.remove(id(value))
+            seen.add(id(value))
+            nodes.append(value)
+            closing.prepare(value)
         visit(clause)
-        pairs, edge_pairs, addresses, prepared, required = {}, {}, {}, set(), 0
-        prediction = None if expectation is None else expectation.estimate
-        surprise = -1. if prediction is None else expectation.surprise_for(clause.meaning)
-        sources = () if expectation is None else tuple(expectation.source_occurrences)
-        estimate, observation_marks = None, {}
-        if prediction is not None:
-            if expectation.identities is not None:
-                observation_marks['_symbol_handles'] = tuple(expectation.identities.cpu().tolist())
+        closing.preflight()
+        context = self.__dict__.get('_write_address')
+        root_existing = None
+        if context is not None:
+            from Occurrence import address_key
+            root_existing = self._index_occurrences.get(address_key(*context))
+        needed, counted = 0, set()
+        def reserve(record, sentence=False, force=False):
+            nonlocal needed
+            term = record['value']
+            key = (id(term), sentence)
+            if key in counted:
+                return
+            counted.add(key)
+            ref, children = record['reference'], record['children']
+            if (not sentence and not force and ref is not None
+                    and (not children or term.operation not in (*closing._assertions, 'lift', 'verb'))):
+                return
+            if (record['resolved'] and term.operation not in closing._assertions) or not children or (force and (term.binding is not None or record.get('mention'))):
+                from IdentityRows import carrier
+                carrier(owner, term.point)
+                needed += int(not sentence or root_existing is None)
+            else:
+                for child in children:
+                    reserve(child)
+        for value in nodes:
+            sentence = value is clause
+            if sentence or value in clause.companions or value.reference_request is not None or value.identity is not None:
+                record = closing._planned[id(closing._terms[id(value)])]
+                force = not sentence
+                reserve(record, sentence, force)
+        needed += int(expectation is not None and expectation.estimate is not None and bool(expectation.source_occurrences))
+        if len(self) + needed > self.capacity:
+            raise OverflowError('LTM0 construction capacity exhausted before close')
+        closing.when = stamp(self)
+        rows, occurrences = {}, {}
+        context = self.__dict__.get('_write_address')
+        root_key = native_content_key(clause.meaning) if context is None else context[2]
+        closing.content_key = (context[0], context[1], root_key) if context is not None else ('direct', root_key)
+        def location(entry):
+            tag, value = entry
+            return self.index_of_row(value) if tag == OCCURRENCE else ('sym', value)
+        # A mention needing a fresh working identity keeps its occurrence.
+        # Existing concepts need no second LTM0 copy solely for their role.
+        for position, value in enumerate(nodes):
+            sentence = value is clause
+            if not sentence and value not in clause.companions and value.reference_request is None and value.identity is None:
+                continue
+            pair = tuple(value.evidence if evidence is None or not sentence else evidence)
+            from_trust = sentence and trust is not None and (authority is not None or evidence is None)
+            if from_trust:
+                pair = max(float(trust), 0.), max(-float(trust), 0.)
+            address = {} if value is clause else dict(document_key=('embedded', closing.content_key[0], closing.content_key[1]) if context is not None else ('mention', root_key),
+                sentence_index=position, content_key=native_content_key(value.meaning))
+            record = closing._planned[id(closing._terms[id(value)])]
+            force = not sentence
+            entry = closing.close(value, pair=pair, sentence=sentence, kind=kind if sentence else 'unverified',
+                address=address, stream=stream, force=force, from_trust=from_trust,
+                surprise=-1. if expectation is None or not sentence else expectation.surprise_for(clause.meaning))
+            row = location(entry)
+            rows[id(value)] = row
+            occurrences[id(value)] = self.occurrence_of(row)
+            if isinstance(row, int) and sentence:
+                if trust is not None:
+                    self.source_trust[row] = float(trust)
+                if origin is not None or text is not None:
+                    self.set_origin(row, self.ORIGIN_CONVERSATION if origin is None else origin, text=text)
+        # Entries consumed inside a chain also remain addressable by the live
+        # journal. This map ends with the close; it is not durable derivation.
+        for value in nodes:
+            entry = closing._entries.get(id(closing._terms[id(value)]))
+            if entry is not None and id(value) not in rows:
+                rows[id(value)] = location(entry)
+                occurrences[id(value)] = self.occurrence_of(rows[id(value)])
+        result = rows[id(clause)]
+        if written_rows is not None:
+            written_rows.update(rows)
+            written_rows.update({('occurrence', key): value for key, value in occurrences.items()})
+            written_rows['root_occurrence'] = occurrences[id(clause)]
+            # The live closing keeps its working roles, without saving them
+            # beside either stratum. This is also the binder's immediate read.
+            for value in nodes:
+                refs = []
+                for role, ref in enumerate(value.refs):
+                    if isinstance(ref, ClausePredicate):
+                        ref = ('sym', ref.identity)
+                    elif isinstance(ref, tuple) and ref[:1] == ('clause',):
+                        ref = occurrences.get(id(value.children[ref[1]]))
+                    elif type(ref) is int and ref not in (-1, 0):
+                        ref = self.semantic_reference(ref)
+                    else:
+                        ref = value.meaning.role_refs[role]
+                    refs.append(ref if bool(value.meaning.role_mask[role]) else None)
+                written_rows['meaning', id(value)] = replace(value.meaning, role_refs=tuple(refs))
+
+            for value in nodes:
+                term = closing._terms[id(value)]
+                ref = closing._planned[id(term)]['reference']
+                written_rows['symbol', id(value)] = ref[1] if ref and ref[0] == SYMBOL and ref[1] in closing.alloc.individuals else None
+            from ReferenceParticipants import clause_participants
+            _, _, participants = clause_participants(clause, self._part_read_rules)
+            written_rows['symbols', id(clause)] = tuple(dict.fromkeys(
+                ref[1] for record in closing._planned.values()
+                if id(record['value']) in participants and (ref := record['reference'])
+                and ref[0] == SYMBOL and ref[1] in closing.alloc.individuals))
+            written_rows['activations', id(clause)] = tuple(
+                (occurrences[id(value)], written_rows.get(('symbol', id(value))),
+                 (value.reference_request or {}).get('role', 0))
+                for value in nodes if value.order == 1 and id(value) in occurrences)
+        if expectation is not None and expectation.estimate is not None and expectation.source_occurrences:
+            prediction = expectation.estimate
+            retained = prediction.retained_bindings(observed=expectation.observed,
+                occupied=expectation.occupied, activation=expectation.activation, identities=expectation.identities)
+            # This is the audited target of the frozen prior, not a second
+            # description or a recoverable sentence derivation.
+            from Expectation import symbol_activations
             activation = expectation.activation
             if activation is None:
-                activation = expectation.residual + prediction.expected_activation
-            observation_marks['_observed_symbol_activations'] = tuple(
+                activation = symbol_activations(prediction.symbol_keys[None],
+                    expectation.observed[None], expectation.occupied[None],
+                    identities=None if expectation.identities is None else expectation.identities[None],
+                    bank_ids=prediction.symbol_ids)[0]
+            retained['_expectation_observation'] = (('_observed_symbol_activations', tuple(
                 (int(identity), tuple(pair)) for identity, pair in zip(
-                    prediction.symbol_ids.cpu().tolist(), activation.detach().cpu().tolist()))
-            observation_marks.update({key: value for key, value in bindings(clause.meaning).items()
-                                      if key == '_withheld_symbols'})
-            if sources:
-                if any(self.location(source) is None for source in sources):
-                    raise ValueError('estimate source occurrence is unavailable')
-                retained = prediction.retained_bindings(observed=expectation.observed,
-                    occupied=expectation.occupied, activation=activation,
-                    identities=expectation.identities)
-                # The predictor's frozen activation target is an audit of
-                # the arrival, not another stored working identity or an
-                # extra column on a Part edge.
-                retained['_expectation_observation'] = observation_marks
-                estimate = ConceptualMeaning(prediction.roles,
-                    torch.ones(3, dtype=torch.bool, device=prediction.roles.device),
-                    mode='unspecified', bindings=retained, scope=prediction.scope)
-                self._validate_local_references(estimate)
-                self._normalise_expectation_provenance(dict(kind='estimate',
-                    source_occurrences=sources, intended_occurrence=None,
-                    presence_logits=tuple(prediction.presence_logits.detach().cpu().tolist()),
-                    stream=expectation.stream, document=expectation.document), self.address_domain)
-                previous = self._address_for_write(estimate, kind='estimate',
-                    **self._estimate_write_address(estimate, document=expectation.document,
-                                                  stream=expectation.stream))[-1]
-                required += previous is None
-        def pending(value):
-            return any(tag != 'evidence' for tag, _ in
-                bindings(value.meaning).get('_open_references', ())) or (value.relation is not None
-                and any(value.refs[role] in (-1, 0) for role in (0, 2)))
-        def incomplete(value):
-            return pending(value) or any(incomplete(child) for child in value.children)
-        def row_kind(value):
-            if value is clause or value in clause.companions:
-                return kind
-            declared = bindings(value.meaning).get('_open_references', ())
-            return 'question' if set(declared).intersection(open_slots(value.meaning)) else 'unverified'
-        def retained_pair(value):
-            term = closing._terms.get(id(value))
-            return (value.relation is not None and term is not None
-                and closing._planned[id(term)]['edge'] is not None)
-        for position, value in enumerate(nodes):
-            asserted = value is clause or value in clause.companions
-            pair = tuple(map(float, value.evidence if evidence is None or not asserted else evidence))
-            from_trust = asserted and (authority is not None or (trust is not None and evidence is None))
-            if from_trust:
-                signed = max(-1., min(1., float(trust)))
-                pair = (max(signed, 0.), max(-signed, 0.))
-            if len(pair) != 2 or any(not math.isfinite(x) or not 0 <= x <= 1 for x in pair):
-                raise ValueError('clause evidence requires two finite poles in [0, 1]')
-            pairs[id(value)] = pair
-            # Occurrences retain polarity as a field; the Part edge has
-            # no polarity column and needs canonical evidence poles.
-            edge_pairs[id(value)] = pair[::-1] if from_trust and not value.meaning.polarity else pair
-            if not incomplete(value):
-                closing.prepare(value)
-                prepared.add(id(value))
-            from Occurrence import native_content_key
-            kwargs = ({} if value is clause and context is not None else
-                dict(document_key=('direct', kind) if context is None else
-                     ('embedded', context[0], context[1]), sentence_index=position,
-                     content_key=native_content_key(value.meaning)))
-            previous = self._address_for_write(value.meaning,
-                kind=row_kind(value), **kwargs)[-1]
-            required += previous is None
-            addresses[id(value)] = kwargs
-        if len(self) + required > self.capacity:
-            raise OverflowError('LTM1 capacity exhausted before clause admission')
-        closing.preflight()
-        from RowTime import stamp
-        closing.when = stamp(self)
-        rows, occurrence_rows = {}, {}
-        estimate_index = None
-        if estimate is not None:
-            estimate_index = self.append_estimate(estimate,
-                presence_logits=prediction.presence_logits, source_occurrences=sources,
-                stream=expectation.stream, document=expectation.document)
-        for value in nodes:
-            asserted = value is clause or value in clause.companions
-            pair = pairs[id(value)]
-            if id(value) in prepared:
-                symbol = closing.close(value, pair=edge_pairs[id(value)], when=closing.when,
-                                       surprise=surprise if asserted else -1.)
-            else:
-                symbol = None
-            if retained_pair(value):
-                if symbol is None or not self.parts.contains(symbol):
-                    raise RuntimeError('a completed relation did not produce a Part edge')
-            retain_open = pending(value) or (value.relation is not None and incomplete(value))
-            unresolved_operands = []
-            if retain_open:
-                # An open question is retained at the existing occurrence
-                # boundary. Filling it later changes only its working read.
-                named = []
-                for role, reference in enumerate(value.refs):
-                    if isinstance(reference, ClausePredicate):
-                        reference = ('sym', reference.identity)
-                    elif isinstance(reference, tuple) and reference[:1] == ('clause',):
-                        child = value.children[reference[1]]
-                        term = closing._terms.get(id(child))
-                        symbol = None if term is None else closing.symbols.get(id(term))
-                        reference = (('sym', symbol) if symbol is not None
-                            and closing._point(symbol) is not None else
-                            self.occurrence_of(rows[id(child)]))
-                        if incomplete(child) and not pending(child):
-                            # This operand contains an unresolved dependency;
-                            # its fused placeholder is not a completed answer.
-                            unresolved_operands.append((role, reference))
-                    elif type(reference) is int and reference not in (-1, 0):
-                        reference = self.semantic_reference(reference)
-                    else:
-                        reference = value.meaning.role_refs[role]
-                    named.append(reference)
-                stored = replace(value.meaning, role_refs=tuple(named))
-            else:
-                point = value.point
-                if point is None:
-                    point = closing._terms[id(value)].point
-                stored = ConceptualMeaning.from_description(self._fit(point))
-                if symbol is not None:
-                    # This is the address of the surviving derivation, not
-                    # the dissolved working identity. Membership reads the
-                    # Part arguments; it never inverts this narrowed point.
-                    stored = replace(stored, role_refs=(('sym', symbol), None, None))
-            marks = bindings(value.meaning)
-            retained = {key: marks[key] for key in ('_withheld_symbols',) if key in marks}
-            if retain_open:
-                retained.update(marks)
-            if unresolved_operands:
-                retained['_unresolved_operands'] = tuple(unresolved_operands)
-            if value is clause:
-                retained.update(observation_marks)
-            stored = with_slots(replace(stored, mode=value.meaning.mode,
-                polarity=value.meaning.polarity,
-                sentence_kind=stored.sentence_kind if retain_open else 'idea',
-                bindings=retained), open_slots(stored), pair=pair)
-            before_count = len(self)
-            row = self.append_meaning(stored, kind=row_kind(value),
-                trust=0. if trust is None or not asserted else float(trust), stream=stream,
-                surprise=surprise if asserted else -1., evidence=pair, order=value.order,
-                **addresses[id(value)])
-            if row >= before_count:
-                self.when[row].copy_(closing.when)
-            if origin is not None:
-                self.set_origin(row, origin, text=text if asserted else None)
-            occurrence_rows[id(value)] = row
-            rows[id(value)] = ('sym', symbol) if retained_pair(value) else row
-            if written_rows is not None:
-                # The returned handle can be a Part. Identity histories name
-                # the completed occurrence beside it, without changing layout.
-                written_rows[('occurrence', id(value))] = self.occurrence_of(row)
-        result = rows[id(clause)]
-        if estimate_index is not None:
-            self.link_estimate_observation(estimate_index, result)
-        if written_rows is not None:
-            written_rows['root_occurrence'] = written_rows[('occurrence', id(clause))]
-            written_rows.update(rows)
-            written_rows.update({('symbol', id(value)):
-                closing.symbols.get(id(closing._terms.get(id(value))))
-                for value in nodes})
-            written_rows[('symbols', id(clause))] = tuple(dict.fromkeys(
-                symbol for symbol in closing.symbols.values()
-                if symbol in closing.alloc.individuals))
-            written_rows[('activations', id(clause))] = tuple(
-                (self.occurrence_of(rows[id(value)]),
-                 symbol if symbol in closing.alloc.individuals else None,
-                 (value.reference_request or {}).get('role', 0))
-                for value in nodes if value.order == 1
-                for symbol in (written_rows.get(('symbol', id(value))),))
+                    prediction.symbol_ids.tolist(), activation.detach().cpu().tolist()))),)
+            estimate = replace(ConceptualMeaning.from_description(prediction.roles[0]),
+                bindings=retained, scope=prediction.scope)
+            index = self.append_estimate(estimate, presence_logits=prediction.presence_logits,
+                source_occurrences=tuple(expectation.source_occurrences), stream=expectation.stream,
+                document=expectation.document)
+            self.link_estimate_observation(index, result)
         if authority is not None:
             authority['rows'].append(result)
         return result
@@ -629,12 +632,33 @@ class ClauseRows:
         from ThoughtReferences import bindings, fill, open_slots, with_slots
         owner_ref = self.__dict__.get('_concept_owner')
         owner = None if owner_ref is None else owner_ref()
-        if owner is None or not isinstance(index, int):
+        if owner is None:
             return meaning
         resolver, mtm = owner.components.reference_close, owner.mtm
         occurrence = self.occurrence_of(index)
+        raw_refs = meaning.role_refs
+        if isinstance(index, tuple):
+            references = list(meaning.role_refs)
+            for role, reference in enumerate(references):
+                child = self.location(reference) if reference is not None else None
+                if not isinstance(child, int):
+                    continue
+                if reference not in mtm.names:
+                    continue  # an idea's identity binding is not its value's address
+                identity = dict(self.raw_meaning_of(child).bindings).get('_identity')
+                if identity is None:
+                    continue
+                token = mtm.token_of(identity)
+                if token is not None and not mtm.entries[token].pending:
+                    entry = mtm.entries[token]
+                    references[role] = ('sym', entry.kind) if entry.kind is not None else token
+                elif identity[0] == 'sym':
+                    references[role] = identity
+            meaning = replace(meaning, role_refs=tuple(references))
         for role, _name in bindings(meaning).get('_forward_references', ()):
-            reference = meaning.role_refs[role]
+            reference = raw_refs[role]
+            if reference is not None and reference[0] == 'sym' and owner.interpret.no_object(reference[1]):
+                continue
             site = reference if reference is not None and reference[0] == 'ltm' else occurrence
             token = mtm.token_of(site)
             if token is None:
@@ -662,35 +686,40 @@ class ClauseRows:
             witnesses = [self.location(address) for address in uses]
             witnesses = [row for row in witnesses if isinstance(row, int)]
             meaning = fill(meaning, dict(reference=target, binding_value=point,
-                support_true=max(float(self.c_plus[row]) for row in witnesses),
-                support_false=max(float(self.c_minus[row]) for row in witnesses)), slots=(('referent', role),),
+                support_true=max((float(self.c_plus[row]) for row in witnesses), default=0.),
+                support_false=max((float(self.c_minus[row]) for row in witnesses), default=0.)), slots=(('referent', role),),
                 witnesses=uses, operation='bind')
         return meaning
 
     def relation_operands(self, symbol):
-        """Read the two symbol arguments without reconstructing an LTM0 row."""
+        """Read the actual operands in their tagged address domains."""
+        from LTM1 import RELATION
+        from ChainRead import point
         symbol = symbol[1] if isinstance(symbol, tuple) else int(symbol)
-        return tuple(self.part_row(ref) if self.parts.contains(ref) else self.point_of_row(ref).clone()
-                     for ref in self.parts.row(symbol)['refs'].tolist())
+        return tuple(self.part_row(ref[1]) if ref[0] == RELATION else point(self, ref)
+                     for ref in self.parts.references(symbol))
 
     def consequents_by_row(self, reference, *, reading=None):
-        return [(symbol, int(self.parts.refs[symbol, 1]),
+        from LTM1 import SYMBOL
+        return [(symbol, right[1] if right[0] == SYMBOL else right,
                  (float(self.parts.truth_plus[symbol]), float(self.parts.truth_minus[symbol])))
                 for symbol in self.relations(reading).tolist()
-                if int(self.parts.refs[symbol, 0]) == int(reference)]
+                for left, right in (self.parts.references(symbol),)
+                if left == self.parts.reference(reference)]
 
     def evaluate_rows(self, left, right, *, reading=None):
         result = self.slots.new_zeros(2)
         for symbol in self.relations(reading).tolist():
-            if tuple(self.parts.refs[symbol].tolist()) == (int(left), int(right)):
+            if self.parts.references(symbol) == (self.parts.reference(left), self.parts.reference(right)):
                 result = torch.maximum(result, result.new_tensor((
                     self.parts.truth_plus[symbol], self.parts.truth_minus[symbol])))
         return result
 
     def _vector_relations(self, reading=None):
+        from ChainRead import point
         result = []
         for symbol in self.relations(reading).tolist():
-            a, b = (self._concept_point(ref) for ref in self.parts.refs[symbol].tolist())
+            a, b = (point(self, ref) for ref in self.parts.references(symbol))
             if a is not None and b is not None:
                 result.append((symbol, a, b))
         return result

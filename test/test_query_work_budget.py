@@ -82,20 +82,18 @@ def test_invalid_call_spends_no_work_and_never_executes():
 def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypatch):
     from Queries import _existing_row, ThoughtLTMCapability
     from reasoning import TruthGroundedReasoner
-    from index_fixtures import append_indexed
+    from index_fixtures import append_content
     cs = _cs()
     ref = ('sym', cs.new_concept())
     cs._csw_concept_row(0, ref[1])
     meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
                       role_refs=(ref, None, None))
-    store = LTM0(8)
-    store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
+    store = LTM0(8, percept_width=0)
     code = _existing_row(cs, ref)
-    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=.6)
-    append_indexed(store, meaning, terms=((code,), (), ()), kind="fact", trust=-.4)
+    append_content(store, meaning, kind='fact', trust=0.6)
+    append_content(store, meaning, kind='fact', trust=-0.4)
     # This mechanism budgets primed candidate reads. Indexing precedes the
     # query; its context supplies no generation work or renewal of the meter.
-    store.configure_leaf_index(code_row=lambda value: _existing_row(cs, value))
     read, original = [], store.row
 
     def row(index):
@@ -110,7 +108,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
             equal=reader.equal, tau_id=reader.tau_id, primed=(code,)))
     from test_query_vp_boundaries import _signature
     result = _signature('query', 'argin1').invoke(
-        context, replace(meaning, mode='interrogative'))
+        context, replace(meaning))
     assert read == [0] and result["records_scanned"] == 1
     assert result["value"][0]["trust"] == pytest.approx(.6)
     assert result["support_false"] == 0 and "work_budget" in result["incomplete"]

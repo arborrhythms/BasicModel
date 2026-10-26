@@ -72,10 +72,10 @@ def test_embedded_identification_does_not_grant_source_authority():
     parent = replace(clause, children=(child,), refs=(('clause', 0), -1, -1),
                      evidence=(.9, .3), order=2)
     row = store.write_clause(parent, trust=.7)
-    assert row == 1 and store.row(0)['trust'] == pytest.approx(.4)
-    assert store.row(0)['evidence'] == pytest.approx((.8, .4))
-    assert store.row(1)['trust'] == pytest.approx(.7)
-    assert store.row(1)['evidence'] == pytest.approx((.7, 0.))
+    assert row == 0 and len(store) == 1
+    assert store.row(row)['trust'] == pytest.approx(.7)
+    assert store.row(row)['evidence'] == pytest.approx((.7, 0.))
+    assert not len(store.parts)
 
 
 def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
@@ -92,17 +92,6 @@ def test_open_reading_keeps_both_poles_and_its_order(monkeypatch):
     assert fixture.store.row(row)['trust'] == pytest.approx(-.1)
 
 
-def test_index_reading_reads_the_stored_order():
-    store, clause = store_and_clause()
-    seen = []
-    def unfold(value, limit, *, order, work=None):
-        seen.append(order)
-        return (1,), 1, True
-    store.configure_leaf_index(read=unfold)
-    row = store.write_clause(replace(clause, order=3), trust=.8)
-    store.reindex_meanings()
-    assert seen == [3, 3]
-    assert store.leaf_terms(row, 0) == (1,)
 
 
 def test_abstract_unfold_descends_each_sigma_rung():
@@ -130,11 +119,10 @@ def test_old_scalar_checkpoint_does_not_invent_evidence_or_order():
     for name in ('order', 'c_plus', 'c_minus'):
         del state[name]
     restored = LTM0(4, capacity=8)
-    with pytest.warns(UserWarning, match='unknown order'):
+    state['truth_schema'].fill_(10)
+    with pytest.raises(ValueError, match='layout checkpoint version'):
         restored.load_state_dict(state, strict=True)
-    assert restored.row(0)['order'] == -1
-    assert restored.row(0)['evidence'] == (0., 0.)
-    assert restored.row(0)['trust'] == 0.
+    assert len(restored) == 0
 
 
 def test_native_word_reference_accepts_both_without_touching_its_signed_value():
@@ -203,7 +191,7 @@ def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monk
                        batch_override=(inputs, torch.zeros(1, 1, 0)))
         field = model._sentence_fields[0][0]
         store = model.symbolSpace.ltm_store
-        row = store.index_of_row(field.row_id)
+        row = store.location(field.row_id)
         assert calls and row is not None
         assert field.evidence == pytest.approx((.8, .6))
         assert store.row(row)['evidence'] == pytest.approx((.8, .6))

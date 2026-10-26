@@ -7,7 +7,7 @@ def record_observation(store, payload, depth, *, meaning, expectation=None):
     prediction = None if expectation is None else expectation.estimate
     if prediction is not None and expectation.source_occurrences:
         estimate = ConceptualMeaning(prediction.roles, torch.ones(3, dtype=torch.bool),
-            mode='unspecified', bindings=prediction.retained_bindings(), scope=prediction.scope)
+             bindings=prediction.retained_bindings(), scope=prediction.scope)
         from dataclasses import replace
         bindings = dict(meaning.bindings)
         bindings['_observed_symbol_activations'] = tuple((int(i), tuple(a)) for i,a in
@@ -33,4 +33,45 @@ def symbol_prediction(keys, activation, *, bindings=(), scope=()):
 
 def estimate_meaning(prediction):
     return ConceptualMeaning(prediction.roles, torch.ones(3, dtype=torch.bool),
-        mode='unspecified', bindings=prediction.retained_bindings(), scope=prediction.scope)
+         bindings=prediction.retained_bindings(), scope=prediction.scope)
+
+
+def unsupported(meaning, slots=None):
+    """A fixture with explicit zero source evidence, independent of form."""
+    from ThoughtReferences import open_slots, with_slots
+    return with_slots(meaning, open_slots(meaning) if slots is None else slots,
+                      pair=(0., 0.), source_evidence=(0., 0.))
+
+
+def replay_first_choice(model, monkeypatch, index):
+    """Record a first decision through the existing chooser replay input."""
+    chooser = model.shared_grammar
+    select, count = chooser.select_logits, [0]
+    def recorded(logits, **kwargs):
+        if count[0] == 0:
+            kwargs['replay_action'] = torch.tensor([index % logits.shape[-1]], device=logits.device)
+        count[0] += 1
+        return select(logits, **kwargs)
+    monkeypatch.setattr(chooser, 'select_logits', recorded)
+
+
+def replay_thought_plan(model, monkeypatch, plan):
+    """Choose a recorded operation while retaining the real scorer and walk."""
+    choose = model._choose_selected_thought_action
+    decisions = iter(plan) if not callable(plan) else None
+    def recorded(root, active, actions, **kwargs):
+        selected = plan(root, active, actions, **kwargs) if callable(plan) else next(decisions)
+        index = next(i for i, action in enumerate(actions)
+                     if action is selected or (isinstance(selected, str) and action is not None
+                                               and action.semantic_id == selected))
+        chooser = model._selected_thought_chooser(active)
+        select = chooser.select_logits
+        def replay(logits, **options):
+            # A recorded alternative is still subject to the walk's exclusion.
+            if options.get('masked_action') is None:
+                options['replay_action'] = torch.tensor([index], device=logits.device)
+            return select(logits, **options)
+        with monkeypatch.context() as patch:
+            patch.setattr(chooser, 'select_logits', replay)
+            return choose(root, active, actions, **kwargs)
+    monkeypatch.setattr(model, '_choose_selected_thought_action', recorded)

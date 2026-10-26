@@ -2,12 +2,22 @@
 
 The cached representation is [form | meaning]. Perception reconstruction alone
 writes native prototypes and evidence; the sentence read detaches them. Order-zero
-meaning is the detached occurrence-context mean of fixed sentence identities,
+meaning is placed at kept closes from the registered priming surface,
 on the for pole, with no against evidence. Letters need no conceptual row.
 """
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+
+def placement_step(q, context, weights, negatives, *, rate=.1, negative_weight=1.):
+    """One meet-ratio subgradient step, in the positive conceptual coordinates."""
+    gradient = torch.zeros_like(q)
+    if len(context):
+        gradient += ((q < context).to(q) * (weights / context.sum(-1).clamp_min(1e-12))[:, None]).sum(0)
+    if len(negatives):
+        gradient -= negative_weight * ((q < negatives).to(q) / negatives.sum(-1).clamp_min(1e-12)[:, None]).sum(0)
+    return F.normalize((q + rate * gradient).clamp_min(0), dim=-1)
 
 
 class MereologicalCodes(nn.Module):
@@ -29,8 +39,31 @@ class MereologicalCodes(nn.Module):
             raise ValueError('the meaning complement holds complete pole pairs')
         self.meaning_pairs = self.context_width // 2
         self.meaning_ones = min(self.meaning_pairs, 6 if self.meaning_pairs > 64 else 3)
-        self._context = None
+        # One direction, count, dirty flag and immutable minted-content key per
+        # constructed codebook seat; meanings reserve half their bipolar width.
+        count = len(initial)
+        self.register_buffer('placement_version', torch.tensor(1, dtype=torch.long, device=initial.device))
+        self.register_buffer('placement', initial.new_zeros(count, self.meaning_pairs))
+        self.register_buffer('placement_witnesses', torch.zeros(count, dtype=torch.long, device=initial.device))
+        self.register_buffer('placement_dirty', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
+        self.register_buffer('placement_keys', torch.zeros(count, 32, dtype=torch.uint8, device=initial.device))
+        self.register_buffer('placement_keyed', torch.zeros(count, dtype=torch.bool, device=initial.device))
+        # A cached form and two validity bits per seat replace unchanged-row scans.
+        self.register_buffer('_forms', initial.new_zeros(count, self.percept_width), persistent=False)
+        self.register_buffer('_form_valid', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
+        self.register_buffer('_allocated', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
+        # One tenth of a meet-ratio subgradient, balanced by five unit-weight
+        # negatives: bounded close work, with negatives as the collapse brake.
+        self.placement_rate = float(TheXMLConfig.space('ConceptualSpace', 'placementRate', .1))
+        self.negative_count = int(TheXMLConfig.space('ConceptualSpace', 'placementNegatives', 5))
+        self.negative_weight = float(TheXMLConfig.space('ConceptualSpace', 'placementNegativeWeight', 1.))
+        import math
+        if (not math.isfinite(self.placement_rate) or self.placement_rate < 0
+                or self.negative_count < 0 or not math.isfinite(self.negative_weight) or self.negative_weight < 0):
+            raise ValueError('placement rate and negative controls must be finite and nonnegative')
         self._centroid_cache = None
+        self._form_revision = self._inventory_revision = None
+        self.last_rederived_rows = self.form_rows_derived = 0
 
     @torch.no_grad()
     def centroid_forms(self):
@@ -40,10 +73,10 @@ class MereologicalCodes(nn.Module):
         identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
         if identity is None:
             return {}
-        rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
-        words = {row: raw for row in rows if (raw := self.owner.word_surface_for_row(row)) in identity.words}
-        revision = (identity.revision, tuple(words.items()))
+        revision = identity.revision
         if self._centroid_cache is None or revision != self._centroid_cache[0]:
+            rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
+            words = {row: raw for row in rows if (raw := self.owner.word_surface_for_row(row)) in identity.words}
             forms = {row: identity.form(raw) for row, raw in words.items()}
             parts = {row: identity.part_atoms(raw) for row, raw in words.items()}
             placed, report = place(forms, parts)
@@ -55,57 +88,191 @@ class MereologicalCodes(nn.Module):
         return {} if self._centroid_cache is None else self._centroid_cache[2]
 
     @torch.no_grad()
-    def occurrence_terms(self, b=0):
-        """Occurrence membership supplies n and detached conceptual meaning M.
+    def remember_content(self, row, value):
+        """Pin a minted concept's content key before its meaning cache is cleared."""
+        import hashlib
+        value = value.detach().clone().to(device='cpu', dtype=torch.float32)
+        value[self.percept_width:self.percept_event_width] = 0
+        key = hashlib.sha256(b'placed-concept-v1\0' + value.contiguous().numpy().astype('<f4').tobytes()).digest()
+        self.placement_keys[row].copy_(self.placement_keys.new_tensor(list(key)))
+        self.placement_keyed[row] = True
+        return key
 
-        A reference witnesses membership even in an unverified sentence.
-        Its truth poles state a different fact and are never changed here.
-        """
-        store = self.owner._closed_clause_store()
-        if store is None or not self.context_width:
-            return {}
-        from PartRead import occurrence_roots, occurrence_codes
-        records = occurrence_roots(self.owner, store, b)
-        terms = occurrence_memberships(self.owner, store, records=records)
-        result = {}
-        from MeaningCodes import defined_code
-        codes = occurrence_codes(records, self.meaning_pairs, self.meaning_ones, store.slots)
-        for code, rows in terms.items():
-            rows = sorted(rows)
-            if not rows:
-                continue
-            weight = torch.stack([records[row]['weight'] for row in rows])
-            roots = torch.stack([codes[row] for row in rows])
-            positive = (roots * weight[:, None]).sum(0) / weight.sum()
-            positive = defined_code(positive, len(rows))
-            result[code] = (len(rows), torch.cat((positive, torch.zeros_like(positive))).detach())
-        return result
+    def content_key(self, row):
+        raw = self.owner.word_surface_for_row(row)
+        if isinstance(raw, bytes):
+            return raw
+        if not bool(self.placement_keyed[row]):
+            self.remember_content(row, self.owner.similarity_codebook.W[row])
+        return bytes(self.placement_keys[row].cpu().tolist())
+
+    def reading_key(self, reading):
+        from Occurrence import sentence_key
+        rows = reading.word_rows.detach().reshape(-1).tolist()
+        identities = getattr(reading, 'concept_ids', None)
+        if identities is not None:
+            rows = [row if row >= 0 else self.owner._csw_row_of(int(cid))
+                    for row, cid in zip(rows, identities.reshape(-1).tolist())]
+        return sentence_key([self.content_key(int(row)) for row in rows if row is not None and row >= 0])
+
+    def placement_step(self, q, context, weights, negatives):
+        """One subgradient step of the meet-ratio objective; negatives brake collapse."""
+        return placement_step(q, context, weights, negatives,
+                              rate=self.placement_rate, negative_weight=self.negative_weight)
+
+    def _negatives(self, row, excess, placed, key):
+        import hashlib
+        eligible = ((excess == 0) & placed).nonzero().flatten()
+        eligible = eligible[eligible != row]
+        generator = torch.Generator(device='cpu')
+        generator.manual_seed(int.from_bytes(hashlib.sha256(key).digest()[:8], 'little'))
+        order = torch.randperm(len(eligible), generator=generator)[:self.negative_count].to(eligible.device)
+        return eligible[order]
+
+    @torch.no_grad()
+    def place_rows(self, rows, context, key):
+        from MeaningCodes import identity_code
+        if not self.meaning_pairs:
+            return
+        rows = list(dict.fromkeys(map(int, rows)))
+        if any(not 0 <= row < len(self.placement) for row in rows):
+            raise RuntimeError('placement row exceeds the constructed inventory')
+        if context.shape != self.placement_witnesses.shape:
+            raise ValueError('placement context differs from the constructed surface')
+        # One frozen context for the close: result is independent of row order.
+        codes = self.placement.detach().clone()
+        placed = self.placement_witnesses > 0
+        for row in rows:
+            q = codes[row] if placed[row] else F.normalize(identity_code(
+                self.content_key(row), self.meaning_pairs, self.meaning_ones, like=codes), dim=0)
+            selected = (context > 0) & placed
+            selected[row] = False
+            negatives = self._negatives(row, context, placed, key)
+            self.placement[row].copy_(self.placement_step(q, codes[selected], context[selected], codes[negatives]))
+            self.placement_witnesses[row] += 1
+            self.placement_dirty[row] = True
+
+    @torch.no_grad()
+    def observe_close(self, reading, batch=0):
+        """Place the registered sentence once, on its kept close only."""
+        if reading is None:
+            return None
+        context = self.owner.placement_context(batch)
+        rows = self.owner._sentence_seen_rows[int(batch)]
+        self.place_rows(rows[rows >= 0].tolist(), context, self.reading_key(reading))
+        return context
+
+    def placement_extras(self):
+        return dict(version=1, placement=self.placement.detach().cpu().clone(),
+                    witnesses=self.placement_witnesses.detach().cpu().clone(),
+                    keys=self.placement_keys.detach().cpu().clone(),
+                    keyed=self.placement_keyed.detach().cpu().clone())
+
+    @torch.no_grad()
+    def load_placement_extras(self, saved):
+        if not isinstance(saved, dict) or saved.get('version') != 1:
+            raise ValueError('item 3.0 placement checkpoint version 1 is required')
+        pairs = (('placement', self.placement), ('witnesses', self.placement_witnesses),
+                 ('keys', self.placement_keys), ('keyed', self.placement_keyed))
+        for key, target in pairs:
+            value = saved.get(key)
+            if not torch.is_tensor(value) or value.shape != target.shape or value.dtype != target.dtype:
+                raise ValueError('placement checkpoint differs from constructed column: '+key)
+        self._validate_placement(saved['placement'], saved['witnesses'])
+        for key, target in pairs:
+            target.copy_(saved[key])
+        self.placement_dirty.fill_(True)
+        self._form_valid.zero_()
+
+    @staticmethod
+    def _validate_placement(codes, witnesses):
+        norms = codes.norm(dim=-1)
+        tolerance = max(1e-5, 8 * torch.finfo(codes.dtype).eps)
+        if (not bool(torch.isfinite(codes).all()) or bool((codes < 0).any())
+                or bool((witnesses < 0).any())
+                or bool(((norms > 1e-6) & ((norms - 1).abs() > tolerance)).any())
+                or bool((codes[witnesses == 0] != 0).any())):
+            raise ValueError('invalid placement directions or witness counts')
+
+    def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        if int(state.get(prefix+'placement_version', -1)) != 1:
+            raise ValueError('item 3.0 placement checkpoint version 1 is required')
+        for name in ('placement', 'placement_witnesses', 'placement_keys', 'placement_keyed'):
+            value = state.get(prefix+name)
+            expected = getattr(self, name)
+            if value is None or value.shape != expected.shape or value.dtype != expected.dtype:
+                raise ValueError('placement checkpoint differs from constructed column: '+name)
+        self._validate_placement(state[prefix+'placement'], state[prefix+'placement_witnesses'])
+        super()._load_from_state_dict(state, prefix, *args, **kwargs)
+        self.placement_dirty.fill_(True)
+        self._form_valid.zero_()
+        self._centroid_cache = None
+        self._form_revision = None
+
+    def _form_sources(self):
+        from Spaces import _concept_alloc_of
+        layer = _concept_alloc_of(self.owner).layer()
+        model = getattr(self.owner, '_model', None)
+        native = []
+        for name in ('perceptualSpace', 'wholeSpace'):
+            space = getattr(model, name, None)
+            cb = getattr(getattr(space, 'subspace', None), 'what', None)
+            W = getattr(cb, 'W', None)
+            native.append(None if W is None else (id(W), W._version))
+        identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
+        return (id(layer.features.values), None if layer.features.values is None else layer.features.values._version, len(layer.features._index),
+                tuple(native), None if identity is None else identity.revision)
+
+    def _invalidate_forms(self):
+        revision = self._form_sources()
+        if revision != self._form_revision:
+            self._form_valid.zero_()
+            self._form_revision = revision
 
     def begin_forward(self):
-        # Both walk paths use the same pre-forward durable context; the
-        # current closing becomes available on the next forward only.
-        store = self.owner._closed_clause_store()
-        self._contexts = {b: self.occurrence_terms(b) for b in range(max(1, 0 if store is None else store.stream.shape[1]))}
-        self._context = self._contexts[0]
-        self._unseen_context = self.occurrence_terms(len(self._contexts))
-        self._form_context = self.centroid_forms()
+        """Refresh changed forms and placement only; paired trials share the cache."""
+        self._invalidate_forms()
         from Spaces import _concept_alloc_of
-        cb = self.owner.similarity_codebook
-        rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
-        with torch.no_grad():
-            from IdentityRows import cache_rows
-            retained = cache_rows(self.owner)
-            clear = torch.ones(len(cb.W), dtype=torch.bool, device=cb.W.device)
-            clear[list(retained)] = False
-            cb.W[clear] = 0
+        layer = _concept_alloc_of(self.owner).layer()
+        revision = (id(layer._tensor_row_keys), len(layer._tensor_row_keys), getattr(layer, '_record_revision', 0))
+        if revision != self._inventory_revision:
+            self._allocated.zero_()
+            rows = list(layer._tensor_row_keys)
             if rows:
-                cb.lookup_rows(torch.tensor(rows, device=cb.W.device))
+                self._allocated[rows] = True
+            self._inventory_revision = revision
+        dirty = self._allocated & (self.placement_dirty | ~self._form_valid)
+        rows = dirty.nonzero().flatten()
+        self.last_rederived_rows = len(rows)
+        if len(rows):
+            self.owner.similarity_codebook.lookup_rows(rows)
+        self.placement_dirty.zero_()
 
     def context_audit(self):
-        context = self.occurrence_terms() if self._context is None else self._context
-        return [dict(row=row, occurrences=n, context_width=self.context_width,
-                     context_norm=float(mean.norm()), bootstrap_learning=False)
-                for row, (n, mean) in sorted(context.items())]
+        return [dict(row=row, placement_witnesses=int(self.placement_witnesses[row]),
+                     context_width=self.context_width, direction_norm=float(self.placement[row].norm()),
+                     bootstrap_learning=False)
+                for row in self.placement_witnesses.nonzero().flatten().tolist()]
+
+    @torch.no_grad()
+    def collapse_audit(self, rows, batch=0):
+        from IdentityRows import meet_ratios
+        excess = self.owner.placement_context(batch)
+        placed = self.placement_witnesses > 0
+        records = []
+        for row in map(int, rows):
+            if not bool(placed[row]):
+                continue
+            selected = (excess > 0) & placed
+            selected[row] = False
+            positives = meet_ratios(self.placement[row], self.placement[selected])[0]
+            weights = excess[selected]
+            negatives = self._negatives(row, excess, placed, b'placement-collapse-audit-v1')
+            random = meet_ratios(self.placement[row], self.placement[negatives])[0]
+            records.append(dict(row=row, context=float((positives*weights).sum()/weights.sum().clamp_min(1e-12)),
+                                random=float(random.mean()) if len(random) else 0., negatives=negatives.tolist()))
+        return dict(context=sum(r['context'] for r in records)/max(1,len(records)),
+                    random=sum(r['random'] for r in records)/max(1,len(records)), rows=records)
 
     @torch.no_grad()
     def support_audit(self, rows):
@@ -215,52 +382,41 @@ class MereologicalCodes(nn.Module):
         requested = indices.flatten().cpu().tolist()
         unique = list(dict.fromkeys(requested))
         row_index = {row: i for i, row in enumerate(unique)}
+        self._invalidate_forms()
         out = cached.new_zeros(len(unique), self.code_width)
-        for row, edges in self._definitions(unique).items():
-            if not edges:
-                continue  # an unallocated cache row has neither form nor meaning
-            (lower, _upper), _, _, _ = self._interval(edges)
-            out[row_index[row], :self.percept_width] = lower
-        model = getattr(owner, '_model', None)
-        identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
-        if identity is not None:
-            # New lexical witnesses can add nested parts during the stem.
-            # Form identity must follow that vocabulary revision immediately;
-            # occurrence meaning and adjacency stay frozen across paired walks.
-            placed = self.centroid_forms()
-            for row in unique:
+        from Spaces import _concept_alloc_of
+        alloc = _concept_alloc_of(owner)
+        retained = set()
+        for row in unique:
+            cid = owner.concept_id_at_row(row)
+            if (cid is not None and cid not in alloc.retired and
+                    ('concept' in alloc.symbol_types.get(cid, ()) or cid in alloc.individuals
+                     or cid in alloc.form_regions.values())):
+                retained.add(row)
+        needed = [row for row in unique if row not in retained and not bool(self._form_valid[row])]
+        if needed:
+            forms = self.centroid_forms()
+            model = getattr(owner, '_model', None)
+            identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
+            for row, edges in self._definitions(needed).items():
+                self._forms[row].zero_()
+                if edges:
+                    (lower, _upper), _, _, _ = self._interval(edges)
+                    self._forms[row].copy_(lower)
                 raw = owner.word_surface_for_row(row)
-                if raw in identity.words:
-                    # Identification is immutable. Learned support changes a
-                    # reading's evidence, never the named word's sparse key.
-                    out[row_index[row], :identity.width] = placed.get(row, identity.form(raw)).to(out)
-        contexts = getattr(self, "_contexts", {0:self._context})
-        context = contexts.get(b, getattr(self, '_unseen_context', None))
-        if context is None:
-            context = self.occurrence_terms(b)
+                if identity is not None and raw in identity.words:
+                    self._forms[row, :identity.width] = forms.get(row, identity.form(raw)).to(out)
+                self._form_valid[row] = True
+            self.form_rows_derived += len(needed)
         for row in unique:
-            if row in context and self.context_width:
-                mean = context[row][1].detach().to(out)
-                start, k = self.percept_event_width, self.meaning_pairs
-                out[row_index[row], start:start+k] = mean[:k]
-                out[row_index[row], start+self.reserved_pairs:start+self.reserved_pairs+k] = mean[k:]
-        from IdentityRows import cache_rows
-        retained = set(cache_rows(owner))
-        for row in unique:
-            if row in retained:
-                out[row_index[row]] = cached[row]
+            out[row_index[row], :self.percept_width] = (
+                cached[row, :self.percept_width] if row in retained else self._forms[row])
+            self._form_valid[row] = True
+        from MeaningCodes import defined_code
+        if unique and self.meaning_pairs:
+            start, k = self.percept_event_width, self.meaning_pairs
+            out[:, start:start+k] = defined_code(self.placement[unique], self.placement_witnesses[unique])
+        # All bands and the against lane remain zero; retained rows cache form
+        # only. Every meaning, including a promoted identity's, reads placement.
         result = out[torch.tensor([row_index[r] for r in requested], device=out.device, dtype=torch.long)]
         return result.reshape(*shape, self.code_width)
-
-
-@torch.no_grad()
-def occurrence_memberships(owner, store, *, records=None):
-    """Map lexical seats to transient context rows rebuilt from Part edges."""
-    from PartRead import occurrence_roots, word_rows
-    if records is None:
-        records = occurrence_roots(owner, store)
-    terms = {}
-    for row, record in enumerate(records):
-        for code in word_rows(owner, store.parts, record['root']):
-            terms.setdefault(code, set()).add(row)
-    return terms

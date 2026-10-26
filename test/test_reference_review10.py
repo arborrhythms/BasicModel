@@ -1,4 +1,5 @@
 """The tenth review's ownership, incompatibility and answer-view contracts."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 
 import pytest
@@ -21,11 +22,15 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
     for unit, (word, point) in enumerate((('y', a[5]), ('box', a[0]), ('ball', a[1]),
                                          ('red', a[2]), ('blue', a[3]), ('two', a[4])), 200):
         words[word] = owner.interpret.lookup_word([unit], (), form=word)
-        with torch.no_grad():
-            owner.similarity_codebook.W[owner._csw_row_of(words[word])].copy_(point)
+        if word != 'y':
+            obj = owner.new_concept()
+            with torch.no_grad():
+                owner.similarity_codebook.W[owner._csw_concept_row(0, obj)].copy_(point)
+            owner.interpret.define(words[word], obj)
+            words[word] = obj
 
     def close(clause, position):
-        plan = resolver.preview(clause, tuple(frames))
+        plan = resolver.preview(clause, chunk_context(resolver, tuple(frames)))
         retained = dict(owner.mtm.entries)
         prepared = resolver.prepare(clause, plan)
         assert owner.mtm.entries == retained
@@ -148,7 +153,7 @@ def test_answer_view_and_loss_judge_only_a_direct_root_site(nested):
         (('referent', role),), pair=(0., 0.))
     clause = Clause(meaning, point=atoms[1], refs=(-1, -1, ('clause', 0)), children=(child,))
     before, entries = snapshot(resolver), dict(resolver.components.owner.mtm.entries)
-    plan = resolver.preview(clause, (SituationFrame.from_row(store.row(antecedent)),))
+    plan = resolver.preview(clause, chunk_context(resolver, (SituationFrame.from_row(store.row(antecedent)),)))
     address = store.occurrence_of(antecedent)
     assert plan['items'][0]['selected'] == address
     assert plan['items'][0]['root_roles'] == (() if nested else (2,))
@@ -172,7 +177,7 @@ def test_thought_bind_is_credited_only_by_episode_advantage(monkeypatch, tmp_pat
     target, _ = occurrence(f, f.atoms[0], f.atoms[4])
     occurrence(f, f.atoms[1], f.atoms[5])
     form_exposure(f.resolver, f.atoms[7], f.atoms[0])
-    meaning = replace(site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7]), mode='interrogative')
+    meaning = replace(site(f, f.atoms[0], predicate=f.atoms[4], cue=f.atoms[7]))
     chooser, original = f.model.shared_grammar, f.model.shared_grammar.thought_logits
     def prefer_binding(active, requests):
         logits = original(active, requests)

@@ -145,12 +145,11 @@ class ConceptualMeaning:
     """One full-width grammatical description; occurrence ownership is external.
 
     Cloning owns tensors without detaching the current computation. Durable
-    stores detach on write. Mode does not establish truth; a fact's evidential
+    stores detach on write. A fact's evidential
     degree and source belong to its stored occurrence, not the concept vector.
     """
     roles: torch.Tensor = field(repr=False)
     role_mask: torch.Tensor = field(repr=False)
-    mode: str = "assertive"
     polarity: bool = True
     role_refs: tuple = (None, None, None)
     bindings: Any = ()
@@ -165,8 +164,6 @@ class ConceptualMeaning:
             self.roles, 3, "infix", self.role_mask)
         if not bool(mask.any()):
             raise ValueError("a conceptual meaning requires an occupied role")
-        if self.mode not in ("assertive", "interrogative", "unspecified"):
-            raise ValueError(f"unknown grammatical mode {self.mode!r}")
         if self.sentence_kind not in (None, 'idea', 'relation'):
             raise ValueError('sentence kind must be idea, relation or unspecified')
         refs = _freeze_metadata(self.role_refs)
@@ -214,7 +211,7 @@ class ConceptualMeaning:
 
     def metadata(self):
         """Tensor-free checkpoint metadata; roles remain in the existing store."""
-        return {"mode": self.mode, "polarity": self.polarity,
+        return {"polarity": self.polarity,
                 "role_refs": self.role_refs, "bindings": self.bindings, "scope": self.scope,
                 "sentence_kind": self.sentence_kind}
 

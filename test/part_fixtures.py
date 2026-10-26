@@ -41,9 +41,11 @@ def part(store, left, right, *, evidence=(1., 0.), types=()):
 
 def part_references(store):
     """Snapshot occupied Part arguments by stable handle, excluding new rows."""
-    return {row: store.parts.refs[row].clone() for row in store.parts.indices().tolist()}
+    return {row: (store.parts.ref_kinds[row].clone(), store.parts.refs[row].clone())
+            for row in store.parts.indices().tolist()}
 
 
 def assert_part_references(store, before):
-    for row, references in before.items():
+    for row, (kinds, references) in before.items():
+        torch.testing.assert_close(store.parts.ref_kinds[row], kinds, rtol=0, atol=0)
         torch.testing.assert_close(store.parts.refs[row], references, rtol=0, atol=0)

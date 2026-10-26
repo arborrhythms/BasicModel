@@ -52,6 +52,7 @@ read the existing journal as the chunk record.
     stamp sits at the sentence level only. An STM row has the LTM0 form,
     a concept entering STM being stamped now (§2, "Recall by `.when`
     alone" and the decided paragraphs after it).
+    *Decided (Alec, 2026-10-25; STM-chunks §27 item 2):* an estimate's percept part carries no time; its zero `.when` supersedes "stamped ahead" in §2's decided paragraph, while the arrival alone keeps its exact stamp.
 11. **STM is eight shared chunks**, each over a few ideas and relations,
     one working set for the open sentence, recalled chains and recent
     rows; the least recently read chunk not still on the parse stack
@@ -379,3 +380,324 @@ behavior stops for Alec.
 7. Unchanged: G1–G3, the pending-premise certificates, the reference,
    bind-thought and identity files, the eight-file set and the regression
    files, on one frozen hash. Step 2's one full sweep follows 2c.
+
+## 5. Code review and layout decisions — Codex, 2026-10-25
+
+This round implements §2 only. The single item-3 sweep belongs after all
+five steps, superseding §4's historical step-2 sweep sentence. The presentation
+boundary remains `BasicModel.begin_presentation`.
+
+1. LTM1 has no composed value. Its percept contains only the two four-coordinate
+   location bands, `.where` and `.when`; the top chain row receives the close's
+   clock stamp. These bands are not a substitute sentence vector. LTM0 stamps
+   the existing percept band of its one paired vector. Inner entries have a
+   zero clock band. Direct stores declare their percept layout at construction.
+2. Tags distinguish occurrence keys, symbols and relation handles even when
+   their integers coincide. Taxonomy callers default to SYMBOL; chain writers
+   pass explicit tags. External relation handles retain the existing `sym`
+   envelope because their allocator already supplies unique handles; the two
+   stored argument tags, never the integer's magnitude, determine traversal.
+3. Checkpoints require the new version and the exact constructed capacities.
+   The former restore-time row resizing is removed. Every new buffer is sized
+   at construction with its derivation beside the declaration.
+4. The current reference resolver already reads role evidence from MTM events.
+   Its remaining same-time Part traversal in `accessible` is replaced by the
+   frame's written activations and identities. Compression retains the subject
+   identity as a semantic binding; it does not retain grammatical role slots.
+5. A direct asserted taxonomy/equality pair remains an LTM1 relation. Ordinary
+   resolved grammatical compositions compress. A pending operand keeps the
+   semantic pair chain, without the parse-only heads or an extra sentence idea.
+   Pending mentions retain their existing occurrence addresses for MTM.
+6. Placement's context source is explicitly interim: the kept reading updates
+   preallocated order-zero context codes once at the close by EWMA. Step 2
+   replaces this context source with the registered priming surface. The receipt
+   will enumerate remaining per-forward inventory/store scans.
+
+Publication of iteration 2 was verified from both remote main refs:
+BasicModel `4f136f76faabafc24397765f4ffe90d01d3dc4bc`, WikiOracle
+`69f82f5f77a3980020841fe859a09afb7733e7be`. The reviewed production source
+remains `75345f891e`. This round is local and returns through Alec for review.
+
+## 6. Reader and fixture audit — Codex, 2026-10-25
+
+1. Embedded occurrence addresses include the source document and sentence
+   position. Content alone reused mentions from repeated sentences and broke
+   MTM membership. A selected arrival operand receives its own unstamped
+   occurrence; only the root sentence is stamped. The live `written_rows` map
+   exposes entries consumed inside chains, but is not retained as derivation.
+2. A chain's temporary working view exposes its actual operands. A missing
+   third grammatical slot is not manufactured as a free variable. Pending
+   names and unresolved child chains are read from their tagged references;
+   they do not require a stored operation or a composed vector. MTM event
+   checkpoint validation accepts the root's relation handle as well as an
+   idea address, while identity membership remains occurrence-addressed.
+3. Pure concept fixtures now declare `percept_width=0`. Tests of time use an
+   actual percept band. Several old arrival fixtures supplied a known concept
+   by filling an objectless word's bank seat; their setup now admits a separate
+   object and definition. Bare names remain pending. These are setup repairs,
+   not new language rules or changed seeds.
+4. The stream-membership slab is constructed with an explicit capacity. Its
+   default is the LTM capacity: a simultaneously closing batch must have room
+   for one entry per stream. `ltmStreamCapacity` can declare a tighter bound.
+   No witness or checkpoint restore grows this slab.
+5. Both forgetting strata use the dependency snapshot taken before the pass.
+   Removing a parent releases its operands for the following pass. The
+   presentation cleanup compares tagged references, so equal integers in
+   different reference domains cannot erase unrelated concepts.
+6. Tests asserting close-time argument minting, stored composing edges or
+   a fused value for an unresolved chain are ported to the decided layout.
+   Their exact before/after text and the explicit retired-reader list belong
+   in the receipt. The reference, choice, gradient and ownership assertions
+   remain behavioral gates.
+
+## 7. Time, identity and evaluation audit — Codex, 2026-10-25
+
+1. Re-witnessing an existing idea preserves its original percept time even
+   when the incoming carrier has a blank time band. Stream membership is
+   access history, not a replacement event clock. The forgetting fixtures now
+   exercise a declared percept band and compare model-time ages. Neither
+   widening a checkpoint's capacity nor inferring absent layout columns is
+   permitted by the new version boundary.
+2. A compressed event over a freshly introduced identity keeps that actual
+   occurrence, ahead of its kind symbol. A numerical journal state update
+   does not alone discharge a named open referent; selected binding and kept
+   thought remain the owners of that transition. The pending-premise
+   assertions retain their original bind-correctly-or-stay-open condition.
+3. Relation verification reads the two tagged operands. It cannot assume
+   that a temporary working view puts the right operand in grammatical slot
+   two. A referenced relation is a situation without requiring its own time
+   stamp; only the containing sentence carries a stamp. Nested asserted pairs
+   therefore remain readable as conditionals while their inner rows remain
+   unstamped.
+4. Alec clarified the decomposition comparison: “we can compare output or
+   some internal isomorphism.” The original snapshots, seeds and configurations
+   remain the measurement inputs. The legacy full-width kernels may carry
+   different vectors for expressions over witnessed-equal identities. The
+   proposed read-time isomorphism reconstructs a common context with a declared
+   inverse, checks its forward recomposition, and requires the already-read
+   equality witnesses for the inputs. MTM's existing before/after event fields
+   are available for this read even when no verb teacher is attached. This
+   keeps no new durable derivation and charges inverse work to the query meter.
+   Numerical equality of paired meaning blocks remains the direct case. The
+   receipt must report the actual result, including any failed original arm;
+   the clarification is not permission to substitute a seed or snapshot.
+5. Old storage tests of three roles, composing argument rows, proof discounts,
+   leaf postings and membership diffusion are ported or explicitly retired
+   against §3. The receipt preserves their exact original and resulting text.
+   Resolved fixture vocabularies admit their objects before composition;
+   close-time argument minting is not reintroduced by the fixtures.
+
+## 8. Output comparison and remaining storage readers — Codex, 2026-10-25
+
+1. The output isomorphism in §7.4 is now implemented in `IdeaEvaluation`.
+   It reads existing MTM before/after values and a native prototype only after
+   `ThoughtBinding.integrate` has established the inputs' witnessed equality.
+   A declared inverse proposes a shared context. Finite-chart clipping can
+   erase different coordinates in each inverse, so their coordinatewise meet
+   and join are tested as hypotheses; both complete outputs must recompose at
+   the existing native decoder tolerance. No grammatical trace is retained.
+   Native lexical activation is searched over its entire allowed interval by
+   a sixteen-interval coarse bracket followed by golden-section refinement.
+   Every inverse and forward check consumes the shared work meter. Both original
+   decomposition lengths pass in both gain arms in development, on the original
+   snapshots, original seeds and unchanged proof assertions and budgets. The
+   frozen receipt is the gate result; this is a mechanism certificate, not a
+   claim of learned decomposition.
+2. A kept inference retains its bound answer reference in `_bound_references`
+   independently of `_identity`, the identity whose value it updates. Both are
+   semantic bindings allowed by §2. `BindingAnswers` can therefore authenticate
+   the retained answer after the working grammatical roles have compressed.
+3. A query cannot cite its own closing relation as an independent witness.
+   The relation branch now honors `_query_occurrence`, as the content branch
+   already does. This preserves search-exhaustion behavior without changing the
+   chooser, reconstruction criterion or seeds.
+4. LTM1 checkpoint cycle validation uses an explicit stack, so a legal deep
+   chain is not rejected by Python's recursion limit. All column layouts,
+   reference tags, counts, access counts and surprise values are checked before
+   replacement. Construction must provide at least the reserved zero handle
+   and one live handle. Cover-map validation retains the pre-round checks for
+   digest shape, positive symbols and distinct ownership.
+5. `Interpret.define` no longer stamps a definition row. Only the sentence
+   entry carries model time. Document-cover retrieval ignores internal binding
+   metadata when testing content constraints, as ordinary content retrieval
+   does. Cover symbols and their separate RNG remain unchanged. A pre-layout
+   checkpoint and a differently sized inventory are rejected instead of migrated
+   or resized; the older acceptance fixtures now assert that version boundary.
+6. The fixture audit also covers the older direct storage readers: three-role
+   column assertions become unary idea or tagged operand assertions; source
+   time readers use `entry_when`; pure vector fixtures declare no percept; time
+   fixtures declare eight percept coordinates. Tests of a selected known
+   vocabulary admit its objects before composition. The receipt records every
+   changed test and fixture in full, including the historical time-reader
+   inventory's removed and added readers.
+
+7. The storage audit restored the existing TruthSet admission boundary: an
+   externally asserted resolved sentence is a fact, an interrogative cannot be
+   asserted, and provenance, text, stream and temporary-cycle validation still
+   run before writing. A full LTM0 can re-witness an existing explicit sentence
+   address without reserving a new seat. The receipt includes the reproducer
+   and regression for that capacity case.
+
+## 9. Construction bounds and query ordering — Codex, 2026-10-25
+
+The bounded affected-file run stopped at its memory ceiling when a canonical
+fixture inherited BasicModel's 262,144-entry LTM and the direct-store default
+reserved that many stream columns too. `SymbolSpace` now constructs the stream
+slab from the configured training batch size; `ltmStreamCapacity` can declare a
+larger runtime batch before construction. Direct isolated `LTM0` stores retain
+the capacity-derived default from §6.4. No store grows after construction. The
+same fixture passes its memory boundary with this production derivation; the
+aborted run remains in the receipt.
+
+Content retrieval retains its previous address-order tie break among equally
+matching descriptions. Explicit references prioritize candidate enumeration
+under a short meter; they do not displace an older equally matching witness
+once both have been read. The replacement for the leaf index now preserves
+that distinction. An inline query fixture supplies one fused description,
+retaining its scope, identity, evidence and pure-construction assertions.
+
+## 10. Final reader and admission audit — Codex, 2026-10-25
+
+1. A chain handle is an existing description wherever an idea occurrence is:
+   both description-resolution contexts accept a live LTM1 handle, charge the
+   record read and preserve its actual operand view. The controller recognizes
+   a live chain from allocator occupancy without reading its content while
+   building candidates. An ordinary concept symbol is not a description.
+   A kept query that merely recalls an unchanged chain reuses that entry and
+   its original percept time. A filled binding still writes the inference
+   value and updates its identity through the existing thought path.
+2. Trust-derived evidence on a negative relation reverses its poles because
+   LTM1 has no polarity column. Explicitly supplied evidence is already
+   canonical and is not reversed again. This restores the pre-layout rule;
+   the existing attribution, negation and negative-trust assertions remain.
+3. Stream-capacity checks precede any durable mutation in both the direct idea
+   writer and the clause transaction. Overflow leaves the tensors, semantic
+   metadata and relation inventory unchanged; it never grows the slab.
+4. Predicate and answer-adapter fixtures read the actual two-operand view of
+   a retained pair. A live grammatical predicate remains part of the working
+   meaning, not a durable LTM1 column. Predictor fixtures supply a unary idea
+   or an actual chain. The final receipt contains exact before/after text,
+   explicit retirements and every failed development invocation.
+
+## 11. Frozen diagnostic-contract repair — Codex, 2026-10-25
+
+The initial content freeze `7b0d1a0090f24a5df7e07c4154e268d3c3906730aece0ce5d57d2b172f6b40ca`
+completed the 906-case core set: 898 passed, seven prerequisite skips, one
+failure. The new chain-description rejection behaved correctly but its message
+omitted “reference,” required by the existing unary-description rejection test.
+The repair adds that word in the two description-reader contexts. No assertion,
+branch, value, seed or budget changes. The initial failed result and archive
+remain intact. Under §39's fix-and-continue rule, this diagnostic-only repair
+requires a new recorded content hash and the required groups on that hash;
+the receipt must not report the original freeze as a pass or combine its
+passes with the repair. This is an exception to the intended one-freeze plan,
+not an additional full sweep. The single native smoke is not repeated; its
+code differs from the repair only in those two error strings. The repair
+manifest authenticates that exact delta. The final runner records one CPU
+thread per worker and preserves emitted certificates before temporary cleanup.
+
+## 12. Step-1 result for review — Codex, 2026-10-25
+
+Final source SHA256
+`34848e154f0fa9912223d4117136d7eb63657cefaeca94a76c6574559a73819e`
+completes **911 passes, seven existing prerequisite skips, zero failures**:
+899 core passes and seven skips, eight XOR passes, and two decomposition
+lengths in each of the original gain arms. All eight companion decomposition
+questions are correct. G1–G3 pass all 32 generated cases; both pending-premise
+orders preserve the bind-correctly-or-stay-open assertion (forward 0 bound /
+16 open; reverse 0 / 24; no wrong binding). Layout gates 1–6 and 4a pass;
+gate 4 uses the declared interim close update.
+
+The [receipt](../benchmarks/2026-10-25-item3-0-layout/README.md) contains the
+source archive/manifests, commands, original snapshots/seeds, emitted
+certificates, 162 test ports with full before/after text, 21 explicit
+retirements of removed behavior, 18 added test functions, all development
+logs, the initial failed freeze and the §11 diagnostic-only repair.
+`BasicModel.begin_presentation` is unchanged. No full sweep, commit or
+publication occurred. Step 1 returns through Alec for Claude's review;
+steps 2–5 remain, including replacement of the interim context source and
+removal of the listed whole-store scans.
+
+## 13. Claude's review of step 1 (source `34848e154f`) — 2026-10-25
+
+Reviewed: §§5–12, the [receipt](../benchmarks/2026-10-25-item3-0-layout/README.md),
+`gate-summary.json`, `repair-01/frozen-source.json`, `remaining-scans.md`,
+`retired-tests.json`, `test-ports.json`, `presentation-boundary.json`, the
+working-tree diff against `4f136f76fa` (35 source files, five new modules
+and tests, 67 test and fixture files) and the new `IdeaEvaluation`,
+`EntryRead`, `Priming`, `MereologicalCodes`, `RowTime`, `LTM1` and
+`MemoryConsolidation` text.
+
+**Verified.** The freeze is real: every one of the 887 manifest paths,
+including the five untracked new files, hashes to its manifest entry on
+disk, and the compact canonical JSON of the map hashes to
+`34848e154f…`. The gate counts are the summary's (core 899/7/0, XOR 8,
+decomposition 2+2 on the original seeds and snapshots), the seven skips are
+the known prerequisites, and the initial freeze's one failure and its
+two-string repair are both recorded, neither promoted. `begin_presentation`
+is byte-identical to the base. No language is named in any added code or
+fixture and no seed is added in any test. The 201 ledger entries are 162
+ports, 21 retirements with reasons, 18 additions, and the retirements are
+all leaf-index, derivation, membership or stored-argument tests.
+
+**The layout is §2 as written.** `LTM0.slots` is `[capacity, nDim]`, the
+`role_mask`, `role_refs` and `when` columns are gone from the store (the
+remaining `role_mask` reads are `ConceptualMeaning`'s working form, which §2
+keeps); `LTM1` has `refs`, `ref_kinds` (OCCURRENCE 1, SYMBOL 2, RELATION 3,
+zero invalid), an eight-coordinate `percept`, `layout_version`, `find`,
+`rows_referencing`, `stratum` and a version-checked load; `write_clause`
+stamps `closing.when` into the sentence entry alone through
+`RowTime.write_stamp`, `entry_when` reads it, forgetting's age reads it, and
+`EntryRead.cued_rows`/`recall_time` are the time-cued query; the chain
+gate's fixture asserts the decided shape `(OCC he, REL (SYM said, REL (OCC
+she, REL (SYM said, OCC x))))` with the top row alone stamped; `Reading`
+replaces `AnswerProgram` with no residue; `PartRead`, the leaf index,
+`occurrence_memberships`, `expression_components`, `nonparticipants`,
+`argument_reader`, `_word_origins`, `_definition`, `_reserve` and
+`membershipPriming` are gone; `Priming.diffuse` is the edge channel only;
+`observe_close` is the interim EWMA over preallocated `context_codes` and
+`context_counts` at the declared rate, order-0 rows only, and the receipt
+says so. The second freeze under §39 and the stream-slab construction bound
+(§9) are right.
+
+**Findings.**
+
+1. *The hash record is incomplete (record only).* Todo "Current", the 3.5
+   line and §5 say the reviewed source "remains `75345f891e`" and that
+   publication is verified. The commits after `f306fc28aa` were rewritten
+   before the push when receipts left version control (`537523ae04`), so
+   `75345f891e`, `a34325c85d` and `f095569a1f` are not on origin; their
+   published equivalents are `2067dbc25a`, `3561f39aa0` and `31c3e4a59e`.
+   One line in each place.
+2. *Reading recurrence is now content identity (for Alec).* `consolidate`
+   keyed a reading by the symbol a mention read to (`role_refs[0]`); with
+   no reading row it now keys by `reading_key`, the SHA-256 of the idea
+   vector, so a reading recurs only when three documents write an
+   identical idea. §§5–10 do not record the change, and it alters 2c's
+   promotion (three documents for a reading), a decided behavior, so under
+   §3 it is Alec's. Recommended: key recurrence on MTM's reading record
+   (`MediumTermMemory.names`, the word a mention read to, counted over
+   documents while the token lives), which is where §72 put readings; fix
+   at the start of step 2, which touches `consolidate` for `_fold`.
+3. *`IdeaEvaluation` is new mechanism in a removal round (watch item).*
+   The read-time isomorphism (declared-inverse context, meet/join
+   hypotheses, sixteen-interval bracket and golden-section search over the
+   lexical activation, all under the work meter) keeps the decomposition
+   arms passing on `MM_math_chain`, whose kernels act on the whole vector.
+   It stores nothing and chooses no seed, and Alec's clarification admits an
+   output comparison, so it stands; it should retire or shrink when the
+   kernels act on meanings on that configuration, and the receipt's
+   "forced architecture certificate" wording is the right claim.
+4. *`Priming.part_edges` now walks every live LTM1 row and resolves
+   OCCURRENCE references through `_semantic_rows` on every `prime_seen`.*
+   Listed in `remaining-scans.md`; step 2 caches it by revision ([step 2
+   spec](2026-10-25-item3-0-step2-placement.md) §6).
+5. *Gate 1's last clause* ("a chain row referencing the bare word x is
+   found by `rows_referencing`") is certified for `said`; x is an
+   OCCURRENCE in the chain, which §5.5 explains. Acceptable; noted.
+
+**Verdict.** Step 1 is approved as a mechanism round: the layout, the
+removals and the ports are what §§1–4 decided, on one verified frozen hash
+with every gate green. Alec's commit follows findings 1 and 2's record
+lines; step 2 begins on that source with finding 2 as its first task once
+Alec decides it. No publication until the end of 3.0.

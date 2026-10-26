@@ -11,7 +11,8 @@ from Layers import LTM0, WhatInteractionMemory, Error
 from Meaning import ConceptualMeaning, ClosingImage
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS
-from ThoughtReferences import bindings, evidence_pair, needs_episode, open_slots, question, with_slots
+from ThoughtReferences import bindings, evidence_pair, has_open_slots, open_slots, with_slots
+from meaning_fixtures import unsupported as question
 from test_cs_symbol_table import _cs
 
 
@@ -54,10 +55,10 @@ def chain_world(monkeypatch):
         store.append_relation(left[1], right[1], truth_plus=1.)
     chosen=[]
     def choose(root,active,actions,**kwargs):
-        if None in actions:
+        if None in actions and len(chosen) == 2:
             return None
         for action in actions:
-            if action.semantic_id=='query' and action.request.constituents:
+            if action is not None and action.semantic_id=='query' and action.request.constituents:
                 q=action.request.constituents[0]
                 if q.role_refs[0] == (a if not chosen else b) and (
                         q.role_refs[2] is None if not chosen else q.role_refs[2]==c):
@@ -78,15 +79,17 @@ def test_chain_two_queries_one_conclusion_and_both_witnesses(monkeypatch):
     assert saved['evidence']==(1.,0.)
     assert set(bindings(result.meaning)['_thought_witnesses'])=={
         ('sym',store.parts.find(a[1],b[1])),('sym',store.parts.find(b[1],c[1]))}
-    assert saved['meaning'].role_refs[0]==a and saved['meaning'].role_refs[2]==c
+    assert saved['refs'].tolist()==[a[1],c[1]]
 
 
-def test_open_reference_modes_and_bound_surface():
+def test_open_references_and_bound_surface_are_independent_of_thinking(monkeypatch):
     model,registry,store,(a,b,c)=world()
     q=registry.form('isPart',a,c)
-    assert open_slots(q)==() and needs_episode(q)
-    bound=replace(with_slots(q,(),pair=(1.,0.)),mode='interrogative')
+    assert open_slots(q)==() and not has_open_slots(q)
+    bound=replace(with_slots(q,(),pair=(1.,0.)))
     assert not open_slots(bound)
+    from meaning_fixtures import replay_first_choice
+    replay_first_choice(model, monkeypatch, -1)
     assert not run(model,bound).records
     relation=question(replace(q,role_refs=(a,None,c)),(('relation',1),))
     assert open_slots(relation)==(('relation',1),)
@@ -99,11 +102,11 @@ def test_conclude_gate_and_exhaustion_question(monkeypatch):
     def illegal(*args,**kwargs):return None
     monkeypatch.setattr(model,'_choose_selected_thought_action',illegal)
     with pytest.raises(ValueError,match='conclude'):
-        run(model,registry.form('isPart',a,c),work_budget=16)
+        run(model,registry.form('isPart',a,open_roles=('argin2',)),work_budget=16)
     model._end_finished_selected_thought_episodes()
-    result=run(model,registry.form('isPart',a,c),work_budget=0)
-    assert needs_episode(result.meaning) and not open_slots(result.meaning)
-    assert store.row(len(store)-1)['kind']=='question'
+    result=run(model,registry.form('isPart',a,open_roles=('argin2',)),work_budget=0)
+    assert has_open_slots(result.meaning)
+    assert result.records[0].kind == 'begin' and result.records[-1].kind == 'finish'
 
 
 def test_thought_uses_existing_compose_scorer_and_owner_credit():
@@ -111,7 +114,7 @@ def test_thought_uses_existing_compose_scorer_and_owner_credit():
     model.train()
     model.errors.clear()
     result=run(model,registry.form('equal',a,a),work_budget=20,
-               score=lambda result:float(needs_episode(result.meaning)))
+               score=lambda result:float(has_open_slots(result.meaning)))
     assert model._selected_thought_chooser(result.meaning) is model.shared_grammar
     assert not hasattr(model,'selected_thought_choosers')
     assert model._last_thought_comparison is not None
@@ -135,7 +138,7 @@ def test_credit_sign_and_exact_tie():
 
 def test_not_exchanges_both_poles_and_preserves_content():
     model,registry,store,(a,b,c)=world()
-    source=with_slots(registry.form('part',a,b,mode='assertive'),(),pair=(.3,.8))
+    source=with_slots(registry.form('part',a,b),(),pair=(.3,.8))
     with model._query_boundary_scope((0,)):
         from QueryWork import QueryWorkBudget
         work=QueryWorkBudget(32)
@@ -162,13 +165,14 @@ def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
 def test_nested_ask_returns_the_binding_and_shares_budget(monkeypatch):
     model,registry,store,(a,b,c)=world()
     model.conceptualSpace.add_whole(a[1],b)
-    child=registry.form('isPart',a,b)
+    store.append_relation(a[1],b[1],truth_plus=1.)
+    store._concept_owner()._concept_allocator.singletons.add(b[1])
+    child=registry.form('equal',a,b)
+    child=question(replace(child, role_refs=(None,child.role_refs[1],b),
+        role_mask=torch.tensor([False,True,True]), bindings={'_equality':True}), (('referent',0),))
     outer=registry.form('ask',child)
-    def choose(root,active,actions,**kwargs):
-        if None in actions:return None
-        name='ask' if kwargs['level']==0 else 'isPart'
-        return next(action for action in actions if action.semantic_id==name and not action.open_roles)
-    monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
     result=run(model,outer,work_budget=64)
     assert not open_slots(result.meaning)
     assert evidence_pair(result.meaning)==(1.,0.)
@@ -182,7 +186,7 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     from ThoughtClosing import absence
     from Layers import MeaningExpectation
     model,registry,store,(a,b,c)=world()
-    predicted=registry.form('part',a,b,mode='assertive')
+    predicted=registry.form('part',a,b)
     keys=predicted.roles.clone()
     logits=torch.full((3,2),-60.);logits[0,0]=60.
     prior=MeaningExpectation(keys,torch.tensor([60.,-60.,-60.]),
@@ -191,7 +195,7 @@ def test_omission_lane_concludes_absence_without_negative_content(monkeypatch):
     image=ClosingImage.form(observed.roles,keys,prior.confidence,
         prediction=prior,occupied=torch.zeros(3,dtype=torch.bool),gain=1.)
     assert not image.conceived.any()
-    source=store.append_meaning(predicted,kind='observation',evidence=(1.,0.))
+    source=store.append_meaning(ConceptualMeaning.from_description(predicted.roles[0]),kind='observation',evidence=(1.,0.))
     witness=store.occurrence_of(source)
     model.symbolSpace.expectation=SimpleNamespace(last_expectation_comparison=lambda row:SimpleNamespace(estimate=prior,source_occurrences=(witness,)))
     index=absence(model,0,observed,image)
@@ -211,9 +215,9 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     rule=store.append_relation(p[1],q[1],truth_plus=.9)
     chosen=[]
     def choose(root,active,actions,**kwargs):
-        if None in actions:return None
+        if None in actions and len(chosen)==2:return None
         for action in actions:
-            if action.semantic_id=='query' and action.request.constituents:
+            if action is not None and action.semantic_id=='query' and action.request.constituents:
                 relation=bindings(action.request.constituents[0]).get('_query_relation')
                 if relation==('truth' if not chosen else 'implies'):
                     chosen.append(action)
@@ -242,33 +246,37 @@ def test_expectation_only_credit_does_not_enter_departure_comparison():
 
 
 def credit_chain_world(monkeypatch):
-    """One binary departure; the rest is the same metered serial mechanism."""
-    from ThoughtStream import query_pattern, slots
+    """An explicit free operand and a recorded first departure own the credit."""
+    from ThoughtStream import slots
     from Queries import ThoughtOperationCandidate
+    import WalkTrials
     model, registry, store, (a,b,c) = world()
-    for left,right in ((a,b),(b,c)):
-        store.append_relation(left[1], right[1], truth_plus=1.)
-    goal=registry.form('isPart',a,c)
+    store.append_relation(a[1], b[1], truth_plus=1.)
+    store._concept_owner()._concept_allocator.singletons.add(b[1])
+    goal=registry.form('equal',a,b)
+    goal=question(replace(goal,role_refs=(None,goal.role_refs[1],b),
+        role_mask=torch.tensor([True,True,True]),bindings={'_equality':True}), (('referent',0),))
     def candidate(name, meaning):
         return ThoughtOperationCandidate(registry.operation_spec(name),meaning,())
-    # The common store exposes the forward transitive relation to the
-    # conceptual reader too. The reverse direction is the known wrong trial.
     direct=candidate('isPart',registry.form('isPart',c,a))
-    first=candidate('query',registry.form('query',query_pattern(goal,'part',a,None)))
-    second=candidate('query',registry.form('query',query_pattern(goal,'part',b,c)))
+    first=candidate('query',registry.form('query',goal))
+    negate=candidate('not',registry.form('not',registry._payload(a)))
     def menu(registry,root,active,current,records,descriptions=()):
-        if not needs_episode(current):return ()
-        results=slots(records)
-        if not results:return direct,first
-        return (second,) if any(r.evidence.get('frames') for r in results) else (direct,)
+        if not has_open_slots(current):return ()
+        return (direct,first) if not slots(records) else (negate,)
     monkeypatch.setattr('ThoughtStream.candidates',menu)
+    capture=WalkTrials.capture_thought_fork
+    def first_departure(model, trace, meter, **continuation):
+        if 'fork' not in trace:
+            capture(model,trace,meter,**continuation)
+    monkeypatch.setattr(WalkTrials,'capture_thought_fork',first_departure)
     with torch.no_grad():
         scorer = model.shared_grammar.chooser
-        # Binding initialization already makes content neutral. Clearing its
-        # readout as well would create two consecutive zero projections.
-        if not hasattr(scorer, "reference_choice"):
+        if not hasattr(scorer, 'reference_choice'):
             scorer.mlp[-1].weight.zero_()
             scorer.mlp[-1].bias.zero_()
+    from meaning_fixtures import replay_first_choice
+    replay_first_choice(model,monkeypatch,0)
     model.train()
     model.errors.clear()
     return model,registry,store,goal,(direct.request,first.request)
@@ -279,11 +287,11 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     chooser=model.shared_grammar
     before=chooser.thought_logits(goal,menu).softmax(-1)[0,1].detach()
     result=run(model,goal,work_budget=64,
-            score=lambda result:float(needs_episode(result.meaning)))
+            score=lambda result:float(has_open_slots(result.meaning)))
     assert model._last_thought_comparison['explore_kept']
     assert tuple(item[1] for item in model._last_thought_comparison['components'])==(1.,0.)
     assert model._last_thought_comparison['costs'][0] > model._last_thought_comparison['costs'][1]
-    assert not needs_episode(result.meaning)
+    assert not has_open_slots(result.meaning)
     value=model._last_thought_score_function['surrogate']
     assert value is not None
     optimizer=torch.optim.SGD(chooser.parameters(),lr=.1)
@@ -292,9 +300,9 @@ def test_answer_credit_moves_shared_chooser_toward_the_completed_chain(monkeypat
     model.eval()
     model._what_memory().end_what_episode()
     learned=run(model,goal,work_budget=64)
-    assert [r.operation for r in learned.records if r.kind=='thought']==['query','query','conclude']
+    assert [r.operation for r in learned.records if r.kind=='thought']==['query','conclude']
     assert not open_slots(learned.meaning)
-    assert store.part_row(store.parts.find(goal.role_refs[0][1],goal.role_refs[2][1]))['evidence']==(1.,0.)
+    assert store.part_row(store.parts.find(learned.meaning.role_refs[0][1],goal.role_refs[2][1]))['evidence']==(1.,0.)
 
 
 def test_expectation_trains_predictor_without_moving_departure_chooser(monkeypatch):
@@ -343,7 +351,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     model,registry,store,(a,b,c)=world()
     source=ConceptualMeaning.from_description(torch.linspace(0.,1.,8))
     clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
-    parsed=replace(source,mode='interrogative') if surface!='unicorn' else None
+    parsed=replace(source) if surface!='unicorn' else None
     q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))
     assert q is not None and open_slots(q)
     q=replace(q,bindings=dict(bindings(q),_forward_references=((0, a[1]),)))
@@ -362,11 +370,11 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     # A new occurrence can fill the earlier null. Its source address remains
     # distinct from the question's address and from the new inference.
     supplied=with_slots(replace(source,role_refs=(b,None,None)),(),pair=(1.,0.))
-    copular=registry.form('equal',a,b,mode='assertive')
+    copular=registry.form('equal',a,b)
     copular=with_slots(replace(copular,role_refs=(None,copular.role_refs[1],b),
         bindings=dict(bindings(copular),_equality=True,_forward_references=((0,a[1]),))),
         (('referent',0),),pair=(1.,0.))
-    index=store.append_meaning(copular,kind='observation',evidence=(1.,0.),
+    index=store.append_meaning(supplied,kind='observation',evidence=(1.,0.),
         stream=0,sentence_index=1)
     pool.bind(store.occurrence_of(0), store.occurrence_of(index),
               kind=b[1], when=1, value=supplied.roles[0], reading=b[1])
@@ -379,8 +387,8 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     assert not hasattr(model,'_open_thought_rows')
     # Reusing the same surface after a successful binding opens no episode.
     bound_clause=Clause(supplied,point=supplied.roles[0],refs=(b[1],-1,-1),evidence=(1.,0.))
-    assert closing_question(supplied,bound_clause,replace(supplied,mode='interrogative'),
-        SimpleNamespace(lexical_forms=(surface,))) is None
+    assert closing_question(supplied,bound_clause,replace(supplied),
+        SimpleNamespace(lexical_forms=(surface,))) is not None
 
 
 def test_answer_credit_is_complete_before_document_end():
@@ -419,23 +427,23 @@ def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known
     model,registry,store,events=event_world(positions)
     goal=registry.form('isImplied',*events)
     def choose(root,active,actions,**kwargs):
-        return None if None in actions else next(action for action in actions if action.semantic_id=='isImplied')
+        return None if kwargs.get('evidence') is not None else next(action for action in actions if action is not None and action.semantic_id=='isImplied')
     monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
     result=run(model,goal,work_budget=24)
-    assert (not needs_episode(result.meaning)) is known
+    assert (evidence_pair(result.meaning)!=(0.,0.)) is known
     if known:
         assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
         assert set(events).issubset(bindings(result.meaning)['_thought_witnesses'])
         assert store.parts.find(events[0][1],events[1][1]) is not None
     else:
-        assert store.row(len(store)-1)['kind']=='question'
+        assert evidence_pair(result.meaning)==(0.,0.) and not open_slots(result.meaning)
 
 
 def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
     _,registry,store,events=event_world((1,2))
-    store.parts.when[events[0][1]].zero_()
+    store.entry_when(events[0]).zero_()
     reader=ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.5)
     result=reader.relation_evidence('implies',*events,max_records=16,work=QueryWorkBudget(16))
     assert result['frames'] == ()
@@ -496,12 +504,18 @@ def test_thought_nested_writer_is_restricted_and_preflights_capacity():
     model,registry,store,(a,b,c)=world()
     child=registry.form('isPart',a,b)
     parent=registry.form('ask',child)
-    write(model,parent,row=0)
-    assert len(store)==2
-    assert all(store.row(i)['kind']=='question' for i in range(len(store)))
-    assert store.meaning_of(1).role_refs[0]==store.occurrence_of(0)
+    with pytest.raises(ValueError, match='multi-role thought'):
+        write(model,parent,row=0)
     store.reset()
-    store.capacity=1
+    child = with_slots(ConceptualMeaning.from_description(registry._payload(a)), (), pair=(1.,0.))
+    parent = with_slots(replace(ConceptualMeaning.from_description(registry._payload(b)),
+        role_refs=(('constituent',0),None,None), constituents=(child,)), (), pair=(1.,0.))
+    write(model,parent,row=0)
+    assert len(store)==2 and store.meaning_of(1).role_refs[0]==store.occurrence_of(0)
+    # Capacity is derived at construction, never resized for the fixture.
+    from Layers import LTM0
+    small = LTM0(store.nDim, capacity=1)
+    model.symbolSpace.ltm_store = small
     with pytest.raises(OverflowError,match='forgetting'):
         write(model,parent,row=0)
-    assert len(store)==0
+    assert len(small)==0

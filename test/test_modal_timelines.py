@@ -1,4 +1,5 @@
 """Fixed-operation timeline certificates; no claim of learned modal attachment."""
+from chunk_fixtures import context as chunk_context
 from copy import deepcopy
 
 import pytest
@@ -50,7 +51,9 @@ def test_no_modifier_keeps_one_actual_timeline_and_legacy_checkpoints_load():
             events, value = row.pop('timelines')[0]
             row.update(events=tuple(event[:7 if version == 4 else 4] for event in events), value=value)
         restored = MediumTermMemory()
-        restored.restore(legacy)
+        with pytest.raises(ValueError,match="version"):
+            restored.restore(legacy)
+        restored.restore(saved)
         assert len(restored.entries[address(1)].timelines) == 1
         torch.testing.assert_close(restored.value_of(address(1)), entry.value)
         assert restored.entries[address(1)].events == entry.events
@@ -132,63 +135,26 @@ def test_a_modifier_without_an_equal_time_alternative_teaches_nothing():
 
 
 def recording(f, tree, frames=()):
-    """Fixed selected operations through the same numerical branch helpers."""
-    from dataclasses import replace
-    from MTMOverlay import MTMOverlay
-    from TimelineOverlay import prepare, choice as timeline_choice
-    from ReferenceContext import result_order
-    from test_identity_threading import choice
-    entry = f.program(tree)
-    orders = torch.tensor([1 if word == f.words['subject'][0] else 0 for word in entry.word_ids])
-    overlay = MTMOverlay(f.binary, f.unary)
-    words, columns = len(entry.leaves), len(entry.actions)
-    state = overlay.stage(f.cs.components.reference_close, [frames],
-        entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns, timelines=True)
-    base = state[0].shape[1] - words - columns
-    stack, stamps, recorded, refs = [], [], [], []
-    for column, (kind, local, word) in enumerate(entry.actions.tolist()):
-        if kind == 0:
-            value = entry.leaves[word][None]
-            state = overlay.push(state, torch.tensor([True]), value,
-                word=entry.concept_ids[word:word+1], order=orders[word:word+1],
-                index=torch.tensor(word), words=words, resolved=torch.tensor([True]))
-            stack.insert(0, value); stamps.insert(0, int(orders[word]))
-            recorded.append(value.new_zeros(3, 8)); refs.append((-1, -1))
-            continue
-        live = overlay.refresh(state, torch.stack(stack,1), torch.arange(len(stack))[None])
-        rule = (f.binary if kind == 1 else f.unary)[local]
-        operands = live[:, [1,0]] if kind == 1 else torch.stack((live[:,0], live[:,0]*0),1)
-        if kind == 1:
-            data = prepare(dict(binary_ops=(local,), left=operands[:,0:1,None], right=operands[:,1:2,None]),
-                state, torch.tensor([[1,0]]), f.binary, meaning_start=0)
-            operands = torch.stack((data['left'][:,0,0],data['right'][:,0,0]),1)
-        handle = 0
-        if rule.method_name == 'bind':
-            points, records, _, _, available = overlay.menu(state, live[:,:1], torch.tensor([[0]]))
-            handle = int(available[0,0,1:].nonzero()[0])+1
-            result = points[:,0,handle]
-            operands = torch.stack((live[:,0],records[:,0,handle]),1)
-        else:
-            values = (operands[:,0],operands[:,1]) if kind == 1 else (operands[:,0],)
-            result = f.operation(rule).compose(*values).reshape(1,-1)
-        arity = 2 if kind == 1 else 1
-        order = result_order(rule, tuple(reversed(stamps[:arity])))
-        selected = choice(result, kind=kind, identity=handle)._replace(
-            local_op=torch.tensor([local]),order=torch.tensor([order]))
-        def evaluate(a,b,active):
-            values = (a,b) if kind == 1 else (a,)
-            return f.operation(rule).compose(*values).reshape(1,-1)
-        selected = timeline_choice(overlay,state,selected,operands,
-            torch.tensor([stamps+[-1]*(8-len(stamps))]),evaluate,meaning_start=0)
-        state = overlay.apply(state,selected,operands,column=torch.tensor(column),words=words)
-        del stack[:arity]; del stamps[:arity]
-        stack.insert(0,result);stamps.insert(0,int(selected.order))
-        recorded.append(torch.cat((operands,result[:,None]),1)[0]);refs.append((-1,-1))
-    return replace(entry,leaf_orders=orders,close_references=True,
-        operation_values=torch.stack(recorded),operation_refs=torch.tensor(refs),
-        identity_origins=state[3][0],identity_actions=state[4][0],identity_values=state[0][0],
-        identity_leaves=torch.arange(base+1,base+words+1),timeline_actions=state[11][0],timeline_values=state[5][0],
-        end_state=torch.stack((stack[0][0],stack[0][0]*0,stack[0][0]*0)))
+    """Modal continuations explicitly bind the second prepended entry."""
+    from chunk_fixtures import record
+    branches,number = [],0
+    def modal(node):
+        return isinstance(node,tuple) and (node[0] == 'adverb' or any(modal(child) for child in node[1:]))
+    def visit(node,alternative=False):
+        nonlocal number
+        if not isinstance(node,tuple):
+            return
+        name,*children = node
+        for index,child in enumerate(children):
+            visit(child,alternative or (name == 'adverb' and index == 0) or
+                  (name == 'lift' and index == 0 and len(children)>1 and modal(children[1])))
+        if name == 'bind':
+            if alternative:
+                branches.append(number)
+            number += 1
+    visit(tree)
+    return record(f,tree,frames=frames,branch_binds=branches,names=('subject',))[0]
+
 
 
 def fixture(monkeypatch):
@@ -218,14 +184,17 @@ def close(f, program, frames=(), *, position=0, actions=(None,None), question=Fa
         f.cover = open_cover(f.cs, f.store, stream=0, document='timeline')
     clause=finish_clause(f.language,program,registry=f.registry)
     if question:
-        clause=replace(clause,meaning=replace(clause.meaning,mode='interrogative'))
+        from ThoughtReferences import with_slots, open_slots
+        clause=replace(clause,evidence=(0., 0.), meaning=with_slots(clause.meaning,
+            open_slots(clause.meaning), pair=(0., 0.), source_evidence=(0., 0.)))
     if evidence is not None:
         clause=replace(clause,evidence=evidence)
     resolver=f.cs.components.reference_close
-    plan=resolver.preview(clause,frames)
+    plan=resolver.preview(clause,chunk_context(resolver, frames))
     kept=resolver.prepare(clause,plan)
     written={}
-    row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position,stream=0)
+    row=f.store.write_clause(kept,written_rows=written,document_key='timeline',sentence_index=position,stream=0,
+        kind='unverified' if question else 'observation')
     resolver.commit(plan,row,written,document='timeline',position=position,training=False,
                     verb_action=actions[0],modifier_action=actions[1])
     frame=SituationAddress(f.store.occurrence_of(row),symbols=written.get(('symbols',id(kept)),()),
@@ -266,8 +235,8 @@ def test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual(monkey
     before=entry.timelines[1].value.clone()
     program=recording(f,tree(('bind','subject')),(frame,))
     bind=next(i for i,(kind,local,_) in enumerate(program.actions.tolist())
-              if kind==2 and f.unary[local].method_name=='bind')
-    torch.testing.assert_close(program.operation_values[bind,1],entry.value)
+              if kind==1 and f.binary[local].method_name=='bind')
+    torch.testing.assert_close(program.operation_values[bind,1],before)
     _,_,_,_=close(f,program,(frame,),position=1,actions=(verb,modifier))
     updated=f.cs.mtm.entries[token]
     assert len(f.cs.mtm.entries)==1 and len(updated.timelines)==2
@@ -342,7 +311,7 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     f,verb,modifier=fixture(monkeypatch)
     _,frame,actual_row,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')),evidence=(1.,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
-    actual_value=f.store.slots[actual_row,0].clone()
+    actual_value=f.store.slots[actual_row].clone()
     tree=('lift',('bind','subject'),('adverb','move','shift'))
     ideas=[]
     for position in (1,2):
@@ -364,39 +333,33 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
 @pytest.mark.parametrize('compiled',(False,True))
 def test_post_attachment_rolls_back_resolution_and_preserves_pathwise_derivatives(compiled):
     from types import SimpleNamespace
-    from MTMOverlay import MTMOverlay
-    from TimelineOverlay import choice as annotate
-    from test_identity_threading import choice,push
-    overlay=MTMOverlay((SimpleNamespace(method_name='lift',clause_form='S',head_role=2),
-                        SimpleNamespace(method_name='adverb',head_role=1)),
-                       (SimpleNamespace(method_name='bind',head_role=1),))
+    from chunk_fixtures import Walk,choice,value
+    from ChunkJournal import RESOLVED
+    walk=Walk((SimpleNamespace(method_name='lift',clause_form='S',head_role=2),
+               SimpleNamespace(method_name='adverb',head_role=1),
+               SimpleNamespace(method_name='bind',head_role=1)),())
     def run(first,scale,modifier):
-        state=overlay.empty(first[:,None].expand(-1,8,-1),journal=16,words=8,timelines=True)
-        state=push(overlay,state,first,word=101,index=0,resolved=False)
-        def apply(state,selected,operands,column,evaluate,orders):
-            selected=annotate(overlay,state,selected,operands,orders,evaluate,meaning_start=0)
-            return overlay.apply(state,selected,operands,column=torch.tensor(column),words=8)
-        state=apply(state,choice(first),torch.stack((first,first*0),1),0,
-                    lambda a,b,mask:a,torch.ones(1,8,dtype=torch.long))
-        state=push(overlay,state,first*0+.3,word=202,index=1,order=0)
-        state=apply(state,choice(first*scale,kind=1),torch.stack((first,first*0+.3),1),1,
-                    lambda a,b,mask:a*scale,torch.tensor([[0,1,0,0,0,0,0,0]]))
-        state=push(overlay,state,first*0+.4,word=303,index=2,order=0)
-        selected=choice(first*scale*modifier,kind=1)._replace(local_op=torch.ones(1,dtype=torch.long))
-        return apply(state,selected,torch.stack((first*scale,first*0+.4),1),2,
-                    lambda a,b,mask:a*modifier,torch.zeros(1,8,dtype=torch.long))
+        state=walk.empty(first,16)
+        state=walk.shift(state,first,word=101,index=0,resolved=False)
+        state=walk.apply(state,choice(first,local=2,bind=True),torch.stack((first,first*0),1),0)
+        state=walk.shift(state,first*0+.3,word=202,index=1,order=0)
+        state=walk.apply(state,choice(first*scale,local=0,head=2,order=0),torch.stack((first,first*0+.3),1),1)
+        state=walk.shift(state,first*0+.4,word=303,index=2,order=0)
+        return walk.apply(state,choice(first*scale*modifier,local=1),torch.stack((first*scale,first*0+.4),1),2)
     if compiled:
         run=torch.compile(run,backend='aot_eager',fullgraph=True)
     first=torch.tensor([[.2,.3]],requires_grad=True)
     scale,modifier=torch.tensor(.6,requires_grad=True),torch.tensor(.4,requires_grad=True)
     state=run(first,scale,modifier)
-    torch.testing.assert_close(state[0][:,0],first)
-    assert state[3][0,0,2]==0 and state[11][0,1,3]==1 and state[11][0,2,0]==1
-    torch.testing.assert_close(state[5][:,0],first*scale*modifier)
-    state[5][:,0].sum().backward()
+    torch.testing.assert_close(value(state,512),first)
+    assert state[2][0,1,12+RESOLVED-2]==0 and state[2][0,1,11]==1 and state[2][0,2,8]==1
+    branch=value(state,512,1)
+    torch.testing.assert_close(branch,first*scale*modifier)
+    branch.sum().backward()
     torch.testing.assert_close(first.grad,torch.full_like(first,.24))
     torch.testing.assert_close(scale.grad,first.detach().sum()*modifier.detach())
     torch.testing.assert_close(modifier.grad,first.detach().sum()*scale.detach())
+
 
 
 def test_post_attachment_preserves_a_later_independent_actual_write(monkeypatch):
@@ -422,32 +385,40 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     _,frame,row,_=close(f,recording(f,('lift',('lower_unary','subject'),('adverb','move','shift'))),
                          evidence=(.9,0.))
     token,entry=next(iter(f.cs.mtm.entries.items()))
-    query=replace(ConceptualMeaning.from_description(f.store.slots[row,0]),
+    query=replace(ConceptualMeaning.from_description(f.store.slots[row]),
         bindings={'_query_event':(token,entry.timelines[1].events[-1].verb,1)})
     f.cs.mtm.end_document(f.cover,store=f.store)
     reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
     found=reader.best_match(query,max_records=64,work=QueryWorkBudget(256))
-    assert found['witnesses']==(f.store.occurrence_of(row),)
-    assert found['support_true']==pytest.approx(.9)
+    assert found['witnesses'] == () and found['support_true'] == 0.
+    assert 'compressed_event_detail_unavailable' in found['incomplete']
+    # Compression retains identity and content, but no predicate derivation
+    # from which an expired timeline's verb could be authenticated.
+    assert f.store.raw_meaning_of(row).role_refs[0] == token
+    content = f.store.cued_rows(replace(query, bindings={}),
+        max_candidates=64, work=QueryWorkBudget(256))
+    recalled, = (item for item in content['value'] if item['occurrence'] == f.store.occurrence_of(row))
+    assert recalled['match'] == pytest.approx(1.)
+    assert recalled['evidence'][0] == pytest.approx(.9)
+
 
 
 @pytest.mark.parametrize('modal',(False,True))
 def test_bound_idea_has_both_value_and_retained_identity_reference(monkeypatch,modal):
-    from PartRead import leaves
     f,_,_=fixture(monkeypatch)
     _,frame,_,_=close(f,recording(f,('lift',('lower_unary','subject'),'move')))
     token,entry=next(iter(f.cs.mtm.entries.items()))
     vp=('adverb','move','shift') if modal else 'move'
     program=recording(f,('lift',('bind','subject'),vp),(frame,))
     bind=next(i for i,(kind,op,_) in enumerate(program.actions.tolist())
-              if kind==2 and f.unary[op].method_name=='bind')
+              if kind==1 and f.binary[op].method_name=='bind')
     torch.testing.assert_close(program.operation_values[bind,1],entry.value)
     _,_,row,_=close(f,program,(frame,),position=1)
     updated=f.cs.mtm.entries[token]
     mention=updated.occurrences[-1]
     reading=f.store.raw_meaning_of(f.store.location(mention)).role_refs[0]
     root=f.store.raw_meaning_of(row).role_refs[0]
-    assert f.cs.mtm.token_of(mention)==token and reading[1] in leaves(f.store.parts,root[1])
+    assert f.cs.mtm.token_of(mention)==token and f.cs.mtm.token_of(root)==token
     assert (int(f.store.order[row])>0)==modal
 
 

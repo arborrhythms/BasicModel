@@ -137,7 +137,7 @@ def test_expected_identity_survives_zero_content_and_retained_pair_restore():
     assert view.awareness()['expectation'][0,0] == 1
     assert view.awareness()['identities'][0] == 0
     observed = ConceptualMeaning(roles, occupied)
-    estimate = ConceptualMeaning(roles, occupied, mode='unspecified', bindings=prediction.retained_bindings())
+    estimate = ConceptualMeaning(roles, occupied,  bindings=prediction.retained_bindings())
     store = LTM0(4, capacity=8)
     source = store.append_meaning(observed, kind='observation')
     e, o = store.append_expectation_pair(estimate, observed, presence_logits=prediction.presence_logits,
@@ -191,7 +191,7 @@ def test_fused_retained_row_replays_original_two_lane_target():
     observed = ConceptualMeaning(fused, occupied, bindings={
         '_observed_symbol_activations': tuple((int(i), tuple(pair))
             for i, pair in zip(ids, target.tolist()))})
-    estimate = ConceptualMeaning(roles, occupied, mode='unspecified',
+    estimate = ConceptualMeaning(roles, occupied,
         bindings=prediction.retained_bindings())
     store = LTM0(4, capacity=8)
     _, row = store.append_expectation_pair(estimate, observed,

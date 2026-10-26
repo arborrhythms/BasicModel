@@ -313,6 +313,13 @@ class IndependentComponents(nn.Module):
         self.verbs = SparseDictionary(3 * self.capacity, max_sources=1, **options)
         self._innovations = {}
         self._chart = None
+        # Native witness rows cannot outnumber the constructed codebook seats.
+        self.register_buffer('_basis_rows', torch.full((self.capacity,), -1, dtype=torch.long), persistent=False)
+        self._basis_count = 0
+        self._basis_revision = None
+        self._observation_revision = None
+        self._retained_witnesses = frozenset()
+        self._inventory_rebuilds = self._witness_rebuilds = 0
         self.admission_drops = 0
         from ReferenceClose import ReferenceClose
         self.reference_close = ReferenceClose(self)
@@ -329,10 +336,21 @@ class IndependentComponents(nn.Module):
         from Spaces import _concept_alloc_of
         owner = self.owner
         basis = owner.similarity_codebook
-        rows = sorted(row for row in _concept_alloc_of(owner).layer()._tensor_row_keys
-                      if owner._order0_inventory_row(row))
-        indices = torch.tensor(rows, dtype=torch.long, device=basis.W.device)
-        codes = basis.lookup_rows(indices).detach() if rows else basis.W[:0].detach()
+        alloc = _concept_alloc_of(owner)
+        layer = alloc.layer()
+        revision = (id(layer._tensor_row_keys), len(layer._tensor_row_keys),
+                    getattr(layer, '_record_revision', 0), id(alloc.reference_orders),
+                    len(alloc.reference_orders), len(alloc.retired))
+        if revision != self._basis_revision:
+            rows = sorted(row for row in layer._tensor_row_keys if owner._order0_inventory_row(row))
+            if len(rows) > self.capacity:
+                raise RuntimeError('component witness rows exceed constructed capacity')
+            self._basis_count = len(rows)
+            self._basis_rows[:len(rows)].copy_(self._basis_rows.new_tensor(rows))
+            self._basis_revision = revision
+            self._inventory_rebuilds += 1
+        indices = self._basis_rows[:self._basis_count]
+        codes = basis.lookup_rows(indices).detach() if len(indices) else basis.W[:0].detach()
         derived = getattr(basis, 'mereology', None)
         self._chart = EventChart(indices, codes, capacity=self.capacity,
             content_width=int(owner.nWhat),
@@ -340,15 +358,17 @@ class IndependentComponents(nn.Module):
             meaning_pairs=None if derived is None else derived.meaning_pairs,
             pole_stride=None if derived is None else derived.reserved_pairs)
         store = owner._closed_clause_store()
-        retained = set()
         if store is not None:
-            retained = {int(store.row_ids[row]) for row in range(len(store))
-                        if store.KINDS[int(store.record_kind[row])] == 'observation'}
-        # Innovations are observations of the same retained chain. Discard
-        # an orphan when its LTM occurrence leaves; this neither removes nor
-        # prunes an identity/change column (item 5 owns that decision).
+            retained = store.observation_ids()
+            revision = store._observation_revision
+        else:
+            retained, revision = (), None
+        if revision != self._observation_revision:
+            self._retained_witnesses = frozenset(map(int, retained))
+            self._observation_revision = revision
+            self._witness_rebuilds += 1
         self._innovations = {identity: value for identity, value in self._innovations.items()
-                             if identity in retained}
+                             if identity in self._retained_witnesses}
 
     def _ready(self):
         if self._chart is None:
@@ -444,7 +464,7 @@ class IndependentComponents(nn.Module):
         """Working identities over the retained addresses, computed on read."""
         from dataclasses import replace
         result = {}
-        records = self.reference_close.accessible(frames)
+        records = self.reference_close.context_records(frames)
         for identity, value in self.reference_close.individuals(records).items():
             address = self.reference_close.address(identity)
             if address is None:
@@ -478,6 +498,7 @@ class IndependentComponents(nn.Module):
         self._innovations = state['innovations']
         self.admission_drops = int(state['admission_drops'])
         self._chart = None
+        self._basis_revision = self._observation_revision = None
 
     def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
         # A pre-6.5 checkpoint has no component parameters or recurrence yet.

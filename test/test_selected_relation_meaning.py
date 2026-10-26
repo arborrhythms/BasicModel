@@ -8,7 +8,7 @@ import torch
 import Language
 from Models import BasicModel
 from Queries import GrammaticalThoughtRegistry
-from Understanding import AnswerProgram
+from Understanding import Reading
 from test_query_vp_boundaries import _world
 
 
@@ -63,7 +63,7 @@ def _program_owner(monkeypatch, *, face="part", interrogative=False):
         if what_local is not None:
             actions = torch.cat((actions, torch.tensor(
                 [[2, what_local, -1]], dtype=actions.dtype)))
-        return AnswerProgram(
+        return Reading(
             rows=torch.tensor([3, 5]), word_rows=torch.tensor([7, 9]),
             activations=torch.tensor([.25, .75]), leaves=values,
             actions=actions,
@@ -84,9 +84,9 @@ def test_selected_binary_relation_preserves_signed_operands_middle_vp_and_mode(
     before = entry.actions.clone()
     meaning = owner.program_meaning(entry, registry)
     canonical = registry.form(
-        face, a, b, mode="interrogative" if interrogative else "assertive")
+        face, a, b)
     assert meaning.role_refs == canonical.role_refs
-    assert meaning.mode == canonical.mode and meaning.polarity
+    assert meaning.metadata() == canonical.metadata() and meaning.polarity
     assert meaning.role_mask.tolist() == [True, True, True]
     torch.testing.assert_close(meaning.roles[1], canonical.roles[1])
     torch.testing.assert_close(meaning.roles[0], leaves[order[0]])
@@ -125,12 +125,12 @@ def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
     """
     _cs, _grammar, registry, owner, leaves, _program, a, b = _program_owner(
         monkeypatch, face=face)
-    canonical = registry.form(face, a, b, mode="assertive")
+    canonical = registry.form(face, a, b)
     vp = canonical.role_refs[1]
     lexical = torch.stack((
         leaves[0], torch.randn_like(leaves[0]), leaves[1],
     )).detach().requires_grad_()
-    entry = AnswerProgram(
+    entry = Reading(
         rows=torch.tensor([3, 4, 5]),
         word_rows=torch.tensor([7, 8, 9]),
         activations=torch.tensor([-.25, 1.0, .75]),
@@ -146,7 +146,7 @@ def test_unreduced_lexical_relation_keeps_signed_operands_and_native_vp(
     meaning = owner.program_meaning(entry, registry)
 
     assert meaning is not None
-    assert meaning.mode == "assertive" and meaning.polarity
+    assert not hasattr(meaning, "mode") and meaning.polarity
     assert meaning.role_refs == canonical.role_refs
     torch.testing.assert_close(meaning.roles[0], lexical[0])
     torch.testing.assert_close(meaning.roles[1], canonical.roles[1])
@@ -170,12 +170,12 @@ def test_unreduced_lexical_converse_uses_its_anchored_grammar_form(
     """
     _cs, _grammar, registry, owner, leaves, _program, whole, part = _program_owner(
         monkeypatch, face="whole")
-    canonical = registry.form("whole", whole, part, mode="assertive")
+    canonical = registry.form("whole", whole, part)
     vp = canonical.role_refs[1]
     lexical = torch.stack((
         leaves[0], torch.randn_like(leaves[0]), leaves[1],
     )).detach().requires_grad_()
-    entry = AnswerProgram(
+    entry = Reading(
         rows=torch.tensor([3, 4, 5]),
         word_rows=torch.tensor([7, 8, 9]),
         activations=torch.tensor([-.25, 1.0, .75]),
@@ -212,9 +212,9 @@ def test_selected_unary_thought_keeps_its_live_leaf_and_question_mode(monkeypatc
     _cs, _grammar, registry, owner, leaves, _program, _a, _b = _program_owner(monkeypatch)
     assert all(rule.method_name != 'quantize' for rule in owner._compose_unary_rules)
     leaf = leaves[:1].detach().clone().requires_grad_()
-    meaning = registry.form('exist', leaf[0], mode='interrogative')
-    canonical = registry.form('exist', leaf[0], mode='interrogative')
-    assert meaning.mode == 'interrogative' and meaning.polarity
+    meaning = registry.form('exist', leaf[0])
+    canonical = registry.form('exist', leaf[0])
+    assert not hasattr(meaning, 'mode') and meaning.polarity
     assert meaning.role_refs == canonical.role_refs
     assert meaning.role_mask.tolist() == [True, True, False]
     torch.testing.assert_close(meaning.roles[0], leaf[0])
@@ -340,7 +340,7 @@ def test_owned_local_rule_meaning_survives_global_grammar_reconfiguration(
     entry = program()
     grammar.configure({"compose": {"S": ["sum(S,S)"]}})
     meaning = owner.program_meaning(entry, registry)
-    assert meaning.mode == "interrogative"
+    assert not hasattr(meaning, "mode")
     assert meaning.role_refs == registry.form("part", a, b).role_refs
     torch.testing.assert_close(meaning.roles[0], leaves[0])
 
@@ -361,7 +361,7 @@ def test_selected_relation_preserves_declared_outer_polarity(
     if expected is None:
         assert meaning is None
         return
-    assert meaning.mode == "interrogative"
+    assert not hasattr(meaning, "mode")
     assert meaning.polarity is expected
     assert meaning.role_refs == registry.form("part", a, b).role_refs
     torch.testing.assert_close(meaning.roles[0], leaves[0])
@@ -394,17 +394,19 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
     cs._concept_allocator.parts.remove(_a[1], _b[1])
     before_parts = set(cs._concept_allocator.parts.indices().tolist())
     commit_reading(owner, registry, entry, store, discourse=discourse, document='doc')
-    assert len(store) == 1 and len(calls) == 1
+    assert len(store) == 0 and len(calls) == 1
     row = ('sym', store.parts.find(_a[1], _b[1]))
     assert set(store.parts.indices().tolist()) == before_parts | {row[1]}
     stored = store.meaning_of(row)
-    assert stored.mode == "assertive"
-    assert stored.role_refs == registry.form("part", _a, _b).role_refs
-    assert stored.role_mask.tolist() == [True, True, True]
+    assert "mode" not in stored.metadata()
+    assert stored.role_refs[:2] == (_a, _b)
+    assert stored.role_mask.tolist() == [True, True, False]
     assert store.row(row)["evidence"] == (0., 0.)
-    assert calls[0][0] == [3]
+    assert calls[0][0] == [1]
     assert calls[0][2]["layout"] == "infix"
     torch.testing.assert_close(calls[0][1][0][0], leaves[0])
-    torch.testing.assert_close(calls[0][1][0][2], leaves[1])
+    assert not bool(calls[0][1][0][1:].ne(0).any())
     assert not stored.roles.requires_grad
+    # The live head still trains its selected value; no operation vector or
+    # second operand is an entry in the predictor's target.
     assert calls[0][1][0].requires_grad

@@ -1,4 +1,5 @@
 """MTM retains chosen bindings, while interpretation and trials stay read-only."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import pytest
 import torch
@@ -13,7 +14,7 @@ from part_fixtures import part_references, assert_part_references
 
 def snapshot(resolver):
     store = resolver.store
-    return (part_references(store), store.slots.clone(), store.when.clone(),
+    return (part_references(store), store.slots.clone(), torch.stack([store.entry_when(row).clone() for row in range(len(store))]) if len(store) else store.slots.new_empty(0, 4),
             {k: v.clone() for k, v in store.parts.state_dict().items()},
             resolver.components.owner.similarity_codebook.W.detach().clone())
 
@@ -55,7 +56,7 @@ def mention(point, *, mode='mint', reference=-1):
 
 
 def keep(resolver, clause, frames=(), *, position=0):
-    plan = resolver.preview(clause, frames)
+    plan = resolver.preview(clause, chunk_context(resolver, frames))
     before = dict(resolver.components.owner.mtm.entries)
     kept = resolver.prepare(clause, plan)
     assert resolver.components.owner.mtm.entries == before
@@ -84,21 +85,22 @@ def test_bound_use_reads_as_its_introduction_without_rewriting_rows(mode):
     assert pool.token_of(occurrence) == introduction
     entry = pool.entries[introduction]
     assert entry.occurrences == (introduction, occurrence) and entry.count == 2
-    assert entry.kind == store.raw_meaning_of(store.index_of_row(address)).role_refs[0][1]
+    assert entry.kind == original.kind
+    assert entry.kind is None  # an unminted value does not acquire a kind
     assert entry.when > original.when
     assert_part_references(store, before[0])
     torch.testing.assert_close(store.slots[:use], before[1][:use], rtol=0, atol=0)
     frame = SituationFrame.from_row(store.row(use))
     # Both the direct row and activation read use the retained token.
     for held in (frame, replace(first, activations=((occurrence, None, 0),))):
-        context = next(context for location, context in resolver.accessible((held,)).values()
-                       if location == use)
+        context = next(context for location, context in resolver.accessible(chunk_context(resolver, (held,))).values()
+                       if context.get('token') == introduction)
         assert context['identity'] == introduction
     before_read = dict(pool.entries)
-    groups = resolver.individuals(resolver.accessible((frame,)))
+    groups = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     assert set(groups) == {introduction}
     assert pool.entries == before_read
-    assert not resolver.accessible(()) and not resolver.individuals({})
+    assert not resolver.accessible(chunk_context(resolver, ())) and not resolver.individuals({})
 
 
 def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
@@ -115,14 +117,16 @@ def test_lru_eviction_keeps_rows_and_a_later_mention_opens_a_new_token():
     # Admission may write new rows; eviction at commit must not touch them.
     third, _, plan = close(resolver, a[2], a[6], 'mint', (), document='lru', sentence=3)
     assert_part_references(store, old[0])
-    for current, before in zip((store.slots, store.when), old[1:3]):
+    for current, before in zip(snapshot(resolver)[1:3], old[1:3]):
         torch.testing.assert_close(current[:retained_rows], before[:retained_rows], rtol=0, atol=0)
     assert tokens[0] in pool.entries and tokens[1] not in pool.entries
     assert pool.token_of(tokens[1]) is None
     assert pool.entries[plan['items'][0]['reference']].when > last_access
-    use, plan = keep(resolver, mention(a[1], mode='bind'), (frames[1],), position=4)
-    assert plan['items'][0]['reference'] == tokens[1]
+    fresh_request = mention(a[1], mode='bind')
+    fresh_request = replace(fresh_request,reference_request=dict(fresh_request.reference_request,compose_bind=0))
+    use, plan = keep(resolver, fresh_request, (frames[1],), position=4)
     fresh = store.occurrence_of(use)
+    assert plan['items'][0]['reference'] == fresh  # The dummy owns the newly committed occurrence.
     assert pool.token_of(fresh) == fresh and fresh != tokens[1]
     assert pool.entries[fresh].occurrences == (fresh,) and pool.entries[fresh].count == 1
     assert pool.token_of(tokens[1]) is None
@@ -205,7 +209,7 @@ def test_revision_merges_are_computed_without_merging_pool_entries():
     pool = resolver.components.owner.mtm
     before = dict(pool.entries)
     retained = snapshot(resolver)
-    assert len(resolver.individuals(resolver.accessible(frames))) == 1
+    assert len(resolver.individuals(resolver.accessible(chunk_context(resolver, frames)))) == 1
     assert pool.entries == before and len(pool.entries) == 2
     assert all(entry.count == len(entry.occurrences) == 2 for entry in pool.entries.values())
     unchanged(resolver, retained)
@@ -222,7 +226,7 @@ def test_trials_leave_pool_untouched_and_only_the_kept_close_writes(compiled):
     for _ in range(2):
         point = forward(a[1][None], a[0][None])[0]
         clause = mention(point)
-        plan = resolver.preview(clause, ())
+        plan = resolver.preview(clause, chunk_context(resolver, ()))
         kept = resolver.prepare(clause, plan)
         plans.append((kept, plan))
         assert not pool.entries

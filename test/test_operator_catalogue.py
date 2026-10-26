@@ -214,7 +214,7 @@ def test_verb_head_does_not_erase_its_object_in_the_clause_journal(monkeypatch):
     from Language import Grammar
     import Language
     from ClauseJournal import finish_clause
-    from Understanding import AnswerProgram
+    from Understanding import Reading
     from types import SimpleNamespace
     grammar=Grammar();grammar.load_from_grammar_file('complete.grammar')
     monkeypatch.setattr(Language, 'TheGrammar', grammar)
@@ -228,7 +228,7 @@ def test_verb_head_does_not_erase_its_object_in_the_clause_journal(monkeypatch):
     frames=torch.zeros(5,3,4)
     frames[3]=torch.stack((leaves[1],leaves[2],vp))
     frames[4]=torch.stack((leaves[0],vp,point))
-    entry=AnswerProgram(rows=torch.arange(3),word_rows=torch.arange(3),
+    entry=Reading(rows=torch.arange(3),word_rows=torch.arange(3),
         activations=torch.ones(3),leaves=leaves,
         actions=torch.tensor([[0,-1,0],[0,-1,1],[0,-1,2],[1,0,-1],[1,1,-1]]),
         targets=torch.tensor([1,-1]),end_state=point[None],

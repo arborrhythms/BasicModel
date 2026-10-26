@@ -49,7 +49,7 @@ def _idea_store(model):
     from ClauseRow import attach_clause_index
     from Layers import LTM0
     owner = model._concept_owner()
-    store = LTM0(int(owner.outputShape[-1]), capacity=8)
+    store = LTM0(int(owner.outputShape[-1]), capacity=8, percept_width=0)
     attach_clause_index(model, store, owner)
     return store
 
@@ -88,10 +88,10 @@ class TestInsertIdea(unittest.TestCase):
         pos = int(store.row_ids[row])
         self.assertIsInstance(pos, int)
         self.assertNotIn(pos, (-1, 0))
-        self.assertEqual(store.role_mask[row].tolist(), [True, False, False])
+        self.assertEqual(store.raw_meaning_of(row).role_mask.tolist(), [True, False, False])
         self.assertGreaterEqual(row, 0)
         self.assertLess(row, store.capacity)
-        self.assertTrue(torch.allclose(store.slots[row, 0], point, atol=1e-5))
+        self.assertTrue(torch.allclose(store.slots[row], point, atol=1e-5))
         for previous in range(row):
             self.assertTrue(torch.allclose(before[previous], store.slots[previous], atol=1e-6))
 

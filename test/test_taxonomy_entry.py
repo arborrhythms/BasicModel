@@ -64,8 +64,8 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     assert result.posture == TRUE
     assert result.result.domain == "conceptual-taxonomy"
     edge = cs._ltm_store.parts.find(a[1], b[1])
-    assert len(cs._ltm_store) == 1 and cs._ltm_store.parts.contains(edge)
-    assert cs._ltm_store.row(0)['kind'] == 'inference'
+    assert len(cs._ltm_store) == 0 and cs._ltm_store.parts.contains(edge)
+    assert cs._ltm_store.row(('sym', edge))['kind'] == 'observation'
     assert cs._ltm_store.parts.truth_plus[edge] == 1
     with pytest.raises((ValueError, TypeError), match='reference|concept'):
         reasoner.model.reason_about(
@@ -75,9 +75,8 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
 def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
     cs, (a, b, _), reasoner = _world()
     from Meaning import ConceptualMeaning
-    cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
-        torch.stack((torch.eye(8)[0], torch.eye(8)[2], torch.eye(8)[1])),
-        depth=3, layout='infix'), kind='fact', trust=1)
+    cs._ltm_store.append_meaning(ConceptualMeaning.from_description(
+        torch.eye(8)[0]), kind='fact', trust=1)
     result = reasoner.model.reason_about(QuerySpec.from_surface("part", a, b))
     assert result.posture == UNKNOWN and result.support_true == 0
 

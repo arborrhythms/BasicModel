@@ -229,16 +229,13 @@ class OccurrenceRows:
         if int(b) < 0:
             return
         if int(b) >= self.stream.shape[1]:
-            self.stream = torch.nn.functional.pad(self.stream, (0, int(b)+1-self.stream.shape[1]))
+            raise OverflowError('stream exceeds LTM0 construction capacity')
         self.stream[int(row), int(b)] = True
 
     def recency_weights(self, b=0):
         """Other streams have the weight of this stream's first row."""
-        rows = self.stream_rows(b)
-        weights = self.slots.new_full((len(self),), 1 / max(1, len(rows)))
-        if len(rows):
-            weights[rows] = 1 / torch.arange(len(rows), 0, -1, device=weights.device, dtype=weights.dtype)
-        return weights
+        from Forgetting import history_age
+        return 1 / (1 + history_age(self))
 
     def content_key(self, row):
         return bytes(self.sentence_content_keys[int(row)].tolist())
@@ -266,13 +263,6 @@ class OccurrenceRows:
             raise RuntimeError('64-bit address collision; refusing to merge different occurrences')
         return identity, document, index, content, previous
 
-    def _drop_row_postings(self, row):
-        for key, rows in tuple(self._leaf_postings.items()):
-            if row in rows:
-                rows.remove(row)
-            if not rows:
-                del self._leaf_postings[key]
-
     def _estimate_write_address(self, meaning, *, document=None, stream=None):
         context = self.__dict__.get('_write_address')
         source = ('thought', context[0], context[1]) if context else ('thought', document, stream)
@@ -289,124 +279,3 @@ class OccurrenceRows:
                 return mapped
             return type(value)(self.remap_legacy_references(item) for item in value)
         return value
-
-    def _resize_checkpoint_rows(self, state, prefix):
-        """A larger configured store can load an older, smaller checkpoint."""
-        slots = state.get(prefix + 'slots')
-        if slots is None or slots.shape[0] == self.capacity:
-            return
-        count = int(state.get(prefix + 'count', 0))
-        if count > self.capacity:
-            raise OverflowError('checkpoint occurrences exceed configured LTM capacity')
-        old_capacity = slots.shape[0]
-        for name, default in self._buffers.items():
-            value = state.get(prefix + name)
-            if (name.startswith('posting_') or value is None or value.ndim == 0
-                    or value.shape[0] != old_capacity or default.ndim == 0
-                    or default.shape[0] != self.capacity
-                    or value.shape[1:] != default.shape[1:]):
-                continue
-            grown = default.clone().to(value)
-            grown[:count] = value[:count]
-            state[prefix + name] = grown
-        # Counter columns from pre-address checkpoints are migrated next.
-        old = state.get(prefix + 'occurrence_id')
-        if old is not None:
-            grown = old.new_full((self.capacity,), -1)
-            grown[:count] = old[:count]
-            state[prefix + 'occurrence_id'] = grown
-        if prefix + 'address_keys' in state and count and prefix + 'model_clock' not in state:
-            # The address is unchanged; its coordinate carrier uses the new
-            # configured period, just as a newly written row would.
-            from Spaces import WhenEncoding
-            positions = state[prefix + 'sentence_index'][:count]
-            encoder = getattr(self, '_address_encoding', None)
-            if encoder is None:
-                encoder = WhenEncoding(n_when=4).set_capacity(max(self.capacity, int(positions.max()) + 1))
-            state[prefix + 'when'][:count] = encoder.encode(positions).to(state[prefix + 'when'])
-
-    def _migrate_address_tensors(self, state, prefix):
-        """Old snapshots lack source coordinates: retain them in a legacy document.
-
-        Their original handles identify positions in that document. We cannot
-        infer a corpus document from a clock. New ingestion always supplies its
-        real source address; no legacy vector is claimed to recover words.
-        """
-        old_ids = state.pop(prefix + 'occurrence_id', None)
-        old_namespace = state.pop(prefix + '_occurrence_namespace', None)
-        state.pop(prefix + '_next_occurrence', None)
-        if prefix + 'address_keys' in state:
-            self._legacy_reference_map = {}
-            return
-        from Meaning import ConceptualMeaning
-        count = int(state.get(prefix + 'count', self.count))
-        old_ids = torch.arange(count) if old_ids is None else old_ids[:count]
-        namespace = 'pre-occurrence' if old_namespace is None else bytes(old_namespace.tolist()).hex()
-        document = document_digest(('legacy-checkpoint', namespace))
-        buffers = {name: getattr(self, name).clone() for name in
-            ('address_keys', 'document_keys', 'sentence_content_keys', 'sentence_index', 'witness_count')}
-        prior_content = state.get(prefix + 'sentence_content_keys')
-        row_ids = state[prefix + 'row_ids'].clone()
-        refs = state.get(prefix + 'refs')
-        mapping, native = {}, {}
-        old_to_new = {}
-        for row, old in enumerate(old_ids.tolist()):
-            meaning = ConceptualMeaning(state[prefix + 'slots'][row], state[prefix + 'role_mask'][row])
-            content = (bytes(prior_content[row].tolist()) if prior_content is not None
-                       and bool(prior_content[row].any()) else native_content_key(meaning))
-            row_document, position = document, int(old)
-            key = address_key(row_document, position, content)
-            buffers['address_keys'][row] = key
-            buffers['document_keys'][row] = buffers['document_keys'].new_tensor(list(row_document))
-            buffers['sentence_content_keys'][row] = buffers['sentence_content_keys'].new_tensor(list(content))
-            buffers['sentence_index'][row], buffers['witness_count'][row] = position, 1
-            mapping[('ltm', namespace, int(old))] = ('ltm', ADDRESS_DOMAIN, key)
-            old_to_new[int(old)] = key
-            previous = int(row_ids[row])
-            if previous not in (-1, 0) and (refs is None or previous != int(refs[row, 0])):
-                native[previous] = key
-            row_ids[row] = key
-        self._legacy_reference_map, self._legacy_id_map = mapping, old_to_new
-        self._legacy_namespace = namespace
-        self._legacy_native_map = native
-        self._legacy_fingerprints = state[prefix + 'semantic_fingerprint'].clone()
-        state[prefix + 'row_ids'] = row_ids
-        from Spaces import WhenEncoding
-        encoder = getattr(self, '_address_encoding', None)
-        if encoder is None:
-            encoder = WhenEncoding(n_when=4).set_capacity(max(self.capacity, max(old_ids.tolist(), default=0) + 1))
-        when = state[prefix + 'when'].clone()
-        when[:count] = encoder.encode(buffers['sentence_index'][:count]).to(when)
-        state[prefix + 'when'] = when
-        state.update({prefix + name: value for name, value in buffers.items()})
-
-    def _migrate_address_extras(self, extras):
-        if extras['version'] >= 5:
-            return extras
-        if extras.get('namespace') != getattr(self, '_legacy_namespace', None):
-            raise ValueError('legacy semantic checkpoint occurrence namespace differs')
-        records = []
-        for record in extras.get('records', ()):
-            old = int(record['id'])
-            new = self._legacy_id_map.get(old)
-            if new is None:
-                raise ValueError('legacy semantic checkpoint occurrence is unavailable')
-            index = self._index_occurrences.get(new)
-            if index is None:
-                continue  # Existing schema migration deliberately discarded this row.
-            fingerprint = self._context_fingerprint(record.get('context'), record.get('text'),
-                record.get('expectation'))
-            if fingerprint != self.semantic_fingerprint[index].tolist():
-                raise ValueError('truth semantic content differs from its checkpoint fingerprint')
-            migrated = self.remap_legacy_references(record)
-            migrated['id'] = new
-            migrated.setdefault('expectation', None)
-            records.append(migrated)
-        result = dict(version=5, namespace=ADDRESS_DOMAIN, records=records)
-        # Validate the old binding first; the new binding covers remapped edges.
-        for record in records:
-            index = self._index_occurrences[record['id']]
-            self.semantic_fingerprint[index] = self.semantic_fingerprint.new_tensor(
-                self._context_fingerprint(record.get('context'), record.get('text'),
-                    record.get('expectation')))
-        return result

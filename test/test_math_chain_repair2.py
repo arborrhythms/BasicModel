@@ -7,10 +7,11 @@ import torch
 
 def test_no_legal_thought_operation_finishes_with_the_reference_open(monkeypatch):
     from test_item6_2_thinking import world, run
-    from ThoughtReferences import question, open_slots
+    from ThoughtReferences import open_slots
+    from meaning_fixtures import unsupported as question
     import ThoughtStream
     model, registry, _store, (a, _b, c) = world()
-    goal = question(registry.form('isPart', a, c))
+    goal = question(registry.form('isPart', a, open_roles=('argin2',)))
     monkeypatch.setattr(ThoughtStream, 'candidates', lambda *_args, **_kwargs: ())
     result = run(model, goal, work_budget=32)
     assert open_slots(result.meaning) == open_slots(goal)

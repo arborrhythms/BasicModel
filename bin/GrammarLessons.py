@@ -314,7 +314,7 @@ def generate_loss(language, programs, lessons, registry, word_code, *, errors=No
         if len(indices) != 2 or any(type(i) is not int or not 0 <= i < len(program.leaves) for i in indices):
             raise ValueError("generation lesson requires two valid source operands")
         refs = tuple(("sym", int(program.concept_ids[i])) for i in indices)
-        meaning = registry.form(supplied["form"], *refs, mode="assertive")
+        meaning = registry.form(supplied["form"], *refs)
         # The supplied form is canonical, so these are explicitly labelled
         # NP1/NP2 source positions, never inferred from the student's parse.
         roles = (program.leaves[indices[0]].detach(), meaning.roles[1].detach(),

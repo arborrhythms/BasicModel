@@ -2,7 +2,7 @@
 import torch
 
 from Layers import ConceptAllocator
-from LTM1 import LTM1
+from LTM1 import LTM1, SYMBOL, RELATION
 
 
 def test_taxonomy_and_nested_relations_share_symbol_rows():
@@ -11,14 +11,14 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
     alloc.add(y, 'part', ('sym', x))
     inner = alloc.parts.find(x, y)
     assert inner in alloc.placement
-    outer = alloc.parts.add(inner, z, truth_plus=.7, truth_minus=.2)
+    outer = alloc.parts.add((RELATION, inner), (SYMBOL, z), truth_plus=.7, truth_minus=.2)
     assert alloc.parts.refs[outer].tolist() == [inner, z]
     assert ('sym', x) in alloc.refs(y, 'part')
     assert alloc.parts.refs[inner].tolist() == [x, y]
     assert len(alloc.parts) == 2
     before = outer
     alloc.parts.retain([inner, outer])
-    assert alloc.parts.find(inner, z) == before
+    assert alloc.parts.find((RELATION, inner), (SYMBOL, z)) == before
     assert set(alloc.parts.row(inner)) == set(LTM1.columns)
     assert alloc.parts.refs.shape[-1] == 2
     assert not hasattr(alloc.parts, 'rel_type')
@@ -31,19 +31,22 @@ def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
     assert len(store) == 1 and store.access_count[first] == 2
     torch.testing.assert_close(store.truth_plus[first], torch.tensor(.7))
     torch.testing.assert_close(store.truth_minus[first], torch.tensor(.8))
-    types = {2: {'situation'}, 3: {'situation', 'speech_individual'}}
+    types = {(SYMBOL, 2): {'situation'}, (SYMBOL, 3): {'situation', 'speech_individual'}}
     assert store.readings(first, types.get) == ('conditional', 'attribution')
 
 
 def test_part_checkpoint_and_retention_keep_native_addresses():
     store = LTM1(16)
     a = store.add(2, 3, truth_plus=.6)
-    b = store.add(a, 4, truth_minus=.4)
-    clone = LTM1(4)
+    b = store.add((RELATION, a), (SYMBOL, 4), truth_minus=.4)
+    clone = LTM1(16)
     clone.load_state_dict(store.state_dict())
-    clone.retain([b])
-    assert clone.find(a, 4) == b
-    assert clone.find(2, 3) is None
+    import pytest
+    with pytest.raises(ValueError, match='dependency'):
+        clone.retain([b])
+    clone.retain([a, b])
+    assert clone.find((RELATION, a), (SYMBOL, 4)) == b
+    assert clone.find(2, 3) == a
     torch.testing.assert_close(clone.truth_minus[b], torch.tensor(.4))
 
 

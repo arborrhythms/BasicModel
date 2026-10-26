@@ -31,11 +31,11 @@ def test_compose_query_and_converse_faces_share_the_same_canonical_vp():
     from ClauseRow import predicate_identity
     from References import symbol_code
     cs, registry, a, b, context = _world()
-    assertion = registry.form('part', a, b, mode='assertive')
+    assertion = registry.form('part', a, b)
     question = registry.form('part', a, b)
     converse = registry.form('whole', b, a)
     assert isinstance(question, ConceptualMeaning)
-    assert question.mode == 'interrogative' and assertion.mode == 'assertive'
+    assert question.metadata() == assertion.metadata() and 'mode' not in question.metadata()
     assert question.role_mask.tolist() == [True, True, True]
     assert question.role_refs[0] == a and question.role_refs[2] == b
     assert question.role_refs == assertion.role_refs == converse.role_refs
@@ -62,7 +62,7 @@ def test_execution_is_derived_from_middle_vp_and_retains_the_proposition():
 def test_assertive_or_unrecognized_vp_does_not_execute_a_query(monkeypatch):
     cs, registry, a, b, context = _world()
     # Surface mode does not control a permitted operation; VP identity does.
-    assert registry.execute(registry.form('isPart', a, b, mode='assertive'), context).support_true == 1.
+    assert registry.execute(registry.form('isPart', a, b), context).support_true == 1.
     question = registry.form('isPart', a, b)
     monkeypatch.setattr(ThoughtTaxonomyCapability, 'evidence', lambda *a, **k: pytest.fail('executed'))
     with pytest.raises(ValueError, match='VP|relation|registered'):
@@ -98,11 +98,10 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
 
 def test_unary_query_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
-    store = LTM0(8)
-    description = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3, dtype=torch.bool),
-                                   scope={'place': 'workshop'},
-                                   role_refs=registry.form('isPart', a, b).role_refs)
-    store.configure_leaf_index(read=lambda idea, limit, **kw: ((7,), 1, True))
+    store = LTM0(8, percept_width=0)
+    description = ConceptualMeaning.from_description(torch.arange(1., 9.) / 8)
+    from dataclasses import replace
+    description = replace(description, scope={'place': 'workshop'}, role_refs=(a, None, None))
     index = store.append_meaning(description, trust=0.75)
     context = _context(cs, store=store)
     reference = store.occurrence_of(index)

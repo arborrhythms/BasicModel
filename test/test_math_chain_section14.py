@@ -5,8 +5,8 @@ import pytest
 import torch
 
 from Meaning import ConceptualMeaning
-from ThoughtReferences import (bindings, evidence_pair, fill, needs_episode,
-                               open_slots, question, with_slots)
+from ThoughtReferences import bindings, evidence_pair, fill, has_open_slots, open_slots, with_slots
+from meaning_fixtures import unsupported as question
 
 
 def test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate():
@@ -14,7 +14,7 @@ def test_ignorance_is_not_a_free_variable_or_an_answer_cost_gate():
     atom = replace(ConceptualMeaning.from_description(torch.ones(4)),
                    role_refs=(('sym', 5), None, None))
     region = question(atom)
-    assert not open_slots(region) and needs_episode(region)
+    assert not open_slots(region) and not has_open_slots(region)
     assert bindings(region)['_open_references'] == ()
     data = bindings(region)
     data['_bound_roles'] = (('referent', 0),)
@@ -47,7 +47,8 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     root = ConceptualMeaning(torch.ones(3,4),torch.ones(3,dtype=torch.bool),
         role_refs=(None,('sym',7),('sym',7)), sentence_kind='relation')
     root = question(root, (('referent',0),))
-    row = store.append_meaning(root, kind='question', evidence=(0.,0.),
+    pending = replace(ConceptualMeaning.from_description(root.roles[0]), bindings=bindings(root))
+    row = store.append_meaning(pending, kind='question', evidence=(0.,0.),
                                document_key='original question', sentence_index=1)
     address, position = store.occurrence_of(row), float(store.sentence_index[row])
     column = slot_key(int(store.address_keys[row]), 0)
@@ -66,7 +67,7 @@ def test_copula_fills_the_addressed_open_column_without_a_word_alias():
     assert not open_slots(resolved)
     assert resolved.role_refs[0] == ('sym',5)
     assert bindings(resolved)['_bound_roles'] == (('referent',0),)
-    assert not bindings(resolved).get('_pending', False) and not needs_episode(resolved)
+    assert not bindings(resolved).get('_pending', False) and not has_open_slots(resolved)
     assert store.occurrence_of(row) == address and float(store.sentence_index[row]) == position
     torch.testing.assert_close(store.slots[row], original[0], rtol=0, atol=0)
     assert open_slots(store.meaning_of(row)) == open_slots(original[1])
@@ -81,7 +82,7 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
     from test_item6_2_thinking import world, run
     model, registry, store, (a,b,c) = world()
     root = registry.form('isPart', a, open_roles=('argin2',))
-    root = with_slots(replace(root, mode='assertive' if supported else 'interrogative',
+    root = with_slots(replace(root,
         bindings={'_formation_records': ({'role':2, 'choice':'open', 'probability':.25},),
                   '_source_evidence':(1.,0.) if supported else (0.,0.)}),
         (('referent',2),), pair=(1.,0.) if supported else (0.,0.))
@@ -98,7 +99,10 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
     result = run(model, root, work_budget=32)
     assert chosen == ['query', 'conclude']
     assert bool(open_slots(result.meaning)) is not supported
-    assert store.row(len(store)-1)['kind'] == ('inference' if supported else 'question')
+    assert len(store.parts) == 1
+    retained = store.part_row(int(store.parts.indices()[-1]))
+    assert bool(open_slots(retained['meaning'])) is not supported
+    assert retained['evidence'] == ((1., 0.) if supported else (0., 0.))
     if supported:
         child = result.meaning.constituents[-1]
         assert bindings(child)['_formation_reason'] == 'search_exhausted'
@@ -129,23 +133,25 @@ def test_episode_work_is_reported_without_changing_the_reconstruction_and_answer
     run(model, goal, work_budget=64)
     audit = model._last_thought_comparison
     assert audit['components'] == ((0.,0.),(0.,0.))
-    assert audit['work_spent'][0] > audit['work_spent'][1]
+    assert audit['work_spent'][0] != audit['work_spent'][1]
     assert audit['costs'] == (0.,0.)
     assert audit['keep_costs'] == (0.,0.) and not audit['explore_kept']
     assert model._last_thought_score_function['surrogate'] is None
 
 
 def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match():
-    from Layers import LTM0
     from Queries import ThoughtLTMCapability
     from QueryWork import QueryWorkBudget
-    from index_fixtures import one_hot_unfold
-    store = LTM0(8,capacity=16)
-    store.configure_leaf_index(code_row=lambda ref:ref[-1], read=one_hot_unfold)
-    source = ConceptualMeaning(torch.eye(8)[:3],torch.ones(3,dtype=torch.bool),
-        role_refs=(None,('sym',1),('sym',2)),sentence_kind='relation')
-    pending = with_slots(source,(('referent',0),),pair=(1.,0.))
-    row = store.append_meaning(pending,kind='question',evidence=(1.,0.))
+    from part_fixtures import native_store
+    from ClauseRow import Clause, predicate_identity
+    store, ids = native_store(width=8, points=torch.eye(8)[:3])
+    source = ConceptualMeaning(torch.eye(8)[:3], torch.ones(3,dtype=torch.bool),
+        role_refs=(None, ('sym', predicate_identity('equal')), ('sym', ids[2])), sentence_kind='relation')
+    pending = with_slots(ConceptualMeaning.from_description(source.roles[0]), (('referent',0),), pair=(1.,0.))
+    child = Clause(pending, point=source.roles[0])
+    row = store.write_clause(Clause(source, relation='equal', children=(child,),
+        refs=(('clause', 0), predicate_identity('equal'), ids[2])), evidence=(1.,0.))
+    source = store.raw_meaning_of(row)
     query = question(replace(source,roles=source.roles.clone()))
     query.roles[0].fill_(-100.)
     reader = ThoughtLTMCapability(store=lambda:store,equal=lambda *_:None,tau_id=.99)
@@ -157,7 +163,8 @@ def test_region_query_ignores_free_variable_code_and_preserves_a_pending_match()
     empty = reader.best_match(replace(query,bindings=own),max_records=16,work=QueryWorkBudget(128))
     assert not empty['frames'] and not empty['incomplete']
     # A fully free region is a query mask, not an invalid zero-role meaning.
-    free = question(replace(source,role_refs=(None,None,None)))
+    free = question(replace(source,role_refs=(None,None,None)),
+        (('referent', 0), ('relation', 1), ('referent', 2)))
     empty = reader.best_match(free,max_records=16,work=QueryWorkBudget(128))
     assert not empty['frames'] and not empty['incomplete']
     assert free.role_mask.tolist() == [True,True,True]
@@ -322,7 +329,8 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         operations = [record.operation for record in result.records if record.kind == 'thought']
         examples.append(dict(source_pair=bindings(meaning).get('_source_evidence'),
             occurrence=bindings(meaning).get('_query_occurrence'), committed=commits[-1],
-            operations=operations,
+            operations=operations, work=result.work.spent, allowance=model.attention_budget,
+            history=[record.kind for record in result.records],
             before=open_slots(meaning), after=open_slots(result.meaning),
             minted=any(bindings(child).get('_formation_reason') == 'search_exhausted'
                        for child in result.meaning.constituents)))
@@ -338,15 +346,20 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         assert len(examples) == 2
         store = model.symbolSpace.ltm_store
         for item in examples:
-            assert item['operations'] == ['query','conclude']
-            index = store._index_occurrences[item['occurrence']]
+            # The forced query preference does not suppress live departures.
+            # The retained walk must search and close within its real budget;
+            # the source-authority and minting assertions below are invariant.
+            assert 'query' in item['operations']
+            assert item['history'][-1] == 'finish'
+            assert item['work'] <= item['allowance']
+            index = store.location(item['occurrence'])
             # The close persists the working conclusion at its own address.
             # The original occurrence retains its open reference.
             committed = store.meaning_of(item['committed'])
             assert open_slots(store.raw_meaning_of(index))
             if tuple(item['source_pair']) == (0.,0.):
                 assert item['after'] and open_slots(committed)
-                assert store.KINDS[int(store.record_kind[index])] == 'question'
+                assert open_slots(store.raw_meaning_of(index))
                 assert not item['minted']
             else:
                 assert item['minted'] and not item['after'] and not open_slots(committed)

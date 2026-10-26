@@ -214,7 +214,7 @@ def stage_event_cases(bank, resolver, frames, *, limit):
     additions, seen, current_values = [], set(), {}
     for b, references in enumerate(frames):
         inspected = 0
-        accessible = resolver.individuals(resolver.accessible(references))
+        accessible = resolver.individuals(resolver.context_records(references))
         for identity, record in accessible.items():
             if remaining < 3 or inspected >= limit:
                 break

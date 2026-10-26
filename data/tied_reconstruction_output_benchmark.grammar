@@ -150,7 +150,7 @@
            morphology (surface inflection -> .when). aspect is REPURPOSED as
            rewrite() - a PLANNED surface-inflection MLP (lemma + tense ->
            ran / will run / ...); not a live rule until RewriteLayer exists. -->
-      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1)</rule>
+      <rule head="argin1">bind_argout1 = bind.forward(bind_argin1, bind_argin2)</rule>
     </compose>
 
     <!-- Explicit boundary allow-list for the relation/description faces;

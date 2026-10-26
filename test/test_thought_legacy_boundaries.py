@@ -11,7 +11,7 @@ from What import LTMSlot
 
 
 def _meaning():
-    return ConceptualMeaning(torch.ones(3, 8, requires_grad=True), torch.ones(3, dtype=torch.bool), mode="interrogative")
+    return ConceptualMeaning(torch.ones(3, 8, requires_grad=True), torch.ones(3, dtype=torch.bool), sentence_kind="relation")
 
 
 

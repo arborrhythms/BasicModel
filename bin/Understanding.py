@@ -22,7 +22,7 @@ import torch
 
 
 @dataclass(frozen=True)
-class AnswerProgram:
+class Reading:
     """Temporary operations and values of one open sentence reading.
 
     Tensor copies retain the current forward's gradients while insulating
@@ -69,6 +69,7 @@ class AnswerProgram:
     leaf_evidence: Any = None
     # Trial identity locations and recorded operations; never stored in LTM.
     identity_origins: Any = None
+    identity_ids: Any = None
     identity_actions: Any = None
     identity_values: Any = None
     identity_leaves: Any = None
@@ -86,7 +87,7 @@ class AnswerProgram:
                 "targets", "end_state", "concept_ids")
         return core + tuple(name for name in ("word_ids", "reference_ids", "reference_orders", "symbol_where", "symbol_when",
                                              "reference_values", "reference_relations", "operation_values", "operation_refs", "operation_relations", "operation_probabilities", "leaf_orders", "leaf_evidence",
-                                             "identity_origins", "identity_actions", "identity_values", "identity_leaves",
+                                             "identity_origins", "identity_ids", "identity_actions", "identity_values", "identity_leaves",
                                              "timeline_actions", "timeline_values", "case_values", "case_selected", "operand_counts",
                                              "form_wholes", "form_whole_counts")
                             if getattr(self, name) is not None)
@@ -268,14 +269,12 @@ class SentenceEndState:
             raise ValueError('completed source trust must be a finite scalar in [-1, 1]')
         if not isinstance(self.meaning, ConceptualMeaning):
             raise TypeError('a sentence end state requires a conceptual field')
-        if int(self.meaning.role_mask.sum()) not in (1, 3):
-            raise ValueError('a sentence end state occupies one or three slots')
+        if int(self.meaning.role_mask.sum()) not in (1, 2, 3):
+            raise ValueError('a sentence end state requires an idea or a working chain view')
         if len(self.refs) != 3 or any(type(ref) is not int or ref == 0 for ref in self.refs):
             raise ValueError('completed references must be native addresses or -1')
-        from ThoughtReferences import needs_episode
-        if self.query is not None and (not isinstance(self.query, ConceptualMeaning)
-                                      or not needs_episode(self.query)):
-            raise ValueError('a completed question requires a free variable or an unsupported region')
+        if self.query is not None and not isinstance(self.query, ConceptualMeaning):
+            raise ValueError('a completed question requires a conceptual field')
         object.__setattr__(self, 'meaning', replace(self.meaning))
         if self.query is not None:
             object.__setattr__(self, 'query', replace(self.query))

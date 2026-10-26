@@ -159,9 +159,9 @@ def make_model(folder, patch):
     model.inputSpace.data.has_supervised_outputs = False
     # A read-only audit retains the first unresolved sym cue encountered by
     # native retrieval. It supplies no addresses or scores to the model.
-    from MemoryIndex import LeafCodeIndex
+    from EntryRead import EntryRead
     from Taxonomy import concept_reference
-    cued_rows = LeafCodeIndex.cued_rows
+    cued_rows = EntryRead.cued_rows
     captured = False
     def audit_cue(store, cue, **kwargs):
         nonlocal captured
@@ -179,7 +179,7 @@ def make_model(folder, patch):
                         role_mask=cue.role_mask.cpu(), metadata=cue.metadata()), folder/'unresolved-cue.pt')
                     break
         return cued_rows(store, cue, **kwargs)
-    patch.setattr(LeafCodeIndex, 'cued_rows', audit_cue)
+    patch.setattr(EntryRead, 'cued_rows', audit_cue)
     return model
 
 

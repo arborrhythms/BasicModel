@@ -72,18 +72,38 @@ class ForgettingConfig:
 
 
 def history_age(store):
-    """Distance from each witnessing stream's tail; the youngest witness wins.
-
-    Re-witnessing does not move a row. Unwitnessed/legacy rows have unknown age
-    (zero penalty), never a fabricated global timestamp.
-    """
-    n = len(store)
-    age = store.slots.new_full((n,), torch.inf)
-    for stream in range(store.stream.shape[1]):
-        rows = store.stream_rows(stream)
-        age[rows] = torch.minimum(age[rows], torch.arange(len(rows) - 1, -1, -1,
-            device=age.device, dtype=age.dtype))
-    return torch.where(torch.isfinite(age), age, 0.)
+    """Age in model time; unstamped operands inherit their sentence's stamp."""
+    from RowTime import encoder
+    from LTM1 import OCCURRENCE, RELATION
+    now = max(0, int(store.model_clock)-1)
+    ages = store.slots.new_zeros(len(store))
+    known = set()
+    for row in range(len(store)):
+        stamp = store.entry_when(row)
+        if bool(stamp.ne(0).any()):
+            ages[row] = max(0, now-int(encoder().decode_index(stamp)))
+            known.add(row)
+    for root in store.parts.indices().tolist():
+        stamp = store.parts.percept[root, 4:]
+        if not bool(stamp.ne(0).any()):
+            continue
+        age = max(0, now-int(encoder().decode_index(stamp)))
+        for kind, value in store.parts.protected_references((root,)):
+            if kind == OCCURRENCE:
+                row = store.index_of_row(value)
+                if row is not None:
+                    ages[row] = min(float(ages[row]), age) if row in known else age
+                    known.add(row)
+    for parent in range(len(store)):
+        if parent not in known:
+            continue
+        context = store._semantic_rows.get(int(store.address_keys[parent]), {})
+        for reference in store._context_occurrence_references(context):
+            child = store.location(reference)
+            if isinstance(child, int):
+                ages[child] = min(float(ages[child]), float(ages[parent])) if child in known else ages[parent]
+                known.add(child)
+    return ages
 
 
 def _scope_keys(store):
@@ -92,53 +112,33 @@ def _scope_keys(store):
             for key in store.address_keys[:len(store)].tolist()]
 
 
-def part_supports(parts):
-    """Two-hop positive Part proofs; negative testimony never licenses a hop."""
-    outgoing, result = {}, {}
-    positive = {row for row in parts.indices().tolist()
-                if float(parts.truth_plus[row]) > 0 and float(parts.truth_minus[row]) == 0}
-    for row in positive:
-        outgoing.setdefault(int(parts.refs[row, 0]), []).append(row)
-    for row in positive:
-        left, right = parts.refs[row].tolist()
-        for first in outgoing.get(left, ()):
-            for second in outgoing.get(int(parts.refs[first, 1]), ()):
-                if len({row, first, second}) != 3 or int(parts.refs[second, 1]) != right:
-                    continue
-                if min(float(parts.truth_plus[first]), float(parts.truth_plus[second])) >= float(parts.truth_plus[row]):
-                    result.setdefault(row, []).append(frozenset((first, second)))
-    return result
-
-
 @torch.no_grad()
-def forget_parts(parts, config, *, retained=()):
-    """Retention over the same six columns for taxonomy and definitions."""
+def forget_parts(parts, config, *, retained=(), now=None):
+    """Retention of tagged chains and taxonomy by their own value."""
     if len(parts) < math.ceil(config.high_water * parts.capacity):
         return None
     from RowTime import encoder
     rows = parts.indices().tolist()
     target = math.floor(config.low_water * parts.capacity)
-    ticks = encoder().decode_index(parts.when[rows])
-    known = parts.when[rows].ne(0).any(-1)
-    tail = int(ticks[known].max()) if bool(known.any()) else 0
+    ticks = encoder().decode_index(parts.percept[rows, 4:])
+    known = parts.percept[rows, 4:].ne(0).any(-1)
+    tail = (int(ticks[known].max()) if bool(known.any()) else 0) if now is None else int(now)
     ages = {row: max(0, tail-int(ticks[i])) if bool(known[i]) else 0 for i, row in enumerate(rows)}
-    proofs = part_supports(parts)
+    from LTM1 import RELATION
+    stamped = {row for i, row in enumerate(rows) if bool(known[i])}
+    inherited = {}
+    for root in stamped:
+        for kind, child in parts.protected_references((root,)):
+            if kind == RELATION and child not in stamped:
+                inherited[child] = min(inherited.get(child, ages[root]), ages[root])
+    ages.update(inherited)
     protected = {int(ref[1]) for ref in retained if ref[:1] == ('sym',) and parts.contains(ref[1])}
     # A referenced edge is released only on the next boundary pass, even
     # when its last parent is selected below. Closure protects every level.
-    protected.update(int(child) for row in rows for child in parts.refs[row].tolist()
-                     if parts.contains(child))
-    pending = list(protected)
-    while pending:
-        for child in parts.refs[pending.pop()].tolist():
-            if parts.contains(child) and child not in protected:
-                protected.add(child)
-                pending.append(child)
+    protected.update(value for kind, value in parts.protected_references() if kind == RELATION)
     alive = set(rows)
     def value(row):
         utility = 1. if float(parts.surprise[row]) < 0 else float(parts.surprise[row])
-        if any(proof <= alive for proof in proofs.get(row, ())):
-            utility = 0.
         access = math.log1p(int(parts.access_count[row]))
         truth = max(float(parts.truth_plus[row]), float(parts.truth_minus[row]))
         return (config.trust_weight*truth + config.utility_weight*utility
@@ -148,30 +148,23 @@ def forget_parts(parts, config, *, retained=()):
             break
         if row in protected:
             continue
-        available = next((proof for proof in proofs.get(row, ()) if proof <= alive-{row}), None)
-        if available is not None:
-            protected.update(available)
         alive.remove(row)
     parts.retain(sorted(alive))
     return dict(before=len(rows), after=len(alive), target=target, protected=len(protected),
                 target_reached=len(alive) <= target)
 
 
-def retention_values(store, config, *, alive=None, supports=None):
+def retention_values(store, config, *, alive=None):
     """Return independent retention terms; no stored evidence is changed."""
     n = len(store)
     alive = set(range(n)) if alive is None else alive
-    supports = {} if supports is None else supports
     trust = store.source_trust[:n].abs()
     utility = torch.where(store.surprise[:n] < 0, 1., store.surprise[:n]).clamp(0, 1)
-    for row, choices in supports.items():
-        if any(witnesses <= alive for witnesses in choices):
-            utility[row] = 0.
     luminosity = torch.ones_like(trust)
     positive, negative = store.c_plus[:n], store.c_minus[:n]
     # Intrinsic both is heterogeneous content, not two disagreeing sources.
     signs = (positive.gt(0) & negative.eq(0)).long() - (negative.gt(0) & positive.eq(0)).long()
-    points = F.normalize(store.slots[:n, 0], dim=-1)
+    points = F.normalize(store.slots[:n], dim=-1)
     orders = store.order[:n]
     scopes = _scope_keys(store)
     scope_ids = {key: i for i, key in enumerate(dict.fromkeys(scopes))}
@@ -188,9 +181,9 @@ def retention_values(store, config, *, alive=None, supports=None):
     if config.coverage:
         # Catuskoti coverage over occupied idea coordinates. Opposite poles
         # stay separate; leave-one-out measures the lost positive coverage.
-        ids = [i for i in sorted(alive) if int(store.role_mask[i].sum()) == 1]
+        ids = sorted(alive)
         if ids:
-            codes = store.slots[ids, 0].abs().clamp(0, 1)
+            codes = store.slots[ids].abs().clamp(0, 1)
             for_pole = codes * positive[ids, None]
             against_pole = codes * negative[ids, None]
             def coverage(p, q):
@@ -248,7 +241,7 @@ def _trim_expectations(store, alive):
 @torch.no_grad()
 def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
            open_sentence=False, stateless=False, retained_occurrences=()):
-    """Plan a complete deletion/coarsening transaction before publishing it."""
+    """Plan a complete wording/deletion transaction before publishing it."""
     config = config or ForgettingConfig()
     n = len(store)
     if (not config.enabled or stateless or open_sentence or torch.compiler.is_compiling()
@@ -271,6 +264,9 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
         raise ValueError('forgetting requires the complete semantic sidecar')
     dependencies = {i: _references(store, i, contexts[key], indexes) for i, key in enumerate(keys)}
     protected = {i for i in range(n) if int(store.origin[i]) in config.protect_origins}
+    from LTM1 import OCCURRENCE
+    protected.update(indexes[value] for tag, value in store.parts.protected_references()
+                     if tag == OCCURRENCE and value in indexes)
     # A live segment cannot lose its boundary and acquire the preceding
     # document's cover. Release the empty cover at the next boundary pass.
     from DocumentCover import segments
@@ -291,10 +287,9 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
             if child not in protected:
                 protected.add(child)
                 pending.append(child)
-    supports = {}
-    terms = retention_values(store, config, supports=supports)
+    terms = retention_values(store, config)
     order = sorted(range(n), key=lambda i: (float(terms['value'][i]), -float(terms['age'][i]), keys[i]))
-    alive, advanced, coarsened = set(range(n)), set(), set()
+    alive, advanced = set(range(n)), set()
     store._ensure_texts(n)
     texts = list(store._texts[:n])
     dropped_text = 0
@@ -321,24 +316,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
                 # then stop this pass; do not substitute costlier deletions.
                 return any(advance(parent, visiting | {row})
                            for parent in sorted(parents[row], key=order.index))
-            context = contexts[keys[row]]
-            references = context.get('role_refs', (None, None, None))
-            children = dependencies[row]
-            if any(ref is not None for ref in references) and all(
-                    int(store.role_mask[child].sum()) == 1 for child in children):
-                coarse = dict(context, role_refs=(None, None, None))
-                remaining = _references(store, row, coarse, indexes)
-                if remaining:
-                    # A semantic binding still needs its target. Clearing
-                    # structural detail must not silently erase that binding.
-                    return False
-                contexts[keys[row]] = coarse
-                coarsened.add(row)
-                advanced.add(row)
-            else:
-                # A bare row is its final stage. An unfused relation cannot
-                # keep a child's three-role value as a gist in one argument.
-                alive.remove(row)
+            alive.remove(row)
             return True
 
         for row in order:
@@ -349,7 +327,7 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
             stage = row in referenced
             if advance(row, set()):
                 cutoff = float(terms['value'][row])
-                if stage or row in coarsened:
+                if stage:
                     break
 
     keep = sorted(alive)
@@ -366,22 +344,15 @@ def forget(store, config=None, *, document_boundary=False, epoch_boundary=False,
     store.compact_rows(keep)
     for row in range(len(store)):
         context = store._semantic_rows.get(int(store.address_keys[row]), {})
-        store.metadata_required[row] = bool(context.get('bindings') or context.get('scope') or
-            any(ref is not None for ref in context.get('role_refs', ()))) or (
+        store.metadata_required[row] = bool(context.get('bindings') or context.get('scope')) or (
             store.text_of(row) is not None or int(store.address_keys[row]) in expectations)
         store._update_semantic_fingerprint(row)
-    for old in coarsened & alive:
-        row = store.index_of_row(keys[old])
-        store._drop_row_postings(row)
-        meaning = store.meaning_of(row)
-        terms_for_row, complete = store._meaning_leaf_terms(meaning, order=int(store.order[row]))
-        store._append_leaf_terms(row, terms_for_row, complete)
     store.forget_passes.add_(1)
     store.forget_pending.fill_(len(store) > target)
     store.forget_last_sentence.copy_(store.forget_sentences)
     store.forget_cutoff.fill_(0. if cutoff is None else cutoff)
     report = dict(before=n, after=len(store), target=target, cutoff=cutoff, deleted_by_origin=by_origin,
-                  cascade=0, wording=dropped_text, coarsened=len(coarsened),
+                  cascade=0, wording=dropped_text, coarsened=0,
                   protected=len(protected | referenced), target_reached=len(store) <= target)
     store.last_forgetting_report = report
     from util import TheMessage
@@ -429,6 +400,10 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
             if pending is not None:
                 roots.update(getattr(pending, 'source_occurrences', ()))
     config = ForgettingConfig.from_xml()
+    from LTM1 import OCCURRENCE
+    # Dependencies of a row removed in this pass are eligible next pass.
+    roots.update(('ltm', store.address_domain, value)
+                 for kind, value in store.parts.protected_references() if kind == OCCURRENCE)
     if config.enabled and getattr(model, '_open_sentence_slot', None) is None and (document_boundary or epoch_boundary):
         audit_roots = {ref for value in store._expectation_rows.values()
                       for ref in store._expectation_references(value) if ref[0] == 'sym'}
@@ -444,7 +419,7 @@ def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
         # second half of this boundary cannot release Part rows for the first.
         structure = symbols(store._semantic_rows)
         store.last_part_forgetting_report = forget_parts(store.parts, config,
-            retained=roots | audit_roots | structure)
+            retained=roots | audit_roots | structure, now=max(0, int(store.model_clock)-1))
     result = forget(store, config, document_boundary=document_boundary,
         epoch_boundary=epoch_boundary, open_sentence=getattr(model, '_open_sentence_slot', None) is not None,
         retained_occurrences=roots)

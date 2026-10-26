@@ -1,3 +1,4 @@
+from dataclasses import replace
 """Accessible-mind §6: expectation changes conception, never observation."""
 import copy
 import os
@@ -9,8 +10,16 @@ import torch
 
 from Layers import MeaningExpectation, ExpectationComparison, LTM0
 from Meaning import ConceptualMeaning
-from meaning_fixtures import record_observation
+from meaning_fixtures import record_observation as record_source
 from test_sentence_expectation import layer, observe
+
+
+def idea(meaning):
+    return replace(ConceptualMeaning.from_description(meaning.roles[0]), polarity=meaning.polarity, bindings=meaning.bindings, scope=meaning.scope, role_refs=(meaning.role_refs[0], None, None))
+
+
+def record_observation(store, payload, depth, *, meaning, expectation=None):
+    return record_source(store, payload, depth, meaning=idea(meaning), expectation=expectation)
 
 
 def test_omitted_symbol_has_a_residual_and_trains_only_the_predictor():
@@ -41,7 +50,9 @@ def test_old_checkpoint_unknown_surprise_is_not_zero():
     state = store.state_dict()
     state.pop("surprise", None)
     restored = LTM0(4, capacity=8)
-    restored.load_state_dict(state, strict=True)
+    with pytest.raises(ValueError, match='surprise'):
+        restored.load_state_dict(state, strict=True)
+    restored.load_state_dict(store.state_dict(), strict=True)
     assert restored.row(0)["surprise"] == -1
 
 
@@ -53,21 +64,26 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     from ThoughtClosing import absence
     model, registry, memory, part, whole = _catalog_world()
     assert 'not' in registry.executable_operation_ids
-    source = with_slots(registry.form('part', part, whole, mode='assertive'), (), pair=(.3,.7))
+    source = with_slots(registry.form('part', part, whole), (), pair=(.3,.7))
     request = registry.form('not', source)
     store = LTM0(8, capacity=8)
     model.symbolSpace.ltm_store = store
-    observation = store.append_meaning(source,kind='observation')
+    from ClauseRow import attach_clause_index
+    attach_clause_index(model, store, model.conceptualSpace)
+    observation = store.append_meaning(idea(source),kind='observation')
+    observed = store.meaning_of(observation).roles.clone()
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(model, monkeypatch, ('not', None))
     with model._query_boundary_scope((0,)):
         result = model.run_selected_thought(request,work_budget=32)
     assert result.result.semantic_id == 'not'
     assert evidence_pair(result.meaning) == (.7,.3)
-    assert len(store) == 2
+    assert len(store) == 1
     edge = store.parts.find(part[1], whole[1])
     # The common Part owner also retains the fixture's earlier affirmation.
     assert store.row(('sym', edge))['evidence'] == pytest.approx((1.,.3))
     assert store.row(observation)['kind'] == 'observation'
-    torch.testing.assert_close(store.meaning_of(observation).roles,source.roles)
+    torch.testing.assert_close(store.meaning_of(observation).roles, observed)
 
 
 def _anticipating_model():
@@ -80,6 +96,8 @@ def _anticipating_model():
     discourse = SymbolExpectation(4, 8, width, concept_dim=width)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
     discourse._ltm_store = store
+    from ClauseRow import attach_clause_index
+    attach_clause_index(model, store, model.conceptualSpace)
     model.symbolSpace.ltm_store = store
     model.symbolSpace.expectation = discourse
     observe(discourse, meaning.roles)
@@ -152,7 +170,7 @@ def test_native_unlabelled_batch_trains_the_same_chooser(tmp_path, monkeypatch, 
 @pytest.mark.parametrize("state", ["live", "restored", "compacted"])
 def test_pair_lookup_uses_occurrence_index_in_both_directions(state, monkeypatch):
     store = LTM0(4, capacity=64)
-    meaning = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool))
+    meaning = ConceptualMeaning.from_description(torch.ones(4))
     for _ in range(24):
         row = store.append_idea(torch.ones(4), sentence_index=len(store))
         store.set_origin(row, store.ORIGIN_USER)
@@ -219,7 +237,8 @@ def test_open_question_and_nested_what_spare_the_same_role():
     observe(discourse, meaning.roles)
     model.expectation_gain = 1.
     store = model.symbolSpace.ltm_store
-    index = store.append_meaning(question, kind="question", sentence_index=len(store))
+    from ThoughtStream import write
+    index = write(model, question, row=0)
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(question, row=0,
             work=QueryWorkBudget(64), continuation=None)
@@ -243,7 +262,7 @@ def test_anticipation_ignores_incoming_staging_and_other_streams():
     # to prior-only thought, including the most recent mutable program slot.
     perturbed._last_understanding = SimpleNamespace(sentence_states=(SimpleNamespace(leaves=torch.full((9, meaning.roles.shape[-1]), 999.)),))
     perturbed.inputSpace = SimpleNamespace(_ar_embedded_N=torch.full((2, 8, 16), -999.))
-    perturbed.symbolSpace.ltm_store.append_meaning(meaning, kind="observation", stream=1, sentence_index=len(perturbed.symbolSpace.ltm_store))
+    perturbed.symbolSpace.ltm_store.append_meaning(idea(meaning), kind="observation", stream=1, sentence_index=len(perturbed.symbolSpace.ltm_store))
     after = perturbed.symbolSpace.expectation.expect_next_meaning(record=True)
     torch.testing.assert_close(before.roles, after.roles, rtol=0, atol=0)
     assert not model._what_memory().thought_history()
@@ -258,7 +277,7 @@ def test_nested_object_mask_reads_a_later_thought_on_the_shared_budget(budget):
     registry = model.grammatical_thoughts
     question = registry.form("isPart", meaning.role_refs[2], open_roles=("argin1",))
     memory = model._what_memory()
-    memory.begin_thought_episode(meaning, work_budget=8)
+    memory.begin_thought_episode(question, work_budget=8)
     memory.commit_thought(question, operation="part")
     memory.finish_thought(question)
     memory.end_what_episode()
@@ -383,7 +402,7 @@ def test_retained_pair_keeps_full_prior_and_surprise_across_restore():
     from meaning_fixtures import symbol_prediction, estimate_meaning
     from Expectation import retention_surprise
     store = LTM0(4, capacity=8)
-    actual = ConceptualMeaning(torch.eye(4)[:3], torch.tensor([True,True,False]))
+    actual = ConceptualMeaning.from_description(torch.eye(4)[0])
     source = store.append_meaning(actual, kind='observation')
     prediction = symbol_prediction(torch.eye(4), torch.full((4,2), .5))
     _, row = store.append_expectation_pair(estimate_meaning(prediction), actual,

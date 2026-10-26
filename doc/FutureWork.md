@@ -1948,3 +1948,169 @@ regions and connection*, KR '92. Gärdenfors (2000), *Conceptual Spaces*,
 MIT Press. Wyszecki & Stiles (1982), *Color Science*, Wiley. Dehaene
 (2003), *The neural basis of the Weber–Fechner law: a logarithmic mental
 number line*, Trends in Cognitive Sciences 7.
+
+## Intensity as codes, not amplitude; percept transitivity kept and certified (Alec, 2026-10-25; decided)
+
+Follows the image-modality entry above (Alec, 2026-10-25, origin
+`aefbc1f06d`) and the step 2 review discussion of the same day.
+
+**The problem found.** The form of a composed node is a centroid
+(`MeaningKernels.centroid` in `GrammarLayer.compose_blocks`, averaged again
+with the span's WholeSpace mean, context-wholes spec §2b), and a mean of
+parts lies coordinatewise below their join, so a whole no longer dominates
+its parts and the percept codes stop being a mereology. Mereology.md's "The
+Order Lives in the Codes" (every whole dominates its parts) holds for the
+synthesizer's join (`Mereology.join_from_bottom`, the fold ladder's rung 0)
+and fails at every grammatical reduce. Alec: the value of order in the codes
+is transitivity, "we know for any two percepts if one is a part of the
+other", and it is "what gave relative meaning to zeroth-order percepts".
+The requirement stands.
+
+**Three ways of carrying amplitude, considered and set aside.** (1) Amplitude
+as a per-coordinate degree on the occurrence while the type's row holds the
+crisp support: parthood then has to be read from supports, which Alec
+rejected ("support is a heavy computation on a part composed of many
+sub-parts"); a dense code's join also saturates for wholes of many parts, so
+support inclusion goes vacuous. (2) Amplitude as firing rate on the priming
+surface (`prime_seen` bumps weighted by intensity, the surface's leaky
+integration as the rate code), codes staying binary. (3) Kosko's subsethood
+$M(A \wedge B)/M(A)$ as parthood between graded occurrences, which answers
+"how much of A's mass lies in B", not "which is a part of which" (a dim
+letter is "part" of a bright word and a bright letter is "not quite" part
+of a dim one). Alec, on all three: "I'm not happy with these ways of
+integrating amplitude."
+
+**Decided (Alec, 2026-10-25).**
+
+1. *Intensity is a code.* For images, 255 RGB levels are 255 atoms (one
+   percept row per level), or a more intelligent discrete coding such as
+   octave filterbanks (one atom per band). A pixel's intensity is then
+   *which* atoms fire, a crisp percept like a letter; no amplitude
+   coordinate, no graded occurrence, no rate code. The image-modality
+   entry's "amplitude is presence" proposal and the Riesz-space extents are
+   superseded by this for now; the basis, `.where` as a region, RCC-8 and
+   the number notes there stand as future work.
+2. *Percept transitivity is kept.* Every whole's form dominates each of
+   its parts coordinatewise (`Ops.partOf(part, whole)`), at every level of
+   the percept towers, atoms through the whole spans, so parthood between
+   any two percepts is decidable from their codes and transitive.
+3. *A certificate is added*, since none exists on the live model:
+   `test_meronomy.py::test_synthesize_whole_dominates_all_parts` certifies
+   the standalone synthesizer only, and `test_inverse_recommend` the
+   `partOf` primitive. The new test reads the towers' percept codes, as
+   the clarification below specifies, and asserts `Ops.partOf` on every
+   `.where` containment edge, with each whole's distance from the all-ones
+   corner (Kosko's fuzzy entropy) reported, since the soft join
+   accumulates toward it.
+
+**Clarified (Alec, 2026-10-25): the requirement is on percepts, and the
+towers already meet it.** "The part and whole codes are well specified and
+do not involve a fold." Percept codes are the two towers' rows: PartSpace
+builds a part from its atoms by the synthesizer's join (rung 0 of the fold
+ladder, `join_from_bottom`), WholeSpace's rows are the span types read by
+the analyzer's meet (`meet_from_top`), and `MereologicalCodes._interval`
+reads a symbol's parts from tower 0 and its wholes from tower 1 in the same
+form coordinates, lower bound the max over parts, upper bound the min over
+wholes. The order and its transitivity live there, by construction, with
+no grammatical fold involved. An order-0 *symbol's* form is a different
+thing: a centroid that brings the two towers together (context-wholes §2b,
+the parts' average centered with the wholes' average), a good approximation
+sitting between the part lower bound and the whole upper bound, and it
+claims no order; a composed node's form at a reduce is likewise a symbol's
+form. So "operations on meaning, centroids on form" (2026-10-23) and §2b
+(2026-10-24) stand as decided, `compose_blocks`, `split_centroid` and the
+WholeSpace centering are unchanged, and the earlier paragraph proposing
+the join at reduces is withdrawn (Claude's misreading; Alec: "keep it on
+percepts instead of symbols, so you shouldn't have to do anything").
+
+The certificate of decision 3 is therefore on the towers' codes, not on
+symbol forms: for a native lesson's kept readings, read the atom and part
+rows from tower 0 (`MereologicalCodes._native(0).lookup_rows`) and the
+whole rows from tower 1 (`_native(1)`), take the `.where` containment
+edges among their spans (`Mereology.where_containment_edges`), assert
+`Ops.partOf(part, whole)` on every edge, assert for every symbol with
+definitions that its lower bound is coordinatewise at most its upper bound
+(a nonempty interval, the transitive link between the towers), and report
+each whole's fuzzy entropy as its distance from the all-ones corner. It is
+a read-only certificate over existing codes; no model change is needed for
+it to pass, and it is added to the next round's gates (step 3) as one more
+unchanged-set file.
+
+**Item (Alec, 2026-10-25): order-0 concepts strictly sorted over the
+perceptual mereology.** "Make order-0 concepts strictly sorted over the
+perceptual mereology (i.e. with respect to each other). That presumes that
+parts and wholes are also sorted wrt one another." The item, in code names:
+
+- *The requirement.* For two order-0 concepts A and B whose percepts nest
+  (A's span inside B's: A's parts a subset of B's, every whole containing B
+  containing A), the symbol forms (`similarity_codebook.W[row,
+  :percept_width]`) satisfy `Ops.partOf(form(A), form(B))` with strict
+  inequality on at least one coordinate; concepts whose percepts do not
+  nest make no claim. Today the form is the centroid approximation
+  (`centroid_forms`, context-wholes §2b), which claims no order and can
+  invert it, since a mean over more parts can fall.
+- *The presumption, certified first.* Parts and wholes sorted with respect
+  to one another is the towers' cross-order of decision 2 above: every
+  part code at most each containing whole code, every defined symbol's
+  interval `[lower, upper]` from `MereologicalCodes._interval` nonempty.
+  The percept certificate of decision 3 is the gate this item presumes.
+- *Claude's reading of the construction, to confirm when the item is
+  specified.* Both bounds are monotone in containment: a superset of parts
+  raises the max, and a subset of wholes raises the min, so if A nests in B
+  then `lower(A) ≤ lower(B)` and `upper(A) ≤ upper(B)`. Any fixed point of
+  the interval, `form = lower + t (upper − lower)` with one `t` for every
+  concept (the midpoint at `t = 1/2` being the centroid of the two bounds),
+  is therefore sorted whenever the towers are, and strictly where B has a
+  part A lacks. This refines §2b's rule in one respect only: the point
+  between the towers is taken on the interval rather than as the parts'
+  average centered with the wholes' average. The free decoder's inverse
+  reads the same interval.
+- *Where.* After item 3.0 lands, its own round: the form rule, the
+  certificate (every nested pair of order-0 concepts in a native lesson's
+  inventory strictly sorted; `containment_audit` becomes that check), and
+  the ports of the context-wholes form assertions. Not part of 3.0's steps.
+
+**Measured (Codex, 2026-10-25; Claude's reading): the towers do not meet
+the cross-tower order, and the first certificate drew its edges from the
+wrong mereology.** The read-only certificate failed 152/152 containment
+edges and found 6/6 definition intervals empty (STM-chunks spec §21). Two
+facts explain the two numbers, and they are different facts.
+
+1. *Within tower 0 the order exists, but over boundary pairs, not bytes.*
+   `WordIdentity`'s mereology is "boundary pairs, exact length parts,
+   collision mints": a word's atoms are `base_atoms(raw)`, the pairs
+   `#c ca at t#` and its length bits, and its form is the coordinatewise
+   max over its atoms' codes and its recorded nested parts' forms
+   (`WordIdentity.form`). So atom $\le$ word and nested part $\le$ word
+   hold by construction and compose transitively, and two words are
+   ordered when one's atom set contains the other's, which is the postings
+   containment `SymbolCentroid.place` and `containment_audit` certify (the
+   2026-10-06 receipts record 160 audits with zero violating pairs). A
+   single byte's percept row is the byte *as a word*, with atoms `#c c#`;
+   `c#` is not in `cat`, so a byte row located inside a word's span is not
+   that word's part in this mereology, and the 120 within-tower failures
+   are edges the identity never claimed. `.where` containment of byte spans
+   is the extent order; identity parthood is atom containment; the
+   certificate conflated them.
+2. *Across the towers there is no order today.* `WholeSpace`'s rows are
+   `PrimitiveProperties` memberships, property types evaluated over
+   positions, in the same coordinates as tower 0 but not supersets of the
+   words they contain; `MereologicalCodes._interval` nevertheless takes the
+   min over a symbol's wholes as its upper bound, and the data refute that
+   assumption (violation 1.0: a whole at 0 where a part is at 1). Nothing
+   live reads the upper bound (`derive`'s fallback writes `lower` only), so
+   no behavior depends on it, but "parts and wholes sorted with respect to
+   one another", which the sorting item above presumes, is not a property
+   of the model as built. It is that item's first requirement, not a
+   current fact; the sentence above saying the towers meet the requirement
+   "by construction" is corrected to tower 0's identity mereology only.
+
+The certificate of decision 3 is respecified to what the model claims: for
+each kept word, every atom in `part_atoms(raw)` satisfies
+`Ops.partOf(atom_code(atom), form(raw))`, every nested part satisfies
+`partOf(form(part), form(raw))`, and every word pair whose atom sets nest
+satisfies `partOf` on their forms; read through `WordIdentity` and the
+tower-0 rows those forms occupy; no byte rows, no tower-1 edges, no
+`_interval` check; each whole's distance from the all-ones corner still
+reported. The cross-tower order and the nonempty interval move to the
+sorting item as its gate.

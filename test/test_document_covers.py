@@ -1,4 +1,5 @@
 """Cover segments, ordinary reference access and evidence centroids."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -11,9 +12,9 @@ from QueryWork import QueryWorkBudget
 from test_reference_close import fixture as reference_fixture
 
 
-def fixture():
+def fixture(*, percept=False):
     from MemoryIndex import configure_model_index
-    resolver, store, atoms = reference_fixture()
+    resolver, store, atoms = reference_fixture(percept=percept)
     configure_model_index(SimpleNamespace(conceptualSpace=resolver.components.owner), store)
     return resolver, store, atoms
 
@@ -37,14 +38,14 @@ def test_cover_generator_is_global_rng_neutral_advances_and_restores():
     first_value = store.raw_meaning_of(store.location(first)).roles[0]
     second_value = store.raw_meaning_of(store.location(second)).roles[0].clone()
     assert not torch.equal(first_value, second_value)
-    restored = LTM0(store.nDim, capacity=store.capacity)
+    restored = LTM0(store.nDim, capacity=store.capacity, percept_width=store.percept_width)
     restored.load_state_dict(checkpoint)
     restored.load_semantic_extras(metadata)
     resumed = open_cover(owner, restored, stream=0, document='second')
     torch.testing.assert_close(restored.raw_meaning_of(restored.location(resumed)).roles[0],
                                second_value, rtol=0, atol=0)
     torch.testing.assert_close(torch.get_rng_state(), global_state, rtol=0, atol=0)
-    assert store.slots.shape == restored.slots.shape == (store.capacity, 3, store.nDim)
+    assert store.slots.shape == restored.slots.shape == (store.capacity, store.nDim)
 
 
 def test_cover_never_certifies_a_proposition():
@@ -115,15 +116,15 @@ def test_cursor_reuses_the_book_cover_on_a_reread():
     assert all(symbol in owner._concept_allocator.individuals for symbol in symbols)
     assert all(owner._concept_allocator.order_of(symbol) == 1 for symbol in symbols)
     assert not owner.mtm.entries
-    before = store.when.clone(), store.address_keys.clone()
+    before = store.slots.clone(), store.address_keys.clone()
     begin_sentence(model, 2, torch.tensor([True]))
     assert latest(store, 0) == second
-    torch.testing.assert_close(store.when[:5], before[0][:5], rtol=0, atol=0)
+    torch.testing.assert_close(store.slots[:5], before[0][:5], rtol=0, atol=0)
     torch.testing.assert_close(store.address_keys[:5], before[1][:5], rtol=0, atol=0)
 
 
 def test_equal_time_boundary_and_two_streams_keep_exact_ownership():
-    resolver, store, atoms = fixture()
+    resolver, store, atoms = fixture(percept=True)
     owner = resolver.components.owner
     store._model_present = lambda: 7
     a = open_cover(owner, store, stream=0, document='first')
@@ -137,10 +138,10 @@ def test_equal_time_boundary_and_two_streams_keep_exact_ownership():
     assert store.stream_rows(0).tolist() == [0, a_row, 4, c_row]
     assert store.stream_rows(1).tolist() == [2, b_row]
     from Forgetting import history_age
-    torch.testing.assert_close(history_age(store), torch.tensor([3., 2., 1., 0., 1., 0.]))
+    torch.testing.assert_close(history_age(store), torch.zeros(6))
     from Layers import SymbolExpectation
     chain = SymbolExpectation.get_stm_chain(SimpleNamespace(_ltm_store=store), b=1)
-    torch.testing.assert_close(torch.stack([entry[1][0] for entry in chain]), store.slots[[2, b_row], 0])
+    torch.testing.assert_close(torch.stack([entry[1][0] for entry in chain]), store.slots[[2, b_row]])
 
 
 def test_end_document_retires_only_tokens_introduced_in_its_segment():
@@ -187,23 +188,27 @@ def test_cover_is_an_ordinary_recent_candidate_with_no_lexical_name():
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     cover = open_cover(owner, store, stream=0, document='body')
+    # A returned cover enters the working identity pool through recall.
+    store.recall_identities((dict(store.row(store.location(cover)), index=store.location(cover)),),
+                            work=QueryWorkBudget(20))
     frame = SituationAddress(cover).read(store)
     symbol = store.raw_meaning_of(store.location(cover)).role_refs[0][1]
-    records = resolver.individuals(resolver.accessible((frame,)))
-    assert cover in records
+    records = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
+    assert symbol in records
     assert owner.definitions.words(symbol) == ()
     clause = mention(frame.point, mode='bind')
-    plan = resolver.preview(clause, (frame,), stream=0)
-    assert cover in plan['items'][0]['candidates']
-    plan['items'][0]['selected'] = cover
+    plan = resolver.preview(clause, chunk_context(resolver, (frame,)), stream=0)
+    assert symbol in plan['items'][0]['candidates']
+    plan['items'][0]['selected'] = symbol
     prepared = resolver.prepare(clause, plan)
     assert prepared is not None
     written = {}
     row = store.write_clause(prepared, document_key='mention', stream=0, written_rows=written)
     resolver.commit(plan, row, written, document='mention', position=0, training=False)
-    assert resolver.last_audit[0]['reference'] == cover
+    assert resolver.last_audit[0]['reference'] == symbol
     occurrence = store.occurrence_of(store.index_of_row(resolver.last_audit[0]['occurrence']))
     assert resolver._derivation_symbol(occurrence) == symbol
+    assert owner.mtm.token_of(occurrence) == owner.mtm.token_of(cover)
 
 
 def test_cover_lookup_uses_the_index_and_charges_before_body_reads(monkeypatch):

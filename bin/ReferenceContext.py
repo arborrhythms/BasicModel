@@ -62,7 +62,7 @@ class SituationFrame:
     activations: tuple = ()
 
     def __iter__(self):
-        # The existing predictor reads its three-role context unchanged.
+        # The working envelope has one occupied entry vector.
         return iter((self.depth, self.roles, self.occupied))
 
     def detached(self):
@@ -75,9 +75,13 @@ class SituationFrame:
         meaning = row['meaning']
         if meaning is None or row.get('row_id', -1) in (-1, 0):
             return None
-        return cls(int(meaning.role_mask.sum()), meaning.roles.detach().clone(),
-                   meaning.role_mask, row['row_id'],
-                   meaning.roles[0].detach().clone() if meaning.sentence_kind == 'idea' else None,
+        point = meaning.roles[0] if meaning.sentence_kind == 'idea' else row.get('head_point')
+        roles = torch.zeros_like(meaning.roles)
+        occupied = torch.zeros_like(meaning.role_mask)
+        if point is not None:
+            roles[0] = point; occupied[0] = True
+        return cls(int(occupied.sum()), roles.detach(),
+                   occupied, row['row_id'], None if point is None else point.detach().clone(),
                    order=int(row.get('order', -1)), when=row.get('when'))
 
 
@@ -147,6 +151,8 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
             stack.append(stack.pop(-1-unary_position))
         arity = 2 if kind == 1 else 1
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+        if kind == 1 and 0 <= local < len(rules) and getattr(rules[local],'method_name',None) == 'bind':
+            arity = 1  # the right field operand is off the parse stack
         if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
             raise ValueError('invalid selected reference rule')
         operands = stack[-arity:]
@@ -329,7 +335,7 @@ def resolve_operand(value, identity, position, *, mode, bank, live, active, orde
 
 
 def prepare_operands(window, identities, flags, positions, *, orders, rules, unary_rules,
-                     bank, live, active, identity_state=None, source=None, meaning_blocks=False):
+                     bank, live, active, chunk_state=None, source=None, meaning_blocks=False):
     """Enumerate reference variants of each operation for one global softmax.
 
     A variant retains the grammar operation's index and learned scoring row.
@@ -340,7 +346,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     def propose(value, ids, scope, pos, stamp, rule, role, valid):
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
-        if identity_state is not None and order is not None:
+        if chunk_state is not None and order is not None:
             # Determination supplies an object, never a reference alternative.
             # Explicit bind is the sole compose operation that chooses one.
             # Other orders still read their existing typed concept before
@@ -506,7 +512,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         return alternatives(options)
 
     def choice_tag(refs, rule, role, stamp, source):
-        if identity_state is not None:
+        if chunk_state is not None:
             return torch.full_like(refs, -1)
         order, mode = binding_spec(rule, role, stamp, implicit=interpreter is not None)
         if order is None:
@@ -526,12 +532,35 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
 
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
     bchoices, uchoices, bfound, ufound = [], [], [], []
+    binary_bind, binary_dummy = [], []
 
     def found(option):
         return option[4] if len(option) > 4 else torch.zeros_like(option[3])
     case_bank = getattr(bank, 'cases', None)
     case_count = 1 if case_bank is None else len(case_bank.ids)
     for operation, rule in enumerate(rules):
+        if getattr(rule, 'method_name', None) == 'bind':
+            if chunk_state is None:
+                raise ValueError('binary bind requires the shared chunk field')
+            import STMChunks
+            newest = (active.long().sum(-1)-1).clamp_min(0)[:,None]
+            mention = window.gather(1,newest[...,None].expand(B,1,D))
+            own = identities.gather(1,newest)
+            points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
+                exclusions=getattr(bank,'exclusions',None))
+            for column in range(points.shape[2]):
+                binary_ops.append(operation)
+                binary_bind.append(True)
+                binary_dummy.append(column == 0)
+                lefts.append(mention)
+                rights.append(points[:,:,column])
+                brefs.append(torch.stack((own,ids[:,:,column]),-1))
+                bchoices.append(torch.stack((torch.full_like(own,-1),chunks[:,:,column]),-1))
+                bfound.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),available[:,:,column] & (column > 0)),-1))
+                brels.append(torch.zeros_like(brefs[-1],dtype=torch.bool))
+                bvalid.append(available[:,:,column] & active.any(-1)[:,None])
+                case_weights.append(window.new_zeros(B,N-1,case_count,2))
+            continue
         left_options = propose(window[:, :-1], identities[:, :-1], flags[:, :-1], positions[:, :-1],
                        orders[:, :-1], rule, 'argin1', active[:, :-1] & active[:, 1:])
         right_options = propose(window[:, 1:], identities[:, 1:], flags[:, 1:], positions[:, 1:],
@@ -539,6 +568,8 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         for left in left_options:
             for right in right_options:
                 binary_ops.append(operation)
+                binary_bind.append(False)
+                binary_dummy.append(False)
                 lefts.append(left[0])
                 rights.append(right[0])
                 brefs.append(torch.stack((left[1], right[1]), -1))
@@ -563,23 +594,6 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
     own_values, record_values, identity_choices, bind_dummies = [], [], [], []
     for operation, rule in enumerate(unary_rules):
-        if identity_state is not None and getattr(rule, 'method_name', None) == 'bind':
-            from MTMOverlay import MTMOverlay
-            points, records, handles, refs, available = MTMOverlay.menu(identity_state, window, source,
-                exclusions=getattr(bank, 'exclusions', None))
-            for column in range(points.shape[2]):
-                unary_ops.append(operation)
-                values.append(points[:, :, column])
-                own_values.append(window)
-                record_values.append(records[:, :, column])
-                identity_choices.append(handles[:, :, column])
-                bind_dummies.append(column == 0)
-                urefs.append(torch.stack((refs[:, :, column], torch.full_like(identities, -1)), -1))
-                uchoices.append(torch.stack((handles[:, :, column], torch.full_like(identities, -1)), -1))
-                ufound.append(torch.stack((handles[:, :, column] > 0, torch.zeros_like(active)), -1))
-                urels.append(torch.zeros_like(urefs[-1], dtype=torch.bool))
-                uvalid.append(available[:, :, column] & active)
-            continue
         for operand in propose(window, identities, flags, positions, orders, rule, 'argin1', active):
             unary_ops.append(operation)
             values.append(operand[0])
@@ -597,6 +611,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
     return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
+                binary_bind=tuple(binary_bind), binary_bind_dummy=tuple(binary_dummy),
                 unary_own=stack(own_values, N, (D,)), unary_record=stack(record_values, N, (D,)),
                 unary_identity=stack(identity_choices, N, dtype=torch.long),
                 unary_bind_dummy=tuple(bind_dummies),

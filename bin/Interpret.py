@@ -36,6 +36,7 @@ class InterpretLayer(GrammarLayer):
         super().__init__(nInput=nInput, nOutput=nOutput)
         object.__setattr__(self, '_conceptual_space', conceptualSpace)
         self._pending = {}
+        self._description_revision = 0
         self._field_pending = set()
 
     @property
@@ -158,11 +159,13 @@ class InterpretLayer(GrammarLayer):
                          wholes=tuple(dict.fromkeys((*definition['wholes'], *wholes))))
             if word in self._pending:
                 self._pending[word] = value
+                self._description_revision += 1
             for candidate in index.objects(word):
                 row = index.row(word, candidate)
                 store = index._store()
                 from Spaces import _concept_alloc_of
                 _concept_alloc_of(cs).word_descriptions[word] = value
+                self._description_revision += 1
                 index.add(row)
             return word
         # In the discovering field, interpretation names the case it admits.
@@ -195,6 +198,7 @@ class InterpretLayer(GrammarLayer):
             for whole in wholes:
                 cs.add_whole(word, whole)
             self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+            self._description_revision += 1
             if form is not None:
                 cs.bind_word_concept(form, word)
             if obj is None:
@@ -224,10 +228,12 @@ class InterpretLayer(GrammarLayer):
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
+        self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
         if identity_key is not None:
             self._pending[word]['identity_key'] = identity_key
+            self._description_revision += 1
         return word
 
     def _sync_identity(self, identity):
@@ -246,6 +252,7 @@ class InterpretLayer(GrammarLayer):
                 continue
             parts = identity.parts(raw)
             self._pending[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            self._description_revision += 1
             for part in parts:
                 cs.add_part(word, part)
             if word not in self._field_pending:
@@ -267,6 +274,7 @@ class InterpretLayer(GrammarLayer):
                 row = index.row(word, obj)
                 store = index._store()
                 _concept_alloc_of(cs).word_descriptions[word] = value
+                self._description_revision += 1
         index.rebuild()
         self._identity_revision = identity.revision
 
@@ -293,15 +301,16 @@ class InterpretLayer(GrammarLayer):
             description = dict(forms=(), parts=(tuple(cs.concept_parts(word)),),
                                wholes=tuple(cs.concept_wholes(word)))
         alloc.word_descriptions[word] = description
+        self._description_revision += 1
         alloc.symbol_types.setdefault(word, set()).add('word')
         alloc.symbol_types.setdefault(obj, set()).add('object')
         alloc.reference_orders.setdefault(word, 0)
-        from RowTime import stamp
-        occurrence_store = cs._closed_clause_store()
-        row = store.add(obj, word, truth_plus=1.,
-                        when=None if occurrence_store is None else stamp(occurrence_store))
+        # A definition is an inner semantic relation. Its containing sentence,
+        # when present, owns the percept clock stamp.
+        row = store.add(obj, word, truth_plus=1.)
         index.add(row)
         self._pending.pop(word, None)
+        self._description_revision += 1
         self._field_pending.discard(word)
         return row
 

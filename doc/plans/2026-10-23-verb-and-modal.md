@@ -3248,6 +3248,8 @@ WikiOracle bump or item-3.0 work; no LAND verdict is asserted here.
 
 ## 62. Claude's LAND review of `75345f891e` — 2026-10-24
 
+History note (2026-10-25): history after `f306fc28aa` was rewritten before the push (`537523ae04`); `75345f891e`, `a34325c85d` and `f095569a1f` are respectively `2067dbc25a`, `3561f39aa0` and `31c3e4a59e` on origin.
+
 Reviewed: §§58–61, the second repair commit (three source/test files), the
 two receipt-only commits after it, the repair-02 receipt and
 `summary.json` (every group `exit 0`, `selected == completed`, `failed: []`,

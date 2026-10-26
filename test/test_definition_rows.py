@@ -29,7 +29,6 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(cs)
     before = alloc.next_id, len(alloc.layer()._tensor_rows), len(store.parts)
-    learned_at = m.present()
     word, obj = admit(m, 'hello')
     assert word != obj
     assert (alloc.next_id, len(alloc.layer()._tensor_rows), len(store.parts)) == (
@@ -39,8 +38,8 @@ def test_22_supplied_object_keeps_its_form_row_and_writes_one_definition():
     row = cs.definitions.row(word, obj)
     assert 'definition' in store.part_row(row)['readings']
     assert store.parts.refs[row].tolist() == [obj, word]
-    from RowTime import encoder
-    assert int(encoder().decode_index(store.parts.when[row])) == learned_at
+    # Definitions are inner semantic rows; only a sentence entry is stamped.
+    assert not store.entry_when(('sym', row)).any()
     assert ('sym', word) not in cs.concept_parts(obj)
     assert all(not hasattr(cs, name) for name in ('bind_meta', 'meta_members'))
     assert all(not hasattr(alloc, name) for name in ('interpretations', 'word_obj_meta'))
@@ -103,7 +102,7 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     cs, store = m._concept_owner(), m.symbolSpace.ltm_store
     first = admit(m, 'hello')
     r0 = cs.definitions.row(*first)
-    when = store.parts.when[r0].clone()
+    when = store.entry_when(('sym', r0)).clone()
     m._advance_when_time()
     admit(m, 'there')
     count = len(store.parts)
@@ -113,7 +112,7 @@ def test_27_definition_rewitness_keeps_its_when_and_store_position():
     assert len(store.parts) == count
     assert int(store.parts.access_count[r0]) == witness + 1
     assert cs.definitions.row(*first) == r0
-    torch.testing.assert_close(store.parts.when[r0], when, atol=0, rtol=0)
+    torch.testing.assert_close(store.entry_when(('sym', r0)), when, atol=0, rtol=0)
     chain = m.symbolSpace.ensure_sentence_expectation().get_stm_chain(n=count)
     assert len(chain) == len(store.stream_rows(0))
 

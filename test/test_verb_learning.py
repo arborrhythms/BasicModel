@@ -1,4 +1,5 @@
 """Kept observations credit a retained verb event once, across sentences."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -34,53 +35,10 @@ def test_teacher_graph_is_built_after_the_paired_optimizer_steps():
 
 
 def record(f, tree, frames=()):
-    """Fixed operations on the production frame-staged identity transaction."""
-    from MTMOverlay import MTMOverlay
-    from ReferenceContext import result_order
-    from test_identity_threading import choice
-    entry = f.program(tree)
-    orders = torch.tensor([1 if word == f.words['subject'][0] else 0 for word in entry.word_ids])
-    overlay = MTMOverlay(f.binary, f.unary)
-    words, columns = len(entry.leaves), len(entry.actions)
-    state = overlay.stage(f.cs.components.reference_close, [frames],
-        entry.leaves.new_zeros(1, 8, 8), words=words, journal=columns)
-    base = state[0].shape[1] - words - columns
-    stack, stamps, recorded, refs = [], [], [], []
-    for column, (kind, local, word) in enumerate(entry.actions.tolist()):
-        if kind == 0:
-            value = entry.leaves[word][None]
-            state = overlay.push(state, torch.tensor([True]), value,
-                word=entry.concept_ids[word:word+1], order=orders[word:word+1],
-                index=torch.tensor(word), words=words, resolved=torch.tensor([True]))
-            stack.insert(0, value); stamps.insert(0, int(orders[word]))
-            recorded.append(value.new_zeros(3, 8)); refs.append((-1, -1))
-            continue
-        live = overlay.refresh(state, torch.stack(stack, 1), torch.arange(len(stack))[None])
-        rule = (f.binary if kind == 1 else f.unary)[local]
-        operands = live[:, [1, 0]] if kind == 1 else torch.stack((live[:, 0], live[:, 0]*0), 1)
-        handle = 0
-        if rule.method_name == 'bind':
-            points, records, _, _, available = overlay.menu(state, live[:, :1], torch.tensor([[0]]))
-            handle = 1
-            assert base and available[0, 0, handle]
-            result = points[:, 0, handle]
-            operands = torch.stack((live[:, 0], records[:, 0, handle]), 1)
-        else:
-            values = (operands[:, 0], operands[:, 1]) if kind == 1 else (operands[:, 0],)
-            result = f.operation(rule).compose(*values).reshape(1, -1)
-        arity = 2 if kind == 1 else 1
-        order = result_order(rule, tuple(reversed(stamps[:arity])))
-        selected = choice(result, kind=kind, identity=handle)._replace(
-            local_op=torch.tensor([local]), order=torch.tensor([order]))
-        state = overlay.apply(state, selected, operands, column=torch.tensor(column), words=words)
-        del stack[:arity]; del stamps[:arity]
-        stack.insert(0, result); stamps.insert(0, order)
-        recorded.append(torch.cat((operands, result[:, None]), 1)[0]); refs.append((-1, -1))
-    return replace(entry, leaf_orders=orders, close_references=True,
-        operation_values=torch.stack(recorded), operation_refs=torch.tensor(refs),
-        identity_origins=state[3][0], identity_actions=state[4][0], identity_values=state[0][0],
-        identity_leaves=torch.arange(base+1, base+words+1),
-        end_state=torch.stack((stack[0][0], stack[0][0]*0, stack[0][0]*0)))
+    """Fixed operations over prepended identities and the production journal."""
+    from chunk_fixtures import record as record_chunks
+    return record_chunks(f,tree,frames=frames,names=('subject',))[0]
+
 
 
 def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypatch):
@@ -97,7 +55,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
     resolver, errors = f.cs.components.reference_close, Error()
     def close(tree, frames=(), position=0):
         clause = finish_clause(f.language, record(f, tree, frames), registry=f.registry)
-        plan = resolver.preview(clause, frames)
+        plan = resolver.preview(clause, chunk_context(resolver, frames))
         kept = resolver.prepare(clause, plan)
         written = {}
         row = f.store.write_clause(kept, written_rows=written, document_key='teacher', sentence_index=position)
@@ -163,7 +121,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     entry, _, _ = recorded_identity_reading(f, ('lift', ('lower_unary', 'subject'), 'move'))
     clause = finish_clause(f.language, entry, registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
     row = f.store.write_clause(prepared, written_rows=written, document_key='unit', sentence_index=0)
@@ -171,20 +129,20 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     token = next(key for key, value in f.cs.mtm.entries.items() if any(event.before is not None for event in value.events))
     prior = f.cs.mtm.entries[token].value.clone()
     # The second sentence is a fixed part operation on the retained subject.
-    from MTMOverlay import MTMOverlay
-    from test_identity_threading import choice
-    overlay = MTMOverlay((SimpleNamespace(method_name='part', relation_kind='part'),), ())
-    values, valid, stack, origins, journal = overlay.empty(prior[None, None].expand(1, 2, 8), words=2, journal=1)
-    values[0, 0], valid[0, 0] = prior, True
-    stack[0, 1, :4] = torch.tensor([1, 12, 0, 1])
-    stack[0, 0, :4] = torch.tensor([0, 13, 0, 1])
-    stack[..., 6] = 1
-    property_value = torch.full_like(prior, .4)
-    previous = dict(f.cs.mtm.entries)
-    state = overlay.apply((values, valid, stack, origins, journal), choice(property_value[None], kind=1),
-        torch.stack((prior, property_value))[None], column=torch.tensor(0), words=2)
-    torch.testing.assert_close(state[0][0, 0], torch.maximum(prior, property_value))
-    f.cs.mtm.update(token, state[0][0, 0], when=3)
+    from chunk_fixtures import Walk,choice,value
+    from ChunkJournal import ChunkJournal
+    walk=Walk((SimpleNamespace(method_name='part',relation_kind='part'),),())
+    state=walk.empty(prior[None],1)
+    state=walk.shift(state,prior[None],word=12,index=0,order=1)
+    stm=walk.journal.publish(state[0],torch.tensor([512]),torch.tensor([0]),prior[None],torch.tensor([True]))
+    state=(stm,*state[1:])
+    property_value=torch.full_like(prior,.4)
+    state=walk.shift(state,property_value[None],word=13,index=1,order=0)
+    previous=dict(f.cs.mtm.entries)
+    state=walk.apply(state,choice(property_value[None]),torch.stack((prior,property_value))[None],0)
+    joined=value(state,512)[0]
+    torch.testing.assert_close(joined,torch.maximum(prior,property_value))
+    f.cs.mtm.update(token,joined,when=3)
     errors = Error()
     from IdentityRows import point
     reports = observe(action, f.cs.mtm, previous, {token}, lambda symbol: point(f.cs, symbol), errors=errors)

@@ -51,6 +51,8 @@ class ClauseScope(nn.Module):
     @staticmethod
     def push(state, active, references):
         value = torch.stack((torch.zeros_like(references), references), -1)
+        if state.shape[-1] > 2:
+            value = torch.cat((value,state.new_zeros(value.shape[0],state.shape[-1]-2)),-1)
         shifted = torch.cat((value[:, None], state[:, :-1]), 1)
         return torch.where(active[:, None, None], shifted, state)
 
@@ -73,10 +75,13 @@ class ClauseScope(nn.Module):
         B, K, _ = state.shape
         positions = torch.arange(K, device=state.device)[None]
         updated = state
+        field_bind = torch.zeros_like(choice.applied) if choice.stack_arity is None else (choice.kind == 1) & (choice.stack_arity == 1)
         for role in range(2):
             position = torch.where(choice.kind == 1, torch.full_like(
                 choice.position, 1-role), choice.position)
             used = choice.applied & (choice.kind != 3) & ((choice.kind == 1) | (role == 0))
+            position = torch.where(field_bind,0,position)
+            used &= ~field_bind | (role == 0)
             selected = used[:, None] & (positions == position[:, None])
             flags = updated[..., 0] | torch.where(
                 relative[:, role, None], cls.RELATIVE | cls.SENTENCE, 0)
@@ -84,7 +89,7 @@ class ClauseScope(nn.Module):
             # A selected durable operand replaces any old journal-local tag.
             flags = torch.where(ids == updated[..., 1], flags,
                                 flags.bitwise_and(~cls.LOCAL))
-            replacement = torch.stack((flags, ids), -1)
+            replacement = torch.cat((torch.stack((flags,ids),-1),updated[:,:,2:]),-1)
             updated = torch.where(selected[:, :, None], replacement, updated)
         return updated
 
@@ -92,13 +97,15 @@ class ClauseScope(nn.Module):
         B, K, _ = state.shape
         binary = choice.kind == 1
         unary = choice.kind == 2
+        field_bind = binary & (choice.stack_arity == 1) if choice.stack_arity is not None else torch.zeros_like(binary)
+        pair = binary & ~field_bind
         table_b = self.binary.to(state.device)[choice.local_op.clamp(0, self.binary.shape[0] - 1)]
         table_u = self.unary.to(state.device)[choice.local_op.clamp(0, self.unary.shape[0] - 1)]
         rule = torch.where(binary[:, None], table_b, table_u)
         selected = state.gather(1, choice.position.clamp(
-            0, K - 1)[:, None, None].expand(B, 1, 2))[:, 0]
-        left = torch.where(binary[:, None], state[:, min(1, K - 1)], selected)
-        right = torch.where(binary[:, None], state[:, 0], selected)
+            0, K - 1)[:, None, None].expand(B, 1, state.shape[-1]))[:, 0]
+        left = torch.where(pair[:, None], state[:, min(1, K - 1)], selected)
+        right = torch.where(pair[:, None], state[:, 0], selected)
         headed = rule[:, 3] > 0
         head = torch.where((rule[:, 3] == 1)[:, None], left, right)
         inherited = torch.where(headed, head[:, 0], left[:, 0].bitwise_or(right[:, 0]))
@@ -132,18 +139,20 @@ class ClauseScope(nn.Module):
         determined |= retained & (previous_flags.bitwise_and(self.DETERMINED) != 0)
         flags |= torch.where(determined, self.DETERMINED, 0)
         parent = torch.stack((flags, reference), -1)
+        if state.shape[-1] > 2:
+            parent = torch.cat((parent,torch.where(preserved[:,None],head[:,2:],0)), -1)
         same_reference = (binary & self.binary_same_reference.to(state.device)[
             choice.local_op.clamp(0, self.binary_same_reference.shape[0]-1)]
             & (left[:, 1] == right[:, 1]) & (left[:, 1] != -1) & (left[:, 1] != 0))
         parent = torch.where(same_reference[:, None], left, parent)
         closing = closing & ~same_reference
-        rewritten = torch.where((unary & choice.applied)[:, None, None]
+        rewritten = torch.where(((unary | field_bind) & choice.applied)[:, None, None]
                                 & (torch.arange(K, device=state.device)[None, :, None] == choice.position[:, None, None]),
                                 parent[:, None], state)
         blank = torch.zeros_like(state[:, :1])
         blank[..., 1] = -1
         folded = torch.cat((parent[:, None], state[:, 2:], blank), 1) if K > 1 else state
-        result = torch.where((binary & choice.applied)[:, None, None], folded, rewritten)
+        result = torch.where((pair & choice.applied)[:, None, None], folded, rewritten)
         transpose = choice.applied & (choice.kind == 3)
         if K > 1:
             swapped = torch.cat((state[:,1:2],state[:,:1],state[:,2:]),1)

@@ -57,6 +57,11 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         return ((child, coordinates & ~bad[:, None]),)
     wrapped = language._tree_layer(2).ops[operation]
     op = getattr(wrapped, 'gl', wrapped)
+    if getattr(op, 'field_operand', None) == 2:
+        # The second field position is an identity, not a presented word.
+        # Binding retains the mention as an occurrence witness in the journal.
+        witness = frame[:1].detach()
+        return ((witness, torch.isfinite(witness)),)
     if (getattr(op, 'meaning_layout', None) is not None
                 and callable(getattr(op, 'compose_case_meaning', None))):
         from MeaningKernels import split_centroid
@@ -121,8 +126,11 @@ def reconstruct(language, record, programs, positions):
             if kind == 0:
                 forest.append((kind, word))
             elif kind == 1:
-                right, left = forest.pop(), forest.pop()
-                forest.append((kind, operation, index, left, right))
+                if language._compose_binary_rules[operation].method_name == 'bind':
+                    forest[-1] = (kind, operation, index, forest[-1])
+                else:
+                    right, left = forest.pop(), forest.pop()
+                    forest.append((kind, operation, index, left, right))
             elif kind == 2:
                 position = len(forest)-1-max(0,word)
                 forest[position] = (kind, operation, index, forest[position])

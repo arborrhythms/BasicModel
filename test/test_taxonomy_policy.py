@@ -20,16 +20,17 @@ def _setup():
 
 def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
     cs, (a, b, _), store, model = _setup()
-    store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[:3]), trust=1)
+    store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]), trust=1)
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == result.support_false == 0
-    assert len(store) == 2 and store.row(1)['kind']=='question'
+    assert len(store) == 1
+    assert store.row(('sym', store.parts.find(a[1], b[1])))['kind'] == 'unverified'
 
 
 def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
     from index_fixtures import terminal_model_index
     cs, (a, b, _), store, model = _setup()
-    fact = model.grammatical_thoughts.form('part', a, b, mode='assertive')
+    fact = ConceptualMeaning.from_description(model.grammatical_thoughts._payload(a))
     order = terminal_model_index(model, fact.role_refs)
     store.append_meaning(fact, trust=1, order=order,
                          evidence=(1., 0.))
@@ -48,7 +49,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     assert result.support_true == 1
     path = result.result.evidence['path']
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
-    assert len(store) == 1
+    assert len(store) == 0
     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
     model.symbolSpace.ltm_store=LTM0(8,capacity=32)
     # Remove the derived conclusion as well as its shared-store premises.

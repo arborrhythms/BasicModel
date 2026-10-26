@@ -1,4 +1,5 @@
 """Bind owns anonymous names and their refinements; retained equalities do not."""
+from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -21,7 +22,11 @@ def world():
              for word, unit in (('x', 120), ('three', 116), ('wrong', 119))}
     with torch.no_grad():
         for word, atom in (('three', atoms[0]), ('wrong', atoms[1])):
-            owner.similarity_codebook.W[owner._csw_row_of(words[word])].copy_(atom)
+            obj = owner.new_concept()
+            row = owner._csw_concept_row(0, obj)
+            owner.similarity_codebook.W[row].copy_(atom)
+            owner.interpret.define(words[word], obj)
+            words[word] = obj
     model = SimpleNamespace(_concept_owner=lambda: owner,
                             symbolSpace=SimpleNamespace(ltm_store=store))
     return resolver, store, atoms, words, model
@@ -77,14 +82,14 @@ def test_named_first_bind_opens_anonymous_without_row_or_bank_writes():
     assert store.raw_meaning_of(row).role_refs == (None, None, None)
     assert not resolver.token_value(token).any()
     held = snapshot(resolver)
-    groups = resolver.individuals(resolver.accessible((SituationFrame.from_row(store.row(row)),)))
+    groups = resolver.individuals(resolver.accessible(chunk_context(resolver, (SituationFrame.from_row(store.row(row)),))))
     assert not groups[token]['value'].any()
     unchanged(resolver, held)
 
 
 def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     from BindingAnswers import matches
-    from PartRead import expression_components
+    from ChainRead import components
     from QueryWork import QueryWorkBudget
     resolver, store, a, words, model = world()
     force_named(resolver, monkeypatch, words['three'])
@@ -106,10 +111,11 @@ def test_arrival_bind_refines_and_reads_three_through_the_token(monkeypatch):
     assert matches(model, parent, 'three')
     assert resolver._derivation_symbol(token) == words['three']
     torch.testing.assert_close(resolver.token_value(token), a[0])
-    groups = resolver.individuals(resolver.accessible((frame,)))
+    groups = resolver.individuals(resolver.accessible(chunk_context(resolver, (frame,))))
     torch.testing.assert_close(groups[token]['value'], a[0])
-    terms, _, incomplete = expression_components(store, (token,), max_records=8, work=QueryWorkBudget(8))
-    assert not incomplete and terms[token]['head_reference'] == ('sym', words['three'])
+    terms, _, incomplete = components(store, (token,), max_records=8, work=QueryWorkBudget(8))
+    assert not incomplete and terms == {}  # a compressed idea has no components
+    assert store.meaning_of(pending).role_refs[0] == ('sym', words['three'])
     torch.testing.assert_close(store.slots[:pending+1], raw[:pending+1], rtol=0, atol=0)
     assert_part_references(store, refs)
 
@@ -195,7 +201,7 @@ def test_anonymous_parent_keeps_its_raw_open_role_and_query_predicate(monkeypatc
     resolver, store, a, words, model = world()
     force_named(resolver, monkeypatch, None)
     clause = equality(a[0], words['x'], words['three'])
-    plan = resolver.preview(clause, ())
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
     prepared = resolver.prepare(clause, plan)
     written = {}
     row = store.write_clause(prepared, document_key='parent', written_rows=written)
@@ -223,7 +229,7 @@ def test_named_trial_plans_only_refine_the_kept_close(monkeypatch, compiled):
     for _ in range(2):
         point = forward(a[1][None], a[0][None])[0]
         clause = equality(point, words['x'], words['three'])
-        plan = resolver.preview(clause, (frame,))
+        plan = resolver.preview(clause, chunk_context(resolver, (frame,)))
         trials.append((resolver.prepare(clause, plan), plan))
         assert pool.entries == before
         unchanged(resolver, retained)
@@ -270,12 +276,14 @@ def test_named_bind_to_a_retained_unpooled_occurrence_keeps_its_kind(monkeypatch
     antecedent = store.write_clause(Clause(ConceptualMeaning.from_description(a[0]),
         point=a[0], order=1, composition=Composition(a[0], reference=words['three'])))
     frame = SituationFrame.from_row(store.row(antecedent))
+    from chunk_fixtures import recall
+    recall(resolver,(frame,))
     monkeypatch.setattr(resolver, 'prime', lambda signature, stream: signature.new_tensor(1.))
     row, plan = keep(resolver, named(a[0], words['x']), (frame,), position=1)
     pool = resolver.components.owner.mtm
     token = pool.token_of(store.occurrence_of(row))
     assert plan['items'][0]['reference'] == store.occurrence_of(antecedent)
-    assert token == store.occurrence_of(row) and pool.entries[token].kind == words['three']
+    assert token == store.occurrence_of(antecedent) and pool.entries[token].kind == words['three']
     from BindingAnswers import matches
     assert matches(model, store.meaning_of(row), 'three')
 
@@ -295,6 +303,8 @@ def test_native_arrival_refines_an_existing_anonymous_token(monkeypatch, retaine
         occurrence = store.occurrence_of(row)
         frame = replace(SituationFrame.from_row(store.row(row)), symbol_ids=(native,),
                         activations=((occurrence, native, 0),))
+        from chunk_fixtures import recall
+        recall(resolver,(frame,))
     else:
         frame = SituationFrame(1, torch.stack((a[0], a[0]*0, a[0]*0)),
             torch.tensor([True, False, False]), -1, a[0], symbol_ids=(native,))

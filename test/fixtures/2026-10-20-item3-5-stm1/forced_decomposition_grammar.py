@@ -36,11 +36,23 @@ class ForcedDecompositionGrammar:
         allocation = _concept_alloc_of(owner)
         lookup = owner.interpret.lookup_word
         def lookup_word(*args, **kwargs):
+            owner = self.model._concept_owner()
             word = lookup(*args, **kwargs)
             form = kwargs.get('form')
             form = form.decode() if isinstance(form, bytes) else form
             if form in self.reference_orders:
                 allocation.reference_orders[word] = 1
+            elif word is not None and not owner.definitions.objects(word):
+                # This certificate declares its nonvariable vocabulary known.
+                # Argument close no longer mints its objects. Admit the same
+                # lexical association here, before the operand is read, using
+                # the native form and a distinct conceptual seat.
+                obj = owner.new_concept()
+                row = owner._csw_concept_row(0, obj)
+                description = owner.interpret._pending.get(word) or owner.definitions.description(word)
+                for parts in description.get('parts', ()):
+                    owner.add_concept_feature(row, 'ps', tuple(parts), 1.)
+                owner.interpret.define(word, obj)
             return word
         for form, words in allocation.word_forms.items():
             form = form.decode() if isinstance(form, bytes) else form
@@ -107,7 +119,9 @@ class ForcedDecompositionGrammar:
             # The same forced references now name compose-bind locations.
             # Mention readings live with those locations in MTM.
             for occurrence, mention in owner.mtm.names.items():
-                names.setdefault(mention.token[-1], set()).update(names.get(mention.reading, ()))
+                entry = owner.mtm.entries[mention.token]
+                identity = entry.symbol if entry.symbol is not None else entry.transient
+                names.setdefault(identity, set()).update(names.get(mention.reading, ()))
             nb, nu = len(data['binary_ops']), len(data['unary_ops'])
             for b in range(len(chosen)):
                 if not bool(active[b]):
@@ -118,28 +132,23 @@ class ForcedDecompositionGrammar:
                 unary_position = min(depth, 2) - 1
                 right = names.get(int(scope[b,0,1]), set())
                 left = names.get(int(scope[b,1,1]), set()) if depth > 1 else set()
-                identity_state = context.get('identity_state')
-                bare = True
-                if identity_state is not None:
-                    identity_stack = identity_state[2]
-                    right = right | names.get(int(identity_stack[b, 0, 4]), set())
-                    if depth > 1:
-                        left = left | names.get(int(identity_stack[b, 1, 4]), set())
-                    # Transparent surface wrappers can drop scope flags. The
-                    # overlay's producing action still distinguishes a bare
-                    # pushed word from an already bound NP, VP or sentence.
-                    bare = int(identity_stack[b, 0, 5]) == 0
+                from ChunkJournal import WORD, SOURCE
+                identity_state = scope.shape[-1] > WORD
+                if identity_state:
+                    if not int(scope[b,0,0]) & (1|4):
+                        right = right | names.get(int(scope[b,0,WORD]),set())
+                    if depth > 1 and not int(scope[b,1,0]) & (1|4):
+                        left = left | names.get(int(scope[b,1,WORD]),set())
+                bare = identity_state and int(scope[b,0,SOURCE]) < 0
                 last = int(self.model.inputSpace._word_active_mask[b].nonzero()[-1])
                 question = self.texts[b].rstrip().endswith('?')
                 operation = None
-                if identity_state is not None and right.intersection(self.reference_orders) and bare:
-                    candidates = [i for i, op in enumerate(data['unary_ops'])
-                        if language._compose_unary_rules[op].method_name == 'bind'
-                        and bool(data['unary_valid'][b, unary_position, i])]
-                    known = any(names.get(int(data['unary_refs'][b, unary_position, i, 0]), set()).intersection(right)
+                if identity_state and right.intersection(self.reference_orders) and bare:
+                    candidates = [i for i,op in enumerate(data['binary_ops'])
+                        if language._compose_binary_rules[op].method_name == 'bind'
+                        and bool(data['binary_valid'][b,0,i])]
+                    known = any(names.get(int(data['binary_refs'][b,0,i,1]),set()).intersection(right)
                                 for i in candidates)
-                    # Preserve the fixture's former mint/reference/open choices
-                    # at their explicit grammatical operations.
                     operation = 'bind' if known or right.intersection(self.open_names) else 'lower_unary'
                 elif depth > 1 and (any(word.isspace() for word in left) or left.intersection({'.', '?'})):
                     # Zero attention presents the whitespace units too.
@@ -181,19 +190,29 @@ class ForcedDecompositionGrammar:
                 if operation is None:
                     candidates = [len(logits[b])-1] if bool(allowed[-1]) else []
                 else:
-                    unary = operation in ('ask', 'generic', 'bind', 'lower_unary')
+                    unary = operation in ('ask', 'generic', 'lower_unary')
                     rules = language._compose_unary_rules if unary else language._compose_binary_rules
                     ops = data['unary_ops' if unary else 'binary_ops']
                     refs = data['unary_refs' if unary else 'binary_refs'][b,unary_position if unary else 0]
                     offset = nb + unary_position * nu if unary else 0
                     def name(rule):
-                        return 'definite' if getattr(rule,'determiner_mode',None)=='bind' else rule.method_name
+                        return 'definite' if rule.method_name != 'bind' and getattr(rule,'determiner_mode',None)=='bind' else rule.method_name
                     candidates = [offset+i for i,op in enumerate(ops)
                                   if name(rules[op]) == operation and bool(allowed[offset+i])]
                     def rank(action):
                         identities = refs[action-offset].tolist()
                         score = 0
-                        for role, labels in enumerate((left,right) if not unary else (right,)):
+                        if operation == 'bind':
+                            import STMChunks as chunks
+                            seat = int(data['binary_choices'][b,0,action-offset,1])
+                            if seat >= 0:
+                                # The old forced choice read MTM's value. Its
+                                # new seat is the prepended identity entry;
+                                # a recent sentence can share the same id.
+                                score += 2 * (int(state[chunks.REFS][b,seat,0,0])
+                                              in (chunks.SYMBOL,chunks.IDENTITY_REF))
+                        for role, labels in ([(1,right)] if operation == 'bind' else
+                                             list(enumerate((left,right) if not unary else (right,)))):
                             identity = identities[role]
                             position = 0 if unary else 1-role
                             # A completed phrase may retain its head's name.
@@ -208,7 +227,8 @@ class ForcedDecompositionGrammar:
                                 if preferred is not None and operation == 'bind':
                                     token = owner.mtm.token_of(('ltm', resolver.store.address_domain, preferred))
                                     if token is not None:
-                                        preferred = token[-1]
+                                        entry = owner.mtm.entries[token]
+                                        preferred = entry.symbol if entry.symbol is not None else entry.transient
                                 score += 1000 * (preferred is not None and identity == preferred)
                             if identity == (-1 if operation != 'bind' else 0): score += 1  # own object without a retained bond
                             if names.get(identity,set()).intersection(labels):

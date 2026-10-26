@@ -36,7 +36,7 @@ def test_direct_and_depth_one_two_chains_keep_native_premises(hops):
     # chain adds that same native Part edge, not a second LTM1 relation.
     edge = store.parts.find(refs[0][1], refs[hops][1])
     assert edge is not None and store.parts.truth_plus[edge] == 1
-    assert len(store) == 1
+    assert len(store) == 0
     if hops > 1:
         model.conceptualSpace.retire_concept(edge)
     model.conceptualSpace.retire_concept(refs[1][1])
@@ -53,7 +53,9 @@ def test_dead_end_and_cycle_terminate_unknown_without_speculative_ltm(cycle):
     result = model.reason_about(registry.form('isPart', a, c))
     assert result.posture == 'UNKNOWN' and result.support_true == 0
     assert result.work.spent <= model.attention_budget
-    assert result.records[-1].kind == 'finish' and store.row(len(store)-1)['kind']=='question'
+    assert result.records[-1].kind == 'finish' and len(store) == 0
+    edge = store.parts.find(a[1], c[1])
+    assert store.row(('sym', edge))['kind'] == 'unverified'
 
 
 def test_budget_exhaustion_is_bounded_unknown_with_diagnostic():
@@ -63,14 +65,15 @@ def test_budget_exhaustion_is_bounded_unknown_with_diagnostic():
     result = model.reason_about(registry.form('isPart', a, b))
     assert result.posture == 'UNKNOWN'
     assert 'work_budget' in result.evidence['incomplete']
-    assert result.work.spent == 1 and store.row(0)['kind']=='question'
+    assert result.work.spent == 1 and len(store) == 0
+    assert store.row(('sym', store.parts.find(a[1], b[1])))['evidence'] == (1., 0.)
 
 
 def test_concluding_without_evidence_is_illegal_while_work_remains(monkeypatch):
     model,registry,store,(a,b,_,_)=_world()
     monkeypatch.setattr(model,'_choose_selected_thought_action',lambda *_a,**_k:None)
     with pytest.raises(ValueError,match='cannot conclude'):
-        model.reason_about(registry.form('isPart',a,b))
+        model.reason_about(registry.form('isPart', a, open_roles=('argin2',)))
     assert len(store)==0
 
 
@@ -79,9 +82,8 @@ def test_world_refutation_or_conflict_never_closes_taxonomy_false(trusts):
     model, registry, store, (a, b, _c, _d) = _world()
     for trust in trusts:
         from Meaning import ConceptualMeaning
-        store.append_meaning(ConceptualMeaning.from_payload(torch.stack((
-            registry._payload(a), torch.zeros(8), registry._payload(b))),
-            depth=3, layout='infix'), kind='fact', trust=trust)
+        store.append_meaning(ConceptualMeaning.from_description(
+            (registry._payload(a) + registry._payload(b)) / 2), kind='fact', trust=trust)
     result = model.reason_about(registry.form('isPart', a, b))
     assert result.posture == 'UNKNOWN'
     assert result.support_true == result.support_false == 0
@@ -91,26 +93,30 @@ def test_world_refutation_or_conflict_never_closes_taxonomy_false(trusts):
 def test_complete_fact_lookup_preserves_conflicting_and_mixed_degrees(positive,negative,posture):
     from index_fixtures import terminal_model_index
     model,registry,store,(a,b,_,_)=_world()
-    meaning=registry.form('part',a,b,mode='assertive')
+    from Meaning import ConceptualMeaning
+    meaning=ConceptualMeaning.from_description(registry._payload(a))
     order=terminal_model_index(model,meaning.role_refs)
     index=store.append_meaning(meaning,kind='fact',order=order,evidence=(positive,negative))
     from QueryWork import QueryWorkBudget
     with model._query_boundary_scope((0,)):
         context=model._thought_grammar_context(meaning,row=0,work=QueryWorkBudget(32),continuation=None)
-        query=registry.form('isTrue',store.occurrence_of(index),context=context)
+        query=registry.form('ask',store.occurrence_of(index),context=context)
     result=model.reason_about(query)
     assert result.posture==posture
     assert result.support_true==pytest.approx(positive) and result.support_false==pytest.approx(negative)
-    assert store.row(len(store)-1)['kind']==('question' if posture=='UNKNOWN' else 'inference')
+    assert store.row(len(store)-1)['kind']==('unverified' if posture=='UNKNOWN' else 'inference')
 
 
-def test_supplied_mechanism_walk_uses_one_controller_at_every_level():
+def test_supplied_mechanism_walk_uses_one_controller_at_every_level(monkeypatch):
     model,registry,store,(a,b,_,_)=_world()
     model.conceptualSpace.add_whole(a[1],b)
-    query=registry.form('isPart',a,b)
+    from test_thought_answer_adapters import _open_goal
+    from meaning_fixtures import replay_thought_plan
+    query=_open_goal(model, registry, a, b)
+    replay_thought_plan(model, monkeypatch, ['ask', 'query', None, None])
     result=model.reason_about(registry.form('ask',query))
     assert [(r.level,r.operation) for r in result.records if r.kind=='thought']==[
-        (0,'ask'),(1,'isPart'),(1,'conclude'),(0,'conclude')]
+        (0,'ask'),(1,'query'),(1,'conclude'),(0,'conclude')]
     assert not hasattr(model,'selected_thought_choosers')
     assert model._selected_thought_chooser(query) is model.shared_grammar
 

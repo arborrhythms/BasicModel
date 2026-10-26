@@ -155,7 +155,7 @@ def test_trust_to_pair_and_negation(trust, polarity, expected):
     from Meaning import ConceptualMeaning
     store = LTM0(4, capacity=4)
     meaning = ConceptualMeaning(torch.ones(3,4), torch.tensor([True,False,False]),
-                                mode='assertive', polarity=polarity)
+                                 polarity=polarity)
     row = store.append_meaning(meaning, trust=trust)
     torch.testing.assert_close(torch.stack((store.c_plus[row],store.c_minus[row])), torch.tensor(expected))
     assert 'trust' not in store.state_dict()

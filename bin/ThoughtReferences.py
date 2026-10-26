@@ -20,7 +20,7 @@ def open_slots(meaning):
 
     A fused idea has one role. A relational row has three roles, including
     the ones still to be filled; its occupancy is part of the contract.
-    Surface mode cannot preserve an already filled reference.
+    An annotation cannot preserve an already filled reference.
     """
     result = []
     forward_roles = {role for role, _ in bindings(meaning).get('_forward_references', ())}
@@ -33,13 +33,13 @@ def open_slots(meaning):
             raise ValueError('unknown open-reference kind')
         if role not in (0, 1, 2):
             raise ValueError('an open role must name a canonical row slot')
-        elif (meaning.role_refs[role] is None or (role in forward_roles
-              and meaning.role_refs[role][0] == 'ltm')):
+        elif (meaning.role_refs[role] is None or role in forward_roles or
+              (bindings(meaning).get('_chain_view') and (kind, role) not in bindings(meaning).get('_bound_roles', ()))):
             # A structural address to an anonymous constituent is still the
             # raw pending site. Its refined working read clears the forward
             # marker; an address alone does not assert a successful bind.
             result.append((kind, role))
-    if (meaning.sentence_kind == 'relation' or
+    if not bindings(meaning).get('_chain_view') and (meaning.sentence_kind == 'relation' or
             (meaning.sentence_kind is None and int(meaning.role_mask.sum()) > 1)):
         for role in range(3):
             if (not bool(meaning.role_mask[role]) or
@@ -57,10 +57,9 @@ def unresolved_operands_match(pattern, candidate):
                for role, reference in bindings(candidate).get('_unresolved_operands', ()))
 
 
-def needs_episode(meaning):
-    """A region can need evidence without owning an extra operand slot."""
-    return bool(open_slots(meaning)) or (meaning.mode == 'interrogative'
-                                        and evidence_pair(meaning) == (0., 0.))
+def has_open_slots(meaning):
+    """The structural fact; the chooser separately decides whether to think."""
+    return bool(open_slots(meaning))
 
 
 def conclude_exhausted(meaning):
@@ -71,7 +70,7 @@ def conclude_exhausted(meaning):
     no durable allocation. A region without source evidence remains open.
     """
     if tuple(bindings(meaning).get('_source_evidence', evidence_pair(meaning))) == (0., 0.):
-        return question(meaning, open_slots(meaning))
+        return with_slots(meaning, open_slots(meaning), pair=(0., 0.), source_evidence=(0., 0.))
     from Meaning import ConceptualMeaning
     refs, children = list(meaning.role_refs), list(meaning.constituents)
     mask = meaning.role_mask.clone()
@@ -101,7 +100,7 @@ def conclude_exhausted(meaning):
                              constituents=tuple(children)), open_slots(meaning))
 
 
-def with_slots(meaning, slots, *, pair=None):
+def with_slots(meaning, slots, *, pair=None, source_evidence=None):
     data = bindings(meaning)
     data['_open_references'] = tuple(dict.fromkeys(slot for slot in slots if slot[0] != 'evidence'))
     if pair is not None:
@@ -109,16 +108,12 @@ def with_slots(meaning, slots, *, pair=None):
         if len(values) != 2 or any(not 0 <= x <= 1 for x in values):
             raise ValueError('thought evidence requires two independent poles in [0,1]')
         data['_evidence_pair'] = values
+    if source_evidence is not None:
+        values = tuple(float(x) for x in source_evidence)
+        if len(values) != 2 or any(not 0 <= x <= 1 for x in values):
+            raise ValueError('source evidence requires two independent poles in [0,1]')
+        data['_source_evidence'] = values
     return replace(meaning, bindings=data)
-
-
-def question(meaning, slots=None):
-    """An interrogative region has free variables and no source evidence."""
-    if slots is None:
-        slots = open_slots(meaning)
-    data = bindings(meaning)
-    data['_source_evidence'] = (0., 0.)
-    return with_slots(replace(meaning, mode='interrogative', bindings=data), slots, pair=(0., 0.))
 
 
 def validate_local_references(meaning):

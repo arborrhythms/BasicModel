@@ -1,3 +1,4 @@
+from dataclasses import replace
 """Normal TruthSet replacement and restore retain thought-owned roots."""
 
 import torch
@@ -10,10 +11,7 @@ from test_ltm_consolidation import _ON_CONFIG, _make_model
 def _seed(model):
     store = model.symbolSpace.ltm_store
     store.reset()
-    meaning = ConceptualMeaning(
-        torch.ones(3, store.nDim), torch.ones(3, dtype=torch.bool),
-        scope={"source": "reported"},
-    )
+    meaning = replace(ConceptualMeaning.from_description(torch.ones(store.nDim)), scope={"source": "reported"})
     row = store.append_meaning(meaning, trust=.75)
     store.set_origin(row, store.ORIGIN_USER, text="a reported claim")
     return store, store.occurrence_of(row)
@@ -24,7 +22,7 @@ def _pin(model, reference):
     memory.detach_mode = "episode"
     roles = torch.ones(3, model.symbolSpace.ltm_store.nDim, requires_grad=True)
     question = ConceptualMeaning(
-        roles, torch.ones(3, dtype=torch.bool), mode="interrogative",
+        roles, torch.ones(3, dtype=torch.bool),
         role_refs=(reference, None, None), bindings={"claim": reference},
     )
     memory.begin_thought_episode(question, work_budget=8)
@@ -75,10 +73,7 @@ def test_full_checkpoint_removes_unreferenced_request_scoped_content(tmp_path):
 def test_tensor_only_restore_defers_pruning_but_withdraws_authority():
     model = _make_model(_ON_CONFIG)
     store, reference = _seed(model)
-    parent = ConceptualMeaning(
-        torch.ones(3, store.nDim), torch.ones(3, dtype=torch.bool),
-        role_refs=(reference, None, None),
-    )
+    parent = replace(ConceptualMeaning.from_description(torch.ones(store.nDim)), role_refs=(reference, None, None))
     store.append_meaning(parent, kind="observation")
     restored = _make_model(_ON_CONFIG)
     restored.load_state_dict(model.state_dict())
