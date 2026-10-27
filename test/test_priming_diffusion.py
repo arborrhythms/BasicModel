@@ -222,7 +222,9 @@ def test_retired_spread_attribute_and_configuration_are_absent():
     root = Path(__file__).resolve().parents[1]
     assert 'primingSpread' not in (root/'data/model.xml').read_text()
     assert 'primingSpread' not in (root/'bin/Models.py').read_text()
-    assert 'primingSpread' not in (root/'doc/Params.md').read_text()
+    # Item 2.9 R2 retains the old name as history in geometricSpread's
+    # description; the retired parameter must have no configuration row.
+    assert '| `primingSpread` |' not in (root/'doc/Params.md').read_text()
     assert hasattr(cs, '_priming_edge_src') and callable(part_edges)
 
 

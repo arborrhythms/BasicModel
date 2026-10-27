@@ -1026,6 +1026,8 @@
       <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="identityLengthDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="propertyDim" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="propertyOnes" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>

@@ -1,23 +1,24 @@
 """A scalar form audit must preserve native device/dtype and its exact report."""
 import pytest
 import torch
-from SymbolCentroid import place
 
 @pytest.mark.parametrize('device', ['cpu', pytest.param('mps', marks=pytest.mark.skipif(
     not torch.backends.mps.is_available(), reason='MPS unavailable'))])
 def test_form_audit_reports_cpu_double_without_moving_forms(device):
     values = torch.tensor([[1., 0., .1], [1., 1., .2], [0., 0., 1.]], device='cpu')
-    parts = {0: {1}, 1: {1, 2}, 2: {3}}
-    _, expected = place(dict(enumerate(values)), parts)
-    forms = {row: value.to(device) for row, value in enumerate(values)}
-    placed, actual = place(forms, parts)
+    from test_review13_subspaces import fixture, word
+    cs, cb, _, _ = fixture()
+    rows = [word(cs, [(4, 1.)]), word(cs, [(4, 1.), (7, 1.)]), word(cs, [(8, 1.)])]
+    cpu = dict(zip(rows, values))
+    expected = cb.mereology.containment_audit(before=cpu, after=cpu)
+    forms = {row: value.to(device) for row, value in cpu.items()}
+    actual = cb.mereology.containment_audit(before=forms, after=forms)
     assert actual == expected
-    assert actual['moved'] == 0 and actual['identity_recovered']
     for row in forms:
-        assert placed[row].device == forms[row].device
-        assert placed[row].dtype == forms[row].dtype
-        torch.testing.assert_close(placed[row].cpu(), values[row], rtol=0, atol=0)
-        torch.testing.assert_close(forms[row].cpu(), values[row], rtol=0, atol=0)
+        assert forms[row].device.type == device
+        assert forms[row].dtype == values.dtype
+        torch.testing.assert_close(forms[row].cpu(), cpu[row], rtol=0, atol=0)
+
 
 
 @pytest.mark.parametrize('device', ['cpu', pytest.param('mps', marks=pytest.mark.skipif(

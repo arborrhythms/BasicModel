@@ -76,14 +76,64 @@ class PrimitiveProperties(nn.Module):
     subsequently refine the same coefficients.
     """
 
-    def __init__(self, rows, *, device=None, dtype=None):
+    def __init__(self, rows, *, property_width=0, ones=1, device=None, dtype=None):
         super().__init__()
+        self.property_width, self.ones = int(property_width), int(ones)
+        if self.property_width < 0 or self.ones < 1 or (self.property_width and self.ones > self.property_width):
+            raise ValueError('property codes require propertyDim >= propertyOnes > 0')
         self.members = nn.Parameter(torch.zeros(int(rows), 256, device=device, dtype=dtype))
         # A coefficient of zero can mean either a witnessed exclusion or an
         # unwritten primitive. Only the former supplies counterevidence.
         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
         self.register_buffer('fixed_rows', torch.zeros(int(rows), device=device, dtype=torch.bool))
         self.register_buffer('fixed_members', torch.zeros(int(rows), 256, device=device, dtype=dtype))
+        # Alec's 256/1 layout is the exact byte extension. Smaller configured
+        # layouts use the same deterministic bit stream as identity atoms.
+        bits = torch.zeros(256, self.property_width, device=device, dtype=dtype)
+        if self.property_width == 256 and self.ones == 1:
+            bits.fill_diagonal_(1)
+        elif self.property_width:
+            from WordIdentity import bit_stream
+            for byte in range(256):
+                bits[byte, list(bit_stream(bytes([byte]), self.property_width)[:self.ones])] = 1
+        self.register_buffer('byte_bits', bits, persistent=bool(self.property_width))
+        self._byte_columns = tuple(tuple(bits[:, i].nonzero().flatten().cpu().tolist())
+                                   for i in range(self.property_width))
+        self._revision = 0
+        self._revision_versions = self._member_versions()
+
+    def _member_versions(self):
+        return tuple((id(value), value._version) for value in
+                     (self.members, self.fixed_rows, self.fixed_members))
+
+    @property
+    def revision(self):
+        """Observe teaching, optimizer writes and projection at the eager barrier."""
+        versions = self._member_versions()
+        if versions != self._revision_versions:
+            self._revision += 1
+            self._revision_versions = versions
+        return self._revision
+
+    def codes(self, rows=None):
+        """Weighted byte union, without a rows-by-bytes-by-width workspace."""
+        weights = self.coefficients(rows)
+        if self.property_width == 256 and self.ones == 1:
+            return weights
+        if not self.property_width:
+            return weights[:, :0]
+        return torch.stack([weights[:, list(ids)].amax(-1) if ids else
+                            weights.sum(-1) * 0 for ids in self._byte_columns], -1)
+
+    def fill(self, raw):
+        """Soft meet of the types holding over a part's own byte multiset."""
+        counts = self.members.new_zeros(256)
+        if raw:
+            ids = torch.tensor(list(raw), device=counts.device, dtype=torch.long)
+            counts.scatter_add_(0, ids, torch.ones_like(ids, dtype=counts.dtype))
+        presence = self.on_counts(counts, conjunctive=True)
+        # Only a rows-by-property_width workspace; no primitive broadcast.
+        return (1 - presence[:, None] * (1 - self.codes())).amin(0)
 
     @torch.no_grad()
     def define_word(self, row):

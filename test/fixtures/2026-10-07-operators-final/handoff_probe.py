@@ -24,7 +24,8 @@ def observe_handoff(result):
         result['containment'].setdefault('start', audits)
         result['containment']['end'] = audits
         result['containment']['largest'] = max(result['containment'].get('largest',0.),
-            max((r[phase]['largest'] for r in audits for phase in ('before','after')),default=0.))
+            max((r[phase][group]['largest'] for r in audits for phase in ('before','after')
+                 for group in ('tower0', 'tower1', 'cross', 'order0')),default=0.))
         return value
     with patch.object(ModelAttention, 'read_poles', observed), patch.object(BasicModel, 'forward', observed_forward):
         yield result

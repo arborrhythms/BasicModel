@@ -1075,6 +1075,24 @@ not by a passing identity lesson.
    concepts strictly sorted; `containment_audit` becomes that check) and
    the context-wholes form ports. Independent of 2.9. Exit: the certificate
    green on one hash.
+   **Built (2026-10-27), unlanded:** item certificate and native lesson pass
+   on `be4514dedea8d`; [spec §9](doc/plans/2026-10-27-item2-8-two-subspaces.md#9-alecs-partial-order-clarification-2026-10-27)
+   records Alec's governing partial-order clarification: no required
+   part/type inequality; equal-code ties allowed. [Receipt](doc/benchmarks/2026-10-27-item2-8-subspaces/README.md).
+   **Gate blocked:** the core native worked-document test fails in thought
+   persistence; all other scoped groups complete without failures. Slow
+   cases and old-width snapshot regeneration remain deferred to November.
+   Return the frozen receipt through Alec for review before another revision.
+   **Latest freeze, gate-complete (2026-10-27), unlanded:** `555e63e2f521`;
+   both demonstrated boundary defects repaired; all requested scoped
+   groups pass, both former core failures pass, slow cases deferred.
+   [Final receipt](doc/benchmarks/2026-10-27-item2-8-subspaces-r3/README.md)
+   preserves both failed freezes and the repair evidence. Return through
+   Alec for Claude's review; no item 2.8 commit, push or WikiOracle bump.
+   **Landing approved (2026-10-27):** reviewed and approved in
+   [spec §11](doc/plans/2026-10-27-item2-8-two-subspaces.md) on
+   `555e63e2f521`. Deferred slow cases and D5's snapshot regeneration
+   remain scheduled for the November sweep.
 - **2.7. Corpus at target size** (formerly item 3; renumbered 2026-10-26
    below the landed 3.0 by the countdown rule: work that follows a landed
    number takes a smaller one; the record below keeps its "item 3"

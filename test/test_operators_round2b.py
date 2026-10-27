@@ -67,9 +67,12 @@ def test_inherited_parts_form_partial_order_and_before_after_audit():
     assert not (codes[ab][:3] <= codes[ac][:3]).all()
     assert not (codes[ac][:3] <= codes[ab][:3]).all()
     audit = cb.mereology.containment_audit()
-    assert audit['before'] == audit['after'] == dict(pairs=2, violating_pairs=0, coordinates=0, largest=0.)
+    assert audit['before'] == audit['after']
+    assert audit['order0'] == dict(pairs=2, violating_pairs=0, coordinates=0,
+                                   largest=0., non_strict_pairs=0, equal_set_ties=0)
+    assert all(name in audit for name in ('tower0', 'tower1', 'cross', 'order0'))
     displaced = {row: code.clone() for row, code in codes.items()}
     displaced[a][0] = 1.
     audit = cb.mereology.containment_audit(before=displaced, after=codes)
-    assert audit['before']['violating_pairs'] == 2
-    assert audit['before']['largest'] > .6 and audit['after']['largest'] == 0
+    assert audit['before']['order0']['violating_pairs'] == 2
+    assert audit['before']['order0']['largest'] > .6 and audit['after']['order0']['largest'] == 0

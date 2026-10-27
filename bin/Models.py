@@ -3654,6 +3654,9 @@ class BaseModel(Mereology, nn.Module):
         basis = self._get_basis()
         if basis is None or not getattr(basis, 'monotonic', False):
             return
+        if hasattr(basis, '_property_identity_width'):
+            basis.primitive_properties.project()
+            return
         W = getattr(basis, 'W', None)
         if W is None or not isinstance(W, torch.Tensor):
             return
@@ -8271,6 +8274,11 @@ class BasicModel(BaseModel):
         """Freeze meanings and centroids before the first lexical bank is staged."""
         if getattr(self, '_sentence_codes_snapshotted', False):
             return
+        for whole in getattr(self, 'wholeSpaces', ()):
+            whole.subspace.what.begin_forward()
+        identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
+        if identity is not None and identity.property_width:
+            identity.refresh_property_fills(self.wholeSpaces[0].subspace.what.primitive_properties)
         seen_books = set()
         for cs in getattr(self, 'conceptualSpaces', ()):
             cb = cs.similarity_codebook

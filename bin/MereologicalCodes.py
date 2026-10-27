@@ -22,14 +22,24 @@ def placement_step(q, context, weights, negatives, *, rate=.1, negative_weight=1
 
 class MereologicalCodes(nn.Module):
     def __init__(self, owner, initial, *, percept_width,
-                 percept_event_width):
+                 percept_event_width, identity_width=None, property_width=0):
         super().__init__()
         object.__setattr__(self, 'owner', owner)
         self.percept_width = int(percept_width)
+        self.property_width = int(property_width)
+        self.identity_width = (self.percept_width - self.property_width
+                               if identity_width is None else int(identity_width))
         self.percept_event_width = int(percept_event_width)
         self.code_width = int(initial.shape[-1])
+        if (self.identity_width < 0 or self.property_width < 0
+                or self.identity_width + self.property_width != self.percept_width):
+            raise ValueError('percept_width must equal identity_width + property_width')
         if not 0 < self.percept_width <= self.percept_event_width <= self.code_width:
             raise ValueError('paired representation must contain the native form block')
+        if self.property_width:
+            self.register_buffer('_form_layout', torch.tensor(
+                [self.identity_width, self.property_width, self.percept_event_width],
+                dtype=torch.long, device=initial.device))
         from util import TheXMLConfig
         available = self.code_width - self.percept_event_width
         self.reserved_pairs = available // 2
@@ -63,31 +73,8 @@ class MereologicalCodes(nn.Module):
         if (not math.isfinite(self.placement_rate) or self.placement_rate < 0
                 or self.negative_count < 0 or not math.isfinite(self.negative_weight) or self.negative_weight < 0):
             raise ValueError('placement rate and negative controls must be finite and nonnegative')
-        self._centroid_cache = None
         self._form_revision = self._inventory_revision = None
         self.last_rederived_rows = self.form_rows_derived = 0
-
-    @torch.no_grad()
-    def centroid_forms(self):
-        from Spaces import _concept_alloc_of
-        from SymbolCentroid import place
-        model = getattr(self.owner, '_model', None)
-        identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
-        if identity is None:
-            return {}
-        revision = identity.revision
-        if self._centroid_cache is None or revision != self._centroid_cache[0]:
-            rows = sorted(_concept_alloc_of(self.owner).layer()._tensor_row_keys)
-            words = {row: raw for row in rows if (raw := self.owner.word_surface_for_row(row)) in identity.words}
-            forms = {row: identity.form(raw) for row, raw in words.items()}
-            parts = {row: identity.part_atoms(raw) for row, raw in words.items()}
-            placed, report = place(forms, parts)
-            self._centroid_cache = revision, placed, report
-        return self._centroid_cache[1]
-
-    def centroid_audit(self):
-        self.centroid_forms()
-        return {} if self._centroid_cache is None else self._centroid_cache[2]
 
     @torch.no_grad()
     def remember_content(self, row, value):
@@ -235,6 +222,10 @@ class MereologicalCodes(nn.Module):
             raise ValueError('invalid placement directions or witness counts')
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        if self.property_width:
+            layout = state.get(prefix+'_form_layout')
+            if layout is None or not torch.equal(layout.to(self._form_layout), self._form_layout):
+                raise ValueError('checkpoint form subspaces differ from the constructed layout')
         if int(state.get(prefix+'placement_version', -1)) != 1:
             raise ValueError('item 3.0 placement checkpoint version 1 is required')
         for name in ('placement', 'placement_witnesses', 'placement_keys', 'placement_keyed'):
@@ -255,7 +246,6 @@ class MereologicalCodes(nn.Module):
             self._restore_class_placements()
         self.placement_dirty.fill_(True)
         self._form_valid.zero_()
-        self._centroid_cache = None
         self._form_revision = None
 
     @torch.no_grad()
@@ -374,64 +364,33 @@ class MereologicalCodes(nn.Module):
                 for row, edges in definitions.items()}
 
     @torch.no_grad()
-    def _interval(self, edges):
+    def _subspace_bounds(self, edges):
         like = self.owner.similarity_codebook.W
-        bounds, weights, extrema, ids = [], [], [], []
+        bounds = []
         for tower in (0, 1):
+            start, stop = ((0, self.identity_width) if tower == 0 else
+                           (self.identity_width, self.percept_width))
             selected = [(pid, d) for t, pid, d in edges if t == tower and d > 0]
-            ids.append([pid for pid, _ in selected])
-            if not selected:
-                bounds.append(like.new_full((self.percept_width,), float(tower)))
-                weights.append(0.)
-                extrema.append(None)
+            if not selected or start == stop:
+                bounds.append(like.new_full((stop-start,), float(tower)))
                 continue
-            codes = self._native(tower).lookup_rows(torch.tensor(ids[-1], device=like.device)).detach()
-            if codes.shape[-1] != self.percept_width:
+            ids = torch.tensor([pid for pid, _ in selected], device=like.device)
+            codes = self._native(tower).lookup_rows(ids).detach()
+            if codes.shape[-1] < self.percept_width:
                 raise RuntimeError('native towers must share the form coordinates')
-            d = like.new_tensor([d for _, d in selected])
+            codes = codes[:, start:stop]
+            # Grouped feature records can overlap: summed net evidence may
+            # exceed one, but the soft-meet presence remains a cube weight.
+            d = like.new_tensor([d for _, d in selected]).clamp(0, 1)
             values = codes if tower == 0 else 1-d[:, None]*(1-codes)
-            bound, extreme = values.max(0) if tower == 0 else values.min(0)
-            bounds.append(bound); weights.append(float(d.sum())); extrema.append(extreme)
-        return bounds, weights, extrema, ids
+            bounds.append(values.amax(0) if tower == 0 else values.amin(0))
+        return tuple(bounds)
 
     @torch.no_grad()
     def containment_audit(self, *, before=None, after=None):
-        """Audit order-zero form containment through positive-part postings.
-
-        Optional row-to-form snapshots expose both sides of the future centroid
-        placement pass. This observer does not project or change any code.
-        Equal part sets are checked in both directions; self pairs are omitted.
-        """
-        from Spaces import _concept_alloc_of
-        rows = sorted(row for row in _concept_alloc_of(self.owner).layer()._tensor_row_keys
-                      if self.owner._order0_inventory_row(row))
-        parts = {row: {pid for tower, pid, net in edges if tower == 0 and net > 0}
-                 for row, edges in self._definitions(rows).items()}
-        postings = {}
-        for row, members in parts.items():
-            for pid in members:
-                postings.setdefault(pid, set()).add(row)
-        pairs = []
-        for row, members in parts.items():
-            extents = sorted((postings[pid] for pid in members), key=len)
-            containers = set.intersection(*extents) if extents else set(rows)
-            pairs.extend((row, other) for other in sorted(containers) if row != other)
-        values = dict(zip(rows, self.derive(rows)[..., :self.percept_width]))
-        def report(snapshot):
-            snapshot = values if snapshot is None else snapshot
-            count = coordinates = 0
-            largest = 0.
-            for contained, container in pairs:
-                violation = (snapshot[contained][:self.percept_width]-
-                             snapshot[container][:self.percept_width]).clamp_min(0)
-                positive = int(violation.gt(0).sum())
-                count += int(positive > 0)
-                coordinates += positive
-                largest = max(largest, float(violation.max()))
-            return dict(pairs=len(pairs), violating_pairs=count,
-                        coordinates=coordinates, largest=largest)
-        return dict(order=0, rows=len(rows), postings=len(postings),
-                    self_pairs=False, before=report(before), after=report(after))
+        """Observe both subspaces and their native containment, without writes."""
+        from FormContainment import audit
+        return audit(self, before=before, after=after)
 
     @torch.no_grad()
     def derive(self, indices, b=0):
@@ -455,17 +414,8 @@ class MereologicalCodes(nn.Module):
                 retained.add(row)
         needed = [row for row in unique if row not in retained and not bool(self._form_valid[row])]
         if needed:
-            forms = self.centroid_forms()
-            model = getattr(owner, '_model', None)
-            identity = getattr(getattr(getattr(model, 'perceptualSpace', None), 'percept_store', None), 'identity', None)
             for row, edges in self._definitions(needed).items():
-                self._forms[row].zero_()
-                if edges:
-                    (lower, _upper), _, _, _ = self._interval(edges)
-                    self._forms[row].copy_(lower)
-                raw = owner.word_surface_for_row(row)
-                if identity is not None and raw in identity.words:
-                    self._forms[row, :identity.width] = forms.get(row, identity.form(raw)).to(out)
+                self._forms[row].copy_(torch.cat(self._subspace_bounds(edges)))
                 self._form_valid[row] = True
             self.form_rows_derived += len(needed)
         for row in unique:

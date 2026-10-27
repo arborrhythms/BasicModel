@@ -2119,6 +2119,17 @@ class GrammaticalThoughtRegistry:
                 f'thought operation role {role!r} cannot fit the three-role meaning')
         return slots[role]
 
+    def _description_value(self, description):
+        """Fold a held description without leaving the form's unit cube."""
+        total = description.roles.sum(0)
+        count = description.role_mask.sum()
+        mereology = getattr(self.space.similarity_codebook, 'mereology', None)
+        width = 0 if mereology is None else mereology.percept_width
+        # Meaning and event coordinates retain their existing normalization.
+        # Overlapping form coordinates require a centroid: sum/sqrt(n)
+        # exceeds one even when every constituent is a valid cube point.
+        return torch.cat((total[:width] / count, total[width:] / count.sqrt()))
+
     def form(self, semantic_id, *arguments, open_roles=(),
              polarity=True, bindings=(), scope=(),
              context=None):
@@ -2196,7 +2207,7 @@ class GrammaticalThoughtRegistry:
                 description = argument
                 argument = ('constituent', len(constituents))
                 constituents.append(description)
-                value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                value = self._description_value(description)
                 references[self._slot_for_operand(role)] = argument
             elif kind == 'description':
                 if isinstance(argument, ConceptualMeaning):
@@ -2208,7 +2219,7 @@ class GrammaticalThoughtRegistry:
                         raise TypeError('description thought operands require a ThoughtGrammarContext')
                     description, _ = _occurrence_description(
                         preparation_context, argument)
-                value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                value = self._description_value(description)
                 references[self._slot_for_operand(role)] = argument
             else:
                 _validate_argument(argument, kind)
@@ -2217,7 +2228,7 @@ class GrammaticalThoughtRegistry:
                         if context is None:
                             raise TypeError('an occurrence operand requires its bounded context')
                         description, _ = _occurrence_description(context, argument)
-                        value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                        value = self._description_value(description)
                     else:
                         value = self._payload(argument, work=work)
                     references[self._slot_for_operand(role)] = argument
@@ -2432,7 +2443,7 @@ class GrammaticalThoughtRegistry:
                 source = ConceptualMeaning(
                     candidate.roles, candidate.role_mask,
                     **dict(candidate.metadata(), polarity=True))
-                value = description.roles.sum(0) / description.role_mask.sum().sqrt()
+                value = self._description_value(description)
                 request = self._form_candidate(operation, descriptor,
                     {operation.operand_roles[0]: (value, reference)}, source=source)
                 requests.append(ThoughtOperationCandidate(operation, request, ()))

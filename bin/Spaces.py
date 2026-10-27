@@ -2363,6 +2363,8 @@ class Codebook(Tensor):
         """
         if getattr(self, 'mereology', None) is not None:
             return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
+        if hasattr(self, '_property_identity_width'):
+            return self.W
         if hasattr(self, 'fixed_row_mask'):
             rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
             return torch.where(self.fixed_row_mask[:, None], self.fixed_row_codes, rows)
@@ -2408,6 +2410,8 @@ class Codebook(Tensor):
             rows = _sparse_embedding_eager(idx, self.W)
         else:
             rows = self.W[idx]
+        if hasattr(self, '_property_identity_width'):
+            return rows
         if hasattr(self, 'fixed_row_mask'):
             if getattr(self, 'is_percept_store', False):
                 rows = _unorm_ste(rows)
@@ -2419,8 +2423,46 @@ class Codebook(Tensor):
 
 
 
+    def enable_property_codes(self, *, identity_width, property_width):
+        """Give the property dictionary fixed storage derived from byte members."""
+        identity_width, property_width = int(identity_width), int(property_width)
+        if (identity_width < 0 or property_width <= 0
+                or identity_width + property_width > self.W.shape[-1]
+                or self.primitive_properties.property_width != property_width):
+            raise ValueError('property dictionary and percept layout disagree')
+        initial = self.W.detach()
+        old = self._parameters.pop('W', None)
+        self.__dict__.pop('W', None)
+        self._buffers.pop('W', None)
+        self.register_buffer('W', torch.zeros_like(initial))
+        self._property_identity_width = identity_width
+        self._property_revision = None
+        if hasattr(self, 'params'):
+            self.params = [p for p in self.params if p is not old]
+        with torch.no_grad():
+            self.begin_forward()
+
+    def begin_forward(self):
+        """Refresh property codes at the eager sentence boundary, never resize."""
+        if not hasattr(self, '_property_identity_width'):
+            return
+        properties = self.primitive_properties
+        revision = properties.revision
+        # A new differentiable forward needs a fresh graph even without an
+        # optimizer step. Inference can keep the unchanged cached values.
+        if revision == self._property_revision and not torch.is_grad_enabled():
+            return
+        codes = properties.codes()
+        start = self._property_identity_width
+        values = torch.cat((codes.new_ones(len(codes), start), codes,
+                            codes.new_zeros(len(codes), self.W.shape[-1] - start - codes.shape[-1])), -1)
+        self.W.detach_()
+        self.W.copy_(values)
+        self._property_revision = revision
+
     def enable_derived_codes(self, owner, *, percept_width=None,
-                             percept_event_width=None, content_width=None):
+                             percept_event_width=None, content_width=None,
+                             identity_width=None, property_width=None):
         """Cache [form | meaning] for each symbol/concept pair, without free rows."""
         from MereologicalCodes import MereologicalCodes
         if getattr(self, 'mereology', None) is not None:
@@ -2429,6 +2471,14 @@ class Codebook(Tensor):
         if percept_width is None:
             percept_event_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
             percept_width = percept_event_width - sum(canonical_shape('PartSpace'))
+            if (TheXMLConfig.data_type() == 'embedding'
+                    and TheXMLConfig.space('PartSpace', 'identityByParts', default=True)):
+                identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64)) + int(TheXMLConfig.space('PartSpace', 'identityLengthDim', default=32))
+                property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=256))
+        if property_width is None:
+            property_width = 0
+        if identity_width is None:
+            identity_width = int(percept_width) - int(property_width)
         if percept_event_width is None:
             percept_event_width = int(percept_width)
         if content_width is not None and int(content_width) != initial.shape[-1]:
@@ -2438,7 +2488,8 @@ class Codebook(Tensor):
         self._buffers.pop('W', None)
         self.register_buffer('W', torch.zeros_like(initial))
         self.mereology = MereologicalCodes(owner, initial,
-            percept_width=percept_width, percept_event_width=percept_event_width)
+            percept_width=percept_width, percept_event_width=percept_event_width,
+            identity_width=identity_width, property_width=property_width)
         if hasattr(self, 'params'):
             self.params = [p for p in self.params if p is not old] + list(self.mereology.parameters())
         vq = getattr(self, 'vq', None)
@@ -6296,6 +6347,8 @@ class SubSpace(nn.Module):
             return
         if hasattr(basis, "clearActivation"):
             basis.clearActivation()
+        if hasattr(basis, '_property_identity_width'):
+            return  # Persistent membership-derived dictionary, not runtime state.
         if hasattr(basis, "setW"):
             basis.setW(None)
 
@@ -10569,10 +10622,17 @@ class PartSpace(Space):
             # layout. Configured text models reserve D + L before this point.
             if self.nDim >= 33 and TheXMLConfig.space(section, 'identityByParts', default=True):
                 from WordIdentity import WordIdentity
+                pair = int(TheXMLConfig.space(section, 'identityPairDim', default=64))
+                length = int(TheXMLConfig.space(section, 'identityLengthDim', default=32))
+                property_width = int(TheXMLConfig.space(section, 'propertyDim', default=256))
+                # Small standalone PartSpace fixtures retain their explicit
+                # identity-only layout; resolved text models use both widths.
+                resolved = self.nDim == pair + length + property_width
                 self.percept_store.identity = WordIdentity(self.percept_store,
-                    pair_dim=self.nDim-32,
+                    pair_dim=pair if resolved else self.nDim-32,
                     ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
-                    length_dim=32)
+                    length_dim=length if resolved else 32,
+                    property_width=property_width if resolved else 0)
         # Numeric carriers have no lexical dictionary. Native text prototype
         # storage has one optimizer owner; admission preserves its moments.
         self._optimize_radix_codebook = self.percept_store is not None
@@ -15561,7 +15621,6 @@ class ConceptualSpace(Space):
             if derived is not None:
                 derived._form_valid[row] = False
                 derived.placement_dirty[row] = True
-                derived._centroid_cache = None
         if row is not None:
             from ConceptForgetting import warn_capacity
             warn_capacity(self)
@@ -19848,10 +19907,11 @@ class WholeSpace(Space):
             return None
         new_row = int(free[0]); used.add(new_row)
         d = int(mean.shape[0]); eps = float(getattr(self, "_lbg_epsilon", 0.1))
-        with torch.no_grad():
-            old = W[int(row), :d].detach().clone()
-            W.data[int(row), :d].copy_(old + eps * direction.to(W.device, W.dtype))
-            W.data[new_row, :d].copy_(old - eps * direction.to(W.device, W.dtype))
+        if not hasattr(cb, '_property_identity_width'):
+            with torch.no_grad():
+                old = W[int(row), :d].detach().clone()
+                W.data[int(row), :d].copy_(old + eps * direction.to(W.device, W.dtype))
+                W.data[new_row, :d].copy_(old - eps * direction.to(W.device, W.dtype))
         side = {}
         for delta, bytes_ in rec["pulls"]:
             proj = float((delta * direction).sum())
@@ -20174,13 +20234,22 @@ class WholeSpace(Space):
             basis.replace_W(nn.Parameter(
                 basis.getW().detach().clone(), requires_grad=True))
         from PerceptProperties import PrimitiveProperties
+        identity_width = int(TheXMLConfig.space('PartSpace', 'identityPairDim', default=64)) + int(TheXMLConfig.space('PartSpace', 'identityLengthDim', default=32))
+        property_width = int(TheXMLConfig.space('PartSpace', 'propertyDim', default=256))
+        derived = (TheXMLConfig.data_type() == 'embedding'
+                   and TheXMLConfig.space('PartSpace', 'identityByParts', default=True)
+                   and self.nDim == identity_width + property_width)
         basis.primitive_properties = PrimitiveProperties(
-            self.nVectors, device=basis.getW().device, dtype=basis.getW().dtype)
+            self.nVectors, property_width=property_width if derived else 0,
+            ones=int(TheXMLConfig.space('PartSpace', 'propertyOnes', default=1)),
+            device=basis.getW().device, dtype=basis.getW().dtype)
         for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
             if row < int(self.nVectors):
                 basis.set_property_kind(row, kind)
                 if _name == "word":
                     basis.primitive_properties.define_word(row)
+        if derived:
+            basis.enable_property_codes(identity_width=identity_width, property_width=property_width)
         basis.freeze_capacity('WholeSpace property basis')
         return basis
 

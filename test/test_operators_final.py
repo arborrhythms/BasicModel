@@ -47,13 +47,15 @@ def test_meaning_width_zero_disables_bootstrap_without_changing_form(monkeypatch
         from MereologicalCodes import MereologicalCodes
         monkeypatch.setitem(TheXMLConfig.data['ConceptualSpace'], 'meaningWidth', 0)
         off = MereologicalCodes(derived.owner, torch.zeros_like(derived.owner.similarity_codebook.W),
-            percept_width=derived.percept_width, percept_event_width=derived.percept_event_width)
+            percept_width=derived.percept_width, percept_event_width=derived.percept_event_width,
+            identity_width=derived.identity_width, property_width=derived.property_width)
         assert off.context_width == 0 and off.context_audit() == []
         rows = [record['row'] for record in derived.context_audit()]
         derived.begin_forward()
         active, absent = derived.derive(rows), off.derive(rows)
-        torch.testing.assert_close(active[:, :104], absent[:, :104])
-        assert not absent[:, 104:].any() and active[:, 104:].any()
+        width = derived.percept_event_width
+        torch.testing.assert_close(active[:, :width], absent[:, :width])
+        assert not absent[:, width:].any() and active[:, width:].any()
     finally:
         model.End(); model.symbolSpace.soft_reset()
 

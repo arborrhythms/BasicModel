@@ -86,11 +86,6 @@ def observed_difference(model, before, after):
             assert '_form_valid' in module._non_persistent_buffers_set
             assert not module._form_valid.requires_grad and isinstance(module.form_rows_derived, int)
             cache_fields.update((name + '.buffer._form_valid', name + '.form_rows_derived'))
-            cache = module._centroid_cache
-            if cache is not None:
-                assert len(cache) == 3 and isinstance(cache[1], dict) and isinstance(cache[2], dict)
-                assert all(not value.requires_grad for value in cache[1].values())
-            cache_fields.add(name + '._centroid_cache')
         if isinstance(module, ShortTermMemory):
             assert len(module.state) == 13 and module.capacity == 8
             assert all(value.shape[0] <= module._init_batch for value in module.state)

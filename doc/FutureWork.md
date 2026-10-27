@@ -2174,3 +2174,45 @@ item 3.0.
 - *Where.* Unchanged: its own round after item 3.0 lands, with the form
   rule, the layout split, the certificate and the ports of the
   context-wholes form assertions.
+
+**Built (item 2.8, 2026-10-27): two form subspaces, one partial order.**
+The implementation and its 18-case certificate are frozen at
+`be4514dedea8d9988e6e97952e33769802d8744bee580016fe9e40ef0595d9da`
+([receipt](benchmarks/2026-10-27-item2-8-subspaces/README.md)). Identity
+keeps the pair/length join; property defaults to 256 exact byte coordinates,
+with type rows derived from weighted membership and fixed part fills
+refreshed on membership revision. Non-retained order-0 forms concatenate
+the identity join and property soft meet; retained rows and centroid
+composition keep their existing writers and inverse. The old interval
+and centroid-form report paths retire with absence certificates.
+
+Alec's clarification in [spec §9](plans/2026-10-27-item2-8-two-subspaces.md#9-alecs-partial-order-clarification-2026-10-27)
+governs the earlier cross-level and strict-sort claims: a part and a type
+need not be comparable, and distinct rows may have equal vectors with
+mutual containment. The audit checks weighted nesting and reports ties
+without requiring strict separation. It preserves the cross report key
+as not applicable. `Ops.partOf` remains the one coordinatewise call.
+The native lesson and allocation certificate pass. Standing scoped
+validation on that hash records one unresolved native worked-document
+thought-persistence failure; item 2.8 is not gate-complete. Priming,
+placement, form ports, packing, XOR and snapshots/budgets have no failures.
+Slow cases remain deferred;
+D5's old-width decomposition snapshots must be regenerated from their
+recorded seeds in the November sweep. This tree is not yet landed.
+
+
+**Repaired and gate-complete (item 2.8, 2026-10-27), `555e63e2f521`.**
+The description-to-operand fold now takes the centroid of the form
+coordinates, preserving the existing event and meaning normalization.
+The thought writer distinguishes an attempted read from an actual
+checked referent binding, so an empty query leaves a canonical
+relation on the semantic-chain path. The malformed-result guard,
+recalled-chain reuse and checked-binding proof writes remain intact.
+The 20-case item certificate and all requested scoped groups pass on
+`555e63e2f521f97bce9e890a811211bd4afd044943f26936729ba5388e63c112`; the core group has 1628 passes and 36 skips.
+Both formerly failing core cases pass. The two failed predecessor
+freezes and the deterministic before/after regression are preserved
+in the [final receipt](benchmarks/2026-10-27-item2-8-subspaces-r3/README.md).
+This supersedes the blocked gate status above. Slow cases and D5's
+snapshot regeneration remain deferred to November. Item 2.8 remains
+uncommitted, for review through Alec; no push or WikiOracle bump.

@@ -31,9 +31,13 @@ def resolve_identity_layout(config):
     pair = int(ps.setdefault('identityPairDim', 64))
     ones = int(ps.setdefault('identityOnes', 3))
     length = int(ps.setdefault('identityLengthDim', 32))
+    property_width = int(ps.setdefault('propertyDim', 256))
+    property_ones = int(ps.setdefault('propertyOnes', 1))
     if pair < ones or ones < 1 or length != 32:
         raise ValueError('identity requires D >= s > 0, L = 32')
-    width = pair + length
+    if not 0 < property_ones <= property_width:
+        raise ValueError('property codes require propertyDim >= propertyOnes > 0')
+    width = pair + length + property_width
     old_ps = int(ps.get('nDim', 0))
     old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
     form_event = width + sum(canonical_shape('PartSpace'))
@@ -82,14 +86,19 @@ class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
     WORD_PREFIX = b'\x00identity/form/'
 
-    def __init__(self, store, pair_dim=64, ones=3, length_dim=32):
+    def __init__(self, store, pair_dim=64, ones=3, length_dim=32, property_width=0):
         super().__init__()
         object.__setattr__(self, 'store', store)
         self.pair_dim, self.ones = int(pair_dim), int(ones)
         self.length_dim = int(length_dim)
         self.width = self.pair_dim + self.length_dim
-        if store.dim != self.width or not 0 < self.ones <= self.pair_dim:
-            raise ValueError('Radix identity bank width must be D + L, with 0 < s <= D')
+        self.property_width = int(property_width)
+        if (store.dim != self.width + self.property_width or self.property_width < 0
+                or not 0 < self.ones <= self.pair_dim):
+            raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
+        object.__setattr__(self, 'properties', None)
+        self._property_revision = None
+        self._fixed_bytes = {}
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
         self.word_keys = {}
         self.mints = []
@@ -115,12 +124,40 @@ class WordIdentity(nn.Module):
         return result
 
     @torch.no_grad()
-    def _fixed(self, row, value):
+    def _fixed(self, row, value, raw=None):
         basis = self.store._basis
         value = value.to(basis.W)
+        if raw is not None:
+            self._fixed_bytes[int(row)] = bytes(raw)
+        if self.property_width:
+            raw = self._fixed_bytes[int(row)]
+            fill = (basis.W.new_ones(self.property_width) if self.properties is None
+                    else self.properties.fill(raw).to(basis.W))
+            value = torch.cat((value[:self.width], fill))
         basis.fixed_row_mask[row] = True
         basis.fixed_row_codes[row].copy_(value)
         basis.W[row].copy_(value)
+
+    @torch.no_grad()
+    def refresh_property_fills(self, properties=None):
+        if properties is not None:
+            if properties.property_width != self.property_width:
+                raise ValueError('identity and property layout widths differ')
+            object.__setattr__(self, 'properties', properties)
+        if not self.property_width or self.properties is None:
+            return
+        revision = self.properties.revision
+        if revision == self._property_revision:
+            return
+        for atom, row in self.atoms.items():
+            self._fixed(row, self.atom_code(atom), bytes_of(atom[1]))
+        for raw, row in self.word_rows.items():
+            self._fixed(row, self.form(raw), raw)
+        self._property_revision = revision
+
+    def _storage_code(self, identity_code):
+        """Admission reserves both subspaces; _fixed writes the property fill."""
+        return torch.nn.functional.pad(identity_code, (0, self.property_width))
 
     def _atom(self, atom, bits=None):
         if bits is not None:
@@ -128,8 +165,8 @@ class WordIdentity(nn.Module):
         code = self.atom_code(atom)
         if atom not in self.atoms:
             key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
-            self.atoms[atom] = self.store.insert(key, init_vector=code)
-        self._fixed(self.atoms[atom], code)
+            self.atoms[atom] = self.store.insert(key, init_vector=self._storage_code(code))
+        self._fixed(self.atoms[atom], code, bytes_of(atom[1]))
         return self.atoms[atom]
 
     def form(self, raw):
@@ -213,14 +250,14 @@ class WordIdentity(nn.Module):
                 key = self.WORD_PREFIX + self.key(value)
                 row = self.word_rows.get(word)
                 if row is None:
-                    row = self.store.insert(key, init_vector=value)
+                    row = self.store.insert(key, init_vector=self._storage_code(value))
                     self.word_rows[word] = row
                     self.store.inverse_table[row] = word
                     # Keep byte rows distinct for one-letter words/descent.
                     if len(word) > 1:
                         self.store.hash_map[word] = row
                         self.store.radix_trie.insert(word, row)
-                self._fixed(row, value)
+                self._fixed(row, value, word)
                 self.store.hash_map[key] = row
                 self.store.radix_trie.insert(key, row)
         return self.parts(raw)
@@ -285,7 +322,7 @@ class WordIdentity(nn.Module):
                     del self.store.hash_map[key]
             for word,row in self.word_rows.items():
                 value = self.form(word)
-                self._fixed(row,value)
+                self._fixed(row,value,word)
                 key = self.WORD_PREFIX+self.key(value)
                 self.store.hash_map[key] = row
             # A rekey must retire its trie terminal as well as its hash entry.
@@ -297,7 +334,7 @@ class WordIdentity(nn.Module):
         return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
 
     def row_for_form(self, form):
-        raw = self.forms.get(self.key(form))
+        raw = self.forms.get(self.key(form[..., :self.width]))
         return None if raw is None else self.word_rows[raw]
 
     def read(self, form):
@@ -330,6 +367,9 @@ class WordIdentity(nn.Module):
         self.word_witnesses = value.get('word_witnesses', {})
         self.nested = value.get('nested', {})
         self._marker_pattern = None
+        self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
+        self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
+        self._property_revision = None
         self._reindex()
 
     def audit(self):

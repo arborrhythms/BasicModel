@@ -27,7 +27,7 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
 
         def form(raw):
             code = identity.form(raw).to(towers[0].W)
-            stored = towers[0].lookup_rows(identity.word_rows[raw]).detach()
+            stored = towers[0].lookup_rows(identity.word_rows[raw])[:identity.width].detach()
             torch.testing.assert_close(code, stored, rtol=0, atol=0)
             return stored
 
@@ -51,7 +51,7 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
                 atom_edges, nested_edges = [], []
                 for atom in sorted(atoms):
                     atom_code = identity.atom_code(atom).to(code)
-                    stored = towers[0].lookup_rows(identity.atoms[atom]).detach()
+                    stored = towers[0].lookup_rows(identity.atoms[atom])[:identity.width].detach()
                     torch.testing.assert_close(atom_code, stored, rtol=0, atol=0)
                     atom_edges.append(edge(stored, code, atom=atom, row=identity.atoms[atom]))
                 for part, lo, hi in identity.nested.get(raw, ()):

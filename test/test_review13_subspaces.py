@@ -5,21 +5,23 @@ import torch
 from torch import nn
 
 
-def fixture(*, meaning_pairs=1, batch_size=1):
+def fixture(*, meaning_pairs=1, batch_size=1, property_width=0):
     from test_cs_sparse_weights import _cs
     from Spaces import Codebook, _concept_alloc_of
     cs = _cs(nS=32, order=0, batch_size=batch_size)
     ps = Codebook()
-    ps.W = nn.Parameter(torch.zeros(16, 3))
+    width = 3 + property_width
+    ps.W = nn.Parameter(torch.zeros(16, width))
     with torch.no_grad():
-        ps.W[4] = torch.tensor([.2, .6, .8])
-        ps.W[7] = torch.tensor([.8, .2, .4])
+        ps.W[4, :3] = torch.tensor([.2, .6, .8])
+        ps.W[7, :3] = torch.tensor([.8, .2, .4])
     object.__setattr__(cs, '_model', SimpleNamespace(perceptualSpace=SimpleNamespace(
-        subspace=SimpleNamespace(what=ps), nDim=3)))
+        subspace=SimpleNamespace(what=ps), nDim=width)))
     cb = Codebook()
-    cb.W = nn.Parameter(torch.zeros(32, 3+2*meaning_pairs))
+    cb.W = nn.Parameter(torch.zeros(32, width+2*meaning_pairs))
     cs.similarity_codebook = cb
-    cb.enable_derived_codes(cs, percept_width=3, content_width=3+2*meaning_pairs)
+    cb.enable_derived_codes(cs, percept_width=width, identity_width=3,
+                            property_width=property_width, content_width=width+2*meaning_pairs)
     cs._online_learning_frozen = False
     return cs, cb, ps, _concept_alloc_of(cs)
 
@@ -102,19 +104,21 @@ def test_support_reports_exact_zeros_and_minimum_absolute_coordinate():
     assert report['minimum_nonzero_absolute_value'] == float(ps.W[4,1])
 
 
-def test_actual_serial_code_uses_ninety_six_native_coordinates_and_a_separate_bipolar_context():
+def test_actual_serial_code_uses_two_form_subspaces_and_a_separate_bipolar_context():
     from test_mm_xor import _fresh_model
     model, _, _ = _fresh_model('data/XOR_grammar.xml')
     model.forward(model.inputSpace.prepInput(['hello world', 'hello there']))
     cb = model._concept_owner().similarity_codebook
-    assert cb.mereology.percept_width == 96
+    assert cb.mereology.identity_width == 96
+    assert cb.mereology.property_width == 256
+    assert cb.mereology.percept_width == 352
     assert cb.mereology.context_width == 128
     assert not isinstance(cb.W, nn.Parameter) and list(cb.parameters()) == []
     rows = model.inputSpace._ar_grammar_object_rows
     atoms = model.inputSpace._ar_grammar_object_atoms
-    torch.testing.assert_close(atoms[rows>=0][..., :96], cb.lookup_rows(rows[rows>=0])[..., :96])
-    assert not atoms[rows>=0][...,104:].any()
-    assert cb.lookup_rows(rows[rows>=0])[...,104:].any()
+    torch.testing.assert_close(atoms[rows>=0][..., :352], cb.lookup_rows(rows[rows>=0])[..., :352])
+    assert not atoms[rows>=0][...,360:].any()
+    assert cb.lookup_rows(rows[rows>=0])[...,360:].any()
     assert bool(cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all())
     groups = model.objective_parameter_groups(model.getOptimizer(lr=.01))
     parameter = model.perceptualSpace.subspace.what.W

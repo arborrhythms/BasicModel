@@ -8,32 +8,43 @@ from test_review13_subspaces import fixture, word
 
 def towers():
     from Spaces import Codebook
-    cs, cb, ps, alloc = fixture()
+    from PerceptProperties import PrimitiveProperties
+    cs, cb, ps, alloc = fixture(property_width=256)
     ws = Codebook()
-    ws.W = nn.Parameter(torch.tensor([[.7,.8,.9], [.6,.7,.8]]))
+    ws.W = nn.Parameter(torch.zeros(2, 259))
+    ws.primitive_properties = PrimitiveProperties(2, property_width=256)
+    with torch.no_grad():
+        ws.primitive_properties.members[0, :3] = torch.tensor([.7,.8,.9])
+        ws.primitive_properties.members[1, :3] = torch.tensor([.6,.7,.8])
+    ws.enable_property_codes(identity_width=3, property_width=256)
+    ws.begin_forward()
     cs._model.wholeSpace = SimpleNamespace(subspace=SimpleNamespace(what=ws))
     return cs, cb, ps, ws, alloc
 
 
-def test_net_evidence_interval_and_detached_native_sources():
+def test_net_evidence_subspaces_and_detached_native_sources():
     cs, cb, ps, ws, alloc = towers()
     row = word(cs, [(4,.75),(4,-.25),(7,.25)])
     cs.add_concept_feature(row, 'ws', 0, .5)
     cs.add_concept_feature(row, 'ws', 0, -.25)
-    lower = torch.maximum(ps.W[4], ps.W[7])
-    upper = 1-.25*(1-ws.W[0])
-    expected = lower  # wholes bound the form; they do not enter it
+    lower = torch.maximum(ps.W[4, :3], ps.W[7, :3])
+    upper = 1-.25*(1-ws.W[0, 3:])
+    expected = torch.cat((lower, upper))
     result = cb.lookup_rows(row)
-    torch.testing.assert_close(result[:3], expected)
+    torch.testing.assert_close(result[:259], expected)
     assert not result.requires_grad
-    assert not result[3:].any()
-    assert ps.W.requires_grad and ws.W.requires_grad and alloc.layer().features.values.requires_grad
+    assert not result[259:].any()
+    assert not isinstance(ws.W, nn.Parameter)
+    assert ps.W.requires_grad and alloc.layer().features.values.requires_grad
+    ws.getW().sum().backward()
+    assert ws.primitive_properties.members.grad.abs().sum() > 0
 
 
 def test_against_alone_is_not_negative_form_and_no_wholes_means_lower():
     cs, cb, ps, ws, alloc = towers()
     row = word(cs, [(4,.5),(7,-.5)])
-    torch.testing.assert_close(cb.lookup_rows(row)[:3], ps.W[4])
+    torch.testing.assert_close(cb.lookup_rows(row)[:3], ps.W[4, :3])
+    assert cb.lookup_rows(row)[3:259].eq(1).all()
 
 
 def test_retired_room_pass_cannot_move_native_wholes():
@@ -41,7 +52,7 @@ def test_retired_room_pass_cannot_move_native_wholes():
     row = word(cs, [(7,1.)])
     cs.add_concept_feature(row, 'ws', 1, 1.)
     before_ps, before_ws = ps.W.detach().clone(), ws.W.detach().clone()
-    cb.mereology.centroid_audit()
+    cb.mereology.containment_audit()
     assert not hasattr(cb.mereology, 'project_room')
     torch.testing.assert_close(ps.W, before_ps, rtol=0, atol=0)
     torch.testing.assert_close(ws.W, before_ws, rtol=0, atol=0)
@@ -160,7 +171,7 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
 def test_repeated_part_address_does_not_multiply_its_11b_evidence():
     cs,cb,ps,_,_=towers()
     row=word(cs,[((4,4,7),.5)])
-    torch.testing.assert_close(cb.lookup_rows(row)[:3], ps.W[[4,7]].amax(0))
+    torch.testing.assert_close(cb.lookup_rows(row)[:3], ps.W[[4,7], :3].amax(0))
 
 
 def test_zero_parent_relative_search_with_large_valid_codes_stays_finite():

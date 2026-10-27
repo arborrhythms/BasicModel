@@ -201,3 +201,55 @@ def test_concluded_relation_keeps_its_occurrence_argument(monkeypatch, role):
     assert len(f.store) == row + 1  # the relation is owned by LTM1
     assert f.store.raw_meaning_of(row).role_refs == (('sym', a), None, None)
     torch.testing.assert_close(f.store.slots[row], original, rtol=0, atol=0)
+
+
+def test_empty_query_keeps_a_closed_equality_on_the_semantic_chain_path(monkeypatch):
+    from test_item6_2_thinking import world, run
+    model, registry, store, (a, b, c) = world()
+    root = registry.form('equal', a, a)
+    selected = []
+    def choose(_root, active, actions, **kwargs):
+        if selected:
+            return None
+        action = next(item for item in actions if item is not None
+            and item.semantic_id == 'query' and item.request.constituents
+            and item.request.constituents[0].role_refs == root.role_refs)
+        selected.append(action)
+        return action
+    monkeypatch.setattr(model, '_choose_selected_thought_action', choose)
+    result = run(model, root, work_budget=20)
+    assert len(selected) == 1
+    assert bindings(result.meaning)['_producing_operation'] == 'query'
+    assert not bindings(result.meaning).get('_bound_roles')
+    torch.testing.assert_close(result.meaning.roles, root.roles, rtol=0, atol=0)
+    assert evidence_pair(result.meaning) == (0., 0.)
+    saved = store.part_row(store.parts.find(a[1], a[1]))
+    assert saved['evidence'] == (0., 0.)
+    assert saved['refs'].tolist() == [a[1], a[1]]
+
+@pytest.mark.parametrize('producer', ('query', 'bind'))
+def test_unbound_read_of_unrecognized_multi_role_content_still_fails(monkeypatch, producer):
+    from ThoughtStream import write
+    from Meaning import ConceptualMeaning
+    from test_item6_2_thinking import world
+    model, registry, store, (a, b, c) = world()
+    meaning = ConceptualMeaning(torch.eye(3, 8), torch.ones(3, dtype=torch.bool),
+        role_refs=(a, b, c), bindings={'_producing_operation': producer})
+    before = len(store), len(store.parts)
+    with pytest.raises(ValueError, match='multi-role thought requires'):
+        write(model, meaning, row=0)
+    assert (len(store), len(store.parts)) == before
+
+@pytest.mark.parametrize('producer', ('query', 'bind'))
+def test_unchanged_read_chain_still_reuses_its_witness(monkeypatch, producer):
+    from dataclasses import replace
+    from ThoughtStream import write
+    from test_item6_2_thinking import world
+    model, registry, store, (a, b, c) = world()
+    reference = store.append_relation(a[1], b[1], truth_plus=.7)
+    meaning = store.meaning_of(reference)
+    meaning = replace(meaning, bindings=dict(bindings(meaning),
+        _producing_operation=producer, _thought_witnesses=(reference,)))
+    before = len(store), len(store.parts)
+    assert write(model, meaning, row=0) == reference
+    assert (len(store), len(store.parts)) == before

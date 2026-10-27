@@ -288,7 +288,6 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
             derived.placement_keyed[row] = False
             derived.placement_dirty[row] = True
             derived._form_valid[row] = False
-            derived._centroid_cache = None
     meaning = getattr(owner.similarity_codebook, 'mereology', None)
     if remove and meaning is not None:
         meaning.begin_forward()

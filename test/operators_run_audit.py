@@ -65,7 +65,7 @@ def geometry(model, record):
         books.append(dict(rows=words,**metrics(values),forms=metrics(forms),
                           d_definition='relu(e_for - e_against), summed net 11b evidence per native address; d > 0 selects a full-presence part',
                           net_evidence=ranges, support=cb.mereology.support_audit(words),
-                          containment=cb.mereology.containment_audit(), centroid=cb.mereology.centroid_audit()))
+                          containment=cb.mereology.containment_audit()))
     owner=model._concept_owner()
     inputs=[' '.join((owner.word_surface_for_row(int(row)) or b'').decode('utf8')
                      for row,valid in zip(rows,mask) if valid)
@@ -106,7 +106,7 @@ def observe_run():
     from util import TheXMLConfig
     import SentenceCredit
     result=dict(reader_weights=[],comparison_reader_weights=[],reader_mse=[],
-                reader_training_rows=[],sentence_gradients={},centroid={})
+                reader_training_rows=[],sentence_gradients={},form_containment={})
     commit = BasicModel._commit_sentence
     result['sentence_trials'] = []
     def observed_commit(model,state,sid,active,*args):
@@ -191,10 +191,10 @@ def observe_run():
         return value
     def observed_projection(model,*args,**kwargs):
         value=project(model,*args,**kwargs)
-        reports=[cs.similarity_codebook.mereology.centroid_audit() for cs in model.conceptualSpaces]
+        reports=[cs.similarity_codebook.mereology.containment_audit() for cs in model.conceptualSpaces]
         if any(r is not None for r in reports):
-            result['centroid'].setdefault('start', reports)
-            result['centroid']['end']=reports
+            result['form_containment'].setdefault('start', reports)
+            result['form_containment']['end']=reports
         return value
     def observed_backward(model,total,*args,**kwargs):
         if getattr(model,'_sentence_backward',False):

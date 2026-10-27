@@ -219,9 +219,9 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     # A query/bind conclusion records its witnessed proof occurrence. The
     # relation it read is not a newly selected composing operation, and its
     # working binding must not mint another Part or grammatical occupation.
-    read_binding = bindings(meaning).get('_producing_operation') in ('query', 'bind')
     data = bindings(meaning)
-    if read_binding and data.get('_chain_view') and not data.get('_bound_roles'):
+    read_result = data.get('_producing_operation') in ('query', 'bind')
+    if read_result and data.get('_chain_view') and not data.get('_bound_roles'):
         # An unchanged recalled chain keeps its own entry and percept time.
         # A filled working variable still takes the inference path below.
         for reference in data.get('_thought_witnesses', ()):
@@ -233,6 +233,11 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                     and torch.equal(retained.role_mask, meaning.role_mask)
                     and torch.equal(retained.roles, meaning.roles)):
                 return location
+    # The last attempted read can be empty, leaving a canonical relation
+    # unchanged. Only a checked filling selects the binding writer; an
+    # unbound relation still belongs to the ordinary semantic-chain writer.
+    read_binding = read_result and any(
+        kind == 'referent' for kind, _role in data.get('_bound_roles', ()))
     if (int(meaning.role_mask.sum()) > 1 and (has_open_slots(meaning) or not read_binding)
             and operation(meaning) in ('part', 'equal', 'implies')):
         from ClauseRow import Clause, Composition, predicate_identity

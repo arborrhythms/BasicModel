@@ -60,9 +60,10 @@ def test_actual_serial_leaf_pairs_forms_and_meanings_and_perception_owns_forms()
               for i in range(len(store)) if store.row(i)['kind'] == 'cover'}
     assert len(covers) == 2
     assert set(owner._concept_allocator.layer()._tensor_row_keys) == set(rows[rows>=0].tolist()) | covers
-    torch.testing.assert_close(atoms[rows>=0][..., :96], cb.lookup_rows(rows[rows>=0])[..., :96])
+    width = cb.mereology.percept_width
+    torch.testing.assert_close(atoms[rows>=0][..., :width], cb.lookup_rows(rows[rows>=0])[..., :width])
     assert cb.mereology.placement_witnesses[rows[rows>=0]].gt(0).all()
-    assert not atoms[rows>=0][..., 104:].any()
+    assert not atoms[rows>=0][..., cb.mereology.percept_event_width:].any()
     opt = model.getOptimizer(lr=.01)
     groups = model.objective_parameter_groups(opt)
     assert any(p is model.perceptualSpace.subspace.what.W for p in groups['reconstruction'])

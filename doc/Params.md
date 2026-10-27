@@ -365,6 +365,8 @@ table while an optimizer owns it.
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
+| `propertyDim` | positive int | `256` | Property coordinates appended to the identity pair and length coordinates at text-model construction. With `propertyOnes=1` and width 256, each byte has its own coordinate: type codes are their weighted byte extension without hash collisions. Numeric layouts are unchanged. |
+| `propertyOnes` | positive int | `1` | Bits per byte in the property subspace; must not exceed `propertyDim`. The 256/1 default uses byte coordinates directly; other configured layouts use `WordIdentity.bit_stream`. |
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | DEPRECATED and INERT: the legacy boolean no longer constructs a QKV attention pass; it is kept only as a backward-compat alias. Superseded by `<attention>` (off / primer / second-order / low-rank). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
