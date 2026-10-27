@@ -42,7 +42,7 @@ class LTM1(nn.Module):
 
     @property
     def symbol_revision(self):
-        """Only taxonomy topology changes; chain appends cannot expire heat."""
+        """Symbol topology and evidence; chain appends cannot expire membership."""
         return (id(self), self._symbol_epoch)
 
     @staticmethod
@@ -163,8 +163,13 @@ class LTM1(nn.Module):
                 self._symbol_epoch += 1
         elif symbol is not None and int(symbol) != row:
             raise ValueError('a tagged pair already has a different handle')
-        self.truth_plus[row] = max(float(self.truth_plus[row]), float(truth_plus))
-        self.truth_minus[row] = max(float(self.truth_minus[row]), float(truth_minus))
+        positive = max(float(self.truth_plus[row]), float(truth_plus))
+        negative = max(float(self.truth_minus[row]), float(truth_minus))
+        if (left[0] == right[0] == SYMBOL and
+                (positive != float(self.truth_plus[row]) or negative != float(self.truth_minus[row]))):
+            self._symbol_epoch += 1
+        self.truth_plus[row] = positive
+        self.truth_minus[row] = negative
         self.access_count[row] += int(witness)
         if surprise >= 0:
             self.surprise[row] = float(surprise)

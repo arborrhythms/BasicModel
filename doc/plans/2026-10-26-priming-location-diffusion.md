@@ -373,3 +373,195 @@ inside the clamp. §5 gate 2 adds that `_prime_seen_step` and
 same radius for contiguity (D1); the propagation in the pre-composition
 call with decay, bump, propagate as the order (D3); the controller's
 defaults (D4). The Codex text is written when item 3.0 lands.
+
+## 9. Claude's review of Codex's item 2.9 round (frozen `b031b11ee9f2`) — 2026-10-27: approved for landing once two document repairs are applied
+
+**Receipt.** `doc/benchmarks/2026-10-27-item2-9-priming/`. The frozen hash
+recomputes from `frozen-source.json`'s inline `source_snapshot` (sha256 of
+the compact canonical JSON, `sort_keys`, separators `(',', ':')`) to
+`b031b11ee9f279bca43eaeee002703724073b4d834780f726d995249946e3332`, and
+all 917 snapshot files hash equal to the live checkout
+`/Users/arogers/github/WikiOracle/basicmodel`; none is missing or differs.
+The snapshot covers `bin`, `test`, `data`, `Makefile`, `README.md`,
+`pytest.ini`, `requirements.txt` and the six protocol files; `doc/` is
+outside it, and `document-hashes.json`'s four documents hash equal to the
+live tree. Every `gates/*/run.json` and the native smoke carry the one
+hash; the smoke started before the freeze was written and ran on the same
+source. Base `91974ced9b`, the item 3.0 landing, verified against the remote.
+No commit, no publication, no `RUN_SLOW`, no seed (none in the diff of
+`bin/` or `test/`; `summary.json` records `seed_pinning: false`), no resize
+(the three `_priming_edge_*` slabs keep their `2 * partsCap` shape; the two
+new bool columns and the two `[nStreams, nVectors]` ledgers are constructed
+once; the pointer gates assert it).
+
+**Gate counts.** 1873 gate executions passed, 47 skipped, 0 failed; 1771
+distinct cases.
+
+| group | passed | skipped | note |
+|---|---:|---:|---|
+| core (the item 3.0 "unchanged sets" list, 152 selectors, all run) | 1623 | 36 | 26 slow marks, 10 absent phase artifacts |
+| priming (the 7 ported files + 4 consumers) | 146 | 4 | the 4 are the pre-existing slow tower-projection tests |
+| placement (step 2's objective and `collapse_audit`) | 6 | 0 | |
+| packing | 1 | 3 | 3 slow native packing cases |
+| XOR standing gate | 8 | 0 | 6 native passes; the 2 CLI cases failed on the first run for a missing `.venv` in the isolated checkout, before model construction, and passed on the replay against the same hash (`gates/xor-cli-runtime-replay`) |
+| decomposition, zero and enabled arms | 0 | 2 + 2 | slow; original seeds, snapshot hashes and the 512/768 budgets recorded in `decomposition-deferred.json`, not executed |
+| snapshots and budgets | 89 | 0 | |
+
+Alec deferred the slow marks on 2026-10-27 ("Skip the run-slow tests, we
+will run them later"); the 26 + 4 + 3 + 4 deferred cases go into the
+November sweep and are not claimed here. The five scoped groups and step 2's
+placement gates are the ones the hand-off named; the only selectors beyond
+the 152-entry scoped list are those groups' own files.
+
+**§5 and §8 gates, by test.** Conservation (§5.1):
+`test_priming_diffusion.py::test_location_outflow_preserves_energy_codes_rng_and_inactive_streams`
+(three streams, two active, `before == after` within `1e-9 * V` in double;
+inactive stream untouched; codes and RNG untouched). Guard (§5.2 and the §8
+addition): `test_seen_ledger_guard_decay_bump_desire_and_fired_rows`:
+`_priming_seen` byte-equal across `propagate`, `placement_context(b)` equal
+to `(_priming_seen[b] - 1).clamp_min(0)` on all three streams,
+`prime_desire` leaves the seen ledger, the step ledger and the radius
+untouched and adds exactly its bump; `BasicModel._prime_seen_step` run as
+the real method bumps the seen ledger and leaves the step ledger and radius
+untouched; two consecutive `relevance_weights` reads equal and change
+neither ledger. Kernel (§5.3 as amended): `test_six_row_cosine_mask_and_fixed_cap_match_direct_computation`
+(cosine against a direct computation, rows in `S`, an unplaced row and a
+derived invalid row at 0, the radius mask and the fixed-shape `topk` of 2
+observed through a monkeypatched `topk`, shares in proportion, debit from
+`S`). Reach across orders (§5.4): the class row receives when its member is
+bumped in `test_class_centroid_weight_witnesses_cross_order_reach_and_context_skip`;
+the row at 80 degrees in the conservation gate receives nothing.
+Persistence (§5.5): `test_priming_energy.py::test_successive_primes_propagate_further`
+(row 5, two hops from row 3 on the placed chain, receives only at the second
+`prime_seen`, with `0.8 * 0.5` of the decayed excess). Retirement (§5.6):
+`test_retired_functions_and_surface_methods_are_absent`,
+`test_retired_spread_attribute_and_configuration_are_absent`,
+`test_priming_energy.py::test_priming_row_order_read_is_retired`, listed in
+`retirement-certificates.json`; `part_edges` and the `_priming_edge_*`
+buffers retained as §8 D1 requires. Standing (§5.7): the placement group on
+the hash; `test_cost_certificate_has_no_pairwise_inventory_tensor` records
+all 79 tensor outputs of one `propagate` at `B = 3`, `V = 257`, `P = 7`
+under a dispatch mode, none of shape `[V, V]`, every allocation at most
+`max(B V, V P)` elements. Centroid (§8): the class sits at
+`normalize(placement[a] + 0.5 placement[b])` after a `truth_minus = 0.5`
+witness on b's membership, `placement_witnesses[c] == 2`, order 1,
+`place_rows` skips it. Contiguity (§8): `test_noncontiguous_class_cannot_supply_field_or_receive_but_members_can`.
+Controller (§8): `test_controller_uses_active_mean_before_cap_for_ten_sentences`
+(5 in-radius rows against a count of 2 shrinks by `0.98` per sentence, 1
+grows by `1.02`, 2 holds, over ten sentences; inactive streams do not dilute
+the mean; the clamp holds at both ends; the buffer pointer is constant).
+One step per sentence (§8 D3): `test_one_precomposition_step_and_one_centroid_close_per_sentence`
+on a two-stream native forward records `sentence`, `step` (shape `[2, V]`,
+both streams active, the registered words already bumped when the step
+runs), `centroid`, in that order and once each. Construction errors fail
+loud: `test_bad_geometric_construction_fails_loud` over the six knobs.
+Checkpoints: `test_class_flags_roundtrip_with_fixed_shapes`.
+
+**Code against §8, read in full.** `Priming.propagate` is the pseudocode:
+`r = (surface - 1).clamp_min(0)`; `ok = (placement_witnesses > 0) &
+(~placement_derived | placement_valid)`; `z = (r * ok) @ A`; `s = z @ A.T`
+zeroed at `r > 0` and at `~ok`; `cos = s / |z|`; mask `cos >= cos(radius)`
+(with `cos > 0` in addition, which only excludes exact zeros at a radius of
+90 degrees); `count` before the cap; one fixed-shape `topk` of
+`min(geometricNeighbours, V)`; `budget = geometricSpread * r.sum(-1) *
+(mass > 0) * active`; receivers in proportion to the selected cosines,
+donors in proportion to `r`; the feasible fraction as `diffuse` computed it;
+totals in double on CPU; ledger `before`, `after`, `budget_fraction`,
+`receivers`, `radius` (the radius used, before adaptation); then the
+controller on the mean of `count` over active streams, clamped. `configure`
+reads the six knobs once at construction into `_geometric_spread`,
+`_geometric_neighbours`, `_geometric_radius_rate`, the min and max in
+radians, and the `[1]` buffer `_geometric_radius`; `model.xml`, `model.xsd`
+and Params.md carry them; `primingSpread` is gone from all three and from
+`Models.py`. `Space.prime_seen(rows, bump, decay, active_rows,
+propagate=True)` decays and bumps `_priming_boosts` and `_priming_seen`
+alike, then propagates on the flag; `Models._prime_sentence_symbols` passes
+`True`, both `_prime_seen_step` calls pass `False`, `prime_desire` bumps
+`_priming_boosts` only. `placement_context` reads `_priming_seen`;
+`relevance_weights` is `_bounded_priming(surface)`; the hard reset clears
+both ledgers. `part_edges` caches `(member, class, (truth_plus -
+truth_minus).clamp_min(0))` for the LTM1 `SYMBOL`/`SYMBOL` rows whose parent
+is a `('part-base', class)` key of `relate_idx`, so definition rows and
+occurrence chains never enter; it rebuilds on `parts.symbol_revision`, which
+now also advances when a `SYMBOL`/`SYMBOL` row's evidence changes (`LTM1`
+and the `LTM0` truth setter). `ConceptIndex.index_part_row` marks the class
+row derived and invalid at its first membership and expires the cache.
+`MereologicalCodes.derive_class_placements` runs once per close from
+`Models` after every active stream's placement and promotion, lower orders
+first, writes the normalized weighted centroid, the witness count and the
+contiguity flag against `cos(_geometric_radius)`; `place_rows` skips derived
+rows. The two flags are saved in `placement_extras` and the state dict;
+version-1 payloads without them are reconstructed from the raise records
+with no resize. Documents: Orders §10 has its one sentence; the step 2 spec
+§12 decision 1 is marked superseded by append; Params.md has the six knobs.
+
+**Observations, recorded, no repair.** (O1) A member without a placement
+has a zero code, so its cosine to the centroid is 0 and the class is
+invalid until every member with `w_m > 0` is placed; `placement_witnesses[c]`
+counts the member regardless. This is the spec read strictly and is the
+right v1 behaviour: an unplaced member is nowhere, so the class is not
+contiguous. (O2) The decay is written `1 + (surface - 1) * d` instead of
+`surface * d + 1 - d`, algebraically the same, so neutral stays exactly
+`1.0` in float32; accepted. (O3) `Priming.configure` runs in every
+`Space.__init__`, so every Space carries the radius buffer; only the
+canonical concept target propagates, so nothing else reads it; accepted.
+(O4) `BaseModel.priming_spread` survives as the gain of
+`project_priming_to_towers` (`Models.py` 6729), a reader of the retired
+`primingSpread` that §2 did not inventory; it now reads `geometricSpread`
+at the same default, so the tower projection moves with the diffusion
+budget. One knob is right for v1; the Params line is repair R2. (O5)
+GradientFlow.md and Orders.md §§9–10 still name `primingSpread` and
+`priming_row_orders` as history; they stay. (O6) Codex's receipt is honest
+about the two environment failures in the XOR group and about the deferred
+slow cases; the preliminary `development/core` preflight is excluded from
+the gate results.
+
+**Repairs, documents only, outside the frozen hash, no re-run.**
+
+- **R1. Architecture.md: the dated record was deleted, not replaced
+  exactly.** The round removed the paragraphs "Amended 2026-10-20 (Alec)",
+  "Amended 2026-10-22 (Alec; Orders §10)" and "Guard against the feedback
+  loop (Alec's question, 2026-10-20)" with Alec's quotation and the Levy and
+  Goldberg 2014 and Qiu et al. 2018 grounding, and wrote three new
+  paragraphs in their place. §6 asked for two exact replacements inside
+  those paragraphs. Repair: restore the three paragraphs from `HEAD` word
+  for word, then make these exact replacements inside them: in the
+  2026-10-20 paragraph, "computed on read against the active field and
+  STM's recent rows, never stored, and the one that placement must not
+  read" becomes "computed once per sentence by `Priming.propagate` and
+  stored in `_priming_boosts` (item 2.9, 2026-10-27; read-only until then),
+  and the one that placement must not read"; in the 2026-10-22 paragraph,
+  "(Claude's reading of the decision, to confirm when item 3 builds that
+  channel). The loop guard is unchanged: placement reads the surface before
+  the conceptual channel, the chooser and attention read it after." becomes
+  "(confirmed and built in item 2.9). The loop guard keeps its form:
+  placement reads the seen ledger, the chooser and attention the propagated
+  surface (item 2.9)."; in the guard paragraph, "One surface, two read
+  points: placement reads it before the conceptual channel is applied; the
+  chooser and attention read it after." becomes "Two ledgers, one read point
+  each (item 2.9, 2026-10-27): placement reads `_priming_seen`, written by
+  the decay and the seen bump only; the chooser and attention read
+  `_priming_boosts` after `Priming.propagate`." The old "Priming diffusion
+  (`<primingSpread>`, ...)" paragraph stays replaced by the round's "Priming
+  diffusion (`geometricSpread`, default 0.05)" paragraph, and the round's
+  "One conceptual space, stored location diffusion (item 2.9, 2026-10-27)"
+  paragraph stays after it, with its "Guard against the feedback loop"
+  companion retitled "Guard, as built (item 2.9, 2026-10-27)" so the
+  heading is not duplicated. The one-line "Amended 2026-10-20 (Alec)" lead
+  sentence the round kept ("a spreading field, not a gate on attention")
+  goes, since the restored paragraph carries that amendment.
+- **R2. Params.md:** the `geometricSpread` row adds "Also the gain
+  `BaseModel.priming_spread` hands to `project_priming_to_towers`, which read
+  `primingSpread` before item 2.9."
+
+Both edits regenerate `document-hashes.json`; the frozen hash is untouched
+because `doc/` is outside the snapshot. No gate re-runs.
+
+**Landing.** Approved on `b031b11ee9f2` once R1 and R2 are applied. Alec
+commits, or tells Codex to: one BasicModel commit of the tree with the
+receipt's generated evidence excluded as item 3.5 and 3.0 did; todo.md item
+2.9 records the hash and this section; the WikiOracle submodule bump
+follows. The deferred slow cases ride the November sweep. Item 2.8 is
+independent and its spec is next; item 2.7's certificate still carries the
+unforced 1-to-2 raise, which orders §70 reads as not supplied by either
+existing path.

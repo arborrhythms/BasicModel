@@ -7663,6 +7663,9 @@ class Space(SpaceCarrierMixin, nn.Module):
         if self.nStreams < 1 or int(self.nVectors) < 0:
             raise ValueError('priming construction requires positive streams and a nonnegative inventory')
         self.register_buffer('_priming_boosts', torch.ones(self.nStreams, int(self.nVectors)), persistent=False)
+        self.register_buffer('_priming_seen', torch.ones(self.nStreams, int(self.nVectors)), persistent=False)
+        from Priming import configure
+        configure(self)
         self.nDim         = spaceShape[1]  # content dimensionality of the codebook vectors
         # Resolve nInputDim/nOutputDim:
         #   0  -> inherit from constructor dim (inputShape[1] / outputShape[1]),
@@ -7995,12 +7998,6 @@ class Space(SpaceCarrierMixin, nn.Module):
             raise RuntimeError('priming surface must move with its constructed owner')
         return surface[:B]
 
-    def _priming_edges(self):
-        """``(src, dst, |w|)`` diffusion graph over this Space's priming
-        rows, or None. Base Spaces carry no row graph; ConceptualSpace
-        overrides with the common Part store."""
-        return None
-
     def _priming_target(self):
         """The canonical priming holder (Alec 2026-07-12): per-stage towers
         delegate to the ONE order-indexed codebook surface -- the terminal
@@ -8008,31 +8005,12 @@ class Space(SpaceCarrierMixin, nn.Module):
         codebook, not on per-stage quantizer copies."""
         return getattr(self, "_priming_canonical_ref", None) or self
 
-    def priming_row_orders(self):
-        """``[V]`` long fold depths of the priming rows.
-
-        This legacy-named API is the canonical codebook's ramsification
-        readout (depth = count of non-NEITHER folds), not mereological rank.
-        ``None`` when the codebook carries no table.
-        """
-        t = self._priming_target()
-        sub = getattr(t, 'subspace', None)
-        cb = sub.codebook() if (sub is not None
-                                and hasattr(sub, 'codebook')) else None
-        ram = getattr(cb, 'ramsification', None)
-        if ram is None:
-            return None
-        orders = (ram != cb.FOLD_NEITHER).sum(dim=1).long()
-        # The table covers the full nVectors inventory; the surface tracks
-        # the ACTIVE getW view -- clip to the index-aligned prefix.
-        return orders[:t._priming_dim()]
-
     @torch.no_grad()
-    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None):
-        """Decay, diffuse existing energy, then bump this row's seen symbols."""
+    def prime_seen(self, rows, bump=1.0, decay=None, *, active_rows=None, propagate=True):
+        """Decay and register seen symbols, then optionally propagate once."""
         target = self._priming_target()
         if target is not self:
-            return target.prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows)
+            return target.prime_seen(rows, bump=bump, decay=decay, active_rows=active_rows, propagate=propagate)
         V = self._priming_dim()
         if V <= 0 or not torch.is_tensor(rows):
             return None
@@ -8042,14 +8020,17 @@ class Space(SpaceCarrierMixin, nn.Module):
         active = (torch.ones(B, device=rows.device, dtype=torch.bool) if active_rows is None
                   else active_rows.to(device=rows.device, dtype=torch.bool))
         d = float(decay if decay is not None else getattr(self, '_priming_decay', .9))
-        surface.copy_(torch.where(active[:, None], surface * d + 1 - d, surface))
-        spread = float(getattr(self, '_priming_spread', 0.) or 0.)
-        edges = self._priming_edges() if spread > 0 else None
-        from Priming import diffuse
-        diffuse(self, surface, edges, spread, active)
+        if active.shape != (B,) or not math.isfinite(d) or not 0 <= d <= 1:
+            raise ValueError('priming requires one active flag per stream and decay in [0, 1]')
         valid = (rows >= 0) & (rows < V) & active[:, None]
-        surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
-        surface.clamp_(min=0.)
+        seen = self._priming_seen[:B]
+        for target_surface in (surface, seen):
+            target_surface.copy_(torch.where(active[:, None], 1 + (target_surface - 1) * d, target_surface))
+            target_surface.scatter_add_(1, rows.long().clamp(0, V-1), valid.to(surface) * float(bump))
+            target_surface.clamp_(min=0.)
+        if propagate:
+            from Priming import propagate as step
+            step(self, surface, active)
         return self.relevance_weights(batch=B)
 
     @torch.no_grad()
@@ -8072,8 +8053,8 @@ class Space(SpaceCarrierMixin, nn.Module):
     def _bounded_priming(self, surface):
         """Normalize positive energy for retrieval; neutral is always one.
 
-        Diffusion keeps its degree-normalized energy ledger. Only the detached
-        consumer boost is bounded, so normalization cannot create graph energy.
+        Diffusion keeps its conservative energy ledger. Only the detached
+        consumer boost is bounded, so normalization cannot create stored energy.
         """
         from util import TheXMLConfig
         if surface is None or not hasattr(self, '_closed_clause_store'):
@@ -8087,9 +8068,9 @@ class Space(SpaceCarrierMixin, nn.Module):
         return 1 + positive + excess.clamp_max(0)
 
     def placement_context(self, batch=0):
-        """Stored SEEN/DESIRE excess, before the read-only geometric channel."""
+        """Observed context only: the independent decay-and-SEEN ledger."""
         target = self._priming_target()
-        surface = target._priming_surface(target._priming_dim())
+        surface = target._priming_seen
         if not 0 <= int(batch) < len(surface):
             raise RuntimeError('placement stream exceeds the constructed surface')
         return (surface[int(batch)].detach() - 1).clamp_min(0)
@@ -8099,11 +8080,10 @@ class Space(SpaceCarrierMixin, nn.Module):
 
     @torch.no_grad()
     def relevance_weights(self, *, batch=None):
-        """Bounded consumer energy after conceptual overlap, without a write."""
+        """Bound the already propagated surface without changing either ledger."""
         target = self._priming_target()
         surface = target._priming_surface(target._priming_dim(), batch=batch)
-        from Priming import geometric
-        return target._bounded_priming(surface + geometric(target, surface))
+        return target._bounded_priming(surface)
 
     def get_vectors(self):
         """Convenience accessor -- delegates to subspace."""
@@ -8730,12 +8710,13 @@ class Space(SpaceCarrierMixin, nn.Module):
                     registered.fill_(-1)
                 elif 0 <= int(batch) < len(registered):
                     registered[int(batch)].fill_(-1)
-            surface = getattr(self, '_priming_boosts', None)
-            if surface is not None:
-                if batch is None:
-                    surface.fill_(1.)
-                elif 0 <= int(batch) < surface.shape[0]:
-                    surface[int(batch)].fill_(1.)
+            for name in ('_priming_boosts', '_priming_seen'):
+                surface = getattr(self, name, None)
+                if surface is not None:
+                    if batch is None:
+                        surface.fill_(1.)
+                    elif 0 <= int(batch) < surface.shape[0]:
+                        surface[int(batch)].fill_(1.)
         for layer in self.layers:
             if hasattr(layer, 'Reset'):
                 layer.Reset(batch=batch, hard=hard)
@@ -13026,7 +13007,7 @@ class ConceptualSpace(Space):
         if derived_similarity_codebook and getattr(_sim_cb, 'mereology', None) is None:
             _sim_cb.enable_derived_codes(self)
         self.similarity_codebook = _sim_cb
-        # At most two directed edges per taxonomy pair; LTM1 fixes partsCap.
+        # Retain the constructed edge slabs as the directed membership cache.
         parts_cap = _concept_alloc_of(self).parts.capacity
         self.register_buffer('_priming_edge_src', torch.full((2*parts_cap,), -1, dtype=torch.long), persistent=False)
         self.register_buffer('_priming_edge_dst', torch.full((2*parts_cap,), -1, dtype=torch.long), persistent=False)
@@ -14707,11 +14688,6 @@ class ConceptualSpace(Space):
                 caps = (n_snap, max(1, N - n_snap))
             object.__setattr__(self, "_order_caps_cache", (key, caps))
         return self._order_caps_cache[1]
-
-    def _priming_edges(self):
-        """All retained Part pairs between existing native bank seats."""
-        from Priming import part_edges
-        return part_edges(self)
 
     def order_slice(self, order):
         """The ``(start, end)`` row range of ramsified ``order`` in the stacked

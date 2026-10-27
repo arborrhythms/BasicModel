@@ -2002,14 +2002,9 @@ class BaseModel(Mereology, nn.Module):
                 "architecture.primingDecay", default=0.9))
         except (TypeError, ValueError):
             self.priming_decay = 0.9
-        # Energy-dissipating prime diffusion (Alec 2026-07-12): the fraction
-        # of a connected row's standing energy that moves to its neighbors
-        # per prime event. Live by default; 0 restores pure decay+bump.
-        try:
-            self.priming_spread = float(TheXMLConfig.get(
-                "architecture.primingSpread", default=0.05))
-        except (TypeError, ValueError):
-            self.priming_spread = 0.05
+        # The existing tower projection shares the location spread budget.
+        self.priming_spread = float(TheXMLConfig.space(
+            'ConceptualSpace', 'geometricSpread', .05))
         # Base grammar-confidence threshold for online STM reduction.  The
         # explicit word-axis controller lowers it with occupancy; legacy
         # serial configs retain their fixed reduce-marginal comparison.
@@ -2226,7 +2221,6 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_ss, '_symbolic_order', self.concept_order_limit)
             object.__setattr__(_ss, '_serial', self.word_brackets)
             object.__setattr__(_ss, '_priming_decay', self.priming_decay)
-            object.__setattr__(_ss, '_priming_spread', self.priming_spread)
             # Canonical priming (Alec 2026-07-12): per-stage WS delegate to
             # the terminal's order-indexed codebook surface.
             _ws_list = list(getattr(self, 'wholeSpaces', None) or [])
@@ -2254,7 +2248,6 @@ class BaseModel(Mereology, nn.Module):
             object.__setattr__(_cs, '_symbolic_order', self.concept_order_limit)
             object.__setattr__(_cs, '_serial', self.word_brackets)
             object.__setattr__(_cs, '_priming_decay', self.priming_decay)
-            object.__setattr__(_cs, '_priming_spread', self.priming_spread)
             # Priming addresses belong to the grammar's actual concept owner.
             # Unshared serial stages have different native identity maps.
             _cs_list = list(getattr(self, 'conceptualSpaces', None) or [])
@@ -6712,7 +6705,7 @@ class BasicModel(BaseModel):
         if ws_c is not None:
             idx = getattr(ws_c, "_stage0_indices", None)
             if torch.is_tensor(idx):
-                ws_c.prime_seen(idx)
+                ws_c.prime_seen(idx, propagate=False)
                 if _rd is not None:
                     ws_c.prime_desire(idx, valence=float(_rd))
         cs0 = self._concept_owner()
@@ -6722,7 +6715,7 @@ class BasicModel(BaseModel):
             packed = torch.cat(rows)
             binding = cs0._field_inventory_rows(packed.device)
             addresses = binding.gather(0, packed) if binding.ndim == 2 else binding[packed]
-            cs0.prime_seen(addresses.transpose(0, 1) if addresses.ndim == 2 else addresses[None])
+            cs0.prime_seen(addresses.transpose(0, 1) if addresses.ndim == 2 else addresses[None], propagate=False)
         # CS->PS / CS->WS heat projection (Alec 2026-07-12): the diffused
         # concept heat lands on the word triples' PS pids (primed
         # RECOGNITION) and word-whole WS rows (primed RETRIEVAL -- the
@@ -6757,7 +6750,7 @@ class BasicModel(BaseModel):
             raise RuntimeError('registered sentence exceeds constructed seen capacity')
         registered.fill_(-1)
         registered[:len(seen), :own_width].copy_(torch.where(present[:, None], seen, -1))
-        heat = owner.prime_seen(seen, active_rows=present)
+        heat = owner.prime_seen(seen, active_rows=present, propagate=True)
         if heat is None:
             raise RuntimeError('a reconstruction bank requires its concept priming surface')
         limit = int(self.reconstruction_basis_limit)
@@ -20606,6 +20599,10 @@ class BasicModel(BaseModel):
                     disc.bind_observation_occurrence(b, store.row(row)['occurrence'],
                         symbols=written_clauses[b].get(('symbols', id(clause)), ()),
                         activations=written_clauses[b].get(('activations', id(clause)), ()))
+        # All active streams have completed their placement and promotion steps.
+        derived = getattr(self._concept_owner().similarity_codebook, 'mereology', None)
+        if derived is not None and bool(active.any()):
+            derived.derive_class_placements()
         for b, program in enumerate(entries):
             if bool(active[b]):
                 self.languageSpace.parts_of_speech.observe_kept(program,

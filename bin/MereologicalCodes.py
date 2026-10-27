@@ -45,6 +45,8 @@ class MereologicalCodes(nn.Module):
         self.register_buffer('placement_version', torch.tensor(1, dtype=torch.long, device=initial.device))
         self.register_buffer('placement', initial.new_zeros(count, self.meaning_pairs))
         self.register_buffer('placement_witnesses', torch.zeros(count, dtype=torch.long, device=initial.device))
+        self.register_buffer('placement_derived', torch.zeros(count, dtype=torch.bool, device=initial.device))
+        self.register_buffer('placement_valid', torch.zeros(count, dtype=torch.bool, device=initial.device))
         self.register_buffer('placement_dirty', torch.zeros(count, dtype=torch.bool, device=initial.device), persistent=False)
         self.register_buffer('placement_keys', torch.zeros(count, 32, dtype=torch.uint8, device=initial.device))
         self.register_buffer('placement_keyed', torch.zeros(count, dtype=torch.bool, device=initial.device))
@@ -143,6 +145,8 @@ class MereologicalCodes(nn.Module):
         codes = self.placement.detach().clone()
         placed = self.placement_witnesses > 0
         for row in rows:
+            if bool(self.placement_derived[row]):
+                continue
             q = codes[row] if placed[row] else F.normalize(identity_code(
                 self.content_key(row), self.meaning_pairs, self.meaning_ones, like=codes), dim=0)
             selected = (context > 0) & placed
@@ -150,6 +154,34 @@ class MereologicalCodes(nn.Module):
             negatives = self._negatives(row, context, placed, key)
             self.placement[row].copy_(self.placement_step(q, codes[selected], context[selected], codes[negatives]))
             self.placement_witnesses[row] += 1
+            self.placement_dirty[row] = True
+
+    @torch.no_grad()
+    def derive_class_placements(self):
+        """Place raised classes at their members' evidence-weighted centroids."""
+        from Priming import part_edges
+        edges = part_edges(self.owner)
+        rows = self.placement_derived.nonzero().flatten().tolist()
+        allocator = self.owner._concept_allocator
+        # Members may themselves be classes. Lower orders are derived first.
+        rows.sort(key=lambda row: allocator.order_of(self.owner.concept_id_at_row(row)))
+        threshold = self.owner._geometric_radius.cos()
+        for row in rows:
+            members = weights = None
+            if edges is not None:
+                src, dst, weight = edges
+                selected = (dst == row) & (weight > 0)
+                members, weights = src[selected], weight[selected]
+            count = 0 if members is None else len(members)
+            self.placement_witnesses[row] = count
+            if count:
+                codes = self.placement[members]
+                centroid = F.normalize((codes * weights[:, None]).sum(0), dim=0)
+                self.placement[row].copy_(centroid)
+                self.placement_valid[row] = ((codes @ centroid) >= threshold).all()
+            else:
+                self.placement[row].zero_()
+                self.placement_valid[row] = False
             self.placement_dirty[row] = True
 
     @torch.no_grad()
@@ -165,6 +197,8 @@ class MereologicalCodes(nn.Module):
     def placement_extras(self):
         return dict(version=1, placement=self.placement.detach().cpu().clone(),
                     witnesses=self.placement_witnesses.detach().cpu().clone(),
+                    derived=self.placement_derived.detach().cpu().clone(),
+                    valid=self.placement_valid.detach().cpu().clone(),
                     keys=self.placement_keys.detach().cpu().clone(),
                     keyed=self.placement_keyed.detach().cpu().clone())
 
@@ -174,6 +208,10 @@ class MereologicalCodes(nn.Module):
             raise ValueError('item 3.0 placement checkpoint version 1 is required')
         pairs = (('placement', self.placement), ('witnesses', self.placement_witnesses),
                  ('keys', self.placement_keys), ('keyed', self.placement_keyed))
+        # Earlier version-1 checkpoints predate class placement. Their native
+        # raise records supply the new flags; no constructed column is resized.
+        flags = (('derived', self.placement_derived), ('valid', self.placement_valid))
+        pairs += tuple((key, target) for key, target in flags if key in saved)
         for key, target in pairs:
             value = saved.get(key)
             if not torch.is_tensor(value) or value.shape != target.shape or value.dtype != target.dtype:
@@ -181,6 +219,8 @@ class MereologicalCodes(nn.Module):
         self._validate_placement(saved['placement'], saved['witnesses'])
         for key, target in pairs:
             target.copy_(saved[key])
+        if 'derived' not in saved or 'valid' not in saved:
+            self._restore_class_placements()
         self.placement_dirty.fill_(True)
         self._form_valid.zero_()
 
@@ -203,11 +243,31 @@ class MereologicalCodes(nn.Module):
             if value is None or value.shape != expected.shape or value.dtype != expected.dtype:
                 raise ValueError('placement checkpoint differs from constructed column: '+name)
         self._validate_placement(state[prefix+'placement'], state[prefix+'placement_witnesses'])
+        legacy = any(prefix+name not in state for name in ('placement_derived', 'placement_valid'))
+        for name in ('placement_derived', 'placement_valid'):
+            value = state.get(prefix+name)
+            if value is None:
+                state[prefix+name] = torch.zeros_like(getattr(self, name))
+            elif value.shape != self.placement_witnesses.shape or value.dtype != torch.bool:
+                raise ValueError('placement checkpoint differs from constructed column: '+name)
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
+        if legacy:
+            self._restore_class_placements()
         self.placement_dirty.fill_(True)
         self._form_valid.zero_()
         self._centroid_cache = None
         self._form_revision = None
+
+    @torch.no_grad()
+    def _restore_class_placements(self):
+        self.placement_derived.zero_()
+        self.placement_valid.zero_()
+        from Priming import part_edges
+        self.owner._priming_edge_revision = None
+        edges = part_edges(self.owner)
+        if edges is not None:
+            self.placement_derived[edges[1]] = True
+        self.derive_class_placements()
 
     def _form_sources(self):
         from Spaces import _concept_alloc_of

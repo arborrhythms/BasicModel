@@ -839,3 +839,12 @@ conducts, the whole-store scans named in §6 are gone or cached, and the
 promotion fold is form-side. Alec commits; step 3 begins on this source
 with findings 1 and 2 as its first tasks. No publication until the end of
 3.0.
+
+
+## Item 2.9 amendment (2026-10-27)
+
+Section 12 decision 1 (taxonomy edges conduct, default on) is superseded by
+[item 2.9, section 8](2026-10-26-priming-location-diffusion.md#8-decided-alec-2026-10-26-and-the-design-as-amended).
+Only placement conducts priming. The retained directed membership cache
+supplies net positive evidence weights for class centroids. Placement reads
+only the separate seen ledger, never propagated or desire energy.

@@ -10,13 +10,13 @@ import torch
 
 
 
-def test_edge_priming_shares_degree_budget_and_is_detached():
-    from Priming import diffuse
-    owner = SimpleNamespace()
+def test_location_priming_shares_excess_budget_and_is_detached():
+    from Priming import propagate
+    from test_priming_diffusion import owner as fixture_owner, directions
+    owner = fixture_owner(directions([0,10,80], dtype=torch.float32))
     surface = torch.tensor([[4., 1., 1.]])
     before = torch.get_rng_state().clone()
-    edges = (torch.tensor([0]), torch.tensor([1]), torch.tensor([2.]))
-    diffuse(owner, surface, edges, .3, torch.tensor([True]))
+    propagate(owner, surface, torch.tensor([True]))
     torch.testing.assert_close(surface, torch.tensor([[3.1, 1.9, 1.]]))
     assert torch.equal(before, torch.get_rng_state()) and not surface.requires_grad
     assert surface.sum() == pytest.approx(6.)

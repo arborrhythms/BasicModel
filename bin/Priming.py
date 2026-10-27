@@ -1,25 +1,54 @@
-"""Taxonomy diffusion and a read-only geometric consumer channel."""
+"""Stored location diffusion and the directed class-membership cache."""
+import math
+
 import torch
+
+
+def configure(owner):
+    """Construct fixed geometric controls; malformed configuration is an error."""
+    from util import TheXMLConfig
+    get = lambda name, default: TheXMLConfig.space('ConceptualSpace', name, default)
+    spread = float(get('geometricSpread', .05))
+    neighbours = int(get('geometricNeighbours', 8))
+    radius, rate, low, high = (float(get(name, default)) for name, default in (
+        ('geometricRadius', 15.), ('geometricRadiusRate', .02),
+        ('geometricRadiusMin', 1.), ('geometricRadiusMax', 90.)))
+    if (not all(map(math.isfinite, (spread, radius, rate, low, high)))
+            or not 0 <= spread <= 1 or neighbours < 0
+            or not 0 <= rate < 1 or not 0 < low <= radius <= high <= 90):
+        raise ValueError('invalid geometric diffusion controls')
+    owner._geometric_spread = spread
+    owner._geometric_neighbours = neighbours
+    owner._geometric_radius_rate = rate
+    owner._geometric_radius_min = math.radians(low)
+    owner._geometric_radius_max = math.radians(high)
+    owner.register_buffer('_geometric_radius', torch.tensor([math.radians(radius)]))
 
 
 @torch.no_grad()
 def part_edges(owner):
-    """Cached SYMBOL/SYMBOL taxonomy; sentence chains conduct no energy."""
-    parts = owner._concept_allocator.parts
+    """Cache (member, raised class, net positive evidence), never definitions."""
+    allocator = owner._concept_allocator
+    parts = allocator.parts
     revision = parts.symbol_revision
     if owner._priming_edge_revision != revision:
-        src, dst = owner._priming_edge_src, owner._priming_edge_dst
+        src, dst, weights = (owner._priming_edge_src, owner._priming_edge_dst,
+                             owner._priming_edge_weight)
+        classes = {key[1] for key in allocator.relate_idx if key[0] == 'part-base'}
         count = 0
         rows = parts.ref_kinds.eq(parts.SYMBOL).all(-1).nonzero().flatten().tolist()
         for relation in rows:
-            left, right = (owner._csw_row_of(int(symbol)) for symbol in parts.refs[relation])
+            member, parent = parts.refs[relation].tolist()
+            if parent not in classes:
+                continue
+            left, right = owner._csw_row_of(member), owner._csw_row_of(parent)
             if left is None or right is None or left == right:
                 continue
-            if count + 2 > len(src):
-                raise RuntimeError('taxonomy priming exceeds the constructed edge capacity')
-            src[count:count+2] = src.new_tensor((left, right))
-            dst[count:count+2] = dst.new_tensor((right, left))
-            count += 2
+            if count >= len(src):
+                raise RuntimeError('class membership exceeds the constructed edge capacity')
+            src[count], dst[count] = left, right
+            weights[count] = (parts.truth_plus[relation] - parts.truth_minus[relation]).clamp_min(0)
+            count += 1
         owner._priming_edge_count = count
         owner._priming_edge_revision = revision
         owner._priming_edge_rebuilds += 1
@@ -29,67 +58,43 @@ def part_edges(owner):
 
 
 @torch.no_grad()
-def geometric(owner, surface):
-    """Heat-path matrix overlap; transfer excess on read, never store it."""
-    from util import TheXMLConfig
-    # Five percent of active excess, at most eight neighbours: the standing
-    # heat-path budget and a bounded conceptual neighbourhood (§12.2).
-    spread = float(TheXMLConfig.space('ConceptualSpace', 'geometricSpread', .05))
-    neighbours = int(TheXMLConfig.space('ConceptualSpace', 'geometricNeighbours', 8))
-    if not 0 <= spread <= 1 or neighbours < 0:
-        raise ValueError('geometric spread must lie in [0, 1] and neighbours be nonnegative')
-    derived = getattr(getattr(owner, 'similarity_codebook', None), 'mereology', None)
-    change = torch.zeros_like(surface)
-    if derived is None or not spread or not neighbours or not derived.meaning_pairs:
-        return change
-    A = derived.placement.detach().to(surface)
-    placed = derived.placement_witnesses > 0
-    r = (surface - 1).clamp_min(0)
-    active = r > 0
-    # As in build_semantic_heat: context = r_S @ A_S; overlap = A @ context.
-    scores = (r @ A) @ A.T
-    scores.masked_fill_(active | ~placed[None], 0)
-    k = min(neighbours, scores.shape[1])
-    values, indices = scores.topk(k, dim=-1)
-    mass = values.sum(-1, keepdim=True)
-    budget = spread * r.sum(-1, keepdim=True) * (mass > 0)
-    change.scatter_add_(1, indices, budget * values / mass.clamp_min(1e-12))
-    change.sub_(budget * r / r.sum(-1, keepdim=True).clamp_min(1e-12))
-    return change
-
-
-@torch.no_grad()
-def diffuse(owner, surface, edges, spread, active):
-    """Conservative diffusion on the surviving explicit edge channel."""
-    if spread <= 0 or not bool(active.any()):
+def propagate(owner, surface, active):
+    """One conservative, bounded location step over the active streams."""
+    codes = getattr(getattr(owner, 'similarity_codebook', None), 'mereology', None)
+    if codes is None or not codes.meaning_pairs or not bool(active.any()):
         return
-    B, V = surface.shape
-    src = dst = torch.empty(0, device=surface.device, dtype=torch.long)
-    weight = surface.new_empty(0)
-    if edges is not None:
-        src, dst, weight = (value.to(surface.device) for value in edges)
-        valid = (src >= 0) & (src < V) & (dst >= 0) & (dst < V)
-        src, dst, weight = src[valid], dst[valid], weight[valid].to(surface)
-    degree = surface.new_zeros(V).index_add_(0, src, weight)
-    degree = degree.expand(B, -1)
-    budget = spread * (surface - 1) * active[:, None]
-    graph_flow = budget[:, src] * weight / degree[:, src].clamp_min(1e-12)
-    change = surface.new_zeros(B, V)
-    change.index_add_(1, src, -graph_flow)
-    change.index_add_(1, dst, graph_flow)
-    # Several hated neighbours can otherwise overdraw a hub, after which the
-    # standing floor would create energy. Spend only the feasible fraction of
-    # this stream's shared budget; transfer itself remains conservative.
+    if surface.ndim != 2 or surface.shape[1] != len(codes.placement) or active.shape != surface.shape[:1]:
+        raise RuntimeError('diffusion differs from the constructed stream/inventory shape')
+    A = codes.placement.detach().to(surface)
+    ok = (codes.placement_witnesses > 0) & (~codes.placement_derived | codes.placement_valid)
+    r = (surface - 1).clamp_min(0)
+    z = (r * ok) @ A
+    scores = z @ A.T
+    scores.masked_fill_((r > 0) | ~ok[None], 0)
+    cosines = scores / z.norm(dim=-1, keepdim=True).clamp_min(1e-12)
+    radius = owner._geometric_radius.detach().clone()
+    # Positive cosines only: masked zeros must not become neighbours at 90 deg.
+    mask = (cosines > 0) & (cosines >= radius.cos())
+    count = mask.sum(-1)
+    k = min(owner._geometric_neighbours, surface.shape[1])
+    values, indices = (cosines * mask).topk(k, dim=-1)
+    mass = values.sum(-1, keepdim=True)
+    total = r.sum(-1, keepdim=True)
+    budget = owner._geometric_spread * total * (mass > 0) * active[:, None]
+    change = torch.zeros_like(surface)
+    change.scatter_add_(1, indices, budget * values / mass.clamp_min(1e-12))
+    change.sub_(budget * r / total.clamp_min(1e-12))
     fraction = torch.where(change < 0, surface / (-change).clamp_min(1e-12),
                            1.).amin(-1).clamp_max(1.)
     fraction = torch.where(fraction < 1,
         fraction * (1 - torch.finfo(surface.dtype).eps), fraction)
-    # Sum in double: a large neutral inventory otherwise hides small transfer
-    # roundoff behind float32 summation of thousands of ones.
-    # Scalar diagnostics retain double precision on hosts without device float64.
     before = surface.cpu().double().sum(-1)
     surface.add_(change * fraction[:, None])
     object.__setattr__(owner, '_last_priming_diffusion', dict(
-        graph_edges=len(src),
-        before=before, after=surface.cpu().double().sum(-1), degree=degree,
-        budget_fraction=fraction))
+        before=before, after=surface.cpu().double().sum(-1),
+        budget_fraction=fraction, receivers=count, radius=radius))
+    mean = (count * active).sum().to(surface) / active.sum()
+    target = owner._geometric_neighbours
+    factor = 1 + owner._geometric_radius_rate * ((mean < target).to(surface) - (mean > target).to(surface))
+    owner._geometric_radius.mul_(factor).clamp_(
+        owner._geometric_radius_min, owner._geometric_radius_max)

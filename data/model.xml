@@ -506,6 +506,10 @@
     <placementNegativeWeight>1.0</placementNegativeWeight>
     <geometricSpread>0.05</geometricSpread>
     <geometricNeighbours>8</geometricNeighbours>
+    <geometricRadius>15</geometricRadius>
+    <geometricRadiusRate>0.02</geometricRadiusRate>
+    <geometricRadiusMin>1</geometricRadiusMin>
+    <geometricRadiusMax>90</geometricRadiusMax>
     <recurrenceAngle>15</recurrenceAngle>
     <raiseEvidence>0</raiseEvidence>
     <mtmPrepend>8</mtmPrepend>

@@ -10,7 +10,7 @@ from test_review13_subspaces import fixture as native_fixture, word
 
 
 def fixture():
-    cs, cb, _, alloc = native_fixture(batch_size=2)
+    cs, cb, _, alloc = native_fixture(meaning_pairs=2, batch_size=2)
     return cs, cb, alloc
 
 
@@ -26,8 +26,9 @@ def test_rows_conduct_to_other_words_without_crossing_batch_streams():
     root = alloc.parts.add(cs.concept_id_at_row(a), cs.concept_id_at_row(b))
     row = store.append_meaning(ConceptualMeaning(torch.eye(3), torch.tensor([True,False,False]),
          sentence_kind='idea', role_refs=(('sym', root), None, None)), evidence=(1.,0.))
-    cs._priming_spread = .25
-    # Existing diffusion transports standing energy before the new seen bump.
+    cb.mereology.placement[[a,b,c]] = torch.tensor([[1.,0.],[1.,0.],[0.,1.]])
+    cb.mereology.placement_witnesses[[a,b,c]] = 1
+    # Recorded relations do not conduct; nearby placements do.
     cs.prime_seen(torch.tensor([[a],[c]]))
     surface = cs.prime_seen(torch.tensor([[a],[c]]))
     assert surface[0,b] > 1 and surface[1,b] == 1

@@ -9927,6 +9927,8 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
             if not self.parts.contains(i):
                 raise IndexError(f"unavailable Part {i}")
             self.parts.truth_plus[i], self.parts.truth_minus[i] = values
+            if bool(self.parts.ref_kinds[i].eq(self.parts.SYMBOL).all()):
+                self.parts._symbol_epoch += 1
             return
         i = int(idx)
         if not 0 <= i < len(self):

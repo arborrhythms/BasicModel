@@ -59,6 +59,12 @@ def index_part_row(cs, part, whole):
     if whole_ref[0] == SYMBOL:
         _inherit_forms(cs, whole_ref[1], parent)
     destination = cs._csw_concept_row(order, parent)
+    meaning = getattr(cs.similarity_codebook, 'mereology', None)
+    if meaning is not None and part_ref[0] == SYMBOL:
+        meaning.placement_derived[destination] = True
+        meaning.placement_valid[destination] = False
+        # Admission can allocate the destination after the relation is written.
+        cs._priming_edge_revision = None
     source = cs._csw_row_of(whole_ref[1]) if whole_ref[0] == SYMBOL else None
     if source is not None:
         with torch.no_grad():

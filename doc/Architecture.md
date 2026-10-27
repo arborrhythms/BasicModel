@@ -571,9 +571,9 @@ Within an order above 0, conceptual overlap is shared membership, reached
 by the existing two-hop through the shared member, so no code-derived
 channel exists there. Within order 0 only, the geometric overlap in the
 dense similarity space where word meanings are placed by context — the
-one code-derived channel, computed on read against the active field and
-STM's recent rows, never stored, and the one that placement must not
-read. Both feed the one degree-normalized, energy-conserving budget. No
+one code-derived channel, computed once per sentence by `Priming.propagate` and stored in
+`_priming_boosts` (item 2.9, 2026-10-27; read-only until then), and the one
+that placement must not read. Both feed the one degree-normalized, energy-conserving budget. No
 matrix, and never the percept cube (forms and meanings do not share a
 metric, [SymbolFirewall](SymbolFirewall.md)).
 **Amended 2026-10-22 (Alec; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3)): one conceptual
@@ -582,10 +582,9 @@ whole, not per order, and every concept of every order is placed by
 context in the one similarity space, concrete and abstract intermingled.
 The edge channel still crosses orders along the Part and membership
 edges. The conceptual channel, the overlap of placed codes, then applies
-at every order rather than at order 0 only (Claude's reading of the
-decision, to confirm when item 3 builds that channel). The loop guard is
-unchanged: placement reads the surface before the conceptual channel,
-the chooser and attention after. Strata remain the structure of LTM.
+at every order rather than at order 0 only (confirmed and built in item 2.9).
+The loop guard keeps its form: placement reads the seen ledger, the chooser
+and attention the propagated surface (item 2.9). Strata remain the structure of LTM.
 **Guard against the feedback loop (Alec's question, 2026-10-20):** codes
 are written from content only — the fold of parts and wholes, the fold
 over occurrences, the pretraining's observed context — and *(amended the same day, Alec: "can the priming surface be used to
@@ -596,9 +595,10 @@ are observed structure (skip-gram factorizes shifted co-occurrence PMI,
 Levy & Goldberg 2014; random-walk embeddings factorize the *diffused*
 co-occurrence, Qiu et al. 2018 — the surface after registration is that
 object) — **but never the conceptual channel**, the overlap-weighted
-diffusion derived from the codes themselves. One surface, two read
-points: placement reads it before the conceptual channel is applied; the
-chooser and attention read it after. That is the exact form of the loop
+diffusion derived from the codes themselves. Two ledgers, one read point each
+(item 2.9, 2026-10-27): placement reads `_priming_seen`, written by the
+decay and the seen bump only; the chooser and attention read
+`_priming_boosts` after `Priming.propagate`. That is the exact form of the loop
 guard: codes never read what was computed from codes. The
 loop that remains is indirect and bounded: priming biases attention and
 the chooser, which biases what is observed and composed, which the folds
@@ -609,19 +609,37 @@ meet over content), and recurrence, not priming, mints.
 Decay (`primingDecay` 0.9), the seen bump, the
 signed desire channel and the bounded read are unchanged.
 
-**Priming diffusion (`<primingSpread>`, default 0.05, LIVE by default,
-amended 2026-10-20).** Before the SEEN bump, `prime_seen` moves an `s =
-<primingSpread>` fraction of each connected row's standing priming energy
-to its neighbors through Part and its derived word-to-sentence memberships
-(ConceptualSpace-only; other spaces have no diffusion graph) — a conservative
-transfer (dst gains exactly what src loses), not amplification, so
-successive SEEN events propagate energy further out into the connected
-symbols before decay + bump apply. `0` restores pure decay+bump (the
-pre-diffusion behavior).
-Step 1b carries this edge path and the default. Orders §10 (2026-10-22)
-replaces the stratified reads with one conceptual space; the geometric
-channel and placement remain item 3's, and the geometric channel is not
-yet a production read.
+**Priming diffusion (`geometricSpread`, default 0.05).** There is one
+batched step per sentence in `Models._prime_sentence_symbols`, ordered
+decay, bump, propagate. The fired-row call `_prime_seen_step` and signed
+`prime_desire` bumps do not propagate or change the diffusion ledger.
+`_last_priming_diffusion` records `before` and `after` totals summed in double
+on CPU, `budget_fraction`, the `receivers` count before the cap, and the
+`radius` used for the step. Afterward the radius adapts from the active
+streams' mean count. `geometricSpread=0` leaves decay and bumps; the
+controller still observes neighbourhood counts. Decay (`primingDecay` 0.9),
+the signed desire channel and the bounded consumer read retain their roles.
+
+**One conceptual space, stored location diffusion (item 2.9, 2026-10-27).**
+Every order shares one placement. After the sentence's decay and seen bump,
+`Priming.propagate` applies the placement field without a pairwise matrix:
+`z = (r * ok) @ placement`, then `scores = z @ placement.T`. Unit directions
+supply the cosine neighbourhood. The adaptive radius and fixed neighbour cap
+bound receivers; the spread budget transfers excess conservatively. Part
+membership edges supply the evidence weights for a class's centroid; they
+conduct no energy. A noncontiguous class is invalid and excluded from the
+field and receiver mask. Definitions remain separate from membership.
+
+**Guard, as built (item 2.9, 2026-10-27).** Placement reads only `_priming_seen`,
+the preallocated ledger written by seen decay and bumps. Desire and
+location propagation never write that ledger. `placement_context`, the
+collapse audit and consolidation read its nonnegative excess over neutral.
+Thus codes never read energy computed from codes. The chooser and attention
+read the propagated `_priming_boosts` through the bounded, pure
+`relevance_weights` read. The indirect loop remains bounded: priming biases
+what is observed and composed; decay, the small conservative spread and the
+capped read keep it a bias on sampling. In `bind`, priming enters only the
+expectation term, never the content term, and recurrence mints.
 
 **Frozen concepts (`freeze_concept` / `_frozen_concepts`, Alec 2026-07-11).**
 A concept's relational structure can be FROZEN: no FORMING of new edges, no

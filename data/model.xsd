@@ -189,7 +189,6 @@
       <!-- Priming diffusion: the fraction of a connected row's energy shared
            by Part and conceptual-overlap neighbours under one degree budget.
            Live by default (0.05); 0 restores pure decay+bump. -->
-      <xs:element name="primingSpread" type="xs:decimal" minOccurs="0"/>
       <!-- Discover concepts in a row pool by witnessed context and use. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
@@ -1138,6 +1137,10 @@
       <xs:element name="placementNegativeWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="geometricSpread" type="unitInterval" minOccurs="0"/>
       <xs:element name="geometricNeighbours" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="geometricRadius" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="geometricRadiusRate" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="geometricRadiusMin" type="xs:decimal" minOccurs="0"/>
+      <xs:element name="geometricRadiusMax" type="xs:decimal" minOccurs="0"/>
       <!-- Reading drift tolerance: 15 degrees by default; three documents promote. -->
       <xs:element name="raiseEvidence" type="unitInterval" minOccurs="0"/>
       <xs:element name="recurrenceAngle" type="nonNegativeFloat" minOccurs="0"/>

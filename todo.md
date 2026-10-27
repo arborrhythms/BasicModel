@@ -1043,7 +1043,7 @@ not by a passing identity lesson.
    Not here: dimensional `lift`/`lower` (FutureWork); the 6.5, 6.2 and 6.1
    learning gates and 9's and 8's empirical evidence (item 0). Exit: the
    list above empty, each line with a receipt hash or a written move.
-- **3.4. Priming as location-based diffusion in the one conceptual space.**
+- **2.9. Priming as location-based diffusion in the one conceptual space.**
    *Decided (Alec, 2026-10-26; [spec §§1–8](doc/plans/2026-10-26-priming-location-diffusion.md)).*
    Successor to Orders §9's stratified surface, which §10 withdrew. The
    placed meaning codes are the network: `Priming.propagate` applies the
@@ -1057,7 +1057,8 @@ not by a passing identity lesson.
    round: smoke, freeze, the §5 gates as §8 amends them, ports, the five
    scoped groups. Codex text when Alec calls it. Exit: the gates green on
    one hash, Architecture's priming guard reworded to the ledger.
-- **3.3. Order-0 concepts strictly sorted over the perceptual mereology:
+   reviewed in spec §9 on b031b11ee9f2, approved, R1 and R2 applied.
+- **2.8. Order-0 concepts strictly sorted over the perceptual mereology:
    two subspaces, one call.** *Decided (Alec, 2026-10-26;
    [FutureWork](doc/FutureWork.md), the "Decided (Alec, 2026-10-26): two
    subspaces, sorted per subspace, one call" block under the sorting item).*
@@ -1072,24 +1073,22 @@ not by a passing identity lesson.
    layout split, the form rule, the certificate (tower 0 as respecified,
    tower 1 subtype pairs, cross-level at-most relations, nested order-0
    concepts strictly sorted; `containment_audit` becomes that check) and
-   the context-wholes form ports. Independent of 3.4. Exit: the certificate
+   the context-wholes form ports. Independent of 2.9. Exit: the certificate
    green on one hash.
-- **3.2. Thinking: derivation over chunks with trust, and `intuit`.**
-   *Spec to write (Claude) after Alec's eight decisions, from the
-   [exploration notes](doc/plans/2026-10-26-thought-design-notes.md) and the
-   [`intuit` spec](doc/plans/2026-10-21-intuit.md) §5, whose leaf-index
-   scan and `Mind.SERIAL` dependency are amended by step 1 and 3.4.*
-   The serial slot becomes the episode's focus chunk among the shared
-   eight; `descend`/`return` follow tagged LTM1 references; operators
-   `infer`, `refute`, `substitute` beside the catalogue; `intuit` proposes
-   into chunks, the serial path confirms; trust computed along the path
-   (minimum, maximum, lane exchange), learned only at the leaves; weak and
-   strong forcing; the implicit route, pervasion over an object's parts and
-   wholes in order-0 space, judged together with the explicit chain
-   (notes §9). Rounds sized at spec time. Runs before item 3's corpus so the
-   STM change lands before the long run. Exit: the spec's gates green and
-   one thought episode's records replaying a derivation with its pair.
-- **3. Corpus at target size.** *Moved from FutureWork (Alec,
+- **2.7. Corpus at target size** (formerly item 3; renumbered 2026-10-26
+   below the landed 3.0 by the countdown rule: work that follows a landed
+   number takes a smaller one; the record below keeps its "item 3"
+   wording). Still to do here: the unforced 1-to-2 raise certificate; the
+   fold trained from DEF rows with explicit and implicit definitions judged
+   in the two lanes; parts of speech learned in order (proper, mass, count)
+   and measured, not forced; order-2 kinds and kind-level verbs; the
+   generated math suite under `RUN_SLOW`; the invertible-path program and
+   the content width audit; the capacity, load and run-config measurements
+   of the Exit below; the age-ordered corpus assembled; and, from 3.5's
+   list (iteration spec §20.3, no receipt found at the 2026-10-26 audit),
+   the paired native surface route and counted centroid inverse
+   certified for absorb and transpose. The 3.0 ledger
+   inside is history. *Moved from FutureWork (Alec,
    2026-10-21):* **orders are learned, not written into the grammar**
    (design record below).
    **Carried from the item 3.0 landing (2026-10-26; [orders §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried)):** certify the 1-to-2 raise on unforced text, “Felix is a cat. Ciao is a cat.”, measuring the shared word's object and both members without `force_order`; §70 records the current readers only.
@@ -1606,6 +1605,20 @@ not by a passing identity lesson.
    [Viterbi toy](doc/benchmarks/2026-10-08-viterbi-departure-toy/README.md)
    shows the order, not only the content, is what lets one departure escape
    multi-step minima ([4.5 spec §5.3–§5.4](doc/specs/2026-10-08-expectation-at-every-level.md)).
+- **2.5. Thinking: derivation over chunks with trust, and `intuit`.**
+   *Spec to write (Claude) after Alec's eight decisions, from the
+   [exploration notes](doc/plans/2026-10-26-thought-design-notes.md) and the
+   [`intuit` spec](doc/plans/2026-10-21-intuit.md) §5, whose leaf-index
+   scan and `Mind.SERIAL` dependency are amended by step 1 and 2.9.*
+   The serial slot becomes the episode's focus chunk among the shared
+   eight; `descend`/`return` follow tagged LTM1 references; operators
+   `infer`, `refute`, `substitute` beside the catalogue; `intuit` proposes
+   into chunks, the serial path confirms; trust computed along the path
+   (minimum, maximum, lane exchange), learned only at the leaves; weak and
+   strong forcing; the implicit route, pervasion over an object's parts and
+   wholes in order-0 space, judged together with the explicit chain
+   (notes §9). Rounds sized at spec time. Exit: the spec's gates green and
+   one thought episode's records replaying a derivation with its pair.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or

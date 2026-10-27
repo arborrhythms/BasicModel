@@ -57,27 +57,24 @@ def test_meet_step_uses_candidate_mass_and_negative_subgradient():
 
 def test_read_point_geometry_conserves_energy_and_never_writes(monkeypatch):
     cs, derived, rows, reading = lesson(monkeypatch)
-    a, b = rows[:2]
-    derived.placement[[a,b]] = F.normalize(torch.ones(2, derived.meaning_pairs), dim=-1)
+    a,b = rows[:2]
+    derived.placement[[a,b]] = F.normalize(torch.ones(2,derived.meaning_pairs),dim=-1)
     derived.placement_witnesses[[a,b]] = 1
-    cs._priming_boosts.fill_(1.)
-    cs._priming_boosts[0,a] = 2.
-    stored = cs._priming_boosts.clone()
+    cs.prime_seen(torch.tensor([[a]]))
+    stored, seen = cs._priming_boosts.clone(), cs._priming_seen.clone()
     context = cs.placement_context(0)
-    torch.testing.assert_close(context, (stored[0]-1).clamp_min(0), rtol=0, atol=0)
-    from Priming import geometric
-    term = geometric(cs, stored)
-    assert term[0,b] > 0
-    assert not term[:, derived.placement_witnesses == 0].any()
-    torch.testing.assert_close(term.double().sum(-1), torch.zeros(1,dtype=torch.double), rtol=0, atol=1e-6)
-    assert cs.relevance_weights(batch=1)[0,b] > 1.
-    torch.testing.assert_close(cs._priming_boosts, stored, rtol=0, atol=0)
-    # One surface read for the close; a consumer read cannot supply it.
-    calls = []
-    original = cs.placement_context
-    monkeypatch.setattr(cs, 'placement_context', lambda batch=0: calls.append(batch) or original(batch))
+    torch.testing.assert_close(context,(seen[0]-1).clamp_min(0),rtol=0,atol=0)
+    assert stored[0,b] > 1 and seen[0,b] == 1
+    first, second = cs.relevance_weights(batch=1), cs.relevance_weights(batch=1)
+    assert torch.equal(first,second) and torch.equal(stored,cs._priming_boosts)
+    assert torch.equal(seen,cs._priming_seen)
+    audit = cs._last_priming_diffusion
+    torch.testing.assert_close(audit['before'],audit['after'],rtol=0,atol=1e-9*cs.nVectors)
+    calls=[]
+    original=cs.placement_context
+    monkeypatch.setattr(cs,'placement_context',lambda batch=0: calls.append(batch) or original(batch))
     derived.observe_close(reading)
-    assert calls == [0]
+    assert calls==[0]
 
 
 def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
@@ -86,12 +83,14 @@ def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
     parts = _concept_alloc_of(cs).parts
     a, b = (cs.concept_id_at_row(row) for row in rows[:2])
     parts.add(a, b)
-    cs._priming_edges()
+    from Priming import part_edges
+    part_edges(cs)
     cs.project_priming_to_towers(None, None, batch=1)
     derived.begin_forward()
     cs.components.begin_forward()
     counts = cs._priming_edge_rebuilds, cs._priming_bridge_rebuilds, derived.form_rows_derived, cs.components._inventory_rebuilds
-    cs._priming_edges()
+    from Priming import part_edges
+    part_edges(cs)
     cs.project_priming_to_towers(None, None, batch=1)
     derived.begin_forward()
     cs.components.begin_forward()
@@ -100,7 +99,8 @@ def test_unchanged_forward_reuses_edges_bridge_forms_and_witnesses(monkeypatch):
     # Appending a chain, even one mentioning the same symbol, is not taxonomy.
     revision = parts.symbol_revision
     parts.add((parts.OCCURRENCE, -7), (parts.SYMBOL, a))
-    cs._priming_edges()
+    from Priming import part_edges
+    part_edges(cs)
     assert parts.symbol_revision == revision and cs._priming_edge_rebuilds == counts[0]
     with pytest.raises(ModuleNotFoundError):
         __import__('PartRead')

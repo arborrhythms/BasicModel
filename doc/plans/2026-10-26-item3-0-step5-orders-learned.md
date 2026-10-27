@@ -2214,3 +2214,5 @@ and sweep receipts, including repair-01, repair-03 and repair-04-slow-budget,
 remain local and gitignored. Learning, runtime failures and the unforced
 raise certificate carry to items 0, 1 and 3 respectively. No tests were run
 for the landing.
+
+BasicModel landing commit: `91974ced9bff1944f43f18ee988c9a731acded2d`, pushed to `origin/main`. This hash was recorded after the single landing commit was created; this final record remains a local documentation edit.

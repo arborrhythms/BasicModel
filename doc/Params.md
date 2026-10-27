@@ -557,7 +557,12 @@ symbol (line anchors drift).
 | `readingAttention` | retired | rejected | Bracket candidates, priming and word expectation carry its capabilities. |
 | `relevance` | `Models.py` (BaseModel init) | `false` | Relevance-integration gate (Architecture.md sec C). |
 | `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
-| `primingSpread` | `Models.py` (BaseModel init) | `0.05` (lowered from 0.25, Alec 2026-10-20; the graph becomes the LTM2 Part edges) | Fraction of a connected row's standing energy diffused to neighbors per prime event (live by default; `0` = pure decay+bump). |
+| `geometricSpread` | `ConceptualSpace`, `Priming.py` | `0.05` | Fraction of positive excess transferred by the stored sentence location step; zero disables transfer. Also the gain `BaseModel.priming_spread` hands to `project_priming_to_towers`, which read `primingSpread` before item 2.9. |
+| `geometricNeighbours` | `ConceptualSpace`, `Priming.py` | `8` | Fixed top-k receiver cap after the cosine radius mask; also the radius controller's target count. |
+| `geometricRadius` | `ConceptualSpace`, `Priming.py` | `15` | Initial radius in degrees; stored in a preallocated one-element radians buffer. Also tests class contiguity. |
+| `geometricRadiusRate` | `ConceptualSpace`, `Priming.py` | `0.02` | Fractional radius change after each sentence: shrink above the active mean target count, grow below, unchanged at equality. |
+| `geometricRadiusMin` | `ConceptualSpace`, `Priming.py` | `1` | Minimum adaptive radius in degrees. |
+| `geometricRadiusMax` | `ConceptualSpace`, `Priming.py` | `90` | Maximum adaptive radius in degrees. |
 | `serialWordCapacity` | `Models.py` (BaseModel init) | legacy fallback: `stmCapacity` | Hard maximum surface words staged for one outer serial loop. Independent of PS/WS/CS field width and STM depth; BasicModel sets 256 while keeping those fields/workspace at 8. The tensor loop executes only through the final live column. |
 | `serialResidualPartCapacity` | `Models.py` / `InputSpace` | `16` | Fixed compiler-visible integer radix/subword-ID extent for one cold spelling. It is not a dense percept-vector axis; the masked PS fold reduces those IDs into PS's configured live field. BasicModel uses 64. |
 | `serialWordBuckets` | `Models.py` / `InputSpace` | one bucket equal to `serialWordCapacity` | Comma-separated staging capacities. The largest value must equal `serialWordCapacity`; an overlong sentence fails rather than clipping. BasicModel uses only `256`, because its compiled `torch.while_loop` has a runtime trip count and therefore needs neither padding execution nor separate 16/32/64/128 graphs. Multiple buckets remain a compatibility/performance option for the static scheduler. |

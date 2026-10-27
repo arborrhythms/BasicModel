@@ -24,13 +24,12 @@ def test_form_audit_reports_cpu_double_without_moving_forms(device):
     not torch.backends.mps.is_available(), reason='MPS unavailable'))])
 def test_priming_energy_audit_keeps_device_values_and_double_totals(device):
     from types import SimpleNamespace
-    from Priming import diffuse
+    from Priming import propagate
+    from test_priming_diffusion import owner as fixture_owner, directions
     surface = torch.tensor([[2., 1., 0.], [1., 1., 4.]], device=device)
     before = surface.cpu().double().sum(-1)
-    edges = (torch.tensor([0, 1], device=device), torch.tensor([1, 0], device=device),
-             torch.ones(2, device=device))
-    owner = SimpleNamespace()
-    diffuse(owner, surface, edges, .25, torch.tensor([True, False], device=device))
+    owner = fixture_owner(directions([0,10,80],dtype=torch.float32).to(device), spread=.25)
+    propagate(owner, surface, torch.tensor([True, False], device=device))
     torch.testing.assert_close(surface.cpu(), torch.tensor([[1.75, 1.25, 0.], [1., 1., 4.]],
         device='cpu'), rtol=0, atol=0)
     assert surface.device.type == device
@@ -38,4 +37,4 @@ def test_priming_energy_audit_keeps_device_values_and_double_totals(device):
     torch.testing.assert_close(audit['before'], before, rtol=0, atol=0)
     torch.testing.assert_close(audit['after'], before, rtol=0, atol=0)
     assert audit['before'].dtype == audit['after'].dtype == torch.float64
-    assert audit['degree'].device == audit['budget_fraction'].device == surface.device
+    assert audit['receivers'].device == audit['budget_fraction'].device == surface.device

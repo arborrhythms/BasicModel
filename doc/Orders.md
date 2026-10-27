@@ -428,7 +428,9 @@ the concrete ones it is used with. The code already has this shape: one
 `similarity_codebook` holds every order's rows, and `context_similarities`
 compares them in one space. What §9 keeps: all symbols in the one
 mereological tree, the Part edges as the record of membership, membership
-read by edge rather than by distance, and the cross-order diffusion. What
+read by edge rather than by distance, and the cross-order diffusion.
+Item 2.9 specifies cross-order diffusion by location in the one space, class
+rows at their members' centroid. What
 goes: the per-order cubes, the "point in every order's space at once"
 read, and `priming_row_orders` as a read restriction. §9's crowding
 objection is answered by the objective's negatives; the collapse
