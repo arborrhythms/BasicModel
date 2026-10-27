@@ -59,6 +59,14 @@ def _model():
             m, _ = Models.BasicModel.from_config(
                 os.path.join(_DATA, "MM_grammar.xml"))
         Models.TheData.load("xor")
+        # These provenance fixtures supply absolute ideas. Reading a bare form
+        # alone no longer testifies to its object; witness all four explicitly.
+        from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+        from reading_fixtures import supply_object
+        _stage_fullgraph_tensor_peer(m, ["hello world loving there"])
+        for word in sorted(m._concept_owner().interpret._pending):
+            supply_object(m._concept_owner(), word)
+        m._staged_in_sub = None  # Ingestion owns its subsequent lexical staging.
         # This tests ingestion and external provenance. Its untrained chooser
         # receives an explicit absolute reading; parsing quality is separate.
         from reading_fixtures import force_absolute_reading

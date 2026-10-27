@@ -109,7 +109,8 @@ def test_sentence_advantage_reads_comparison_and_optimizer_owns_both(monkeypatch
         assert bank and all(any(p is q for q in owners['output']) for p in bank)
         assert not any(p is q for p in bank for q in owners['reconstruction'])
         assert model._sentence_reader_updates==model._sentence_comparison_reader_updates==1
-        assert {float(optimizer.state[p]['step']) for p in bank if p in optimizer.state}=={1.}
+        # One compose exposure plus the offered closing thought's reader exposure.
+        assert {float(optimizer.state[p]['step']) for p in bank if p in optimizer.state}=={2.}
         assert all(r is not None for r in audit['readers'])
         assert any(not torch.equal(r['presented']['mse'],r['comparison']['mse']) for r in audit['readers'])
         # A later comparison read can never become the ordinary forward head.

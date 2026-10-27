@@ -1,4 +1,5 @@
 """A closing bind's uncovered description reaches R and chooser credit."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
@@ -95,7 +96,7 @@ def test_named_token_keeps_its_content_before_and_after_the_close():
     resolver, store, a, words, _ = world()
     owner, word = resolver.components.owner, words['x']
     # A unit fixture may supply the word's reading order (spec section 13).
-    _concept_alloc_of(owner).reference_orders[word] = 1
+    force_order(owner, word, 1)
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_row_of(word)].copy_(a[0])
     order = owner._concept_source_order(word)

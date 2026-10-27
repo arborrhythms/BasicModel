@@ -437,8 +437,8 @@ class Probe:
                 from SentenceUnderstanding import readback_decisions
                 self.log('readback_decisions', epoch=self.epoch, train=bool(model._sentence_training),
                     trial=model._sentence_trial, decisions=readback_decisions(leaves, counts, bank, active))
-                cosines = torch.nn.functional.cosine_similarity(
-                    leaves[:, :, None], bank.codes[:, None], dim=-1)
+                from decoder_margin_probe import decoder_cosines
+                cosines = decoder_cosines(leaves, bank.codes)
                 lang = local['state'][1]
                 owners, _, _ = model._compose_round_owners(lang[1])
                 compose_valid = lang[3] & (owners == local['sid'])

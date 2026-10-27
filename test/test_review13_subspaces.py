@@ -1,4 +1,5 @@
 """Native form and detached meaning faces, paired by the shared index."""
+from order_fixtures import force_order
 from types import SimpleNamespace
 import torch
 from torch import nn
@@ -25,6 +26,7 @@ def fixture(*, meaning_pairs=1, batch_size=1):
 
 def word(cs, parts):
     cid = cs.new_concept()
+    force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
     for part, weight in parts:
         cs.add_concept_feature(row, 'ps', part, weight)

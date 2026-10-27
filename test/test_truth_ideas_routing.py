@@ -89,7 +89,8 @@ class TestStmLtmTrust(unittest.TestCase):
         cs = m.conceptualSpace
         cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
         D = int(cs.nDim)
-        buf = torch.zeros(2, 3, D)
+        cs.stm.ensure_batch(2)
+        buf = torch.zeros(2, cs.stm.capacity, D)
         buf[0, 2, 0] = 1.0          # row 0 predicate (slot depth-1)
         cs.stm._buffer = buf
         cs.stm._depth = torch.tensor([3, 1], dtype=torch.long)
@@ -108,7 +109,8 @@ class TestStmLtmTrust(unittest.TestCase):
         cs._trust = 0.5
         cs._tetralemma_trust = lambda rel, truth_set=None: (0.8, 0.1, 0.1, 0.0)
         D = int(cs.nDim)
-        buf = torch.zeros(2, 3, D)
+        cs.stm.ensure_batch(2)
+        buf = torch.zeros(2, cs.stm.capacity, D)
         buf[0, 2, 0] = 1.0
         cs.stm._buffer = buf
         cs.stm._depth = torch.tensor([3, 1], dtype=torch.long)
@@ -253,7 +255,7 @@ class TestVerifyRelation(unittest.TestCase):
         new = cs.verify_relation(edge, eps, store=st, support_weight=0.5)
         self.assertAlmostEqual(new, 0.5, places=6)   # observed positive evidence
         # Evidence updates leave the stored vectors unscaled.
-        np1, _vp, np2 = st.row(edge)['meaning'].roles.unbind()
+        np1, _vp, np2 = st.part_row(edge[1], reading='part')['meaning'].roles.unbind()
         self.assertTrue(torch.allclose(np1, _v(1, 1), atol=1e-5))
         self.assertTrue(torch.allclose(np2, _v(0, 0, 1), atol=1e-5))
 
@@ -291,7 +293,7 @@ class TestRelativeTrustPersistence(unittest.TestCase):
     def test_evidence_and_unscaled_argument_identity_survive_checkpoint(self):
         st=_store();edge=part(st,_v(1,1),_v(0,0,1),evidence=(.7,.2))
         state=st.parts.state_dict()
-        self.assertEqual(set(state),{'refs','truth_plus','truth_minus','access_count','surprise','when','count'})
+        self.assertEqual(set(state),{'layout_version','ref_kinds','refs','truth_plus','truth_minus','access_count','surprise','percept','count'})
         fresh=_store();same=part(fresh,_v(1,1),_v(0,0,1),evidence=(0.,0.))
         self.assertEqual(same,edge)
         fresh.parts.load_state_dict(state)

@@ -51,12 +51,12 @@ def test_occupation_migration_retains_counts_by_declared_argument():
                              (current, ('first_argin1', 'new_argin1'))):
         model.language = torch.nn.Module()
         model.language.parts_of_speech = PartsOfSpeech(arguments)
-    previous.language.parts_of_speech.add(17, 'first_argin1')
-    previous.language.parts_of_speech.add(17, 'first_argin1')
-    previous.language.parts_of_speech.add(17, 'removed_argin1')
+    previous.language.parts_of_speech.add(17, 'first_argin1', previous.language.parts_of_speech.order_of(17))
+    previous.language.parts_of_speech.add(17, 'first_argin1', previous.language.parts_of_speech.order_of(17))
+    previous.language.parts_of_speech.add(17, 'removed_argin1', previous.language.parts_of_speech.order_of(17))
     migrated, drift, _ = align(current, previous.state_dict(), catalog(previous))
     key = 'language.parts_of_speech._extra_state'
-    assert _unpack_state(migrated[key])['counts'] == {17: {'first_argin1': 2}}
+    assert _unpack_state(migrated[key])['counts'] == {17: {('first_argin1', -1): 2}}
     assert drift[key]['retired'] == ['removed_argin1']
     current.load_state_dict(migrated, strict=True)
     assert current.language.parts_of_speech.part_of_speech(17) == 'first_argin1'

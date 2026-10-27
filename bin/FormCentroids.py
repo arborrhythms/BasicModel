@@ -94,10 +94,10 @@ def selected(context, arity, like, rule):
     if context is None:
         return None
     mean, count, orders = context[arity]
-    from ReferenceContext import result_order
+    from ReferenceContext import denoted_order
     order = context.get((arity, getattr(rule, 'predicate_identity', None)))
     if order is None:
-        order = result_order(rule, orders)
+        order = denoted_order(rule, orders, context.get('references', {}).get(arity, ()), None)
     count = count * (order == 0)[..., None]
     if mean.ndim == like.ndim and mean.shape[1] != like.shape[1]:
         copies = like.shape[1] // mean.shape[1]
@@ -108,7 +108,7 @@ def selected(context, arity, like, rule):
 def capture(program, bank, batch, positions, language):
     """Retain the same span witnesses for this open derivation's inverse."""
     from dataclasses import replace
-    from ReferenceContext import result_order
+    from ReferenceContext import denoted_order
     stack, stamps, spans, counts, active = [], [], [], [], []
     for index, (kind, operation, word) in enumerate(program.actions.tolist()):
         pair = (1, 1)
@@ -129,8 +129,8 @@ def capture(program, bank, batch, positions, language):
             part = stack[at]
             pair = (len(part), 0)
             span = (min(part), max(part)+1)
-            order = (stamps[at] if field_bind else result_order(
-                language._compose_unary_rules[operation], (stamps[at],)))
+            order = (stamps[at] if field_bind else denoted_order(
+                language._compose_unary_rules[operation], (stamps[at],), (), None))
             if program.timeline_actions is not None:
                 order = int(program.timeline_actions[index, 0])
             stamps[at] = order
@@ -139,7 +139,7 @@ def capture(program, bank, batch, positions, language):
             part = left+right
             stack.append(part)
             right_order, left_order = stamps.pop(), stamps.pop()
-            order = result_order(language._compose_binary_rules[operation], (left_order, right_order))
+            order = denoted_order(language._compose_binary_rules[operation], (left_order, right_order), (), None)
             if program.timeline_actions is not None:
                 order = int(program.timeline_actions[index, 0])
             stamps.append(order)

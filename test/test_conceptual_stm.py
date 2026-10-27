@@ -130,14 +130,17 @@ class TestShortTermMemoryUnit(unittest.TestCase):
         torch.testing.assert_close(stm.peek(0, 0), torch.tensor([2.0, 0.0]))
         torch.testing.assert_close(stm.peek(1, 0), torch.tensor([0.0, 1.0]))
 
-    def test_ensure_batch_resizes(self):
-        stm = self.STM(batch=1, capacity=4, concept_dim=2)
+    def test_ensure_batch_uses_constructed_capacity(self):
+        stm = self.STM(batch=3, capacity=4, concept_dim=2)
+        pointer = stm._buffer.data_ptr()
         stm.ensure_batch(3)
         self.assertEqual(stm._buffer.shape[0], 3)
         self.assertEqual(stm._depth.shape[0], 3)
-        # New rows start empty
         for b in range(3):
             self.assertEqual(stm.size(b), 0)
+        with self.assertRaisesRegex(ValueError, 'constructed nStreams'):
+            stm.ensure_batch(4)
+        self.assertEqual(stm._buffer.data_ptr(), pointer)
 
 
 class TestConceptualSpaceHasSTM(unittest.TestCase):

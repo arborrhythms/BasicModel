@@ -1,4 +1,5 @@
 """Language testimony and META use the native concept hierarchy."""
+from order_fixtures import force_order
 import copy
 from dataclasses import replace
 
@@ -49,7 +50,7 @@ def test_definition_binding_preserves_ambiguous_objects_until_selection():
     word = interpret.lookup_word([7], [1], form='bank')
     first = witness_object(cs, word)
     second = cs.new_concept()
-    _concept_alloc_of(cs).reference_orders[second] = 1
+    force_order(cs, second, 1)
     interpret.define(word, second)
     assert interpret.forward(word, selected=second) == second
     assert interpret.forward(word, selected=first) == first
@@ -58,7 +59,7 @@ def test_definition_binding_preserves_ambiguous_objects_until_selection():
 
 def test_wholespace_taxonomy_payload_is_dropped_instead_of_quarantined():
     cs, _ = _operator()
-    with pytest.warns(UserWarning, match='WholeSpace.*taxonomy'):
+    with pytest.raises(ValueError, match='version 3'):
         cs.load_vocab_extras({'version': 1, 'taxonomy': {'1': [2, 3]},
                              'taxonomy_parent': {'2': 1}, 'meta_trust': {'1': [1, 0, 0, 0]}})
     assert 'legacy_whole_structure' not in cs.vocab_extras()
@@ -88,7 +89,8 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     assert store.parts.refs[row[1]].tolist() == [first, second]
     assert first in cs.taxonomy_children(second)
     assert store.write_clause(source) == row
-    assert len(store) == 1
+    assert len(store) == 0  # Relations occupy LTM1, never an LTM0 idea seat.
+    assert store.parts.contains(row[1])
 
 
 def test_failed_closing_does_not_leave_a_taxonomy_prefix():
@@ -107,8 +109,11 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
                     relation='part', refs=(left, left, right))
     bad = replace(source, children=(source,), refs=(('clause', 0), left, 99999))
     alloc = _concept_alloc_of(cs)
+    # A missing concept can retain its owned point under the layout. Use
+    # actual relation exhaustion to test the transaction's no-prefix guard.
+    alloc.next_id = store.parts.capacity
     before = alloc.next_id, dict(alloc.placement), alloc.records(right)
-    with pytest.raises(ValueError):
+    with pytest.raises(OverflowError, match='LTM1'):
         store.write_clause(bad)
     assert before == (alloc.next_id, dict(alloc.placement), alloc.records(right))
     assert not len(store)
@@ -127,18 +132,16 @@ def test_closing_binds_subject_form_to_particular_without_widening_compose_acces
     clause = finish_reading(f.language, entry, registry=f.registry)
     written = {}
     f.store.write_clause(clause, written_rows=written)
-    cid, = (cid for cid in set(f.cs.word_concepts('cat')) - {f.noun('cat')}
-            if f.cs._concept_source_order(cid) == 1)
-    assert cid in f.cs.word_concepts('cat')
-    assert cid not in f.cs.word_concepts('the')
-    assert cid not in f.cs.word_concepts('runs')
-    assert f.cs._concept_source_order(cid) == 1
-    assert f.cs.resolve_word_concept('cat', order=1, previous=cid) == cid
-    # An unrestricted lexical lookup cannot choose among the admitted uses.
-    # A requested order has its own unique candidate; a situation supplies
-    # the bounded chooser when more than one use remains.
-    assert f.cs.interpret.forward(f.words['cat'][0]) is None
-    assert f.cs.interpret.forward(f.words['cat'][0], order=1) == cid
+    member = clause.children[0]
+    occurrence = f.store.occurrence_of(written[id(member)])
+    assert int(f.store.order[written[id(member)]]) == 1
+    root = written[id(clause)]
+    assert f.store.meaning_of(root).role_refs[0] == occurrence
+    # The identity is the occurrence. Composing the particular adds no DEF
+    # or inventory object to any of the three existing lexical words.
+    for word in ('cat', 'the', 'runs'):
+        assert set(f.cs.word_concepts(word)) == set(f.words[word])
+    assert f.cs.interpret.forward(f.words['cat'][0]) == f.noun('cat')
 
 
 @pytest.mark.parametrize('invalid', ['width', 'capacity'])
@@ -163,13 +166,16 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     alloc = _concept_alloc_of(f.cs)
     before = alloc.next_id, copy.deepcopy(alloc.placement), copy.deepcopy(alloc.relate_idx)
     if invalid == 'width':
-        with pytest.raises(ValueError):
-            f.store.write_clause(clause)
+        # The layout's documented _fit accepts an operand width and keeps
+        # exactly the store-width leading coordinates, without a new row shape.
+        f.store.write_clause(clause)
+        assert len(f.store) == 1 and f.store.slots.shape[1] == 8
+        torch.testing.assert_close(f.store.slots[0], torch.zeros(8), rtol=0, atol=0)
     else:
-        with pytest.raises(OverflowError, match='LTM2'):
+        with pytest.raises(OverflowError, match='LTM1'):
             f.store.write_clause(clause)
-    assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
-    assert len(f.store) == 0
+        assert before == (alloc.next_id, alloc.placement, alloc.relate_idx)
+        assert len(f.store) == 0
 
 
 def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
@@ -184,8 +190,8 @@ def test_selected_anaphor_form_binds_to_its_own_end_particular(monkeypatch):
                     reference_values=values)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause)
-    subject = int(f.store.parts.refs[f.store.meaning_of(row).role_refs[0][1], 0])
-    assert subject in f.cs.word_concepts('he')
-    assert subject not in f.cs.word_concepts('rests')
-    assert f.cs.interpret.forward(f.words['he'][0], order=1) is None
+    assert f.store.meaning_of(row).role_refs[0] == f.store.occurrence_of(prior)
+    assert set(f.cs.word_concepts('he')) == set(f.words['he'])
+    assert set(f.cs.word_concepts('rests')) == set(f.words['rests'])
+    assert f.cs.resolve_word_concept('he', order=1) is None
     assert f.noun('he') in f.cs.word_concepts('he')

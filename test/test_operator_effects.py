@@ -67,7 +67,7 @@ def test_order_change_is_declared_and_survives_an_alias():
     grammar=Grammar();rules=[]
     grammar._fill_rule_list(rules, {'rule': {'_':'S2 = renamed.forward(N1, V1)', 'implementation':'lower'}})
     rule=rules[0]._replace(method_name='no_semantic_spelling')
-    assert grammar._rule_order_signature(rule).order_delta == -1
+    assert not hasattr(grammar._rule_order_signature(rule), 'order_delta')
 
 
 def test_mean_bundling_is_not_a_field_operation():

@@ -184,6 +184,8 @@ def test_trace_records_the_choice_without_another_argmax():
     state = (torch.ones(3, 2, 4), torch.full((3,), 2),
              torch.zeros(3, 2, dtype=torch.long), torch.zeros(3, 2, dtype=torch.long),
              torch.tensor([[7, 5], [11, 9], [17, 13]]), torch.ones(3, 2))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     BasicModel._record_operation_choice(owner, 0, choice, state)
     ids, arities, active = trace.choices()
     assert ids[:, 0].tolist() == [23, 29, -1]

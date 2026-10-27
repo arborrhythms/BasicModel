@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 def reading(language, program, source_positions, meaning_slice):
     """Brackets and stamp transitions from the kept journal alone."""
-    from ReferenceContext import result_order, operation_modes
+    from ReferenceContext import denoted_order, operation_modes
     if program is None:
         return dict(error='no_kept_program', brackets=[], steps=[], lowerings=[], leaf_positions=[])
     stack, steps, brackets, lowerings = [], [], [], []
@@ -36,7 +36,7 @@ def reading(language, program, source_positions, meaning_slice):
         del stack[-arity:]
         rule = rules[operation]
         span = sum((node['leaves'] for node in operands), [])
-        stamp = result_order(rule, tuple(node['order'] for node in operands))
+        stamp = denoted_order(rule, tuple(node['order'] for node in operands), (), None)
         frame = program.operation_values[index, :, start:end].detach()
         name = getattr(rule, 'surface_name', None) or rule.method_name
         record = dict(kind='binary' if arity == 2 else 'unary', method=name,
@@ -46,7 +46,7 @@ def reading(language, program, source_positions, meaning_slice):
         if arity == 2 and len(span) > 1:
             brackets.append(span)
         for role, mode in operation_modes(rule).items():
-            if mode not in ('mint', 'bind') or getattr(rule, 'order_delta', 0) != -1:
+            if mode not in ('mint', 'bind') or getattr(rule, 'determiner_mode', None) is None:
                 continue
             operand = operands[int(role[5:])-1]
             lowerings.append(dict(span=span, description=operand['leaves'],

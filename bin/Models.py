@@ -159,9 +159,15 @@ def _sentence_query_mask(method):
     return masked
 
 
-def _open_reference_mask(meaning, registry):
+def _open_reference_mask(meaning, registry, clause=None):
     """Spare the actual unfilled roles in the closing expectation image."""
     from ThoughtReferences import open_slots
+    if clause is not None and clause.relation is not None:
+        # The journal resolves these addresses before the durable writer
+        # installs role_refs. Temporary None slots do not reopen a bound
+        # relation; explicit forward-reference annotations still do.
+        refs = tuple(None if ref in (-1, 0) else getattr(ref, 'identity', ref) for ref in clause.refs)
+        meaning = replace(meaning, role_refs=refs)
     mask = meaning.roles.new_zeros(3)
     for kind, slot in open_slots(meaning):
         if slot == 1:
@@ -3946,7 +3952,7 @@ class BaseModel(Mereology, nn.Module):
         beside that structure; their vectors remain in registered buffers.
         """
         alloc_fields = (
-            "placement", "raised", "singletons", "retired", "identity",
+            "placement", "raised", "singletons", "singleton_members", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions",
@@ -4106,7 +4112,7 @@ class BaseModel(Mereology, nn.Module):
                 "ConceptualSpace cannot materialize an allocator")
 
         fields = (
-            "placement", "raised", "singletons", "retired", "identity",
+            "placement", "raised", "singletons", "singleton_members", "retired", "identity",
             "relate_idx", "word_forms", "reference_orders", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions",
@@ -4115,6 +4121,12 @@ class BaseModel(Mereology, nn.Module):
             if name not in saved:
                 continue
             incoming = _checkpoint_host_copy(saved[name])
+            if name == "singleton_members":
+                alloc.singleton_members.clear()
+                alloc.singleton_values.zero_()
+                for right, (member, token, value) in incoming.items():
+                    alloc.remember_singleton(right, member, token, value)
+                continue
             current = getattr(alloc, name, None)
             # Preserve dict/set identities because ConceptualSpace exposes
             # aliases to native constituent records.
@@ -5448,7 +5460,10 @@ class BaseModel(Mereology, nn.Module):
 
         self.set_sigma(0)
         try:
-            _, _, allOut, allIn = self.runEpoch(batchSize=n_rows, split=split)
+            # Reporting may cover more rows than the fixed stream slab.
+            # runEpoch visits every row in batches within that construction.
+            streams = int(getattr(getattr(self, 'conceptualSpace', None), 'nStreams', n_rows))
+            _, _, allOut, allIn = self.runEpoch(batchSize=min(n_rows, streams), split=split)
         finally:
             self.set_sigma(0.5)
 
@@ -8228,6 +8243,16 @@ class BasicModel(BaseModel):
                     fullgraph=_fullgraph)
             self._compiled_step = self._compiled_word_steps[
                 max(_word_buckets)]
+        elif not _serial_per_word:
+            # The whole-sentence adapter publishes native identity memberships
+            # after the numerical head. Those dictionary reads are host work;
+            # compile the ordinary tensor body and head at that boundary.
+            self._compiled_word_steps = {}
+            self._forward_body = _compile(
+                self._forward_body, verbose=True, fullgraph=_fullgraph)
+            self._forward_head = _compile(
+                self._forward_head, verbose=True, fullgraph=_fullgraph)
+            self._compiled_step = self.forward
         else:
             self._compiled_word_steps = {}
             self._compiled_step = _compile(
@@ -12033,6 +12058,12 @@ class BasicModel(BaseModel):
         separate = placement == "compiled" or (
             placement == "graph" and getattr(self, '_sentence_ends', False))
         if backend and backend != "none" and separate:
+            # This numerical brick can compile without util.compile's outer
+            # model entry. Keep that entry's existing 64-specialization policy
+            # for training/evaluation shapes and greedy/replayed traversals.
+            import torch._dynamo as _dynamo
+            _dynamo.config.recompile_limit = max(
+                64, int(_dynamo.config.recompile_limit))
             # "auto" is our backend policy, not a torch backend name. Match
             # util.compile's first choice before resolving the torch compiler.
             backend = _util._COMPILE_BACKENDS[0] if backend == "auto" else backend
@@ -17399,15 +17430,11 @@ class BasicModel(BaseModel):
             # drives every stage on the PARALLEL path (glue contract);
             # non-parallel t>0 stays carrier-driven (the live recurrent leg).
             _par = self.concept_order_limit > 0 and not self.word_brackets
-            # Under trace the unity is a lifted constant that the export
-            # config leaves unused (lift_constants_pass StopIteration);
-            # the traced path takes the carrier -- numerically what the
-            # pre-delivery export computed (its unity was all-zero).
-            _u_ok = not (torch.compiler.is_compiling()
-                         or torch.compiler.is_exporting())
+            # The staged symbolic input is evidence in eager and compiled
+            # prediction alike. Export owns its fixed host context; tracing
+            # must not replace that evidence with an empty carrier.
             WS_sub = ws.forward(
-                (self._staged_concepts_in
-                 if (t == 0 and _u_ok) else None),
+                (self._staged_concepts_in if t == 0 else None),
                 cs_out=prevCS_forSS)
             # ``cs.forward`` does the STM push + the C->P / C->S handoff
             # bookkeeping and produces this stage's perception event CS_0
@@ -20470,7 +20497,7 @@ class BasicModel(BaseModel):
             entry_roles = view['observed'][b]
             entry_mask = view['roles'][b] if view['roles'] is not None else meaning.role_mask
             registry = _boundary_registry(self)
-            mask = _open_reference_mask(meaning, registry)
+            mask = _open_reference_mask(meaning, registry, view['clauses'][b])
             images[b] = ClosingImage.form(entry_roles,
                 None if estimate is None else estimate.roles.to(meaning.roles),
                 None if estimate is None else estimate.confidence,
@@ -20830,7 +20857,8 @@ class BasicModel(BaseModel):
             lexical_capacity = max(collections.Counter(word for word, _ in pairs).values(), default=0)
             occupations = self.languageSpace.parts_of_speech.counts
             literals = ids.new_tensor([identity for identity, counts in occupations.items()
-                if counts.get('surface_argin1', 0)])
+                if any(argument == 'surface_argin1' and count > 0
+                       for (argument, order), count in counts.items())])
         return ReferenceBank(ids, values, valid, relations, torch.stack(queries), predicted,
                              types, cases, inventory, interpreter, associations, orders,
                              close_references=bool(getattr(self, '_component_reading', False)),
@@ -21480,18 +21508,22 @@ class BasicModel(BaseModel):
             commit_mask = commit_mask.to(dtype=torch.bool)
 
         if not canonical:
+            # Existing values are views of the preallocated SymbolEntries
+            # slabs. Re-publishing one through stage_words would clear its
+            # own source before copying. Only absent metadata needs staging.
             empty_rows = torch.full((B, width), -1, device=words.device, dtype=torch.long)
-            concept_rows = concept_rows if torch.is_tensor(concept_rows) else empty_rows
-            concept_orders = concept_orders if torch.is_tensor(concept_orders) else empty_rows.clone()
-            object_rows = object_rows if torch.is_tensor(object_rows) else empty_rows.clone()
-            object_orders = object_orders if torch.is_tensor(object_orders) else empty_rows.clone()
-            # Publish the current batch's complete reference slab even when
-            # this path has no native rows. Scratch publication must not keep
-            # the previous (often one-row provisioning) batch's metadata.
-            isp._ar_word_concept_rows = concept_rows
-            isp._ar_word_concept_orders = concept_orders
-            isp._ar_word_object_rows = object_rows
-            isp._ar_word_object_orders = object_orders
+            if not torch.is_tensor(concept_rows):
+                concept_rows = empty_rows
+                isp._ar_word_concept_rows = concept_rows
+            if not torch.is_tensor(concept_orders):
+                concept_orders = empty_rows.clone()
+                isp._ar_word_concept_orders = concept_orders
+            if not torch.is_tensor(object_rows):
+                object_rows = empty_rows.clone()
+                isp._ar_word_object_rows = object_rows
+            if not torch.is_tensor(object_orders):
+                object_orders = empty_rows.clone()
+                isp._ar_word_object_orders = object_orders
 
         percept_dim = int(ps.subspace.muxedSize)
         whole_dim = int(ws.subspace.muxedSize)

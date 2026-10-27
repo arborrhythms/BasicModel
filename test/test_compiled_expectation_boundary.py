@@ -50,7 +50,8 @@ def test_unpacked_forward_observes_each_published_sentence_once(
             model._end_step()
             model._end_step()
             assert discourse.expectation_metrics()["observations"] == 2 * (index + 1)
-            assert discourse.expectation_metrics()["predicted_targets"] == 2 * index
+            # The cover is the first predecessor in each stream.
+            assert discourse.expectation_metrics()["predicted_targets"] == 2 * (index + 1)
             for row in range(2):
                 expected = observed[-1]['observed'][row]
                 if index:
@@ -71,7 +72,7 @@ def test_unpacked_forward_observes_each_published_sentence_once(
         torch._dynamo.reset()
 
 
-def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypatch):
+def test_explicit_boundary_retains_one_entry_and_skips_masked_rows(monkeypatch):
     from Layers import SymbolExpectation
     from reading_fixtures import commit_reading, finish_reading
     from test_clause_acceptance import SentenceFixture
@@ -86,7 +87,11 @@ def test_explicit_boundary_retains_factored_roles_and_skips_masked_rows(monkeypa
     assert discourse.expectation_metrics()["observations"] == 1
     assert len(discourse._inter_context[0]) == 1
     depth, payload, mask = discourse._inter_context[0][0]
-    assert depth == 3
-    expected = finish_reading(fixture.language, entry, registry=fixture.registry).meaning
-    torch.testing.assert_close(payload, expected.roles)
-    torch.testing.assert_close(mask, expected.role_mask)
+    assert depth == 1
+    clause = finish_reading(fixture.language, entry, registry=fixture.registry)
+    from PartClosing import PartClosing
+    closing = PartClosing(fixture.cs, fixture.store)
+    expected = closing.prediction_point(closing.prepare(clause))
+    torch.testing.assert_close(payload[0], expected)
+    assert not payload[1:].any()
+    assert mask.tolist() == [True, False, False]

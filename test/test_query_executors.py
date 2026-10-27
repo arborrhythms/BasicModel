@@ -8,6 +8,7 @@ import torch
 from Meaning import ConceptualMeaning
 from Layers import LTM0
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 from Language import Grammar
 from Queries import GrammaticalThoughtRegistry, THOUGHT_EXECUTORS, ThoughtSignature, _existing_row
 from test_query_vp_boundaries import _context, _signature
@@ -22,6 +23,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     cs = _cs()
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
+        force_order(cs, ref[1], 0)
         cs._csw_concept_row(0, ref[1])
     store = LTM0(8, percept_width=0)
     from index_fixtures import one_hot_unfold
@@ -46,6 +48,7 @@ def test_part_and_converse_executor_read_native_taxonomy_without_writes():
     cs = _cs()
     a, b = cs.new_concept(), cs.new_concept()
     for concept in (a, b):
+        force_order(cs, concept, 0)
         cs._csw_concept_row(0, concept)
     cs.add_whole(a, ("sym", b))
     context = _context(cs)

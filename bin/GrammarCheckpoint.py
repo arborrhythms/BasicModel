@@ -10,7 +10,7 @@ import torch
 def catalog(model):
     from Language import TheGrammar, SyntacticLayer, OperationSelectionLayer
     return dict(meaning_kernel_schema=1, rule_keys=list(TheGrammar.rule_table.values()),
-        roles=[], chooser_role_context=0, occupation_schema=1, categories=list(TheGrammar.categories),
+        roles=[], chooser_role_context=0, occupation_schema=2, categories=list(TheGrammar.categories),
         syntactic={name:list(module._by_name) for name,module in model.named_modules()
                    if isinstance(module,SyntacticLayer)},
         operation={name:dict(binary=module.op_names,unary=module.unary_names)
@@ -94,19 +94,19 @@ def align(model, state, old):
             from IndependentComponents import _pack_state, _unpack_state
             state = _unpack_state(result[key])
             owner = model.get_submodule(key[:-len('._extra_state')])
-            if state['version'] != 1:
+            if state['version'] != 2:
                 raise ValueError('unknown occupation checkpoint schema')
             if tuple(state['arguments']) != owner.arguments:
                 if old is None:
                     raise ValueError('occupation migration requires the saved grammar catalogue')
                 counts = {word: {argument: count for argument, count in values.items()
-                                 if argument in owner.index}
+                                 if argument[0] in owner.index}
                           for word, values in state['counts'].items()}
                 result[key] = _pack_state(dict(state, arguments=owner.arguments, counts=counts))
                 drift[key] = dict(action='aligned declared formal arguments',
                                   retired=sorted(set(state['arguments']) - set(owner.arguments)))
         else:
-            if old is not None and old.get('occupation_schema') == 1:
+            if old is not None and old.get('occupation_schema') in (1, 2):
                 raise ValueError('checkpoint is missing its occupation state')
             from PartsOfSpeech import PartsOfSpeech
             owner = model.get_submodule(key[:-len('._extra_state')])

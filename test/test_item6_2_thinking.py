@@ -1,4 +1,5 @@
 """The 6.2 certificates use native rows, the grammar scorer and real episodes."""
+from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
 import ast
@@ -25,6 +26,7 @@ def world():
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     refs = tuple(('sym', cs.new_concept()) for _ in range(3))
     for ref in refs:
+        force_order(cs, ref[1], 0)
         cs._csw_concept_row(0, ref[1])
     store = LTM0(cs.outputShape[-1], capacity=128)
     memory = WhatInteractionMemory(batch=1, capacity=128, detach_mode='episode')
@@ -414,6 +416,7 @@ def event_world(positions):
         event=store.parts.add(ref[1],ref[1],truth_plus=.8,truth_minus=.1,when=encoder().encode(position))
         owner=model.conceptualSpace
         owner._concept_allocator.symbol_types.setdefault(event,set()).add('situation')
+        force_order(owner,event,0)
         seat=owner._csw_concept_row(0,event)
         with torch.no_grad():
             owner.similarity_codebook.W[seat].copy_(registry._payload(ref))

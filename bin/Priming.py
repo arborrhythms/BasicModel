@@ -86,9 +86,10 @@ def diffuse(owner, surface, edges, spread, active):
         fraction * (1 - torch.finfo(surface.dtype).eps), fraction)
     # Sum in double: a large neutral inventory otherwise hides small transfer
     # roundoff behind float32 summation of thousands of ones.
-    before = surface.double().sum(-1)
+    # Scalar diagnostics retain double precision on hosts without device float64.
+    before = surface.cpu().double().sum(-1)
     surface.add_(change * fraction[:, None])
     object.__setattr__(owner, '_last_priming_diffusion', dict(
         graph_edges=len(src),
-        before=before, after=surface.double().sum(-1), degree=degree,
+        before=before, after=surface.cpu().double().sum(-1), degree=degree,
         budget_fraction=fraction))

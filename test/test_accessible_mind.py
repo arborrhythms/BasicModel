@@ -1,4 +1,5 @@
 """Accessible-mind boundaries, exact cue indices, and retrieval effects."""
+from order_fixtures import force_order
 from types import SimpleNamespace
 
 import pytest
@@ -28,6 +29,7 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     from test_cs_symbol_table import _cs
     cs = _cs()
     member = cs.new_concept()
+    force_order(cs, member, 0)
     row = cs._csw_concept_row(0, member)
     def forbidden(self):
         raise AssertionError("thought must not rebuild the dictionary reverse map")
@@ -120,9 +122,11 @@ def test_higher_order_missing_edge_keeps_content_with_zero_evidence():
     from test_query_vp_boundaries import _context, _signature
     cs = _cs()
     a, b = cs.new_concept(), cs.new_concept()
+    force_order(cs, a, 0)
+    force_order(cs, b, 0)
     higher = cs.synthesize_higher_order([('sym', a)])
     for cid in (a, b, higher):
-        cs._csw_concept_row(0, cid)
+        cs._csw_concept_row(cs._concept_source_order(cid), cid)
     result = _signature('isPart', 'argin1', 'argin2').invoke(_context(cs), ('sym', higher), ('sym', b))
     assert result['support_true'] == 0.
     assert result['result_kind'] == 'concept' and result['evidence_kind'] == 'taxonomy'
@@ -184,6 +188,8 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     from test_cs_symbol_table import _cs
     cs = _cs()
     members = [cs.new_concept() for _ in range(3)]
+    for cid in members:
+        force_order(cs, cid, 0)
     rows = [cs._csw_concept_row(0, cid) for cid in members]
     higher = cs.synthesize_higher_order([('sym', members[0]), ('sym', members[2])])
     cs._csw_concept_row(1, higher)

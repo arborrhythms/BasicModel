@@ -221,9 +221,9 @@ class TruthGroundedReasoner:
                 idxs = idxs.tolist() if hasattr(idxs, "tolist") else list(idxs)
                 for i in idxs:
                     row = store.row(int(i))
-                    s = self.equal(X, row["np1"])
+                    s = self.equal(X, row["point"])
                     if best is None or s > best["match"]:
-                        best = {"idea": row["np1"], "trust": float(row["trust"]),
+                        best = {"idea": row["point"], "trust": float(row["trust"]),
                                 "row": int(i), "kind": "idea", "match": s}
             return best
         Y = _as_vec(Y)

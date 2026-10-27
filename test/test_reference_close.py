@@ -5,6 +5,7 @@ from dataclasses import replace
 
 import pytest
 import torch
+from order_fixtures import force_order
 
 from ClauseRow import Clause, Composition, attach_clause_index
 from Layers import LTM0
@@ -53,6 +54,7 @@ def close(resolver, point, predicate, mode, frames, *, document, sentence, selec
     key = tuple(predicate.tolist())
     if key not in predicates:
         symbol = allocator.new_concept()
+        force_order(owner, symbol, 0)
         row = owner._csw_concept_row(0, symbol)
         with torch.no_grad():
             owner.similarity_codebook.W[row].copy_(predicate)
@@ -118,6 +120,7 @@ def test_recent_token_returns_at_its_kinds_native_conceptual_order(order):
     resolver, store, atoms = fixture()
     owner = resolver.components.owner
     kind = owner.new_concept()
+    force_order(owner, kind, order)
     seat = owner._csw_concept_row(order, kind)
     with torch.no_grad():
         owner.similarity_codebook.W[seat].copy_(atoms[0])
@@ -350,7 +353,7 @@ def test_deferred_reference_request_survives_kept_trial_detachment(monkeypatch):
     f = SentenceFixture(monkeypatch, native_cube=True)
     program = record_reading(f.language, replace(
         f.program(('lift', ('lower', 'cue', 'object'), 'predicate')),
-        leaf_orders=torch.tensor([0, 0, 0]), close_references=True))
+        leaf_orders=torch.tensor([0, 1, 0]), close_references=True))
     scored = finish_clause(f.language, program, registry=f.registry)
     retained = program.detached()
     committed = finish_clause(f.language, retained, registry=f.registry)
@@ -379,22 +382,22 @@ def test_objectless_marker_stays_literal_under_an_implicit_reference_read():
     torch.testing.assert_close(result['unary'][0, 0, valid][0], value[0, 0])
 
 
-@pytest.mark.parametrize('description_order', (0, 2))
+@pytest.mark.parametrize('description_order', (1, 2))
 def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(monkeypatch, description_order):
     from test_clause_acceptance import SentenceFixture
     from reading_fixtures import record_reading
     from ClauseJournal import finish_clause
     from ReferenceClose import constituents
-    from ReferenceContext import binding_spec, result_order
+    from ReferenceContext import binding_spec, denoted_order
     f = SentenceFixture(monkeypatch, native_cube=True)
     for rule in f.binary:
         mode = rule.determiner_mode
         if mode not in ('mint', 'bind', 'kind'):
             continue
-        expected = 2 if mode == 'kind' else 1
+        expected = max(1, description_order - 1)
         assert binding_spec(rule, 'argin2', description_order) == (expected, mode)
         stamps = torch.tensor([description_order, 17])
-        assert result_order(rule, (torch.zeros_like(stamps), stamps)).tolist() == [expected, expected]
+        assert denoted_order(rule, (torch.zeros_like(stamps), stamps), (), None).tolist() == [expected, 16]
     program = f.program(('lift', ('lower', 'cue', 'object'), 'predicate'))
     program = record_reading(f.language, replace(program,
         leaf_orders=torch.tensor([0, description_order, 1]), close_references=True))

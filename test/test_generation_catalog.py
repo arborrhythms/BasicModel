@@ -91,7 +91,7 @@ def test_alias_catalog_reordering_preserves_shared_identity_and_separate_policy(
 
     source = torch.nn.Linear(4, 4)
     coordinator = SimpleNamespace(
-        languageLayer=None, muxedSize=4, _grammar_is_default_only=False,
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())), muxedSize=4, _grammar_is_default_only=False,
         _host_layer_registry={("CS", "sum"): source},
         _resolve_rule_layer=lambda role, name: source)
     grammar = SimpleNamespace(rules_upward=[], rule_table=[], rules_downward=[])
@@ -132,7 +132,7 @@ def test_default_catalog_does_not_borrow_a_natural_fold_from_another_space(monke
     grammar = SimpleNamespace(rules_upward=[], rules_downward=rules,
                               rules=rules, rule_table=[])
     coordinator = SimpleNamespace(
-        languageLayer=None, muxedSize=4, _grammar_is_default_only=True,
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())), muxedSize=4, _grammar_is_default_only=True,
         _host_layer_registry={("SS", "sigma"): shared},
         _default_generate_rules=lambda: {"subsymbolic": [[0]], "SS": [[1]]},
         _resolve_rule_layer=lambda role, name: shared)

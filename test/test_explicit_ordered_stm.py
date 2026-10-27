@@ -65,6 +65,7 @@ def _word_space():
 
 def test_ordered_taxonomy_preserves_np3_np4_orders():
     view = _ordered_view()
+    assert all('order_delta' not in sig for sig in view.rule_order_signatures)
     ordered = view.ordered_taxonomy_names
     assert view.order_of_ref(ordered['NP3']) == 3
     assert view.order_of_ref(ordered['NP4']) == 4

@@ -6,6 +6,7 @@ import torch
 
 import Language
 import Spaces
+from order_fixtures import force_order
 from Models import BasicModel
 from test_cs_sparse_weights import _cs
 
@@ -43,7 +44,7 @@ def test_selected_grammar_context_selects_order(context, order):
     actions = torch.tensor([[0, 0, 0], [0, 0, 1], [1, 0, -1]])
     got, orders = Language.LanguageSpace.resolve_lexical_references(
         language, cs, torch.tensor([-1, row]), torch.tensor([-1, ids[0]]), actions,
-        leaf_orders=torch.tensor([0, order+1]))
+        leaf_orders=torch.tensor([0, order+1 if order else 0]))
     # The source kind survives the member-order request. Closing chooses
     # the token's identity independently of this derivation carrier.
     assert got.tolist() == [-1, ids[0] if order == 1 else ids[order]]
@@ -75,7 +76,7 @@ def test_capture_owns_grammar_resolution_without_changing_reconstruction():
 
 def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     """Operand positions and the configured storage rung impose no order ceiling."""
-    from ReferenceContext import reference_requests, result_order
+    from ReferenceContext import reference_requests, denoted_order
     cs = _cs(nS=256, order=1)
     word, _ = cs.interpret_word([7], [], key='statement')
     from reading_fixtures import supply_object
@@ -105,8 +106,8 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
         torch.tensor([cs._csw_row_of(raw)]), torch.tensor([relation]), actions, leaf_orders=stamps)
     assert refs.tolist() == [relation] and orders.tolist() == [3]
     assert reference_requests(language, actions, leaf_orders=stamps) == {0: (3, 'generic')}
-    assert result_order(rule, (3,)) == 3
-    assert result_order(rule, (17,)) == 17
+    assert denoted_order(rule, (3,), (), None) == 3
+    assert denoted_order(rule, (17,), (), None) == 17
     # A binding operation retains its mode at the same high order. An
     # individual with identical content is not that relation's identity.
     from ReferenceContext import ReferenceBank, prepare_operands
@@ -125,7 +126,7 @@ def test_order_three_relation_over_kinds_is_read_from_its_stamp():
     # Its same-content kind candidate has a different order stamp.
     bank = bank._replace(ids=torch.tensor([[relation, kinds[0]]]),
                          orders=torch.tensor([[3, 2]]))
-    lower = binder._replace(order_delta=-1, reference_modes=(('argin1', 'bind'),))
+    lower = binder._replace(determiner_mode='bind', reference_modes=(('argin1', 'bind'),))
     proposals = prepare_operands(value, torch.tensor([[relation]]), torch.tensor([[0]]),
         torch.tensor([[0]]), orders=stamps[None], rules=(), unary_rules=(lower,),
         bank=bank, live=live, active=torch.tensor([[True]]))
@@ -183,6 +184,7 @@ def test_order_zero_reference_agrees_before_and_after_admission(ambiguous):
     if ambiguous:
         for _ in range(2):
             obj = cs.new_concept()
+            force_order(cs, obj, 0)
             cs._csw_concept_row(0, obj)
             cs.interpret.define(word, obj)
             cs.bind_word_concept('token', obj)

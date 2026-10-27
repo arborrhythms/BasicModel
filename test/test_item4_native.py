@@ -73,7 +73,16 @@ def case(row_gain, document_gain, *, omitted=False, relation=False):
         retained = fixture.store.expectation_pair(index, gain=document_gain)
         floor = (1-row_gain)*(1-document_gain)
         torch.testing.assert_close(image.conceived, image.observed*floor, atol=1e-7, rtol=1e-6)
-        torch.testing.assert_close(retained['observation'].roles, clause.meaning.roles if relation else entry.end_state, atol=0, rtol=0)
+        if relation:
+            # Two order-zero symbol operands form an untyped chain; the
+            # taxonomy reader does not invent a third predicate row.
+            expected = torch.stack((fixture.registry._payload(('sym', clause.refs[0])),
+                fixture.registry._payload(('sym', clause.refs[2])), bank[0]*0))
+            assert retained['observation'].role_refs == (
+                ('sym', clause.refs[0]), ('sym', clause.refs[2]), None)
+        else:
+            expected = entry.end_state
+        torch.testing.assert_close(retained['observation'].roles, expected, atol=0, rtol=0)
         if omitted:
             assert image.omission[1, 0] == 1 and image.excess[1].sum() == 0
             assert retained['omission'][1, 0] == 1 and retained['excess'][1].sum() == 0
@@ -94,7 +103,7 @@ def test_expected_cat_and_omission_survive_native_answer_and_store(row_gain,docu
 
 
 @pytest.mark.parametrize('row_gain,document_gain',[(1.,0.),(0.,1.),(.5,.5)])
-def test_three_role_relation_uses_symbol_confidence_through_native_close_and_store(row_gain,document_gain):
+def test_relation_chain_uses_symbol_confidence_through_native_close_and_store(row_gain,document_gain):
     case(row_gain,document_gain,relation=True)
 
 

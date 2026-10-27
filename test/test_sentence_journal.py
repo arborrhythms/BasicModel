@@ -276,7 +276,7 @@ def test_identity_admission_uses_the_resolved_stm_order(tmp_path, monkeypatch, e
 def test_unresolved_typed_admission_keeps_the_scored_source_reference():
     from Language import LanguageSpace
     rule = SimpleNamespace(method_name='kind', head_role=1, determiner_mode='kind',
-        reference_roles=('argin1',), reference_modes=(), order_delta=0)
+        reference_roles=('argin1',), reference_modes=())
     language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
     owner = SimpleNamespace(resolve_word_concept=lambda *a, **k: None,
         word_surface_for_row=lambda row: 'pending-form', word_concepts=lambda surface: (101,),
@@ -286,7 +286,7 @@ def test_unresolved_typed_admission_keeps_the_scored_source_reference():
     arguments = (owner, torch.tensor([10]), torch.tensor([101]),
                  torch.tensor([[0, -1, 0], [2, 0, 0]]))
     results = [LanguageSpace.resolve_lexical_references(language, *arguments,
-        leaf_orders=torch.tensor([0]), admit=admit) for admit in (False, True)]
+        leaf_orders=torch.tensor([2]), admit=admit) for admit in (False, True)]
     assert results[0][0].tolist() == results[1][0].tolist() == [101]
     assert results[0][1].tolist() == results[1][1].tolist() == [2]
 
@@ -294,7 +294,7 @@ def test_unresolved_typed_admission_keeps_the_scored_source_reference():
 def test_ambiguous_typed_reading_is_open_in_preview_and_admission():
     from Language import LanguageSpace
     rule = SimpleNamespace(method_name='kind', head_role=1, determiner_mode='kind',
-        reference_roles=('argin1',), reference_modes=(), order_delta=0)
+        reference_roles=('argin1',), reference_modes=())
     language = SimpleNamespace(_compose_binary_rules=(), _compose_unary_rules=(rule,))
     owner = SimpleNamespace(resolve_word_concept=lambda *a, **k: None,
         word_surface_for_row=lambda row: 'pending-form', word_concepts=lambda surface: (201, 202),
@@ -304,6 +304,6 @@ def test_ambiguous_typed_reading_is_open_in_preview_and_admission():
     arguments = (owner, torch.tensor([10]), torch.tensor([101]),
                  torch.tensor([[0, -1, 0], [2, 0, 0]]))
     results = [LanguageSpace.resolve_lexical_references(language, *arguments,
-        leaf_orders=torch.tensor([0]), admit=admit) for admit in (False, True)]
+        leaf_orders=torch.tensor([2]), admit=admit) for admit in (False, True)]
     assert results[0][0].tolist() == results[1][0].tolist() == [-1]
     assert results[0][1].tolist() == results[1][1].tolist() == [2]

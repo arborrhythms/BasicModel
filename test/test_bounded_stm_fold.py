@@ -58,8 +58,8 @@ def test_compose_single_reduction_space_role():
     layer = m.symbolSpace.languageLayer.operation_layer
     assert layer is m._stm_reducer()
     assert layer.r_reduce >= 8
-    assert layer.r_apply == 1  # bind composes; not remains a field operation
-    assert isinstance(layer.unary_ops[0].gl, Language.BindLayer)
+    assert layer.r_apply == 0  # Bind consumes an off-stack identity as its second operand.
+    assert any(isinstance(op.gl, Language.BindLayer) for op in layer.ops)
     assert 5 in layer.attention_operations
 
 

@@ -3,6 +3,7 @@
 The generator supplies the structure and antecedent. These are mechanism
 gates, not claims about learned parsing or reference resolution.
 """
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import json
@@ -76,6 +77,7 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False):
     predicates = f.__dict__.setdefault('predicates', {})
     if key not in predicates:
         symbol = f.cs.new_concept()
+        force_order(f.cs, symbol, 0)
         row = f.cs._csw_concept_row(0, symbol)
         with torch.no_grad():
             f.cs.similarity_codebook.W[row].copy_(predicate)
@@ -140,7 +142,7 @@ def test_g1_definite_generator_referent_with_distractor(monkeypatch, kind, other
     # instance becomes the identical bind site in a thought episode.
     program = f.program(('lift', ('definite_unary', KINDS[kind]), VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[kind], f.atoms[4])),
-        leaf_orders=torch.zeros(2, dtype=torch.long), close_references=True)
+        leaf_orders=torch.tensor([1, 0]), close_references=True)
     clause = finish_clause(f.language, record_reading(f.language, program), registry=f.registry)
     from ReferenceClose import constituents
     node = constituents(clause)[0]
@@ -171,7 +173,7 @@ def test_g2_generated_leaf_without_object_uses_same_resolver(monkeypatch, kind, 
     from Spaces import _concept_alloc_of
     assert word in _concept_alloc_of(f.cs).word_forms[marker]
     assert word in f.cs.word_concepts(marker)
-    _concept_alloc_of(f.cs).reference_orders[word] = 1
+    force_order(f.cs, word, 1)
     f.words[marker] = word, word
     program = f.program(('lift', marker, VERBS[0]))
     program = replace(program, leaves=torch.stack((f.atoms[7], f.atoms[4])),
@@ -352,7 +354,7 @@ def test_selected_open_formation_keeps_one_site_and_its_objectless_cue(monkeypat
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     from Spaces import _concept_alloc_of
-    _concept_alloc_of(f.cs).reference_orders[word] = 1
+    force_order(f.cs, word, 1)
     f.words['m'] = word, word
     program = f.program(('lift', 'm', VERBS[0]))
     program = replace(program, binding_choices=True,

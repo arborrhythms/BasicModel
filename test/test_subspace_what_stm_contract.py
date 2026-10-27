@@ -1241,6 +1241,8 @@ def _shared_compose(model):
     state = (buffer, torch.tensor([2]), torch.ones(1, 2, dtype=torch.long),
              torch.zeros(1, 2, dtype=torch.long), torch.full((1, 2), -1, dtype=torch.long),
              torch.ones(1, 2))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     choice = model.languageSpace.choose_operation(state, torch.tensor([True]), slots=1, sample=False)
     return state, choice
 
@@ -1302,7 +1304,8 @@ def test_shared_operation_writes_the_caller_owned_stack(_xor_model):
             state, torch.tensor([True]), slots=1, sample=False,
             rounds_left=rounds - step)
         state = _xor_model.conceptualSpace.apply_language_choice(state, choice)
-    out = state
+    from STMChunks import stack_view
+    out = stack_view(state)
     assert out[0] is not None
     assert torch.isfinite(out[0]).all()
     assert out[1].tolist() == [1]

@@ -91,7 +91,7 @@ def test_determined_sentences_keep_distinct_occurrences_and_universal_stays_high
     assert len(f.store) == 2
     universal = next(r for r in f.grammar.rules_upward if r.determiner_mode == 'kind')
     from ReferenceContext import binding_spec
-    assert universal.order_delta == 0 and binding_spec(universal, 'argin2', 2) == (2, 'kind')
+    assert not hasattr(universal, 'order_delta') and binding_spec(universal, 'argin2', 2) == (1, 'kind')
     renamed = universal._replace(method_name='opaque')
     assert renamed.determiner_mode == 'kind'
 
@@ -146,12 +146,12 @@ def test_determiner_lowering_keeps_order_without_minting_a_composing_argument(mo
     reading = replace(program, reference_ids=refs, reference_orders=orders,
                       leaf_orders=torch.tensor([0, 2, 0]))
     clause = finish_reading(f.language, reading, registry=f.registry)
-    assert clause.order == clause.children[0].order == 1
+    assert clause.order == 0 and clause.children[0].order == 1
     written = {}
     row = f.store.write_clause(clause, document_key='determiner', sentence_index=1,
                                written_rows=written)
     assert id(clause.children[0]) not in written
-    assert f.store.row(row)['order'] == 1 and len(f.store) == 1
+    assert f.store.row(row)['order'] == 0 and len(f.store) == 1
     assert not len(f.store.parts) - before
     root = f.store.raw_meaning_of(row).role_refs[0]
     assert root == ('sym', f.noun('cat'))

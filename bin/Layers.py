@@ -2470,7 +2470,6 @@ class GrammarLayer(Layer):
     footprint_writes = ('form', 'meaning')
     field_eligible = False
     case_head_role = 0
-    order_delta = 0
     inverse_kind = None
     clause_form = None
     head_role = 0
@@ -5859,12 +5858,13 @@ class ConceptAllocator:
     (``self.layer()``, a :class:`ConceptualAttentionLayer`); rows are
     permanent -- nothing migrates by order."""
 
-    def __init__(self, layer_sizer=None, order_cap=None):
+    def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=None, member_width=0):
         self.next_id = 1                 # 0 reserved
         self.reclaimed_seats = 0         # capacity credits, never recycled handles
         self.placement = {}              # cid -> derived order (bookkeeping)
         self.raised = set()              # σ-raised: never re-refined
         self.singletons = set()          # unit-set rows (min-support exempt)
+        self.singleton_members = {}     # right reference -> first equality witness
         self.retired = set()
         self.identity = {}               # cid -> (part, whole) 1:1 ties
         self.relate_idx = {}             # (part, whole) / ("raise", fs) -> cid
@@ -5875,6 +5875,12 @@ class ConceptAllocator:
         from LTM1 import LTM1
         self.parts = LTM1()         # LTM1 and the symbol taxonomy, one owner
         self.parts.allocate = self._allocate_part_symbol
+        # Each first equality witness requires an LTM1 equality row. Its
+        # right side may be an occurrence/token outside the codebook, so the
+        # relation capacity bounds this slab, not the symbol-vector inventory.
+        # Each row holds one native concept vector; the slab never grows.
+        capacity = self.parts.capacity if member_capacity is None else int(member_capacity)
+        self.singleton_values = torch.zeros(capacity, int(member_width))
         self.symbol_types = {}           # types of bank arguments, never edge kinds
         self.word_descriptions = {}      # native form definitions, keyed by word symbol
         from Definitions import DefinitionIndex
@@ -5884,6 +5890,24 @@ class ConceptAllocator:
         self._layers = {}                # {0: THE shared square layer}
         self._layer_sizer = layer_sizer  # order -> (nInput, nOutput, device)
         self._order_cap = order_cap      # () -> max ramsified order S
+        self.reference_order = None     # native occurrence/relation lookup, owned by CS
+
+    def remember_singleton(self, right, member, token, value, *, replace=False):
+        if right in self.singleton_members and not replace:
+            return self.singleton_members[right]
+        if right in self.singleton_members:
+            # A forgotten equality can renew its witness in the same seat.
+            snapshot = self.singleton_members[right][2]
+        else:
+            seat = len(self.singleton_members)
+            if seat >= len(self.singleton_values):
+                raise OverflowError('equality witnesses exceed the constructed relation capacity')
+            snapshot = self.singleton_values[seat]
+        if value.shape != snapshot.shape:
+            raise ValueError('equality witness differs from the constructed concept width')
+        snapshot.copy_(value.detach().to(snapshot))
+        self.singleton_members[right] = (member, token, snapshot)
+        return self.singleton_members[right]
 
     def layer(self, order=0):
         """THE shared store (v3: ``order`` ignored, every order gets the same
@@ -5938,9 +5962,11 @@ class ConceptAllocator:
             edge = self.parts.find(part, whole)
             return 'definition' not in self.parts.readings(
                 edge, lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ())
+        from LTM1 import SYMBOL, OCCURRENCE, RELATION
+        tags = {SYMBOL: 'sym', OCCURRENCE: 'occ', RELATION: 'rel'}
         return list(dict.fromkeys((*raw,
-                *(('part', ('sym', part)) for part in self.parts.parts(cid)
-                  if structural(part, cid)),
+                *(('part', (tags[kind], part)) for kind, part in self.parts.parts((SYMBOL, cid))
+                  if structural((kind, part), cid)),
                 *(('whole', ('sym', whole)) for whole in self.parts.wholes(cid)
                   if structural(cid, whole)))))
 
@@ -5951,28 +5977,62 @@ class ConceptAllocator:
     def cap(self):
         return int(self._order_cap()) if self._order_cap else 0
 
-    def order_of(self, cid, _seen=None):
-        """Ramsified order: 0 for raw constituents, else 1 + max symbol order.
+    def _part_order(self, cid, seen):
+        """An implicit definition is one order above its referenced members."""
+        subs, percept = [], False
+        # A word's native form is its definition. A chain may reference the
+        # same bare word as an operand; that semantic relation is not an
+        # additional boundary-pair constituent of the word's form.
+        refs = ([ref for role, ref in self.store_of(cid).constituents(cid) if role == 'part']
+                if 'word' in self.symbol_types.get(cid, ()) else self.refs(cid, 'part'))
+        for ref in refs:
+            if isinstance(ref, tuple) and len(ref) == 2 and ref[0] in ('sym', 'occ', 'rel'):
+                if ref[0] == 'sym':
+                    order = self.order_of(ref[1], seen)
+                else:
+                    order = -1 if self.reference_order is None else self.reference_order(ref[1], seen)
+                subs.append(order)
+            else:
+                percept = True
+        if subs:
+            return (-1 if min(subs) < 0 else 1 + max(subs)), True
+        return (0 if percept else -1), False
 
-        Storage capacity does not cap a symbol's semantic order. Cycle-guarded.
-        """
+    def order_of(self, cid, _seen=None):
+        """A witnessed order, or -1 when neither record nor definition exists."""
         cid = int(cid)
+        if cid <= 0:
+            return -1  # Padding and unavailable references have no witness.
         if cid in self.reference_orders:
             return self.reference_orders[cid]
-        _seen = _seen if _seen is not None else set()
+        _seen = set() if _seen is None else set(_seen)
         if cid in _seen:
-            return 0
+            return -1  # A cycle supplies no finite order witness.
         _seen.add(cid)
-        subs = []
-        for x in sorted(self.refs(cid, "part"), key=repr):
-            if isinstance(x, tuple) and len(x) == 2 and x[0] == "sym":
-                subs.append(self.order_of(x[1], _seen))
-        return 0 if not subs else 1 + max(subs)
+        order, structural = self._part_order(cid, _seen)
+        if structural or order >= 0:
+            return order
+        layer = self.layer()
+        features = getattr(layer, 'features', None)
+        if features is not None:
+            # Rebuild only when feature topology changes, never per word.
+            revision = (id(features._index), features._next_edge_id, len(features._index))
+            if getattr(self, '_percept_revision', None) != revision:
+                self._percept_rows = set(features._rows)
+                self._percept_revision = revision
+            keys = [('snap', cid), ('pool', cid), ('shared', cid), cid]
+            keys.extend((f'o{order}', cid) for order in range(1, self.cap()+1))
+            if any(layer.row_of(key) in self._percept_rows for key in keys):
+                return 0
+        return 0 if cid in self.identity else -1
 
     def settle(self, cid):
         """Re-derive ``cid``'s order (BOOKKEEPING ONLY, v3: records and rows
         are permanent in the single shared layer -- no migration)."""
         cid = self.touch(cid)
+        expected, structural = self._part_order(cid, {cid})
+        if structural and cid in self.reference_orders and self.reference_orders[cid] != expected:
+            raise ValueError('recorded concept order disagrees with its parts')
         new = self.order_of(cid)
         self.placement[cid] = new
         return new
@@ -6020,7 +6080,8 @@ class ConceptAllocator:
         self.retired.add(cid)
         for ids in self.word_forms.values():
             ids.discard(cid)
-        for k in [k for k, v in self.relate_idx.items() if int(v) == cid]:
+        for k in [k for k, v in self.relate_idx.items()
+                  if v == cid or k == ('part-base', cid)]:
             self.relate_idx.pop(k, None)
         self.parts.remove_symbol(cid)
         self.symbol_types.pop(cid, None)

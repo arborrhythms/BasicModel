@@ -227,7 +227,7 @@ def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     assert torch.equal(out2[0, :live], event[0, :live])
 
 
-def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk(eager_reading):
+def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the_walk(eager_reading, monkeypatch):
     """The answer-materialisation boundary (spec sections 1-2): after
     resolution the answer is its own conceptual idea, [B, 3, D] at the
     concept width (the three LTM slots), the operand of the output loop;
@@ -250,7 +250,14 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     # This boundary contract is for an absolute idea. A fresh grammar can
     # select a three-role relation, whose semantic and STM slot orders differ.
     from reading_fixtures import force_absolute_reading
+    _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
+    from reading_fixtures import supply_object
+    for word in sorted(m._concept_owner().interpret._pending):
+        supply_object(m._concept_owner(), word)
+    m._staged_in_sub = None  # Subsequent raw forwards own fresh lexical staging.
     force_absolute_reading(m)
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(m, monkeypatch, lambda root, active, actions, **kw: None)
     with torch.no_grad():
         u = _capture_program_probe(m, ["one plus two", "three plus four"])
         derivation = m.resolveAnswer(u, What.supervised(0))
@@ -258,7 +265,7 @@ def test_answer_materialises_as_its_own_conceptual_idea_and_realises_through_the
     D = int(m.conceptualSpace.stm.concept_dim)
     assert tuple(idea.shape) == (2, 3, D) and bool(resolved.all())
     assert all(src.startswith("idea:") for src in sources)
-    end = m._sentence_end_state(None)
+    end = torch.stack([field.end_state for field in u.sentence_states])
     assert torch.allclose(idea, end)                        # zero-initialised conditioning
     T = m._walk_budget()
     assert targets is None  # generation has no input-reading targets
@@ -529,7 +536,7 @@ def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_pa
             model.symbolSpace.soft_reset()
 
 
-def test_materialised_idea_follows_the_symbol_rows(eager_reading):
+def test_materialised_idea_follows_the_symbol_rows(eager_reading, monkeypatch):
     """A completed answer owns its field; a new reading uses its own words.
 
     Exchanging the later input's row staging cannot alter the held answer.
@@ -539,6 +546,14 @@ def test_materialised_idea_follows_the_symbol_rows(eager_reading):
     from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     from What import What
     m = _model()
+    _stage_fullgraph_tensor_peer(m, ["one plus two", "three plus four"])
+    from reading_fixtures import supply_object, force_absolute_reading
+    for word in sorted(m._concept_owner().interpret._pending):
+        supply_object(m._concept_owner(), word)
+    m._staged_in_sub = None  # Subsequent raw forwards own fresh lexical staging.
+    force_absolute_reading(m)
+    from meaning_fixtures import replay_thought_plan
+    replay_thought_plan(m, monkeypatch, lambda root, active, actions, **kw: None)
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
     m.reconstruct_in_loop = False
@@ -552,10 +567,10 @@ def test_materialised_idea_follows_the_symbol_rows(eager_reading):
         rows = m._word_symbol_rows()
         assert bool((rows[:, (0, 2)] >= 0).all()) and bool((rows[:, 0] != rows[:, 2]).all())
         isp = m.inputSpace
-        for name in ("_ar_word_object_rows", "_ar_word_concept_rows"):
-            table = getattr(isp, name).clone()
+        from PrependedSymbols import word_view
+        for name in ("object_rows", "concept_rows"):
+            table = word_view(isp, name)
             table[:, (0, 2)] = table[:, (0, 2)].flip(1)
-            setattr(isp, name, table)
         assert torch.equal(m._word_symbol_rows()[:, (0, 2)], rows[:, (0, 2)].flip(1))
         held, _r, _s, _t = m._materialize_answer_idea(u, derivation, (What.supervised(0), What.supervised(1)))
         torch.testing.assert_close(held, idea0, rtol=0, atol=0)

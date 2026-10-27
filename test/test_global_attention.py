@@ -189,6 +189,11 @@ def test_forward_parks_typed_obs_over_spaces(monkeypatch):
     with torch.no_grad():
         out1 = m.forward(x)[2]
         out2 = m.forward(x)[2]
+        # The generation reader owns this observation after the placement
+        # round; presenting input alone no longer scans every address space.
+        carrier = m._combine_last_cs_sub or m.conceptualSpace.subspace
+        m._generation_read(carrier.materialize().detach(),
+            record=getattr(m, '_last_sentence_understanding', None))
     assert torch.isfinite(out1).all()
     assert torch.equal(out1, out2), "dark global attention stays deterministic"
     obs = getattr(m, "_answer_attention_obs", None)
@@ -239,7 +244,7 @@ def test_ltm_space_appears_when_store_present_but_excludes_estimates():
     ps = m.perceptualSpace.forward(in_sub)
     D = int(ps.materialize().shape[-1])
     store = LTM0(D, capacity=8)
-    store.slots[:3] = torch.randn(3, 3, D)
+    store.slots[:3] = torch.randn(3, D)
     store.count = torch.tensor(3)
     store.record_kind[2] = store.KINDS.index("estimate")
     object.__setattr__(m.symbolSpace, "ltm_store", store)

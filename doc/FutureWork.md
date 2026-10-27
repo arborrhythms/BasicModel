@@ -2114,3 +2114,63 @@ tower-0 rows those forms occupy; no byte rows, no tower-1 edges, no
 `_interval` check; each whole's distance from the all-ones corner still
 reported. The cross-tower order and the nonempty interval move to the
 sorting item as its gate.
+
+**Decided (Alec, 2026-10-26): two subspaces, sorted per subspace, one
+call.** Supersedes the interval rule `form = lower + t (upper - lower)` and
+the presumption that parts and wholes are sorted with respect to one another
+in shared coordinates. Recorded for the item's round; nothing here is part of
+item 3.0.
+
+- *Layout.* The percept width splits at construction into two subspaces:
+  identity (`WordIdentity`'s pair and length coordinates, `pair_dim +
+  length_dim`) and property (new, sized by config). Tower 0 codes, tower 1
+  codes and order-0 concept forms (`similarity_codebook.W[row,
+  :percept_width]`) all occupy both. A construction-time split, never a
+  resize; `MereologicalCodes` and `PrependedSymbols` read `percept_width`
+  as the sum.
+- *Sort per subspace; no cross-subspace comparison.* Identity sorts by atom
+  containment: the join of atom codes, `WordIdentity.form` unchanged.
+  Property sorts by extension over the byte primitives: a type's code is
+  the union over its member bytes of that byte's hashed bits (`bit_stream`
+  over the property subspace, `ones` bits per byte), weighted by
+  `PrimitiveProperties.members`, so it is monotone in the membership and a
+  subtype's code is at most its supertype's. The direction is fixed by
+  extension, not by attribute lists: coded the other way a nested span is
+  smaller in identity and larger in property and nested concepts become
+  incomparable.
+- *Location selects, never codes.* For an occurrence at a span, its parts
+  are the identity percepts whose spans lie inside it and its wholes are the
+  property types whose evidence holds over its bytes
+  (`PrimitiveProperties.on_counts`, conjunctive). No location coordinate
+  enters any code; `.where` stays with the event (`PerceptField.events`).
+- *Fills.* A part percept's property subspace is the meet of the types
+  holding over its own bytes; a type's identity subspace is one (the
+  saturated join of every instance the type admits). Neither tower is
+  compared with the other on content.
+- *The concept form.* Identity subspace: the join of the selected parts'
+  forms. Property subspace: the meet of the selected whole types' codes.
+  Replaces the meaning-side average of `centroid_forms` as the form rule;
+  `MereologicalCodes._interval`'s upper bound (the min over tower-1 codes in
+  shared coordinates) is retired with the interval rule, nothing live reads
+  it. If A's span nests in B's, A's parts are inside B's (join rises) and A
+  holds every conjunctive type B holds (meet falls or holds), so `form(A)`
+  $\le$ `form(B)`, strictly where B has a part A lacks or A has a type B
+  lacks; hash collisions give ties, as in tower 0 today.
+- *One call.* `Ops.partOf` over the whole code, the two per-subspace
+  verdicts conjoined: it reads part-of where the identity subspace separates
+  the pair and is-a where the property subspace does, and a nested span
+  satisfies both. No per-subspace `isPart`/`isa` split; every consumer of
+  `partOf` (the `isPart` layer, the thought operation, `containment_audit`,
+  `SymbolCentroid.place`, the free decoder's inverse) is unchanged in
+  interface.
+- *Certificate (the item's gate).* Within tower 0 as respecified above.
+  Within tower 1, every pair of types whose byte memberships nest satisfies
+  `partOf` on their codes. Across levels, every part percept is at most each
+  word it is an atom or nested part of and each type holding over its
+  bytes; every order-0 concept is at most each of its whole types. At order
+  0, every nested pair of concepts in a native lesson's inventory is
+  strictly sorted; `containment_audit` becomes that check. No cross-tower
+  content comparison is claimed or tested.
+- *Where.* Unchanged: its own round after item 3.0 lands, with the form
+  rule, the layout split, the certificate and the ports of the
+  context-wholes form assertions.

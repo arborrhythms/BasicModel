@@ -19,10 +19,10 @@ def witness_object(cs, word, *, point=None):
     """
     value = cs.interpret._pending[word]
     obj = cs.new_concept()
-    cs._csw_concept_row(0, obj)
     for parts in value['parts']:
         for part in parts:
             cs.add_part(obj, part)
+        cs._csw_concept_row(0, obj)
         cs._populate_concept_weights(
             obj, witness=(parts, value['wholes']), word_reading=True)
     for whole in value['wholes']:

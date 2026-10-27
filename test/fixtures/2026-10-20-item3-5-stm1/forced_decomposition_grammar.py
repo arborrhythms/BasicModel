@@ -4,6 +4,7 @@ The fixture selects legal compose choices through the actual chooser seam.
 It does not replace a meaning, a driver, a result, a cost, a keep decision or
 the live explore suffix. It is never imported by the measurement helpers.
 """
+from order_fixtures import force_order
 from contextlib import ExitStack
 from unittest.mock import patch
 import torch
@@ -41,15 +42,18 @@ class ForcedDecompositionGrammar:
             form = kwargs.get('form')
             form = form.decode() if isinstance(form, bytes) else form
             if form in self.reference_orders:
-                allocation.reference_orders[word] = 1
+                force_order(owner, word, 1)
             elif word is not None and not owner.definitions.objects(word):
                 # This certificate declares its nonvariable vocabulary known.
                 # Argument close no longer mints its objects. Admit the same
                 # lexical association here, before the operand is read, using
                 # the native form and a distinct conceptual seat.
                 obj = owner.new_concept()
-                row = owner._csw_concept_row(0, obj)
                 description = owner.interpret._pending.get(word) or owner.definitions.description(word)
+                for parts in description.get('parts', ()):
+                    for part in parts:
+                        owner.add_part(obj, part)
+                row = owner._csw_concept_row(0, obj)
                 for parts in description.get('parts', ()):
                     owner.add_concept_feature(row, 'ps', tuple(parts), 1.)
                 owner.interpret.define(word, obj)
@@ -58,7 +62,7 @@ class ForcedDecompositionGrammar:
             form = form.decode() if isinstance(form, bytes) else form
             if form in self.reference_orders:
                 for word in words:
-                    allocation.reference_orders[word] = 1
+                    force_order(owner, word, 1)
         def reference_choice(choices, logits, *, forward_identity=None, individuals=None):
             # The same declared open-name choice applies when the closing
             # owner calls bind. In particular, the question's "what" must

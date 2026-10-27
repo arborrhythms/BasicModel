@@ -46,11 +46,14 @@ def test_serial_window_excludes_the_inverse_at_the_same_physical_slot(monkeypatc
     from Language import LanguageSpace
     layer = _prefer_unary(monkeypatch)
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
-                            _structural_context=lambda **kwargs: None)
+                            _structural_context=lambda **kwargs: None,
+                            _compose_binary_rules=(), _compose_unary_rules=())
     buffer = torch.tensor([[[.2, .4], [.7, .3], [0., 0.]]])
     state = (buffer, torch.tensor([2]), torch.zeros(1, 3, dtype=torch.long),
              torch.zeros(1, 3, dtype=torch.long), torch.full((1, 3), -1, dtype=torch.long),
              buffer.norm(dim=-1))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     choice = LanguageSpace.choose_operation(owner, state, torch.tensor([True]), slots=2,
         sample=False, previous_unary=torch.tensor([[0, -1, -1]]))
     assert choice.kind.tolist() == [2]

@@ -35,13 +35,14 @@ import torch
 
 import recon_bench
 from recon_bench import run_config
+from slow_budget import slow_count
 
 
 def _trained_model(epochs=3, config="data/MM_20M_xor.xml"):
     model, dev, lr, bs = recon_bench._build_model(
         recon_bench._resolve_config(config))
     opt = model.getOptimizer(lr=lr)
-    for _ in range(int(epochs)):
+    for _ in range(slow_count(int(epochs))):
         model.runEpoch(optimizer=opt, batchSize=bs, split="train")
     ti, _ = model.inputSpace.getTestData()
     n = int(ti.shape[0]) if torch.is_tensor(ti) else len(ti)
@@ -180,10 +181,10 @@ def test_curriculum_fraction_masks_some_tiles():
 def test_recon_bench_blind_flag(tmp_path):
     """recon_bench --blind computes the decode + where_recovery blind
     (default); --scaffold keeps the debug/fallback path."""
-    rec_blind = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
+    rec_blind = run_config("data/MM_20M_xor.xml", epochs=slow_count(3), seed=None,
                            out_dir=str(tmp_path), blind=True)
     assert rec_blind.notes.get("decode_mode") == "blind"
-    rec_scaf = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
+    rec_scaf = run_config("data/MM_20M_xor.xml", epochs=slow_count(3), seed=None,
                           out_dir=str(tmp_path), blind=False)
     assert rec_scaf.notes.get("decode_mode") == "scaffold"
     # This test selects the decode mode.  The historical E=3 scaffold score

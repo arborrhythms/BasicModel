@@ -163,7 +163,7 @@ def _run_unreduce(attention_mode, *, hot_ref=None, break_retrieval=False):
     orig_ret = ss.retrieval_candidates_for_slot
 
     def spy_ret(*a, **k):
-        retrieval_calls.append(k.get('mode'))
+        retrieval_calls.append((k.get('gamma'), k.get('delta')))
         if break_retrieval:
             raise RuntimeError("forced retrieval failure")
         return orig_ret(*a, **k)
@@ -189,7 +189,7 @@ def test_primer_fires_retrieval_on_lift_family():
     """Lift joined the recommender family (Task C): primer mode fires the
     retrieval helper on a Lift-hosted reverse and carries the typed rows."""
     kwargs, calls = _run_unreduce('primer', hot_ref=0)
-    assert calls == ['primer', 'primer'], calls          # left + right slot
+    assert calls == [(0., 0.), (0., 0.)], calls          # left + right slot
     assert 'left_rows' in kwargs
     assert sorted(kwargs['left_rows'].tolist()) == [0, 1]
     assert sorted(kwargs['right_rows'].tolist()) == [2]

@@ -144,6 +144,9 @@ def test_review17_measurement_wiring_on_one_ordinary_batch(tmp_path):
     receipt=root/'test/fixtures/2026-10-07-operators-final'
     prior=root/'test/fixtures/2026-10-03-operators-attention'
     env=os.environ.copy()
+    # The child installs its own observer and import path. Parent receipt
+    # plugins belong to the outer case and may live outside that path.
+    env.pop('PYTEST_ADDOPTS', None)
     env.update(PYTEST_PLUGINS='operators_gate_observer', MODEL_COMPILE='none',
         OWNERSHIP_OBSERVER_OUTPUT=str(tmp_path/'ownership'),
         ITEM7_XOR_MEASUREMENTS=str(tmp_path/'observations.jsonl'), ITEM7_XOR_GATE='5',

@@ -130,9 +130,9 @@ class ChunkJournal(nn.Module):
         modal = torch.where(event,right[:,MODAL].bool() & rule[:,4].bool(),head[:,MODAL].bool()) | rule[:,8].bool()
         timeline = torch.where(event,left[:,TIMELINE],head[:,TIMELINE])
         timeline = torch.where(modal,torch.ones_like(timeline),timeline)
-        unlowered = torch.where(rule[:,4].bool(),left[:,UNLOWERED].clamp_min(1),selected.order.clamp_min(1))
+        unlowered = torch.where(rule[:,4].bool(),left[:,UNLOWERED],selected.order)
         unlowered = torch.where(post,left[:,UNLOWERED],unlowered)
-        order = torch.where(rule[:,4].bool() & (modal | (timeline > 0)),unlowered,selected.order)
+        order = torch.where(rule[:,4].bool() & (modal | (right[:,TIMELINE] > 0)),unlowered,selected.order)
         order = torch.where(post,unlowered,order)
         return selected._replace(order=order,timeline=torch.stack((timeline,modal.long(),head[:,EVENT],unlowered),-1))
 
@@ -167,7 +167,10 @@ class ChunkJournal(nn.Module):
         rule = self.rule(selected)
         left,right = self.operands(scope,selected)
         active = selected.applied & ((selected.kind == 1) | (selected.kind == 2))
-        bind,determined = active & rule[:,2].bool(), active & rule[:,1].bool()
+        # Determination opens an individual only when its looked-up member
+        # order is one. An order-zero event stays an event; allocating a
+        # token there would leave a later bind without a closing introduction.
+        bind,determined = active & rule[:,2].bool(), active & rule[:,1].bool() & selected.order.eq(1)
         pair = active & (selected.kind == 1) & ~bind
         head = torch.where((rule[:,0] == 2)[:,None],right,left)
         parent = torch.where(((selected.kind == 2) | (rule[:,0] > 0))[:,None],head,0)
@@ -195,7 +198,7 @@ class ChunkJournal(nn.Module):
             timeline = torch.where(bind & (selected.chunk >= 0),selected_timeline,timeline)
         modal = head[:,MODAL]
         origin = head[:,ORIGIN]
-        unlowered = selected.order.clamp_min(1)
+        unlowered = selected.order
         if selected.timeline is not None:
             timeline = torch.where(bind,timeline,selected.timeline[:,0])
             modal,unlowered = selected.timeline[:,1],selected.timeline[:,3]

@@ -97,12 +97,16 @@ def test_inactive_dictionary_row_cannot_poison_byte_loss_or_its_gradient(tmp_pat
     model = _model(tmp_path)
     try:
         isp = model.inputSpace
-        isp._ar_concept_lookup_atoms = torch.tensor([[[1., 0.], [float("nan"), float("nan")]]])
+        width = model.conceptualSpace.stm.concept_dim
+        atoms = torch.zeros(1, 2, width)
+        atoms[0, 0, 0] = 1.
+        atoms[0, 1] = float('nan')
+        isp._ar_concept_lookup_atoms = atoms
         isp._ar_concept_lookup_rows = torch.tensor([[4, -1]])
         isp._ar_bank_bytes = torch.tensor([[[97, 98], [99, 100]]])
         isp._ar_bank_valid = torch.tensor([[[True, True], [stale_surface, stale_surface]]])
-        _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, 2))
-        idea = torch.tensor([[.7, .4]], requires_grad=True)
+        _, atoms, values, valid = model._snapshot_tables(torch.zeros(1, 1, width))
+        idea = torch.nn.functional.pad(torch.tensor([[.7, .4]]), (0, width-2)).requires_grad_()
         cost = model._byte_word_cost(
             idea, torch.tensor(0), atoms, values, valid,
             torch.tensor([[[97, 98]]]), torch.ones(1, 1, 2, dtype=torch.bool), True)
@@ -124,12 +128,16 @@ def test_tied_affine_inverse_uses_the_retained_operand(tmp_path, name, side):
         binary = language._tree_layer(2)
         index = list(binary.op_names).index(name)
         op = getattr(binary.ops[index], "gl", binary.ops[index])
+        # This isolated affine certificate supplies only numerical content,
+        # with no positional coordinates; keep all original inverse equalities.
+        op.percept_band = None
         inner = op._sigma if name == "lift" else op._pi
         width = int(model.conceptualSpace.stm.concept_dim)
         with torch.no_grad():
             inner.layer.biasWeight.fill_(.13)
         left = torch.linspace(.4, .65, width).reshape(1, width)
         right = torch.linspace(.55, .425, width).reshape(1, width)
+        left, right = op.content_operand(left), op.content_operand(right)
         parent = op.compose(left, right).detach().requires_grad_()
         recovered = language.reverse_binary_step(
             parent, torch.tensor([index]), torch.tensor([True]),
@@ -341,6 +349,7 @@ def test_adverb_uses_its_own_bounded_inverse_and_shared_parameters(tmp_path):
             op._adv_edit.weight.copy_(torch.eye(width) * .9)
         left = torch.linspace(.45, .65, width).reshape(1, width)
         right = torch.linspace(.2, .4, width).reshape(1, width)
+        left, right = op.content_operand(left), op.content_operand(right)
         parent = op.compose(left, right).detach().requires_grad_()
         assert not torch.allclose(parent, left)
         a, b = model.languageSpace.reverse_binary_step(

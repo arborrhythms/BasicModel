@@ -1,3 +1,4 @@
+from order_fixtures import force_order
 import pytest
 import torch
 from ReferenceContext import ReferenceBank, resolve_operand
@@ -124,7 +125,7 @@ def test_identity_journal_keeps_the_implicit_typed_reference_and_point(order, op
     language, entry = language_and_program()
     rule = SimpleNamespace(method_name=operation, reference_roles=(), reference_modes=(),
         clause_form='S' if operation == 'lift' else None,
-        relation_kind=None if operation == 'lift' else operation, head_role=0, order_delta=0)
+        relation_kind=None if operation == 'lift' else operation, head_role=0)
     language._compose_binary_rules = (rule,)
     typed = torch.tensor([.2, .3, .4, .5])
     types = ReferenceTypes(torch.tensor([[1]]), torch.tensor([order]),
@@ -265,7 +266,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     language = model.languageSpace
     rules = list(language._compose_binary_rules)
     op = next(i for i, r in enumerate(rules) if r.method_name == 'lift')
-    rules[op] = rules[op]._replace(clause_form='S', head_role=1, order_delta=0)
+    rules[op] = rules[op]._replace(clause_form='S', head_role=1)
     language._compose_binary_rules = tuple(rules)
     from ChunkJournal import ChunkJournal
     language.chunk_journal = ChunkJournal(rules,language._compose_unary_rules)
@@ -311,7 +312,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
     owner = model._concept_owner()
     owner.interpret.lookup_word(tuple(map(ord, 'alpha')), (), form='alpha')
     for word in owner.word_concepts('alpha'):
-        _concept_alloc_of(owner).reference_orders[word] = 1
+        force_order(owner, word, 1)
     occurrence = store.occurrence_of(index)
     owner.mtm.open(occurrence, kind=None, when=0, value=prior, pending=False)
     frame = SituationAddress(occurrence).read(store)

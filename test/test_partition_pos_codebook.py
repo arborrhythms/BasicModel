@@ -71,7 +71,8 @@ def _make_word_space(nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     outputShape  = [nSymbols,   symbolDim]
 
     percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
-    concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
+    concept_space   = Spaces.ConceptualSpace(inputShape, [nSymbols, conceptDim],
+                                              [nSymbols, conceptDim])
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
 
     # Reset grammar so SymbolSubSpace.__init__ can (re)configure it cleanly.

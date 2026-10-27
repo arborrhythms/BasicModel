@@ -123,5 +123,5 @@ def test_activation_predictor_parameter_width_does_not_scale_with_bank():
     large=SymbolExpectation(100000,6,8,concept_dim=12)
     large.set_symbol_bank(torch.eye(large.concept_dim))
     assert [p.shape for p in small.parameters()]==[p.shape for p in large.parameters()]
-    assert small._inter_predictor.context[0].in_features==4*12
+    assert small._inter_predictor.context[0].in_features==4*12+4
     assert small.word_predictor is small._inter_predictor

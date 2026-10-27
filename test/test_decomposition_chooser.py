@@ -119,6 +119,7 @@ def test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent():
     record = SimpleNamespace(primed=bank, root=parent,
         word_rows=bank.rows, word_valid=bank.valid)
     language = SimpleNamespace(decomposition_chooser=chooser,
+        _compose_binary_rules=(SimpleNamespace(method_name="product"),),
         language_layer=SimpleNamespace(operation_layer=SimpleNamespace(ops=[Product()])),
         _bounded_binary_reconstruction=LanguageSpace._bounded_binary_reconstruction)
     model = SimpleNamespace(languageSpace=language, reconstruction_basis_limit=2)

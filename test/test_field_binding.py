@@ -1,3 +1,4 @@
+from order_fixtures import force_order
 from types import SimpleNamespace
 
 import torch
@@ -46,6 +47,7 @@ def test_inventory_checkpoint_preserves_definition_between_modes(tmp_path, sourc
     source._serial = source_serial
     source._concept_binding = binding
     cid = source.new_concept()
+    force_order(source, cid, 0)
     row = source._csw_concept_row(0, cid)
     source.add_concept_feature(row, "ps", 7, .75)
     native, bracket = _one_part()
@@ -88,6 +90,7 @@ def test_one_active_percept_reaches_every_referencing_concept():
     identities = []
     for _ in range(12):
         cid = cs.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         cs.add_concept_feature(row, "ps", 7, 1.)
         identities.append(cid)
@@ -139,6 +142,7 @@ def test_native_learning_updates_one_definition_for_both_modes(source_serial):
     cs._serial = source_serial
     cs._concept_binding = 'aligned'
     cid = cs.new_concept()
+    force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
     cs.add_concept_feature(row, 'ws', 0, 1.)
     primitive = PrimitiveProperties(1)
@@ -172,6 +176,7 @@ def test_vector_head_selects_symbols_without_truncating_knowing(tmp_path):
     pid, = model.perceptualSpace.percept_store.spell_out(b'a')
     for _ in range(20):
         cid = cs.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         cs.add_concept_feature(row, 'ps', pid, 1.)
     with torch.no_grad():

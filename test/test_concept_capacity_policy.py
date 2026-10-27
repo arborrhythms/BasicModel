@@ -1,6 +1,7 @@
 """Capacity-safe admission for the aligned conceptual inventory."""
 
 from __future__ import annotations
+from order_fixtures import force_order
 
 import os
 import sys
@@ -72,6 +73,7 @@ def _assert_snapshot_equal(before, after):
 def test_explicit_word_row_capacity_failure_is_atomic():
     cs = _cs(8)
     for row in range(8):
+        force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = _allocator_snapshot(cs)
     with pytest.raises(RuntimeError, match='capacity'):
@@ -85,6 +87,7 @@ def test_automatic_capacity_mode_reuses_known_identity_without_recycling():
     cs = _cs(8)
     known = cs.interpret_word([10], (0,), key='known')
     for row in range(1, 8):
+        force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     cs.retire_concept(1007)
     assert cs.interpret_word([10], (0,), key='known') == known
@@ -124,6 +127,7 @@ def test_serial_property_autobind_does_not_persist_sentence_chain():
 def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
     cs = _cs(8)
     for row in range(8 - remaining):
+        force_order(cs, 1000 + row, 0)
         cs._csw_concept_row(0, 1000 + row)
     store = cs.definitions._store()
     cs._concept_allocator.next_id = store.capacity
@@ -142,6 +146,7 @@ def test_rejected_word_does_not_consume_location_fallback_rows(remaining):
 def test_rejected_mixed_type_word_suppresses_every_overlapping_ws_span():
     cs = _cs(8)
     for row in range(8):
+        force_order(cs, 1000 + row, 0)
         cs._csw_concept_row(0, 1000 + row)
     before = _allocator_snapshot(cs)
     ws = _property_ws(torch.tensor([[[0, 3], [3, 4]]]))

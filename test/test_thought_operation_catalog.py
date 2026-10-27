@@ -9,6 +9,7 @@ import torch
 
 from Language import Grammar
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 
 
 def _family(*, compose=True, generate=True, thought=True,
@@ -248,10 +249,14 @@ def test_canonical_form_derives_closed_and_open_roles_without_alias_methods():
     grammar = Grammar()
     grammar.configure({'thought': {'rule': ['isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)']}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
-    part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
+    base = space.new_concept()
+    force_order(space, base, 0)
+    part = ("sym", space.synthesize_higher_order([("sym", base)]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
 
     closed = registry.form("isPart", part, whole)
     open_part = registry.form("isPart", whole, open_roles=("argin1",))
@@ -280,7 +285,9 @@ def test_open_part_form_executes_a_taxonomy_set_without_an_alias():
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
     for reference in (part, whole):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     space.add_whole(part[1], whole)
     # argin1 is the unknown part; argin2 carries the known whole.
     request = registry.form("isPart", whole, open_roles=("argin1",))
@@ -314,7 +321,9 @@ def test_catalog_forms_unparsed_executable_candidates_without_a_reader_call():
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = ("sym", space.new_concept()), ("sym", space.new_concept())
     for reference in (part, whole):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     parsed = registry.form("part", part, whole)
 
     candidates = registry.controller_candidates(parsed, parsed, parsed)
@@ -351,10 +360,14 @@ def test_thought_execution_receives_the_common_context_and_only_capability_views
     grammar = Grammar()
     grammar.configure({"thought": {"rule": ["isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)"]}})
     registry = GrammaticalThoughtRegistry.install(space, grammar)
-    part = ("sym", space.synthesize_higher_order([("sym", space.new_concept())]))
+    base = space.new_concept()
+    force_order(space, base, 0)
+    part = ("sym", space.synthesize_higher_order([("sym", base)]))
     whole = ("sym", space.new_concept())
     for reference in (part, whole):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     request = registry.form("isPart", part, whole)
     taxonomy = TaxonomyRead()
     boundary_rows = []
@@ -956,7 +969,9 @@ def test_grammar_declares_whole_as_one_part_family_with_a_role_permutation():
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     whole, part = (("sym", space.new_concept()), ("sym", space.new_concept()))
     for reference in (whole, part):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     forward = registry.form("part", part, whole)
     converse = registry.form("whole", whole, part)
     assert registry.operation_spec("whole").semantic_id == "part"
@@ -1016,7 +1031,9 @@ def test_normal_boundary_execution_uses_the_thought_registry_and_common_context(
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     part, whole = (("sym", space.new_concept()), ("sym", space.new_concept()))
     for reference in (part, whole):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     space.add_whole(part[1], whole)
     model = BasicModel()
     model.spaces = []
@@ -1072,7 +1089,9 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     whole, part = (("sym", space.new_concept()), ("sym", space.new_concept()))
     for reference in (whole, part):
-        space._csw_concept_row(0, reference[1])
+        if space._concept_source_order(reference[1]) < 0:
+            force_order(space, reference[1], 0)
+        space._csw_concept_row(space._concept_source_order(reference[1]), reference[1])
     whole_rule = next(rule for rule in grammar.rules_upward
                       if rule.method_name == "whole")
     what_rule = next(rule for rule in grammar.rules_upward

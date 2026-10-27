@@ -49,5 +49,5 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
         else:
             assert store.row(row)['refs'].numel() == 2
         assert store.row(row)['trust'] == pytest.approx(.8)
-    assert store.ideas().tolist() == [0, 1]
+    assert store.ideas().tolist() == [0]
     assert store.relations().tolist() == [store.parts.find(1, 2)]

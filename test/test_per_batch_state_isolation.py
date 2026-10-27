@@ -38,6 +38,7 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
         symbolDim=symbolDim,
         wordDim=symbolDim,
         outputDim=symbolDim,
+        nStreams=max(3, batch),  # Largest explicit activation exercised below.
         nInput=nPercepts,
         nPercepts=nPercepts,
         nConcepts=nSymbols,
@@ -61,7 +62,8 @@ def _make_ws(batch=2, nSymbols=3, symbolDim=4, conceptDim=4, nPercepts=3):
     outputShape = [
         nSymbols, symbolDim + sum(canonical_shape("WholeSpace"))]
     percept_space   = Spaces.PartSpace(inputShape, spaceShape, outputShape)
-    concept_space   = Spaces.ConceptualSpace(inputShape, spaceShape, outputShape)
+    concept_space   = Spaces.ConceptualSpace(inputShape, [nSymbols, conceptDim],
+                                             [nSymbols, conceptDim])
     symbolic_space  = Spaces.WholeSpace(inputShape, spaceShape, outputShape)
     Language.TheGrammar._configured = False
     ss = Language.SymbolSubSpace(

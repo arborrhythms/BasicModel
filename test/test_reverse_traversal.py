@@ -75,6 +75,8 @@ def test_tied_binary_reverse_recomposes_the_parent(tmp_path):
         op = list(binary.ops)[idx]
         op = getattr(op, "gl", op)
         parent = (1 + torch.tanh(torch.randn(3, D) * 0.5)) / 2
+        # A composition output has no occurrence band in its content kernel.
+        parent = op.content_operand(parent)
         left, right = language.reverse_binary_step(
             parent, torch.full((3,), idx), torch.ones(3, dtype=torch.bool))
         recomposed = op.compose(left, right)
@@ -426,7 +428,10 @@ def test_final_end_state_keeps_three_slots_for_a_relative_row(tmp_path):
     stm = m.conceptualSpace.stm
     B, D = 2, int(stm.concept_dim)
     buf = torch.randn(B, int(stm.capacity), D)
-    object.__setattr__(stm, "_live_buffer", buf)
+    from chunk_fixtures import from_stack
+    columns = torch.zeros(B, int(stm.capacity), dtype=torch.long)
+    stm.set_state(from_stack(buf, torch.tensor([3, 1]), columns, columns,
+                             columns-1, torch.ones_like(columns, dtype=buf.dtype)))
     S = buf[:, 2, :].clone()                          # the oldest of three
     slots, depth = m._final_end_state(S, torch.tensor([3, 1]))
     assert tuple(slots.shape) == (B, 3, D) and depth.tolist() == [3, 1]
@@ -512,8 +517,10 @@ def test_snapshot_bytes_are_staged_on_the_first_brick(tmp_path):
     m = _traversal_model(tmp_path)
     _run(m, ["ab", "12"])
     isp = m.inputSpace
-    bank = isp._ar_concept_lookup_rows
+    from PrependedSymbols import lookup_view
+    bank = lookup_view(isp, 'lookup_rows')
     valid = isp._ar_bank_valid
+    assert tuple(valid.shape[:2]) == tuple(bank.shape)
     assert torch.is_tensor(valid) and int(valid.shape[0]) == int(bank.shape[0])
     L = int(bank.shape[1])
     present = valid.any(-1)                                            # [B, L]

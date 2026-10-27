@@ -49,7 +49,7 @@ def _stage_one_part_word(model):
 
 
 @pytest.mark.slow
-def test_single_real_part_is_identity_padded_to_three(serial_model):
+def test_boundary_pair_word_is_unchanged_by_identity_padding(serial_model):
     """P=1 becomes P=3 without changing the mask or synthesized word."""
     _stage_one_part_word(serial_model)
     input_space = serial_model.inputSpace
@@ -59,18 +59,25 @@ def test_single_real_part_is_identity_padded_to_three(serial_model):
     mask = input_space._ar_word_part_mask[:, 0, :]
     offsets = input_space._ar_word_part_offsets[:, 0, :]
 
+    identity = part_space.percept_store.identity
+    atoms = identity.part_atoms(b'a')
+    assert len(atoms) == 3  # Two boundary pairs plus the exact-length atom.
     assert ids.shape == mask.shape == offsets.shape == (1, 3)
-    assert mask.tolist() == [[True, False, False]]
-    assert offsets.tolist() == [[0, -1, -1]]
-
+    assert mask.tolist() == [[True, True, True]]
+    assert set(ids[mask].tolist()) == {identity.atoms[atom] for atom in atoms}
     with torch.no_grad():
-        padded = part_space.synthesize_word_parts(ids, mask, offsets)
-        real_only = part_space.synthesize_word_parts(
-            ids[:, :1], mask[:, :1], offsets[:, :1])
-
-    torch.testing.assert_close(padded, real_only, rtol=0, atol=0)
-    torch.testing.assert_close(
-        padded, input_space._ar_embedded_N[:, :1], rtol=0, atol=0)
+        native = part_space.synthesize_word_parts(ids, mask, offsets)
+        padded = part_space.synthesize_word_parts(
+            torch.nn.functional.pad(ids, (0, 2), value=-1),
+            torch.nn.functional.pad(mask, (0, 2), value=False),
+            torch.nn.functional.pad(offsets, (0, 2), value=-1))
+        # Preserve the original one-real-part/P=3 padding contract as well.
+        one = part_space.synthesize_word_parts(ids[:, :1], mask[:, :1], offsets[:, :1])
+        one_padded = part_space.synthesize_word_parts(
+            ids, torch.tensor([[True, False, False]]), offsets)
+    torch.testing.assert_close(padded, native, rtol=0, atol=0)
+    torch.testing.assert_close(one_padded, one, rtol=0, atol=0)
+    torch.testing.assert_close(native, input_space._ar_embedded_N[:, :1], rtol=0, atol=0)
 
 
 @pytest.mark.slow

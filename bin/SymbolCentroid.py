@@ -29,7 +29,9 @@ def place(forms, parts):
     def cosine(values):
         if len(rows) < 2:
             return None
-        x = torch.stack([values[row] for row in rows]).double()
+        # This scalar audit uses double precision; MPS has no float64 dtype.
+        # Keep the native forms on their device and compute the report on CPU.
+        x = torch.stack([values[row] for row in rows]).cpu().double()
         x = torch.nn.functional.normalize(x, dim=-1)
         # Sum of every off-diagonal dot product, without a V by V allocation.
         return float((x.sum(0).square().sum() - x.square().sum()) / (len(rows)*(len(rows)-1)))

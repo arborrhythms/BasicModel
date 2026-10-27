@@ -1,4 +1,5 @@
 """Only the kept parse's participant constituents can enter a bind menu."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
@@ -98,8 +99,8 @@ def test_ordinary_menu_uses_the_retained_argument_occupations(monkeypatch):
     from IdentityRows import mint
     words = dict(three=mint(owner, atoms[0]), wrong=mint(owner, atoms[1]))
     occupations = PartsOfSpeech(('lift_argin1', 'lift_argin2'))
-    occupations.add(words['three'], 'lift_argin1')
-    occupations.add(words['wrong'], 'lift_argin2')
+    occupations.add(words['three'], 'lift_argin1', 1)
+    occupations.add(words['wrong'], 'lift_argin2', 1)
     object.__setattr__(store, '_occupation_owner', weakref.ref(occupations))
     object.__setattr__(store, '_part_read_rules', (rule,))
     # Explicitly minted native identities; the predicate position in this
@@ -134,7 +135,7 @@ def test_journal_and_close_use_the_reading_order_and_argument_position(monkeypat
     from test_bind_thought import native
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
-    _concept_alloc_of(f.cs).reference_orders[word] = order
+    force_order(f.cs, word, order)
     f.words['m'] = word, word
     tree = (('lift', 'm', 'v') if position == 'participant' else
             ('surface', 'm', 'v') if position == 'marker' else ('lift', 'v', 'm'))

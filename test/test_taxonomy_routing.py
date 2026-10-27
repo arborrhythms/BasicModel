@@ -16,10 +16,10 @@ def test_partof_is_not_established_by_vector_containment():
 
 def test_partof_is_not_established_by_an_ltm1_description():
     part, whole = torch.eye(4)[:2]
-    store = LTM0(4)
+    store = LTM0(12, percept_width=0)
     from Meaning import ConceptualMeaning
-    store.append_meaning(ConceptualMeaning.from_payload(torch.stack((part, torch.eye(4)[2], whole)),
-        depth=3, layout='infix'), kind='fact', trust=.9)
+    store.append_meaning(ConceptualMeaning.from_payload(torch.stack((part, torch.eye(4)[2], whole)).flatten()[None],
+        depth=1, layout='infix'), kind='fact', trust=.9)
     result = TruthGroundedReasoner(store=store).evaluate(
         QuerySpec.from_surface("isPart", part, whole))
     assert result["posture"] == UNKNOWN

@@ -1,4 +1,5 @@
 """The tenth review's ownership, incompatibility and answer-view contracts."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 
@@ -24,6 +25,7 @@ def test_later_ball_mention_preserves_the_boxs_key_members_and_count(monkeypatch
         words[word] = owner.interpret.lookup_word([unit], (), form=word)
         if word != 'y':
             obj = owner.new_concept()
+            force_order(owner, obj, 0)
             with torch.no_grad():
                 owner.similarity_codebook.W[owner._csw_concept_row(0, obj)].copy_(point)
             owner.interpret.define(words[word], obj)

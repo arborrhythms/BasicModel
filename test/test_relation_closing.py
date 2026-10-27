@@ -23,7 +23,9 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     entry = f.program(tree)
     ids = entry.concept_ids.clone()
     ids[list(unknown)] = -1
-    entry = replace(entry, concept_ids=ids)
+    words = entry.word_ids.clone()
+    words[list(unknown)] = -1  # No fallback lexical identity for numerical operands.
+    entry = replace(entry, concept_ids=ids, word_ids=words)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause, trust=.7)
     relation = clause.children[0] if nested else clause
@@ -31,15 +33,19 @@ def test_unindexed_operand_ends_as_an_unasserted_idea_before_relative_parent(
     for leaf, child in zip(unknown, relation.children):
         assert child.relation is None
         torch.testing.assert_close(child.point, entry.leaves[leaf])
-    assert len(f.store) == len(unknown) + 1 + int(nested)
-    assert (f.store.parts.refs[f.store.relations()] > 0).all()
+    from LTM1 import OCCURRENCE
+    from ChainRead import point
+    assert len(f.store) == len(unknown)
+    assert isinstance(row, tuple) and f.store.parts.contains(row[1])
     assert not f.store.trust[:len(unknown)].any()
     assert f.store.row(row)['evidence'] == pytest.approx((.7, 0.))
-    for index in range(len(unknown)):
+    operand_rows = f.store.ideas().tolist()
+    for index, leaf in zip(operand_rows, unknown):
         assert f.store.row(index)['kind'] == 'unverified'
-    sentence = f.store.row(len(f.store) - 1)
-    assert sentence['kind'] == 'observation'
-    assert sentence['evidence'] == pytest.approx((.7, 0.))
+        torch.testing.assert_close(f.store.slots[index], entry.leaves[leaf])
+    assert len(operand_rows) == len(unknown)
+    # The sentence itself is a tagged chain, not a duplicate LTM0 payload.
+    assert f.store.parts.truth_plus[row[1]] == pytest.approx(.7)
 
 
 def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
@@ -54,10 +60,13 @@ def test_three_slot_relation_closes_unindexed_numerical_operands(monkeypatch):
         symbol_where=None, symbol_when=None, lexical_forms=(None,) * 3)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause, trust=.6)
-    assert len(f.store) == 3 and isinstance(row, tuple)
-    for symbol, point in zip(f.store.row(row)['refs'].tolist(), leaves[[0, 2]]):
-        torch.testing.assert_close(f.store._concept_point(symbol), point)
-    torch.testing.assert_close(f.store.slots[:2, 0], leaves[[0, 2]])
+    from ChainRead import point
+    from LTM1 import OCCURRENCE
+    assert len(f.store) == 2 and isinstance(row, tuple)
+    assert f.store.parts.ref_kinds[row[1]].tolist() == [OCCURRENCE, OCCURRENCE]
+    for reference, expected in zip(f.store.parts.refs[row[1]].tolist(), leaves[[0, 2]]):
+        torch.testing.assert_close(point(f.store, (OCCURRENCE, reference)), expected)
+    torch.testing.assert_close(f.store.slots[:2], leaves[[0, 2]])
 
 
 @pytest.mark.usefixtures('eager_reading')
@@ -69,6 +78,7 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
     # arguments now require native seats in addition to the four words.
     with small_retained('MM_grammar.xml', concept_rows=64) as path:
         model, _, _ = _fresh_model(path)
+    constructed_vectors = model._concept_owner().nVectors
     chooser = model.languageSpace._tree_layer(2).chooser
     part = next(i for i, r in enumerate(model.languageSpace._compose_binary_rules)
                 if r.method_name == 'part')
@@ -81,7 +91,12 @@ def test_unaligned_mm_forward_can_select_a_relation_without_native_word_rows(mon
         stop, scores = score_unary(*args, **kwargs)
         if kwargs.get('op_offset') == model._stm_reducer().r_reduce + model._stm_reducer().r_apply:
             return stop, scores
-        return stop, torch.full_like(scores, -torch.inf)
+        indices = kwargs.get('op_indices')
+        forced = torch.full_like(scores, -torch.inf)
+        if indices is not None:
+            forced = torch.where(indices >= model._stm_reducer().r_reduce + model._stm_reducer().r_apply,
+                                 scores, forced)
+        return stop, forced
     monkeypatch.setattr(chooser, 'score_binary', binary)
     monkeypatch.setattr(chooser, 'score_unary', unary)
     try:
@@ -110,6 +125,7 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
     from PartClosing import PartClosing
     from reading_fixtures import capture_readings
     model, _, _ = _fresh_model(str(Path(_PROJECT)/'data/MM_grammar.xml'))
+    constructed_vectors = model._concept_owner().nVectors
     chooser = model.languageSpace._tree_layer(2).chooser
     part = next(i for i, rule in enumerate(model.languageSpace._compose_binary_rules)
                 if rule.method_name == 'part')
@@ -122,19 +138,33 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
         stop, scores = score_unary(*args, **kwargs)
         if kwargs.get('op_offset') == model._stm_reducer().r_reduce + model._stm_reducer().r_apply:
             return stop, scores
-        return stop, torch.full_like(scores, -torch.inf)
+        indices = kwargs.get('op_indices')
+        forced = torch.full_like(scores, -torch.inf)
+        if indices is not None:
+            forced = torch.where(indices >= model._stm_reducer().r_reduce + model._stm_reducer().r_apply,
+                                 scores, forced)
+        return stop, forced
     monkeypatch.setattr(chooser, 'score_binary', binary)
     monkeypatch.setattr(chooser, 'score_unary', unary)
     preflight, plans = PartClosing.preflight, []
     def observe(closing):
-        plans.append([(record['value'].reference, record['seat']) for record in closing._plan])
+        plans.append([record['reference'] for record in closing._planned.values()
+                      if not record['children']])
         return preflight(closing)
     monkeypatch.setattr(PartClosing, 'preflight', observe)
+    close = PartClosing.close
+    seat_counts = []
+    def observe_seats(closing, *args, **kwargs):
+        before = sum(len(layer._tensor_rows) for layer in closing.alloc._layers.values())
+        result = close(closing, *args, **kwargs)
+        seat_counts.append((before, sum(len(layer._tensor_rows) for layer in closing.alloc._layers.values())))
+        return result
+    monkeypatch.setattr(PartClosing, 'close', observe_seats)
     try:
         inputs, _ = next(iter(model.inputSpace.data.data_loader(split='train', num_streams=4)))
         with capture_readings(model) as captured:
             model.forward(model.inputSpace.prepInput(inputs))
-        assert model._concept_owner().nVectors == 8
+        assert model._concept_owner().nVectors == constructed_vectors
         assert model._word_symbol_concept_ids() is None
         source = model.inputSpace
         valid = source._ar_grammar_leaf_mask
@@ -142,7 +172,9 @@ def test_mixing_relation_keeps_admitted_object_ids_without_duplicate_seats(monke
             expected = source._ar_grammar_object_ids[b, valid[b]]
             torch.testing.assert_close(program.concept_ids, expected, rtol=0, atol=0)
             assert bool((expected > 0).all())
-        assert plans and all(not seat for plan in plans for _, seat in plan)
+        from LTM1 import SYMBOL
+        assert plans and all(ref is not None and ref[0] == SYMBOL for plan in plans for ref in plan)
+        assert seat_counts and all(before == after for before, after in seat_counts)
         assert not model.symbolSpace.ltm_store.relations('definition').numel()
     finally:
         model.End()

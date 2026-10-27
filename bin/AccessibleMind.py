@@ -231,7 +231,9 @@ def apply_thought_effect(model, result, *, row, work, effect_round=None):
             bound_rows = addresses[:, row] if addresses.ndim == 2 else addresses
             slots = (bound_ids == cid).nonzero().flatten() if cid is not None else (bound_rows == index).nonzero().flatten()
             if not len(slots):
-                order = space._concept_source_order(cid) if cid is not None else 0
+                # This selects a physical pool, not a concept's order record.
+                # An unknown concept (or a raw row) uses the base pool here.
+                order = max(0, space._concept_source_order(cid)) if cid is not None else 0
                 start, end = space.order_slice(order)
                 slots = (bound_rows[start:end] < 0).nonzero().flatten() + start
                 if len(slots):

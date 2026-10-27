@@ -7,7 +7,7 @@ def test_conflicting_claim_preserves_support_and_counterevidence():
     store, _ = clause_store()
     row = store.write_clause(part_clause(), trust=.8, evidence=(.8, 0.))
     assert store.write_clause(part_clause(polarity=False), trust=.6, evidence=(0., .6)) == row
-    assert len(store) == 2 and len(store.parts) == 1
+    assert len(store) == 0 and len(store.parts) == 1
     assert store.row(row)['evidence'] == pytest.approx((.8, .6))
     assert min(store.row(row)['evidence']) == pytest.approx(.6)
 

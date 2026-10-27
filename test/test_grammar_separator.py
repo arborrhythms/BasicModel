@@ -69,7 +69,7 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
     def observed_push(*args):
         frame = inspect.currentframe().f_back
         if frame.f_code.co_name == 'stage_cs_lang':
-            pushes.append((int(frame.f_locals['index']), args[7].detach().clone()))
+            pushes.append((int(frame.f_locals['index']), args[2].detach().clone()))
         return push(*args)
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed_push))
     commit = model._commit_sentence

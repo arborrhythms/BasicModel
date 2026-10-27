@@ -2,6 +2,14 @@
 import torch
 
 
+def decoder_cosines(leaves, codes):
+    """All row cosines without a [batch, leaves, codes, dimension] temporary."""
+    # Match cosine_similarity's per-norm clamp, including zero code rows.
+    left = torch.nn.functional.normalize(leaves, dim=-1, eps=1e-8)
+    right = torch.nn.functional.normalize(codes, dim=-1, eps=1e-8)
+    return left @ right.transpose(-1, -2)
+
+
 class DecoderMarginProbe:
     def __init__(self, emit):
         self.emit = emit

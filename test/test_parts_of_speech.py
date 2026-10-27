@@ -60,7 +60,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
         if not initial:
             words = model.inputSpace._ar_word_concept_ids
             for i, word in enumerate(sorted(set(words[words>=0].flatten().tolist()))):
-                parts.add(word,parts.arguments[i])
+                parts.add(word,parts.arguments[i], parts.order_of(word))
             initial.update({word:dict(counts) for word,counts in parts.counts.items()})
         stage()
     monkeypatch.setattr(model,'_stage_reconstruction_teacher',seeded_stage)
@@ -113,7 +113,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
                     expected_probability=torch.zeros(len(parts.arguments))
                     for word in heads[span]:
                         counts=initial.get(word,{})
-                        expected_probability+=torch.tensor([counts.get(arg,0)/max(1,sum(counts.values())) for arg in parts.arguments])
+                        expected_probability+=torch.tensor([counts.get((arg,parts.order_of(word)),0)/max(1,sum(counts.values())) for arg in parts.arguments])
                     torch.testing.assert_close(state['kwargs']['occupation'][b,i].cpu(),expected_probability,rtol=0,atol=0)
         return result
     monkeypatch.setattr(model,'_commit_sentence',committed)
@@ -124,7 +124,7 @@ def test_kept_readings_alone_supply_occupation_counts(tmp_path, monkeypatch, eag
             questions=(What.supervised(0,split='train',prompt='what is red ?'),
                        What.supervised(1,split='train',prompt='what is blue ?')))
     assert len(events) == 2 and len(lessons) == 4
-    expected = PartsOfSpeech(parts.arguments)
+    expected = PartsOfSpeech(parts.arguments, model._concept_owner())
     expected.counts={word:Counter(counts) for word,counts in initial.items()}
     for program, binary, unary in events:
         expected.observe_kept(program, binary, unary)
@@ -149,14 +149,14 @@ def test_one_stored_part_of_speech_is_the_recomputed_argmax(chooser):
     a, b = parts.arguments[:2]
     assert parts.part_of_speech(7) == a
     assert sum(parts.distribution(7)) == pytest.approx(1.)
-    parts.add(7,b)
+    parts.add(7,b, parts.order_of(7))
     assert parts.part_of_speech(7) == b
-    parts.add(7,a); parts.add(7,a)
+    parts.add(7,a, parts.order_of(7)); parts.add(7,a, parts.order_of(7))
     assert parts.part_of_speech(7) == a and parts.labels == {7:a}
     assert parts.distribution(7)[parts.index[a]] == pytest.approx(2/3)
     # Cosines report shared occupants without changing either argument.
     before = parts.get_extra_state().clone()
-    assert next(row for row in parts.collapse() if row['left']==a and row['right']==b)['cosine'] == 1.
+    assert next(row for row in parts.collapse() if row['left']==(a,-1) and row['right']==(b,-1))['cosine'] == 1.
     assert torch.equal(before, parts.get_extra_state())
 
 
@@ -170,23 +170,23 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         lower=2,definite=2,lower_unary=1,definite_unary=1,
         preposition_unary=1,surface_unary=1,verb=1,
         lift=0,equal=0,part=0,whole=0,implies=0,generic=0,ask=0,bind=1)
-    assert rules['bind'].arity == 1 and rules['bind'].head_role == 1
+    assert rules['bind'].arity == 2 and rules['bind'].head_role == 1
     assert rules['adverb'].head_role == 1
     for name,mask in expected.items():
-        r=rules[name];arity=len(r.rhs_symbols)
+        r=rules[name];arity=1 if name=='bind' else len(r.rhs_symbols)
         assert flow_mask(r)==mask
         parts=PartsOfSpeech(formal_arguments([r]))
-        actions=[[0,-1,i] for i in range(arity)]+[[2 if arity==1 else 1,0,0]]
+        actions=[[0,-1,i] for i in range(arity)]+[[2 if arity==1 and name!='bind' else 1,0,0]]
         parts.observe_kept(NS(word_ids=torch.tensor([101,102][:arity]),
-                              actions=torch.tensor(actions)),[r] if arity==2 else (),[r] if arity==1 else ())
+                              actions=torch.tensor(actions)),[r] if arity==2 or name=='bind' else (),[r] if arity==1 and name!='bind' else ())
         for i,word in enumerate([101,102][:arity]):
-            gold=Counter({f'{name}_argin{i+1}':1})
-            if mask & (1<<i):gold[f'{name}_argout1']=1
+            gold=Counter({(f'{name}_argin{i+1}',-1):1})
+            if mask & (1<<i):gold[f'{name}_argout1',-1]=1
             assert parts.counts[word]==gold
         # The compiled carrier must implement the same flow as the kept journal.
         words=torch.tensor([[[0.,1.],[1.,0.],[3.,4.]]])
         choice=NS(applied=torch.tensor([True]),kind=torch.tensor([1 if arity==2 else 2]),
-                  local_op=torch.tensor([0]),position=torch.tensor([1]))
+                  local_op=torch.tensor([0]),position=torch.tensor([1]), stack_arity=None)
         binary,unary=((mask,),()) if arity==2 else ((),(mask,))
         result=update_flow(words,choice,binary,unary)
         if arity==2:
@@ -199,7 +199,7 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         assert torch.equal(update_flow(words,choice,binary,unary),words)
     words=words.expand(7,-1,-1).clone()
     choice=NS(applied=torch.ones(7,dtype=torch.bool),kind=torch.tensor([1,1,1,1,2,2,3]),
-              local_op=torch.tensor([0,1,2,3,0,1,0]),position=torch.ones(7,dtype=torch.long))
+              local_op=torch.tensor([0,1,2,3,0,1,0]),position=torch.ones(7,dtype=torch.long), stack_arity=None)
     result=update_flow(words,choice,(0,1,2,3),(0,1))
     assert result[:4,0].tolist()==[[0.,0.],[1.,0.],[0.,1.],[1.,1.]]
     assert result[4,1].tolist()==[0.,0.] and torch.equal(result[5],words[5])
@@ -216,16 +216,16 @@ def test_word_flow_follows_the_catalogue_and_ends_at_a_clause():
         [0,-1,3],[3,3,0],[3,3,0],[1,2,0],[2,0,0],[2,1,0]]))
     parts.observe_kept(program,binary,unary)
     for word in (102,103):
-        assert parts.counts[word]['intersection_argout1']==1
-        assert parts.counts[word]['lower_argin2']==parts.counts[word]['lower_argout1']==1
-        assert parts.counts[word]['lift_argin1']==1
-    assert parts.counts[101]==Counter(lower_argin1=1)
-    assert parts.counts[104]['lift_argin2']==1
-    assert not any(counts.get('lift_argout1') or counts.get('not_argin1') or counts.get('lower_unary_argin1')
+        assert parts.counts[word]['intersection_argout1',-1]==1
+        assert parts.counts[word]['lower_argin2',-1]==parts.counts[word]['lower_argout1',-1]==1
+        assert parts.counts[word]['lift_argin1',-1]==1
+    assert parts.counts[101]==Counter({('lower_argin1',-1):1})
+    assert parts.counts[104]['lift_argin2',-1]==1
+    assert not any(counts.get(('lift_argout1',-1)) or counts.get(('not_argin1',-1)) or counts.get(('lower_unary_argin1',-1))
                    for counts in parts.counts.values())
     cosines={(row['left'],row['right']):row['cosine'] for row in parts.collapse()}
-    assert cosines['intersection_argin1','intersection_argout1']==pytest.approx(2**-.5)
-    assert cosines['intersection_argin2','intersection_argout1']==pytest.approx(2**-.5)
+    assert cosines[('intersection_argin1',-1),('intersection_argout1',-1)]==pytest.approx(2**-.5)
+    assert cosines[('intersection_argin2',-1),('intersection_argout1',-1)]==pytest.approx(2**-.5)
 
 
 def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
@@ -240,10 +240,10 @@ def test_kept_product_carries_both_operands_words_into_the_enclosing_np():
         [0,-1,0],[0,-1,1],[0,-1,2],[1,0,0],[1,1,0]]))
     parts.observe_kept(program,binary,())
     assert flow_mask(binary[0])==3
-    assert parts.counts[101]==Counter(lower_argin1=1)
+    assert parts.counts[101]==Counter({('lower_argin1',-1):1})
     for role,word in enumerate((102,103),1):
-        assert parts.counts[word]==Counter({f'product_argin{role}':1,
-            'product_argout1':1,'lower_argin2':1,'lower_argout1':1})
+        assert parts.counts[word]==Counter({(f'product_argin{role}',-1):1,
+            ('product_argout1',-1):1,('lower_argin2',-1):1,('lower_argout1',-1):1})
 
 
 def test_chooser_adds_input_probabilities_directly_and_carries_words(chooser):
@@ -258,7 +258,7 @@ def test_chooser_adds_input_probabilities_directly_and_carries_words(chooser):
     logits = layer(x,slots=2,occupation=probabilities)[2]['logits']
     torch.testing.assert_close(logits-base, torch.tensor([[1.,0.,.4,0.,0.]]))
     heads = torch.arange(12.).reshape(1,3,4)
-    choice = NS(applied=torch.tensor([True]),kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]))
+    choice = NS(applied=torch.tensor([True]),kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]), stack_arity=None)
     assert torch.equal(update_flow(heads,choice,(2,1),())[:,0],heads[:,0])
     assert torch.equal(update_flow(heads,choice,(0,1),())[:,0],torch.zeros_like(heads[:,0]))
     choice.kind.fill_(3)
@@ -337,7 +337,7 @@ def test_artifact_restoration_retains_weights_and_occupation_state_exactly(tmp_p
     parts = model.languageSpace.parts_of_speech
     assert parts.counts
     for word in range(123,143):
-        parts.add(word,parts.arguments[0]);parts.add(word,parts.arguments[-1])
+        parts.add(word,parts.arguments[0], parts.order_of(word));parts.add(word,parts.arguments[-1], parts.order_of(word))
     expected = _unpack_state(parts.get_extra_state())
     expected_labels=dict(parts.labels)
     path = tmp_path/'occupation.ckpt'

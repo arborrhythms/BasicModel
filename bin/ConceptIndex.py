@@ -24,55 +24,45 @@ def _available(cs, values):
     return values
 
 
-def _symbol_at(cs, cid, order):
-    """Raise a member by sigma singletons until it reaches the input order."""
-    alloc = _concept_alloc_of(cs)
-    current = cs._concept_source_order(cid)
-    while current < order:
-        candidates = [candidate for candidate in alloc.placement
-            if candidate not in alloc.retired
-            and not alloc.refs(candidate, 'word')
-            and cs._concept_source_order(candidate) == current + 1
-            and alloc.refs(candidate, 'part') == [('sym', cid)]
-            and not alloc.refs(candidate, 'whole')]
-        previous = cid
-        cid = min(candidates) if candidates else cs.singleton_concept(cid)
-        if not candidates:
-            basis = cs.similarity_codebook.getW()
-            source_row, destination = cs._csw_row_of(previous), cs._csw_row_of(cid)
-            if source_row is not None and destination is not None:
-                with torch.no_grad():
-                    basis[destination].copy_(basis[source_row])
-        current += 1
-        alloc.reference_orders[cid] = current
-        alloc.settle(cid)
-    return cid
-
-
 def index_part_row(cs, part, whole):
-    """Testimony adds a sigma edge to the parent at the next native order."""
+    """Admit a witnessed member to the next-order class of the shared side."""
+    from LTM1 import SYMBOL
     alloc = _concept_alloc_of(cs)
-    part, whole = _available(cs, (part, whole)) if part != whole else (int(part), int(whole))
-    if part == whole:
-        return whole  # improper parthood needs no cyclic definition
-    index = cs._definition_index()
-    words = set(() if index is None else index.word_ids)
-    if part in words or whole in words:
-        raise ValueError('language taxonomy relates object concepts, never words')
-    order = cs._concept_source_order(part) + 1
-    if cs._concept_source_order(whole) > order:
-        raise ValueError('a taxonomy parent must be exactly one order above its part')
-    key = ('part-kind', whole, order)
-    parent = whole if cs._concept_source_order(whole) == order else alloc.relate_idx.get(key)
+    part_ref, whole_ref = alloc.parts.reference(part), alloc.parts.reference(whole)
+    if part_ref == whole_ref:
+        return whole_ref[1]
+    part_order = (alloc.order_of(part_ref[1]) if part_ref[0] == SYMBOL
+                  else cs._concept_source_order(part_ref[1]))
+    whole_order = (alloc.order_of(whole_ref[1]) if whole_ref[0] == SYMBOL
+                   else cs._concept_source_order(whole_ref[1]))
+    base = alloc.relate_idx.get(('part-base', whole_ref[1])) if whole_ref[0] == SYMBOL else None
+    if base is not None and part_order == whole_order - 1:
+        # A later member joins the witnessed equivalence class. Naming its
+        # parent after the first raise must not raise that same class again.
+        whole_ref, whole_order = base, whole_order - 1
+    if part_order < 0 or whole_order < 0:
+        raise ValueError('a class requires witnessed member and shared-side orders')
+    order = whole_order + 1
+    if part_order != whole_order:
+        raise ValueError('a class member must have the shared side order')
+    key = ('part-kind', whole_ref, order)
+    parent = alloc.relate_idx.get(key)
     if parent is None:
-        parent = _symbol_at(cs, whole, order)
+        parent = cs.new_concept()
         alloc.relate_idx[key] = parent
-    alloc.add(parent, 'part', ('sym', part))
+        alloc.relate_idx['part-base', parent] = whole_ref
+    alloc.parts.add(part_ref, (SYMBOL, parent), truth_plus=1.)
     alloc.reference_orders[parent] = order
     alloc.singletons.add(parent)
     alloc.raised.add(parent)
     alloc.settle(parent)
-    _inherit_forms(cs, whole, parent)
+    if whole_ref[0] == SYMBOL:
+        _inherit_forms(cs, whole_ref[1], parent)
+    destination = cs._csw_concept_row(order, parent)
+    source = cs._csw_row_of(whole_ref[1]) if whole_ref[0] == SYMBOL else None
+    if source is not None:
+        with torch.no_grad():
+            cs.similarity_codebook.W[destination].copy_(cs.similarity_codebook.W[source])
     cs._populate_concept_weights(parent)
     return int(parent)
 

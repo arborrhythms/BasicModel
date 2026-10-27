@@ -189,7 +189,7 @@ def test_aligned_provenance_preserves_prior_bearing_forward_event():
 
 
 @pytest.mark.slow
-def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
+def test_mini_basicmodel_production_widths_runs_forward_backward(
         tmp_path, monkeypatch, eager_reading):
     """Exercise the real construction/stem with production boundary widths."""
     import Language
@@ -204,7 +204,7 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
         assert node is not None, path
         node.text = str(value).lower() if isinstance(value, bool) else str(value)
 
-    # Keep the production 128-WHAT native peers and 1024-WHAT concept geometry,
+    # Keep the production 104-coordinate peers and 1000-coordinate concept geometry,
     # but replace the large physical dictionaries and raw byte ceiling with
     # smoke-test capacities.
     _set("./InputSpace/nOutput", 128)
@@ -217,7 +217,7 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     _set("./architecture/training/autoload", False)
     _set("./architecture/training/autosave", False)
     _set("./architecture/weightsPath", tmp_path / "unused.ckpt")
-    config = tmp_path / "mini_basic_ps128_ws128_cs1024.xml"
+    config = tmp_path / "mini_basic_production_widths.xml"
     tree.write(config, encoding="unicode")
 
     init_device("cpu")
@@ -232,10 +232,10 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
         model, _ = Models.BasicModel.from_config(str(config), data=Models.TheData)
     model.train()
 
-    assert model.perceptualSpace.outputShape == [8, 136]
-    assert model.wholeSpace.outputShape == [8, 136]
-    assert model.conceptualSpace.inputShape == [8, 1032]
-    assert model.conceptualSpace.outputShape == [8, 1032]
+    assert model.perceptualSpace.outputShape == [8, 104]
+    assert model.wholeSpace.outputShape == [8, 104]
+    assert model.conceptualSpace.inputShape == [8, 1000]
+    assert model.conceptualSpace.outputShape == [8, 1000]
     assert not hasattr(model.conceptualSpace, "perceptual_lift")
     assert model.conceptualSpace.similarity_codebook.sparse_lookup_grad
 
@@ -270,19 +270,28 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
         if torch.is_tensor(value) and value.requires_grad]
     assert differentiable, "mini BasicModel forward exposed no gradient path"
 
-    # Reversing a complete root must ignore a stale one-word reshape descriptor
-    # and preserve the eight-location PS field recovered from its seed. Install
-    # that descriptor explicitly: the shipped completed-reconstruction path
-    # need not leave a word reader's temporary cache behind. Keep the reverse in
-    # the live graph and retain the gradient/optimizer checks below.
-    ps = model.perceptualSpace
-    ps._pre_reshape_input = (1, 136)
+    # Native spelling consumes explicitly recovered leaves. A free root is
+    # not a saved eight-location perception field after the native migration.
     carrier = model.conceptualSpace.subspace.carrier_like()
-    carrier.set_event(model._stm_single_S.unsqueeze(1))
+    leaves = model.inputSpace._ar_word_concept_atoms
+    assert leaves.shape[0] == 1 and leaves.shape[-1] == 1000
+    carrier.set_event(leaves)
     recon = model._reverse_input_surface(carrier).materialize()
-    assert recon.shape == (1, 8, 136)
-    differentiable.append(recon)
+    assert bytes(recon[0, 0].tolist()).rstrip(b'\x00') == b'alpha beta'
+    assert recon.shape == (1, 1, len(b'alpha beta'))
+    # The native byte inverse is discrete; the real forward and sparse
+    # readout still own the unchanged backward/optimizer assertions below.
 
+    # The fixture's admitted row 17 is a supplied readout witness. Bare
+    # WordIdentity admission no longer invents that semantic definition.
+    readout = readouts[0]
+    percepts = leaves.new_zeros(1, readout.nInput)
+    admitted = torch.zeros_like(percepts, dtype=torch.bool)
+    percepts[:, :len(expected_refs)] = 1.
+    admitted[:, :len(expected_refs)] = True
+    projected = readout(percepts, torch.tensor([17]), mask=admitted)
+    assert projected.shape == (1,) and projected.requires_grad
+    differentiable.append(projected)
     loss = sum(value.square().mean() for value in differentiable)
     loss.backward()
     shared_W = model.conceptualSpace.similarity_codebook.W
@@ -311,9 +320,9 @@ def test_mini_basicmodel_ps128_ws128_cs1024_runs_forward_backward(
     assert _finite_nonzero_grad(coefficients)
     assert coefficients.grad.is_sparse
     optimizer = model.getOptimizer()
-    assert any(p is coefficients for p in model._shared_representation_parameters(optimizer))
+    assert any(p is coefficients for p in model.objective_parameter_groups(optimizer)['reconstruction'])
     leaves = getattr(optimizer, "optimizers", [optimizer])
-    assert any(type(leaf.inner).__name__ == "_RowLocalAdam" and any(
+    assert any(type(leaf.inner).__name__ == "_RowLocalSGD" and any(
         p is coefficients for group in leaf.param_groups for p in group["params"])
         for leaf in leaves)
     before = coefficients.detach().clone()

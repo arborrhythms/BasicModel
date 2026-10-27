@@ -12,5 +12,5 @@ def test_closing_reuses_relation_and_preserves_independent_evidence():
     clause = part_clause()
     row = store.write_clause(clause, trust=.8, evidence=(.8, 0.))
     assert store.write_clause(replace(clause, meaning=replace(clause.meaning, polarity=False)), trust=.7, evidence=(0., .7)) == row
-    assert len(store) == 2 and len(store.parts) == 1
+    assert len(store) == 0 and len(store.parts) == 1
     assert store.row(row)['evidence'] == pytest.approx((.8, .7))

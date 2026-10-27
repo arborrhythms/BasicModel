@@ -26,6 +26,14 @@ if str(_BIN) not in sys.path:
 from Layers import ShortTermMemory  # noqa: E402
 
 
+def _stack(stm):
+    from types import SimpleNamespace
+    from STMChunks import stack_view
+    return SimpleNamespace(**dict(zip(
+        ('_buffer', '_depth', '_orders', '_grammar_orders', '_concept_rows', '_concept_activations'),
+        stack_view(stm.state))))
+
+
 def _stm(*, batch=2, capacity=4, dim=2):
     return ShortTermMemory(
         batch=batch, capacity=capacity, concept_dim=dim)
@@ -42,7 +50,8 @@ def _assert_invalid(stm, rows=None):
 
 
 def test_identity_slabs_initialize_and_begin_forward_invalid():
-    stm = _stm(batch=2, capacity=4, dim=3)
+    stm = _stm(batch=3, capacity=4, dim=3)
+    stm.ensure_batch(2)
 
     assert stm._concept_rows.shape == (2, 4)
     assert stm._concept_rows.dtype == torch.long
@@ -71,11 +80,11 @@ def test_push_and_push_step_shift_identity_slabs_with_payload():
         0, torch.tensor([2.0, 20.0]),
         concept_row=12, concept_activation=0.2)
 
-    assert torch.equal(stm._buffer[0, :2], torch.tensor([[2.0, 20.0],
+    assert torch.equal(_stack(stm)._buffer[0, :2], torch.tensor([[2.0, 20.0],
                                                         [1.0, 10.0]]))
-    assert stm._concept_rows[0].tolist() == [12, 11, -1, -1]
+    assert _stack(stm)._concept_rows[0].tolist() == [12, 11, -1, -1]
     torch.testing.assert_close(
-        stm._concept_activations[0], torch.tensor([0.2, 0.1, 0.0, 0.0]))
+        _stack(stm)._concept_activations[0], torch.tensor([0.2, 0.1, 0.0, 0.0]))
 
     stm.push_step(
         torch.tensor([[3.0, 30.0], [4.0, 40.0]]),
@@ -83,16 +92,16 @@ def test_push_and_push_step_shift_identity_slabs_with_payload():
         concept_activation=torch.tensor([0.3, 0.4]),
     )
 
-    assert stm._concept_rows.tolist() == [
+    assert _stack(stm)._concept_rows.tolist() == [
         [13, 12, 11, -1],
         [24, -1, -1, -1],
     ]
     torch.testing.assert_close(
-        stm._concept_activations,
+        _stack(stm)._concept_activations,
         torch.tensor([[0.3, 0.2, 0.1, 0.0],
                       [0.4, 0.0, 0.0, 0.0]]),
     )
-    assert torch.equal(stm._buffer[0, :3], torch.tensor([
+    assert torch.equal(_stack(stm)._buffer[0, :3], torch.tensor([
         [3.0, 30.0], [2.0, 20.0], [1.0, 10.0]]))
 
 
@@ -104,10 +113,10 @@ def test_push_step_masked_is_exact_noop_for_ungated_rows():
         concept_activation=torch.tensor([0.1, 0.2]),
     )
     before = {
-        "buffer": stm._buffer.clone(),
+        "buffer": _stack(stm)._buffer.clone(),
         "depth": stm._depth.clone(),
-        "rows": stm._concept_rows.clone(),
-        "activations": stm._concept_activations.clone(),
+        "rows": _stack(stm)._concept_rows.clone(),
+        "activations": _stack(stm)._concept_activations.clone(),
     }
 
     stm.push_step_masked(
@@ -117,18 +126,18 @@ def test_push_step_masked_is_exact_noop_for_ungated_rows():
         concept_activation=torch.tensor([0.3, 0.4]),
     )
 
-    assert stm._concept_rows[0].tolist() == [13, 11, -1, -1]
+    assert _stack(stm)._concept_rows[0].tolist() == [13, 11, -1, -1]
     torch.testing.assert_close(
-        stm._concept_activations[0], torch.tensor([0.3, 0.1, 0.0, 0.0]))
-    assert torch.equal(stm._buffer[0, :2], torch.tensor([
+        _stack(stm)._concept_activations[0], torch.tensor([0.3, 0.1, 0.0, 0.0]))
+    assert torch.equal(_stack(stm)._buffer[0, :2], torch.tensor([
         [3.0, 30.0], [1.0, 10.0]]))
     assert int(stm._depth[0]) == 2
 
-    assert torch.equal(stm._buffer[1], before["buffer"][1])
+    assert torch.equal(_stack(stm)._buffer[1], before["buffer"][1])
     assert torch.equal(stm._depth[1], before["depth"][1])
-    assert torch.equal(stm._concept_rows[1], before["rows"][1])
+    assert torch.equal(_stack(stm)._concept_rows[1], before["rows"][1])
     assert torch.equal(
-        stm._concept_activations[1], before["activations"][1])
+        _stack(stm)._concept_activations[1], before["activations"][1])
 
 
 def test_push_window_reverses_identity_metadata_with_payload():
@@ -145,11 +154,11 @@ def test_push_window_reverses_identity_metadata_with_payload():
         concept_activations=torch.tensor([[0.2, 0.3, 0.4]]),
     )
 
-    assert torch.equal(stm._buffer[0, :4], torch.tensor([
+    assert torch.equal(_stack(stm)._buffer[0, :4], torch.tensor([
         [4.0, 40.0], [3.0, 30.0], [2.0, 20.0], [1.0, 10.0]]))
-    assert stm._concept_rows[0].tolist() == [40, 30, 20, 10, -1]
+    assert _stack(stm)._concept_rows[0].tolist() == [40, 30, 20, 10, -1]
     torch.testing.assert_close(
-        stm._concept_activations[0],
+        _stack(stm)._concept_activations[0],
         torch.tensor([0.4, 0.3, 0.2, 0.1, 0.0]),
     )
 
@@ -165,14 +174,14 @@ def test_pop_shifts_and_clears_identity_tail():
 
     torch.testing.assert_close(stm.pop(0), torch.full((2,), 3.0))
 
-    assert stm._concept_rows[0].tolist() == [12, 11, -1, -1]
+    assert _stack(stm)._concept_rows[0].tolist() == [12, 11, -1, -1]
     torch.testing.assert_close(
-        stm._concept_activations[0], torch.tensor([0.2, 0.1, 0.0, 0.0]))
-    assert torch.equal(stm._buffer[0, 2], torch.zeros(2))
+        _stack(stm)._concept_activations[0], torch.tensor([0.2, 0.1, 0.0, 0.0]))
+    assert torch.equal(_stack(stm)._buffer[0, 2], torch.zeros(2))
     assert int(stm._depth[0]) == 2
 
 
-def test_capacity_growth_preserves_prefix_and_full_push_fails_atomically():
+def test_capacity_growth_is_refused_and_full_push_fails_atomically():
     stm = _stm(batch=1, capacity=2, dim=2)
     stm.push(
         0, torch.tensor([1.0, 10.0]),
@@ -187,7 +196,7 @@ def test_capacity_growth_preserves_prefix_and_full_push_fails_atomically():
         "activations": stm._concept_activations.clone(),
     }
 
-    with pytest.raises(RuntimeError, match="at capacity"):
+    with pytest.raises(RuntimeError, match="all chunks are on the stack"):
         stm.push(
             0, torch.tensor([3.0, 30.0]),
             concept_row=13, concept_activation=0.3)
@@ -198,15 +207,14 @@ def test_capacity_growth_preserves_prefix_and_full_push_fails_atomically():
     assert torch.equal(
         stm._concept_activations, before["activations"])
 
-    stm.ensure_capacity(5)
-    assert stm.capacity == 5
-    assert stm._concept_rows[0].tolist() == [12, 11, -1, -1, -1]
-    torch.testing.assert_close(
-        stm._concept_activations[0],
-        torch.tensor([0.2, 0.1, 0.0, 0.0, 0.0]),
-    )
-    assert torch.equal(stm._buffer[0, :2], before["buffer"][0])
-    assert torch.equal(stm._buffer[0, 2:], torch.zeros(3, 2))
+    pointers = tuple(value.data_ptr() for value in stm.state)
+    state = tuple(value.clone() for value in stm.state)
+    with pytest.raises(ValueError, match='cannot resize'):
+        stm.ensure_capacity(5)
+    assert stm.capacity == 2
+    assert tuple(value.data_ptr() for value in stm.state) == pointers
+    for got, expected in zip(stm.state, state):
+        torch.testing.assert_close(got, expected, rtol=0, atol=0)
 
 
 def test_clear_single_and_all_reset_identity_sentinels():
@@ -247,13 +255,18 @@ def test_wholesale_buffer_replacement_invalidates_identity_metadata():
         concept_activation=torch.tensor([0.1, 0.2]),
     )
 
-    replacement = torch.full((2, 5, 2), 7.0, dtype=torch.float64)
-    stm._buffer = replacement
+    with pytest.raises(ValueError, match='cannot resize'):
+        stm._buffer = torch.full((2, 5, 2), 7.0)
+    replacement = torch.full((2, 3, 2), 7.0, dtype=torch.float64)
+    from STMChunks import empty
+    state = list(empty(2, 3, 2, dtype=torch.float64))
+    state[0] = replacement
+    stm.set_state(tuple(state))
 
-    assert stm._concept_rows.shape == (2, 5)
+    assert stm._concept_rows.shape == (2, 3)
     assert stm._concept_rows.dtype == torch.long
     assert stm._concept_rows.device == replacement.device
-    assert stm._concept_activations.shape == (2, 5)
+    assert stm._concept_activations.shape == (2, 3)
     assert stm._concept_activations.dtype == replacement.dtype
     assert stm._concept_activations.device == replacement.device
     _assert_invalid(stm)

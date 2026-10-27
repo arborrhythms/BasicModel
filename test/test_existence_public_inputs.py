@@ -9,17 +9,17 @@ from reasoning import QuerySpec
 
 
 @pytest.mark.parametrize("structured", [True, False])
-def test_checked_reader_accepts_complete_description_without_collapsing_roles(structured):
+def test_checked_reader_accepts_complete_single_idea_description(structured):
     roles = torch.eye(6)[:3]
-    fact = ConceptualMeaning.from_description(roles)
-    store = LTM0(6, capacity=8)
+    fact = ConceptualMeaning.from_description(roles.flatten())
+    store = LTM0(roles.numel(), capacity=8, percept_width=0)
     store.append_meaning(fact, trust=.8)
     reasoner = TruthGroundedReasoner(store=store)
-    query = fact if structured else roles
+    query = fact if structured else roles.flatten()
     assert reasoner.evaluate(QuerySpec.from_surface('exist', query))['support_true'] == pytest.approx(.8)
     altered = roles.clone()
     altered[1] = torch.eye(6)[3]
-    other = ConceptualMeaning.from_description(altered) if structured else altered
+    other = ConceptualMeaning.from_description(altered.flatten()) if structured else altered.flatten()
     assert reasoner.evaluate(QuerySpec.from_surface('exist', other))['support_true'] == 0
 
 

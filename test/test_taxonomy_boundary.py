@@ -6,15 +6,17 @@ import pytest
 from reasoning import QuerySpec, TruthGroundedReasoner
 from test_thought_model_fixture import model_for
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 
 
 def _chain():
     cs = _cs()
     a, b, c = (("sym", cs.new_concept()) for _ in range(3))
+    force_order(cs, a[1], 0)
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
     for ref in (a, b, c):
-        cs._csw_concept_row(0, ref[1])
+        cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
     return (a, b, c), TruthGroundedReasoner(model_for(cs))
 
 
@@ -46,6 +48,7 @@ def test_model_taxonomy_entries_skip_global_vector_proposal_setup(monkeypatch, t
         cs = model.conceptualSpace
         a, b = (("sym", cs.new_concept()) for _ in range(2))
         for ref in (a, b):
+            force_order(cs, ref[1], 0)
             cs._csw_concept_row(0, ref[1])
         cs.add_whole(a[1], b)
         def forbidden(*args, **kwargs):
@@ -63,6 +66,7 @@ def test_open_taxonomy_reports_a_neighbor_without_a_payload_without_allocating()
     cs = _cs()
     model = model_for(cs)
     a, b = (("sym", cs.new_concept()) for _ in range(2))
+    force_order(cs, a[1], 0)
     cs._csw_concept_row(0, a[1])
     cs.add_whole(a[1], b)
     registry = model.grammatical_thoughts

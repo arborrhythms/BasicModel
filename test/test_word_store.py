@@ -25,6 +25,7 @@ if _BIN not in sys.path:
     sys.path.insert(0, _BIN)
 
 import torch
+from PrependedSymbols import word_view, lookup_view
 
 _DATA = os.path.join(_PROJECT, "data")
 _SMOKE = os.path.join(_DATA, "MM_ladder.xml")
@@ -788,11 +789,11 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
     m = _surface_snapshot_model()
     try:
         isp, owner = m.inputSpace, m._concept_owner()
-        row = int(isp._ar_word_object_rows[0, 0])
-        obj = int(isp._ar_word_object_ids[0, 0])
-        word = int(isp._ar_word_concept_ids[0, 0])
-        other_word = int(isp._ar_word_concept_ids[0, 1])
-        other_row = int(isp._ar_word_object_rows[0, 1])
+        row = int(word_view(isp, 'object_rows')[0, 0])
+        obj = int(word_view(isp, 'object_ids')[0, 0])
+        word = int(word_view(isp, 'concept_ids')[0, 0])
+        other_word = int(word_view(isp, 'concept_ids')[0, 1])
+        other_row = int(word_view(isp, 'object_rows')[0, 1])
         assert row != other_row
         assert owner._csw_row_of(word) is not None
         reference = isp._ar_word_object_atoms
@@ -803,7 +804,7 @@ def test_surface_bytes_belong_to_words_and_objects_follow_their_association():
         store.remove(obj, word)
         owner.interpret.define(other_word, obj)
         m._stage_snapshot_bytes()
-        bank = isp._ar_concept_lookup_rows[0]
+        bank = lookup_view(isp, 'lookup_rows')[0]
         object_col = int((bank == row).nonzero()[0])
         expected = owner.word_surface_for_row(other_row)
         assert bytes(isp._ar_bank_bytes[0, object_col, :len(expected)].tolist()) == expected
@@ -827,10 +828,10 @@ def test_word_surface_and_reassociated_object_survive_strict_checkpoint(tmp_path
     fresh = None
     try:
         isp, owner = m.inputSpace, m._concept_owner()
-        word_row = int(isp._ar_word_concept_rows[0, 0])
-        obj = int(isp._ar_word_object_ids[0, 0])
-        other_word = int(isp._ar_word_concept_ids[0, 1])
-        word = int(isp._ar_word_concept_ids[0, 0])
+        word_row = int(word_view(isp, 'concept_rows')[0, 0])
+        obj = int(word_view(isp, 'object_ids')[0, 0])
+        other_word = int(word_view(isp, 'concept_ids')[0, 1])
+        word = int(word_view(isp, 'concept_ids')[0, 0])
         store = owner.definitions._store()
         old = owner.definitions.row(word, obj)
         store.remove(obj, word)
@@ -838,7 +839,7 @@ def test_word_surface_and_reassociated_object_survive_strict_checkpoint(tmp_path
         m._stage_snapshot_bytes()
         expected_bytes = isp._ar_bank_bytes.clone()
         expected_valid = isp._ar_bank_valid.clone()
-        bank = isp._ar_concept_lookup_rows.clone()
+        bank = lookup_view(isp, 'lookup_rows').clone()
         m._materialize_answer_path()
         with torch.no_grad():
             owner.chunk_prior.fill_(0.375)

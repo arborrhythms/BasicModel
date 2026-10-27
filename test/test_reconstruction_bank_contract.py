@@ -84,11 +84,12 @@ def test_first_sight_admits_concepts_before_reconstruction(tmp_path):
         active = isp._ar_grammar_leaf_mask
         assert owner._concept_allocator.next_id > before
         assert model._active_inventory_rows > active_before
-        assert (isp._ar_word_concept_rows[active] >= 0).all()
-        assert (isp._ar_word_object_rows[active] >= 0).all()
+        from PrependedSymbols import word_view, lookup_view
+        assert (word_view(isp, 'concept_rows')[active] >= 0).all()
+        assert (word_view(isp, 'object_rows')[active] >= 0).all()
         for row in range(active.shape[0]):
             for sentence in isp._packed_sentence_ids[row, active[row]].unique():
-                candidates = isp._ar_concept_lookup_sentence_ids[row] == sentence
+                candidates = lookup_view(isp, 'lookup_sentence_ids')[row] == sentence
                 assert isp._ar_bank_valid[row, candidates].any()
         admitted = owner._concept_allocator.next_id
         model._stage_serial_concept_rows()
@@ -116,7 +117,8 @@ def test_staging_rejects_missing_or_unusable_reconstruction_bank(tmp_path, monke
         else:
             # The first sentence still has candidates. Coverage must be
             # checked per sentence, not just once for the whole batch.
-            foreign = isp._ar_concept_lookup_sentence_ids == 1
+            from PrependedSymbols import lookup_view
+            foreign = lookup_view(isp, 'lookup_sentence_ids') == 1
             isp._ar_bank_valid[foreign] = False
 
     monkeypatch.setattr(model, "_stage_snapshot_bytes", broken_stage)

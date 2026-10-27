@@ -120,8 +120,8 @@ def test_reference_request_follows_the_head_and_outer_particular_scope():
     from ReferenceContext import reference_requests
     generic = SimpleNamespace(reference_roles=('argin1',),
         reference_modes=(('argin1', 'generic'),), head_role=1)
-    lower = SimpleNamespace(reference_roles=('argin2',),
-        reference_modes=(('argin2', 'particular'),), head_role=2, order_delta=-1)
+    lower = SimpleNamespace(method_name='lower', reference_roles=('argin2',),
+        reference_modes=(('argin2', 'particular'),), head_role=2)
     language = SimpleNamespace(_compose_binary_rules=(lower,), _compose_unary_rules=(generic,))
     actions = torch.tensor([[0, -1, 0], [0, -1, 1], [2, 0, -1], [1, 0, -1]])
     assert reference_requests(language, actions, leaf_orders=torch.tensor([0, 2])) == {1: (1, 'particular')}

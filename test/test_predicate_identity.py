@@ -1,6 +1,7 @@
 """AK: closing and thought use the same row-free predicate identity and point."""
 import pytest
 import torch
+from order_fixtures import force_order
 
 from ClauseRow import predicate_identity
 from reading_fixtures import finish_reading
@@ -52,6 +53,7 @@ def test_full_inventory_still_installs_and_forms_part_question():
     while True:
         try:
             cid = cs.new_concept()
+            force_order(cs, cid, 0)
             cs._csw_concept_row(0, cid)
             operands.append(('sym', cid))
         except RuntimeError as error:

@@ -26,6 +26,16 @@ def _build_gate_model():
     from util import init_config, init_device
     init_device("cpu")
     cfg = str(_root / "data" / "MM_ladder.xml")
+    import tempfile
+    import xml.etree.ElementTree as ET
+    tree = ET.parse(cfg)
+    # The unchanged sampled fixture has 19 word events; the next declared
+    # bucket is 32. Allocate it before construction, never resize at staging.
+    for name in ('serialWordCapacity', 'serialWordBuckets'):
+        tree.getroot().find('.//' + name).text = '32'
+    path = Path(tempfile.mkdtemp()) / 'static_loop.xml'
+    tree.write(path, encoding='unicode')
+    cfg = str(path)
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
@@ -36,32 +46,28 @@ def _build_gate_model():
 
 @pytest.mark.slow
 def test_per_word_body_callable_with_static_signature():
-    """The new ``_per_word_body_step(w, p, gate_b_1, out_slot)``
-    signature must be callable. Smoke test for the refactor — the
-    important assertion is that the call doesn't raise, signaling the
-    arity / argument shapes are wired correctly."""
+    """The native fixed-state sentence body is callable after lexical staging.
+
+    The former direct word cell lacks the native reference scope. The live
+    tensor body now carries that scope in its explicit chunk/journal state.
+    The dense cell's static accumulator is still exercised by the two pins
+    below on its supported mixing configuration.
+    """
     pytest.importorskip("torch._dynamo")
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
     m = _build_gate_model()
+    m._tensor_peer_while_eager = True
     isp = m.inputSpace
     inp, _ = isp.getTrainData()
-    isp.Start()
-    inputTensor = isp.prepInput(list(inp[:1]))
-    in_sub = m._lex_embed_stem(inputTensor)
-    assert isp._ar_embedded_N is not None
-    assert isp._word_active_mask is not None
-    N = int(isp.outputShape[0])
-    m._per_word_prelude(in_sub)
-    # The eager reading boundary owns the operation journal. An isolated word
-    # call needs the same teacher and maps that a complete forward stages.
-    m._stage_reconstruction_teacher()
-    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
-        isp._word_active_mask.shape[1], isp._word_active_mask.device)
-    out_slot = m._per_word_contributions
-    gate = isp._word_active_mask[:, 0:1]
-    w = isp.word_at(0)
-    cs, idea = m._per_word_body_step(w, 0, gate, out_slot)
-    # idea may be None on the first call (PS/SS/CS may emit empty
-    # subspaces); the assertion is structural: no exception was raised.
+    raw = _stage_fullgraph_tensor_peer(m, list(inp[:1]))
+    assert isp._ar_embedded_N is not None and isp._word_active_mask is not None
+    extent = isp._ar_embedded_N.shape[1]
+    with torch.no_grad(), m._sentence_run():
+        result = m._forward_with_compiled_sentence_state(raw)
+    m._publish_compiled_sentence_state(result)
+    assert len(result) == 21
+    assert isp._ar_embedded_N.shape[1] == extent
+    assert len(m.conceptualSpace.stm.state) == 13
 
 
 @pytest.mark.slow

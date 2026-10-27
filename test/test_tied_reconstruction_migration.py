@@ -119,6 +119,8 @@ def test_traced_verb_reverse_uses_the_actual_verb_operand(tmp_path):
         generator = torch.Generator().manual_seed(812)
         noun = .5 + torch.randn(2, width, generator=generator).tanh() * .3
         verb = .5 + torch.randn(2, width, generator=generator).tanh() * .4
+        # These are content operands; the excluded percept bands are not content.
+        noun, verb = op.content_operand(noun), op.content_operand(verb)
         with torch.no_grad():
             op._verb_spec.weight.fill_(.002)
         parent = op.compose(noun, verb)
@@ -180,6 +182,8 @@ def test_repeated_row_references_keep_their_occurrence_activations(tmp_path):
         binary = model.languageSpace._tree_layer(2)
         index = list(binary.op_names).index("sum")
         op = getattr(binary.ops[index], "gl", binary.ops[index])
+        # Occurrence magnitudes vary in content, without inventing percept stamps.
+        reference = op.content_operand(reference)
         root = op.compose(op.compose(reference[:, 0], reference[:, 1]), reference[:, 2])
         recovered, cost, _bytes, truncated = _supplied_three_leaf_inverse(model, root, reference)
         assert not bool(truncated.any())
@@ -304,6 +308,9 @@ def test_compiled_reverse_does_not_backpropagate_through_an_unused_inverse(tmp_p
         gradient, = torch.autograd.grad(left.sum() + right.sum(), (parent,))
         assert torch.isfinite(gradient).all()
         expected = torch.tensor([2., 2.]).reshape(2, 1).expand_as(gradient)
+        selected_op = getattr(binary.ops[selected], "gl", binary.ops[selected])
+        # The selected inverse excludes percept bands; an inactive row is passthrough.
+        expected = torch.where(live[:, None], selected_op.content_operand(expected), expected)
         torch.testing.assert_close(gradient, expected)
     finally:
         model.End()

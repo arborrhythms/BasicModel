@@ -238,7 +238,12 @@ def _checkpoint_space():
     from types import SimpleNamespace
     cs = _space()
     cs.mtm = MediumTermMemory()
-    cs.similarity_codebook = SimpleNamespace(W=cs.concepts_from_percepts.coefficients)
+    from Spaces import Codebook
+    from types import MethodType
+    book = SimpleNamespace(W=cs.concepts_from_percepts.coefficients)
+    book.placement_extras = MethodType(Codebook.placement_extras, book)
+    book.load_placement_extras = MethodType(Codebook.load_placement_extras, book)
+    cs.similarity_codebook = book
     cs.legacy = nn.Linear(2, 2)
     cs.concept_source_readout = SigmaConceptsFromPercepts(9, 1)
     cs.layers = nn.ModuleList([cs.legacy, cs.concepts_from_percepts,

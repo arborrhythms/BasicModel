@@ -71,8 +71,9 @@ def test_candidate_payloads_are_detached_from_the_hard_choice():
 def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch):
     from QueryWork import QueryWorkBudget
     model, registry, memory, part, whole = _catalog_world()
-    child = registry.form("isPart", part, whole)
-    record = memory.begin_thought_episode(child, work_budget=2)
+    from test_thought_answer_adapters import _open_goal
+    child = _open_goal(model, registry, part, whole)
+    record = memory.begin_thought_episode(child, work_budget=2, opened_by_chooser=True)
     reference = memory.thought_reference(record)
     memory.finish_thought(child)
     memory.end_what_episode()
@@ -87,7 +88,7 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
         child_choices.append(evidence)
         if len(child_choices) > 2:
             return None
-        target = "isPart" if len(child_choices) == 1 else "equal"
+        target = "query" if len(child_choices) == 1 else "equal"
         return next(action for action in actions
                     if action is not None and action.semantic_id == target)
 
@@ -101,7 +102,7 @@ def test_child_context_can_refine_before_returning_its_causal_result(monkeypatch
     assert selected.result.value.semantic_id == "equal"
     child_ops = [record.operation for record in selected.records
                  if record.level == 1 and record.kind == "thought"]
-    assert child_ops == ["isPart", "equal", "conclude"]
+    assert child_ops == ["query", "equal", "conclude"]
     returned = next(record for record in selected.records if record.kind == "return")
     conclusion = next(record for record in selected.records
                       if record.level == 0 and record.operation == "conclude")
@@ -158,6 +159,8 @@ def test_runbatch_credits_each_controller_row_from_its_own_answer(monkeypatch, e
         registry = model.grammatical_thoughts
         owner = model._concept_owner()
         ref = ('sym', owner.new_concept())
+        from order_fixtures import force_order
+        force_order(owner, ref[1], 0)
         owner._csw_concept_row(0, ref[1])
         query = registry.form('equal', ref, ref)
         capture = model._capture_understanding
@@ -196,7 +199,15 @@ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_e
     from Layers import LTM0, SymbolExpectation
     model, registry, memory, part, whole = _catalog_world()
     model.symbolSpace.ltm_store = LTM0(8, capacity=32)
+    from ClauseRow import attach_clause_index
+    from dataclasses import replace
+    from ThoughtReferences import bindings
+    store = model.symbolSpace.ltm_store
+    attach_clause_index(model, store, model.conceptualSpace)
+    source = store.append_relation(part[1], whole[1], truth_plus=1.)
     question = registry.form('isPart', part, whole)
+    question = replace(question, bindings=dict(bindings(question),
+        _query_occurrence=store.occurrence_of(source)))
     if with_expectation:
         from test_sentence_expectation import observe
         discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
@@ -206,6 +217,12 @@ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_e
         observe(discourse, question.roles)
     for _ in range(4):
         question = registry.form('ask', question)
+        question = replace(question, bindings=dict(bindings(question),
+            _query_occurrence=store.occurrence_of(source)))
+    # A controller read is over its existing durable occurrence. Cutoff does
+    # not invent another entry containing the working request's role table.
+    question = replace(question, bindings=dict(bindings(question),
+        _query_occurrence=store.occurrence_of(source)))
     with model._query_boundary_scope((0,)):
         result = model.run_selected_thought(question, work_budget=budget)
     state = memory.thought_state()

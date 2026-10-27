@@ -1,4 +1,5 @@
 """Reading derives word concepts and symbols under both supported bindings."""
+from order_fixtures import force_order
 from pathlib import Path
 
 import pytest
@@ -11,7 +12,7 @@ def test_every_read_word_has_a_concept_and_symbol(tmp_path, monkeypatch, configu
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     if configuration == 'aligned':
         from test_compiled_word_chunk import _tiny_canonical_model
-        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', concept_rows=256)
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', concept_rows=256, batch_size=4)
         model.reconstruct_in_loop = False
         model.loss.reconstruction_scale = 0.
         model._tensor_peer_while_eager = True
@@ -89,7 +90,7 @@ def test_default_interpret_reuses_a_witnessed_association():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [], form='cat')
     kind = cs.new_concept()
-    _concept_alloc_of(cs).reference_orders[kind] = 2
+    force_order(cs, kind, 2)
     interpret.define(word, kind)
     cs.bind_word_concept('cat', kind)
     assert interpret.forward(word) == kind
@@ -116,6 +117,7 @@ def test_interpret_reuses_definition_and_reverses_by_identity():
     assert interpret.forward(word) == interpret.reverse(word) == word
     assert interpret.no_object(word)
     supplied = cs.new_concept()
+    force_order(cs, supplied, 0)
     cs._csw_concept_row(0, supplied)
     interpret.define(word, supplied)
     obj = interpret.forward(word, occurrence=(0, 1))
@@ -137,11 +139,12 @@ def test_grammar_resolution_distinguishes_particular_and_kind():
     cs, interpret = _operator()
     word = interpret.lookup_word([7], [1], form='cat')
     supplied = cs.new_concept()
+    force_order(cs, supplied, 0)
     cs._csw_concept_row(0, supplied)
     interpret.define(word, supplied)
     particular = interpret.forward(word, order=1)
     kind = cs.new_concept()
-    _concept_alloc_of(cs).reference_orders[kind] = 2
+    force_order(cs, kind, 2)
     interpret.define(word, kind)
     cs.bind_word_concept('cat', kind)
     assert particular != kind
@@ -208,7 +211,9 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     objects = model.inputSpace._ar_word_object_ids
     active = model.inputSpace._ar_grammar_leaf_mask
     assert len(calls) >= int(active.sum())
-    for word, obj in zip(ids[active].tolist(), objects[active].tolist()):
+    # The grammar leaf mask covers presented words; skip the MTM prefix.
+    base = ids.shape[1] - active.shape[1]
+    for word, obj in zip(ids[:,base:][active].tolist(), objects[:,base:][active].tolist()):
         if operator.no_object(word):
             assert obj == word
         else:
@@ -234,6 +239,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
              for part, form in ((7, 'cats'), (8, 'animals'))]
     for word in words:
         obj = cs.new_concept()
+        force_order(cs, obj, 0)
         cs._csw_concept_row(0, obj)
         cs.interpret.define(word, obj)
     objects = [cs.interpret.forward(word, order=1) for word in words]
@@ -241,7 +247,7 @@ def test_selected_generic_grammar_ends_the_interpreted_kinds(monkeypatch):
     # merely because the first has a different order.
     for form in ('cats', 'animals'):
         kind = cs.new_concept()
-        _concept_alloc_of(cs).reference_orders[kind] = 2
+        force_order(cs, kind, 2)
         cs._csw_concept_row(2, kind)  # the supplied kind owns a payload row
         cs.interpret.define(cs.definitions.word(form=form), kind)
         cs.bind_word_concept(form, kind)
@@ -279,14 +285,16 @@ def test_testimony_and_its_later_definition_are_read_by_the_parallel_field():
     cs._concept_binding = 'aligned'
     cs._serial = True
     word = interpret.lookup_word([7], [], form='wug')
-    obj = interpret.forward(word, occurrence=(0, 0))
+    from definition_fixtures import witness_object
+    obj = witness_object(cs, word)
+    assert interpret.forward(word, occurrence=(0, 0)) == obj
     for tick in range(1, 20):
         assert interpret.forward(word, occurrence=(tick, 0)) == obj
         interpret.boundary()
     row = cs._csw_row_of(obj)
     original = tuple(cs.concept_parts(obj))
     cs._serial = False  # witness the later definition through the parallel field
-    witnessed = interpret.forward(interpret.lookup_word([8], [], form='witnessed'))
+    witnessed = witness_object(cs, interpret.lookup_word([8], [], form='witnessed'))
     cs.assert_concept_relation(obj, sym_part=witnessed)
     assert all(part in cs.concept_parts(obj) for part in original)
     assert ('sym', witnessed) in cs.concept_parts(obj)

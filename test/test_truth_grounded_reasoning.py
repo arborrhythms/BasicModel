@@ -67,13 +67,13 @@ class TestQuerySpec(unittest.TestCase):
 def _store(rows_ideas=(), rows_partof=()):
     """Build a LTM0. rows_ideas = [(vec, trust)]; rows_partof =
     [(np1, np2, trust)]."""
-    s = LTM0(nDim=8, capacity=32)
+    s = LTM0(nDim=24 if rows_partof else 8, capacity=32, percept_width=0)
     for vec, trust in rows_ideas:
-        s.append_idea(vec, trust=trust)
+        s.append_idea(vec, trust=trust, kind='fact')
     for np1, np2, trust in rows_partof:
         from Meaning import ConceptualMeaning
         s.append_meaning(ConceptualMeaning.from_payload(
-            torch.stack((np1, torch.zeros(8), np2)), depth=3, layout='infix'),
+            torch.stack((np1, torch.zeros(8), np2)).flatten()[None], depth=1, layout='infix'),
             kind='fact', trust=trust, sentence_index=len(s))
     return s
 

@@ -128,7 +128,7 @@ def test_serial_object_meta_stamps_and_word_index_device_tensors():
 def test_serial_radix_has_distinct_word_and_local_part_axes():
     """The sentence loop is [B,W]; raw constituent staging is [B,W,P_raw].
 
-    The XOR rows contain exactly two words. P_raw follows the longest complete
+    The XOR rows contain exactly two words. P_raw follows the longest native atom
     spelling in this batch and is independent of the eight-wide PS field.
     """
     m, x = _serial_model_and_batch()
@@ -138,7 +138,16 @@ def test_serial_radix_has_distinct_word_and_local_part_axes():
     assert ie._ar_embedded_N.shape[:2] == (4, 8)       # sentence W
     assert ie._ar_word_part_ids.shape[:2] == (4, 8)
     assert ie._ar_word_part_ids.shape == ie._ar_word_part_mask.shape
-    assert ie._ar_word_part_ids.shape[-1] == 6         # longest full spelling
+    # The six-character word has seven boundary pairs and six length atoms.
+    # Check every spelling as well as the exact slab width; byte rows are not
+    # the native constituents of a word (the retained WordIdentity decision).
+    assert ie._ar_word_part_ids.shape[-1] == 13
+    store = m.perceptualSpace.percept_store
+    for b, words in enumerate(m.perceptualSpace._forward_input['word_texts']):
+        for w, word in enumerate(words):
+            actual = ie._ar_word_part_ids[b, w][ie._ar_word_part_mask[b, w]]
+            expected = torch.tensor(store.identity.parts(word.encode('latin1')), device=actual.device)
+            assert torch.equal(actual, expected)
     assert ie._ar_word_part_ids.shape[-1] != m.perceptualSpace.outputShape[0]
     assert ie._word_active_mask.sum(dim=1).tolist() == [3, 3, 3, 3]
     assert ie._word_last_slot_mask.sum(dim=1).tolist() == [3, 3, 3, 3]
@@ -244,12 +253,14 @@ def test_physical_push_uses_one_complete_unit_commit_boundary(monkeypatch):
     m, x = _serial_model_and_batch()
     pushed = []
     original_push = ShortTermMemory.functional_push_step_masked
-    def push(*args):
-        pushed.append(args[7].reshape(-1).clone())
-        return original_push(*args)
+    def push(state, ideas, gate, *metadata):
+        pushed.append(gate.reshape(-1).clone())
+        return original_push(state, ideas, gate, *metadata)
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(push))
     m.forward(x)
-    commits = m.inputSpace._word_last_slot_mask.sum(1)
+    # The host closing tick is active but is not a lexical deposit.
+    commits = (m.inputSpace._word_last_slot_mask & m.inputSpace._ar_grammar_leaf_mask).sum(1)
+    assert commits.tolist() == [2, 2, 2, 2]
     assert torch.equal(torch.stack(pushed).sum(0), commits)
 
 
@@ -258,19 +269,20 @@ def test_physical_push_uses_one_complete_unit_commit_boundary(monkeypatch):
 def _count_unity_calls(m, x):
     """Observe the current tensor peer's native property evidence consumer."""
     from unittest.mock import patch
-    from Spaces import WholeSpace
     calls = {'real': 0, 'none': 0}
-    original = WholeSpace.compute_word_property_event
-    def observe(self, counts):
+    # Construction installs the compiled callable on this peer instance.
+    # Observe that live callable instead of a shadowed class method.
+    original = m.wholeSpace.compute_word_property_event
+    def observe(counts):
         calls['real' if bool(counts.any()) else 'none'] += 1
-        return original(self, counts)
-    with patch.object(WholeSpace, 'compute_word_property_event', observe), torch.no_grad():
+        return original(counts)
+    with patch.object(m.wholeSpace, 'compute_word_property_event', observe), torch.no_grad():
         m.forward(x)
     return calls['real'], calls['none']
 
 
 @pytest.mark.slow
-def test_ss_unity_validity_at_stem():
+def test_ss_unity_validity_at_stem(eager_reading):
     """Unity VALIDITY law + LIVE delivery (2026-07-12): IS is not the
     lexer -- it delivers the raw surface, so the unity now carries the
     batch's real bytes and the stem stages it (universe routing engaged,

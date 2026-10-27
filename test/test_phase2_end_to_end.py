@@ -71,6 +71,7 @@ def test_phase2_end_to_end_admissibility_uses_loaded_signatures(tmp_path):
     save_artifact(path, knowledge=build_knowledge_section(grammar))
     view = load_knowledge_view(path)
     sigs = view.rule_order_signatures
+    assert all('order_delta' not in sig for sig in sigs)
     assert len(sigs) == 3
 
     # Stack-top: (NP at 3, VP at 1) — only lift admissible
@@ -100,6 +101,7 @@ def test_phase2_end_to_end_mask_logits_concentrates_on_admissible(tmp_path):
     save_artifact(path, knowledge=build_knowledge_section(grammar))
     view = load_knowledge_view(path)
     sigs = view.rule_order_signatures
+    assert all('order_delta' not in sig for sig in sigs)
 
     # Build the mask for a stack-top that admits exactly the lift rule.
     mask = admissibility_mask(

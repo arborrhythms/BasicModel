@@ -142,6 +142,89 @@ class PartClosing:
             return head_idea(self.store, reference[1]) if reference[0] == RELATION else point(self.store, reference)
         return record['value'].point if not record['children'] else None
 
+    def _equality_member(self, reference):
+        from ChainRead import envelope, point
+        pool = self.owner.mtm
+        token = pool.token_of(reference[1] if reference[0] == SYMBOL else envelope(self.store, reference))
+        value = pool.entries[token].value if token is not None else point(self.store, reference)
+        return token, value
+
+    def _observe_equality(self, left, right, record, pair):
+        from util import TheXMLConfig
+        # Zero means any positively asserted equality; both witnesses must
+        # exceed this same threshold. No work meter participates in a raise.
+        threshold = float(TheXMLConfig.space('ConceptualSpace', 'raiseEvidence', 0.))
+        if not 0 <= threshold <= 1:
+            raise ValueError('raiseEvidence must lie in [0, 1]')
+        if not float(pair[0]) > threshold:
+            return
+        key = right[1] if right[0] == SYMBOL else right
+        token, value = self._equality_member(left)
+        if value is None:
+            return
+        from ConceptIndex import index_part_row
+        if (right[0] == SYMBOL and ('part-base', right[1]) in self.alloc.relate_idx
+                and self.owner._concept_source_order(left[1]) == self.alloc.order_of(right[1]) - 1):
+            index_part_row(self.owner, left, right)
+            return
+        # A next-order class requires members at its shared side's order.
+        # Unlike-order testimony remains an equality with both evidence lanes;
+        # it cannot start or partly extend a class before the index rejects it.
+        member_order = self.owner._concept_source_order(left[1])
+        shared_order = self.owner._concept_source_order(right[1])
+        if member_order < 0 or member_order != shared_order:
+            return
+        right_token, _ = self._equality_member(right)
+        if right[0] == OCCURRENCE and right_token is not None:
+            key = right_token
+        first = self.alloc.singleton_members.get(key)
+        if first is None:
+            self.alloc.remember_singleton(key, left, token, value)
+            return
+        member, first_token, previous = first
+        previous_row = self.parts.find(member, right)
+        shared = right
+        if right[0] == OCCURRENCE and right_token is not None:
+            # Mentions of one MTM token share the token's native occurrence,
+            # even when the two equality rows name different mention events.
+            shared = (OCCURRENCE, int(right_token[-1]))
+            previous_row = next((self.parts.find(member, side)
+                for side in self.parts.wholes(member)
+                if self._equality_member(side)[0] == right_token), None)
+        if previous_row is None:
+            # The earlier equality has been forgotten or cleared at a
+            # presentation boundary. Start from this admitted witness,
+            # reusing its fixed snapshot seat rather than retaining a dead one.
+            self.alloc.remember_singleton(key, left, token, value, replace=True)
+            return
+        if not float(self.parts.truth_plus[previous_row]) > threshold:
+            return
+        if self.owner._concept_source_order(member[1]) != member_order:
+            # A prior witness whose current referent no longer has this order
+            # is renewed in its existing fixed snapshot seat.
+            self.alloc.remember_singleton(key, left, token, value, replace=True)
+            return
+        if token is not None and first_token is not None:
+            distinct = token != first_token and not torch.equal(value.detach().to(previous), previous)
+        elif token is None and first_token is None and left[0] == member[0] == OCCURRENCE:
+            start = self.store.when_start
+            distinct = start is not None and not torch.equal(
+                value[start-4:start+4].detach().to(previous), previous[start-4:start+4])
+        else:
+            distinct = False
+        if not distinct:
+            return
+        parent = index_part_row(self.owner, member, shared)
+        if index_part_row(self.owner, left, shared) != parent:
+            raise RuntimeError('equality witnesses disagree on their shared parent')
+        word = record['children'][-1]['value'].word_id
+        words = (() if word in (None, -1, 0) else (word,))
+        if not words and right[0] == SYMBOL:
+            words = ((right[1],) if 'word' in self.alloc.symbol_types.get(right[1], ())
+                     else self.owner.definitions.words(right[1]))
+        for word in words:
+            self.owner.interpret.define(word, parent)
+
     def _write(self, record, *, pair=(0., 0.), sentence=False, kind='unverified',
                metadata=None, address=None, stream=-1, surprise=-1., force=False, from_trust=False):
         term = record['value']
@@ -195,6 +278,7 @@ class PartClosing:
             self.edges.append(row)
             if assertion and term.operation == 'equal':
                 self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
+                self._observe_equality(left, right, record, pair)
             result = RELATION, row
         self._entries[id(term)] = result
         self.symbols[id(term)] = result[1] if result[0] == SYMBOL else None

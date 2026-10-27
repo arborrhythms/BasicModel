@@ -288,11 +288,11 @@ def test_whole_contribution_follows_the_composed_stamp():
     from FormCentroids import selected
     mean, count = torch.ones(1, 2, 4), torch.ones(1, 2, 1)
     orders = (torch.tensor([[0, 1]]), torch.tensor([[0, 1]]))
-    rule = SimpleNamespace(head_role=2, order_delta=0)
+    rule = SimpleNamespace(head_role=2)
     actual = selected({2: (mean, count, orders)}, 2, mean, rule)
     assert actual[1].flatten().tolist() == [1., 0.]
     rule.determiner_mode = 'kind'
-    assert not selected({2: (mean, count, orders)}, 2, mean, rule)[1].any()
+    assert selected({2: (mean, count, orders)}, 2, mean, rule)[1].flatten().tolist() == [1., 0.]
 
 
 @pytest.mark.parametrize('centered', (False, True))

@@ -1,4 +1,5 @@
 """Structural operator faces and boundary thought use the same native VP."""
+from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -19,9 +20,11 @@ def _world():
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
+    force_order(cs, base, 0)
     a = ('sym', cs.synthesize_higher_order([('sym', base)]))
     b = ('sym', cs.new_concept())
-    cs._csw_concept_row(0, a[1])
+    cs._csw_concept_row(cs._concept_source_order(a[1]), a[1])
+    force_order(cs, b[1], 0)
     cs._csw_concept_row(0, b[1])
     cs.add_whole(a[1], b)
     return cs, registry, a, b, _context(cs)

@@ -35,6 +35,8 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
     values=keys[:,:2].clone()
     state=(values,torch.tensor([2]),torch.tensor([[1,0]]),torch.zeros(1,2,dtype=torch.long),
            torch.tensor([[-1,1]]),torch.tensor([[0.,.7]]))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     seen=[]; original=layer.chooser.score_binary
     def scores(x,candidates,*args,**kwargs):
         seen.append((x.clone(),candidates.clone()))
@@ -77,6 +79,8 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
     state = (keys[:,:2].clone(), torch.tensor([2]), torch.tensor([[1,0]]), torch.zeros(1,2,dtype=torch.long),
              torch.tensor([[-1,1]]), torch.tensor([[0.,.7]]))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     LanguageSpace.choose_operation(host, state, torch.tensor([True]), slots=2, sample=False)
     assert len(calls) == 2
     torch.testing.assert_close(calls[0][0], torch.tensor([[.7]]))

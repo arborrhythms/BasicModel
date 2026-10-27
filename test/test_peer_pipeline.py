@@ -62,6 +62,9 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
              torch.tensor([[4, 2, 0], [7, -1, -1]]),
              torch.tensor([[12, 11, 10], [15, -1, -1]]),
              torch.tensor([[.9, .8, .7], [.6, 0., 0.]]))
+    from chunk_fixtures import from_stack
+    from STMChunks import stack_view
+    state = from_stack(*state)
     before = tuple(value.clone() for value in state)
     versions = tuple(value._version for value in state)
     gate = torch.tensor([True, False])
@@ -70,21 +73,22 @@ def test_language_chooses_and_conceptual_space_alone_applies_stm_update(monkeypa
     assert tuple(value._version for value in state) == versions
     assert choice.kind.tolist() == [1, 0]
     next_state = ConceptualSpace.apply_language_choice(state, choice)
+    next_view = stack_view(next_state)
     for actual, expected in zip(state, before):
         torch.testing.assert_close(actual, expected, rtol=0, atol=0)
-    torch.testing.assert_close(next_state[0][0], torch.tensor([[4., 6.], [5., 6.], [0., 0.]]))
-    torch.testing.assert_close(next_state[1], torch.tensor([2, 1]))
-    torch.testing.assert_close(next_state[2][0], torch.tensor([2, 0, -1]))
-    torch.testing.assert_close(next_state[3][0], torch.tensor([5, 0, -1]))
-    torch.testing.assert_close(next_state[4][0], torch.tensor([-1, 10, -1]))
+    torch.testing.assert_close(next_view[0][0], torch.tensor([[4., 6.], [5., 6.], [0., 0.]]))
+    torch.testing.assert_close(next_view[1], torch.tensor([2, 1]))
+    torch.testing.assert_close(next_view[2][0], torch.tensor([2, 0, -1]))
+    torch.testing.assert_close(next_view[3][0], torch.tensor([5, 0, -1]))
+    torch.testing.assert_close(next_view[4][0], torch.tensor([-1, 10, -1]))
     with torch.no_grad():
         layer.apply_anchor.fill_(-100)
     unary = language.choose_operation(next_state, gate, slots=1)
     assert unary.kind.tolist() == [2, 0]
     assert unary.position[0] == 1  # the older of the two slots
-    final = ConceptualSpace.apply_language_choice(next_state, unary)
+    final = stack_view(ConceptualSpace.apply_language_choice(next_state, unary))
     torch.testing.assert_close(final[0][0], torch.tensor([[4., 6.], [-5., -6.], [0., 0.]]))
-    torch.testing.assert_close(final[1], next_state[1])
+    torch.testing.assert_close(final[1], next_view[1])
     assert final[3][0, 1] == 1
 
 
@@ -128,7 +132,8 @@ def test_language_plan_snapshots_routing_before_latch():
         rule_probs=torch.tensor([[0.25, 0.75]]),
     )
     coordinator = SimpleNamespace(
-        current_rules=rules, routing_state=routing, _compose_generation=7)
+        current_rules=rules, routing_state=routing, _compose_generation=7,
+        languageLayer=SimpleNamespace(operation_layer=SimpleNamespace(ops=())))
     language = LanguageSpace(SimpleNamespace(subspace=coordinator))
     plan = language.reduction_plan()
     # A later Language C-stage may replace its mutable coordinator state; the
@@ -621,9 +626,10 @@ def test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows():
     stm._grammar_orders = stm._orders + 20
     stm._concept_rows = stm._orders + 40
     stm._concept_activations = stm._orders.to(torch.float32) + 0.5
-    before = tuple(t.clone() for t in (
-        stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
-        stm._concept_rows, stm._concept_activations))
+    from chunk_fixtures import from_stack
+    stm.set_state(from_stack(stm._buffer, stm._depth, stm._orders,
+        stm._grammar_orders, stm._concept_rows, stm._concept_activations))
+    before = tuple(t.clone() for t in stm.state)
 
     ideas = torch.randn(B, D)
     gate = torch.tensor([[True], [False], [True]])
@@ -632,33 +638,28 @@ def test_functional_stm_push_matches_owner_commit_and_preserves_masked_rows():
     inserted_rows = torch.tensor([70, 80, 90])
     inserted_activations = torch.tensor([0.7, 0.8, 0.9])
     expected = ShortTermMemory.functional_push_step_masked(
-        *before, ideas, gate, inserted_orders, inserted_grammar,
+        before, ideas, gate, inserted_orders, inserted_grammar,
         inserted_rows, inserted_activations)
 
     stm.push_step_masked(
         ideas, gate, orders=inserted_orders,
         grammar_orders=inserted_grammar, concept_row=inserted_rows,
         concept_activation=inserted_activations)
-    actual = (
-        stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
-        stm._concept_rows, stm._concept_activations)
+    actual = stm.state
     for actual_tensor, expected_tensor in zip(actual, expected):
         torch.testing.assert_close(actual_tensor, expected_tensor)
     # The middle row was not active and every state slab is unchanged.
     for actual_tensor, before_tensor in zip(actual, before):
         torch.testing.assert_close(actual_tensor[1], before_tensor[1])
+        torch.testing.assert_close(actual_tensor[2], before_tensor[2])  # All chunks on stack: refuse.
 
 
 def test_functional_stm_state_is_fullgraph_while_loop_safe():
     B, capacity, D = 4, 5, 3
 
     def recurrent(ideas, gates):
-        buffer = torch.zeros(B, capacity, D)
-        depth = torch.zeros(B, dtype=torch.long)
-        orders = torch.full((B, capacity), -1, dtype=torch.long)
-        grammar = torch.full_like(orders, -1)
-        rows = torch.full_like(orders, -1)
-        activations = torch.zeros(B, capacity)
+        from STMChunks import empty
+        state = empty(B, capacity, D)
         zero = torch.zeros((), dtype=torch.long)
 
         def cond(index, *state):
@@ -666,23 +667,19 @@ def test_functional_stm_state_is_fullgraph_while_loop_safe():
             return index < ideas.shape[1]
 
         def body(index, *state):
-            (current_buffer, current_depth, current_orders,
-             current_grammar, current_rows, current_activations) = state
             gather_index = index.reshape(1)
             word = torch.index_select(
                 ideas, 1, gather_index)[:, 0, :]
             gate = torch.index_select(gates, 1, gather_index)
             inserted = index.expand(B)
             next_state = ShortTermMemory.functional_push_step_masked(
-                current_buffer, current_depth, current_orders,
-                current_grammar, current_rows, current_activations,
-                word, gate, inserted, inserted, inserted,
+                state, word, gate, inserted, inserted, inserted,
                 inserted.to(dtype=ideas.dtype))
             return (index + 1, *next_state)
 
         result = torch.while_loop(
             cond, body,
-            (zero, buffer, depth, orders, grammar, rows, activations))
+            (zero, *state))
         return result[1:]
 
     compiled = torch.compile(recurrent, backend="eager", fullgraph=True)

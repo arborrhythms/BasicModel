@@ -17,6 +17,7 @@ import torch
 
 import recon_bench
 from recon_bench import run_config
+from slow_budget import slow_count
 
 
 def _build(config):
@@ -24,8 +25,10 @@ def _build(config):
     return recon_bench._build_model(recon_bench._resolve_config(config))
 
 
-# Keep the pre-audit training budget; it is not evidence of convergence.
-RECONSTRUCTION_EPOCHS = 160
+# The full experiment remains 160 epochs; the optional slow default uses 80.
+RECONSTRUCTION_EPOCHS = slow_count(160)
+# MM_ladder's fixed corpus has 256 presentations and an eight-row batch.
+_LADDER_FULL_BATCHES = 256 // 8
 
 
 @pytest.mark.slow
@@ -262,7 +265,7 @@ def test_grammar_output_loss_not_silent_zero(tmp_path):
     supervision.
     """
     rec = run_config("data/MM_ladder.xml", epochs=1, seed=None,
-                     out_dir=str(tmp_path))
+                     out_dir=str(tmp_path), max_batches=slow_count(_LADDER_FULL_BATCHES))
     assert rec.output_loss > 0.0
 
 
@@ -335,9 +338,23 @@ def test_xor_percepts_tile_words():
         pids = [int(p) for p in pid_grid[b] if int(p) != null_pid]
         decoded = [ps.bytes_for(p) for p in pids]
         assert decoded == tiles, (surface, decoded, tiles)
-    # No whole-sentence percept survives in the learned store.
-    for key in ps.hash_map:
-        assert len(Meronomy.word_tiling(key)) <= 1, key
+    # Atom keys and canonical form keys share the store but are metadata,
+    # not percept surfaces. Check each form's decoded word, and keep the
+    # original tiling assertion for every ordinary stored surface.
+    identity = ps.identity
+    atom_rows = set(identity.atoms.values())
+    form_rows = set(identity.word_rows.values())
+    assert atom_rows and form_rows
+    for key, pid in ps.hash_map.items():
+        if key.startswith(identity.PREFIX):
+            assert pid in atom_rows, (key, pid)
+        elif key.startswith(identity.WORD_PREFIX):
+            assert pid in form_rows, (key, pid)
+            raw = ps.bytes_for(pid)
+            assert raw in identity.word_rows and identity.word_rows[raw] == pid
+            assert len(Meronomy.word_tiling(raw)) <= 1, raw
+        else:
+            assert len(Meronomy.word_tiling(key)) <= 1, key
 
 
 def test_spell_out_respects_tile_cut():
@@ -440,7 +457,7 @@ def test_reconstruction_not_double_counted():
 @pytest.mark.slow
 def test_mm20m_xor_roundtrip_at_harness_budget(tmp_path):
     """Retain the three-epoch .5 reconstruction bar without a selected seed."""
-    rec = run_config("data/MM_20M_xor.xml", epochs=3, seed=None,
+    rec = run_config("data/MM_20M_xor.xml", epochs=slow_count(3), seed=None,
                      out_dir=str(tmp_path), blind=False)
     assert rec.exact_match_rate >= 0.5
     assert rec.where_recovery == 1.0
@@ -455,7 +472,8 @@ def test_mm20m_grammar_free_derivation_roundtrip(tmp_path):
     historical measurement is not a correctness contract or a ceiling.
     """
     rec = run_config("data/MM_ladder.xml", epochs=3, seed=None,
-                     out_dir=str(tmp_path), blind=False, free_derivation=True)
+                     out_dir=str(tmp_path), blind=False, free_derivation=True,
+                     max_batches=slow_count(_LADDER_FULL_BATCHES))
     assert rec.exact_match_rate == 1.0
     assert rec.where_recovery == 1.0
 

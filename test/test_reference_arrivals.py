@@ -1,4 +1,5 @@
 """Bind owns anonymous names and their refinements; retained equalities do not."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
@@ -23,6 +24,7 @@ def world():
     with torch.no_grad():
         for word, atom in (('three', atoms[0]), ('wrong', atoms[1])):
             obj = owner.new_concept()
+            force_order(owner, obj, 0)
             row = owner._csw_concept_row(0, obj)
             owner.similarity_codebook.W[row].copy_(atom)
             owner.interpret.define(words[word], obj)
@@ -164,7 +166,7 @@ def test_unary_bind_keeps_the_objectless_word_site(monkeypatch):
     f = native(monkeypatch)
     word = f.cs.interpret.lookup_word([101], (), form='m')
     from Spaces import _concept_alloc_of
-    _concept_alloc_of(f.cs).reference_orders[word] = 1
+    force_order(f.cs, word, 1)
     f.words['m'] = word, word
     program = replace(f.program(('definite_unary', 'm')), close_references=True,
                       leaf_orders=torch.tensor([f.cs._concept_source_order(word)]))

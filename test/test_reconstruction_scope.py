@@ -57,7 +57,8 @@ def test_missing_packed_sentence_does_not_dilute_the_owned_reconstruction(tmp_pa
     def without_second_sentence():
         stage()
         isp = model.inputSpace
-        isp._ar_bank_valid[isp._ar_concept_lookup_sentence_ids == 1] = False
+        from PrependedSymbols import lookup_view
+        isp._ar_bank_valid[lookup_view(isp, 'lookup_sentence_ids') == 1] = False
     monkeypatch.setattr(model, '_stage_snapshot_bytes', without_second_sentence)
     prime=model._prime_sentence_symbols
     def without_prior_candidates(sid):

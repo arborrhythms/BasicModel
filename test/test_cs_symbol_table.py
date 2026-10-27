@@ -382,8 +382,13 @@ def test_assert_relation_replaces_poles_and_enters_embedding():
     A, B = cs.interpret_word([1], 2, key="cat")
     assert set(cs.concept_parts(B)) == {1}
     assert set(cs.concept_wholes(B)) == {2}
-    # "a cat has whiskers" (whiskers-object = another concept, id 9):
+    # Supply the object explicitly; a word's witnessed form stays order zero.
+    from reading_fixtures import supply_object
+    from order_fixtures import force_order
+    B = supply_object(cs, A)
     part = cs.new_concept()
+    force_order(cs, part, 0)
+    force_order(cs, B, 1)
     cs.assert_concept_relation(B, sym_part=part)
     assert ATOM not in cs.concept_parts(B)           # pole replaced
     # "cats are animals" (animal-object = concept 11):

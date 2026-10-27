@@ -72,7 +72,7 @@ def test_paired_compound_uses_one_learned_test_and_preserves_its_head_order(monk
     paired.__wrapped__(monkeypatch)
     from Language import CompoundLayer, invoke_structural_face
     from Queries import StructuralGrammarContext, ConceptualSpaceCapability
-    from ReferenceContext import result_order
+    from ReferenceContext import denoted_order
     op = CompoundLayer().double()
     codes = torch.tensor([[[.1, .2, .3, .4, 1., 0., 0., 0., 0., 1., 0., 0.],
                            [.2, .3, .4, .5, 0., 1., 0., 0., 0., 0., 1., 0.]]], dtype=torch.float64)
@@ -87,7 +87,7 @@ def test_paired_compound_uses_one_learned_test_and_preserves_its_head_order(monk
     selected = op.select_view(modifier, cases)
     second = op.compose(modifier, result, case_view=selected)
     torch.testing.assert_close(second[..., 4:], result[..., 4:], rtol=0, atol=0)
-    assert result_order(op, (0, 2)) == 2
+    assert denoted_order(op, (0, 2), (), None) == 2
     assert all(name.startswith('meaning_kernel.') for name, _ in op.named_parameters())
     result[..., 4:].sum().backward()
     assert op.meaning_kernel.bias.grad is not None
@@ -116,7 +116,7 @@ def test_case_flow_retains_the_selected_head_through_two_parse_steps(monkeypatch
         state = CaseFlow.push(state, bank, torch.tensor([identity]), live)
     rule = SimpleNamespace(head_role=2, case_head_role=2, clause_form=None)
     choice = SimpleNamespace(kind=torch.tensor([1]), local_op=torch.tensor([0]),
-        position=torch.tensor([0]), applied=live)
+        position=torch.tensor([0]), applied=live, stack_arity=None)
     operands = codes[[3, 0]][None]
     def step(*values):
         return CaseFlow.apply(values, bank, choice, operands, (rule,), (), (op,), column=torch.tensor([0]))
@@ -264,8 +264,9 @@ def test_phase_content_checkpoint_copies_and_rejects_invalid_values():
         entry = legacy['entries'][0]
         entry['timelines'] = tuple((tuple(event[:-1] for event in history), value)
                                   for history, value in entry['timelines'])
-        restored.restore(legacy)
-        assert restored.entries[address(1)].events[0].case_value is None
+        with pytest.raises(ValueError, match='transient pool version'):
+            restored.restore(legacy)
+        same(restored.state(), before)
 
 
 def test_close_transports_phase_content_as_a_query_constituent(monkeypatch):

@@ -133,7 +133,7 @@ def test_part_arguments_remain_unscaled_and_separate_from_luminosity():
     left,right=_vec(1.),_vec(0.,0.,1.)
     edge=part(rs,left,right,evidence=(1.,0.))
     assert len(rs)==0 and len(rs.parts)==1
-    value=rs.row(edge)
+    value=rs.part_row(edge[1], reading='part')
     assert value['refs'].numel()==2
     torch.testing.assert_close(value['meaning'].roles[0],left)
     torch.testing.assert_close(value['meaning'].roles[2],right)

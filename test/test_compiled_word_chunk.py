@@ -439,16 +439,19 @@ def test_real_aligned_loop_matches_prior_compiled_semantics_across_chunks(
     assert (chunked.conceptualSpace.stm._max_depth_host
             == legacy.conceptualSpace.stm._max_depth_host)
 
-    lookup_rows = chunked.inputSpace._ar_concept_lookup_rows
+    from PrependedSymbols import lookup_view, word_view
     capacity = int(chunked.serial_word_capacity)
+    entries = chunked.inputSpace.symbol_entries
+    assert entries.lookup_rows.shape[1] == entries.prepend + 2 * capacity
+    lookup_rows = lookup_view(chunked.inputSpace, 'lookup_rows')
     assert int(lookup_rows.shape[1]) == 2 * capacity
-    words = int(chunked.inputSpace._ar_word_concept_rows.shape[1])
+    words = int(word_view(chunked.inputSpace, 'concept_rows').shape[1])
     torch.testing.assert_close(
         lookup_rows[:, :words],
-        chunked.inputSpace._ar_word_concept_rows)
+        word_view(chunked.inputSpace, "concept_rows"))
     torch.testing.assert_close(
         lookup_rows[:, capacity:capacity + words],
-        chunked.inputSpace._ar_word_object_rows)
+        word_view(chunked.inputSpace, "object_rows"))
     assert bool((lookup_rows[:, words:capacity] == -1).all())
     assert bool((lookup_rows[:, capacity + words:] == -1).all())
 
@@ -711,6 +714,8 @@ def test_functional_soft_reset_clears_only_selected_owner_rows():
         torch.arange(batch * capacity, dtype=torch.float32).reshape(
             batch, capacity) / 10.0,
     )
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     before = tuple(value.clone() for value in state)
     reset = Models.FunctionalPeerSTM.soft_reset_rows(
         state, torch.tensor([False, True, False]))
@@ -928,9 +933,9 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
     closing = [[], []]
     end = BasicModel._clause_end_state
     for model, seen in zip((legacy, chunked), closing):
-        def capture(state, sid, clauses, row_ids, seen=seen):
+        def capture(state, sid, clauses, row_ids, seen=seen, model=model):
             seen.append(tuple(value.detach().clone() for value in state[0]))
-            return end(state, sid, clauses, row_ids)
+            return end(model, state, sid, clauses, row_ids)
         monkeypatch.setattr(model, '_clause_end_state', capture)
 
     with torch.no_grad():
@@ -958,4 +963,8 @@ def test_no_grad_fallback_retains_eager_stm_depth_semantics(
         for value, target in zip(got, expected):
             torch.testing.assert_close(value, target, rtol=0, atol=0)
     assert chunked.conceptualSpace.stm._max_depth_host == 0
-    assert not chunked.conceptualSpace.stm._buffer.any()
+    # A kept close retains its top chunk, off the empty parse stack.
+    stm = chunked.conceptualSpace.stm
+    assert stm.state[9].lt(0).all()
+    assert stm.state[10].gt(0).any()
+    assert stm._buffer.any()

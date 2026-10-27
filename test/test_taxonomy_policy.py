@@ -4,6 +4,7 @@ from Layers import LTM0
 from Meaning import ConceptualMeaning
 from reasoning import QuerySpec
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 from test_thought_model_fixture import model_for
 
 
@@ -11,10 +12,13 @@ def _setup():
     cs = _cs(nS=128)
     store = LTM0(8, capacity=32)
     model = model_for(cs, store)
-    refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
-                 for _ in range(3))
+    bases = tuple(cs.new_concept() for _ in range(3))
+    for base in bases:
+        force_order(cs, base, 0)
+    refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
+                 for base in bases)
     for ref in refs:
-        cs._csw_concept_row(0, ref[1])
+        cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
     return cs, refs, store, model
 
 

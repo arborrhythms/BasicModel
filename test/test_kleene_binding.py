@@ -33,7 +33,6 @@ def _polymorphic_signature():
         'rhs_orders': [0, 1],
         'rhs_order_kinds': ['variable', 'constant'],
         'op_name': 'lift',
-        'order_delta': 1,
     }
 
 
@@ -47,7 +46,6 @@ def _matched_variable_signature():
         'rhs_orders': [0, 0],
         'rhs_order_kinds': ['variable', 'variable'],
         'op_name': 'pi',
-        'order_delta': 0,
     }
 
 
@@ -100,7 +98,6 @@ def test_variable_with_delta_shifts_binding():
         'rhs_orders': [0, 1],
         'rhs_order_kinds': ['variable', 'variable'],
         'op_name': 'pi',
-        'order_delta': 0,
     }
     # binding from X3 = 3; Y must be at 3+1=4
     assert is_rule_admissible(
@@ -123,7 +120,6 @@ def test_unary_variable_slot_accepts_any_order():
         'rhs_orders': [0],
         'rhs_order_kinds': ['variable'],
         'op_name': 'identity',
-        'order_delta': 0,
     }
     for k in (0, 1, 2, 5):
         assert is_rule_admissible(sig, left_cat='N', left_order=k)
@@ -145,7 +141,6 @@ def test_legacy_signature_without_kinds_treats_as_constants():
         'rhs_categories': ['NP', 'VP'],
         'rhs_orders': [3, 1],
         'op_name': 'lift',
-        'order_delta': 1,
     }
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,

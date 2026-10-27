@@ -109,10 +109,8 @@ def test_forward_core_matches_normal_forward():
     """forward_core(staged) reads its ARGUMENT (not ``self._staged_in_sub``)
     and reproduces the NORMAL forward's head prediction -- bit-exact.
 
-    Running the full ``forward`` first stabilises the runtime-added word
-    embeddings; re-deriving the head via ``stage_for_core`` + ``forward_core``
-    on the SAME model must then match exactly. (A finiteness-only assertion
-    would NOT verify the core actually equals the forward it claims to be.)
+    Compare the full and split paths from identical arrival state. A second
+    forward on the same live model would have a different clock/context.
     """
     import torch
     m = _build("MM_20M_xor.xml"); m.eval()
@@ -126,10 +124,15 @@ def test_forward_core_matches_normal_forward():
     import Models; Models.TheData.load("xor")
     loader = m.inputSpace.data.data_loader(split="train", num_streams=4)
     items, _ = next(iter(loader)); x = m.inputSpace.prepInput(items)
+    import copy
+    replay = copy.deepcopy(m)
     with torch.no_grad():
-        normal = m.forward(x)[2]            # head prediction via the FULL forward
-        staged = stage_for_core(m, x)       # host pre-step (lex+chunk+embed)
-        core = forward_core(m, staged)      # tensor-only core on the staged arg
+        # Cold-word admission uses the ordinary RNG stream. Both paths read
+        # the same stream state; no seed is supplied or selected for parity.
+        with torch.random.fork_rng():
+            normal = m.forward(x)[2]        # head prediction via the FULL forward
+        staged = stage_for_core(replay, x)  # same arrival and initialization
+        core = forward_core(replay, staged)
     assert torch.is_tensor(core), f"forward_core must return a tensor, got {type(core)!r}"
     assert core.shape == normal.shape, f"core {tuple(core.shape)} != normal {tuple(normal.shape)}"
     assert torch.isfinite(core).all()

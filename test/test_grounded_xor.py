@@ -71,6 +71,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
 
 
 def learn_grounded_xor(tmp_path, pool):
+    from order_fixtures import force_order
     model, x = grounded_model(tmp_path, pool, field_slots=4 * pool)
     cs, ws = model.conceptualSpaces[0], model.wholeSpaces[0]
     prior = ws.subspace.what.primitive_properties
@@ -79,6 +80,7 @@ def learn_grounded_xor(tmp_path, pool):
     for row, targets in ((9, [0., 1.]), (10, [1., 0.])):
         before, after = prior.teach(row, [48, 49], targets)
         assert before > .1 and after < 1e-12
+    force_order(cs, 10001, 0)
     assert cs._csw_concept_row(0, 10001) == 0
     cs.add_concept_feature(0, 'ws', 9, 1.)
     for negative in (False, True):
@@ -138,6 +140,7 @@ def learn_grounded_xor(tmp_path, pool):
         cs.observe_concept_use(model._combine_last_cs_sub._concept_activations)
     cs.promotion_pass()
     assert all(not bool(store.provisional[r]) and store.participation[r] == 1 for r in rows)
+    force_order(cs, 20001, 1)
     xor = cs._csw_concept_row(1, 20001)
     assert xor is not None
     for row in rows:

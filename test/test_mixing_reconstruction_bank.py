@@ -17,12 +17,13 @@ def test_mixing_reconstruction_keeps_non_ascii_target_and_candidate_bytes(tmp_pa
         raw = torch.tensor([list(surface.encode('utf-8'))], dtype=torch.long)
         model._lex_embed_stem(raw)
         isp = model.inputSpace
+        from PrependedSymbols import lookup_view
         target = [bytes(v[m].tolist()) for v, m in
                   zip(isp._ar_target_word_bytes[0], isp._ar_target_word_mask[0]) if bool(m.any())]
         assert b''.join(target) == surface.encode('utf-8'), target
         candidates = [bytes(v[m].tolist()) for v, m, row in
                       zip(isp._ar_bank_bytes[0], isp._ar_bank_valid[0],
-                          isp._ar_concept_lookup_rows[0]) if int(row) >= 0]
+                          lookup_view(isp, "lookup_rows")[0]) if int(row) >= 0]
         assert candidates == [b'caf', 'é'.encode('utf-8')], candidates
         assert b''.join(candidates) == surface.strip().encode('utf-8')
         assert model._word_symbol_concept_ids() is None
@@ -63,15 +64,16 @@ def test_mixing_reconstruction_stages_objects_surfaces_and_occurrences(tmp_path,
         raw = model.inputSpace.prepInput(['hello world', 'hello there', 'loving world', 'loving there'])
         model._lex_embed_stem(raw)
         isp = model.inputSpace
+        from PrependedSymbols import lookup_view
         model._validate_reconstruction_bank()
         assert model._word_symbol_concept_ids() is None
-        rows = isp._ar_concept_lookup_rows
+        rows = lookup_view(isp, "lookup_rows")
         valid = rows >= 0
         assert valid.sum(1).tolist() == [2, 2, 2, 2]
         torch.testing.assert_close(rows, isp._ar_grammar_object_rows)
-        torch.testing.assert_close(isp._ar_concept_lookup_atoms, isp._ar_grammar_object_atoms)
-        assert isp._ar_concept_lookup_sentence_ids[valid].tolist() == [0] * 8
-        assert bool((isp._ar_concept_lookup_sentence_ids[~valid] == -1).all())
+        torch.testing.assert_close(lookup_view(isp, "lookup_atoms"), isp._ar_grammar_object_atoms)
+        assert lookup_view(isp, "lookup_sentence_ids")[valid].tolist() == [0] * 8
+        assert bool((lookup_view(isp, "lookup_sentence_ids")[~valid] == -1).all())
         owner = model._concept_owner()
         decoded = []
         for b in range(rows.shape[0]):

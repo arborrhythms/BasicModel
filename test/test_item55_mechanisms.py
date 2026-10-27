@@ -393,14 +393,22 @@ def test_surface_inverses(tmp_path, monkeypatch):
     assert states[0]['spans'] == ((0,),(1,)) and states[1]['spans'] == ((1,),(0,))
     from Spaces import ConceptualSpace, LanguageOperationChoice
     columns = tuple(torch.arange(4).reshape(2,2)+10*i for i in range(4))
-    state=(slab,torch.tensor([2,2]),*columns)
+    from chunk_fixtures import from_stack
+    import STMChunks as chunks
+    state=from_stack(slab,torch.tensor([2,2]),*columns)
     choice=LanguageOperationChoice(route['candidate'],route['kind'],torch.zeros(2,dtype=torch.long),
         route['op'],route['valid'],route['probability'],route['action'],route['valid'])
     swapped=ConceptualSpace.apply_language_choice(state,choice)
-    assert torch.equal(swapped[0],slab.flip(1)) and torch.equal(swapped[1],state[1])
-    for a,b in zip(swapped[2:],columns):assert torch.equal(a,b.flip(1))
-    for a,b in zip(ConceptualSpace.apply_language_choice(swapped,choice),state):
-        assert torch.equal(a,b)
+    view = chunks.stack_view(swapped)
+    assert torch.equal(view[0],slab.flip(1)) and torch.equal(view[1],state[1])
+    for a,b in zip(view[2:],columns):assert torch.equal(a,b.flip(1))
+    torch.testing.assert_close(swapped[chunks.BUFFER], state[chunks.BUFFER], rtol=0, atol=0)
+    restored = ConceptualSpace.apply_language_choice(swapped,choice)
+    for field,(a,b) in enumerate(zip(restored,state)):
+        if field == chunks.READ:
+            assert (a > b).all()  # Both operand reads refresh their recency.
+        else:
+            assert torch.equal(a,b)
     _native_step_comparison(tmp_path, monkeypatch)
 
 

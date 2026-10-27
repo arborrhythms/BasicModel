@@ -103,7 +103,8 @@ def serial_synth_config(tmp_path_factory):
 def test_output_path_memorizes_supervised_labels_on_the_parallel_topology(xor_synth_config, eager_reading):
     m = _build(xor_synth_config, "xor")
     assert m.answer_synthesis
-    assert _memorize(m, epochs=60) >= 1.0
+    from slow_budget import slow_count
+    assert _memorize(m, epochs=slow_count(60)) >= 1.0
 
 
 @pytest.mark.slow
@@ -118,8 +119,10 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config, eager_rea
         x = m.inputSpace.prepInput(list(data.train_input))
         u = m.understand(x)
         c = m.reverseOutput(u, m.resolveAnswer(u, tuple(What.supervised(i) for i in range(len(data.train_input)))))
-    conceptual = _spread(u.conceptual_state)
-    seed = _spread(u.answer_seed if torch.is_tensor(u.answer_seed) else u.symbolic_state)
+    # Serial understanding owns completed fields; dense compatibility
+    # carriers are absent. Compare the owned roots and resolved answer input.
+    conceptual = _spread(torch.stack([field.end_state for field in u.sentence_states]))
+    seed = _spread(c.derivation.conceptual_answer)
     actual = _spread(c.actual)
     assert conceptual > 0.3, conceptual                    # the understanding varies
     assert seed > 0.3, seed                                # so does what seeds the answer
@@ -129,9 +132,11 @@ def test_serial_answer_path_varies_with_the_input(serial_synth_config, eager_rea
 @pytest.mark.slow
 def test_output_path_memorizes_supervised_labels_on_the_serial_topology(serial_synth_config, eager_reading):
     m = _build(serial_synth_config, "phrases")
-    assert torch.is_tensor(m.understand(m.inputSpace.prepInput(
-        list(m.inputSpace.data.train_input[:2]))).answer_seed)
-    assert _memorize(m, epochs=40, lr=1e-3) >= 1.0
+    completed = m.understand(m.inputSpace.prepInput(
+        list(m.inputSpace.data.train_input[:2]))).sentence_states
+    assert len(completed) == 2 and all(torch.is_tensor(field.end_state) for field in completed)
+    from slow_budget import slow_count
+    assert _memorize(m, epochs=slow_count(40), lr=1e-3) >= 1.0
 
 
 
@@ -217,6 +222,17 @@ def test_native_answer_uses_owned_ideas_without_dense_symbol_state(tmp_path, out
         torch._dynamo.reset()
 
 
+def _assert_output_comparison(m):
+    # Output compares complete walks; the shared chooser is trained by
+    # reconstruction, and no separate output_policy loss is registered.
+    audit = m._last_output_comparison
+    assert audit is not None
+    assert audit['costs'].shape == (2, 2)
+    assert bool(torch.isfinite(audit['costs']).all())
+    assert any(item.get('owner') == 'output'
+               for item in m._last_answer_construction.trace)
+
+
 def _dedicated_answer_parameters(m):
     decoder={id(p) for p in m.languageSpace.generate_policy.parameters()}
     return [p for p in m.synthesis_parameters() if p.requires_grad and id(p) not in decoder]
@@ -252,7 +268,7 @@ def _answer_training_probe(m, opt, questions):
         if sentence:
             assert 'output' not in recorded
             reader = m._sentence_reader_costs
-            if not reader:
+            if 'output' not in reader:
                 return backward(total, amp_scaler, **kwargs)
             total = reader['output']
         params = _dedicated_answer_parameters(m)
@@ -318,16 +334,22 @@ def test_native_realized_answer_loss_trains_the_active_conditioner(tmp_path, out
         assert got["answer_loss"] > 0 and got["answer_requires_grad"]
         assert got["total_grads"][i] is not None
         assert bool(got["total_grads"][i].abs().sum() > 0)
-        # At identity the small label head reads only its initial coordinates.
-        # All concept coordinates must still reach the percept realization.
-        assert bool(got["realization_grad"][136:].abs().sum() > 0)
-        assert m._last_answer_construction.percepts.shape[-1] == 136
+        # The landed form/meaning split realizes the native form directly.
+        # Its percept loss trains form conditioning, never the meaning band;
+        # meaning-loss inverse credit has its own paired-kernel certificate.
+        native_width = int(m.perceptualSpace.subspace.muxedSize)
+        assert bool(got["realization_grad"][:native_width].abs().sum() > 0)
+        assert torch.count_nonzero(got["realization_grad"][native_width:]) == 0
+        assert m._last_answer_construction.percepts.shape[-1] == native_width
         assert got["changed"][i]
         assert got["actual_grad"] is not None and bool(got["actual_grad"].abs().sum() > 0)
         owned = [id(p) for group in opt.param_groups for p in group["params"]]
         assert owned.count(id(got["params"][i])) == 1
-        for b, answer in enumerate(m._last_what_answers):
-            root_input = answer.ltm_slot.input
+        # A completed field may decline an episode and have no legacy slot.
+        # Its owned derivation still retains the exact source field.
+        for b, field in enumerate(m._last_answer_construction.derivation.sentence_states):
+            assert field is m._last_understanding.sentence_states[b]
+            root_input = field.end_state
             assert root_input.shape[-1] == concept_width
             expected = m._last_understanding.sentence_states[b].end_state
             torch.testing.assert_close(root_input.reshape_as(expected), expected)
@@ -345,7 +367,6 @@ def test_available_input_targets_do_not_train_answer_modules_after_adam(output_l
     m = _model()
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    m.output_policy_weight = 1.0
     data = m.inputSpace.data
     saved_addresses = deepcopy(data.source_addresses["train"])
     had_outputs = data.has_supervised_outputs
@@ -360,7 +381,7 @@ def test_available_input_targets_do_not_train_answer_modules_after_adam(output_l
         # only dedicated answer parameters must stop receiving credit.
         got = _answer_training_probe(m, opt, supplied)
         assert got["changed"][got["active_index"]]
-        assert "output_policy" in got["recorded"]
+        _assert_output_comparison(m)
         assert all(opt.state.get(p) for p in m.languageSpace.generate_policy.parameters())
         m.output_in_loop = output_loop
         for family, questions in (
@@ -427,7 +448,6 @@ def test_supplied_text_scores_fixed_surface_and_masks_automatic_text(eager_readi
         os.environ["BASICMODEL_DEVICE"]).type
     m._tensor_peer_while_eager = True
     m._chart_compose_per_word = lambda: None
-    m.output_policy_weight = 1.0
     data = m.inputSpace.data
     saved_outputs = data.train_output
     opt = m.getOptimizer(lr=1e-3)
@@ -440,7 +460,7 @@ def test_supplied_text_scores_fixed_surface_and_masks_automatic_text(eager_readi
         assert got["surface_grad"] is not None
         assert bool(got["surface_grad"][0].abs().sum() > 0)
         assert torch.count_nonzero(got["surface_grad"][1]) == 0
-        assert "output_policy" in got["recorded"]
+        _assert_output_comparison(m)
         c = m._last_answer_construction
         before = {name: getattr(c, name).detach().clone()
                   for name in ("actual", "concepts", "percepts", "surface")}
@@ -509,7 +529,12 @@ def test_legacy_parity_memory_cannot_change_an_owned_conceptual_answer(tmp_path,
             # A lexical referent resolves through its definition row;
             # the completed row has no remembered word list.
             owner = m._concept_owner()
-            word_id = owner.definitions.word(form='plus')
+            # This is a lexical reader fixture: supply its DEF explicitly.
+            # An unforced presentation admits a form without promising an object.
+            from definition_fixtures import witness_object
+            word_id = owner.interpret.word_for_form('plus')
+            assert word_id is not None
+            witness_object(owner, word_id)
             concept_id, = owner.definitions.objects(word_id)
             expected = owner.similarity_codebook.getW()[owner._csw_row_of(concept_id)]
             query = m._referent_representation(

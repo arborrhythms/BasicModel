@@ -71,7 +71,8 @@ def test_consolidated_prediction_uses_observed_context_without_target_leak():
     layer = _make_layer(D=4)
     # A provisioned/global LTM row is not an external predecessor in this
     # document. The predictor view is populated only by observe, per row.
-    layer._ltm_store = object()
+    from types import SimpleNamespace
+    layer._ltm_store = SimpleNamespace(model_clock=0, when_start=None)
     layer.predict_and_observe_stm_end_state([1], [torch.ones(1, 4)])
     assert layer._inter_loss_count == 0
     assert not layer._stm_end_states[0], "durable LTM remains the only store"

@@ -125,6 +125,21 @@ The central collection hook skips them before fixture setup unless `RUN_SLOW=1`.
 A slow check keeps its assertions and any explicit expected-failure status;
 skipping it in the default run is not evidence that its learning gate passed.
 
+**Repeated-work budget (Alec, 2026-10-26).** `RUN_SLOW=1` now defaults to
+`RUN_SLOW_FRACTION=0.5` for the explicitly budgeted training and stability
+fixtures. Their epoch, update or per-epoch batch counts use `slow_count`;
+rounding keeps at least one observation and each fixture's structural minimum.
+For example, projection stability runs three epochs instead of six, the long
+reconstruction experiments run 80 instead of 160, and the 256-presentation
+successor/ladder replays train 16 batches per epoch instead of 32. The latter
+keep their corpus, epochs and evaluation set. No test or assertion is removed,
+no seed changes, and one-shot mechanism and compiler checks retain their work.
+`RUN_SLOW=1 RUN_SLOW_FRACTION=1` restores the historical repetition budgets.
+The pytest header reports the fraction. Shorter measurements state their
+actual work; they do not replace the retained full-budget evidence. Fixed
+construction and compilation costs mean wall time need not scale exactly
+with the repeated work.
+
 **The generated math suite under `RUN_SLOW` (Alec, 2026-10-20).** Beside
 the convergence experiments, the slow tier carries a **generated, graded
 corpus of mathematical sentences in English** that trains a grammar for

@@ -15,15 +15,16 @@ def _description():
 @pytest.mark.parametrize("changed_role", [None, 1, 2])
 def test_exist_matches_the_complete_relational_description(changed_role):
     roles = _description()
-    store = LTM0(6, capacity=8)
+    # Preserve all three independent content blocks in one supplied idea.
+    store = LTM0(roles.numel(), capacity=8, percept_width=0)
     from Meaning import ConceptualMeaning
-    store.append_meaning(ConceptualMeaning.from_payload(roles, depth=3, layout='infix'),
+    store.append_meaning(ConceptualMeaning.from_description(roles.flatten()),
                          kind='fact', trust=.85)
     probe = roles.clone()
     if changed_role is not None:
         probe[changed_role] = torch.eye(6)[4]
     result = TruthGroundedReasoner(store=store).evaluate(
-        QuerySpec.from_surface("exist", probe))
+        QuerySpec.from_surface("exist", probe.flatten()))
     if changed_role is None:
         assert result["posture"] == TRUE
         assert result["support_true"] == pytest.approx(.85)

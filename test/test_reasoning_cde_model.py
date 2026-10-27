@@ -71,10 +71,13 @@ class TestReasoningCDEModel(unittest.TestCase):
 
     @pytest.mark.usefixtures('eager_reading')
     def test_answer_query_degrades_gracefully(self):
-        # Non-interrogative -> None. A query surface on a byte-grain config (no
-        # word vocab to resolve operands) also returns None (generative
-        # fallback), never a crash.
-        self.assertIsNone(self.m.answer_query('hello there'))
+        # Every completed field can offer a thought after mode retirement.
+        # A surface without open slots can decline or return a bounded episode.
+        out = self.m.answer_query('hello there')
+        self.assertTrue(out is None or isinstance(out, dict))
+        if out is not None:
+            self.assertLessEqual(out['work'], self.m.attention_budget)
+            self.assertIn(out['posture'], ('TRUE', 'FALSE', 'BOTH', 'NEITHER', 'UNKNOWN'))
         out = self.m.answer_query('is socrates part of mortal?')
         self.assertTrue(out is None or isinstance(out, dict))
 

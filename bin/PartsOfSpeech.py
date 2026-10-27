@@ -45,33 +45,58 @@ def flow_mask(rule):
 
 
 class PartsOfSpeech(nn.Module):
-    def __init__(self, arguments):
+    VERSION = 2
+
+    def __init__(self, arguments, space=None):
         super().__init__()
+        import weakref
+        self._space = None if space is None else weakref.ref(space)
         self.arguments = tuple(arguments)
         self.index = {name: i for i, name in enumerate(self.arguments)}
         self.counts = {}
-        self.labels = {}
         self.frozen = False
+
+    def order_of(self, word):
+        """The word's current object, or its witnessed form when objectless."""
+        space = None if self._space is None else self._space()
+        if space is None:
+            return -1  # Standalone occupation fixtures have no concept witness.
+        from Spaces import _concept_alloc_of
+        objects = space.interpret.denotations(int(word))
+        concept = objects[0] if len(objects) == 1 else int(word) if not objects else None
+        if concept is None:
+            return -1  # An ambiguous object has no single witnessed order.
+        return _concept_alloc_of(space).order_of(concept)
+
+    @property
+    def labels(self):
+        # A later definition may raise the object without adding occupations.
+        return {word: self.part_of_speech(word) for word in self.counts}
 
     def distribution(self, word):
         counts = self.counts.get(int(word), {})
-        total = sum(counts.values())
+        order = self.order_of(word)
+        selected = Counter()
+        for (argument, at), count in counts.items():
+            if order < 0 or at == order:
+                selected[argument] += count
+        total = sum(selected.values())
         if not total:
             return [1. / max(1, len(self.arguments))] * len(self.arguments)
-        return [counts.get(name, 0) / total for name in self.arguments]
+        return [selected.get(name, 0) / total for name in self.arguments]
 
     def part_of_speech(self, word):
-        return self.labels.get(int(word), self.arguments[0] if self.arguments else None)
+        values = self.distribution(word)
+        return self.arguments[max(range(len(values)), key=values.__getitem__)] if values else None
 
-    def add(self, word, argument):
+    def add(self, word, argument, order):
         if self.frozen or int(word) < 0:
             return
         if argument not in self.index:
             raise ValueError(f'undeclared formal argument: {argument}')
         word = int(word)
         counts = self.counts.setdefault(word, Counter())
-        counts[argument] += 1
-        self.labels[word] = max(self.arguments, key=lambda name: counts.get(name, 0))
+        counts[argument, int(order)] += 1
 
     def probabilities(self, words, like):
         """Eager boundary: a frozen table shared by the paired trials."""
@@ -112,14 +137,14 @@ class PartsOfSpeech(nn.Module):
             name = operation_name(rule)
             for i, carried in enumerate(operands):
                 for word in carried:
-                    self.add(word, f'{name}_argin{i+1}')
+                    self.add(word, f'{name}_argin{i+1}', self.order_of(word))
             mask = flow_mask(rule)
             results = operands[::-1] if kind == 3 else [tuple(
                 word for i, carried in enumerate(operands) if mask & (1 << i)
                 for word in carried)]
             for i, carried in enumerate(results):
                 for word in carried:
-                    self.add(word, f'{name}_argout{i+1}')
+                    self.add(word, f'{name}_argout{i+1}', self.order_of(word))
             if kind == 2 or field_bind:
                 stack[at] = results[0]
             else:
@@ -127,27 +152,26 @@ class PartsOfSpeech(nn.Module):
 
     def collapse(self):
         words = sorted(self.counts)
+        occupations = sorted({key for counts in self.counts.values() for key in counts})
         vectors = torch.tensor([[self.counts[word].get(arg, 0) for word in words]
-                                for arg in self.arguments], dtype=torch.float64)
+                                for arg in occupations], dtype=torch.float64)
         vectors = torch.nn.functional.normalize(vectors, dim=-1)
         cosines = vectors @ vectors.T
         return [dict(left=a, right=b, cosine=float(cosines[i, j]))
-                for i, a in enumerate(self.arguments)
-                for j, b in enumerate(self.arguments) if j > i]
+                for i, a in enumerate(occupations)
+                for j, b in enumerate(occupations) if j > i]
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(version=1, arguments=self.arguments,
+        return _pack_state(dict(version=self.VERSION, arguments=self.arguments,
             counts={word: dict(counts) for word, counts in self.counts.items()}))
 
     def set_extra_state(self, value):
         from IndependentComponents import _unpack_state
         state = _unpack_state(value)
-        if state['version'] != 1 or tuple(state['arguments']) != self.arguments:
+        if state['version'] != self.VERSION or tuple(state['arguments']) != self.arguments:
             raise ValueError('occupation argument schema does not match the grammar')
         self.counts = {int(word): Counter(counts) for word, counts in state['counts'].items()}
-        self.labels = {word: max(self.arguments, key=lambda name: counts.get(name, 0))
-                       for word, counts in self.counts.items()}
 
 
 def update_flow(words, choice, binary_flow, unary_flow):

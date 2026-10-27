@@ -76,8 +76,8 @@ def _bare_cs(n_locations=8, n_rows=16):
 
 def _full_stm():
     stm = ShortTermMemory(batch=1, capacity=8, concept_dim=8)
-    # Push in reverse so final slot i has exact row i+1.
-    for row in range(8, 0, -1):
+    # Chunks retain allocation positions; the stack is a separate ordering.
+    for row in range(1, 9):
         idea = torch.zeros(1, 8)
         idea[:, 4:] = float(100 + row)
         stm.push_step(
@@ -146,11 +146,11 @@ def test_ss_is_prior_tick_and_never_sees_a_later_push():
     assert prior_valid[0, 0] and not bool(prior_valid[0, 1:].any())
     assert torch.equal(prior[0, 0, :4], torch.full((4,), 3.0))
     # The already-decoded prior source is immutable; the new row first appears
-    # in the following call/tick at location zero.
+    # in the following call/tick at the next allocated chunk.
     assert torch.equal(prior[0, 0, :4], torch.full((4,), 3.0))
     assert following_valid[0, 0] and following_valid[0, 1]
-    assert torch.equal(following[0, 0, :4], torch.full((4,), 4.0))
-    assert torch.equal(following[0, 1, :4], torch.full((4,), 3.0))
+    assert torch.equal(following[0, 0, :4], torch.full((4,), 3.0))
+    assert torch.equal(following[0, 1, :4], torch.full((4,), 4.0))
 
 
 def test_unknown_or_inactive_slots_zero_both_what_and_band():
@@ -165,16 +165,16 @@ def test_unknown_or_inactive_slots_zero_both_what_and_band():
         torch.full((2, 8), 7.0), torch.tensor([[True], [False]]),
         concept_row=torch.tensor([-1, 9]),
         concept_activation=torch.tensor([42.0, 0.9]))
-    assert int(stm._concept_rows[0, 0]) == -1
-    assert float(stm._concept_activations[0, 0]) == 0.0
+    assert int(stm._concept_rows[0, 1]) == -1
+    assert float(stm._concept_activations[0, 1]) == 0.0
 
     decoded, valid = cs.decode_prior_stm_peer(
         stm, torch.tensor([True, False]))
 
-    assert not bool(valid[0, 0])
-    assert valid[0, 1]
+    assert not bool(valid[0, 1])
+    assert valid[0, 0]
     assert not bool(valid[1].any())
-    assert torch.equal(decoded[0, 0], torch.zeros(8))
+    assert torch.equal(decoded[0, 1], torch.zeros(8))
     assert torch.equal(decoded[1], torch.zeros_like(decoded[1]))
 
 
@@ -221,13 +221,11 @@ def test_word_push_then_object_reference_replacement_is_cs_owned_and_masked():
     batch, capacity, dim = 2, 3, 5
     stm = ShortTermMemory(batch=batch, capacity=capacity, concept_dim=dim)
     stm.begin_forward(batch, dtype=torch.float32)
-    initial = (
-        stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
-        stm._concept_rows, stm._concept_activations)
+    initial = stm.state
     gate = torch.tensor([[True], [False]])
     word = torch.arange(batch * dim, dtype=torch.float32).reshape(batch, dim)
     pushed = ShortTermMemory.functional_push_step_masked(
-        *initial, word, gate,
+        initial, word, gate,
         torch.tensor([7, 8]), torch.tensor([0, 0]),
         torch.tensor([10, 11]), torch.tensor([0.5, 0.6]))
     object_idea = word + 100.0

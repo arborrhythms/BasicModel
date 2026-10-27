@@ -50,10 +50,22 @@ def _relative_targets(text):
 def test_relative_links_resolve(path):
     text = path.read_text(encoding="utf-8")
     missing = []
+    # These are byte-preserved snapshots of documents, whose links retain
+    # the original document's home. Audit every target without rewriting
+    # historical evidence or excluding the archived documents.
+    origins = {
+        **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/development/upstream/{name}.md": "doc/FutureWork.md"
+           for name in ("base", "local", "merged", "remote")},
+        **{f"doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/publication/FutureWork.{name}.md": "doc/FutureWork.md"
+           for name in ("combined", "conflict")},
+        **{f"doc/benchmarks/2026-10-25-item3-0-stm-chunks/{name}": "doc/plans/2026-10-25-item3-0-step3-stm-chunks.md"
+           for name in ("repair-01/spec-as-received.md", "step3-spec-as-received.md")},
+    }
+    original = _ROOT / origins.get(str(path.relative_to(_ROOT)), str(path.relative_to(_ROOT)))
     for target in _relative_targets(text):
         if not target:
             continue
-        resolved = (path.parent / target).resolve()
+        resolved = (original.parent / target).resolve()
         if not resolved.exists():
             missing.append(target)
     assert not missing, f"{path.relative_to(_ROOT)}: unresolved {missing}"

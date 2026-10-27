@@ -401,7 +401,8 @@ def test_bind_contained_in_conceptual_space():
         "the flowing CS_sub must carry the bind too")
     cs_last = m.conceptualSpaces[len(m.body_stages) - 1]
     with torch.no_grad():
-        glued = cs_last.combine.glue(last_carrier)
+        from ModelAttention import read_code_field
+        glued = read_code_field(cs_last.combine.glue(last_carrier))
         ev = last.materialize()
     assert ev is not None and ev.shape[-2:] == (Nv, D)
     assert torch.allclose(ev, glued, atol=1e-4), (

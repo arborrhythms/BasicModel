@@ -19,12 +19,9 @@ because those force a graph break. On CUDA each such break is also a
 for the CUDA DtoH==0 gate; the metalbaby unit test (separate, CUDA-only)
 covers the sufficient leg.
 
-Today this test FAILS by design (TDD RED): the per-word step is
-inlined inside the variable while-loop in ``_forward_body_per_word``
-and has no standalone callable. The first failure drives the
-extraction of ``BasicModel._per_word_body_step``; subsequent failures
-drive the DtoH-offender removal from the PS/SS/CS forwards reached
-through the body.
+The current scheduler receives three pure native word transactions.
+The fixture captures those callables at that boundary and checks one
+complete word cell, including a second call with the returned state.
 """
 import os
 os.environ["BASICMODEL_DEVICE"] = "cpu"
@@ -78,165 +75,118 @@ def _build_gate_model():
     return m
 
 
-def _stage_for_per_word(m):
-    """Run one real ``InputSpace.forward`` so ``_ar_embedded`` /
-    ``_valid_len_host`` / peer BPE state are populated -- the live
-    pre-conditions of the per-word body. Also pre-warms MPHF tables
-    if the peer is in mphf mode (the production path pre-warms in
-    ``_forward_body_per_word``'s setup; the gate test calls the step
-    directly so it mirrors the contract here)."""
-    isp = m.inputSpace
-    assert isp._per_word_enabled is True, (
-        "gate target: MM_20M (grammar-enabled) must wire "
-        "_per_word_enabled=True")
-    # The isolated two-word cell does not need an arbitrary corpus sentence
-    # that may exceed this fixture's fixed eight-word bucket.
-    inp_items = ['alpha beta', 'gamma delta']
-    isp.Start()
-    inputTensor = isp.prepInput(inp_items)
-    in_sub = m._lex_embed_stem(inputTensor)
-    # Per-sentence SymbolSubSpace state. Production initializes this in
-    # the first ``_per_word_prelude`` (sentinel
-    # ``_per_sentence_initialized``); replay that here for tests that
-    # call ``_per_word_body_step`` in isolation.
-    if (m.symbolSpace is not None
-            and not getattr(m.symbolSpace,
-                            '_per_sentence_initialized', False)):
-        m.symbolSpace.soft_reset()
-        m.symbolSpace._per_sentence_initialized = True
-    # Mirror ``BasicModel._forward_body_per_word``'s prelude: STM
-    # batch resize + clear, MPHF pre-warm, recur_pass reset, and
-    # loop-carry SubSpace pre-seed. The capture gate calls
-    # ``_per_word_body_step`` in isolation so the prelude is
-    # replayed here verbatim.
-    m._per_word_prelude(in_sub)
-    m._stage_reconstruction_teacher()
-    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
-        isp._word_active_mask.shape[1], isp._word_active_mask.device)
-    m._per_word_contributions = [None] * isp._word_active_mask.shape[1]
-    # Production's enable_compiled_step() constructs the grammar reducer
-    # before tracing. Parameter construction inside a Dynamo trace is not
-    # supported, so the isolated-step gate must mirror that boundary.
-    m._stm_reducer()
-    return isp
+def _stage_for_per_word(m, monkeypatch, *, samples=None):
+    """Extract the live pure word transactions after their normal host staging.
 
-
-def _gate_for(isp, w, p=0):
-    """Build a [B, 1] all-True gate tensor for the per-word body call."""
-    return torch.ones(w.shape[0], 1, dtype=torch.bool, device=w.device)
-
-
-@pytest.mark.slow
-def test_per_word_step_runs_eagerly_end_to_end():
-    """SANITY gate (eager mode): the extracted per-word step must run
-    end-to-end without raising. This catches regressions in the
-    refactor that the production targeted suite misses (those tests
-    check structural properties, not runtime behaviour of the body).
-
-    Updated 2026-05-20 for the static per-word loop refactor: the body
-    signature is now ``(w, p, gate_b_1, out_slot, active_host=True)``.
+    The old compatibility body predates native cube codes.  The active
+    pipeline hands these three callbacks to TensorPeerWhilePipeline; this
+    fixture captures that boundary without running or replacing a callback.
     """
-    m = _build_gate_model()
-    if not hasattr(m, "_per_word_body_step"):
-        pytest.skip("extraction not yet landed")
-    isp = _stage_for_per_word(m)
-    w = isp.next_word()
-    assert w is not None
-    out_slot = m._per_word_contributions
-    # No compile -- just eager. Any exception fails the test.
-    CS_sub, idea_bd = m._per_word_body_step(w, 0, _gate_for(isp, w), out_slot)
-    assert CS_sub is not None
-    w2 = isp.next_word()
-    assert w2 is not None
-    CS_sub2, idea_bd2 = m._per_word_body_step(w2, 1, _gate_for(isp, w2), out_slot)
-    assert CS_sub2 is not None
+    import Models
+    from test_compiled_word_chunk import _stage_fullgraph_tensor_peer
+
+    _stage_fullgraph_tensor_peer(m, ['alpha beta', 'gamma delta'] if samples is None else samples)
+    isp = m.inputSpace
+    width = int(isp._ar_embedded_N.shape[1])
+    assert m._tensor_peer_while_ready(width)
+    staged = {}
+
+    class Captured(Exception):
+        pass
+
+    def capture(_pipeline, words, active, **kwargs):
+        staged.update(words=words, active=active, **kwargs)
+        raise Captured
+
+    # Host closes are outside this capture gate; the same numerical callbacks
+    # also run under the banked tensor scheduler with explicit state carries.
+    m._sentence_ends = False
+    with monkeypatch.context() as context:
+        context.setattr(Models.TensorPeerWhilePipeline, 'run_cs_lanes_banked', capture)
+        with pytest.raises(Captured):
+            m._run_tensor_peer_word_pipeline(width)
+
+    def step(word, gate, index, carry):
+        stm, sub, sym, lang, feedback = carry
+        live = torch.ones((), dtype=torch.bool, device=word.device)
+        payload, sub = staged['stage_cs_sub'](word, gate, index, live, sub)
+        payload, sym = staged['stage_cs_sym'](payload, feedback, index, live, sym)
+        lang, stm, feedback = staged['stage_cs_lang'](payload, index, live, lang, stm)
+        return stm, sub, sym, lang, feedback
+
+    carry = tuple(staged[key] for key in ('stm_state', 'cs_sub_state',
+        'cs_sym_state', 'cs_lang_state', 'empty_feedback'))
+    # A loop carry has one autograd signature. Its initial zero tensors do
+    # not yet have the gradient metadata of a returned native state. Derive
+    # that metadata from one pure word step without consuming the walk RNG,
+    # then give the original zeros the same leaf signature for isolated calls.
+    with torch.random.fork_rng(devices=[]):
+        template = step(staged['words'][:, :1], staged['active'][:, :1],
+            staged['words'].new_zeros((), dtype=torch.long), carry)
+    def typed(initial, returned):
+        if torch.is_tensor(initial):
+            return initial.detach().clone().requires_grad_(returned.requires_grad)
+        return tuple(typed(a, b) for a, b in zip(initial, returned))
+    carry = typed(carry, template)
+    return step, carry, staged
+
+
+def _word(staged, index):
+    words, active = staged['words'], staged['active']
+    assert bool(active[:, index].all())
+    return words[:, index:index+1], active[:, index:index+1], words.new_tensor(index, dtype=torch.long)
 
 
 @pytest.mark.slow
-def test_per_word_step_is_extractable_as_a_standalone_callable():
-    """RED gate #1: a standalone ``_per_word_body_step(self, w)`` MUST
-    exist on ``BasicModel``. The current implementation inlines the body
-    inside the while-loop in ``_forward_body_per_word``; D8 requires it
-    as a separable callable so the middle (replayable) CUDA graph wraps
-    exactly one iteration."""
+def test_per_word_step_runs_eagerly_end_to_end(monkeypatch):
+    """Both native words traverse PS/WS, CS and grammar eagerly."""
     m = _build_gate_model()
-    assert hasattr(m, "_per_word_body_step"), (
-        "D8 piece 1: BasicModel._per_word_body_step(w) must be "
-        "extractable -- see doc/plans/2026-05-18-two-loop-pipeline-"
-        "architecture.md D8 'two implementation pieces' for the "
-        "extraction contract.")
-    assert callable(m._per_word_body_step)
+    step, carry, staged = _stage_for_per_word(m, monkeypatch)
+    first = step(*_word(staged, 0), carry)
+    assert first[1][0] is not None
+    second = step(*_word(staged, 1), first)
+    assert second[1][0] is not None
+    assert bool(torch.isfinite(second[1][0]).all())
 
 
 @pytest.mark.slow
-def test_per_word_step_compiles_fullgraph_clean():
-    """RED gate #2: the extracted per-word step must compile under
-    ``torch.compile(fullgraph=True)`` with zero graph breaks. Dynamo
-    raises ``Unsupported`` (Inductor / eager backend) on the first
-    ``.item()`` / ``bool(t)`` / data-dependent control-flow it sees
-    in the trace; on CUDA each such break is a ``cudaMemcpyDtoH``.
-
-    This is the CPU-runnable proxy for D8's strict gate; the CUDA-only
-    ``cudaMemcpyDtoH == 0`` sufficient leg lives in the metalbaby
-    capture suite (separate, CUDA-required)."""
-    if not hasattr(torch, "compile"):
-        pytest.skip("torch.compile unavailable")
-
+def test_per_word_step_is_extractable_as_a_standalone_callable(monkeypatch):
+    """The active scheduler receives independently callable native stages."""
     m = _build_gate_model()
-    if not hasattr(m, "_per_word_body_step"):
-        pytest.skip("extraction not yet landed (see RED gate #1)")
+    step, carry, staged = _stage_for_per_word(m, monkeypatch)
+    assert callable(step)
+    for key in ('stage_cs_sub', 'stage_cs_sym', 'stage_cs_lang'):
+        assert callable(staged[key])
 
-    isp = _stage_for_per_word(m)
-    w = isp.next_word()
-    assert w is not None, "stage produced a valid first word"
-    m._prepare_reconstruction_choices(
-        int(w.shape[0]), int(isp._ar_embedded_N.shape[1]), w.device)
 
-    # Compile the bound method; fullgraph=True turns ANY graph break
-    # into a hard ``Unsupported``. Use the eager backend (already in
-    # MODEL_COMPILE=eager via env) -- the gate is about graph breaks,
-    # not about codegen quality.
-    # backend="eager" -- skip Inductor codegen (the gate is about
-    # graph breaks, not codegen quality). The default backend
-    # (Inductor) C++ compiles, which fails on paths containing
-    # spaces (e.g. iCloud Documents) -- orthogonal to the gate.
-    compiled = torch.compile(
-        m._per_word_body_step, backend="eager", fullgraph=True)
-    # Five-arg call: body signature updated for the static per-word loop
-    # refactor (w, p, gate_b_1, out_slot, active_host).
-    out_slot = m._per_word_contributions
-    compiled(w, 0, _gate_for(isp, w), out_slot)
-    choice_ids, choice_arities, choice_mask = (
-        m.symbolSpace.reconstruction_stack.choices())
+@pytest.mark.slow
+def test_per_word_step_compiles_fullgraph_clean(monkeypatch):
+    """One native word cell compiles with graph breaks forbidden."""
+    if not hasattr(torch, 'compile'):
+        pytest.skip('torch.compile unavailable')
+    m = _build_gate_model()
+    step, carry, staged = _stage_for_per_word(m, monkeypatch)
+    compiled = torch.compile(step, backend='eager', fullgraph=True)
+    result = compiled(*_word(staged, 0), carry)
+    choice_ids, choice_arities, choice_mask = result[3][1:4]
     assert torch.is_tensor(choice_ids)
     assert torch.is_tensor(choice_arities)
     assert torch.is_tensor(choice_mask)
 
 
 @pytest.mark.slow
-def test_per_word_loop_completes_two_steps_under_fullgraph():
-    """RED gate #3: two consecutive compiled steps must succeed without
-    a recompile (cache hit, same shape)."""
-    if not hasattr(torch, "compile"):
-        pytest.skip("torch.compile unavailable")
-
+def test_per_word_loop_completes_two_steps_under_fullgraph(monkeypatch):
+    """The next native word reuses the same fullgraph with its returned state."""
+    if not hasattr(torch, 'compile'):
+        pytest.skip('torch.compile unavailable')
     m = _build_gate_model()
-    if not hasattr(m, "_per_word_body_step"):
-        pytest.skip("extraction not yet landed (see RED gate #1)")
-
-    isp = _stage_for_per_word(m)
-    m._prepare_reconstruction_choices(
-        int(isp._ar_embedded_N.shape[0]),
-        int(isp._ar_embedded_N.shape[1]), isp._ar_embedded_N.device)
-    # backend="eager" -- skip Inductor codegen (the gate is about
-    # graph breaks, not codegen quality). The default backend
-    # (Inductor) C++ compiles, which fails on paths containing
-    # spaces (e.g. iCloud Documents) -- orthogonal to the gate.
-    compiled = torch.compile(
-        m._per_word_body_step, backend="eager", fullgraph=True)
-    w1 = isp.next_word()
-    w2 = isp.next_word()
-    assert w1 is not None and w2 is not None
-    out_slot = m._per_word_contributions
-    compiled(w1, 0, _gate_for(isp, w1), out_slot)
-    compiled(w2, 1, _gate_for(isp, w2), out_slot)
+    step, carry, staged = _stage_for_per_word(m, monkeypatch)
+    graphs = []
+    def backend(graph, _inputs):
+        graphs.append(graph)
+        return graph.forward
+    compiled = torch.compile(step, backend=backend, fullgraph=True)
+    first = compiled(*_word(staged, 0), carry)
+    second = compiled(*_word(staged, 1), first)
+    assert len(graphs) == 1
+    assert bool(torch.isfinite(second[0][0]).all())

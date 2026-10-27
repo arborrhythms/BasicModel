@@ -117,6 +117,7 @@ def test_priming_spread_knob_stamped():
 
 
 def _projected_model(epochs=3):
+    from slow_budget import slow_count
     from configuration_fixtures import parallel_concepts
     with parallel_concepts(wide=True) as path:
         m, *_ = _build_model(_resolve_config(path))
@@ -132,7 +133,7 @@ def _projected_model(epochs=3):
                           m.wholeSpaces[-1].priming_weights())))
     m._prime_seen_step = seen
     opt = m.getOptimizer(lr=0.01)
-    for e in range(epochs):
+    for e in range(slow_count(epochs)):
         m.runEpoch(optimizer=opt, batchSize=4, split="train", max_batches=1)
     return m
 

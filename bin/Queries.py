@@ -743,7 +743,7 @@ class ThoughtConceptualCapability:
         if allocator is None:
             raise ValueError('concept order owner unavailable')
         cid = concept_reference(reference)[1]
-        return max(int(allocator.order_of(cid)), int(cid in allocator.raised))
+        return int(allocator.order_of(cid))  # Unknown remains -1; a raise flag is not an order.
 
     def payload(self, reference, *, work=None):
         if work is not None:

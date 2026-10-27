@@ -97,18 +97,17 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         value.detach() for value in compiled_ws(property_weights))
     _sync(torch, device)
 
-    row = isp._ar_word_concept_rows[:, 0]
-    order = isp._ar_word_concept_orders[:, 0]
-    object_row = isp._ar_word_object_rows[:, 0]
-    object_order = isp._ar_word_object_orders[:, 0]
+    from PrependedSymbols import word_view
+    row = word_view(isp, "concept_rows")[:, 0]
+    order = word_view(isp, "concept_orders")[:, 0]
+    object_row = word_view(isp, "object_rows")[:, 0]
+    object_order = word_view(isp, "object_orders")[:, 0]
     object_atom = isp._ar_word_object_atoms[:, 0, :]
     row_gate = isp._word_active_mask[:, :1]
     commit = isp._word_last_slot_mask[:, :1]
     lookup_rows = isp._ar_concept_lookup_rows
     lookup_atoms = isp._ar_concept_lookup_atoms
-    stm_state = tuple(value.detach().clone() for value in (
-        stm._buffer, stm._depth, stm._orders, stm._grammar_orders,
-        stm._concept_rows, stm._concept_activations))
+    stm_state = tuple(value.detach().clone() for value in stm.state)
     feedback = (
         isp._ar_embedded_N.new_zeros(batch, int(language._n_rules)),
         torch.zeros(batch, 1, dtype=torch.bool, device=device),
@@ -182,7 +181,7 @@ def _profile_peer_legs(torch, model, device, texts, repeats):
         pre_valid = torch.zeros_like(pre_applied)
         word_order = symbol_orders[:, 0].to(dtype=torch.long)
         pushed_word = ShortTermMemory.functional_push_step_masked(
-            *pre_state, word_idea, commit, word_order,
+            pre_state, word_idea, commit, word_order,
             torch.zeros_like(word_order), source_row, source_activation)
         presence = source_activation.reshape(batch).abs()
         object_idea = interpretation.forward(

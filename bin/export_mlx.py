@@ -11,7 +11,8 @@ The script has TWO clearly separated phases:
     ``ExportCore`` adapter (defined in this script) whose ``forward`` IS
     ``forward_core(model, .)``.  The export adapter lives HERE, not on
     ``BasicModel`` -- the model keeps a single forward path; the only model
-    surface this needs is the ``_forward_per_stage(in_sub_override=...)`` hook.
+    surfaces are the ordinary body and head. Symbol publication follows the
+    prediction and remains in the host path.
 
   Phase 2 — ExecuTorch lowering (requires executorch + MLX/Apple delegate)
     Lower the ExportedProgram to .pte via ``to_edge_transform_and_lower``
@@ -100,8 +101,8 @@ def stage_for_core(model, x):
     and parks the stem shell on ``model._staged_in_sub`` for ``forward_core``
     to rebind the export argument into. The export concern lives HERE in the
     (opt-in, speculative) script rather than on ``BasicModel`` -- the model
-    keeps ONE forward path; the only model surface this needs is the
-    ``_forward_per_stage(in_sub_override=...)`` injection hook.
+    keeps one body and head. The host also establishes the arrival time and
+    source context before exposing the staged tensor.
     """
     import torch
     if isinstance(x, torch.Tensor):
@@ -109,6 +110,14 @@ def stage_for_core(model, x):
             x = x.to(next(model.parameters()).device)
         except StopIteration:
             pass
+    # The host owns the same arrival boundary as BasicModel.forward. The
+    # exported tensor graph neither advances time nor admits source records.
+    from Occurrence import stage_sources
+    source = getattr(x, '_sentence_source', None)
+    split, prepared = source if source is not None else ('train', None)
+    stage_sources(model, split, prepared, x)
+    model._advance_when_time()
+    model._snapshot_sentence_codes()
     model._start_spaces_for_forward()
     model._spaces_started_for_forward = True
     # Eager stem: lex (IS) -> embed (PS) -> finalize bookkeeping, so the
@@ -123,8 +132,8 @@ def stage_for_core(model, x):
 
 def forward_core(model, staged):
     """TENSOR-ONLY core: rebind ``staged`` into the parked stem shell and run
-    the SAME ``_forward_per_stage`` the normal forward uses (via the
-    ``in_sub_override`` hook). Returns the head prediction tensor (index 2).
+    the ordinary body and head. Return the prediction before the host-only
+    public symbol update, which cannot affect that prediction.
 
     The random IR mask (``create_ir_mask``'s BERT-style ``torch.bernoulli``
     hide-a-token) is DISABLED for the core: it is a training / ``infer()``
@@ -139,10 +148,20 @@ def forward_core(model, staged):
     _saved_mask_rate = model.mask_rate
     model.mask_rate = 0.0
     try:
-        out = model._forward_per_stage(None, in_sub_override=in_sub)
+        # The prediction uses the ordinary body and head. Public symbol
+        # publication follows the head and reads host-side identity records;
+        # it is not an input to this prediction-only export.
+        model.symbol_states = []
+        model._unified_j_iterations = 0
+        model.symbolic_state = model.wholeSpace.empty_state(batch=staged.shape[0]).to(staged.device)
+        body = model._forward_body(in_sub)
+        head = model._forward_head(body)
+        out = head.materialize() if head is not None else None
+        if out is not None and not model.outputSpace.concept_ids:
+            out = model.normalizer.denormalize(out, which='output')
     finally:
         model.mask_rate = _saved_mask_rate
-    return out[2] if out is not None else None
+    return out
 
 
 def _get_staged_input(m):
@@ -163,14 +182,30 @@ def _run_torch_export(m, staged):
     class ExportCore(torch.nn.Module):
         """``nn.Module`` whose ``forward`` IS ``forward_core(model, .)`` --
         torch 2.11's ``torch.export.export`` wants an ``nn.Module``, not a
-        bound method. Holds the model by reference (it owns every Parameter
-        the core reads; no re-registration)."""
+        bound method. Registers the model as a child so every parameter and
+        fixed context buffer read by the graph has an owning module."""
 
         def __init__(self, model):
             super().__init__()
-            object.__setattr__(self, "_model", model)
+            self._model = model
+            # The exported prediction has one staged input and the context
+            # captured at construction. Own every fixed-size STM seed as a
+            # buffer; each call works on copies, never mutating a lifted
+            # constant or carrying a previous graph invocation's chunks.
+            self._stm_seeds = []
+            for stream, space in enumerate(model.conceptualSpaces):
+                names = []
+                for name, value in space.stm.__dict__.items():
+                    if name.startswith('_live_') and torch.is_tensor(value):
+                        key = f'stm_{stream}_{name}'
+                        self.register_buffer(key, value.detach().clone())
+                        names.append((name, key))
+                self._stm_seeds.append(tuple(names))
 
         def forward(self, staged):
+            for space, names in zip(self._model.conceptualSpaces, self._stm_seeds):
+                for name, key in names:
+                    object.__setattr__(space.stm, name, getattr(self, key).clone())
             return forward_core(self._model, staged)
 
     print("[export_mlx] Phase 1 — torch.export.export ...", flush=True)

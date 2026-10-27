@@ -1,4 +1,5 @@
 """Redundancy certificates free seats without aliasing retired identities."""
+from order_fixtures import force_order
 import copy
 import warnings
 from types import SimpleNamespace
@@ -74,7 +75,13 @@ def test_two_empty_concepts_are_not_redundant():
 def test_unused_mints_are_reclaimed_by_magnitude_without_erasing_defined_or_referenced_concepts():
     cs = _cs(16)
     ids = [cs.new_concept() for _ in range(9)]
+    for cid in ids:
+        force_order(cs, cid, 0)
     rows = [cs._csw_concept_row(0, cid) for cid in ids]
+    # These are abandoned reservations, not retained order testimony. The
+    # fixture withdraws the setup witness before testing unused-seat reclaim.
+    for cid in ids:
+        cs._concept_allocator.reference_orders.pop(cid)
     large, small, referenced, defined, posted, edge_source, edge_target, feature, witnessed = ids
     layer = cs._concept_allocator.layer()
     for row in rows:
@@ -120,10 +127,10 @@ def test_different_order_or_definition_never_merges():
     cs = _cs(8)
     first, _ = concept(cs, magnitude=.1)
     second, _ = concept(cs, magnitude=.9)
-    cs._concept_allocator.reference_orders[second] = 1
+    force_order(cs, second, 1)
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs)['reclaimed'] == 0
-    cs._concept_allocator.reference_orders[second] = 0
+    force_order(cs, second, 0)
     cs.add_part(second, 11)
     with pytest.warns(RuntimeWarning, match='no safely redundant'):
         assert reclaim_concepts(cs)['reclaimed'] == 0
@@ -134,6 +141,7 @@ def test_exact_physical_preallocation_warns_even_for_external_handles():
     with warnings.catch_warnings(record=True) as seen:
         warnings.simplefilter('always')
         for index in range(4):
+            force_order(cs, 1000 + index, 0)
             assert cs._csw_concept_row(0, 1000 + index) == index
         warn_capacity(cs)
     assert sum('maximum preallocation' in str(w.message) for w in seen) == 1

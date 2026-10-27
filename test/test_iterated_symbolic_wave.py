@@ -4,6 +4,7 @@ import torch
 import Spaces
 from test_basicmodel import _populate_test_config
 from test_cs_sparse_weights import _evidence
+from order_fixtures import force_order
 
 _D = 8
 
@@ -37,6 +38,8 @@ def _rowp(cs, cid):
 
 def test_depth_d_sigma_path_completes_in_one_pass():
     cs = _cs(nS=64, order=3)
+    for order, cid in ((1, 100), (1, 101), (2, 102), (3, 103)):
+        force_order(cs, cid, order)
     rows = [cs._csw_concept_row(order, cid)
             for order, cid in ((1, 100), (1, 101), (2, 102), (3, 103))]
     for row, sources in zip(rows, ((0, 1), (2, 3), rows[:2], (rows[2],))):

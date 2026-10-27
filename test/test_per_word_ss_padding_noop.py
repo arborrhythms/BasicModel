@@ -1,8 +1,8 @@
 """Padding columns of the static per-word loop are no-ops.
 
-STM depth must increment exactly by the active-prefix length, not by N.
-The concept buffer at active positions must match the active-prefix-
-only run; positions past the active prefix must be zero.
+Real lexical deposits are counted, excluding host closing ticks. Padding
+never changes a chunk. The word-aligned symbolic handoff has zero presence
+and evidence outside the active prefix.
 
 Doc: doc/plans/2026-05-20-static-per-word-loop-impl.md §2.4-2.6.
 """
@@ -36,8 +36,7 @@ def _build_gate_model():
 
 @pytest.mark.slow
 def test_stm_depth_tracks_valid_len_not_N(monkeypatch):
-    """After one forward pass, STM depth (via host mirror) equals the
-    real-positions count, not N."""
+    """The active lexical leaves push; padded rows preserve every chunk field."""
     m = _build_gate_model()
     isp = m.inputSpace
     inp, _ = isp.getTrainData()
@@ -58,27 +57,28 @@ def test_stm_depth_tracks_valid_len_not_N(monkeypatch):
     original = ShortTermMemory.functional_push_step_masked
     pushes = []
     def observed(*args):
-        gate = args[7].reshape(-1).bool()
+        gate = args[2].reshape(-1).bool()
         pushes.append(gate.clone())
         result = original(*args)
         if bool((~gate).any()):
-            for before, after in zip(args, result):
+            for before, after in zip(args[0], result):
                 torch.testing.assert_close(after[~gate], before[~gate], rtol=0, atol=0)
         return result
     monkeypatch.setattr(ShortTermMemory, 'functional_push_step_masked', staticmethod(observed))
     m.forward(inputTensor)
     active = isp._word_active_mask
-    assert int(torch.stack(pushes).sum()) == int(active.sum())
+    # The current attention reader schedules lexical leaves and a separate
+    # closing tick. The closing marker and unselected entries are not pushes.
+    leaves = active & isp._ar_grammar_leaf_mask
+    assert int(torch.stack(pushes).sum()) == int(leaves.sum())
+    assert int(leaves.sum()) == 2  # the two words in this fixed input
     assert int(active.sum()) < active.numel()
 
 
 
 @pytest.mark.slow
 def test_concept_buf_zero_past_active_prefix():
-    """Per-iteration contributions are zero past the active prefix
-    (the gate-masked ``torch.where`` writes zeros for inactive rows).
-    After ``_forward_body_per_word``, the stacked event on the
-    ConceptualSpace subspace shows that pattern."""
+    """The current word-aligned handoff is empty at every padded position."""
     m = _build_gate_model()
     isp = m.inputSpace
     inp, _ = isp.getTrainData()
@@ -90,10 +90,14 @@ def test_concept_buf_zero_past_active_prefix():
     if not (0 < L < N):
         pytest.skip(f"input lacks padding columns (L={L}, N={N})")
     m._forward_body_per_word(in_sub)
-    cs_event = m.conceptualSpace.subspace.materialize()
-    if cs_event is None or cs_event.dim() != 3:
-        pytest.skip("CS event not materialized")
-    tail = cs_event[:, L:, :]
-    assert torch.all(tail == 0), (
-        f"CS event[{L}:] should be zero (padded with S→S "
-        f"no-ops); max abs value = {tail.abs().max().item()}")
+    # The full W-wide concept history retired; SymbolSpace now owns its
+    # word-aligned row/presence/evidence handoff, while STM owns the chunks.
+    symbol = m.symbolSpace
+    active = isp._word_active_mask
+    presence = symbol._word_reference_presences
+    evidence = symbol._word_reference_evidence
+    assert presence.shape[:2] == active.shape
+    assert bool((~active).any())
+    assert torch.all(presence[~active] == 0)
+    assert torch.all(evidence[~active] == 0)
+    assert torch.all(symbol._word_reference_rows[~active] == -1)

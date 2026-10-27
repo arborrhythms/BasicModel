@@ -45,7 +45,9 @@ def test_23_same_parts_after_property_change_write_nothing():
 def test_26_full_row_inventory_leaves_no_word_identity():
     from test_concept_capacity_policy import _cs
     cs = _cs(8)
+    from order_fixtures import force_order
     for row in range(8):
+        force_order(cs, 1000 + row, 0)
         assert cs._csw_concept_row(0, 1000 + row) == row
     before = snapshot(cs)
     try:

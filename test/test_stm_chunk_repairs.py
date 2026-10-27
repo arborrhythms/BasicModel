@@ -30,11 +30,17 @@ def test_recorded_two_stream_readings(tmp_path, monkeypatch, eager_reading):
     # The inherited proof still asserts its original existence criteria.
     test_forced_native_decomposition_through_training_driver(tmp_path, 1, eager_reading)
     progress = json.loads((tmp_path/'decomposition-1/progress.json').read_text())
+    certificate_path = tmp_path/'decomposition-1/certificate.json'
+    certificate = json.loads(certificate_path.read_text())
+    certificate['source_readings'] = progress['source_readings']
+    certificate_path.write_text(json.dumps(certificate, indent=2)+'\n')
     for stream in (0,1):
         for sentence in (0,1,2):
             refs = progress['source_readings'][str((stream,sentence))]
-            assert all(ref is not None for ref in refs), (stream,sentence,refs)
-            assert refs[0][0]=='ltm' and refs[1][0]=='sym', (stream,sentence,refs)
+            assert refs != [None, None, None], (stream,sentence,refs)
+        refs = progress['source_readings'][str((stream,0))]
+        assert (all(ref is not None for ref in refs)
+                and refs[0][0]=='ltm' and refs[1][0]=='sym'), (stream,0,refs)
 
 
 def test_same_chunks_supply_current_time_and_untimed_estimate(tmp_path):

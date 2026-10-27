@@ -18,7 +18,7 @@ def scope():
 def choice(rules, name, *, unary=False, position=0):
     return SimpleNamespace(kind=torch.tensor([2 if unary else 1]), position=torch.tensor([position]),
         local_op=torch.tensor([next(i for i, r in enumerate(rules) if r.method_name == name)]),
-        applied=torch.tensor([True]))
+        applied=torch.tensor([True]), stack_arity=torch.tensor([1 if unary else 2]))
 
 
 def test_13_relative_clause_pushes_a_scoped_reference_and_taints_its_enclosing_s():
@@ -62,22 +62,32 @@ def test_clause_scope_is_fullgraph_and_keeps_other_batch_rows():
         torch.testing.assert_close(left, right, rtol=0, atol=0)
 
 
-def test_committed_close_dissolves_stm_and_keeps_only_the_output_field():
+def test_committed_close_keeps_recent_chunks_beside_the_output_field():
     from Models import BasicModel
     from test_clause_storage import idea_clause, part_clause
     buffer = torch.randn(2, 8, 4)
     stm = (buffer, torch.ones(2, dtype=torch.long),
            torch.zeros(2, 8, dtype=torch.long), torch.zeros(2, 8, dtype=torch.long),
            torch.full((2, 8), -1, dtype=torch.long), torch.ones(2, 8))
+    from chunk_fixtures import from_stack
+    import STMChunks as chunks
+    stm = from_stack(*stm)
     lang = [torch.zeros(2)] * 19
     lang[6] = torch.zeros(2, 1, 4)
     lang[10] = torch.zeros(2, 1, 12)
     lang[11] = torch.ones(2, 1, dtype=torch.long)
     lang[17] = torch.zeros(2, 8, 2, dtype=torch.long)
     idea, relation = idea_clause(), part_clause()
-    state = BasicModel._clause_end_state((stm, tuple(lang), ()), 0, (idea, relation), (10, 11))
+    from Layers import LTM0
+    store = LTM0(4, capacity=16)
+    owner = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store))
+    state = BasicModel._clause_end_state(owner, (stm, tuple(lang), ()), 0, (idea, relation), (10, 11))
     assert state[0][1].tolist() == [0, 0]
-    assert not state[0][0].any() and not state[0][5].any()
+    assert state[0][chunks.STACK].eq(-1).all()
+    assert state[0][chunks.READ][:, 0].gt(0).all()
+    torch.testing.assert_close(state[0][0][0, 0], idea.point)
+    torch.testing.assert_close(state[0][0][1, 0], buffer[1, 0])
+    assert not state[0][0][:, 1:].any()
     assert state[0][4].eq(-1).all()
     torch.testing.assert_close(state[1][10][0, 0, :4], idea.point)
     torch.testing.assert_close(state[1][10][1, 0].reshape(3,4), relation.meaning.roles[[2, 0, 1]])

@@ -20,7 +20,7 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
     # Arbitrary, distinct prior distributions expose a wrong occurrence gather.
     # The same word occurs twice; its second occurrence is not another word type.
     for word, argument in zip((101, 102, 103), parts.arguments):
-        parts.add(word, argument)
+        parts.add(word, argument, parts.order_of(word))
     initial = {word: counts.copy() for word, counts in parts.counts.items()}
     word_ids = torch.tensor([101, 102, 102, 103])
     actions = ((0, -1, 0), (0, -1, 1), (0, -1, 2),
@@ -32,7 +32,7 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
 
     choices = tuple(None if kind == 0 else SimpleNamespace(
         applied=torch.tensor([True]), kind=torch.tensor([kind]),
-        local_op=torch.tensor([local]), position=torch.tensor([position]))
+        local_op=torch.tensor([local]), position=torch.tensor([position]), stack_arity=None)
         for kind, local, position in actions)
 
     def carry(probabilities):
@@ -61,10 +61,8 @@ def test_repeated_occurrences_keep_direct_counts_through_unary_and_clause(compil
 
     parts.observe_kept(program, binary, unary)
     delta = {word: parts.counts[word] - initial[word] for word in initial}
-    assert delta[101] == Counter(compound_argin1=1)
-    assert delta[102] == Counter(intersection_argin1=1, intersection_argin2=1,
-        intersection_argout1=2, compound_argin2=2, compound_argout1=2,
-        compound_unary_argin1=2, compound_unary_argout1=2, lift_argin1=2)
-    assert delta[103] == Counter(lift_argin2=1)
+    assert delta[101] == Counter({('compound_argin1',-1):1})
+    assert delta[102] == Counter({('intersection_argin1',-1):1, ('intersection_argin2',-1):1, ('intersection_argout1',-1):2, ('compound_argin2',-1):2, ('compound_argout1',-1):2, ('compound_unary_argin1',-1):2, ('compound_unary_argout1',-1):2, ('lift_argin1',-1):2})
+    assert delta[103] == Counter({('lift_argin2',-1):1})
     # Clause completion clears both occurrences before the final unary call.
     assert observed[-2:].count_nonzero() == 0

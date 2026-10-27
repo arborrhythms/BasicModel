@@ -1,4 +1,5 @@
 """Cover-segment recurrence, pool lifetime and retained identity promotion."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 from types import SimpleNamespace
@@ -34,6 +35,7 @@ def kept(resolver, clause, frames=(), *, document='consolidation', position=0, s
 
 def native(owner, point):
     symbol = owner.new_concept()
+    force_order(owner, symbol, 0)
     with torch.no_grad():
         owner.similarity_codebook.W[owner._csw_concept_row(0, symbol)].copy_(point)
     return symbol

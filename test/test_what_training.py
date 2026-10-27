@@ -212,8 +212,10 @@ def _build_synth(path):
     return m.to("cpu")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def synth_model(synth_config_path):
+    # Both callers train: each needs the recorded initialization, independent
+    # of whether the curriculum case ran before the untrained causal check.
     return _build_synth(synth_config_path)
 
 
@@ -252,7 +254,8 @@ def test_temporal_question_content_is_causally_used(synth_model):
     untrained_swapped = answer_loss(swapped, u0, desired_for=straight)
     assert abs(untrained_straight - untrained_swapped) < 1e-6
 
-    for _ in range(40):
+    from slow_budget import slow_count
+    for _ in range(slow_count(40)):
         m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=straight)
@@ -406,7 +409,8 @@ def test_joint_training_keeps_both_primary_costs_in_band(synth_config_path):
     batch = _same_input_two_questions(m)
     questions = (What.supervised(0), What.supervised(1))
     history = []
-    for _ in range(30):
+    from slow_budget import slow_count
+    for _ in range(slow_count(30, minimum=10)):
         m.begin_presentation()
         m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                    batch_override=batch, questions=questions)
@@ -467,7 +471,8 @@ def test_supplied_text_answer_quality_improves_with_training(synth_discourse_con
     try:
         before = _surface_answer_cost(m, batch, questions)
         assert before > 0.0
-        for _ in range(30):
+        from slow_budget import slow_count
+        for _ in range(slow_count(30)):
             m.begin_presentation()
             m.runBatch(train=True, batchSize=2, split="train", optimizer=opt,
                        batch_override=batch, questions=questions)

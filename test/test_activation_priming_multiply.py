@@ -28,7 +28,9 @@ def _tiny_grammar():
 
 def _tiny_view():
     from embed import build_knowledge_section, KnowledgeView
-    return KnowledgeView(build_knowledge_section(_tiny_grammar()))
+    view = KnowledgeView(build_knowledge_section(_tiny_grammar()))
+    assert all('order_delta' not in sig for sig in view.rule_order_signatures)
+    return view
 
 
 def _bare_word_space(batch=1):

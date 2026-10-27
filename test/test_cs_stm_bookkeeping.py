@@ -123,91 +123,28 @@ class TestCSForwardMutatesSTM(unittest.TestCase):
 
 
 class TestSTMShiftAtCapacity(unittest.TestCase):
-    """Pushing beyond Miller cap shifts the oldest idea out. Under the
-    newest-at-slot-0 convention the new idea goes to slot 0 and the window
-    rolls RIGHT (STM[1..7] := STM[0..6]); the oldest (the last occupied
-    slot) drops. After cap+1 pushes the OLDEST live idea (peek(n=cap-1))
-    is the SECOND-pushed one (the first having rolled off), and the newest
-    (peek(n=0)) is the just-pushed idea. The assertions below use peek
-    (convention-agnostic by semantics), not raw slot indices."""
+    """The bounded chunk field protects every live stack operand."""
 
-    def test_shift_drops_oldest(self):
+    def test_all_stack_chunks_refuse_shift_and_preserve_every_operand(self):
         model = _make_plain_model()
-        cs = model.conceptualSpace
-        # Use a small unit dim for clarity: build dummy PS subspaces
-        # directly with synthetic events that are distinguishable
-        # per push (so we can identify which one ended up where).
-        import Spaces
-        # Use the actual CS-attached subspace dim to avoid shape errors.
-        # The bookkeeping push goes via cs.stm.push, which takes
-        # whatever the materialised PS event width is.
-        ps = model.perceptualSpace
-        loader = model.inputSpace.data.data_loader(
-            split="train", num_streams=1)
-        inp_items, _ = next(iter(loader))
-        x_input = model.inputSpace.prepInput(inp_items)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore")
-            with torch.no_grad():
-                in_sub, _ = model.inputSpace.forward(x_input)
-                ps_sub = ps.forward(in_sub)
-                ps_ev = ps_sub.materialize()
-                # Reduce to a per-batch row-0 vector we can rebuild as
-                # an 8-step push sequence with distinctive marker values
-                # so we can identify slot occupancy after the shift.
-                B = int(ps_ev.shape[0])
-                D = int(ps_ev.shape[-1])
-                cs.stm.ensure_batch(B)
-                cs.stm.clear()
-                cap = int(cs.stm.capacity)
-                # Push ``cap`` distinguishable ideas: idea k is a vector
-                # of all ``float(k+1)`` so the slot-occupancy check
-                # is direct.
-                for k in range(cap):
-                    marker = torch.full(
-                        (D,), float(k + 1),
-                        dtype=ps_ev.dtype, device=ps_ev.device)
-                    # Mutate the existing PS subspace event to carry this
-                    # synthetic idea, then push it through cs.forward.
-                    # We use [B, 1, D] to keep the 3-D event shape that
-                    # cs.forward expects via materialize().
-                    synth = marker.view(1, 1, D).expand(B, 1, D).clone()
-                    ps_sub.set_event(synth)
-                    cs.forward(ps_sub)
-                # After cap pushes, depth is cap (no shift yet — the
-                # buffer is full but no extra push has overflowed).
-                # Now push one more: this is the (cap+1)-th idea and
-                # must trigger the shift.
-                marker = torch.full(
-                    (D,), float(cap + 1),
-                    dtype=ps_ev.dtype, device=ps_ev.device)
-                synth = marker.view(1, 1, D).expand(B, 1, D).clone()
-                ps_sub.set_event(synth)
-                cs.forward(ps_sub)
-                # After the shift: the OLDEST live idea (peek at
-                # n=cap-1) should be the second-pushed one (marker == 2.0;
-                # the first rolled off). The most recent (peek(b, 0))
-                # should be the just-pushed idea (marker == cap+1). These
-                # peek-based checks are convention-agnostic by semantics.
-                oldest = cs.stm.peek(0, n=cap - 1)
-                top = cs.stm.peek(0, n=0)
-        self.assertIsNotNone(oldest, "STM oldest live slot must be populated.")
-        self.assertIsNotNone(top, "STM top slot must be populated.")
-        # The actual stored idea is the materialised PS event (which
-        # cs.forward shapes / wraps but does not magnify); the
-        # all-equal-value marker should survive intact: oldest live == 2.0
-        # and newest == cap+1.
-        self.assertAlmostEqual(
-            float(oldest[0].item()), 2.0, places=3,
-            msg=f"STM oldest live idea must be the SECOND-pushed one after "
-            f"cap+1 pushes (first shifted out); got marker "
-            f"{float(oldest[0].item())}.")
-        self.assertAlmostEqual(
-            float(top[0].item()), float(cap + 1), places=3,
-            msg=f"STM top slot must hold the most recently pushed "
-            f"idea (marker {cap + 1}); got {float(top[0].item())}.")
-
-
+        try:
+            stm = model.conceptualSpace.stm
+            stm.ensure_batch(1)
+            stm.clear()
+            for k in range(stm.capacity):
+                stm.push(0, torch.full((stm.concept_dim,), float(k+1)))
+            before = tuple(value.clone() for value in stm.state)
+            self.assertEqual(stm.size(0), stm.capacity)
+            with self.assertRaisesRegex(RuntimeError, 'all chunks are on the stack'):
+                stm.push(0, torch.full((stm.concept_dim,), float(stm.capacity+1)))
+            for original, retained in zip(before, stm.state):
+                torch.testing.assert_close(retained, original, atol=0, rtol=0)
+            for position in range(stm.capacity):
+                torch.testing.assert_close(stm.peek(0, position),
+                    torch.full((stm.concept_dim,), float(stm.capacity-position)), atol=0, rtol=0)
+        finally:
+            model.End()
+            model.symbolSpace.soft_reset()
 
 
 class TestCSForwardArity(unittest.TestCase):

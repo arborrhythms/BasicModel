@@ -174,6 +174,8 @@ def force_absolute_reading(model):
         indices = kwargs.get('op_indices')
         if kwargs.get('op_offset') == layer.r_reduce + layer.r_apply:
             return stop, scores  # supplied grammar does not force attention
+        if not unary_names:
+            return stop, scores  # No grammar unary; global thought indices still exist.
         mask = torch.tensor([name in ('not', 'non') for name in unary_names], device=scores.device, dtype=torch.bool)
         if indices is not None:
             mask = mask.index_select(0, indices.clamp(0, len(unary_names) - 1))

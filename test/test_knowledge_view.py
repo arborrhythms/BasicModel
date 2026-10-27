@@ -9,6 +9,8 @@ etc., without each Space re-implementing the lookup logic.
 import sys
 from pathlib import Path
 
+import pytest
+
 _project = Path(__file__).resolve().parent.parent
 _wo_root = _project.parent
 sys.path.insert(0, str(_wo_root / "bin"))
@@ -94,6 +96,7 @@ def test_knowledge_view_rule_order_signatures():
     sigs = view.rule_order_signatures
     assert isinstance(sigs, list)
     assert len(sigs) == 2
+    assert all('order_delta' not in sig for sig in sigs)
     assert sigs[0]['op_name'] == 'lift'
     assert sigs[1]['op_name'] == 'lower'
 
@@ -182,6 +185,34 @@ def test_load_knowledge_view_missing_section_raises(tmp_path):
         load_knowledge_view(path)
 
 
+@pytest.mark.parametrize('version', [None, 1, 3])
+def test_knowledge_grammar_version_rejects_without_migration(tmp_path, version):
+    """Only the current grammar schema can be saved, loaded or viewed."""
+    import torch
+    from embed import KnowledgeView, load_artifact, save_artifact
+    knowledge = _tiny_knowledge_section()
+    grammar = knowledge['grammar']
+    if version is None:
+        del grammar['version']
+    else:
+        grammar['version'] = version
+    for sig in grammar['rule_order_signatures']:
+        sig['order_delta'] = 0  # The retired field must never be migrated.
+    path = tmp_path / 'old.kv'
+    torch.save({'format_version': 1, 'kind': 'knowledge',
+                'knowledge': knowledge}, path)
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match='knowledge grammar version'):
+        load_artifact(str(path))
+    assert path.read_bytes() == before
+    with pytest.raises(ValueError, match='knowledge grammar version'):
+        KnowledgeView(knowledge)
+    target = tmp_path / 'copy.kv'
+    with pytest.raises(ValueError, match='knowledge grammar version'):
+        save_artifact(str(target), knowledge=knowledge)
+    assert not target.exists()
+
+
 # -- Typed admissibility --------------------------------------------
 # `is_rule_admissible(sig, left_cat, left_order, right_cat=None,
 # right_order=None) -> bool` decides whether a rule signature can fire
@@ -190,7 +221,7 @@ def test_load_knowledge_view_missing_section_raises(tmp_path):
 
 
 def _make_sig(lhs_category, lhs_order, rhs_categories, rhs_orders,
-              op_name, order_delta):
+              op_name):
     """Construct a serialized RuleOrderSignature dict shape (matches
     what ``grammar_signatures_to_serializable`` emits)."""
     return {
@@ -199,7 +230,6 @@ def _make_sig(lhs_category, lhs_order, rhs_categories, rhs_orders,
         'rhs_categories': list(rhs_categories),
         'rhs_orders':    list(rhs_orders),
         'op_name':       op_name,
-        'order_delta':   order_delta,
     }
 
 
@@ -207,7 +237,7 @@ def test_admissible_binary_exact_match():
     """Rule ``S4 = lift(NP3, VP1)`` is admissible for operands
     (NP at order 3, VP at order 1)."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1)
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,
         right_cat='VP', right_order=1) is True
@@ -216,7 +246,7 @@ def test_admissible_binary_exact_match():
 def test_inadmissible_binary_category_mismatch():
     """Left category mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1)
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
     assert is_rule_admissible(
         sig, left_cat='DET', left_order=3,
         right_cat='VP', right_order=1) is False
@@ -225,7 +255,7 @@ def test_inadmissible_binary_category_mismatch():
 def test_inadmissible_binary_order_mismatch():
     """Left order mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1)
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=2,  # rule wants 3
         right_cat='VP', right_order=1) is False
@@ -234,7 +264,7 @@ def test_inadmissible_binary_order_mismatch():
 def test_inadmissible_right_category_mismatch():
     """Right category mismatch → not admissible."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1)
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3,
         right_cat='AP', right_order=1) is False
@@ -243,7 +273,7 @@ def test_inadmissible_right_category_mismatch():
 def test_inadmissible_arity_mismatch():
     """Binary rule fed only a left operand → not admissible (arity wrong)."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1)
+    sig = _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift')
     assert is_rule_admissible(
         sig, left_cat='NP', left_order=3) is False
 
@@ -251,7 +281,7 @@ def test_inadmissible_arity_mismatch():
 def test_admissible_unary():
     """Unary rule ``S3 = not(S3)`` matches a single S-at-3 operand."""
     from embed import is_rule_admissible
-    sig = _make_sig('S', 3, ('S',), (3,), 'not', 0)
+    sig = _make_sig('S', 3, ('S',), (3,), 'not')
     assert is_rule_admissible(
         sig, left_cat='S', left_order=3) is True
     # But binary call shape is wrong for a unary rule.
@@ -263,7 +293,7 @@ def test_admissible_unary():
 def test_admissible_lower_with_consistent_orders():
     """``NP3 = lower(DET, NP4)`` admissible for (DET@0, NP@4)."""
     from embed import is_rule_admissible
-    sig = _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower', -1)
+    sig = _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower')
     assert is_rule_admissible(
         sig, left_cat='DET', left_order=0,
         right_cat='NP', right_order=4) is True
@@ -273,7 +303,7 @@ def test_inadmissible_lower_against_lower_order_noun():
     """``NP3 = lower(DET, NP4)`` cannot fire on (DET@0, NP@3) — the
     operand NP is order 3, not the rule's required 4."""
     from embed import is_rule_admissible
-    sig = _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower', -1)
+    sig = _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower')
     assert is_rule_admissible(
         sig, left_cat='DET', left_order=0,
         right_cat='NP', right_order=3) is False
@@ -289,9 +319,9 @@ def _three_rule_list():
     """Three serialized rule signatures: lift, lower, and an
     ordinary not-rule."""
     return [
-        _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift', +1),
-        _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower', -1),
-        _make_sig('S', 3, ('S',), (3,), 'not', 0),
+        _make_sig('S', 4, ('NP', 'VP'), (3, 1), 'lift'),
+        _make_sig('NP', 3, ('DET', 'NP'), (0, 4), 'lower'),
+        _make_sig('S', 3, ('S',), (3,), 'not'),
     ]
 
 

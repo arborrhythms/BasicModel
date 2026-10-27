@@ -481,11 +481,10 @@ class Grammar:
          'clause_form', 'head_role', 'surface_name', 'predicate_identity',
          'operand_kinds', 'effect_writes', 'relation_kind', 'scope_transparent',
          'polarity_effect', 'same_reference_idempotent',
-         'effect_reads', 'field_eligible', 'order_delta', 'case_head_role',
+         'effect_reads', 'field_eligible', 'case_head_role',
          'footprint_reads', 'footprint_writes', 'determiner_mode', 'substrate', 'mandatory', 'semantic_operand'],
     )
-    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0,
-                                  None, None, (), (), None, False, None, False, (), False, 0, 0, (), (), None, False, False, None)
+    RuleDef.__new__.__defaults__ = (0, 0, False, None, None, (), (), None, 0, None, None, (), (), None, False, None, False, (), False, 0, (), (), None, False, False, None)
 
     @staticmethod
     def _declared_rule(rule):
@@ -498,7 +497,7 @@ class Grammar:
         implementation = implementation or {'pi': PiLayer, 'sigma': SigmaLayer}.get(rule.method_name, GrammarLayer)
         fields = ('clause_form', 'head_role', 'relation_kind', 'scope_transparent',
                   'polarity_effect', 'same_reference_idempotent',
-                  'predicate_identity', 'field_eligible', 'order_delta', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory', 'semantic_operand')
+                  'predicate_identity', 'field_eligible', 'case_head_role', 'determiner_mode', 'reference_modes', 'substrate', 'mandatory', 'semantic_operand')
         from Queries import THOUGHT_EXECUTORS
         from AccessibleMind import OperatorEffects, OperatorFootprint
         descriptor = THOUGHT_EXECUTORS.get(rule.method_name)
@@ -624,13 +623,13 @@ class Grammar:
     ParsedCategory = _namedtuple('ParsedCategory', ['name', 'order'])
 
     # Per-rule order signature derived from the rule's parsed categories
-    # plus its op name. ``order_delta``: +1 for ``lift``, -1 for ``lower``,
-    # 0 for every other op (order-preserving by default).
+    # plus its operation name. Semantic order is read from the denoted
+    # concepts by ReferenceContext.denoted_order, never from a rule delta.
     RuleOrderSignature = _namedtuple(
         'RuleOrderSignature',
         ['lhs_category', 'lhs_order_expr',
          'rhs_categories', 'rhs_order_exprs',
-         'op_name', 'order_delta'],
+         'op_name'],
     )
 
     def __init__(self):
@@ -1331,8 +1330,6 @@ class Grammar:
                     if attributes['referent'] not in ('mint', 'bind', 'kind'):
                         raise ValueError('referent must declare mint, bind or kind')
                     rule = rule._replace(determiner_mode=attributes['referent'])
-                    if attributes['referent'] == 'kind':
-                        rule = rule._replace(order_delta=0)
                 if 'relation' in attributes:
                     if attributes['relation'] not in ('part', 'whole', 'equal', 'implies', 'operator'):
                         raise ValueError('relation requires a declared row relation')
@@ -1579,20 +1576,19 @@ class Grammar:
 
         Parses ``rule.lhs`` and each ``rule.rhs_symbols`` token through
         ``_parse_category`` to extract category names + ``OrderExpr``s.
-        ``order_delta`` is +1 for ``lift``, -1 for ``lower``, 0 otherwise.
+        Categories describe grammar positions; denoted_order reads concept
+        orders, including predication and selection of a kind member.
         """
         lhs_parsed = Grammar._parse_category(rule.lhs)
         rhs_parsed = tuple(
             Grammar._parse_category(s) for s in (rule.rhs_symbols or ()))
         op = rule.method_name
-        delta = rule.order_delta
         return Grammar.RuleOrderSignature(
             lhs_category=lhs_parsed.name,
             lhs_order_expr=lhs_parsed.order,
             rhs_categories=tuple(p.name for p in rhs_parsed),
             rhs_order_exprs=tuple(p.order for p in rhs_parsed),
             op_name=op,
-            order_delta=delta,
         )
 
     # No static validation of ``RuleOrderSignature`` at grammar-load time:
@@ -2967,7 +2963,6 @@ class LiftLayer(GrammarLayer):
     ``gate`` optionally selects a lexical low-rank slice; grammar theory lives
     in ``doc/Language.md``.
     """
-    order_delta = 0
     head_role = 2
     inverse_kind = 'fold'
     rule_name  = "lift"
@@ -3428,7 +3423,6 @@ class VerbLayer(LiftLayer):
     use does not reverse the grammatical head and object roles.
     """
     head_role = 1
-    order_delta = 0
     inverse_kind = 'gain'
     witness_inverse = 'unapply_verb'
     clause_form = 'VP'
@@ -3483,7 +3477,6 @@ class VerbLayer(LiftLayer):
 
 class AdverbLayer(LiftLayer):
     """Multiplicative modifier, exactly invertible given its adverb operand."""
-    order_delta = 0
     inverse_kind = 'gain'
     witness_inverse = 'unapply_adverb'
     clause_form = None
@@ -3526,7 +3519,6 @@ class LowerLayer(GrammarLayer):
     Reference proposal selects an earlier address for bind, or leaves a fresh
     description for the kept closing to mint. No structural face writes LTM.
     """
-    order_delta = -1
     inverse_kind = 'right'
     head_role = 2
     meaning_head_role = 1
@@ -3753,7 +3745,6 @@ class LowerUnaryLayer(MarkerUnaryLayer):
     marker_base = 'lower'
     rule_name = 'lower_unary'
     predicate_identity = 'lower'
-    order_delta = -1
     determiner_mode = 'mint'
     reference_modes = (('argin1', 'particular'),)
 
@@ -9743,50 +9734,6 @@ class SymbolSubSpace(SubSpace):
     # ``ConceptualSpace`` invokes these via
     # ``ss.push(...)`` / ``ss.pop(b)`` / ``ss.top(b)`` etc.
 
-    def conceptualize(self, order, part=None, whole=None,
-                      word_parts=None, word_whole=None, key=None, parts=None):
-        """Form a concept on the ConceptualSpace symbol tables (Alec 2026-06-21).
-
-        A concept is a FLEXIBLE combination of two percepts; this is the unified
-        dispatch over the three orders (doc/old/2026-06-21-higher-order-symbolic-
-        composition.md sections 2b / 4b / 4c). The SS subspace owns this method;
-        the CS owns the ``_sym_*`` relation tables it mutates -- the duality
-        (``CS.forward`` processes ``SS.subspace``). Host-side; the caller runs it
-        in the eager island (``symbol_tower`` relaxes fullgraph).
-
-          order 0 -> ``[part, whole]``      : ``relate(part, whole)`` -- one
-                     part-percept tied to one whole-percept (constituents carry
-                     ``.where`` / ``.when``).
-          order 1 -> ``[object isa word]``  : ``interpret.forward(word)`` after lookup of ``word_parts,
-                     word_whole, key)`` -> ``(A=word, B=object, C=meta)``; the
-                     constituents' ``.where`` / ``.when`` = 0 (abstract).
-          order 2 -> higher-order object    : ``synthesize_higher_order(parts)`` --
-                     collapse the over-collected many into one superset.
-
-
-        Constituents are stored BY REFERENCE (codebook index, or ``('sym', id)``
-        for sub-symbols) -- never duplicate codes (section 4c). Letters/bytes are
-        snapped to the percept codebook by the caller; other data is referenced by
-        its ``.where`` boundary, unsnapped. Returns the concept id (order 0/2) or
-        the ``(A, B, C)`` triple (order 1), or ``None`` on missing inputs.
-        """
-        cs = getattr(self, 'conceptualSpace', None)
-        if cs is None:
-            return None
-        if order == 0:
-            if part is None or whole is None:
-                return None
-            return cs.relate(part, whole)
-        if order == 1:
-            if word_parts is None or word_whole is None:
-                return None
-            return cs.interpret_word(word_parts, word_whole, key=key)
-        if order == 2:
-            if not parts:
-                return None
-            return cs.synthesize_higher_order(parts)
-        return None
-
     def _commit_priming(self, b, ref_id):
         """Gated forward-commit heat update for a single committed ref.
 
@@ -12438,7 +12385,8 @@ class LanguageSpace(nn.Module):
         self.register_buffer('_free_transient_ids', torch.full((int(TheXMLConfig.space(
             'ConceptualSpace', 'mtmCapacity', default=64)),), -1, dtype=torch.long), persistent=False)
         from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
-        self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
+        self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward),
+            getattr(symbol_space.subspace, 'conceptualSpace', None))
         self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)
         self._occupation_unary_flow = tuple(flow_mask(rule) for rule in self._compose_unary_rules)
         if self._compose_binary_rules or self._compose_unary_rules:
@@ -12756,6 +12704,12 @@ class LanguageSpace(nn.Module):
         n = min(2, K)
         window_depth = depth.clamp(0, n)
         source = (window_depth[:, None] - 1 - torch.arange(n, device=buffer.device)[None, :]).clamp_min(0)
+        from ReferenceContext import OrderReference
+        from ChunkJournal import TIMELINE
+        window_timelines = (torch.zeros_like(source, dtype=torch.bool) if reference_scope is None or reference_scope.shape[-1] <= TIMELINE
+                            else reference_scope[..., TIMELINE].gather(1, source) > 0)
+        window_ids = state[4].gather(1, source)
+        denotations = tuple(OrderReference(window_ids[:, i], window_timelines[:, i]) for i in range(n))
         window = buffer.gather(1, source[..., None].expand(B, n, D))
         physical = STMChunks.stack_indices(chunks).gather(1,source)
         _, window = STMChunks.refresh(chunks,physical,
@@ -12824,7 +12778,10 @@ class LanguageSpace(nn.Module):
                                      torch.maximum(spans[:, :-1, 1], spans[:, 1:, 1])), -1)
             stamps = state[2].gather(1, source)
             form_context = {1: (*whole, (stamps,)),
-                            2: (*form_bank.read(pair_span), (stamps[:, :-1], stamps[:, 1:]))}
+                            2: (*form_bank.read(pair_span), (stamps[:, :-1], stamps[:, 1:])),
+                            'references': {1: (OrderReference(window_ids, window_timelines),),
+                                2: (OrderReference(window_ids[:, :-1], window_timelines[:, :-1]),
+                                    OrderReference(window_ids[:, 1:], window_timelines[:, 1:]))}}
             structural_context = replace(structural_context, form_context=form_context)
         if structural_context is not None and reference_scope is not None and reference_scope.shape[-1] > 2:
             from dataclasses import replace
@@ -12870,17 +12827,17 @@ class LanguageSpace(nn.Module):
             lesson.record(lesson_slot, window,
                 dict(arguments, what_ctx=getattr(layer, '_what_context', None)), route)
         position = (window_depth - 1 - route['position']).clamp_min(0)
-        from ReferenceContext import result_order
+        from ReferenceContext import denoted_order
         window_orders = state[2].gather(1, source)
         selected_order = state[2].gather(1, position[:, None]).squeeze(1)
-        def selected_stamp(rules, operands):
-            stamps = [result_order(rule, operands) for rule in rules]
+        def selected_stamp(rules, operands, identities=()):
+            stamps = [denoted_order(rule, operands, identities, None) for rule in rules]
             fallback = torch.stack(operands, -1)
             fallback = torch.where((fallback >= 0).all(-1), fallback.amax(-1), -1)
             table = torch.stack(stamps, -1) if stamps else fallback[:, None]
             return table.gather(1, route['op'].clamp(0, table.shape[1]-1)[:, None]).squeeze(1)
         binary_order = selected_stamp(getattr(self, '_compose_binary_rules', ()),
-            (window_orders[:, 0], window_orders[:, min(1, n-1)]))
+            (window_orders[:, 0], window_orders[:, min(1, n-1)]), denotations)
         unary_order = selected_stamp(getattr(self, '_compose_unary_rules', ()), (selected_order,))
         output_order = torch.where(route['kind'] == 1, binary_order, unary_order)
         choice = LanguageOperationChoice(
@@ -12893,8 +12850,11 @@ class LanguageSpace(nn.Module):
                 .gather(1, route['action'].clamp_min(0)[:, None]).squeeze(1), 0.),
             route['proposal_inverse'], output_order, route.get('identity'))
         binding = route.get('bind',torch.zeros_like(choice.applied))
+        bound_chunk = route.get('chunk', torch.full_like(position, -1))
+        bound_order = STMChunks.gather(chunks[STMChunks.ORDERS], bound_chunk.clamp_min(0)[:, None])[:, 0]
+        bound_order = torch.where(bound_chunk >= 0, bound_order, state[2][:, 0])
         choice = choice._replace(position=torch.where(binding,0,choice.position),
-            order=torch.where(binding,state[2][:,0],choice.order),
+            order=torch.where(binding,bound_order,choice.order),
             stack_arity=torch.where(binding,1,2), chunk=route.get('chunk'))
         if reference_scope is not None and reference_scope.shape[-1] > 2:
             choice = self.chunk_journal.choice(reference_scope,choice)

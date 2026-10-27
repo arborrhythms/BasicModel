@@ -1,33 +1,9 @@
-"""Isolated unit tests for InputSpace's per-word ground-truth cursor.
+"""InputSpace's word cursor returns staged inputs and stops at their boundary.
 
-The cursor (``InputSpace.next_word``) was authored NET-NEW (PATH 2,
-owner-ratified) as a pure ground-truth word feed for the future
-IR-reconstruction loop. It is NOT the retired ``arir_step`` AR machine:
-there is ZERO AR-prediction (no get_recovered_word, no reconstruction
-feedback, no [MASK], no model-predicted EOF). The stop is the input's
-NULL/end-of-valid-lexed-content sentinel.
-
-Increment 2a WIRED the enable predicate: ``create_from_config`` sets
-``InputSpace._per_word_enabled = (model.useGrammar != 'none')`` (the
-retired serial-boolean push, extended to InputSpace). ``useGrammar`` is
-*derived* from the grammar XML by ``_derive_use_grammar`` -- it is
-``'all'`` (so the flag is True) for any config carrying a real
-non-substrate rule (e.g. MM_20M's ``intersection``/``union``, or the
-default-only ``not(S)`` NOOP-grammar fallback that every empty-grammar
-config inherits), and ``'none'`` (flag False) ONLY for the default-only
-unary ``sigma``/``pi`` grammar -- which is exactly ``data/model.xml``'s
-shipped default grammar. ``next_word`` is still the sole reader of the
-flag and has ZERO production callers, so the wiring is byte-identical in
-the live whole-slab ``forward`` path even where the flag is True (the
-production contract asserted below).
-
-The model-free tests below force the flag True/False *locally* on a
-hand-seeded ``_ar_embedded`` buffer and prove the cursor logic in
-isolation. The two model-level tests pin the WIRED design end to end:
-the grammar-enabled gate model (MM_20M) has the flag True and a working
-cursor, the non-grammar model (default-only sigma/pi -> ``model.xml``)
-has it False and a dormant cursor -- with the whole-slab ``forward``
-byte-identical regardless.
+The construction-time cursor flag mirrors ``model.word_brackets``, derived
+from the native word/object carrier. The model-free cases check exact slices,
+valid length and disabled behavior. The isolated model probes check both
+sides of that construction contract without sharing grammar singletons.
 """
 import os
 
@@ -230,7 +206,7 @@ def test_nongrammar_config_disables_cursor_and_next_word_is_none():
 
 def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
     """Build ``config_rel`` in a clean subprocess and return
-    ``(useGrammar, _per_word_enabled)``.
+    ``(useGrammar, word_brackets, _per_word_enabled)``.
 
     The grammar / XML-config singletons (``TheGrammar._configured``,
     ``TheXMLConfig``) are process-wide and ``init_config`` does NOT
@@ -263,7 +239,7 @@ def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
         f"TheData.load({dataset}, dat={dat_inline})\n"
         "m,_=BaseModel.from_config(cfg, data=TheData)\n"
         "print('RESULT', repr(m.useGrammar), "
-        "m.inputSpace._per_word_enabled)\n"
+        "bool(m.word_brackets), m.inputSpace._per_word_enabled)\n"
     )
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
@@ -277,36 +253,26 @@ def _probe_flag_in_subprocess(config_rel, dataset, dat_inline="None"):
     line = [ln for ln in proc.stdout.splitlines()
             if ln.startswith("RESULT ")]
     assert line, f"no RESULT line in:\n{proc.stdout}"
-    _, ug_repr, flag = line[-1].split(maxsplit=2)
-    return ug_repr.strip("'\""), flag.strip() == "True"
+    _, ug_repr, brackets, flag = line[-1].split(maxsplit=3)
+    return ug_repr.strip("'\""), brackets == "True", flag.strip() == "True"
 
 
 @pytest.mark.skipif(
     os.getenv("RUN_SLOW") != "1",
-    reason="slow: builds MM_20M over the full text corpus in a subprocess "
-           "(can exceed the 180s subprocess timeout); set RUN_SLOW=1")
-def test_per_word_enabled_predicate_tracks_use_grammar():
-    """Gate-2 predicate correctness (skipped by the prior increment):
-    the 2a wiring ``_per_word_enabled = (model.useGrammar != 'none')``
-    is True for a grammar-enabled config (MM_20M: ``useGrammar='all'``)
-    and False for a non-grammar config (``model.xml``: default-only
-    unary sigma/pi -> ``useGrammar='none'``). Pins the predicate on
-    BOTH sides of the only branch that distinguishes them (each model
-    built in its own process; the grammar singleton forbids building
-    two different configs in one interpreter)."""
-    ug_g, flag_g = _probe_flag_in_subprocess(
-        "MM_20M_xor.xml", dataset="'text'")
-    assert ug_g != "none", f"MM_20M must be grammar-enabled, got {ug_g!r}"
-    assert flag_g is True, (
-        "grammar-enabled config => _per_word_enabled True")
+    reason="slow: builds native and dense models in separate subprocesses; set RUN_SLOW=1")
+def test_per_word_enabled_predicate_tracks_word_objects():
+    """The cursor flag exactly mirrors native word-bracket availability."""
+    ug_g, brackets_g, flag_g = _probe_flag_in_subprocess(
+        "MM_ladder.xml", dataset="'math'")
+    assert ug_g != "none", f"native fixture must include grammar, got {ug_g!r}"
+    assert brackets_g is True
+    assert flag_g is True, "native word objects enable the word cursor"
 
-    ug_n, flag_n = _probe_flag_in_subprocess(
+    ug_n, brackets_n, flag_n = _probe_flag_in_subprocess(
         "model.xml", dataset="'xor'")
-    assert ug_n == "none", (
-        f"model.xml default-only sigma/pi must derive 'none', got {ug_n!r}")
-    assert flag_n is False, (
-        "non-grammar config => _per_word_enabled False")
+    assert ug_n == "none", f"dense fixture has no grammar, got {ug_n!r}"
+    assert brackets_n is False
+    assert flag_n is False, "no native word objects leaves the cursor disabled"
 
-    # The flag is EXACTLY the wired predicate on each model.
-    assert flag_g is (ug_g != "none")
-    assert flag_n is (ug_n != "none")
+    assert flag_g is brackets_g
+    assert flag_n is brackets_n

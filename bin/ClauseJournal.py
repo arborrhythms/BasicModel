@@ -23,7 +23,7 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     if program is None:
         raise ValueError('cannot finish a reading that is not open')
     from Language import TheGrammar
-    from ReferenceContext import binding_spec, operation_modes, result_order
+    from ReferenceContext import binding_spec, operation_modes, denoted_order, OrderReference
     orders = program.leaf_orders
     if program.reference_orders is not None:
         orders = (program.reference_orders if orders is None else
@@ -77,6 +77,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             known = selected > 0
             minimum = torch.where(known, selected, torch.inf).amin(0)
             pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+        # A closed field has a percept point even when a leaf concept is
+        # unwitnessed; only this field schema coerces its absent order to 0.
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
         return dict(order=order, evidence=pair)
     # Each node owns the exact grammar action and its live operands.
@@ -204,7 +206,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     operand['has_point'] = (operand['has_point']
                         and reference_has_point(reference, True))
         parent = dict(value=frames[action, 2], composed_value=frames[action, 2], local=local, ref=-1,
-                          order=result_order(catalog[local], tuple(child['order'] for child in operands)),
+                          order=denoted_order(catalog[local], tuple(child['order'] for child in operands),
+                              tuple(OrderReference(child['ref'], child.get('timeline', False)) for child in operands), None),
                           rule=catalog[local], children=operands,
                           operand_refs=None if selected_refs is None else tuple(selected_refs),
                           leaves=tuple(i for child in operands for i in child['leaves']),
@@ -374,6 +377,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                 reference=reference,
                 operation=None if rule is None else rule.method_name,
                 head_role=0 if rule is None else getattr(rule, 'head_role', 0),
+                # The occurrence itself is an order-0 percept if its source
+                # concept remains unknown; no allocator record is assigned.
                 order=max(0, int(current.get('mint_order', current['order']))),
                 leaves=current['leaves'],
                 word_id=subject_word_id(current) if not current['children'] else -1,
@@ -767,28 +772,11 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             described = replace(described, bindings=dict(bindings(described), _withheld_symbols=tuple(withheld)))
         evidence = metadata(root['leaves'])
         def node_order(item):
-            # Deep sentence folds must not depend on Python's recursion limit.
-            pending = [(item, False)]
-            orders = {}
-            while pending:
-                part, ready = pending.pop()
-                if not part['children']:
-                    orders[id(part)] = metadata(part['leaves'])['order']
-                    continue
-                if not ready:
-                    pending.append((part, True))
-                    pending.extend((child, False) for child in part['children'])
-                    continue
-                if part.get('timeline_order'):
-                    orders[id(part)] = max(0, part['order'])
-                    continue
-                rule = part['rule']
-                role = 1 if getattr(rule, 'clause_form', None) == 'S' else getattr(rule, 'head_role', 0)
-                value = (orders[id(part['children'][role - 1])] if role else
-                         max(orders[id(child)] for child in part['children']))
-                orders[id(part)] = (determined_order(part) if
-                    getattr(rule, 'determiner_mode', None) in ('mint', 'bind') else value)
-            return orders[id(item)]
+            # The journal node already read denoted_order (or the native
+            # timeline capture). Do not reconstruct a second stamp from heads.
+            # A completed point with an unknown source is a percept at zero;
+            # this schema coercion never writes an allocator order.
+            return max(0, int(item['order']))
         evidence['order'] = node_order(root)
         formations = tuple(dict(formation, role=role) for role, item in enumerate(role_nodes)
             if item is not None and (formation := item.get('formation') or head(item).get('formation')) is not None)

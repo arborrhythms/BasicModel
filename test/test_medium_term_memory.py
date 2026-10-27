@@ -1,4 +1,5 @@
 """MTM retains chosen bindings, while interpretation and trials stay read-only."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 from dataclasses import replace
 import pytest
@@ -138,6 +139,7 @@ def test_reclosed_occurrence_survives_eviction_of_its_previous_token(reclose):
     owner = resolver.components.owner
     pool = owner.mtm = MediumTermMemory(2)
     kind = owner.new_concept()
+    force_order(owner, kind, 0)
     seat = owner._csw_concept_row(0, kind)
     with torch.no_grad():
         owner.similarity_codebook.W[seat].copy_(a[0])

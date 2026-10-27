@@ -63,13 +63,18 @@ from A while retaining its output training. Repair source
 finishes **1,490 passed, one failed, eight standing skips**, plus the smoke
 ([spec §§18–19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#18-asked-rows-alone-contribute-to-the-keep-comparison--codex-2026-10-25),
 [repair receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
-Gates 1–5 and both decomposition arms pass; companions are **6/8**, with
-different failed questions from step 3. Gate 6 remains not met: the unchanged
-two-stream premise-completeness assertion fails on stream 0, sentence 2,
-kept by reconstruction alone. No learning-side disposition is approved;
-item 0's accepted step 3 flag stays separate. Alec requests committing and
-pushing the completed repair on main. Step 4 review, step 5 and the one
-end-of-3.0 sweep remain.
+Step 4 is approved as a mechanism round in
+[§20](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#20-claudes-review-of-the-repair-source-acac0b3448--2026-10-26-approved-as-mechanism-one-port-for-alec).
+The approved two-stream port closes gate 6: all premise readings are nonempty
+and both first premises are full; its file and both decomposition arms pass
+6/6, with companions 6/8 ([§21 and receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)).
+**Step 5, orders learned**, is approved in [orders §19](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#19-claudes-review-of-step-5-source-c4a1d92e3f--2026-10-26-approved-one-fix-before-the-sweep) on final
+source `c4a1d92e3fc27decc669322a507b362dd615556e89041331fe1259116584ab95`:
+1,647 passed, ten existing prerequisite skips, zero failures, plus the native
+smoke; companions remain 6/8. The failed first freeze is retained separately.
+[Spec §18](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#18-final-scoped-measurement-and-review-hand-off--codex-2026-10-26),
+[receipt](doc/benchmarks/2026-10-26-item3-0-orders/README.md).
+**Item 3.0 LANDED — 2026-10-26**, approved in [orders spec §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried). The landing names step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. The [serializer receipt](doc/benchmarks/2026-10-26-item3-0-serializer/README.md) and [sweep receipt](doc/benchmarks/2026-10-26-item3-0-sweep/README.md), including repair-01, repair-03 and repair-04-slow-budget, remain local and gitignored. The complete default sweep retains 6,386 passes, 324 skips and one permitted XPASS; final model repair retains its smoke, 1,812 scoped passes and ten standing skips. The ten budget-policy checks and reduced stability replay pass. Companions remain 6/8; no complete passing slow sweep is claimed. No new test round accompanies landing.
 [Handoff](doc/plans/2026-10-24-handoff-3-0.md).
 
 **Historical step 1b review ledger (superseded by Current).**
@@ -218,13 +223,14 @@ step 2, placement, is approved in §21 and committed
 The closing replay moves the 6/8 companion residual to item 0; the decided
 estimate now has zero time and consumes no tick. Closing source
 `cd49a1e845` passes 1,113 cases with seven standing skips; both regressions, the unported clock test and the percept certificate pass ([receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
-Step 4's §17 repair source `acac0b3448` finishes **1,490 passes, one failure
-and eight standing skips** ([spec §19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#19-repair-measurements-and-commit-instruction--codex-2026-10-25),
-[receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
-The new comparison regression and both decomposition arms pass; companions
-are 6/8. Gate 6's two-stream premise-completeness failure remains for review.
-Alec requests the combined steps 1–4 commit and pushes on main. Step 5 and
-the end-of-item sweep remain.
+Step 4 is approved in §20, and its approved two-stream port closes gate 6
+with 6/6 scoped passes and companions 6/8
+([receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)).
+**Step 5, orders learned**, is approved in orders §19 on `c4a1d92e3f`:
+1,647 passed, ten existing skips, zero failures, plus the smoke; companions 6/8
+([spec §18](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#18-final-scoped-measurement-and-review-hand-off--codex-2026-10-26),
+[receipt](doc/benchmarks/2026-10-26-item3-0-orders/README.md)).
+**Item 3.0 LANDED — 2026-10-26**, approved in [orders spec §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried). The landing names step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. The [serializer receipt](doc/benchmarks/2026-10-26-item3-0-serializer/README.md) and [sweep receipt](doc/benchmarks/2026-10-26-item3-0-sweep/README.md), including repair-01, repair-03 and repair-04-slow-budget, remain local and gitignored.
 3.5 landed 2026-10-24 at BasicModel `75345f891e`. *3.5's record:* it ran on main after
 Item 4 publication, in the order [Alec's first-pass plan](doc/plans/2026-10-19-item4-start.md#next-on-codexs-plate-after-item-4-lands-item-35-first-pass-alec-2026-10-19)
 gives: bind as thought; LTM1/LTM3 and the row amendment; stage 4e and NP
@@ -1037,9 +1043,56 @@ not by a passing identity lesson.
    Not here: dimensional `lift`/`lower` (FutureWork); the 6.5, 6.2 and 6.1
    learning gates and 9's and 8's empirical evidence (item 0). Exit: the
    list above empty, each line with a receipt hash or a written move.
+- **3.4. Priming as location-based diffusion in the one conceptual space.**
+   *Decided (Alec, 2026-10-26; [spec §§1–8](doc/plans/2026-10-26-priming-location-diffusion.md)).*
+   Successor to Orders §9's stratified surface, which §10 withdrew. The
+   placed meaning codes are the network: `Priming.propagate` applies the
+   dot-product kernel to the stream's active rows once per sentence in the
+   pre-composition `prime_seen` (decay, bump, propagate), stored and
+   conservative; receivers within an adaptive radius, at most
+   `geometricNeighbours`; class rows placed at the membership-weighted
+   centroid of their members, valid while contiguous within that radius;
+   `_priming_seen` ledger for placement; `diffuse`, `geometric` and
+   `primingSpread` retire, `part_edges` stays as the membership cache. One
+   round: smoke, freeze, the §5 gates as §8 amends them, ports, the five
+   scoped groups. Codex text when Alec calls it. Exit: the gates green on
+   one hash, Architecture's priming guard reworded to the ledger.
+- **3.3. Order-0 concepts strictly sorted over the perceptual mereology:
+   two subspaces, one call.** *Decided (Alec, 2026-10-26;
+   [FutureWork](doc/FutureWork.md), the "Decided (Alec, 2026-10-26): two
+   subspaces, sorted per subspace, one call" block under the sorting item).*
+   The percept width splits at construction into an identity subspace
+   (`WordIdentity`'s pair and length coordinates) and a property subspace;
+   identity sorts by atom containment, property by extension over bytes
+   (subtype smaller); location selects the set, never codes; a part's
+   property subspace is the meet of the types over its bytes, a type's
+   identity subspace is one; the concept form is the join of its parts and
+   the meet of its types; `Ops.partOf` over the whole code is the one call;
+   the interval rule and `_interval`'s upper bound retire. One round: the
+   layout split, the form rule, the certificate (tower 0 as respecified,
+   tower 1 subtype pairs, cross-level at-most relations, nested order-0
+   concepts strictly sorted; `containment_audit` becomes that check) and
+   the context-wholes form ports. Independent of 3.4. Exit: the certificate
+   green on one hash.
+- **3.2. Thinking: derivation over chunks with trust, and `intuit`.**
+   *Spec to write (Claude) after Alec's eight decisions, from the
+   [exploration notes](doc/plans/2026-10-26-thought-design-notes.md) and the
+   [`intuit` spec](doc/plans/2026-10-21-intuit.md) §5, whose leaf-index
+   scan and `Mind.SERIAL` dependency are amended by step 1 and 3.4.*
+   The serial slot becomes the episode's focus chunk among the shared
+   eight; `descend`/`return` follow tagged LTM1 references; operators
+   `infer`, `refute`, `substitute` beside the catalogue; `intuit` proposes
+   into chunks, the serial path confirms; trust computed along the path
+   (minimum, maximum, lane exchange), learned only at the leaves; weak and
+   strong forcing; the implicit route, pervasion over an object's parts and
+   wholes in order-0 space, judged together with the explicit chain
+   (notes §9). Rounds sized at spec time. Runs before item 3's corpus so the
+   STM change lands before the long run. Exit: the spec's gates green and
+   one thought episode's records replaying a derivation with its pair.
 - **3. Corpus at target size.** *Moved from FutureWork (Alec,
    2026-10-21):* **orders are learned, not written into the grammar**
    (design record below).
+   **Carried from the item 3.0 landing (2026-10-26; [orders §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried)):** certify the 1-to-2 raise on unforced text, “Felix is a cat. Ciao is a cat.”, measuring the shared word's object and both members without `force_order`; §70 records the current readers only.
    Alec: "we need not create an ordered grammar, because we have the
    rule that raises order." Parts of speech stay order-free.
    - **The definition: IS and its raise.** An equality writes an LTM1
@@ -1142,16 +1195,16 @@ not by a passing identity lesson.
      standing prerequisite skips and zero test failures**, plus the smoke
      ([§§28–29](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25),
      [closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md)).
-     Prior failed and approved results remain separate. Step 4's rejected
-     `44ea10180c` is repaired at `acac0b3448`: **1,490 passes, one failure,
-     eight standing skips**, plus the smoke ([spec §19](doc/plans/2026-10-25-item3-0-step4-retire-mode.md#19-repair-measurements-and-commit-instruction--codex-2026-10-25),
-     [receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md)).
-     Silence still trains output but contributes no sentence-comparison A.
-     The new case and both decomposition arms pass; companions are 6/8.
-     Gate 6's two-stream premise-completeness failure is unchanged and awaits
-     review, separate from item 0's accepted step 3 flag. Alec requests the
-     combined steps 1–4 commit and pushes on main.
-     Step 4 review, step 5 and the end-of-item sweep remain.
+     Prior failed and approved results remain separate. Step 4's repair
+     `acac0b3448` is approved as a mechanism round in §20. The approved
+     two-stream port closes gate 6: the file and both decomposition arms
+     pass 6/6, companions 6/8 ([§21 receipt](doc/benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)).
+     **Step 5, orders learned**, is approved in orders §19 on `c4a1d92e3f`:
+     1,647 passed, ten existing skips, zero failures, plus the smoke;
+     companions remain 6/8
+     ([spec §18](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#18-final-scoped-measurement-and-review-hand-off--codex-2026-10-26),
+     [receipt](doc/benchmarks/2026-10-26-item3-0-orders/README.md)).
+     **Item 3.0 LANDED — 2026-10-26**, approved in [orders spec §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried). The landing names step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. The [serializer receipt](doc/benchmarks/2026-10-26-item3-0-serializer/README.md) and [sweep receipt](doc/benchmarks/2026-10-26-item3-0-sweep/README.md), including repair-01, repair-03 and repair-04-slow-budget, remain local and gitignored.
      [Spec](doc/plans/2026-10-23-layout-and-removal.md);
      decisions in [step-2 spec §§70–72](doc/plans/2026-10-21-step2-one-ltm.md#71-decided-alec-2026-10-23-ideas-in-ltm0-binary-chains-in-ltm1-no-sentence-row).
      *Decided later the same day (Alec; in the spec):* every mental event
@@ -1598,7 +1651,9 @@ not by a passing identity lesson.
 - **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
    `RUN_SLOW` (item 3, moved from 3.5 on 2026-10-21) is the compiler test at scale — compiled and eager
    runs of the identical corpus, seed and budget agree in actions,
-   probabilities, costs and parameter updates. *Added 2026-10-04:* the open read of 6.8-1 made the
+   probabilities, costs and parameter updates.
+   **Carried from the item 3.0 landing (2026-10-26; [orders §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried)):** four runtime failure groups: `test/test_objective_conflicts_slow.py::test_native_production_objective_measurements` at the 28 GiB guard, with the remaining allocation unattributed after the Householder and candidate-context repairs; `test/test_testpoint.py::TestGPUDevicePlacement::test_model_on_gpu` at its 120 s deadline; `TestServerQueries::test_demo_queries`, `::test_response_format` and `::test_response_length_bounded` in `test/test_testpoint.py` at their 30 s request deadlines; and `test/test_math_thinking_training.py::test_successor_is_learned_as_a_verb`, `test/test_reconstruction_roundtrip.py::test_grammar_output_loss_not_silent_zero` and `::test_mm20m_grammar_free_derivation_roundtrip` at their 45-minute caps with half work. Retain all failed attempts in the [sweep ledger](doc/benchmarks/2026-10-26-item3-0-sweep/repair-04-slow-budget/slow-resolution.md); these are runtime failures, separate from item 0's learning records.
+   *Added 2026-10-04:* the open read of 6.8-1 made the
    whole forward 2.6× slower (.141 s against .055 s on the XOR fixture;
    [profile](doc/benchmarks/2026-10-03-operators-attention/attention-profile-review/measurement.json));
    Alec: "the slowdown will have to be addressed." *2026-10-09:* the
@@ -1689,6 +1744,81 @@ not by a passing identity lesson.
    substituting the standing existence proof for companion accuracy
    ([replay and closing receipt](doc/benchmarks/2026-10-25-item3-0-stm-chunks/closeout/README.md),
    [decision and diagnosis](doc/plans/2026-10-25-item3-0-step3-stm-chunks.md#28-closing-replay-the-companion-residual-is-learning-side--codex-2026-10-25)).
+
+   **Slow-budget note (Alec, 2026-10-26):** the entries below retain their
+   measured historical budgets. Optional RUN_SLOW repeated work now defaults
+   to half; `RUN_SLOW_FRACTION=1` restores the full budgets for a like-for-like
+   replay ([policy and separate results](doc/benchmarks/2026-10-26-item3-0-sweep/repair-04-slow-budget/README.md)).
+   No earlier result is relabeled as a half-budget measurement. The companions'
+   512/768 work budgets and one-shot contracts are unchanged; runtime stops
+   remain separate from learning failures.
+
+   **Item 3.0 landing — 2026-10-26:** [orders spec §69](doc/plans/2026-10-26-item3-0-step5-orders-learned.md#69-claudes-review-of-the-serializer-round-and-the-item-30-sweep-test-freeze-ee7ca4e920bc-model-6fe273d2f12a7--2026-10-26-approved-for-landing-three-items-carried) approves step 5 `c4a1d92e3f`, serializer `caece43fc0`, sweep repair `03fbbf2a7d9c`, final model repair `6fe273d2f12a7`, and test budgets `ee7ca4e920bc`. The learning records stay at item 0 at their listed budgets; the four runtime failure groups move to item 1 as named below; the unforced 1-to-2 raise certificate for “Felix is a cat. Ciao is a cat.” moves to item 3's corpus round. Learning claims use `RUN_SLOW_FRACTION=1`; a half-work result states its work. No RUN_SLOW before November at the earliest.
+
+   **Item 3.0 sweep learning remainder:** blind `MM_20M_xor` reconstruction
+   is 0.0 exact match after **160 epochs**, seed **3145616037**, in the
+   initial slow sweep on `caece43fc0`. The repair slow run on `03fbbf2a7d9c`
+   also records **0.0 exact match at 160 epochs**, seed **3510236551**.
+   Location recovery is 0.0625 and 0.125 respectively; these are separate
+   fresh initializations, not a learning improvement claim. The assertion
+   stays unchanged; retain both original-budget records with the 6/8 companions for item 0
+   ([both raw benchmark records](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/blind-learning-records.json),
+   [initial failed-run record](doc/benchmarks/2026-10-26-item3-0-sweep/run-01/test_all/failures.md)).
+
+   The separate scaffold exact-reconstruction gate also records **0.0 exact
+   match at 160 epochs**, seed **1506395199**, with location recovery **1/3**
+   on `03fbbf2a7d9c`. Its original 1.0 assertion remains, and its 160-epoch record stays at item 0
+   ([raw record](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/reconstruction-learning-records.json));
+   it is separate from the blind measurements above.
+
+   The two ordinary generation-gradient variants also remain learning-side:
+   one requested two-stream batch at learning rate .001, 48 trips per output
+   walk, zero emitted concepts and zero conditioner gradient on the recorded
+   initializations. The detailed replay chooses `not` / `null` and reaches
+   no emitting continuation. Keep both nonzero-gradient assertions unchanged
+   for item 0 ([walks and budgets](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/generation-learning-records.json),
+   orders spec §30); no forced choice or additional training was supplied.
+
+   Three native answer-gradient variants also have a zero conditioner gradient
+   after one requested two-row batch at .001 and 48 trips. The recorded replay
+   emits one unconditioned role, leaving the conditioned role pending; it keeps
+   the strict assertions and original budgets for item 0
+   ([trace](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/native-conditioner-learning-records.json),
+   orders spec §§39–40). The fourth native variant passes after its form-credit
+   and kept-field observer port on the original initialization; it is not
+   another zero-total-gradient result.
+
+   The full slow sweep's fresh decomposition initialization also retains a
+   two-step proof failure: 0/2 final bindings at **571/768 work**, reproduced
+   on both `03fbbf2a7d9c` and pre-repair `caece43fc0`; the one-step case is
+   2/2 at **246/512**. Keep the strict proof and saved states for item 0
+   ([comparison](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/decomposition-learning-records.json),
+   orders spec §32). This is separate from the passing original-snapshot
+   arms and their 6/8 companions. The existing expected arithmetic learning
+   gates also remain below .9: direct arithmetic **.3125/.1290 at 40 epochs**,
+   dependency chains **.5234/.1953 at 30 epochs** (train/test;
+   [records](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/arithmetic-learning-records.json)).
+   Serial supervised output reaches **.78125 best accuracy at 40 epochs**,
+   learning rate .001, batch 8, after the completed-field observer port;
+   the original 1.0 bar remains ([record](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/output-learning-record.json)).
+   The cold-boundary corpus reaches its unchanged learning assertion after
+   the equality-close repair: both boundary weights stay **-4.0 at six
+   epochs**, batch 4, 48 rows, learning rate .001, boundary rate 40/update
+   interval 16 ([record](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/boundary-learning-record.json)).
+
+   The supplied neighboring-sentence answer gate also remains open: on the
+   frozen sweep source `03fbbf2a7d9c`, the future-label arm's surface error is
+   **.0860481 before and .0965504 after 30 updates**, batch 2, learning rate
+   .001. Its original 10% improvement bar, answer masks and gradient checks
+   remain unchanged ([record](doc/benchmarks/2026-10-26-item3-0-sweep/repair-01/what-learning-records.json)). The past-label
+   arm records **.0799439251 → .0799437165** at the same budget against the
+   unchanged 10% improvement bar; its masks and gradient checks also pass.
+
+   The supplementary three-epoch XOR reconstruction draw (seed 1646304963)
+   records 0 exact match against the unchanged .5 bar. A source comparison
+   at the original sweep's recorded seed 2197030207 reproduces its .5 exact
+   match and identical losses; neither record replaces the other or supplies
+   a selected acceptance seed ([record](doc/benchmarks/2026-10-26-item3-0-sweep/repair-03/supplementary-roundtrip-record.json)).
 
    **6.1's learning gates** also remain at item 0's checkpoint: supplied
    answers and asked parts; free reading in the lesson's order on permuted

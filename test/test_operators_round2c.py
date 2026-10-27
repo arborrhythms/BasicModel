@@ -138,6 +138,8 @@ def test_zero_meaning_departures_and_one_reader_step(config,walk,monkeypatch,eag
         assert model._sentence_comparison_reader_updates==1
         states=[optimizer.state[p]['step'] for p in model.objective_parameter_groups(optimizer)['output']
                 if p in optimizer.state and 'step' in optimizer.state[p]]
-        assert states and all(float(s)==1 for s in states)
+        # Compose trains once; the now-offered closing thought supplies its
+        # separate presented/comparison reader exposure at batch end.
+        assert states and all(float(s)==2 for s in states)
     finally:
         model.End();model.symbolSpace.soft_reset()

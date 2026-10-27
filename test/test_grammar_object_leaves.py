@@ -12,7 +12,7 @@ def test_grammar_resolves_each_word_to_its_full_object_code(tmp_path, monkeypatc
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     if configuration == 'aligned':
         from test_compiled_word_chunk import _tiny_canonical_model
-        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8')
+        model = _tiny_canonical_model(tmp_path, monkeypatch, word_buckets='8', batch_size=4)
         model.reconstruct_in_loop = False
         model._tensor_peer_while_eager = True
         model._chart_compose_per_word = lambda: None

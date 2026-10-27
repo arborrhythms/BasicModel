@@ -74,7 +74,7 @@ def tables(model, forms):
         concepts = [] if word < 0 else list(map(int,owner.definitions.objects(word)))
         individuals = [cid for cid in concepts if cid in owner.components.individual_ids]
         word_rows.append(dict(word=form, identity=word, part_of_speech=parts.part_of_speech(word),
-                              counts=dict(parts.counts.get(word,{})),observed=word in parts.counts))
+                              counts=[dict(argument=argument,order=order,count=count) for (argument,order),count in parts.counts.get(word,{}).items()],observed=word in parts.counts))
         noun_rows.append(dict(word=form, identity=word, concepts=concepts,
                               individual_columns=individuals, noun_prior=bool(individuals)))
     head_pairs,flow_pairs=set(),set()
@@ -94,12 +94,12 @@ def tables(model, forms):
                 head_pairs.add(frozenset((f'{name}_argin{role}',f'{name}_argout{output}')))
     collapse=parts.collapse()
     for row in collapse:
-        row['same_head_by_construction']=frozenset((row['left'],row['right'])) in head_pairs
-        row['flow_related_by_construction']=frozenset((row['left'],row['right'])) in flow_pairs|head_pairs
+        row['same_head_by_construction']=frozenset((row['left'][0],row['right'][0])) in head_pairs
+        row['flow_related_by_construction']=frozenset((row['left'][0],row['right'][0])) in flow_pairs|head_pairs
     modification_flow={}
     for name in ('intersection','product'):
         slots=tuple(f'{name}_{slot}' for slot in ('argin1','argin2','argout1'))
-        occupants={slot:{str(word):counts[slot] for word,counts in parts.counts.items() if counts.get(slot)} for slot in slots}
+        occupants={slot:{str(word):sum(count for (arg,order),count in counts.items() if arg==slot) for word,counts in parts.counts.items() if any(arg==slot for arg,order in counts)} for slot in slots}
         combined={word:sum(occupants[slot].get(word,0) for slot in slots[:2])
                   for word in set(occupants[slots[0]])|set(occupants[slots[1]])}
         modification_flow[name]=dict(occupants=occupants,combined_inputs=combined,

@@ -15,8 +15,8 @@ def test_part_without_supplied_evidence_stays_unverified():
 
 
 def test_prediction_and_observation_occurrences_cannot_certify_their_content():
-    description = ConceptualMeaning.from_description(torch.eye(6)[:3])
-    store = LTM0(6, capacity=8)
+    description = ConceptualMeaning.from_description(torch.eye(6)[:3].flatten())
+    store = LTM0(18, capacity=8, percept_width=0)
     for kind in ('estimate', 'observation', 'unverified'):
         store.append_meaning(description, kind=kind, trust=1)
     result = TruthGroundedReasoner(store=store).evaluate(QuerySpec.from_surface('exist', description))
@@ -24,14 +24,14 @@ def test_prediction_and_observation_occurrences_cannot_certify_their_content():
 
 
 def test_explicit_fact_admission_preserves_full_description_and_source():
-    description = ConceptualMeaning.from_payload(torch.eye(6)[:3], depth=3,
+    description = ConceptualMeaning.from_payload(torch.eye(6)[:3].flatten()[None], depth=1,
         layout='infix', scope={'where': ('sym', 5)})
-    store = LTM0(6, capacity=8)
+    store = LTM0(18, capacity=8, percept_width=0)
     row = store.append_meaning(description, kind='fact', trust=-.8)
     store.set_origin(row, store.ORIGIN_USER, text='named witness')
     reasoner = TruthGroundedReasoner(store=store)
     result = reasoner.evaluate(QuerySpec.from_surface('exist', description))
     assert result['support_false'] == pytest.approx(.8)
     assert result['candidates'][0]['text'] == 'named witness'
-    unscoped = ConceptualMeaning.from_description(torch.eye(6)[:3])
+    unscoped = ConceptualMeaning.from_description(torch.eye(6)[:3].flatten())
     assert reasoner.evaluate(QuerySpec.from_surface('exist', unscoped))['posture'] == UNKNOWN

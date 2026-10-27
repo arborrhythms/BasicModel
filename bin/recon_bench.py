@@ -247,7 +247,9 @@ def run_config(config, epochs, seed, out_dir, profile=False,
     model.set_sigma(0)
     model.train(False)
     with torch.no_grad():
-        model.runEpoch(batchSize=max(1, min(n, _MAX_EVAL_BATCH)),
+        # Evaluation shares the construction-sized STM stream slab.
+        streams = int(model._concept_owner().nStreams)
+        model.runEpoch(batchSize=max(1, min(n, _MAX_EVAL_BATCH, streams)),
                        split="test", max_batches=max_batches)
 
     # Gate 2b: blind (band-derived tiling) is the harness default; the

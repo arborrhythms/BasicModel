@@ -41,7 +41,7 @@ def test_derivation_inverse_recovers_composed_children_and_depends_on_the_root()
     # A four-leaf binary tree with a real invertible arithmetic kernel. Its
     # co-operands include compounds, without adding them to a word dictionary.
     class Language:
-        _compose_binary_rules = [SimpleNamespace(relation_kind=None)]
+        _compose_binary_rules = [SimpleNamespace(relation_kind=None, method_name='compose')]
         def _tree_layer(self, arity):
             return SimpleNamespace(ops=[SimpleNamespace(inverse_kind='residual')])
         def reverse_binary_step(self, parent, op, valid, reference, **kwargs):
@@ -99,7 +99,7 @@ def test_native_lesson_teaches_scorer_and_keeps_one_word_per_read(tmp_path,monke
 
 def test_lossy_derivation_has_no_inverse_or_search_and_reports_every_coordinate():
     class Language:
-        _compose_binary_rules = [SimpleNamespace(relation_kind=None)]
+        _compose_binary_rules = [SimpleNamespace(relation_kind=None, method_name='compose')]
         def _tree_layer(self, arity):
             return SimpleNamespace(ops=[SimpleNamespace(inverse_kind='search')])
         def reverse_binary_step(self, *args, **kwargs):
@@ -116,7 +116,7 @@ def test_lossy_derivation_has_no_inverse_or_search_and_reports_every_coordinate(
 
 def test_partial_product_inverse_keeps_defined_coordinates_and_root_gradient():
     class Language:
-        _compose_binary_rules = [SimpleNamespace(relation_kind=None)]
+        _compose_binary_rules = [SimpleNamespace(relation_kind=None, method_name='compose')]
         def _tree_layer(self, arity):
             return SimpleNamespace(ops=[SimpleNamespace(inverse_kind='product')])
         def reverse_binary_step(self, parent, op, valid, reference, **kwargs):
@@ -154,7 +154,12 @@ def test_native_four_word_inverse_follows_composed_children_without_free_decoder
         result=[' '.join(row) for row in words_from_leaves(recovered,torch.tensor([4,4]),record.primed)]
         assert result==texts
         assert not trial['unavailable'].any()
-        torch.testing.assert_close(recovered,record.word_values[:,:4],atol=1e-5,rtol=1e-5)
+        ops = model.languageSpace._tree_layer(2).ops
+        kernel = next(getattr(op, 'gl', op) for op in ops
+                      if getattr(getattr(op, 'gl', op), 'percept_band', None) is not None)
+        # Content inverses exclude occurrence coordinates; surface recovery stays exact.
+        torch.testing.assert_close(kernel.content_operand(recovered),
+            kernel.content_operand(record.word_values[:,:4]),atol=1e-5,rtol=1e-5)
     finally:model.End()
 
 

@@ -4,6 +4,7 @@ import torch
 import Spaces
 from Layers import RadixLayer
 from test_cs_sparse_weights import _cs
+from order_fixtures import force_order
 
 
 def test_first_witness_keeps_existing_parts(tmp_path):
@@ -38,6 +39,7 @@ def test_inventory_outlives_the_eight_attended_rows():
     definitions = []
     for n in range(12):
         cid = cs.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         assert row is not None, 'a field cap must not cap persistent definitions'
         cs.add_concept_feature(row, 'ps', 100 + n, 1.)
@@ -80,6 +82,7 @@ def test_bound_snapshot_and_checkpoint_keep_concept_ids():
     definitions = []
     for n in range(12):
         cid = cs.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         cs.add_concept_feature(row, 'ps', 100 + n, 1.)
         definitions.append((cid, row))
@@ -170,6 +173,7 @@ def test_batch_members_bind_independently_within_eight_rows():
     cids = []
     for n in range(12):
         cid = cs.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         cs.add_concept_feature(row, 'ps', 100 + n, 1.)
         cids.append(cid)
@@ -186,6 +190,8 @@ def test_batch_members_bind_independently_within_eight_rows():
 def test_unattended_concept_is_unknown_and_does_not_veto_observed_evidence():
     cs = _cs(nS=16, order=1)
     a, b, conjunction = [cs.new_concept() for _ in range(3)]
+    for cid in (a, b, conjunction):
+        force_order(cs, cid, 0)
     ar, br = [cs._csw_concept_row(0, cid) for cid in (a, b)]
     row = cs._csw_concept_row(0, conjunction)
     cs.add_concept_feature(ar, 'ps', 10, 1.)

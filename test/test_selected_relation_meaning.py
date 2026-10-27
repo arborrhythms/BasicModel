@@ -1,4 +1,5 @@
 """Owned compose actions preserve semantic operands lost by their folded root."""
+from order_fixtures import force_order
 from dataclasses import replace
 from types import MethodType, SimpleNamespace
 
@@ -322,6 +323,7 @@ def test_native_addresses_do_not_become_semantic_operand_values(monkeypatch):
     aliases = []
     for original in (a, b):
         reference = ("sym", cs.new_concept())
+        force_order(cs, reference[1], 0)
         row = cs._csw_concept_row(0, reference[1])
         with torch.no_grad():
             cs.similarity_codebook.getW()[row].copy_(_registry._payload(original))

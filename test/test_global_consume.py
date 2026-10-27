@@ -145,7 +145,7 @@ def test_zero_gate_matches_consume_off(monkeypatch):
     m.eval()
     consume = m.answer_attention.consume
     with torch.no_grad():
-        monkeypatch.setattr(m.answer_attention, 'consume', lambda symbols, content: symbols)
+        monkeypatch.setattr(m.answer_attention, 'consume', lambda symbols, content, **kwargs: symbols)
         out_off_flag = _generation_forward(m, x)[2].clone()
         monkeypatch.setattr(m.answer_attention, 'consume', consume)
         out_on_gate0 = _generation_forward(m, x)[2].clone()
@@ -224,7 +224,7 @@ def test_ltm_truthset_read_is_fed_to_the_answer():
     ps = m.perceptualSpace.forward(in_sub)
     D = int(ps.materialize().shape[-1])
     store = LTM0(D, capacity=8)
-    store.slots[:3] = torch.randn(3, 3, D)
+    store.slots[:3] = torch.randn(3, D)
     store.count = torch.tensor(3)
     object.__setattr__(m.symbolSpace, "ltm_store", store)
     prev = getattr(m, '_combine_last_cs_sub', None) or m.conceptualSpace.subspace

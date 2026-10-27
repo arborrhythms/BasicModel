@@ -1,3 +1,4 @@
+from order_fixtures import force_order
 from types import SimpleNamespace
 
 import torch
@@ -15,6 +16,7 @@ def test_sentence_boundary_writes_present_percepts_at_the_negative_pole():
     from PerceptProperties import PrimitiveProperties
     cs = _cs()
     cid = cs.new_concept()
+    force_order(cs, cid, 0)
     row = cs._csw_concept_row(0, cid)
     for part in (7, 8):
         cs.add_concept_feature(row, 'ps', part, 0.)

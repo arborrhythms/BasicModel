@@ -8,14 +8,18 @@ from Layers import LTM0
 from reasoning import QuerySpec, TruthGroundedReasoner, TRUE, UNKNOWN
 from test_thought_model_fixture import model_for
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 
 
 def _world():
     cs = _cs()
-    refs = tuple(('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
-                 for _ in range(3))
+    bases = tuple(cs.new_concept() for _ in range(3))
+    for base in bases:
+        force_order(cs, base, 0)
+    refs = tuple(('sym', cs.synthesize_higher_order([('sym', base)]))
+                 for base in bases)
     for ref in refs:
-        cs._csw_concept_row(0, ref[1])
+        cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
     cs._ltm_store = LTM0(8, capacity=16)
     return cs, refs, TruthGroundedReasoner(model_for(cs, cs._ltm_store),
                                           store=cs._ltm_store)
@@ -105,10 +109,13 @@ def test_actual_model_entry_and_checkpoint_keep_taxonomy_identity(tmp_path):
         source.reasoning_iterations = source.attention_budget = 128
         cs = source.conceptualSpace
         assert source.symbolSpace.ltm_store.parts is cs._concept_allocator.parts
-        a, b = (('sym', cs.synthesize_higher_order([('sym', cs.new_concept())]))
-                for _ in range(2))
+        bases = tuple(cs.new_concept() for _ in range(2))
+        for base in bases:
+            force_order(cs, base, 0)
+        a, b = (('sym', cs.synthesize_higher_order([('sym', base)]))
+                for base in bases)
         for ref in (a, b):
-            cs._csw_concept_row(0, ref[1])
+            cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
         relation = cs.reify_concept(a[1], b[1])
         spec = QuerySpec.from_surface("isPart", a, b)
         before = source.reason_about(spec, spaces=[])

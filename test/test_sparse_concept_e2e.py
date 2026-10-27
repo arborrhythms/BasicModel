@@ -86,6 +86,8 @@ def test_interpreted_object_keeps_the_native_features_in_one_row():
 
 def test_symbolic_order_does_not_admit_a_same_order_edge():
     cs = _cs_active(order=1)
+    from order_fixtures import force_order
+    for cid in (100, 101): force_order(cs, cid, 1)
     target = cs._csw_concept_row(1, 100)
     source = cs._csw_concept_row(1, 101)
     with pytest.raises(ValueError, match='preceding order'):
@@ -106,7 +108,9 @@ def test_population_inactive_is_noop():
 
 def test_order_block_overflow_is_safe():
     cs = _cs_active(nS=8, order=3)                     # order 0 cap = 4
-    rows = [cs._csw_concept_row(0, c) for c in range(6)]
+    from order_fixtures import force_order
+    for cid in range(100, 106): force_order(cs, cid, 0)
+    rows = [cs._csw_concept_row(0, c) for c in range(100, 106)]
     assert rows[:4] == [0, 1, 2, 3]                    # fills the block
     assert rows[4] is None and rows[5] is None         # overflow -> None (safe)
 
@@ -226,6 +230,8 @@ def test_csw_weights_update_under_optimizer_step():
     """Edge values train under the optimizer (dual-towers rev 2: grads reach
     the store only through ALLOCATED+selected rung rows -- mint first)."""
     cs = _cs_active(nS=16, order=1)                    # taper caps (8, 4)
+    from order_fixtures import force_order
+    for cid in (101, 102): force_order(cs, cid, 1)
     r1 = cs._csw_concept_row(1, 101)                   # allocated -> selected
     r2 = cs._csw_concept_row(1, 102)
     cs.add_concept_edge(r1, 0, weight=0.5)

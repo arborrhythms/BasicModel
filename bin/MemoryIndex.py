@@ -74,7 +74,7 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
             constituents=constituents, constituent_valid=constituent_valid,
             constituent_families=constituent_families,
             terminal_valid=(None if candidate_orders is None else
-                            (candidate_orders <= current_order)[None]))
+                            ((candidate_orders >= 0) & (candidate_orders <= current_order))[None]))
         determined = {}
         if candidate_orders is not None:
             # A higher-order noun may share its point with a particular.
@@ -85,7 +85,7 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
                 candidate_basis, candidate_orders, binding=current_binding)
             distance = (candidate_basis - top).norm(dim=-1)
             terminal = ((distance <= 1e-4 * max(1., float(top.norm())))
-                        & (candidate_orders <= current_order)).any()
+                        & ((candidate_orders >= 0) & (candidate_orders <= current_order))).any()
             legal[:, -1] &= terminal
             if determined and not bool(terminal):
                 legal.zero_()
@@ -112,7 +112,7 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
             # Terminal words can only name currently active symbols.
             distance = (candidate_basis.detach().to(top) - top).norm(dim=-1)
             if order_of is not None:
-                eligible = distance.new_tensor([order_of(int(code)) <= current_order
+                eligible = distance.new_tensor([0 <= order_of(int(code)) <= current_order
                                                  for code in candidates], dtype=torch.bool)
                 distance = distance.masked_fill(~eligible, torch.inf)
             value, row = distance.min(0)

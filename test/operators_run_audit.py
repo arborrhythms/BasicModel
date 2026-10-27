@@ -23,14 +23,19 @@ def native_parameters(model):
 def storage_snapshot(model):
     store=model.symbolSpace.ltm_store
     n=len(store)
-    sentences=torch.arange(n, device=store.address_keys.device)
+    # Only the arrival entry carries time; estimates and operand ideas have
+    # zero stamps. This includes a kept cover without asserting evidence for it.
+    stamps = [store.entry_when(row).detach().cpu().tolist() for row in range(n)]
+    sentences=torch.tensor([row for row, stamp in enumerate(stamps) if any(stamp)],
+                           dtype=torch.long, device=store.address_keys.device)
     return dict(rows_used=n, capacity=store.capacity, sentence_rows=len(sentences),
+        row_kinds=[store.KINDS[int(k)] for k in store.record_kind[:n]],
         definition_rows=0,
         addresses=store.address_keys[sentences].detach().cpu().tolist(),
         sentence_indices=store.sentence_index[sentences].detach().cpu().tolist(),
         content_keys=[store.content_key(int(row)).hex() for row in sentences],
         witness_counts=store.witness_count[sentences].detach().cpu().tolist(),
-        when=torch.stack([store.entry_when(int(row)) for row in sentences]).detach().cpu().tolist(),
+        when=[stamps[int(row)] for row in sentences],
         all_witness_counts=store.witness_count[:n].detach().cpu().tolist())
 
 
@@ -99,6 +104,7 @@ def geometry(model, record):
 def observe_run():
     from Models import BasicModel, BaseModel
     from util import TheXMLConfig
+    import SentenceCredit
     result=dict(reader_weights=[],comparison_reader_weights=[],reader_mse=[],
                 reader_training_rows=[],sentence_gradients={},centroid={})
     commit = BasicModel._commit_sentence
@@ -206,12 +212,44 @@ def observe_run():
                 maximum=0. if g is None else float(g.detach().abs().max())
                 row['absent']+=int(g is None); row['zero']+=int(g is not None and maximum==0)
                 row['backwards']+=1; row['nonzero']+=int(maximum>0); row['maximum']=max(row['maximum'],maximum)
-        return backward(model,total,*args,**kwargs)
+        value = backward(model,total,*args,**kwargs)
+        sentence = bool(getattr(model, '_sentence_backward', False))
+        optimizer = model._sentence_optimizer if sentence else kwargs.get('optimizer')
+        if optimizer is not None:
+            names = {id(p): name for name, p in model.named_parameters()}
+            output = model.objective_parameter_groups(optimizer)['output']
+            registry = model._sentence_cost_registry if sentence else model.errors
+            result.setdefault('output_backward_calls', []).append(dict(
+                sentence=sentence, trial=getattr(model, '_sentence_trial', None),
+                present=[names[id(p)] for p in output if p.grad is not None],
+                trained=[name for name, term in registry._terms.items()
+                         if term.get('trained', True)]))
+        return value
     from round2_score_probe import observe_score_function
     from review17_decomposition_probe import observe_decomposition
+    departure = SentenceCredit.departure
+    def observed_departure(narrowing, compose, **kwargs):
+        # W is the number of nonempty walk menus for this field. Read the
+        # actual eligibility masks without drawing or changing an action.
+        attention = (compose.new_zeros((compose.shape[0], 0)) if narrowing is None
+                     else narrowing.alternatives.clone())
+        sentence_ids = kwargs.get('sentence_ids')
+        if narrowing is not None and sentence_ids is not None:
+            owners = sentence_ids.gather(1, narrowing.round_words.clamp_min(0))
+            attention &= ((owners == kwargs.get('sentence', 0))
+                          & (narrowing.round_words >= 0))
+        menus = [attention, compose]
+        menus += [kwargs[name] for name in ('candidates', 'binds')
+                  if kwargs.get(name) is not None]
+        counts = torch.stack([menu.sum(-1) for menu in menus], -1)
+        counts *= kwargs['active'][:, None]
+        value = departure(narrowing, compose, **kwargs)
+        torch.testing.assert_close(value['walk_count'], counts.gt(0).sum(-1))
+        value['observed_eligible_walk_counts'] = counts.detach()
+        return value
     preferences=observe_score_function(result)
     from handoff_probe import observe_handoff
-    with observe_handoff(result), preferences, patch.object(BasicModel,'_commit_sentence',observed_commit), observe_decomposition(result), patch.object(BasicModel,'_reconstruct_trial',observed_trial), patch.object(BasicModel,'runEpoch',observed_epoch), patch.object(BasicModel,'_project_sentence_parameters',observed_projection), patch.object(BaseModel,'_backward_training_loss',observed_backward):
+    with patch.object(SentenceCredit, 'departure', observed_departure), observe_handoff(result), preferences, patch.object(BasicModel,'_commit_sentence',observed_commit), observe_decomposition(result), patch.object(BasicModel,'_reconstruct_trial',observed_trial), patch.object(BasicModel,'runEpoch',observed_epoch), patch.object(BasicModel,'_project_sentence_parameters',observed_projection), patch.object(BaseModel,'_backward_training_loss',observed_backward):
         try:
             yield result
         finally:

@@ -109,7 +109,11 @@ def test_reconstruct_from_idea_rebuilds_after_clearing():
     try:
         model.reconstruct_from_idea = True
         with torch.no_grad():
-            model._chart_generate_from_stm(model.conceptualSpace.subspace)
+            # The terminal CS lane is not the completed sentence. The held
+            # reading owns the root selected by the native word transaction.
+            reading = model._last_sentence_understanding
+            assert reading is not None
+            model._chart_generate_from_stm(reading.root[:, None])
     finally:
         ss.generate = orig
 

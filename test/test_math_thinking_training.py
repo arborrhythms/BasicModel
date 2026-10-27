@@ -21,6 +21,7 @@ if str(_BIN) not in sys.path:
     sys.path.insert(0, str(_BIN))
 
 from What import What  # noqa: E402
+from slow_budget import slow_count
 
 _MATH_DAT = {"mathRange": 16, "mathDepths": "1-2", "mathTestDepths": "3",
              "mathDistractors": 1, "mathProblems": 64, "mathSeed": 0}
@@ -117,7 +118,7 @@ def _learn(config_path, dat, epochs, lr=0.01):
     assert _exact_accuracy(m, "train") < 0.5
     opt = m.getOptimizer(lr=lr)
     best = (0.0, 0.0)
-    for epoch in range(1, epochs + 1):
+    for epoch in range(1, slow_count(epochs, minimum=5) + 1):
         m.train()
         m.runEpoch(optimizer=opt, batchSize=32, split="train")
         if epoch % 5 == 0:
@@ -213,6 +214,14 @@ def successor_config(tmp_path_factory):
     successor corpus: ``n plus one`` -> the next numeral, single-digit
     facts only (R = 10), 256 presentations per epoch."""
     src = (_DATA / "MM_add_verb.xml").read_text()
+    # Construction bound: the accuracy reader presents 32 rows together;
+    # training presents eight. Reserve max(32, 8) streams before either runs.
+    assert src.count("<batchSize>12</batchSize>") == 1
+    src = src.replace("<batchSize>12</batchSize>", "<batchSize>32</batchSize>")
+    # Each of 256 corpus presentations needs at most a cover plus three
+    # word identities. Reserve 256 * (1 + 3) seats once, before ingestion.
+    assert src.count("<nVectors>8</nVectors>") == 1
+    src = src.replace("<nVectors>8</nVectors>", "<nVectors>1024</nVectors>")
     assert src.count("<nOutput>16</nOutput>") == 1          # the one-hot head
     src = (src.replace("<mathRange>16</mathRange>", "<mathRange>10</mathRange>")
               .replace("<nOutput>16</nOutput>", "<nOutput>10</nOutput>")
@@ -242,7 +251,10 @@ def test_successor_is_learned_as_a_verb(successor_config):
     best = 0.0
     for epoch in range(1, 31):
         m.train()
-        out_err, _, _, _ = m.runEpoch(optimizer=opt, batchSize=8, split="train")
+        # 256 fixed corpus presentations / 8 rows = 32 batches per epoch.
+        # Keep epochs and evaluation intact; halve training batches by default.
+        out_err, _, _, _ = m.runEpoch(optimizer=opt, batchSize=8, split="train",
+                                    max_batches=slow_count(256 // 8))
         # A zero answer loss means the target never reached the head (the
         # shape gate zeroes an irreconcilable pair): no learning claim.
         assert float(out_err) > 0.0, "answer loss is zero: target/head mismatch"

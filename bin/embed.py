@@ -29,11 +29,22 @@ from Layers import Lexicon
 # files without format_version are lifted to kind="lexicon" by load_artifact().
 
 FORMAT_VERSION = 1
+# Grammar version 2 omits the retired composition-order stamp; version 1
+# (including the unversioned layout) cannot supply the current signatures.
+GRAMMAR_VERSION = 2
 KIND_LEXICON = "lexicon"
 KIND_BPE = "bpe"
 KIND_BOTH = "both"
 KIND_KNOWLEDGE = "knowledge"
 _VALID_KINDS = (KIND_LEXICON, KIND_BPE, KIND_BOTH, KIND_KNOWLEDGE)
+
+
+def _validate_knowledge_grammar(knowledge: Dict[str, Any]) -> None:
+    version = knowledge.get('grammar', {}).get('version')
+    if version != GRAMMAR_VERSION:
+        raise ValueError(
+            f"knowledge grammar version {version!r} is unsupported; "
+            f"expected {GRAMMAR_VERSION}")
 
 
 def _wrap_unit_ball(x: torch.Tensor) -> torch.Tensor:
@@ -224,6 +235,7 @@ def save_artifact(
     if truth_data is not None:
         payload["truth_data"] = truth_data
     if knowledge is not None:
+        _validate_knowledge_grammar(knowledge)
         payload["knowledge"] = knowledge
     atomic_torch_save(payload, path)
 
@@ -237,6 +249,8 @@ def load_artifact(path: str) -> Dict[str, Any]:
     raw = torch.load(path, map_location="cpu", weights_only=False)
     if not isinstance(raw, dict):
         raise ValueError(f"load_artifact: {path!r} did not contain a dict")
+    if raw.get('knowledge') is not None:
+        _validate_knowledge_grammar(raw['knowledge'])
     if "format_version" in raw:
         return raw
     lexicon_section = {
@@ -513,6 +527,7 @@ class KnowledgeView:
     """
 
     def __init__(self, knowledge_section: Dict[str, Any]):
+        _validate_knowledge_grammar(knowledge_section)
         self._ks = knowledge_section
         rc = knowledge_section['reference_codebook']
         self._n_live = int(rc['v_ref_live'])
@@ -910,7 +925,7 @@ def build_knowledge_section(
       - ``reference_codebook`` from ``build_reference_codebook_initial(taxonomy)``.
       - ``typed_indexes``    from ``build_typed_indexes(taxonomy, rc)``.
       - ``taxonomy``         from ``build_taxonomy_from_grammar(grammar)``.
-      - ``grammar``          ``{'rule_order_signatures': [...]}``.
+      - ``grammar``          versioned ``rule_order_signatures``.
 
     Carries ``section_kind='knowledge'`` for inspection tooling.
 
@@ -930,6 +945,7 @@ def build_knowledge_section(
         'typed_indexes':      typed_indexes,
         'taxonomy':           taxonomy,
         'grammar':            {
+            'version': GRAMMAR_VERSION,
             'rule_order_signatures':
                 grammar_signatures_to_serializable(grammar),
         },
@@ -968,7 +984,6 @@ def grammar_signatures_to_serializable(grammar) -> List[Dict[str, Any]]:
             "rhs_orders":    [int(oe.delta) for oe in sig.rhs_order_exprs],
             "rhs_order_kinds": [str(oe.kind) for oe in sig.rhs_order_exprs],
             "op_name":       sig.op_name,
-            "order_delta":   int(sig.order_delta),
         })
     return out
 

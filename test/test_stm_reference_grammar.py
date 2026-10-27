@@ -5,7 +5,8 @@ from Spaces import ConceptualSpace, LanguageOperationChoice
 
 
 def state():
-    return (torch.tensor([[[2.], [1.], [3.], [0.]]]), torch.tensor([3]),
+    from chunk_fixtures import from_stack
+    return from_stack(torch.tensor([[[2.], [1.], [3.], [0.]]]), torch.tensor([3]),
             torch.tensor([[2, 1, 4, -1]]), torch.tensor([[0, 1, 2, -1]]),
             torch.tensor([[22, 11, 33, -1]]), torch.tensor([[.2, .1, .3, 0.]]))
 
@@ -13,7 +14,8 @@ def state():
 def choice(kind, position=0):
     return LanguageOperationChoice(torch.tensor([[7.]]), torch.tensor([kind]),
         torch.tensor([position]), torch.tensor([0]), torch.tensor([kind != 0]),
-        torch.tensor([.5]), torch.tensor([0]), torch.tensor([True]))
+        torch.tensor([.5]), torch.tensor([0]), torch.tensor([True]),
+        order=torch.tensor([2]) if kind == 1 else None)
 
 
 @pytest.mark.parametrize('position', [0, 1])
@@ -41,6 +43,8 @@ def test_stop_preserves_all_slots_and_references():
 def test_binary_shifts_surviving_reference_and_updates_orders():
     before = state()
     after = ConceptualSpace.apply_language_choice(before, choice(1))
+    from STMChunks import stack_view
+    after = stack_view(after)
     assert after[1].tolist() == [2]
     assert after[2].tolist() == [[2, 4, -1, -1]]
     assert after[3].tolist() == [[2, 2, -1, -1]]

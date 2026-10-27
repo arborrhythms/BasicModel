@@ -1,4 +1,5 @@
 """Item 6.5 mechanism certificates; no passing seed is selected."""
+from order_fixtures import force_order
 import itertools
 from types import SimpleNamespace
 from dataclasses import replace
@@ -242,6 +243,7 @@ def test_unretained_innovation_cannot_change_population_cost(monkeypatch):
     owner._order0_inventory_row = lambda physical: physical < 4
     for i in range(4):
         cid = owner.new_concept()
+        force_order(owner, cid, 0)
         seat = owner._csw_concept_row(0, cid)
         with torch.no_grad(): owner.similarity_codebook.W[seat].copy_(torch.eye(4)[i])
     prediction = SimpleNamespace(roles=torch.zeros(3, 4))
@@ -321,6 +323,7 @@ def test_native_admission_optimizer_ownership_and_checkpoint(tmp_path, monkeypat
         owner = model._concept_owner()
         columns = owner.components
         event = owner.new_concept()
+        force_order(owner, event, 0)
         event_row = owner._csw_concept_row(0, event)
         width = owner.similarity_codebook.W.shape[-1]
         code = torch.zeros(1, width)

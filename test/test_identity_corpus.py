@@ -179,7 +179,8 @@ def test_native_observer_uses_owned_individual_not_enclosing_sentence(monkeypatc
         written={}
         root=fixture.store.write_clause(clause,stream=0,written_rows=written)
         child=written[id(clause.children[0])]
-        assert root!=child and clause.order==clause.children[0].order==1
+        assert root != child
+        assert clause.order == 0 and clause.children[0].order == 1
         assert token['reference']==int(fixture.store.row_ids[child])
         assert token['reference']!=int(fixture.store.row_ids[root])
         assert token['missing_reason'] is None

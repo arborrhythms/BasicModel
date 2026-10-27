@@ -1,4 +1,5 @@
 """The kept close consumes a derivation, never a reconstructed STM identity."""
+from order_fixtures import force_order
 from chunk_fixtures import context as chunk_context
 import pytest
 import torch
@@ -136,7 +137,7 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     alloc = f.cs._concept_allocator
     word = alloc.new_concept()
     alloc.symbol_types[word] = {'word'}
-    alloc.reference_orders[word] = 0
+    force_order(f.cs, word, 0)
     assert f.cs._csw_row_of(word) is None
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
     right = Composition(torch.eye(8)[3], reference=word)
@@ -203,8 +204,8 @@ def test_lower_word_alias_does_not_double_count_kept_occupations(monkeypatch):
     assert {word: dict(parts.counts[word]) for word in words} == expected
     assert row[0] == 'sym'
     assert row[1] not in parts.counts
-    assert parts.counts[words[1]]['lower_argout1'] == 1
-    assert parts.counts[words[1]]['intersection_argin1'] == 1
+    assert parts.counts[words[1]]['lower_argout1', parts.order_of(words[1])] == 1
+    assert parts.counts[words[1]]['intersection_argin1', parts.order_of(words[1])] == 1
 
 
 def test_same_description_tokens_keep_distinct_occurrence_identities(monkeypatch):

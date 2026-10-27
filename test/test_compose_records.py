@@ -124,8 +124,12 @@ def test_unknown_recorded_operation_is_not_silently_dropped():
 
 def test_incomplete_forest_keeps_its_slots_for_reconstruction():
     buffer = torch.tensor([[[2., 3.], [5., 7.], [0., 0.]]])
+    from chunk_fixtures import from_stack
+    state = from_stack(buffer, torch.tensor([2]), torch.zeros(1, 3, dtype=torch.long),
+        torch.zeros(1, 3, dtype=torch.long), torch.full((1, 3), -1, dtype=torch.long),
+        torch.ones(1, 3))
     model = SimpleNamespace(conceptualSpace=SimpleNamespace(
-        stm=SimpleNamespace(_buffer=buffer)))
+        stm=SimpleNamespace(_buffer=buffer, state=state)))
     slots, depth = BasicModel._final_end_state(model, buffer[:, 1], torch.tensor([-2]))
     torch.testing.assert_close(slots, buffer)
     assert depth.tolist() == [-1]  # still ineligible for memory

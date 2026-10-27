@@ -54,11 +54,12 @@ def test_nested_observation_writers_retain_children_without_certifying_them(monk
     _cs._concept_allocator.parts.remove(*entry.concept_ids[:2].tolist())
     store = _write_selected_observation(language, registry, entry, path)
     # The two native pairs retain ignorance independently in the common owner.
-    assert len(store) == 2
+    assert len(store) == 0
     child_id = store.parts.find(*entry.concept_ids[:2].tolist())
-    parent_id = store.parts.find(int(entry.concept_ids[2]), child_id)
+    from LTM1 import SYMBOL, RELATION
+    parent_id = store.parts.find((SYMBOL, int(entry.concept_ids[2])), (RELATION, child_id))
     assert set(store.parts.indices().tolist()) == store._test_initial_parts | {child_id, parent_id}
-    child, parent = store.row(('sym', child_id)), store.row(('sym', parent_id))
+    child, parent = (store.part_row(index, reading='part') for index in (child_id, parent_id))
     from ThoughtReferences import open_slots
     assert not open_slots(child['meaning']) and not open_slots(parent['meaning'])
     assert child['evidence'] == parent['evidence'] == (0., 0.)
@@ -80,9 +81,11 @@ def test_10_packed_pending_and_eager_ends_write_identical_rows(monkeypatch):
                       for ref in store.raw_meaning_of(row).role_refs) for row in range(len(store))]
     for store in stores[1:]:
         assert addresses(store) == addresses(stores[0])
-        for name in ('slots', 'c_plus', 'c_minus', 'role_mask', 'record_kind', 'when'):
+        assert not hasattr(store, 'role_mask') and not hasattr(store, 'when')
+        for name in ('slots', 'c_plus', 'c_minus', 'record_kind'):
             torch.testing.assert_close(getattr(store, name), getattr(stores[0], name), rtol=0, atol=0)
-        for name in ('refs', 'truth_plus', 'truth_minus', 'surprise', 'when'):
+        assert not hasattr(store.parts, 'when')
+        for name in ('ref_kinds', 'refs', 'truth_plus', 'truth_minus', 'surprise'):
             torch.testing.assert_close(getattr(store.parts, name), getattr(stores[0].parts, name), rtol=0, atol=0)
         for row in range(len(store)):
             torch.testing.assert_close(store.meaning_of(row).roles,

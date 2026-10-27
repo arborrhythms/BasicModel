@@ -59,7 +59,7 @@ def test_grammar_signatures_lift_rule_fields():
     assert s['rhs_categories'] == ['NP', 'VP']
     assert s['rhs_orders'] == [3, 1]
     assert s['op_name'] == 'lift'
-    assert s['order_delta'] == 0
+    assert 'order_delta' not in s
 
 
 def test_grammar_signatures_lower_rule_fields():
@@ -73,7 +73,7 @@ def test_grammar_signatures_lower_rule_fields():
     assert s['rhs_categories'] == ['DET', 'NP']
     assert s['rhs_orders'] == [0, 4]
     assert s['op_name'] == 'lower'
-    assert s['order_delta'] == -1
+    assert 'order_delta' not in s
 
 
 def test_grammar_signatures_fields_are_primitive_types():
@@ -90,7 +90,7 @@ def test_grammar_signatures_fields_are_primitive_types():
         assert isinstance(s['rhs_orders'], list)
         assert all(isinstance(o, int) for o in s['rhs_orders'])
         assert s['op_name'] is None or isinstance(s['op_name'], str)
-        assert isinstance(s['order_delta'], int)
+        assert 'order_delta' not in s
 
 
 # -- Taxonomy builder --------------------------------------------------
@@ -403,6 +403,7 @@ def test_knowledge_section_works_without_wv():
     # 1 root + 4 base + 4 ordered variants (NP3, NP4, S4, VP1).
     assert ks['reference_codebook']['v_ref_live'] == 9
     assert 'NP' in ks['taxonomy']['taxonomy_names']
+    assert ks['grammar']['version'] == 2
     assert len(ks['grammar']['rule_order_signatures']) == 2
 
 
@@ -438,7 +439,8 @@ def test_save_and_load_artifact_round_trips_knowledge(tmp_path):
     # One nested dict round-trips
     assert rt['taxonomy']['taxonomy_names'] == \
         ks['taxonomy']['taxonomy_names']
-    # Grammar signatures round-trip
+    # The current grammar schema and its signatures round-trip.
+    assert rt['grammar']['version'] == ks['grammar']['version'] == 2
     assert rt['grammar']['rule_order_signatures'] == \
         ks['grammar']['rule_order_signatures']
 

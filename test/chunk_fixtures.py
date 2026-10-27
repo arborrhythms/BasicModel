@@ -145,7 +145,7 @@ def value(state, identity, timeline=0):
 
 
 def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','alias'),leaf_orders=None):
-    from ReferenceContext import result_order
+    from ReferenceContext import denoted_order
     # These fixed source readings assert their event; ask at the head still
     # removes that evidence through the production journal.
     entry = f.program(tree)
@@ -153,6 +153,32 @@ def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','a
     named = {f.words[name][0] for name in names if name in f.words}
     orders = (torch.tensor([1 if int(word) in named else 0 for word in entry.word_ids])
               if leaf_orders is None else torch.tensor(leaf_orders))
+    # These fixed-operation identity certificates supply kinds whose selected members are individuals;
+    # the retired determiner constant no longer manufactures that order.
+    from order_fixtures import force_order
+    if leaf_orders is None:
+        stack = []
+        for kind, local, position in entry.actions.tolist():
+            if kind == 0:
+                stack.append((position,))
+                continue
+            if kind == 3:
+                stack[-2:] = reversed(stack[-2:])
+                continue
+            rule = (f.binary if kind == 1 else f.unary)[local]
+            arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
+            operands = stack[-arity:]
+            del stack[-arity:]
+            head = (getattr(rule, 'head_role', 0) or 1)-1
+            carried = operands[head] if head < arity else operands[0]
+            if getattr(rule, 'determiner_mode', None) in ('mint', 'bind'):
+                for index in carried:
+                    if int(orders[index]) == 0:
+                        orders[index] = 2
+            stack.append(carried if getattr(rule, 'head_role', 0) else tuple(i for part in operands for i in part))
+    for index, order in enumerate(orders.tolist()):
+        if order != f.cs._concept_source_order(int(entry.concept_ids[index])):
+            force_order(f.cs, int(entry.concept_ids[index]), order)
     state = prepend(f,frames,len(entry.leaves))
     walk = Walk(f.binary,f.unary,capacity=f.cs.mtm.capacity,first_id=int(f.cs.mtm.transient_ids[0]))
     walk.free = torch.where(f.cs.mtm.transient_used,-1,f.cs.mtm.transient_ids)
@@ -199,7 +225,7 @@ def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','a
         else:
             result = f.operation(rule).compose(*(operands[:,i] for i in range(arity))).reshape(1,-1)
         stamps = chunks.stack_view(stm)[2][0,:arity].tolist()
-        order = stamps[0] if bind else result_order(rule,tuple(reversed(stamps)))
+        order = stamps[0] if bind else denoted_order(rule,tuple(reversed(stamps)), (), None)
         selected = choice(result,kind=kind,local=local,identity=identity,chunk=index,bind=bind,
                           order=order,head=getattr(rule,'head_role',0))
         inputs.append((rule.method_name,operands.clone(),result.clone()))
@@ -215,3 +241,19 @@ def record(f,tree,*,frames=(),dummy_binds=(),branch_binds=(),names=('subject','a
         end_state=torch.stack((end,end*0,end*0)),**identity)
     handle = 0 if first is None else int((result.identity_ids == first).long().argmax())+1
     return result,inputs,handle
+
+
+def from_stack(buffer, depth, orders, grammar, rows, activations):
+    # The supplied B, K and D define the allocation; no live state is resized.
+    batch, capacity, width = buffer.shape
+    state = list(chunks.empty(batch, capacity, width, device=buffer.device, dtype=buffer.dtype))
+    positions = torch.arange(capacity, device=buffer.device)[None].expand(batch, -1)
+    valid = positions < depth[:, None]
+    state[chunks.BUFFER] = torch.where(valid[..., None], buffer, 0)
+    state[chunks.DEPTH] = depth.clone()
+    for field, value in ((chunks.ORDERS, orders), (chunks.GRAMMAR, grammar), (chunks.ROWS, rows)):
+        state[field] = torch.where(valid, value, -1)
+    state[chunks.ACTIVATIONS] = torch.where(valid, activations, 0)
+    state[chunks.STACK] = torch.where(valid, positions, -1)
+    state[chunks.READ] = valid.long()
+    return tuple(state)

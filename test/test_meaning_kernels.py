@@ -1,4 +1,5 @@
 """Paired-block grammar certificates; fixed operations, no learning claim."""
+from order_fixtures import force_order
 import copy
 
 import pytest
@@ -345,6 +346,7 @@ def test_paired_lower_closes_its_composed_value_without_aliasing_the_description
         terms = []
         for value in points:
             symbol = owner.new_concept()
+            force_order(owner, symbol, 0)
             seat = owner._csw_concept_row(0, symbol)
             with torch.no_grad():
                 owner.similarity_codebook.W[seat].copy_(value)

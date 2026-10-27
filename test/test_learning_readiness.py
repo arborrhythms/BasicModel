@@ -189,8 +189,8 @@ def test_native_progress_and_trained_artifact_evaluation_path(tmp_path, monkeypa
     owner_index = next(i for i, space in enumerate(model.conceptualSpaces)
                        if space is model._concept_owner())
     for damage, message in (
-            ('value', 'Part arguments must be positive native symbol handles'),
-            ('shape', 'two symbol references')):
+            ('value', 'invalid tagged relation reference'),
+            ('shape', 'LTM1 checkpoint capacity differs from construction')):
         broken = torch.load(path, map_location='cpu', weights_only=False)
         parts = broken['structural_extras']['conceptual_spaces'][owner_index]['allocator']['part_store']
         if damage == 'value':

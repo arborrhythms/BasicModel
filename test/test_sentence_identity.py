@@ -16,27 +16,30 @@ def inventory(cs):
                 keys=copy.deepcopy(alloc.relate_idx))
 
 
-def test_closing_idea_is_narrow_and_the_operation_has_a_native_part(monkeypatch):
+def test_closing_idea_is_narrow_without_a_derivation_part(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('lift', 'cat', 'runs'))
     before = inventory(f.cs)
     row = f.store.write_clause(clause)
     assert row >= 0
-    assert inventory(f.cs)['next_id'] == before['next_id'] + 1
-    assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is not None
+    assert inventory(f.cs) == before
+    assert f.store.parts.find(f.noun('cat'), f.noun('runs')) is None
     assert int(f.store.row_ids[row]) not in _concept_alloc_of(f.cs).placement
     torch.testing.assert_close(f.store.point_of_row(int(f.store.row_ids[row])), clause.point)
 
 
-def test_referenced_phrase_is_minted_as_a_part_argument(monkeypatch):
+def test_referenced_phrase_is_an_occurrence_part_argument(monkeypatch):
     f = SentenceFixture(monkeypatch)
     clause = f.clause(('part', 'cat', ('lift', 'chases', 'mouse')))
     row = f.store.write_clause(clause)
     reference = int(f.store.row(row)['refs'][1])
-    assert f.cs._csw_row_of(reference) is not None
-    assert f.store.parts.refs[reference].tolist() == [f.noun('chases'), f.noun('mouse')]
-    torch.testing.assert_close(f.store._concept_point(reference), clause.children[0].point)
-    assert len(f.store) == 2  # the constituent and completed sentence both survive
+    from LTM1 import OCCURRENCE
+    from ChainRead import point
+    assert int(f.store.parts.ref_kinds[row[1], 1]) == OCCURRENCE
+    assert f.cs._csw_row_of(reference) is None
+    torch.testing.assert_close(point(f.store, (OCCURRENCE, reference)), clause.children[0].point)
+    assert f.store.parts.find(f.noun('chases'), f.noun('mouse')) is None
+    assert len(f.store) == 1  # Compressed constituent; the sentence is a chain.
 
 
 def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
@@ -48,14 +51,14 @@ def test_closing_part_and_implies_never_ask_thought_authorization(monkeypatch):
     before = dict(f.cs._csw_rows)
     clause = finish_reading(f.language, entry, registry=f.registry)
     row = f.store.write_clause(clause)
-    assert f.store.row(row)['readings'] == ('conditional',)
+    assert f.store.row(row)['readings'] == ()  # Untyped chain; no retired predicate label.
     assert f.store.parts.find(f.noun('cat'), f.noun('animal')) is not None
     assert f.store.parts.refs.shape[-1] == 2
     assert all('predicate' not in f.cs._concept_allocator.symbol_types.get(cid, ())
                for cid in set(f.cs._csw_rows) - set(before))
 
 
-def test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically(monkeypatch):
+def test_full_symbol_inventory_needs_no_seats_and_chain_exhaustion_is_atomic(monkeypatch):
     import Language
     from test_mm_xor import _fresh_model, _PROJECT
     from pathlib import Path
@@ -88,7 +91,18 @@ def test_mm_grammar_full_inventory_refuses_the_whole_closing_atomically(monkeypa
         before = inventory(f.cs)
         clause = finish_reading(f.language, entry, registry=f.registry)
         rows, edges = len(f.store), len(f.store.parts)
-        with pytest.raises(RuntimeError, match='concept row pool'):
+        row = f.store.write_clause(clause)
+        assert f.store.row(row) is not None
+        assert inventory(f.cs)['rows'] == before['rows']
+        # New stable chain handles have bookkeeping orders but no codebook seats.
+        assert all(inventory(f.cs)['placement'][key] == value
+                   for key, value in before['placement'].items())
+        # The actual remaining fixed resource is the chain handle capacity.
+        alloc = _concept_alloc_of(f.cs)
+        alloc.next_id = alloc.parts.capacity
+        before = inventory(f.cs)
+        rows, edges = len(f.store), len(f.store.parts)
+        with pytest.raises(OverflowError, match='LTM1 construction capacity'):
             f.store.write_clause(clause)
         assert inventory(f.cs) == before
         assert len(f.store) == rows and len(f.store.parts) == edges

@@ -271,7 +271,8 @@ def test_real_runbatch_stages_l1_once_and_reports_it_separately(
     def step(*args, **kwargs):
         if getattr(model, '_sentence_trial', None) in ('exploit', 'explore'):
             sentence_steps.append(model._sentence_trial)
-        expected = layer.l1_batch(model.inputSpace._ar_word_concept_rows,
+        from PrependedSymbols import word_view
+        expected = layer.l1_batch(word_view(model.inputSpace, 'concept_rows'),
                                   model.inputSpace._ar_percept_reference_roles)
         # Trie promotion can make a previously seen spelling an honest
         # unknown until its new support is committed at the boundary.

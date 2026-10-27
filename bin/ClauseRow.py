@@ -151,6 +151,10 @@ def attach_clause_index(model, store, space):
     object.__setattr__(store, '_concept_owner', space_ref)
     language = getattr(model, 'languageSpace', None)
     occupations = getattr(language, 'parts_of_speech', None)
+    if occupations is not None:
+        # Staged word IDs and kept clauses use this registry's allocator;
+        # a terminal stage's local IDs need not name the same concepts.
+        object.__setattr__(occupations, '_space', space_ref)
     object.__setattr__(store, '_occupation_owner',
                        None if occupations is None else weakref.ref(occupations))
     object.__setattr__(store, '_part_read_rules', tuple(

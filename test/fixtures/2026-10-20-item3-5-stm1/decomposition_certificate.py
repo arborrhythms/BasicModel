@@ -130,7 +130,8 @@ def run(folder, successors=1):
         old = [footprint.value_digest(store.meaning_of(i)) for i in range(len(store))]
         start = len(store)
         result = original(model, meaning, **kwargs)
-        changes = footprint.difference(before, footprint.snapshot(model))
+        observation = footprint.observed_difference(model, before, footprint.snapshot(model))
+        changes = observation['comparison']
         trail = {'.'+name for name in ('_last_thought_comparison', '_last_thought_score_function',
                  '_thought_ordinals', '_walk_audit', '_walk_observations', '_walk_previous')}
         trail.update('what_memory.'+name for name in (
@@ -143,7 +144,7 @@ def run(folder, successors=1):
         added = [store.KINDS[int(store.record_kind[i])] for i in range(start, len(store))]
         episodes.append(dict(row=kwargs['row'], before=meaning.role_refs, after=result.meaning.role_refs,
             open=open_slots(result.meaning), metadata=bindings(result.meaning), work=result.work.spent,
-            state_diff=dict(changed=changes, unexpected=unexpected, changed_old_rows=changed_rows,
+            state_diff=dict(**observation, unexpected=unexpected, changed_old_rows=changed_rows,
                             source_row=source_index, added_row_kinds=added),
             trace=[dict(kind=r.kind, operation=r.operation, level=r.level,
                         refs=None if r.meaning is None else r.meaning.role_refs,

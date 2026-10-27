@@ -1,4 +1,5 @@
 """Free variables, stored columns, exhaustion and formation provenance (§14)."""
+from order_fixtures import force_order
 from dataclasses import replace
 from types import SimpleNamespace
 import pytest
@@ -300,7 +301,7 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
         if not owner.word_concepts(word):
             owner.interpret.lookup_word(tuple(map(ord, word)), (), form=word)
         for identity in owner.word_concepts(word):
-            _concept_alloc_of(owner).reference_orders[identity] = 1
+            force_order(owner, identity, 1)
     chooser = model._selected_thought_chooser(None)
     logits = chooser.thought_logits
     def query_then_conclude(active, requests):
@@ -382,7 +383,7 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     if not owner.word_concepts('x'):
         owner.interpret.lookup_word((ord('x'),), (), form='x')
     for identity in owner.word_concepts('x'):
-        _concept_alloc_of(owner).reference_orders[identity] = 1
+        force_order(owner, identity, 1)
     sentences = ('y is x plus two.', 'x is three.')
     if reverse:
         sentences = sentences[::-1]

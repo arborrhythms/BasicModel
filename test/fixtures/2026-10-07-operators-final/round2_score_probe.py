@@ -141,6 +141,8 @@ def observe_score_function(result):
                 scale = float(batch['scale'][row][batch['mask'][row]][0])
                 draw=batch['departure']
                 walks=int(draw['walk_count'][row]);rounds=int(draw['walk_rounds'][row])
+                if 'observed_eligible_walk_counts' in draw:
+                    record['eligible_walk_counts'] = draw['observed_eligible_walk_counts'][row].cpu().tolist()
                 alternatives=int(entry['eligible'][row].sum())
                 assert scale==walks*rounds*alternatives
                 assert int(draw['walk'][row])==(0 if entry['walk']=='narrowing' else 1)

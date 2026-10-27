@@ -85,38 +85,66 @@ class SituationFrame:
                    order=int(row.get('order', -1)), when=row.get('when'))
 
 
-def shifted_order(stamp, delta):
-    """Apply an operation's order change; unknown stays unknown, field is zero."""
-    if torch.is_tensor(stamp):
-        return torch.where(stamp >= 0, (stamp + delta).clamp_min(0), -1)
-    return max(0, stamp + delta) if stamp >= 0 else -1
+class OrderReference(NamedTuple):
+    """A staged native reference and its existing alternative-timeline flag."""
+    identity: object
+    timeline: object = False
 
 
-def operation_order(rule, stamp):
-    """A determiner constructs a member or extension from its description.
+def denoted_order(rule, operand_orders, operand_ids, alloc):
+    """Read the order of what the composition denotes, preserving unknown.
 
-    The description can be a field type or a raised kind. Its stamp does
-    not determine the member's order. Other operations retain their delta;
-    these fixed outputs impose no ceiling on their operands or results.
+    Tensor orders are native lookups staged before the compiled word loop.
+    Scalar leaves can read the allocator directly. An unknown (-1) is not
+    coerced to an event: joins and lowering retain that lack of a witness.
     """
-    mode = getattr(rule, 'determiner_mode', None)
-    if mode in ('mint', 'bind', 'kind'):
-        order = 2 if mode == 'kind' else 1
-        return torch.full_like(stamp, order) if torch.is_tensor(stamp) else order
-    return shifted_order(stamp, getattr(rule, 'order_delta', 0))
+    orders = tuple(operand_orders)
+    identities = tuple(operand_ids or ())
+    if rule is None:
+        identity = identities[0]
+        identity = identity.identity if isinstance(identity, OrderReference) else identity
+        return alloc.order_of(identity)
+    name = getattr(rule, 'method_name', None) or getattr(rule, 'rule_name', None)
+    relation = getattr(rule, 'relation_kind', None)
+    head = int(getattr(rule, 'head_role', 0) or 0)
 
+    def lower(order, *, kind=False):
+        if torch.is_tensor(order):
+            return torch.where(order >= (2 if kind else 0), (order-1).clamp_min(0), order)
+        return max(0, order-1) if order >= (2 if kind else 0) else order
 
-def result_order(rule, operands):
-    """The head's stamp, or the joined operands' stamp, followed by the operation."""
-    head = getattr(rule, 'head_role', 0)
-    if head:
-        stamp = operands[head - 1]
-    elif torch.is_tensor(operands[0]):
-        stamps = torch.stack(operands, -1)
-        stamp = torch.where((stamps >= 0).all(-1), stamps.amax(-1), -1)
-    else:
-        stamp = max(operands) if min(operands) >= 0 else -1
-    return operation_order(rule, stamp)
+    if name == 'bind':
+        # The off-stack identity is the second operand. The dummy retains
+        # the mention's own captured order, with no invented individual.
+        if len(orders) > 1:
+            return orders[1]
+        if len(identities) > 1 and alloc is not None:
+            identity = identities[1]
+            identity = identity.identity if isinstance(identity, OrderReference) else identity
+            if isinstance(identity, int) and identity not in (-1, 0):
+                return alloc.order_of(identity)
+        return orders[0]
+    if relation == 'equal' or name in ('equal', 'isEqual'):
+        return orders[0]
+    if relation in ('part', 'whole', 'kind') or name in ('part', 'whole', 'kind', 'assertPart', 'isPart'):
+        return orders[0 if relation == 'whole' or name == 'whole' else -1]
+    if getattr(rule, 'determiner_mode', None) is not None or name in ('lower', 'lower_unary', 'definite_unary'):
+        return lower(orders[head-1 if head and head <= len(orders) else -1], kind=True)
+    if len(orders) == 1:
+        return orders[0]
+    if getattr(rule, 'clause_form', None) == 'S' or name == 'lift':
+        subject = orders[0]
+        vp = identities[1] if len(identities) > 1 else None
+        timeline = vp.timeline if isinstance(vp, OrderReference) else False
+        return torch.where(timeline, subject, lower(subject)) if torch.is_tensor(timeline) else subject if timeline else lower(subject)
+    if getattr(rule, 'clause_form', None) == 'VP' or name == 'verb':
+        return orders[0]
+    if head and name not in ('sum', 'intersection', 'union', 'conjunction', 'disjunction', 'product'):
+        return orders[head-1]
+    if torch.is_tensor(orders[0]):
+        values = torch.stack(orders, -1)
+        return torch.where((values >= 0).all(-1), values.amax(-1), -1)
+    return max(orders) if min(orders) >= 0 else -1
 
 
 def operation_modes(rule):
@@ -169,7 +197,7 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
         head = getattr(rule, 'head_role', 0)
         leaves = (operands[head - 1][0] if head else
                   tuple(leaf for operand, _ in operands for leaf in operand))
-        stack.append((leaves, result_order(rule, tuple(stamp for _, stamp in operands))))
+        stack.append((leaves, denoted_order(rule, tuple(stamp for _, stamp in operands), (), None)))
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
     return requests
@@ -226,7 +254,9 @@ def binding_spec(rule, role, stamp, *, implicit=False):
                 (clause == 'VP' and role == 'argin2') or
                 (relation in ('part', 'whole', 'equal') and role in ('argin1', 'argin2'))):
             requested = True
-    return (operation_order(rule, stamp) if requested else None), mode
+    # This contract selects the operand's denotation, not its enclosing
+    # predication. Only a determiner selects a member of a higher kind.
+    return (denoted_order(rule, (stamp,), (), None) if requested else None), mode
 
 
 def resolve_order(value, identity, order, types):
@@ -242,7 +272,9 @@ def resolve_order(value, identity, order, types):
     source = identity[:, :, None] == types.sources[:, None, :]
     associated = (identity[:, :, None, None] == types.identities[:, None]).any(-1)
     matching = ((source | associated) & (identity > 0)[:, :, None])[:, :, :, None]
+    # Unknown requests remain -1 and cannot select a typed concept at 0.
     requested = torch.as_tensor(order, device=value.device).expand(batch, positions)
+    matching = matching & (requested >= 0)[:, :, None, None]
     matching = matching & (types.orders[None, None, None, :] == requested[:, :, None, None])
     matching = matching & (types.identities[:, None] > 0)
     matching = matching.reshape(batch, positions, words * orders)

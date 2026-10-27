@@ -159,6 +159,8 @@ def is_slow(item):
 
 
 def pytest_configure(config):
+    from slow_budget import work_fraction
+    work_fraction()  # Reject an invalid work policy before expensive setup.
     config.addinivalue_line("markers", "phase(name): certificate restoring a registered lesson artifact")
     config.addinivalue_line(
         'markers','slow: long training/quality/compilation check; opt in with RUN_SLOW=1')
@@ -166,6 +168,12 @@ def pytest_configure(config):
     config.addinivalue_line('markers', 'learning_certificate: default-tier learning gate regardless of runtime')
     config.addinivalue_line(
         'markers', 'shared_training(name): keep selected consumers of a module fixture in one worker')
+
+
+def pytest_report_header():
+    if os.environ.get('RUN_SLOW') == '1':
+        from slow_budget import work_fraction
+        return f'Optional slow repeated-work fraction: {work_fraction():g}; RUN_SLOW_FRACTION=1 restores full work'
 
 
 def pytest_collection_modifyitems(items):

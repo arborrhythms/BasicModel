@@ -12,6 +12,7 @@ from Queries import THOUGHT_EXECUTORS, ThoughtSignature
 from Taxonomy import capture_taxonomy
 from test_taxonomy_view import _ref, _world
 from test_cs_symbol_table import _cs
+from order_fixtures import force_order
 from test_query_vp_boundaries import _context
 
 
@@ -85,6 +86,7 @@ def test_fact_reads_stop_at_shared_budget_and_preserve_partial_evidence(monkeypa
     from index_fixtures import append_content
     cs = _cs()
     ref = ('sym', cs.new_concept())
+    force_order(cs, ref[1], 0)
     cs._csw_concept_row(0, ref[1])
     meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
                       role_refs=(ref, None, None))

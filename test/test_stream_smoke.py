@@ -44,17 +44,53 @@ def test_stream_smoke_runs_one_epoch(tmp_path):
     import subprocess
 
     proj = Path(__file__).resolve().parent.parent
-    python = proj / ".venv" / "bin" / "python"
-    if not python.exists():
-        # Fall back to the repo-level venv (basicmodel/.venv can be missing
-        # or corrupted; the project root usually has a working interpreter).
-        alt = proj.parent / ".venv" / "bin" / "python"
-        if alt.exists():
-            python = alt
-        else:
-            pytest.skip("no usable python venv found for subprocess run")
+    import sys
+    python = Path(sys.executable)
     entry = proj / "bin" / "Models.py"
-    config = proj / "data" / "stream_smoke.xml"
+    source = proj / "data" / "stream_smoke.xml"
+    # Keep all 200 documents and the one-epoch budget. Bound the native
+    # dictionary before construction from that unchanged corpus: byte/pad
+    # rows, one canonical row per unit, and every possible identity atom.
+    import json
+    import xml.etree.ElementTree as ET
+    from data import Data
+    from util import init_config
+    from WordIdentity import base_atoms, text_of
+    import Meronomy
+    init_config(path=str(source), defaults_path=str(proj/'data/model.xml'))
+    tree = ET.parse(source)
+    section = tree.find('architecture/data')
+    documents = int(section.findtext('maxDocs'))
+    dataset = Data()
+    dataset.load('text', max_docs=documents, num_shards=1,
+                 shard_dir=str(proj/'data/fineweb'))
+    width = int(tree.findtext('InputSpace/nOutput'))
+    units = set()
+    for split in ('train', 'validation', 'test'):
+        for text in getattr(dataset, split+'_input'):
+            raw = text.encode('utf8')
+            for value in (raw, raw[:width]):
+                units.update(value[lo:hi] for lo, hi in Meronomy.percept_spans(value))
+    atoms = set()
+    for raw in units:
+        atoms.update(base_atoms(raw))
+        marked = '#' + text_of(raw) + '#'
+        # WordIdentity may mint a triple or quadruple at a differing position.
+        # Include all such keys, independently of any sampled training path.
+        for size in (3, 4):
+            atoms.update(('mint', f'{marked[pos:pos+size]}@{pos}')
+                         for pos in range(len(marked)-size+1))
+    capacity = 257 + len(units) + len(atoms)
+    tree.find('PartSpace/nVectors').text = str(capacity)
+    section.find('shardDir').text = str(proj/'data/fineweb')
+    tree.find('architecture/weightsPath').text = str(tmp_path/'stream_smoke.ckpt')
+    config = tmp_path/'stream_smoke.xml'
+    tree.write(config, encoding='unicode')
+    (tmp_path/'fixture-capacity.json').write_text(json.dumps(dict(
+        documents=documents, epochs=int(tree.findtext('architecture/training/numEpochs')),
+        batch_size=int(tree.findtext('architecture/training/batchSize')),
+        byte_and_padding_rows=257, units=len(units), atom_keys=len(atoms),
+        percept_capacity=capacity), indent=2)+'\n')
 
     env = {**os.environ, "PYTHONPATH": str(proj / "bin")}
     result = subprocess.run(

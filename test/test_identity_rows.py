@@ -227,7 +227,7 @@ def test_reference_closing_reads_surface_meaning_and_never_mints_a_relation_addr
     f=SentenceFixture(monkeypatch,native_cube=True)
     entry=f.program(('lower_unary',('surface','marker','object')))
     entry=record_reading(f.language,replace(entry,close_references=True,
-        leaf_orders=torch.zeros(2,dtype=torch.long)))
+        leaf_orders=torch.tensor([0,1])))
     clause=finish_clause(f.language,entry,registry=f.registry)
     member,=constituents(clause)
     torch.testing.assert_close(member.point,entry.leaves[1],rtol=0,atol=0)

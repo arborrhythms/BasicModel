@@ -50,10 +50,10 @@ def test_percept_codes_vector_overlap_and_world_rows_are_not_taxonomy_edges():
     cs, (a, b, _c) = _world()
     cs.add_part(b, a)  # raw percept code, not a sym reference
     cs.add_whole(a, b)  # raw whole-space code, not a sym reference
-    cs._ltm_store = LTM0(4)
+    cs._ltm_store = LTM0(12, percept_width=0)
     from Meaning import ConceptualMeaning
     cs._ltm_store.append_meaning(ConceptualMeaning.from_payload(
-        torch.stack((torch.eye(4)[0], torch.eye(4)[2], torch.ones(4))), depth=3, layout='infix'),
+        torch.stack((torch.eye(4)[0], torch.eye(4)[2], torch.ones(4))).flatten()[None], depth=1, layout='infix'),
         kind='fact', trust=1)
     cs.wholeSpace_ref = SimpleNamespace(taxonomy_parent=lambda _ref: b)
     result = _view(cs).part_of(_ref(a), _ref(b))

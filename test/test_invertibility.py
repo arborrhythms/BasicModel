@@ -515,7 +515,7 @@ def _setup_object_encoding(objSize=0, contentDim=6, outputDim=2, nIdeas=3,
             # non-embedding value so PartSpace does not build an Embedding
             # basis if a prior test left dataType="embedding".
             "dataType": "numeric",
-            "embeddingPath": None, "data": {}, "training": {},
+            "embeddingPath": None, "data": {}, "training": {"batchSize": 2},
         },
         "InputSpace":      {"nDim": contentDim, "nVectors": nIdeas, "nActive": nIdeas, "flatten": False, "codebook": False, "lexer": "word"},
         "PartSpace": {"nDim": contentDim, "nVectors": nIdeas, "nActive": nIdeas, "flatten": flatten, "codebook": False, "hasAttention": hasAttention, "invertible": invertible},

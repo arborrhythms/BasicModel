@@ -150,9 +150,9 @@ def test_shipped_grammar_supplies_subtyping_without_a_predefined_surface():
     forward=[r for r in grammar.rules_upward if r.case_head_role]
     reverse=[r for r in grammar.rules_downward if r.case_head_role]
     assert len(forward) == len(reverse) == 2
-    assert forward[0].head_role == 2 and forward[0].order_delta == 0
+    assert forward[0].head_role == 2 and not hasattr(forward[0], 'order_delta')
     assert forward[0].method_name not in grammar.surface_anchors.values()
-    assert forward[1].head_role == 1 and forward[1].order_delta == 0
+    assert forward[1].head_role == 1 and not hasattr(forward[1], 'order_delta')
     assert forward[1].method_name == 'compound_unary'
     assert forward[1].method_name not in grammar.surface_anchors.values()
 

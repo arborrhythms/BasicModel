@@ -52,6 +52,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
                          ThoughtConceptualCapability, ThoughtTaxonomyCapability)
     from QueryWork import QueryWorkBudget
     from test_cs_symbol_table import _cs
+    from order_fixtures import force_order
     def world(prefix, names):
         cs = _cs()
         for _ in range(prefix):
@@ -60,10 +61,12 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
         grammar.load_from_grammar_file('complete.grammar')
         registry = GrammaticalThoughtRegistry.install(cs, grammar)
         base = cs.new_concept()
+        force_order(cs, base, 0)
         part = ('sym', cs.synthesize_higher_order([('sym', base)]))
         whole = ('sym', cs.new_concept())
+        force_order(cs, whole[1], 2)
         for ref, name in zip((part, whole), names):
-            cs._csw_concept_row(0, ref[1])
+            cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
             cs.bind_word_concept(name.encode(), ref[1])
         cs.add_whole(part[1], whole)
         context = ThoughtGrammarContext(word_stream=(),
@@ -80,7 +83,7 @@ def test_renamed_native_vocabulary_preserves_checked_relation_answers(monkeypatc
     with torch.no_grad():
         for slot in (0, 1, 2):
             value, ref = x.roles[slot], y.role_refs[slot]
-            row = second[0]._csw_concept_row(0, ref[1])
+            row = second[0]._csw_concept_row(second[0]._concept_source_order(ref[1]), ref[1])
             second[0].similarity_codebook.getW()[row].copy_(value)
     y = second[1].form('isPart', second[2], second[3])
     torch.testing.assert_close(x.roles, y.roles)

@@ -19,7 +19,8 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "bin"))
 import Spaces  # noqa: E402
 from Spaces import _concept_alloc_of  # noqa: E402
-from test_basicmodel import _populate_test_config  # noqa: E402
+from test_basicmodel import _populate_test_config
+from order_fixtures import force_order  # noqa: E402
 
 _D = 8
 
@@ -56,6 +57,7 @@ def _mint_chain(cs):
     H = cs.new_concept()
     B1 = cs.relate(("sym", H), ("sym", H)) if False else cs.new_concept()
     B2 = cs.new_concept()
+    for cid in (B1, B2): force_order(cs, cid, 0)
     # B1, B2 are PARTS of H; H is the WHOLE covering them.
     cs.add_part(H, ("sym", B1))
     cs.add_part(H, ("sym", B2))
@@ -84,6 +86,7 @@ def test_typed_definition_head_modifiers_exclusions():
     assert None not in (rH, r1, r2), "constructed cids must hold store rows"
     # A fourth, unrelated concept to serve as the EXCLUSION.
     X = cs.new_concept()
+    force_order(cs, X, 0)
     rX = cs._csw_concept_row(cs._concept_source_order(X), X)
     _orthonormal_rows(cs, [rH, r1, r2, rX])
     W = cs.similarity_codebook.getW().detach()
@@ -113,6 +116,7 @@ def test_typed_definition_verbose_not_wrong_without_relations():
     cs = _cs()
     A = cs.new_concept()
     B = cs.new_concept()
+    for cid in (A, B): force_order(cs, cid, 0)
     rA = cs._csw_concept_row(cs._concept_source_order(A), A)
     rB = cs._csw_concept_row(cs._concept_source_order(B), B)
     _orthonormal_rows(cs, [rA, rB])
@@ -128,6 +132,7 @@ def test_typed_definition_respects_stm_capacity_cap():
     # The sec-5 hard cap: the support cannot exceed stm_capacity members.
     cs = _cs()
     cids = [cs.new_concept() for _ in range(6)]
+    for cid in cids: force_order(cs, cid, 0)
     rows = [cs._csw_concept_row(cs._concept_source_order(c), c) for c in cids]
     _orthonormal_rows(cs, rows)
     W = cs.similarity_codebook.getW().detach()

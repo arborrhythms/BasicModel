@@ -29,6 +29,8 @@ def test_selected_typed_scope_changes_the_attentive_extent(tmp_path):
     cs,ws=model.conceptualSpaces[0],model.wholeSpaces[0]
     prior=ws.subspace.what.primitive_properties
     prior.teach(9,[48,49],[0.,1.]);prior.teach(10,[48,49],[1.,0.])
+    from order_fixtures import force_order
+    force_order(cs,10001,0)
     cs._csw_concept_row(0,10001);cs.add_concept_feature(0,'ws',9,1.);cs.add_concept_feature(0,'ws',10,-1.)
     model.forward(inputs[2:3]);model.conceptualSpace._passback_scope_where=torch.tensor([[0.,1.]])
     ids,spans=model._subsymbolic_percepts[:2]

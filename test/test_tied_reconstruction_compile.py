@@ -91,6 +91,64 @@ def test_cached_backward_supports_retained_reads_after_an_ordinary_step(monkeypa
         torch._dynamo.reset()
 
 
+def _held_final_field(model, roots, offset=0.):
+    """Keep the last presented field as an independent differentiable input."""
+    ids = model.inputSpace._packed_sentence_ids
+    index = ids.amax(-1).clamp_min(0)
+    field = roots.gather(1, index[:, None, None].expand(-1, 1, roots.shape[-1]))[:, 0]
+    end = (field.detach().reshape_as(model._tensor_final_end_slots).clone() + offset).requires_grad_()
+    positions = torch.arange(roots.shape[1], device=roots.device)[None]
+    held = torch.where((positions == index[:, None])[..., None], end.flatten(1)[:, None], roots)
+    depth = model._tensor_sentence_roots_depth.gather(1, index[:, None])[:, 0].clone()
+    return held, end, depth
+
+
+def _supplied_inverse_fixture(model, monkeypatch):
+    """Declare a differentiable numerical reading for the compiler contract.
+
+    Fixed-identity byte readback is a discrete audit; legacy free search emits
+    detached dictionary rows. Neither promises a nonzero numerical adjoint.
+    This fixture instead supplies a known co-operand to the real tied inverse,
+    as the existing affine-inverse certificate does. The model's production
+    reconstruction compiler still owns capture, donation and backward caching.
+    """
+    language = model.languageSpace
+    binary = language._tree_layer(2)
+    index = list(binary.op_names).index('lift')
+    op = getattr(binary.ops[index], 'gl', binary.ops[index])
+    monkeypatch.setattr(op, 'percept_band', None)  # numerical content only
+    width = int(model.conceptualSpace.stm.concept_dim)
+    left = torch.linspace(.4, .65, width).reshape(1, width)
+    right = torch.linspace(.55, .425, width).reshape(1, width)
+    parent = op.compose(left, right).detach()
+    witness = right.detach().clone()
+    fields = model._tensor_sentence_roots_live
+    model._tensor_sentence_roots_live = parent[:, None, None].expand(
+        fields.shape[0], fields.shape[1], 3, width).clone().flatten(2)
+    model._tensor_final_end_slots = parent[:, None].expand(
+        fields.shape[0], 3, width).clone()
+
+    def reconstruct(S, reference, roots, depths, end, end_depth):
+        values = roots.reshape(roots.shape[0], -1, width)
+        def condition(i, total):
+            return i < values.shape[1]
+        def body(i, total):
+            value = values.gather(1, i.reshape(1, 1, 1).expand(
+                values.shape[0], 1, width))[:, 0]
+            older, newer = language.reverse_binary_step(value,
+                torch.full((values.shape[0],), index),
+                torch.ones(values.shape[0], dtype=torch.bool),
+                reference=witness.expand(values.shape[0], -1))
+            return i + 1, total + (older.square() + newer.square()).mean(-1)
+        from Models import _carries_with_grad
+        _, cost = torch.while_loop(condition, body, _carries_with_grad((
+            torch.zeros((), dtype=torch.long), values.new_zeros(values.shape[0]))))
+        return reference, S.sum(-1) * 0, cost, cost.bool(), cost[:, None]
+
+    monkeypatch.setattr(model, '_reconstruct_sentences', reconstruct)
+    model.__dict__.pop('_reconstruct_compiled', None)
+
+
 @pytest.mark.slow
 def test_reconstruction_compile_retains_buffers_for_joint_gradient_reads(tmp_path, monkeypatch):
     """Reconstruction is differentiated more than once by the joint rule."""
@@ -113,16 +171,21 @@ def test_reconstruction_compile_retains_buffers_for_joint_gradient_reads(tmp_pat
     model._install_unit_span_fn()
     try:
         _stage_packed(model, [["aa bb cc", "dd ee ff", "gg hh ii"]])
-        with torch.no_grad():
+        from reading_fixtures import use_eager_reading
+        with pytest.MonkeyPatch.context() as staging, torch.no_grad():
+            use_eager_reading(staging)
             state = model._forward_with_compiled_sentence_state(None)
         model._publish_compiled_sentence_state(state)
+        _supplied_inverse_fixture(model, monkeypatch)
         roots = model._tensor_sentence_roots_live.detach().clone().requires_grad_()
-        end = model._tensor_final_end_slots.detach().clone().requires_grad_()
+        # Packed reconstruction owns each held field, not the later STM end.
+        # Supply its final held field as an independent input alongside the others.
+        reading_roots, end, end_depth = _held_final_field(model, roots)
         with config.patch(donated_buffer=True):
             result = model._compiled_reconstruct()(
                 model._stm_single_S.detach().clone(), model._tensor_pushed_ideas.detach().clone(),
-                roots, model._tensor_sentence_roots_depth.detach().clone(),
-                end, model._tensor_final_end_depth.detach().clone())
+                reading_roots, model._tensor_sentence_roots_depth.detach().clone(),
+                end, end_depth)
             value = result[2].sum()
             assert config.donated_buffer is True  # no global configuration mutation
             expected = None
@@ -148,7 +211,11 @@ def test_separate_reconstruction_does_not_retrace_backward_every_step(tmp_path, 
     model = _model(tmp_path)
     calls = []
     try:
-        _run(model, ["aa bb cc"])
+        from reading_fixtures import use_eager_reading
+        with pytest.MonkeyPatch.context() as staging:
+            use_eager_reading(staging)
+            _run(model, ["aa bb cc"])
+        _supplied_inverse_fixture(model, monkeypatch)
         for module_name in ("cond", "while_loop"):
             module = importlib.import_module("torch._higher_order_ops." + module_name)
             original = module.materialize_as_graph
@@ -161,13 +228,14 @@ def test_separate_reconstruction_does_not_retrace_backward_every_step(tmp_path, 
         reconstruct = model._compiled_reconstruct()
         counts = []
         for index in range(3):
-            end = (model._tensor_final_end_slots.detach().clone() + index * .001).requires_grad_()
+            held = model._tensor_sentence_roots_live.detach().clone()
+            held, end, end_depth = _held_final_field(model, held, index * .001)
             result = reconstruct(
-                model._stm_single_S.detach().clone(),
+                end[:, 0],
                 model._tensor_pushed_ideas.detach().clone(),
-                model._tensor_sentence_roots_live.detach().clone(),
+                held,
                 model._tensor_sentence_roots_depth.detach().clone(),
-                end, model._tensor_final_end_depth.detach().clone())
+                end, end_depth)
             compose = tuple(p for p in model.languageSpace._tree_layer(2).parameters()
                             if p.requires_grad)
             gradient, *operator_gradients = torch.autograd.grad(

@@ -55,6 +55,9 @@ def test_free_lift_inverse_searches_both_operands_from_the_bank(tmp_path):
         op=getattr(binary.ops[index],'gl',binary.ops[index])
         dimension=model.conceptualSpace.stm.concept_dim
         codes=torch.arange(1,1+3*dimension,dtype=torch.float32).reshape(1,3,dimension)/(3*dimension+1)
+        # A content inverse cannot recover an operand's event address.
+        # This bank-search fixture supplies unstamped content codes.
+        codes[..., model._readback_percept_width:model._image_form_width] = 0
         parent=op.compose(codes[:,0],codes[:,1])
         left,right,bad=language.reverse_binary_step(parent,torch.tensor([index]),torch.tensor([True]),
             basis=codes,basis_valid=torch.ones(1,3,dtype=torch.bool),basis_priming=torch.ones(1,3),return_status=True)
@@ -85,7 +88,7 @@ def test_conjunction_keeps_the_repeated_reference_for_the_next_operation():
     from ClauseScope import ClauseScope
     scope=ClauseScope([SimpleNamespace(same_reference_idempotent=True)],[])
     state=torch.tensor([[[0,7],[0,7],[0,7]]])
-    choice=SimpleNamespace(kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]),applied=torch.tensor([True]))
+    choice=SimpleNamespace(kind=torch.tensor([1]),local_op=torch.tensor([0]),position=torch.tensor([0]),applied=torch.tensor([True]),stack_arity=torch.tensor([2]))
     once,closing=scope.apply(state,choice,torch.tensor(0))
     assert once[0,0,1] == 7 and closing.item() == 0
     twice,_=scope.apply(once,choice,torch.tensor(1))

@@ -8535,7 +8535,11 @@ class Space(SpaceCarrierMixin, nn.Module):
             # -- e.g. the reconstruction reverse, which seeds the DEEP CS state
             # directly then walks ``PartSpace.reverse`` (so the forward's
             # ``_pre_reshape_output`` does not match this CS-shaped tensor).
-            layer_out = self.subspace.getEncodedOutputSize()
+            # PartSpace folds native events, as forwardBegin already does.
+            # Its raw-byte reshape ratio can round to zero and cannot size
+            # the inverse of an already embedded percept field.
+            layer_out = (int(getattr(self, '_percept_width', 0) or 0)
+                         or self.subspace.getEncodedOutputSize())
             if y.shape[-1] != layer_out:
                 # INVERSE wide<->deep slab-reshape (the top-down/reconstruction
                 # leg of the invertible Pi bridge,
@@ -12599,6 +12603,16 @@ def _concept_rows_exist(host):
 
 
 
+def _bridge_index_layout(capacity):
+    """Lossless signed storage for the constructed zero-based inventory."""
+    capacity = int(capacity)
+    if capacity < 1:
+        raise ValueError('bridge index inventory must be positive')
+    dtype = (torch.int16 if capacity <= 2**16 else
+             torch.int32 if capacity <= 2**32 else torch.int64)
+    return dtype, capacity // 2
+
+
 def _concept_alloc_of(host):
     """Lazy :class:`Layers.ConceptAllocator` + THE shared square store for
     ``host`` (a ConceptualSpace or a duck-typed stub). Sizes the single
@@ -12629,7 +12643,9 @@ def _concept_alloc_of(host):
             caps_fn = getattr(_h, "_order_caps", None)
             return max(2, int(getattr(_h, "_symbolic_order", 0)))
 
-        alloc = ConceptAllocator(layer_sizer=_sizer, order_cap=_cap)
+        alloc = ConceptAllocator(layer_sizer=_sizer, order_cap=_cap,
+            member_width=int(getattr(host, 'nDim', 0)))
+        alloc.reference_order = getattr(host, '_concept_source_order', None)
         object.__setattr__(host, "_concept_allocator", alloc)
         object.__setattr__(host, "_concept_parts",
                            _ConceptRoleView(host, "part"))
@@ -13023,9 +13039,21 @@ class ConceptualSpace(Space):
         # declared input/output inventory. One pair of buffers holds both towers.
         part_cap = int(TheXMLConfig.space('PartSpace', 'nVectors', 0) or self.inputShape[0])
         whole_cap = int(TheXMLConfig.space('WholeSpace', 'nVectors', 0) or self.nVectors)
-        bridge_cap = int(self.nVectors) * (part_cap + whole_cap)
-        self.register_buffer('_priming_bridge_src', torch.full((bridge_cap,), -1, dtype=torch.long), persistent=False)
-        self.register_buffer('_priming_bridge_dst', torch.full((bridge_cap,), -1, dtype=torch.long), persistent=False)
+        # One 32-bit mask represents all destinations in a block of 32.
+        # Each concept can reach every block in both constructed towers, so
+        # this fixed capacity represents the same complete bipartite relation.
+        bridge_cap = int(self.nVectors) * ((part_cap + 31)//32 + (whole_cap + 31)//32)
+        src_dtype, self._priming_bridge_src_bias = _bridge_index_layout(self.nVectors)
+        self._priming_bridge_target_cap = max(part_cap, whole_cap)
+        dst_dtype, self._priming_bridge_dst_bias = _bridge_index_layout(
+            (self._priming_bridge_target_cap + 31)//32)
+        # Counted prefixes only: native capacities need eight bytes per block,
+        # rather than sixteen bytes for each of its 32 possible edges.
+        self.register_buffer('_priming_bridge_src', torch.empty(bridge_cap, dtype=src_dtype), persistent=False)
+        self.register_buffer('_priming_bridge_dst', torch.empty(bridge_cap, dtype=dst_dtype), persistent=False)
+        self.register_buffer('_priming_bridge_bits', torch.empty(bridge_cap, dtype=torch.int32), persistent=False)
+        # The 32 bit positions belong to the fixed mask representation.
+        self.register_buffer('_priming_bridge_offsets', torch.arange(32, dtype=torch.long), persistent=False)
         self._priming_bridge_counts = (0, 0)
         self._priming_bridge_revision = None
         self._priming_bridge_rebuilds = 0
@@ -14792,7 +14820,9 @@ class ConceptualSpace(Space):
         row = int(row)
         cid = self.concept_id_at_row(row)
         if cid is not None:
-            return _concept_alloc_of(self).order_of(cid)
+            # Physical row selection needs a nonnegative pool; unknown stays
+            # unknown in the allocator and uses the base pool only here.
+            return max(0, _concept_alloc_of(self).order_of(cid))
         caps = self._order_caps()
         return next((k for k in range(1, len(caps))
                      if sum(caps[:k]) <= row < sum(caps[:k + 1])), 0)
@@ -15408,11 +15438,28 @@ class ConceptualSpace(Space):
     # -- per-order weight population at mint (abstraction_order-keyed) ---------
 
     def _concept_source_order(self, concept_id, _seen=None):
-        """Ramsified order of a concept: 0 when its constituents are all raw
-        PS/WS codes; otherwise ``1 + max`` order of its sub-symbol constituents.
-        (Symbols ARE concepts of the
-        previous order -- this is the ramsified recursion.) Cycle-guarded."""
+        """Read a concept's witness or a relation's denotation; unknown is -1.
+
+        Raw percept definitions witness zero; structural concepts are one
+        above their members. Relation handles follow their tagged references.
+        """
         alloc = _concept_alloc_of(self)
+        from LTM1 import OCCURRENCE, SYMBOL, RELATION
+        if alloc.parts.contains(concept_id):
+            from types import SimpleNamespace
+            from ReferenceContext import denoted_order
+            seen = set() if _seen is None else set(_seen)
+            key = ('relation', int(concept_id))
+            if key in seen:
+                return -1  # A cyclic chain supplies no order witness.
+            seen.add(key)
+            refs = alloc.parts.references(concept_id)
+            orders = tuple(alloc.order_of(value, seen) if tag == SYMBOL
+                           else self._concept_source_order(value, seen) for tag, value in refs)
+            right = refs[1][1] if refs[1][0] == SYMBOL else refs[1]
+            name = ('equal' if right in alloc.singletons and right not in alloc.raised else
+                    'part' if all(tag == SYMBOL for tag, _ in refs) else 'lift')
+            return denoted_order(SimpleNamespace(method_name=name), orders, refs, alloc)
         if int(concept_id) not in alloc.placement:
             store = self._closed_clause_store()
             row = None if store is None else store.index_of_row(concept_id)
@@ -15459,12 +15506,10 @@ class ConceptualSpace(Space):
         previous_rows = len(alloc.layer()._tensor_row_keys)
         if int(concept_id) in alloc.retired:
             raise ValueError('a retired concept cannot be assigned a new storage row')
-        if int(order) > 0 and alloc.order_of(concept_id) < int(order):
-            alloc.reference_orders[int(concept_id)] = int(order)
-            alloc.placement[int(concept_id)] = int(order)
-            components = getattr(self, 'components', None)
-            if components is not None:
-                components._basis_revision = None
+        if int(order) != alloc.order_of(concept_id):
+            raise ValueError('concept row requested at a foreign order')
+        if int(order) < 0:
+            raise ValueError('an unwitnessed concept has no storage order')
         caps = self._order_caps()
         ly = alloc.layer(0)
         if getattr(self, '_concept_binding', 'mixing') == 'aligned':
@@ -15640,11 +15685,12 @@ class ConceptualSpace(Space):
                 # Alternatives are ordinary concepts in the existing row
                 # inventory, each with its own percept conjunction.
                 alternative = ConceptualSpace.new_concept(self)
-                target = self._csw_concept_row(0, alternative)
                 for p in parts:
                     self.add_part(alternative, p)
                 for w in wholes:
                     self.add_whole(alternative, w)
+                # Admit the percept witness before requesting its order-zero row.
+                target = self._csw_concept_row(0, alternative)
                 self.add_concept_edge(c_row, target, 1.)
             else:
                 target = c_row
@@ -15894,6 +15940,9 @@ class ConceptualSpace(Space):
         if name in reg:
             return reg[name]
         cid = self.new_concept()
+        # This constructor supplies a declared primitive, rather than asking
+        # a row allocation to invent an order for an unwitnessed concept.
+        _concept_alloc_of(self).reference_orders[cid] = 0
         self._csw_concept_row(0, cid)
         self.freeze_concept(cid)
         reg[name] = cid
@@ -16807,26 +16856,44 @@ class ConceptualSpace(Space):
                 for index, values in enumerate(targets):
                     values = () if values is None else values if isinstance(values, tuple) else (values,)
                     pairs[index].update((row, int(value)) for value in values)
-            count = sum(map(len, pairs))
+            blocks = []
+            for group in pairs:
+                packed = {}
+                for src, dst in sorted(group):
+                    valid = 0 <= dst < self._priming_bridge_target_cap
+                    key = (src, dst//32 if valid else 0)
+                    packed[key] = packed.get(key, 0) | ((1 << (dst % 32)) if valid else 0)
+                blocks.append(packed)
+            count = sum(map(len, blocks))
             if count > len(self._priming_bridge_src):
                 raise RuntimeError('priming tower bridge exceeds its constructed vocabulary capacity')
             offset = 0
-            for group in pairs:
+            for group in blocks:
                 if group:
-                    src, dst = self._priming_bridge_src.new_tensor(sorted(group)).T
-                    self._priming_bridge_src[offset:offset+len(group)].copy_(src)
-                    self._priming_bridge_dst[offset:offset+len(group)].copy_(dst)
+                    # Signed int32 preserves all 32 bits, including bit 31.
+                    values = [(src, dst, bits if bits < 2**31 else bits - 2**32)
+                              for (src, dst), bits in sorted(group.items())]
+                    src, dst, bits = torch.tensor(values, dtype=torch.long,
+                        device=self._priming_bridge_src.device).T
+                    self._priming_bridge_src[offset:offset+len(group)].copy_(src - self._priming_bridge_src_bias)
+                    self._priming_bridge_dst[offset:offset+len(group)].copy_(dst - self._priming_bridge_dst_bias)
+                    self._priming_bridge_bits[offset:offset+len(group)].copy_(bits)
                     offset += len(group)
-            self._priming_bridge_counts = tuple(map(len, pairs))
+            self._priming_bridge_counts = tuple(map(len, blocks))
             self._priming_bridge_revision = revision
             self._priming_bridge_rebuilds += 1
         offset = 0
         for count, space in zip(self._priming_bridge_counts, (ps_space, ws_space)):
-            src = self._priming_bridge_src[offset:offset+count]
-            dst = self._priming_bridge_dst[offset:offset+count]
-            offset += count
+            start, offset = offset, offset + count
             if space is None or not count or space._priming_dim() <= 0:
                 continue
+            sources = self._priming_bridge_src[start:offset].long() + self._priming_bridge_src_bias
+            destinations = self._priming_bridge_dst[start:offset].long() + self._priming_bridge_dst_bias
+            bits = self._priming_bridge_bits[start:offset].long()
+            positions = self._priming_bridge_offsets
+            live = ((bits[:, None] >> positions[None, :]) & 1).bool()
+            src = sources[:, None].expand(-1, 32)[live]
+            dst = (destinations[:, None] * 32 + positions[None, :])[live]
             V = space._priming_dim()
             valid = (dst >= 0) & (dst < V)
             target = space._priming_surface(V, device=surface.device, batch=surface.shape[0])
@@ -16913,7 +16980,9 @@ class ConceptualSpace(Space):
             return
         width = max(1, min(int(store.content_width), int(store.nDim)))
         for index in store.relations(reading).tolist():
-            row = store.part_row(index)
+            # This numerical pair reader requests its predicate view explicitly;
+            # an untyped chain otherwise places its right reference in slot one.
+            row = store.part_row(index, reading=reading or 'part')
             roles = row['meaning'].roles
             yield (index, roles[0, :width], roles[2, :width], float(row['trust']))
 

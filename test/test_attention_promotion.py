@@ -4,6 +4,7 @@ Matching contexts assign disjunctive parts; conceptualPi admits complete
 co-present sets as conjunctive parts. Detached use EWMA promotes the same
 row in place and replenishes the per-order provisional pool.
 """
+from order_fixtures import force_order
 import os
 import sys
 
@@ -50,6 +51,7 @@ def _mint_order0(cs, n):
     out = []
     for _ in range(n):
         cid = alloc.new_concept()
+        force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
         assert row is not None
         out.append((cid, int(row)))
@@ -246,6 +248,7 @@ def test_row_pool_prunes_weak_edges_when_use_discovers_it():
     ly = Spaces._concept_alloc_of(cs).layer()
     cs.add_concept_edge(r, rows[3][1], weight=.0001)
     frozen = Spaces._concept_alloc_of(cs).new_concept()
+    force_order(cs, frozen, 1)
     frozen_row = cs._csw_concept_row(1, frozen)
     cs.add_concept_edge(frozen_row, a, weight=.4)
     cs.freeze_concept(frozen)

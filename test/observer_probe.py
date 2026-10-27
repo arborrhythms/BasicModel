@@ -22,6 +22,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     with observe_run() as run_audit:
         model.runEpoch(optimizer=optimizer,batchSize=4,split='train')
         model.runBatch(train=False,optimizer=None,batchSize=4,split='test',batch_override=batch)
+    (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
     decomposition=run_audit['decomposition_chooser']
     assert decomposition['start']['weights'] == [1., 0., 0., 0., 0.]
     assert decomposition['start']['undos'] > 0
@@ -30,7 +31,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     steps=run_audit['compose_score_function_steps']
     assert len(steps)==4
     assert all(row['sampling_scale']==row['W']*row['R_walk']*row['K'] for row in steps)
-    assert all(row['W']==2 for row in steps)
+    assert all(row['W']==sum(n > 0 for n in row['eligible_walk_counts']) for row in steps)
     assert run_audit['chooser_logit_ranges']['1']['calls']>0
     assert all(row.get('gradient_max_error',0.)<2e-6 for row in steps)
     assert all(row.get('finite_difference',{}).get('error',0.)<2e-6 for row in steps)
@@ -41,11 +42,17 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert run_audit['storage']['sentence_rows'] == 4
     assert run_audit['storage']['rows_used'] < run_audit['storage']['capacity']
     assert run_audit['reader_weights'][0]['reader_updates'] == 1
-    assert set(run_audit['reader_weights'][0]['optimizer_steps'].values()) == {1.}
+    calls = run_audit['output_backward_calls']
+    assert [call['trial'] for call in calls if call['sentence'] and call['present']] == ['explore']
+    # Retiring mode offers the ordinary thought pair to this completed field.
+    # Its output-owned losses make one distinct batch-end reader update.
+    thought_steps = sum(not call['sentence'] and bool(call['present']) for call in calls)
+    assert thought_steps == 1
+    assert set(run_audit['reader_weights'][0]['optimizer_steps'].values()) == {1. + thought_steps}
     assert len(run_audit['reader_training_rows']) == 1
     assert len(run_audit['comparison_reader_weights']) == 1
     assert run_audit['comparison_reader_weights'][0]['reader_updates'] == 1
-    assert set(run_audit['comparison_reader_weights'][0]['optimizer_steps'].values()) == {1.}
+    assert set(run_audit['comparison_reader_weights'][0]['optimizer_steps'].values()) == {1. + thought_steps}
     assert len(run_audit['reader_mse']) == 1
     assert all(sum(w)==1 and set(w)<={0.,1.} for w in run_audit['reader_training_rows'][0]['weights'])
     assert all(all(row['rows']) for row in run_audit['reader_training_rows'])
@@ -62,7 +69,6 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
         assert identity['containment_violations'] == 0
     assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']
     assert all(phase in run_audit['centroid'] for phase in ('start','end'))
-    (Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])/'run-audit.json').write_text(json.dumps(run_audit,default=json_value,indent=2))
     operators_gate_observer.save_ownership(model)
     folder = Path(os.environ['OWNERSHIP_OBSERVER_OUTPUT'])
     events = [json.loads(line) for line in (folder/'events.jsonl').read_text().splitlines()]
@@ -70,7 +76,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     steps = [event for event in events if event['kind'] == 'decoder_margin_step']
     assert len(first) >= 2
     assert {row['path'] for row in first} == {'greedy', 'explore'}
-    assert len(steps) == 2
+    assert len(steps) == 2 + thought_steps
     assert not any(step['walks'] for step in steps)
     assert 'attention_score_function_steps' not in run_audit
     assert len([r for r in run_audit['sentence_trials'] if r['training']]) == 1

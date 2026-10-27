@@ -51,7 +51,11 @@ def scorer(model, state, observation, sentence):
         presented, comparison = Error(row_mask=active), Error(row_mask=active)
         # Both readers are output-owned. Held forward values survive other
         # owners' sentence updates before the ordinary batch-end backward.
-        with torch.autograd.graph.saved_tensors_hooks(lambda tensor:tensor.clone(),lambda tensor:tensor):
+        # Freeze mutable parameter/buffer views once per version. Immutable
+        # reader intermediates retain their existing storage, as at the
+        # enclosing sentence boundary, rather than cloning every saved use.
+        from SentenceCompose import saved_sentence_values
+        with saved_sentence_values(model.parameters(), model.buffers()):
             value = model._sentence_reader_error(bound,sentence,active,view,registry=presented)
             reader = getattr(model,'comparison_reader',None)
             if reader is not None and value is not None:

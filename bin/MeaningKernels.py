@@ -85,6 +85,20 @@ def householder(vectors):
     return result
 
 
+def householder_action(values, vectors, *, transpose=False):
+    """Apply the same product of reflections without its dense matrix.
+
+    Q = H1 ... Hk: Q.T acts in forward reflection order, Q in reverse.
+    The carried evidence lanes add one axis beside the vector coordinates.
+    """
+    reflections = vectors.unbind(-2)
+    for vector in reflections if transpose else reversed(reflections):
+        norm = vector.square().sum(-1, keepdim=True)
+        projected = (values * vector[..., None, :]).sum(-1, keepdim=True)
+        values = values - 2 * projected * vector[..., None, :] / torch.where(norm > 0, norm, 1.)[..., None, :]
+    return values
+
+
 class VerbGroups(nn.Module):
     """Learned bases with host-owned fit witnesses and verb assignments."""
     def __init__(self, size, capacity=24, reflections=4, fit=.1):
@@ -101,6 +115,13 @@ class VerbGroups(nn.Module):
 
     def forward(self, group):
         eye = torch.eye(self.vectors.shape[-1], device=self.vectors.device, dtype=self.vectors.dtype)
+        if not torch.compiler.is_compiling() and not bool((group >= 0).any()):
+            # An entirely unknown group denotes I. Avoid retaining batched
+            # dense reflection intermediates which the mask would discard.
+            # The empty sum preserves the original zero parameter gradient
+            # (and therefore optimizer momentum updates) without a basis.
+            zero = self.vectors.reshape(-1)[:0].sum()
+            return (eye + zero).expand(*group.shape, *eye.shape)
         # Keep a scalar group as a tensor index inside nested cond/while
         # graphs; scalar subscription otherwise extracts an unbacked integer.
         vectors = self.vectors.index_select(0, group.clamp(0, self.capacity-1).reshape(-1))
@@ -203,6 +224,27 @@ class MeaningAction(nn.Module):
                 support = torch.where(object_present[..., None], support, True)
         return q, support
 
+    def _basis_action(self, chart, *, object_value=None, group=None,
+                      object_present=None, transpose=False):
+        # Forward action needs Q times two vectors, not every column of Q.
+        # Each saved intermediate is [..., 2, size], instead of [..., size,
+        # size]. The inverse below still constructs its restricted SPD solve.
+        if self.modifier:
+            group = torch.zeros((), dtype=torch.long, device=chart.device)
+        result = chart
+        if group is not None:
+            vectors = self.groups.vectors.index_select(0, group.clamp(0, self.groups.capacity-1).reshape(-1))
+            vectors = vectors.reshape(*group.shape, *self.groups.vectors.shape[1:])
+            selected = householder_action(chart, vectors, transpose=transpose)
+            result = torch.where((group >= 0)[..., None, None], selected, chart)
+        if object_value is not None:
+            support = object_value.unflatten(-1, (2, self.readout.shape[0])).ne(0).any(-2)
+            vectors = torch.einsum('...d,knd->...kn', object_value, self.object_vectors)
+            selected = householder_action(chart, vectors * support[..., None, :], transpose=transpose)
+            result = selected if object_present is None else torch.where(
+                object_present[..., None, None], selected, result)
+        return result
+
     def forward(self, value, verb, *, object_value=None, group=None,
                 object_present=None, inverse=False):
         from Layers import cube_chart, cube_unchart
@@ -220,8 +262,15 @@ class MeaningAction(nn.Module):
             chart = cube_chart(lanes, bounded=False)
             result = torch.where(lanes != 0, cube_unchart(chart * ((-w if inverse else w).exp()[..., None, :])), 0.).flatten(-2)
             return exact_initial(value, result, (w == 0).all(-1, keepdim=True))
-        q, allowed = self.basis(value, object_value=object_value, group=group,
-                                object_present=object_present)
+        if inverse:
+            q, allowed = self.basis(value, object_value=object_value, group=group,
+                                    object_present=object_present)
+        else:
+            allowed = torch.ones_like(value[..., :self.readout.shape[0]], dtype=torch.bool)
+            if object_value is not None:
+                allowed = object_value.unflatten(-1, (2, self.readout.shape[0])).ne(0).any(-2)
+                if object_present is not None:
+                    allowed = torch.where(object_present[..., None], allowed, True)
         w = self.spectrum(verb) * allowed
         size = w.shape[-1]
         lanes = value.unflatten(-1, (2, size))
@@ -239,8 +288,9 @@ class MeaningAction(nn.Module):
             torch._assert_async((info == 0).all(), 'meaning action inverse is singular')
             changed = solved[..., 0]
         else:
-            projected = (q.transpose(-1, -2)[..., None, :, :] @ chart[..., None])[..., 0]
-            changed = (q[..., None, :, :] @ (projected*w.exp()[..., None, :])[..., None])[..., 0]
+            basis = dict(object_value=object_value, group=group, object_present=object_present)
+            projected = self._basis_action(chart, transpose=True, **basis)
+            changed = self._basis_action(projected*w.exp()[..., None, :], **basis)
         result = torch.where(present, cube_unchart(changed), 0.).flatten(-2)
         result = torch.where(allowed[..., None, :].expand_as(lanes).flatten(-2), result, value)
         return exact_initial(value, result, (w == 0).all(-1, keepdim=True))

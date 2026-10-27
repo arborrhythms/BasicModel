@@ -1,4 +1,5 @@
 """Native concept identity, learned output, and its independent ordered inverse."""
+from order_fixtures import force_order
 from pathlib import Path
 from types import SimpleNamespace
 from dataclasses import replace
@@ -187,6 +188,7 @@ def test_contained_ordered_group_reconstructs_at_its_extent():
     cs = model.conceptualSpaces[0]
     radix = model.perceptualSpace.percept_store
     for index, text in enumerate(texts):
+        force_order(cs, 30000 + index, 0)
         row = cs._csw_concept_row(0, 30000 + index)
         group = tuple(radix.get_id(bytes([value])) for value in text.encode())
         cs.add_concept_feature(row, 'ps', group, 1.)

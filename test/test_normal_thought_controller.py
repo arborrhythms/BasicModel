@@ -4,6 +4,7 @@ These are reviewer probes for the normal boundary controller, not the legacy
 ``LTMSlot`` parity loop.  They exercise a real checked VP registry, the one
 existing interaction-memory owner, and its shared work/cutoff accounting.
 """
+from order_fixtures import force_order
 
 from dataclasses import replace
 from types import MappingProxyType, SimpleNamespace
@@ -35,8 +36,10 @@ def _catalog_world():
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
+    force_order(cs, base, 0)
     part, whole = ("sym", cs.synthesize_higher_order([("sym", base)])), ("sym", cs.new_concept())
-    cs._csw_concept_row(0, part[1])
+    cs._csw_concept_row(cs._concept_source_order(part[1]), part[1])
+    force_order(cs, whole[1], 0)
     cs._csw_concept_row(0, whole[1])
     cs.add_whole(part[1], whole)
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")

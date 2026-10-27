@@ -246,15 +246,15 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
     model._install_unit_span_fn()
     assert not model.symbolSpace.expectation.expectation_enabled
     store = model.symbolSpace.ltm_store
-    written = []
+    written, sources = [], []
     append = Models._append_observed_meaning
 
     def capture(target, clause, **kwargs):
         written_rows = kwargs.setdefault('written_rows', {})
         row = append(target, clause, **kwargs)
         if target is store:
-            occurrence = store.location(written_rows['root_occurrence'])
-            written.append(int(store.row_ids[occurrence]))
+            written.append(written_rows['root_occurrence'])
+            sources.append(target._write_address[:2])
         return row
 
     monkeypatch.setattr(Models, '_append_observed_meaning', capture)
@@ -266,16 +266,19 @@ def test_expectation_off_keeps_every_packed_closing_in_ltm(tmp_path, monkeypatch
         rows = [store.row(i) for i in range(before, len(store))]
         # An untrained reading can leave a bind unresolved and close as a
         # question. Both external closings must survive, independently of
-        # their grammatical mode and of the expectation switch.
+        # their evidence and of the expectation switch. Tagged chain roots
+        # and occurrence roots share this reader; sentence time is perceptual.
         assert len(written) == len(set(written)) == 2
-        roots = [store.index_of_row(address) for address in written]
-        assert all(row is not None and row >= before for row in roots)
-        assert len({int(store.sentence_index[row]) for row in roots}) == 2
-        assert all(store.row(row)['kind'] in ('observation', 'question') for row in roots)
+        roots = [store.location(address) for address in written]
+        assert all(row is not None for row in roots)
+        closings = [store.row(row) for row in roots]
+        assert len(set(sources)) == 2  # Both packed source positions reached the writer.
+        assert all(row['kind'] in ('observation', 'unverified', 'question') for row in closings)
+        rows.extend(row for address, row in zip(roots, closings) if isinstance(address, tuple))
         assert all(row['kind'] in ('observation', 'unverified', 'question', 'inference', 'cover') for row in rows)
         assert sum(row['kind'] == 'cover' for row in rows) == 1
         assert not any(row['kind'] == 'estimate' for row in rows)
-        assert all(int(store.meaning_of(i).role_mask.sum()) in (1, 3) for i in range(before, len(store)))
+        assert all(int(store.meaning_of(i).role_mask.sum()) == 1 for i in range(before, len(store)))
         assert not hasattr(store, 'clause_derivation')
     finally:
         model.End()

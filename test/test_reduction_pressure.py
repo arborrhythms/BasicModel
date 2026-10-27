@@ -24,11 +24,14 @@ def test_online_deadline_uses_full_depth_behind_the_two_slot_window():
     from Spaces import ConceptualSpace
     step = unary_first()
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=step),
+                            _compose_binary_rules=(), _compose_unary_rules=(),
                             _structural_context=lambda **kwargs: None)
     # Before the word arrives there are K-1 terms. After its deposit, d=K.
     state = (torch.ones(1, 8, 1), torch.tensor([8]),
              torch.zeros(1, 8, dtype=torch.long), torch.zeros(1, 8, dtype=torch.long),
              torch.full((1, 8), -1, dtype=torch.long), torch.ones(1, 8))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     choice = Language.LanguageSpace.choose_operation(owner, state, torch.tensor([True]),
         slots=1, allowance=7, rounds_left=1)
     assert choice.kind.tolist() == [1]

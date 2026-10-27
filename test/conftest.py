@@ -80,6 +80,20 @@ def _release_test_compilation_cache():
 
 
 @pytest.fixture(autouse=True)
+def _release_unreachable_test_models():
+    """Release cyclic models between independent cases in the single-process sweep.
+
+    Diagnostic continuation measured 2.1--2.7 GiB of unreachable tensors
+    released by collection alone. Live module fixtures and compilation caches
+    remain owned; module teardown still resets the compilation cache.
+    """
+    import gc
+    gc.collect()
+    yield
+    gc.collect()
+
+
+@pytest.fixture(autouse=True)
 def _reset_global_singletons():
     """Reset cross-test global singletons before every test.
 

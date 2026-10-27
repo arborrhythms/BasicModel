@@ -65,6 +65,15 @@ class InterpretLayer(GrammarLayer):
         return tuple(dict.fromkeys((*self.owner.definitions.object_ids,
             *(word for word in self._pending if self.no_object(word)))))
 
+    def denotations(self, word):
+        """Keep definitions, reading a witnessed raised parent over its base."""
+        from Spaces import _concept_alloc_of
+        from LTM1 import SYMBOL
+        alloc = _concept_alloc_of(self.owner)
+        objects = self.owner.definitions.objects(int(word))
+        return tuple(cid for cid in objects if alloc.relate_idx.get(
+            ('part-kind', (SYMBOL, cid), alloc.order_of(cid)+1)) not in objects)
+
     def lexical_form(self, identity):
         if self.no_object(identity):
             value = self._pending[int(identity)]
@@ -370,7 +379,7 @@ class InterpretLayer(GrammarLayer):
         from Spaces import _concept_alloc_of
         cs, word = self.owner, int(word)
         alloc, index = _concept_alloc_of(cs), cs.definitions
-        candidates = index.objects(word)
+        candidates = index.objects(word) if order is not None else self.denotations(word)
         frozen = getattr(cs, '_online_learning_frozen', False)
         if self.no_object(word):
             return word

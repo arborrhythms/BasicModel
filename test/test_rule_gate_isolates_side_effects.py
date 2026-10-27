@@ -24,7 +24,7 @@ import pytest
 import torch
 
 
-def _build_gate_model():
+def _build_gate_model(tmp_path):
     from data import TheData
     from Models import BaseModel
     from util import init_config, init_device
@@ -33,60 +33,58 @@ def _build_gate_model():
     init_config(path=cfg, defaults_path=str(_root / "data" / "model.xml"))
     TheData.load("text", shard_dir=str(_root / "data" / "fineweb"),
                  num_shards=1, max_docs=8)
-    m, _ = BaseModel.from_config(cfg, data=TheData)
+    # Each fixture presents the first loaded sentence. There cannot be more
+    # nonempty lexical units than input bytes; construct that full bound.
+    first = TheData.train_input[0]
+    width = len(first.encode('utf8')) if isinstance(first, str) else int(first.ne(0).sum())
+    width = max(1, width)
+    text = Path(cfg).read_text()
+    for tag in ('serialWordCapacity', 'serialWordBuckets'):
+        old = f'<{tag}>8</{tag}>'
+        assert old in text
+        text = text.replace(old, f'<{tag}>{width}</{tag}>', 1)
+    path = tmp_path/'gate-model.xml'
+    path.write_text(text)
+    m, _ = BaseModel.from_config(str(path), data=TheData)
     return m.to("cpu")
 
 
 @pytest.mark.slow
-def test_false_gate_contribution_is_zero():
-    """At an inactive batch row / padding column, the per-iteration
-    contribution must be zero. The list-based accumulator records
-    one tensor per call; gate=False yields zeros."""
-    m = _build_gate_model()
-    isp = m.inputSpace
-    inp, _ = isp.getTrainData()
-    isp.Start()
-    inputTensor = isp.prepInput(list(inp[:1]))
-    in_sub = m._lex_embed_stem(inputTensor)
-    m._per_word_prelude(in_sub)
-    m._stage_reconstruction_teacher()
-    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
-        isp._word_active_mask.shape[1], isp._word_active_mask.device)
-    out_slot = m._per_word_contributions = [None] * isp._word_active_mask.shape[1]
-    B = isp._ar_embedded_N.shape[0] if isp._ar_embedded_N is not None else 1
-    gate_false = torch.zeros(B, 1, dtype=torch.bool)
-    w = isp.word_at(0)
-    m._per_word_body_step(w, 0, gate_false, out_slot)
-    contribution = out_slot[0]
+def test_false_gate_contribution_is_zero(tmp_path, monkeypatch):
+    """An inactive native word contributes zero while preserving the carry."""
+    from test_per_word_capture_gate import _stage_for_per_word
+    m = _build_gate_model(tmp_path)
+    inp, _ = m.inputSpace.getTrainData()
+    step, carry, staged = _stage_for_per_word(m, monkeypatch, samples=list(inp[:1]))
+    word = staged['words'][:, :1]
+    gate_false = torch.zeros_like(staged['active'][:, :1])
+    index = word.new_zeros((), dtype=torch.long)
+    payload, _ = staged['stage_cs_sub'](word, gate_false, index,
+        torch.ones((), dtype=torch.bool), carry[1])
+    contribution = payload[0]
     assert torch.all(contribution == 0), (
         "False-gate contribution must be zero; got non-zero "
         f"max abs {contribution.abs().max().item()}")
 
 
 @pytest.mark.slow
-def test_false_gate_preserves_stm_buffer():
-    m = _build_gate_model()
-    isp = m.inputSpace
-    inp, _ = isp.getTrainData()
-    isp.Start()
-    inputTensor = isp.prepInput(list(inp[:1]))
-    in_sub = m._lex_embed_stem(inputTensor)
-    m._per_word_prelude(in_sub)
-    m._stage_reconstruction_teacher()
-    m._prepare_reconstruction_choices(isp._word_active_mask.shape[0],
-        isp._word_active_mask.shape[1], isp._word_active_mask.device)
+def test_false_gate_preserves_stm_buffer(tmp_path, monkeypatch):
+    from test_per_word_capture_gate import _stage_for_per_word
+    m = _build_gate_model(tmp_path)
+    inp, _ = m.inputSpace.getTrainData()
+    step, carry, staged = _stage_for_per_word(m, monkeypatch, samples=list(inp[:1]))
     stm = m.conceptualSpace.stm
-    if stm is None:
-        pytest.skip("model has no STM")
+    stm.set_state(carry[0])
+    before = tuple(value.clone() for value in stm.state)
     buf_before = stm._buffer.clone()
     depth_before = stm._depth.clone()
-    out_slot = m._per_word_contributions
-    w = isp.word_at(0)
-    B = w.shape[0]
-    gate_false = torch.zeros(B, 1, dtype=torch.bool)
-    m._per_word_body_step(w, 0, gate_false, out_slot)
+    word = staged['words'][:, :1]
+    result = step(word, torch.zeros_like(staged['active'][:, :1]),
+                  word.new_zeros((), dtype=torch.long), carry)
+    stm.set_state(result[0])
     assert torch.equal(stm._buffer, buf_before), "STM buffer changed under gate=False"
     assert torch.equal(stm._depth, depth_before), "STM depth changed under gate=False"
+    assert all(torch.equal(a, b) for a, b in zip(stm.state, before))
 
 
 def test_maybe_blend_event_noop_when_gate_false():

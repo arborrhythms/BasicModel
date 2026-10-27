@@ -112,13 +112,22 @@ def test_forward_equals_compose_on_a_live_snapshot():
 
 # -- Phase 1, step A: the ladder stem (units = staged wholes, atoms = bytes) --
 
-def _build_ladder(dat=None):
+def _build_ladder(dat=None, *, tmp_path=None, retained_presentations=0):
     import Language
     from util import init_config
     from data import TheData
     import Models
 
     config = _DATA / "MM_ladder.xml"
+    if retained_presentations:
+        # Each eight-word reading can name W*(4+2*K) journal identities;
+        # add its cover, sentence entry and estimate. Six batches of eight
+        # streams retain at most 48 * (8*(4+2*8) + 3) rows in these probes.
+        capacity = int(retained_presentations) * (8 * (4 + 2 * 8) + 3)
+        source = config.read_text().replace(
+            '<SymbolSpace>', f'<SymbolSpace>\n    <ltmCapacity>{capacity}</ltmCapacity>', 1)
+        config = tmp_path / 'MM_ladder_retained.xml'
+        config.write_text(source)
     init_config(path=str(config), defaults_path=str(_DATA / "model.xml"))
     Language.TheGrammar._configured = False
     cfg = Models.BaseModel.load_config(str(config))
@@ -407,7 +416,8 @@ def test_admitted_phrase_row_snaps_at_the_folded_slot():
     cs = m._concept_owner()
     _stage_tensor_peer(m, ["12 plus 1"])
     stm = m.conceptualSpace.stm
-    ids = m.inputSpace._ar_word_concept_ids
+    from PrependedSymbols import word_view
+    ids = word_view(m.inputSpace, "concept_ids")
     members = (int(ids[0, 0]), int(ids[0, 1]))
     cs.__dict__["_chunk_rows"] = {members: 5}
     table = cs.chunk_row_table(ids.device)
@@ -428,6 +438,8 @@ def test_admitted_phrase_row_snaps_at_the_folded_slot():
              torch.full((B, int(stm.capacity)), -1),
              torch.full((B, int(stm.capacity)), -1),
              torch.zeros(B, int(stm.capacity)))
+    from chunk_fixtures import from_stack
+    state = from_stack(*state)
     snapped = cs.apply_phrase_rows(state, phrase_row, on)
     assert snapped[4][0, 0].item() == 5 and snapped[5][0, 0].item() == 1.0
     # Not applied: untouched.
@@ -564,12 +576,12 @@ def test_utility_counts_accrue_once_per_presentation(eager_reading, trained_ladd
 
 @pytest.mark.slow
 @pytest.mark.usefixtures('eager_reading')
-def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase():
+def test_recurring_same_whole_pair_is_proposed_and_admitted_as_a_phrase(tmp_path):
     """Under digit wholes a two-digit numeral is a coarse whole over two
     digit units; a chunk chosen on that pair recurring ``admissionCount``
     times is admitted as a concept over the two member concepts.  (On a
     text corpus numerals rarely recur; here the mechanism is under test.)"""
-    m = _build_ladder()
+    m = _build_ladder(tmp_path=tmp_path, retained_presentations=6 * 8)
     cs = m._concept_owner()
     before = len(cs.__dict__.get("_chunk_admitted", {}))
     # Force the chooser toward chunk on licensed pairs so the mechanism fires
@@ -687,7 +699,8 @@ def test_cold_start_learns_space_as_the_basic_boundary(tmp_path):
     b0, e0, a0, _ = ws._predicate_masks()
     assert not bool(b0.any() or e0.any() or a0.any())
     opt = m.getOptimizer(lr=1e-3)
-    for _ in range(6):
+    from slow_budget import slow_count
+    for _ in range(slow_count(6)):
         m.runEpoch(optimizer=opt, batchSize=4, split="train")
     b_on, e_on, a_on, _ = ws._predicate_masks()
     assert any(bool(b_on[c]) or bool(e_on[c]) or bool(a_on[c]) for c in space_cols), \
@@ -721,7 +734,8 @@ def test_digit_identity_order_and_repetition_are_distinct_occurrences(ladder):
     # A digit's concept identity is the same at another position (translation).
     with torch.no_grad():
         m._lex_embed_stem(m.inputSpace.prepInput(["1 plus 12"]))
-    cids = m.inputSpace._ar_word_concept_ids[0].tolist()
+    from PrependedSymbols import word_view
+    cids = word_view(m.inputSpace, "concept_ids")[0].tolist()
     u2 = m.perceptualSpace._forward_input["word_texts"][0]
     ones = [cids[w] for w, u in enumerate(u2) if u == "1"]
     assert len(ones) == 2 and ones[0] == ones[1] and ones[0] >= 0
@@ -770,7 +784,7 @@ def test_recurring_phrases_are_admitted_on_a_text_corpus_with_positive_gain():
 @pytest.mark.slow
 @pytest.mark.usefixtures('eager_reading')
 def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
-    m = _build_ladder()
+    m = _build_ladder(tmp_path=tmp_path, retained_presentations=6 * 8)
     cs = m._concept_owner()
     ws = m.wholeSpaces[0]
     with torch.no_grad():
@@ -784,7 +798,7 @@ def test_utility_state_and_predicates_round_trip_a_checkpoint(tmp_path):
     assert counts > 0 and admitted
     path = tmp_path / "ladder.ckpt"
     m.save_weights(str(path))
-    m2 = _build_ladder()
+    m2 = _build_ladder(tmp_path=tmp_path, retained_presentations=6 * 8)
     m2.load_weights(str(path), require_match=False)
     cs2 = m2._concept_owner(); ws2 = m2.wholeSpaces[0]
     assert cs2.utility_counts()["n"] == counts

@@ -140,17 +140,17 @@ def test_parse_category_still_accepts_multi_digit_constant():
 
 # -- RuleOrderSignature tests -----------------------------------------
 # Each parsed rule has an order signature capturing LHS / RHS categories,
-# their OrderExprs, the op name, and the order_delta (+1 / -1 / 0).
+# their OrderExprs and the operation name; denotation supplies the order.
 
 
-def test_lift_preserves_subject_order():
-    """``S4 = lift(NP3, VP1)`` parses with ``order_delta == +1`` and fully
+def test_lift_looks_up_subject_predication_order():
+    """``S4 = lift(NP3, VP1)`` retains fully
     explicit constant order annotations on every category."""
     from Language import Grammar
     g = Grammar()
     rule = g._parse_rule("S4", "lift(NP3, VP1)", space_role='SS')
     sig = g._rule_order_signature(rule)
-    assert sig.order_delta == 0
+    assert not hasattr(sig, 'order_delta')
     assert sig.lhs_category == "S"
     assert sig.lhs_order_expr.kind == "constant"
     assert sig.lhs_order_expr.delta == 4
@@ -162,15 +162,14 @@ def test_lift_preserves_subject_order():
     assert sig.op_name == "lift"
 
 
-def test_lower_rule_has_order_delta_minus_one():
-    """``NP3 = lower(DET, NP4)`` parses with ``order_delta == -1``. NP4
-    (abstract count noun) is specified by DET into NP3 (contiguous
-    individual). NP3 is the contiguous floor — there is no NP2."""
+def test_lower_rule_has_lookup_without_a_declared_delta():
+    """``NP3 = lower(DET, NP4)`` keeps category annotations. The denoted
+    member order comes from the noun, independently of those annotations."""
     from Language import Grammar
     g = Grammar()
     rule = g._parse_rule("NP3", "lower(DET, NP4)", space_role='SS')
     sig = g._rule_order_signature(rule)
-    assert sig.order_delta == -1
+    assert not hasattr(sig, 'order_delta')
     assert sig.lhs_category == "NP"
     assert sig.lhs_order_expr.kind == "constant"
     assert sig.lhs_order_expr.delta == 3
@@ -184,12 +183,12 @@ def test_lower_rule_has_order_delta_minus_one():
 
 
 def test_ordinary_rule_is_order_preserving():
-    """Non-lift / non-lower rules have ``order_delta == 0``."""
+    """Joined orders come from operands, without a rule delta."""
     from Language import Grammar
     g = Grammar()
     rule = g._parse_rule("NP", "conjunction(DET, N)", space_role='SS')
     sig = g._rule_order_signature(rule)
-    assert sig.order_delta == 0
+    assert not hasattr(sig, 'order_delta')
     assert sig.op_name == "conjunction"
 
 
@@ -199,7 +198,7 @@ def test_unary_rule_order_signature():
     g = Grammar()
     rule = g._parse_rule("S", "not(S)", space_role='SS')
     sig = g._rule_order_signature(rule)
-    assert sig.order_delta == 0
+    assert not hasattr(sig, 'order_delta')
     assert sig.lhs_category == "S"
     assert sig.rhs_categories == ("S",)
     assert len(sig.rhs_order_exprs) == 1
@@ -240,7 +239,7 @@ def test_modal_sentence_lift():
     assert sig.rhs_order_exprs[0].delta == 4
     assert sig.rhs_order_exprs[1].delta == 1
     assert sig.op_name == "lift"
-    assert sig.order_delta == 0
+    assert not hasattr(sig, 'order_delta')
 
 
 def test_complete_grammar_relation_ops_registered_and_mirrored():
@@ -309,4 +308,4 @@ def test_signatures_capture_explicit_orders_for_runtime_use():
     assert sig.rhs_categories == ("DET", "N")
     assert sig.rhs_order_exprs[0].delta == 0
     assert sig.rhs_order_exprs[1].delta == 3
-    assert sig.order_delta == 0
+    assert not hasattr(sig, 'order_delta')

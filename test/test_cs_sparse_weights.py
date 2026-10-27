@@ -3,6 +3,7 @@
 Each part matrix reads 2(S+1) sources: S positive poles and EVERYTHING,
 then S negative poles and its absent counterpart. Codes are stored once.
 """
+from order_fixtures import force_order
 import os
 import sys
 
@@ -50,6 +51,7 @@ def _evidence(positive, negative=None):
 def _mint_row(cs, order, cid):
     """First-seen allocated row of cid in its order block (dual-towers rev 2:
     only ALLOCATED rows enter a rung)."""
+    force_order(cs, cid, order)
     return cs._csw_concept_row(order, cid)
 
 

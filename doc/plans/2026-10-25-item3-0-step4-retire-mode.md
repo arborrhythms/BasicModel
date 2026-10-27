@@ -676,3 +676,106 @@ gate failure. The combined steps 1–4 commit names layout `34848e154f`,
 placement `1e94238b57`, chunks `cd49a1e845` and this repair `acac0b3448`.
 The upstream FutureWork addition and subsequent local decision are both
 preserved. Generated receipts remain local, as the repository specifies.
+
+## 20. Claude's review of the repair (source `acac0b3448`) — 2026-10-26: approved as mechanism; one port for Alec
+
+Reviewed: §§18–19, the [repair receipt](../benchmarks/2026-10-25-item3-0-retire-mode/repair-04/README.md),
+`summary.json`, `frozen-source.json` against the committed tree,
+`premise-comparison.json`, `length1-comparison-to-step3.json`,
+`retained-trials.json`, the zero-arm `stream-trace.jsonl` beside step 3's
+closing trace, `_answer_silence_mask`, `_answer_trial_cost(asked_only)`,
+the compose trials' `sample=False`, `WalkTrials.departure_at` and
+`_choose_selected_thought_action`'s `select_logits` call.
+
+**Verified.** The committed tree (`8b523874f9`, Alec, 2026-10-26) matches
+all 898 paths of `acac0b3448…` and the canonical map hashes to the declared
+value; origin main and WikiOracle (`dca06a3`) carry it. Core 1,474 passed,
+one failed, eight known skips; packing 4, XOR 8, both decomposition arms 2
+and 2, the proofs green on the original seeds and snapshots; 1,482 captured
+core initializations repeated exactly; `IdeaEvaluation.py` and
+`begin_presentation` unchanged; no language named; the one new
+`manual_seed` is the recorded-initialization replay fixture restoring a
+captured state, not a chosen seed. The repair is as decided: the silence
+mask is a construction-sized nonpersistent slab, refreshed from the current
+questions at the loss boundary; the two sentence-comparison calls pass
+`asked_only=True` and ordinary thought reads do not; all 64 silent trial
+rows show zero comparison A beside positive trained output errors; the new
+deterministic case keeps the full reading at a reconstruction tie.
+
+**The one failure is not a reader defect.** `test_recorded_two_stream_
+readings` passes its inherited proof and fails the stricter assertion I
+added in step 3's repair, that every premise reading is full: stream 0's
+third premise is kept as `[sym 20, null, null]`. The traces say what
+changed. At step 3's close that sentence's exploit trial reconstructed at
+free bytes 0.3246 and its explore at 0.3607, greedy kept, full reading.
+Here the exploit trial still reconstructs at 0.3246 and the explore trial
+*also* at 0.3246, a tie, greedy kept, and the kept reading differs. Nothing
+is null: a bare-symbol reading with full reconstruction is a legitimate
+reading the chooser arrived at, unlike the `[null, null, null]` rows the
+regression was written for. The cause is in the mechanism this round
+decided: offering the episode at every close puts one thought-chooser
+decision after each sentence, and that decision draws from the same global
+RNG (`select_logits`'s departure draw) as the compose trials' explore
+departures (`WalkTrials.departure_at`, the fork's reservoir), while a
+chooser-opened episode's queries change the STM chunks and MTM the next
+sentence parses against. On a fixed seed the downstream readings move. The
+companions show the same: 6/8 as at step 3, but a different question lost.
+This is the untrained model under the decided objective, and the proof
+certificates, which are the gates, hold.
+
+**For Alec, one port.** The second assertion of
+`test_recorded_two_stream_readings` encodes an outcome of the walk, not the
+defect it certifies. Recommended: port it to "no premise reading is
+`[None, None, None]`, and both streams' first premise is full", the
+repaired defect's exact scope, with the inherited proof assertion
+unchanged and every kept reading recorded; before and after text in the
+receipt. Then gate 6 is met on this source with no production change and
+no new freeze. Optional, for the thought round rather than now: a private
+`torch.Generator` for the thought chooser's departure draws would keep the
+parse walks' draws independent of how many closes the chooser is offered,
+which makes fixed-seed certificates comparable across mechanism rounds; it
+does not remove the context change a kept episode causes, which is the
+model thinking between sentences, as decided.
+
+**Noted.** Publication preceded approval at Alec's instruction (§19); the
+commit names the four frozen hashes and the receipts stay local. The 6/8
+companion flag is carried to item 0 with the step 3 one; `premise-
+comparison.json` records 30/32.
+
+**Verdict.** Step 4 is approved as a mechanism round: mode retired, the
+episode offered at every close with not thinking free, silence an available
+trained target that does not select a reading, every live mode reader
+replaced by its structural fact. Gate 6 closes with the port above on
+Alec's yes; the port is committed as its own small commit on the published
+source. Step 5, orders learned, is next, its spec section first.
+
+## 21. Approved two-stream certificate port — Codex, 2026-10-26
+
+Alec authorizes §20's one test port on published `8b523874f9`, measured as
+`acac0b3448`. The inherited decomposition proof call and its implementation
+remain unchanged. `test_recorded_two_stream_readings` now asserts that no
+premise in either stream has `[None, None, None]` and that both streams'
+first premises are full, retaining the original reference-tag checks there.
+The former assertion required every premise to be full; it tested an
+outcome of the walk beyond the repaired empty-reading defect. The
+certificate now records all eight kept readings before these assertions,
+including both question rows. No production code or other test changes.
+
+The file passes **2/2**; the zero and enabled decomposition arms each pass
+both lengths, **2/2** each: **six passed, zero failed, zero skipped** in this
+scoped run. All six premise readings are nonempty and both first premises
+are full. Stream 0's third premise remains `[sym 20, null, null]`. Companions
+remain **6/8**, with every individual outcome matching repair-04: document
+0's length-1 question fails in both arms, and all other companions pass.
+The original proof holds in every arm/length run. This closes §20's
+outstanding gate-6 assertion under the approved port, without a learning
+claim or a new production result.
+
+The [repair-05 receipt](../benchmarks/2026-10-25-item3-0-retire-mode/repair-05/README.md)
+retains exact before/after text, every kept reading and companion question,
+and checks of all four original decomposition seeds/snapshots/configurations
+and both file-level RNG states. All 898 source paths matched the published
+source before the port; only this test differs afterward. The preceding
+failure and results remain in repair-04. No new freeze, smoke or full sweep
+was run. Work remains on main, unstaged and uncommitted for Alec's separate
+port commit; Codex makes no publication.

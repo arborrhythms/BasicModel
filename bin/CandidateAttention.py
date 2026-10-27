@@ -4,6 +4,36 @@ from torch import nn
 from Layers import Layer
 
 
+class _ReaderAffine(torch.autograd.Function):
+    """The same dense affine read, retaining shared context only once."""
+    @staticmethod
+    def forward(ctx, context, candidates, weight, bias):
+        # Normalization already owns context storage; preserve the small keys
+        # as the original concatenation did, even if a caller reuses its buffer.
+        ctx.save_for_backward(context, candidates.clone())
+        inputs = torch.cat((context[:, None].expand(-1, candidates.shape[1], -1), candidates), -1)
+        return torch.nn.functional.linear(inputs, weight, bias)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        context, candidates = ctx.saved_tensors
+        # Reconstruct this immutable reader input only for its weight gradient.
+        # The original affine forward and backward matrix shapes are unchanged.
+        inputs = torch.cat((context[:, None].expand(-1, candidates.shape[1], -1), candidates), -1)
+        inputs = inputs.to(grad_output.dtype).reshape(-1, inputs.shape[-1])
+        gradient = grad_output.reshape(-1, grad_output.shape[-1])
+        weight = gradient.T @ inputs if ctx.needs_input_grad[2] else None
+        bias = gradient.sum(0) if ctx.needs_input_grad[3] else None
+        return None, None, weight, bias
+
+
+class _ReaderLinear(nn.Linear):
+    def forward(self, value):
+        if isinstance(value, tuple):
+            return _ReaderAffine.apply(*value, self.weight, self.bias)
+        return super().forward(value)
+
+
 class CandidateAttention(Layer):
     def __init__(self, context_width, candidate_width, *, hidden_width=64, hidden_layers=1):
         for value in (context_width, candidate_width, hidden_width, hidden_layers):
@@ -12,8 +42,8 @@ class CandidateAttention(Layer):
         super().__init__(context_width + candidate_width, 1)
         self.context_width, self.candidate_width = context_width, candidate_width
         widths = [self.nInput] + [hidden_width] * hidden_layers
-        self.hidden = nn.Sequential(*(module for left, right in zip(widths, widths[1:])
-                                     for module in (nn.Linear(left, right), nn.Tanh())))
+        self.hidden = nn.Sequential(*(module for index, (left, right) in enumerate(zip(widths, widths[1:]))
+                                     for module in ((_ReaderLinear if index == 0 else nn.Linear)(left, right), nn.Tanh())))
         self.readout = nn.Linear(hidden_width, 1)
         nn.init.zeros_(self.readout.weight)
         nn.init.zeros_(self.readout.bias)
@@ -47,7 +77,7 @@ class CandidateAttention(Layer):
         # before the candidate contributes. Bound this block's length while
         # retaining its direction and leaving candidate differences intact.
         context = context / context.norm(dim=-1, keepdim=True).clamp_min(1.)
-        inputs = torch.cat((context[:, None].expand(-1, candidates.shape[1], -1), candidates), -1)
+        inputs = (context.detach(), candidates.detach())
         # Scoring is a reader. Named-part lessons and paired costs train it;
         # neither keys nor needs are extra writers of their source owners.
-        return self.readout(self.hidden(inputs.detach())).squeeze(-1)
+        return self.readout(self.hidden(inputs)).squeeze(-1)

@@ -128,6 +128,7 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
     prompt = What.supervised(0)
     answer = WhatAnswer(prompt, ReferentTarget('an opaque target') if kind == 'referent' else 'target')
     model = SimpleNamespace(_sentence_answer_questions=(prompt,),
+        parameters=lambda: (), buffers=lambda: (),
         inputSpace=SimpleNamespace(data=SimpleNamespace(what=lambda _: answer)),
         _sentence_reader_error=lambda *args, **kwargs: torch.tensor([.75]))
     monkeypatch.setattr(BindingAnswers, 'cost', lambda *args, **kwargs: torch.tensor(.125))

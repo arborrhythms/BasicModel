@@ -68,9 +68,12 @@ def _world():
     grammar.load_from_grammar_file('complete.grammar')
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     base = cs.new_concept()
+    from order_fixtures import force_order
+    force_order(cs, base, 0)
     a, b = ('sym', cs.synthesize_higher_order([('sym', base)])), ('sym', cs.new_concept())
+    force_order(cs, b[1], 0)
     for ref in (a, b):
-        cs._csw_concept_row(0, ref[1])
+        cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
     cs.add_whole(a[1], b)
     context = _context(cs)
     return cs, grammar, registry, a, b, context

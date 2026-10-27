@@ -214,7 +214,10 @@ def test_written_order0_words_are_present_after_one_smoke_epoch(monkeypatch):
     raw = raw[:, 0] if raw.ndim == 3 else raw
     for b, row in enumerate(raw):
         word = bytes(row[row != 0].tolist()).decode()
-        cid = cs0.definitions.deref(cs0.definitions.word(form=word))
+        wid = cs0.interpret.word_for_form(word)
+        assert wid is not None, word
+        objects = cs0.interpret.denotations(wid)
+        cid = objects[0] if objects else wid  # An admitted form need not have a DEF.
         ids = carrier._concept_ids
         ids = ids[:, b] if ids.ndim == 2 else ids
         slots = (ids == cid).nonzero().flatten()
@@ -284,6 +287,12 @@ def test_pyramid_grads_reach_every_rung():
     import torch
     m = _run_one_epoch("sparse")
     cs0 = m._concept_owner()
+    from reading_fixtures import supply_object
+    # The gradient mechanism supplies testimony; one smoke epoch is not a
+    # promise that an untrained reading has defined an object for every word.
+    for word in tuple(cs0.interpret._pending):
+        if cs0.interpret.no_object(word):
+            supply_object(cs0, word)
     for obj in cs0.definitions.object_ids:
         cs0.singleton_concept(obj)
     opt = m.getOptimizer(lr=0.01)

@@ -117,6 +117,9 @@ def _seed_stm(model, depths):
             buf[b, s, :] = 0.5 + 0.1 * (b + 1) + 0.01 * (s + 1)
     stm._buffer = buf
     stm._depth = torch.tensor([int(d) for d in depths], dtype=torch.long)
+    from chunk_fixtures import from_stack
+    stm.set_state(from_stack(stm._buffer, stm._depth, stm._orders,
+                             stm._grammar_orders, stm._concept_rows, stm._concept_activations))
     return B, dim
 
 
@@ -197,6 +200,13 @@ def test_relative_mask_per_row_and_shared_shapes():
     model = _build_model()
     B = 3
     model.conceptualSpace.stm.ensure_batch(B)
+    # This case isolates the explicit legacy-plan fallback, not a live clause.
+    model.languageSpace.clause_scope = None
+    model._reconstruction_stack = lambda: None  # No selected trace in this plan-only fixture.
+    from types import SimpleNamespace
+    object.__setattr__(model, 'symbolSpace', SimpleNamespace(
+        current_rules={}, conceptualSpace=SimpleNamespace(_anchored_pids=None),
+        perceptualSpace=model.perceptualSpace))
     rel_id = _forward_relative_rule_id()
     abs_id = _forward_absolute_rule_id()
 
@@ -243,6 +253,13 @@ def test_relative_mask_sees_cs_role_rules():
     model = _build_model()
     B = 3
     model.conceptualSpace.stm.ensure_batch(B)
+    # This case isolates the explicit legacy-plan fallback, not a live clause.
+    model.languageSpace.clause_scope = None
+    model._reconstruction_stack = lambda: None  # No selected trace in this plan-only fixture.
+    from types import SimpleNamespace
+    object.__setattr__(model, 'symbolSpace', SimpleNamespace(
+        current_rules={}, conceptualSpace=SimpleNamespace(_anchored_pids=None),
+        perceptualSpace=model.perceptualSpace))
     rel_id = _forward_relative_rule_id()
     abs_id = _forward_absolute_rule_id()
     model.symbolSpace.current_rules = {
@@ -289,7 +306,8 @@ def test_relative_sentence_reduces_to_depth_three():
 
     assert post_depth.tolist() == [3, 3], (
         f"relative rows must stop at depth 3, got {post_depth.tolist()}")
-    buf = model.conceptualSpace.stm._buffer
+    from STMChunks import stack_view
+    buf = stack_view(model.conceptualSpace.stm.state)[0]
     for b in range(B):
         for slot in range(3):
             assert buf[b, slot].abs().sum() > 0, (

@@ -122,6 +122,8 @@ compare : $(VENV_STAMP)
 # `make test` runs the default (fast) suite; tests tagged slow (>30s wall) are
 # skipped via RUN_SLOW (central slow marker and existing per-test gates). `make test_all`
 # sets RUN_SLOW=1 to also run them.
+# Repeated slow workloads default to half work. RUN_SLOW_FRACTION=1 restores
+# their historical budgets; test selection and assertion thresholds are unchanged.
 test : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
 

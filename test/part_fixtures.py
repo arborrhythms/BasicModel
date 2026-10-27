@@ -1,4 +1,5 @@
 """Native concept seats and Part edges for isolated storage certificates."""
+from order_fixtures import force_order
 from types import SimpleNamespace
 
 import torch
@@ -26,6 +27,7 @@ def native_store(width=4, capacity=32, points=()):
 def symbol(store, point, *, types=()):
     owner = store._concept_owner()
     identity = owner.new_concept()
+    force_order(owner, identity, 0)
     row = owner._csw_concept_row(0, identity)
     with torch.no_grad():
         owner.similarity_codebook.W[row].copy_(point)

@@ -41,7 +41,8 @@ def test_native_activated_word_is_observed_by_handle_with_both_lanes(tmp_path,mo
     head=model.symbolSpace.expectation
     from ModelAttention import stage_symbol_bank
     stage_symbol_bank(model,head)
-    ids=model.inputSpace._ar_word_object_rows[:,0]
+    from PrependedSymbols import word_view
+    ids=word_view(model.inputSpace, "object_rows")[:,0]
     atoms=model.inputSpace._ar_word_object_atoms[:,0]
     lanes=atoms.new_tensor([[.6,.2],[0.,.8]])
     values=model._concept_owner().interpret.forward(atoms,object_atoms=atoms,

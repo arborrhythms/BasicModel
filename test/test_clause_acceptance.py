@@ -63,6 +63,7 @@ class SentenceFixture:
             # These certificates supply object meanings. A bare new form
             # alone now deliberately remains an unbound reference site.
             obj = self.cs.new_concept()
+            self.cs.add_part(obj, len(self.words) + 1)  # The fixture supplies the witnessed form.
             seat = self.cs._csw_concept_row(0, obj)
             if self.native_cube:
                 with torch.no_grad():

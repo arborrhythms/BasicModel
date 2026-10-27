@@ -1139,6 +1139,7 @@
       <xs:element name="geometricSpread" type="unitInterval" minOccurs="0"/>
       <xs:element name="geometricNeighbours" type="xs:nonNegativeInteger" minOccurs="0"/>
       <!-- Reading drift tolerance: 15 degrees by default; three documents promote. -->
+      <xs:element name="raiseEvidence" type="unitInterval" minOccurs="0"/>
       <xs:element name="recurrenceAngle" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="recurrenceCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="primingMaxBoost" type="nonNegativeFloat" minOccurs="0"/>

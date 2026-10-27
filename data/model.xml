@@ -507,6 +507,7 @@
     <geometricSpread>0.05</geometricSpread>
     <geometricNeighbours>8</geometricNeighbours>
     <recurrenceAngle>15</recurrenceAngle>
+    <raiseEvidence>0</raiseEvidence>
     <mtmPrepend>8</mtmPrepend>
     <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
     <primingMaxBoost>2.0</primingMaxBoost>

@@ -172,7 +172,7 @@ def _populate_test_config(*,
                           perceptCodebook=None, conceptCodebook=None,
                           certainty=False,
                           demuxed=False,
-                          lexer="word",
+                          lexer="word", nStreams=1,
                           **_legacy):
     """Populate TheXMLConfig._data -- test equivalent of XML loading.
 
@@ -239,6 +239,7 @@ def _populate_test_config(*,
             "data": {},
             "training": {
                 "certainty": certainty,
+                "batchSize": nStreams,
             },
         },
         "InputSpace": {
@@ -433,7 +434,7 @@ class TestSimpleModelCreation(unittest.TestCase):
         The OutputSpace performs the final aggregation to nOutput.
         """
         N = 16
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True)
@@ -446,7 +447,7 @@ class TestSimpleModelCreation(unittest.TestCase):
     def test_simple_model_ergodic(self):
         """BasicModel (simple path) with ergodic=True uses SigmaLayer path."""
         N = 16
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -744,7 +745,7 @@ class TestCanonicalSpaceShapes(unittest.TestCase):
     """Lock down tensor shapes for canonical Space subclasses."""
 
     def setUp(self):
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, wordDim=1, outputDim=4,
             nInput=4, nPercepts=4, nConcepts=4, nSymbols=4, nWords=4, nOutput=4,
             flatten=True)
@@ -788,7 +789,7 @@ class TestSimpleModel(unittest.TestCase):
 
     def test_simple_model_ergodic_shapes(self):
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -803,7 +804,7 @@ class TestSimpleModel(unittest.TestCase):
 
     def test_simple_model_traditional_shapes(self):
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -856,7 +857,7 @@ class TestModelEndToEnd(unittest.TestCase):
 
     def test_simple_model_ergodic_shapes(self):
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -871,7 +872,7 @@ class TestModelEndToEnd(unittest.TestCase):
 
     def test_simple_model_traditional_shapes(self):
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -889,7 +890,7 @@ class TestModelEndToEnd(unittest.TestCase):
     def test_simple_model_loss_runs(self):
         """Verify forward + loss + backward doesn't crash."""
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True,
@@ -994,7 +995,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
     """ConceptualSpace with ergodic flag matches DerivedConceptualSpace behavior."""
 
     def _set_zero_object_encoding(self, ergodic=False, reconstruct="NONE"):
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nWords=8, nOutput=8,
             nWhere=0, nWhen=0, ergodic=ergodic, reconstruct=reconstruct)
@@ -1040,7 +1041,7 @@ class TestConceptualSpaceErgodic(unittest.TestCase):
 
     def test_canonical_forward_still_works(self):
         """Existing ConceptualSpace (with objectSize > 0) still works after changes."""
-        _populate_test_config(inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
+        _populate_test_config(nStreams=2,inputDim=8, perceptDim=8, conceptDim=8, symbolDim=0, outputDim=4,
                               nConcepts=4)
         nIn, nOut, nDim = 4, 4, 8
         inEmb = Models.TheXMLConfig.encodingSize(Models.TheXMLConfig.space("InputSpace", "nDim"))
@@ -1666,27 +1667,32 @@ class TestInputSpaceParseEmbeddings(unittest.TestCase):
             os.unlink(artifact_path)
 
 
-class TestLoadEmbeddingsEnwiki(unittest.TestCase):
+class TestLoadEmbeddingsText(unittest.TestCase):
     """Embedding._load_embeddings handles word2vec text format (.txt).
 
-    The enwiki file is large; setUpClass loads it once and the test
-    checks all properties in a single pass to avoid repeated file I/O.
+    A construction-sized word2vec text fixture supplies the format contract.
+    The optional external corpus file is not part of this checkout.
     """
-
-    ENWIKI_PATH = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "data", "embeddings", "enwiki_20180420_100d.txt")
 
     @classmethod
     def setUpClass(cls):
-        """Load the enwiki file once for all tests in this class."""
         if not _RUN_SLOW:
             cls.wv = None
             return
-        cls.wv = Models.Embedding._load_embeddings(embedding_path=cls.ENWIKI_PATH)
+        import tempfile
+        from pathlib import Path
+        cls.directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.directory.cleanup)
+        path = Path(cls.directory.name) / 'vectors.txt'
+        # 100 coordinates exercise the existing dimension check; 1001 rows
+        # exceed its >1000 inventory assertion. Values are fixed format data.
+        words = ['the', *(f'w{i:04d}' for i in range(1000))]
+        row = ' '.join(['0.25'] * 100)
+        path.write_text('1001 100\n' + ''.join(word+' '+row+'\n' for word in words))
+        cls.wv = Models.Embedding._load_embeddings(embedding_path=str(path))
 
     @unittest.skipIf(not _RUN_SLOW, "slow -- set RUN_SLOW=1")
-    def test_load_enwiki(self):
+    def test_load_text_inventory(self):
         """Verify txt format properties and nDim-filter logic from a single load."""
         # Basic load: file loaded once in setUpClass
         self.assertIsNotNone(self.wv)
@@ -1777,7 +1783,7 @@ class TestModelTypeVariants(unittest.TestCase):
         # symbolDim=9 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass
         # widened (2,2)->(2,4), symbolDim 5 -> 7; 2026-07-09 multi-rung pass
         # widened (2,4)->(4,4), symbolDim 7 -> 9.)
-        _populate_test_config(inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
+        _populate_test_config(nStreams=2,inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
                               wordDim=1, outputDim=1,
                               nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                               perceptPassThrough=True, symbolPassThrough=False,
@@ -1794,7 +1800,7 @@ class TestModelTypeVariants(unittest.TestCase):
 
     def test_percept_no_attention(self):
         """perceptHasAttention=False, perceptPassThrough=False -- forward only."""
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
             perceptHasAttention=False,
@@ -1810,7 +1816,7 @@ class TestModelTypeVariants(unittest.TestCase):
     def test_concept_with_attention(self):
         """conceptHasAttention=True -- forward only."""
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             conceptHasAttention=True,
@@ -2896,7 +2902,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
     def test_simple_model_subspace_activation(self):
         """BasicModel with useSubspaceActivation=True produces valid output shapes."""
         N = 16
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True,
@@ -2910,7 +2916,7 @@ class TestSubspaceActivationPipeline(unittest.TestCase):
     def test_subspace_activation_stored(self):
         """After forward with useSubspaceActivation, spaces have activations."""
         N = 8
-        _populate_test_config(
+        _populate_test_config(nStreams=2,
             inputDim=1, perceptDim=1, conceptDim=1, symbolDim=0, wordDim=1, outputDim=1,
             nInput=N, nPercepts=N, nConcepts=N, nSymbols=N, nOutput=4,
             perceptPassThrough=True, symbolPassThrough=True, flatten=True,
