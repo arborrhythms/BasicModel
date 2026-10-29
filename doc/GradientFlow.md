@@ -101,6 +101,14 @@ and expectation pulling the codes away from what reconstruction needs)?
   persists when answers are right, a margin or confidence term on output is
   the principled form; for robustness, perturb reconstruction's input
   (denoising), not its target.
+  Alec's settled intent: expectation stays exact (if it does all the work,
+  so much the better), and the jitter goes on reconstruction. Jittering
+  reconstruction's *strength* (randomly scaling or dropping its term per
+  step) or its tolerance does give output influence: while reconstruction
+  is weak, output moves the understanding unopposed, and on average this
+  equals the leak (C) or slack (B), plus exploration. Jittering its target
+  does not. Either way output's gradient must first be allowed to reach the
+  understanding (A, B or C); under the current ownership cut it never is.
 - **C. A leak.** Output reads the base through a gradient-scaling read,
   `stop_gradient(base) + a * (base - stop_gradient(base))`: the forward
   value is unchanged and output's gradient reaches the base scaled by `a`.
