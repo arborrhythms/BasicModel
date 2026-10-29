@@ -90,6 +90,17 @@ and expectation pulling the codes away from what reconstruction needs)?
   reconstruction gradient is zero, so output moves the understanding until
   reconstruction's restoring pull balances it. A randomized tolerance width
   has the average effect of a fixed one, plus exploration.
+  Alec's intent (same day) is to keep reconstruction slightly wrong on
+  purpose, so output always has a gradient. Forcing reconstruction or
+  expectation to be wrong adds a gradient on reconstruction's side (a pull
+  toward a wrong target, and an inverse that fits the injected error), not
+  output's; output's gradient comes only from its own error, through the
+  cut. With a leak or slack, perfect reconstruction leaves output the most
+  room: reconstruction's gradient is zero there, so output shapes the
+  understanding unopposed whenever its answer is wrong. For a force that
+  persists when answers are right, a margin or confidence term on output is
+  the principled form; for robustness, perturb reconstruction's input
+  (denoising), not its target.
 - **C. A leak.** Output reads the base through a gradient-scaling read,
   `stop_gradient(base) + a * (base - stop_gradient(base))`: the forward
   value is unchanged and output's gradient reaches the base scaled by `a`.
