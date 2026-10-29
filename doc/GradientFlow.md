@@ -154,8 +154,10 @@ expectation; jitter of reconstruction's strength against output (a leak
 with a random strength, so the understanding's parameters have two
 writers); and the chooser's log-probabilities summed into the same
 objective with live features (E), all differentiated by one backward (D).
-Specified in item 2.5's spec, `plans/2026-10-27-item2-5-thinking.md` §16.
-Not built.
+Specified in item 2.5's spec, `plans/2026-10-27-item2-5-thinking.md` §16,
+with the re-check in §16.1: each band is stopped at its output where it is
+consumed, percept expectation keeps its in-loop update, the 6.9 drift risk
+returns in weighted form and is measured. Not built.
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
