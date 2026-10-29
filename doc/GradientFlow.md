@@ -1,5 +1,105 @@
 # Gradient flow across the architecture
 
+> **Read first (2026-10-29): the simple story, then the alternatives under
+> exploration.** Written for Alec as one picture of the current contract.
+> Everything below this box is the historical record and is kept as it was.
+
+## The simple story, as built today
+
+**One forward, separate gradients.** A sentence runs forward once per
+trial. Every reader sees live values: output reads the understanding in
+STM, attention reads perception, the decoder reads the completed
+understanding. The graph is differentiable end to end. What keeps the
+objectives apart is the backward: `ObjectiveOwnership.backward_owned`
+calls `torch.autograd.grad` once per objective, each time only with
+respect to the parameters that objective owns, and an audit fails if any
+parameter receives a second writer (item 6.9 §15, Alec 2026-10-02: "the
+gradients separate over the weights"). So an error can be differentiable
+through a parameter without ever training it.
+
+**Who owns what** (`Models.objective_parameter_groups`):
+
+| Owner | Parameters | Trained by |
+|---|---|---|
+| reconstruction | perception's codebooks (through the perception pullback), the conceptual definitions (sparse sigma and pi values), the grammar operators and their inverses, the compose chooser, the generate policy and the decoder's operators | the derivation's reconstruction losses (`reconstruction.*`), the decomposition and walk teachers (`reconstruction.decomposition`, `reconstruction.walk_policy`), the walk credit (`reconstruction.walk_credit`), the grammar lessons, and the chooser's paired-trial credit |
+| expectation | the predictors (the discourse, inter-sentence and word predictors, the conceptual components) | expectation terms whose targets and sources are detached: a predictor never trains what it predicts |
+| output | the reading map: the output space, the answer attention, the answer and comparison readers, the synthesis parameters; in configurations whose output names concepts, also the concept layer's sparse coefficients | the answer and output costs |
+| attention | the candidate attention | attention terms |
+
+**How the answer reaches the understanding: only by selection.** Each
+sentence is read in two trials, the greedy one and one departure. Their
+costs are compared as reconstruction plus the supplied answer's cost
+(`SentenceCredit.components`; expectation is excluded from the
+comparison). The cheaper trial is kept, and the chooser is credited for
+the departure by a score function on the detached cost difference
+(`Models._compose_score_function_loss`), booked to reconstruction, the
+chooser's owner. The answer's gradient never reaches the operators, the
+definitions or perception. A supplied answer teaches which reading to
+choose, not how to bend the weights of the reading that was chosen.
+
+**Where reconstruction is a loss and where it is an audit.** The
+derivation's reconstruction (the completed understanding inverted back to
+the sentence's leaves) is a loss, owned by reconstruction. The free
+decoder's identity cost (`Models._reconstruct_trial`) is an audit and the
+decoder's lesson: it decides which decoder walk is kept and trains the
+generate policy, but cannot change the derivation's reconstruction
+objective. Proposed in item 2.7 (record §38.3): a map whose inverse is
+certified exact has its reconstruction reduced to a reported audit and
+its observed source made live, since an exact inverse cannot be improved
+by a loss; approximate maps keep their reconstruction loss.
+
+**Expectation and reconstruction (decided 2026-10-29).** Percept
+expectation predicts each arrival from prior context and learns at that
+arrival, inside the processing loop, from its own local loss (item 2.7
+record §39). The forward path carries the full signal, `expected +
+residual`. The inverse side is split by residual (record §42): the
+completed understanding's inverse learns only `observed -
+stop_gradient(expected)`, using the value frozen at arrival, so no
+top-down gradient reaches expectation and expectation's loss reaches
+nothing else. Perceptual layer in item 2.7's final round; the conceptual
+layer, where `intuit` becomes the expectation, in item 2.5 round B.
+This supersedes, at the percept level, the 2026-10-20 amendment below
+that describes expectation as a gain field "never a subtraction": the
+residual is now signed (an expected absence is negative), and the full
+signal is recovered as `expected + residual`.
+
+## Alternatives under exploration (Alec and Claude, 2026-10-29; not decided)
+
+The question: should output be able to shape the understanding by
+gradient, not only by selection, without the conflict 6.9 removed (output
+and expectation pulling the codes away from what reconstruction needs)?
+
+- **A. A residual band for output.** The understanding gets two parts: a
+  base owned and trained by reconstruction, and a residual band owned by
+  output. Output reads `stop_gradient(base) + residual`, so its error
+  propagates through the operations back to the input, but only into the
+  residual band's weights. Every parameter keeps one writer. The band's
+  magnitude per question measures what the base lacks for answering.
+- **B. Slack in reconstruction.** For approximate maps, the reconstruction
+  loss gets a tolerance, `max(0, error - eps)`, with `eps` relative to its
+  own error scale, and output reads the base fully. Inside the tolerance
+  only output shapes the understanding; at the boundary reconstruction
+  pushes back. This is the constrained problem "the best answer, subject to
+  the understanding still explaining the input within `eps`". The base then
+  has two writers, an extension of 6.9. Exact maps keep zero tolerance.
+- **C. A leak.** Output reads the base through a gradient-scaling read,
+  `stop_gradient(base) + a * (base - stop_gradient(base))`: the forward
+  value is unchanged and output's gradient reaches the base scaled by `a`.
+  Simpler than B, but it pushes against reconstruction everywhere.
+- **D. One backward instead of several.** If every place one objective
+  reads another's value is a stop-gradient in the forward (as A writes it),
+  the objectives' losses can be summed and differentiated by a single
+  backward with one optimizer; each parameter still receives only its
+  intended gradient, and the ownership audit becomes a certificate that the
+  single backward equals the per-owner gradients. B and C fit a single
+  backward too. One caveat: perception's gradients are pulled through a
+  separate traversal today (`pullback.gradients`), which must join the same
+  graph or remain a second call.
+
+Claude's recommendation: D with A in a round of its own after item 2.7,
+then measure what the band learns; add B only if the base itself must
+move for answers. Nothing here is built or decided.
+
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
