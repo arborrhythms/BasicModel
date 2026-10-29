@@ -82,6 +82,14 @@ and expectation pulling the codes away from what reconstruction needs)?
   pushes back. This is the constrained problem "the best answer, subject to
   the understanding still explaining the input within `eps`". The base then
   has two writers, an extension of 6.9. Exact maps keep zero tolerance.
+  *A note on random perturbation (Alec, 2026-10-29).* A zero-mean random
+  perturbation of the reconstruction target leaves reconstruction's
+  expected gradient unchanged, so on average it gives output no extra
+  influence; it adds jitter only. Output's influence comes from the
+  tolerance band (B) or from weighting (C): at perfect reconstruction the
+  reconstruction gradient is zero, so output moves the understanding until
+  reconstruction's restoring pull balances it. A randomized tolerance width
+  has the average effect of a fixed one, plus exploration.
 - **C. A leak.** Output reads the base through a gradient-scaling read,
   `stop_gradient(base) + a * (base - stop_gradient(base))`: the forward
   value is unchanged and output's gradient reaches the base scaled by `a`.
@@ -96,9 +104,32 @@ and expectation pulling the codes away from what reconstruction needs)?
   separate traversal today (`pullback.gradients`), which must join the same
   graph or remain a second call.
 
+- **E. One objective for syntax and semantics.** With hard choices the
+  model is a stochastic computation graph, and the gradient of one expected
+  cost, `E[reconstruction + answer]`, has two parts: the pathwise gradient
+  through the values the choices produced (the signal gradient), and the
+  score-function gradient, the cost times the gradient of the choice's log
+  probability with the other trial's cost as baseline (the chooser's credit,
+  already computed by `_compose_score_function_loss` from the paired
+  trials). Both come from one surrogate loss and one backward:
+  `total_cost + sum over choices of detach(cost - baseline) * log_prob(choice)`.
+  Two things keep syntax and semantics apart today: the chooser reads
+  detached features, so its credit never reaches the meaning representation
+  that made a choice easy or hard; and the ownership cut keeps the answer
+  out of the understanding. Lifting the first lets the meanings learn, in
+  part, to make good parses likely, while the parses are learned from the
+  meanings they produce. The risk is variance: the score-function term is
+  noisy, and in shared parameters Adam's per-coordinate scaling can let that
+  noise dominate, so it needs its own scale and a measurement first.
+
+Alec's reading (2026-10-29): expectation and attention are well handled by
+removing a band and stopping its gradient; output and reconstruction need
+slack or a leak; a single gradient is the ideal, since a strongly
+partitioned syntax and semantics is doubtful as a psychological model.
 Claude's recommendation: D with A in a round of its own after item 2.7,
 then measure what the band learns; add B only if the base itself must
-move for answers. Nothing here is built or decided.
+move for answers; E as the next step once A and D are measured. Nothing
+here is built or decided.
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
