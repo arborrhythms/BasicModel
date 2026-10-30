@@ -1374,3 +1374,87 @@ full sweep, no RUN_SLOW, no seed, no resize, preallocated shapes, no
 language named in code, fail loud. Return through Alec for one review; no
 commit beyond round A's.
 ~~~
+
+## 26. Claude's review of the one-backward return (2026-10-30)
+
+Reviewed: Codex's return receipt, `decision.json`, §§24, 25 and 25.1, the
+normalization-review ports, the GradientFlow read-first replacement, and
+the code at `Generative._relative_energy`, `relative_residual`,
+`walk_residual`, `Models._sentence_path_cost` and `Layers.Error.error`.
+Round B's frozen source is as §24 records; stage 2's gates are green on
+`f9fbf450...` and its measurement is incomplete, so stage 2 is not accepted.
+Both are the right states.
+
+**The return is correct, and the diagnosis stands.** Withdrawing the
+precision-versus-domain question was right: the overflow is a symptom of
+the loss definition, not a float32 problem. Mechanism, from the code:
+`_relative_energy` takes `scale` as the maximum magnitude of the live
+reference and divides the error energy by the reference energy at that
+scale. A step whose parent is numerically near zero, not exactly zero,
+gives a tiny `scale`, so `(error/scale)^2` is astronomical: the recorded
+forward loss of $2.5\times10^{29}$ is that number, and the live
+denominator's derivative is its square root order larger, the
+$1.6\times10^{43}$ cotangent. The general contract (`Error.error`,
+objective-conflicts spec §10.2a) is built against exactly this: the
+baseline is detached, and numerator and baseline are aggregated over every
+active entry of the named term before one division, so no single near-zero
+target can supply its own normalization. Generation takes neither property:
+it divides per step and per lane with the reference live, sums the ratios,
+and registers the finished scalar through `Error.add`. The forward value is
+already meaningless before any gradient, and a cost of $10^{29}$ in $R$
+also decides which trial is kept (`SentenceCredit.comparison` keeps by
+$R + A$) in both chooser modes. The `(true, 0)` arm's clean run is
+trajectory, not safety: its epoch records hold no value above $10^{20}$,
+while the `(false, 0)` arm's gradient report shows chooser variance and
+squared norms at $10^{34}$ in the idea epochs, before the non-finite entries.
+Not adding a cap, floor, detachment or dropped term was right; each would
+have hidden the wrong loss.
+
+**On balancing output and reconstruction (Alec's question).** Under
+`separateChooser` false the shared understanding sees $s\,R + A + C$. $R$
+and $A$ are addable only because the registry puts each in the same units,
+a ratio to its own detached uninformed baseline; that is unit
+normalization, not balancing, and nothing adaptive belongs on top of it.
+The only weight is $s$, drawn from $U[1 - j, 1]$, and the `(false, 0.5)`
+arm is its measurement. The generation residual is the one imbalance in the
+system today, and it is a unit violation rather than a weight. Balance
+should be read, not tuned: I ask that the gradient report record, per
+epoch, the gradient norm into the shared parameters from $R$ and from $A$
+separately, as a reading beside the existing per-operator dissonance and
+chooser variance.
+
+**Direction, for Alec's decision (D-i to D-iii).**
+
+- **D-i.** Generation's training loss follows the contract: per lane, the
+  raw squared error and the detached squared parent, aggregated over the
+  walk's steps and the sentence's streams, one division per named term;
+  exactly zero parent energy stays an ordinary penalty; no floor. This
+  removes an unintended per-step weighting; it adds no balance. If 2.7 §38's
+  per-step weighting is wanted for training, it has to be argued for
+  separately, because a per-step ratio has no protection against a
+  near-zero parent short of a floor, which the contract forbids.
+- **D-ii.** The per-step relative residual may stay as the menu's score for
+  choosing a proposal, detached, since selection is a hard choice; it is not
+  the registered loss.
+- **D-iii.** Defaults stay `(true, 0)` until the three arms complete on one
+  hash.
+
+Then one short Codex round: the producer repair at `walk_residual` and
+`_sentence_path_cost`; the reproducer turned into a passing certificate
+(finite loss and gradients on the admissible terminal that overflowed, and
+the kept trial unchanged on the standing fixtures, where no near-zero
+parent occurs); the three lesson-13 arms and the required verification on
+the resulting hash; the stage 2 freeze. No precision change.
+
+**Two readings for Alec, not for this round.** The `(false, 0)` arm bound
+2 of 32 answers in four idea epochs against 0 of 80 in every other arm of
+rounds A, B and this one; it is the first nonzero binding anywhere, under
+the single backward where output reaches the understanding. A measurement,
+not a claim, until the arms complete. And the cued LTM0 read is a 32-row
+window in address order, not a content search (item 1.5 plan §7.3): with
+occupancy above 32 rows, a content read without a reference cannot reach a
+later row. It may bear on the zero binding and is Alec's decision in item
+1.5.
+
+Codex's documentation ports (GradientFlow's read-first replacement,
+Training, §25.1) match the code I read; I have no corrections.
