@@ -90,7 +90,7 @@ def _matches(model, meaning, word, values):
 
 
 def cost(model, meaning, target, *, stream=0):
-    """An exact bound identity costs zero; other bindings receive code error.
+    """An exact identity costs zero; other bindings use content coverage.
 
     This is a loss-side answer term for the existing paired chooser rule.
     Missing target identities or an unbound answer cannot be scored as correct.
@@ -109,5 +109,13 @@ def cost(model, meaning, target, *, stream=0):
         return meaning.roles.new_ones(())
     basis = owner.similarity_codebook.lookup_rows(torch.tensor(
         rows, device=meaning.roles.device, dtype=torch.long),stream=stream).detach()
-    distance = (basis - values[0][1].detach()).square().mean(-1).min()
-    return .5 + .5 * distance / (1 + distance)
+    content = values[0][1].detach()
+    codes = getattr(owner.similarity_codebook, 'mereology', None)
+    width = getattr(codes, 'context_width', content.shape[-1])
+    start = getattr(codes, 'percept_event_width', 0)
+    basis, content = basis[:, start:start+width], content[start:start+width]
+    if not content.numel():
+        return meaning.roles.new_ones(())
+    from IdentityRows import meet_ratios
+    coverage = meet_ratios(basis, content.expand_as(basis))[1]
+    return 1. - coverage.amax()

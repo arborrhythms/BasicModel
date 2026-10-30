@@ -557,7 +557,7 @@ def test_complete_grammar_exposes_its_declared_canonical_thought_operations():
     grammar = Grammar()
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(_cs(), grammar)
-    assert {"part", "equal", "ask", "query", "isTrue", "exist", "isEqual", "isImplied", "gain"}.issubset(
+    assert {"part", "equal", "ask", "query", "isTrue", "exist", "isEqual", "infer", "intuit", "gain"}.issubset(
         registry.executable_operation_ids)
     assert {"true", "arma", "quantize", "lookup"}.isdisjoint(registry.executable_operation_ids)
 
@@ -830,19 +830,33 @@ def test_canonical_thought_executors_use_only_their_named_capability_views():
         primed_symbols=(), ltm=LTMRead(), taxonomy=object(), work=QueryWorkBudget(64),
         continuation=None, boundary=lambda row:None, row=0)
     value = torch.ones(4)
-    arguments = {name: {'argin1': ('sym',1), 'argin2': ('sym',2)} for name in ('isPart','isEqual','isImplied')}
+    arguments = {name: {'argin1': ('sym',1), 'argin2': ('sym',2)} for name in ('isPart','isEqual')}
     arguments.update({name: {'argin1':value, 'argin2':value} for name in ('part','equal','implies')})
     arguments.update({name: {'argin1':meaning} for name in ('isTrue','ask','query','not')})
     arguments.update({name: {'argin1':value} for name in ('exist','gain')})
     from dataclasses import replace
     arguments['bind'] = {'argin1': replace(meaning, bindings={'_bind_role': 0})}
-    assert set(arguments) == set(THOUGHT_EXECUTORS)
+    from Layers import ShortTermMemory
+    from ThoughtChunks import put, address
+    from ThoughtReferences import with_slots
+    stm = ShortTermMemory(concept_dim=4)
+    premise = with_slots(replace(meaning, role_refs=(('sym', 1), None, None)), (), pair=(.6, .2))
+    rule = ConceptualMeaning(torch.ones(3, 4), torch.ones(3, dtype=torch.bool),
+        role_refs=(('sym', 1), ('sym', 3), ('sym', 2)), bindings={
+            '_rule_row': ('sym', 4), '_evidence_pair': (.8, .1)})
+    put(stm, premise, address(1), 0)
+    put(stm, rule, address(2), 0)
+    context = replace(context, stm=stm)
+    arguments['infer'] = {'argin1': ('chunk', address(1)), 'argin2': ('chunk', address(2))}
+    assert set(arguments) | {'intuit'} == set(THOUGHT_EXECUTORS)
+    with pytest.raises(NotImplementedError, match='round B'):
+        THOUGHT_EXECUTORS['intuit'].executor(context, {'argin1': meaning})
     assert {'what','lookup','quantize','arma','expect','true'}.isdisjoint(THOUGHT_EXECUTORS)
     results = {name:THOUGHT_EXECUTORS[name].executor(context,args) for name,args in arguments.items()}
     for result in results.values():
         assert 0 <= result['support_true'] <= 1 and 0 <= result['support_false'] <= 1
     assert results['isPart']['witnesses'] == ('relation-row',)
-    assert results['isImplied']['support_true'] == .6
+    assert results['infer']['support_true'] == pytest.approx(.6)
     assert results['equal']['support_true'] == 1.
     assert not hasattr(context, 'reasoner')
 

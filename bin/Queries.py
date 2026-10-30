@@ -134,6 +134,9 @@ class ThoughtGrammarContext(GrammarContext):
     max_expansions: int = 1024
     operand_references: tuple = ()
     operand_values: tuple = ()
+    stm: object = None
+    focus_where: tuple | None = None
+    direction: tuple = (0, 2)
 
     def __post_init__(self):
         super().__post_init__()
@@ -358,6 +361,9 @@ class QueryContext:
 
 
 def symbolic_reference(value):
+    if (isinstance(value, tuple) and len(value) == 2 and value[0] == 'chunk'
+            and isinstance(value[1], tuple) and len(value[1]) == 4):
+        return value
     if (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
             and isinstance(value[1], str) and type(value[2]) is int and value[2] not in (-1, 0)):
         return value
@@ -783,6 +789,30 @@ class ThoughtTaxonomyCapability:
 
     def evidence(self, part, whole, *, max_nodes, max_records, max_steps,
                  max_expansions, work):
+        space = object.__getattribute__(self, '_ThoughtTaxonomyCapability__space')
+        from Priming import part_edges
+        edges = part_edges(space)
+        if edges is not None and part[0] == whole[0] == 'sym':
+            start, target = space._csw_row_of(part[1]), space._csw_row_of(whole[1])
+            pending, seen = [(start, 1., 0)], set()
+            expanded = 0
+            while pending and expanded < max_expansions:
+                point, strength, depth = pending.pop(0)
+                if point is None or point in seen or depth >= max_steps:
+                    continue
+                seen.add(point)
+                for edge in (edges[0] == point).nonzero().flatten().tolist():
+                    work.require('expansion')
+                    expanded += 1
+                    if expanded > max_expansions:
+                        break
+                    degree = min(strength, float(edges[2][edge]))
+                    next_point = int(edges[1][edge])
+                    if degree > 0 and next_point == target:
+                        return dict(support_true=degree, support_false=0., path=(),
+                                    reason='membership', edges_expanded=expanded)
+                    if degree > 0:
+                        pending.append((next_point, degree, depth+1))
         nodes, records = capture_limits(work, max_nodes, max_records)
         view = capture_taxonomy(
             object.__getattribute__(self, '_ThoughtTaxonomyCapability__space'),
@@ -1550,7 +1580,7 @@ class ThoughtExecutorDescriptor:
 
 from ThoughtFaces import (part as _conceptual_part, is_part as _symbolic_part,
     equal as _conceptual_equal, is_equal as _symbolic_equal, implies as _implies,
-    is_implied as _is_implied, is_true as _is_true, exist as _exist,
+    infer as _infer, intuit as _intuit, is_true as _is_true, exist as _exist,
     query as _query, ask as _ask, negate as _negate, gain as _gain, bind as _bind,
     reverse_bind as _reverse_bind)
 
@@ -1583,9 +1613,14 @@ _thought_executors = (
     ThoughtExecutorDescriptor('implies', 'conceptual-implication', ('concept', 'concept'), Mind.SERIAL,
         (Mind.SERIAL, Mind.KNOWING, Mind.SYMBOLIC, Mind.BUDGET), (Mind.SERIAL,), 'containment', _implies,
         evidence_pair=True, method_grants=(('conceptual_space', ('payload', 'extent', 'negate')),)),
-    ThoughtExecutorDescriptor('isImplied', 'symbolic-implication', ('reference', 'reference'), Mind.SERIAL,
-        (Mind.SERIAL, Mind.SYMBOLIC, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'implication', _is_implied,
-        evidence_pair=True, method_grants=(('ltm', ('relation_evidence', 'premise_evidence')),)),
+    ThoughtExecutorDescriptor('infer', 'symbolic-derivation', ('reference', 'reference'), Mind.SERIAL,
+        (Mind.SERIAL, Mind.SYMBOLIC, Mind.LTM, Mind.TAXONOMY, Mind.BUDGET), (Mind.SERIAL,), 'inference', _infer,
+        evidence_pair=True, relation_directions=((0, 2), (2, 0)),
+        method_grants=(('ltm', ('relation_evidence', 'premise_evidence')),
+                       ('taxonomy', ('evidence', 'neighbors')))),
+    ThoughtExecutorDescriptor('intuit', 'conceptual-inference', ('meaning',), Mind.SERIAL,
+        (Mind.SERIAL, Mind.KNOWING, Mind.LTM, Mind.PRIMING, Mind.BUDGET),
+        (Mind.SERIAL, Mind.KNOWING), 'intuition', _intuit, evidence_pair=True),
     ThoughtExecutorDescriptor('isTrue', 'symbolic-truth', ('description',), Mind.SERIAL,
         (Mind.SERIAL, Mind.LTM, Mind.BUDGET), (Mind.SERIAL,), 'truth', _is_true, evidence_pair=True,
         method_grants=(('ltm', ('end_evidence', 'truth_evidence', 'resolve_description')),)),
@@ -1638,6 +1673,8 @@ def _descriptor_context(context, descriptor):
         context,
         word_stream=context.word_stream if Mind.SERIAL in descriptor.read_scope else (),
         operand_values=context.operand_values if Mind.SERIAL in descriptor.read_scope else (),
+        stm=context.stm if Mind.SERIAL in descriptor.read_scope else None,
+        focus_where=context.focus_where if Mind.SERIAL in descriptor.write_scope else None,
         primed_symbols=context.primed_symbols if Mind.PRIMING in descriptor.read_scope else None,
         conceptual_space=_ThoughtCapabilityView(
             context.conceptual_space, grants['conceptual_space']),
@@ -2198,6 +2235,14 @@ class GrammaticalThoughtRegistry:
         for role in occupied_roles:
             argument = supplied[source_by_canonical_role[role]]
             kind = kinds_by_role[role]
+            if kind == 'reference' and isinstance(argument, ConceptualMeaning):
+                from ThoughtReferences import bindings as thought_bindings
+                where = thought_bindings(argument).get('_chunk_where')
+                if where is None:
+                    raise ValueError('infer operands must be resident addressed chunks')
+                references[self._slot_for_operand(role)] = ('chunk', where)
+                payloads[self._slot_for_operand(role)] = self._description_value(argument)
+                continue
             if (kind == 'meaning' and isinstance(argument, tuple) and len(argument) == 2
                     and all(type(value) in (int, float) for value in argument)):
                 from ThoughtReferences import with_slots
@@ -2224,7 +2269,12 @@ class GrammaticalThoughtRegistry:
             else:
                 _validate_argument(argument, kind)
                 if isinstance(argument, tuple):
-                    if argument[0] == 'ltm':
+                    if argument[0] == 'chunk':
+                        from ThoughtChunks import read
+                        if context is None:
+                            raise ValueError('chunk operands require their STM context')
+                        value = self._description_value(read(context.stm, argument[1], context.row))
+                    elif argument[0] == 'ltm':
                         if context is None:
                             raise TypeError('an occurrence operand requires its bounded context')
                         description, _ = _occurrence_description(context, argument)
@@ -2246,6 +2296,10 @@ class GrammaticalThoughtRegistry:
         from ThoughtReferences import with_slots
         slots = tuple(('referent', self._slot_for_operand(role)) for role in canonical_open_roles)
         result = with_slots(result, slots, pair=(0., 0.), source_evidence=(0., 0.))
+        if operation.semantic_id == 'infer':
+            from ThoughtReferences import bindings as thought_bindings
+            result = replace(result, bindings=dict(thought_bindings(result),
+                _infer_direction=(0, 2) if tuple(form.permutation) == tuple(operation.operand_roles) else (2, 0)))
         return result
 
     def _is_description_reference(self, reference):
@@ -2391,7 +2445,7 @@ class GrammaticalThoughtRegistry:
             key = (operation.semantic_id, tuple(open_roles))
             if key in seen:
                 return
-            if operation.semantic_id == 'bind':
+            if operation.semantic_id in ('bind', 'infer'):
                 # The serial owner offers one full-meaning request per site.
                 return
             if descriptor.continues:
@@ -2433,7 +2487,7 @@ class GrammaticalThoughtRegistry:
             for semantic_id in self.executable_operation_ids:
                 operation = self._operations_by_id[semantic_id]
                 descriptor = self.descriptors[semantic_id]
-                if descriptor.continues or semantic_id == 'bind':
+                if descriptor.continues or semantic_id in ('bind', 'infer'):
                     continue
                 bound = {role: self._candidate_operand((source,), role, kind)
                          for role, kind in zip(operation.operand_roles, descriptor.kinds_for(()))}
@@ -2469,6 +2523,10 @@ class GrammaticalThoughtRegistry:
                 break
         legal = []
         for request in requests:
+            if request.semantic_id == 'intuit':
+                # D9: round B enables this menu entry with its executor.
+                # Keep the grammar and direct-call error available meanwhile.
+                continue
             try:
                 if request.semantic_id == 'isPart':
                     # LTM occurrence provenance is not a taxonomy concept.
@@ -2603,12 +2661,19 @@ class GrammaticalThoughtRegistry:
                     value = reference
                 else:
                     raise ValueError('thought operand requires a grounded conceptual reference')
+                if isinstance(value, ConceptualMeaning):
+                    from ThoughtReferences import bindings as thought_bindings
+                    where = thought_bindings(value).get('_chunk_where')
+                    if where is not None:
+                        from ThoughtChunks import read
+                        value = read(context.stm, where, context.row)
                 arguments.append(value)
             # ``execute`` already admitted this completed row before any
             # preparation/read above.  Avoid a second observable boundary
             # call while retaining :meth:`ThoughtSignature.invoke`'s guard
             # for direct checked calls.
-            invocation = replace(context, operand_values=tuple(
+            from ThoughtReferences import bindings as thought_bindings
+            invocation = replace(context, direction=thought_bindings(meaning).get('_infer_direction', (0, 2)), operand_values=tuple(
                 (role, meaning.roles[self._slot_for_operand(role)])
                 for role in signature.occupied_roles), operand_references=tuple(
                 (role, meaning.role_refs[self._slot_for_operand(role)])

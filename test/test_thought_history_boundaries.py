@@ -112,7 +112,7 @@ def test_typed_result_checkpoint_rehydrates_nested_meaning_evidence(tmp_path):
     memory.finish_thought(
         request, result=result, evidence_kind="retrieval")
     memory.end_what_episode()
-    assert memory.thought_extras()["version"] == 5
+    assert memory.thought_extras()["version"] == 6
 
     source = _model(memory)
     path = tmp_path / "nested-result.ckpt"
@@ -172,7 +172,7 @@ def test_v2_thought_history_checkpoint_is_rejected_even_with_a_typed_result():
         evidence_kind="taxonomy")
     memory.end_what_episode()
     legacy = memory.thought_extras()
-    assert legacy["version"] == 5
+    assert legacy["version"] == 6
     legacy["version"] = 2
     legacy["namespace"] = "0123456789abcdef0123456789abcdef"
     for row in legacy["rows"]:

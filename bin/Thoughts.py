@@ -34,7 +34,7 @@ class ThoughtRecord:
     reason: str = ""
     semantic_delta: float = 0.0
     result: ThoughtResult | None = None
-    address: int | None = None
+    address: tuple | None = None
     opened_by_chooser: bool = False
 
     def __post_init__(self):
@@ -87,7 +87,7 @@ class ThoughtRecord:
             "concept-codebook",
             "conceptual-identity",
             "subgoal", "definition", "implication", "containment", "truth",
-            "presence", "conceptual-presence", "gain", "reference",
+            "presence", "conceptual-presence", "gain", "reference", "intuition", "pervasion",
         ):
             raise ValueError("unknown thought evidence kind")
         if self.result is not None:
@@ -100,6 +100,10 @@ class ThoughtRecord:
             if self.result.request.roles.shape != self.meaning.roles.shape:
                 raise ValueError("thought result changed the episode conceptual width")
         object.__setattr__(self, "sources", _freeze_metadata(self.sources))
+        if self.address is not None:
+            if len(self.address) != 4 or not all(math.isfinite(float(x)) for x in self.address):
+                raise ValueError('thought address requires four finite coordinates')
+            object.__setattr__(self, 'address', tuple(float(x) for x in self.address))
 
     def snapshot(self, *, detach):
         meaning = self.meaning
@@ -130,6 +134,7 @@ class ThoughtState:
     finished: bool = False
     cutoff_depth: int | None = None
     drain_count: int = 0
+    focus_where: tuple | None = None
 
     @property
     def level(self):
@@ -144,17 +149,38 @@ class ThoughtState:
         return self.cutoff_depth is not None
 
 
-def replay_thoughts(records):
+def replay_thoughts(records, *, chunks_state=None, row=0):
     """Validate chronological execution and derive the most recent episode."""
     state = None
     previous = -1
+    conclusions = {}
     for record in records:
         if not isinstance(record, ThoughtRecord):
             continue  # explicitly retained legacy prefix, not execution evidence
         if record.id <= previous:
             raise ValueError("thought occurrences must be strictly chronological")
         previous = record.id
+        if chunks_state is not None and record.address is not None:
+            from STMChunks import locate
+            if int(locate(chunks_state, record.address)[row]) < 0:
+                raise ValueError('replay chunk is absent at its .where address')
+        if record.result is not None and 'derivation' in record.result.evidence:
+            from ThoughtInference import replay_pair
+            computed = replay_pair(record.result.evidence)
+            key = record.result.evidence['meaning'].role_refs
+            if not record.result.evidence['derivation']['backward']:
+                computed = tuple(max(x, y) for x, y in zip(computed, conclusions.get(key, (0., 0.))))
+                conclusions[key] = computed
+            if any(abs(x-y) > 1e-6 for x, y in zip(computed,
+                    (record.support_true, record.support_false))):
+                raise ValueError('thought derivation pair differs from replayed supports')
+        if record.result is not None and 'operand_pair' in record.result.evidence:
+            computed = record.result.evidence['operand_pair'][::-1]
+            if any(abs(x-y) > 1e-6 for x, y in zip(computed,
+                    (record.support_true, record.support_false))):
+                raise ValueError('thought negation pair differs from replayed supports')
         if record.kind == "begin":
+            conclusions = {}
             if state is not None and not state.finished:
                 raise ValueError("new thought episode overlaps an active context")
             if (
@@ -170,6 +196,7 @@ def replay_thoughts(records):
                 record.budget,
                 0,
                 0.0,
+                focus_where=record.address,
             )
         else:
             if state is None or state.finished or record.episode != state.episode:
@@ -391,7 +418,7 @@ class LevelledThoughtHistory:
             raise ValueError(
                 "thought reference requires an occurrence owned by this row"
             )
-        return ("thought", self._thought_namespace, record.address)
+        return ("thought", self._thought_namespace, record.id + 1)
 
     def resolve_thought(self, reference, *, b=0, max_records=1024, work=None):
         if (
@@ -410,7 +437,7 @@ class LevelledThoughtHistory:
             if work is not None:
                 work.require("record")
             record = next(iterator)
-            if isinstance(record, ThoughtRecord) and record.address == reference[2]:
+            if isinstance(record, ThoughtRecord) and record.id + 1 == reference[2]:
                 if record.meaning is None:
                     raise ValueError("transition occurrence has no grammatical content")
                 return record.meaning, index + 1
@@ -443,7 +470,7 @@ class LevelledThoughtHistory:
                     "thought capacity cannot evict active contexts or their drain reserve"
                 )
             removed = {
-                record.address
+                record.id + 1
                 for record in records[:cut]
                 if isinstance(record, ThoughtRecord)
             }
@@ -469,17 +496,10 @@ class LevelledThoughtHistory:
     def _store_thought_events(self, events, *, b, reserve=0):
         current = list(self._what_slots[b])
         live = self.detach_mode == "episode" and b in self._episode_live
-        from Occurrence import address_key, document_digest, native_content_key, sentence_key
-        sources = getattr(self, '_address_sources', {})
-        document, ordinal = sources.get(b, (('thought-input', native_content_key(events[0].meaning)
-            if events[0].meaning is not None else b), 0))
-        addressed = []
-        for record in events:
-            content = sentence_key((record.kind.encode(),)) if record.meaning is None else native_content_key(record.meaning)
-            addressed.append(replace(record, address=address_key(document_digest(document), ordinal, content)))
-            ordinal += 1
-        self._address_sources = dict(sources, **{})
-        self._address_sources[b] = (document, ordinal)
+        from ThoughtChunks import address
+        active = replay_thoughts(current)
+        where = events[0].address or (active.focus_where if active is not None else address(events[0].id + 1))
+        addressed = [replace(record, address=record.address or where) for record in events]
         stored = [record.snapshot(detach=not live) for record in addressed]
         candidate = self._retain_thought_history(current + stored, reserve)
         replay_thoughts(candidate)  # validation precedes every owner mutation
@@ -505,9 +525,11 @@ class LevelledThoughtHistory:
         if type(work_budget) is not int or work_budget < 0:
             raise ValueError("thought work budget must be a non-negative integer")
         identifier = self._thought_next_id
+        from ThoughtChunks import address, begin
+        focus_where = address(identifier + 1)
         record = ThoughtRecord(
             identifier, identifier, "begin", 0, meaning, budget=work_budget,
-            opened_by_chooser=opened_by_chooser
+            opened_by_chooser=opened_by_chooser, address=focus_where
         )
         events = [record]
         if work_budget == 0:
@@ -524,6 +546,7 @@ class LevelledThoughtHistory:
         # Reserve a cutoff and the one root finish, or just the pending finish.
         reserve = 1 if work_budget == 0 else 2
         self._retain_thought_history(list(self._what_slots[b]) + events, reserve)
+        begin(self, meaning, b, identifier)
         self._episode_live[b] = []
         try:
             return self._store_thought_events(events, b=b, reserve=reserve)
@@ -626,7 +649,11 @@ class LevelledThoughtHistory:
             forced = True
         # Room for one cutoff if needed, all LIFO returns and one root finish.
         reserve = 0 if kind == "finish" else level + 1 + (not forced)
-        return self._store_thought_events(events, b=b, reserve=reserve)
+        stored = self._store_thought_events(events, b=b, reserve=reserve)
+        if kind == 'finish':
+            from ThoughtChunks import release
+            release(self, state.focus_where, b)
+        return stored
 
     def commit_thought(self, meaning, *, operation="refine", **kwargs):
         return self._thought_event("thought", meaning, operation=operation, **kwargs)
@@ -685,7 +712,7 @@ class LevelledThoughtHistory:
                 values.append(value)
             rows.append(values)
         return {
-            "version": 5,
+            "version": 6,
             "namespace": self._thought_namespace,
             "next_id": self._thought_next_id,
             "batch": self.batch,
@@ -694,7 +721,7 @@ class LevelledThoughtHistory:
 
     def load_thought_extras(self, extras):
         """Validate every row before restoring history; rebuild context by replay."""
-        if not isinstance(extras, dict) or extras.get("version") != 5:
+        if not isinstance(extras, dict) or extras.get("version") != 6:
             raise ValueError("unsupported thought history checkpoint")
         rows = extras.get("rows")
         batch = extras.get("batch")

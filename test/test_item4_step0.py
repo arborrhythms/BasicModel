@@ -111,7 +111,9 @@ def test_binding_judge_scores_referent_while_surface_readers_keep_their_training
     registry = Error(row_mask=torch.ones(4, dtype=torch.bool))
     result = BasicModel._sentence_answer_error(model, None, 0,
         torch.ones(4, dtype=torch.bool), dict(meanings=[correct, wrong, base, base]), registry=registry)
-    assert result.tolist() == pytest.approx([0., .5, 1., .2])
+    # D8 adds text to the graded binding cost. The two named candidates
+    # have identical content here; an unbound referent still costs one.
+    assert result.tolist() == pytest.approx([2., 0., 1.1, .2])
     registry.total(objective='output').sum().backward()
     assert surface.grad.tolist() == [1., 1., 1., 1.]
 
@@ -133,7 +135,8 @@ def test_thought_judge_uses_the_supplied_answer_kind(monkeypatch, kind):
         _sentence_reader_error=lambda *args, **kwargs: torch.tensor([.75]))
     monkeypatch.setattr(BindingAnswers, 'cost', lambda *args, **kwargs: torch.tensor(.125))
     score, _ = scorer(model, None, dict(meanings=[meaning]), 0)
-    assert float(score(0, SimpleNamespace(meaning=meaning))) == (.125 if kind == 'referent' else .75)
+    # An unresolved referent cannot contribute an accepted binding pair.
+    assert float(score(0, SimpleNamespace(meaning=meaning))) == (1.75 if kind == 'referent' else .75)
 
 
 def test_open_region_with_only_negation_offers_conclude(monkeypatch):

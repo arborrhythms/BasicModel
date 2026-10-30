@@ -10,10 +10,11 @@ import torch
 
 BUFFER, DEPTH, ORDERS, GRAMMAR, ROWS, ACTIVATIONS = range(6)
 REFS, IDENTITY, TIMELINE, STACK, READ, WHERE, WHEN = range(6, 13)
+TRUTH = 13
 SYMBOL, IDENTITY_REF, ACTION, RELATION, OCCURRENCE = range(1, 6)
 FIELDS = ('buffer', 'depth', 'orders', 'grammar_orders', 'concept_rows',
           'concept_activations', 'chunk_refs', 'chunk_identity', 'chunk_timeline',
-          'chunk_stack', 'chunk_read', 'chunk_where', 'chunk_when')
+          'chunk_stack', 'chunk_read', 'chunk_where', 'chunk_when', 'chunk_truth')
 
 
 def empty(batch, capacity, width, *, device=None, dtype=torch.float32):
@@ -32,7 +33,15 @@ def empty(batch, capacity, width, *, device=None, dtype=torch.float32):
     return (floats((int(width),)), torch.zeros(shape[0], dtype=torch.long, device=device),
             longs(fill=-1), longs(fill=-1), longs(fill=-1), floats(),
             longs((2, 2)), longs(fill=-1), longs(), longs(fill=-1), longs(),
-            floats((4,)), floats((4,)))
+            floats((4,)), floats((4,)), floats((2,)))
+
+
+def locate(state, where):
+    """Resolve an occupied chunk by its exact four-coordinate address."""
+    where = torch.as_tensor(where, device=state[WHERE].device, dtype=state[WHERE].dtype)
+    where = where.expand(state[WHERE].shape[0], 4)
+    match = (state[WHERE] == where[:, None]).all(-1) & (state[READ] > 0)
+    return torch.where(match.any(-1), match.long().argmax(-1), -1)
 
 
 def gather(value, indices):
@@ -116,7 +125,7 @@ def read(state, indices, gate=None, *, tick=None):
 
 def deposit(state, value, gate, *, order=None, grammar_order=None, row=None,
             activation=None, refs=None, identity=None, timeline=None,
-            where=None, when=None, stack=False, tick=None):
+            where=None, when=None, truth=None, stack=False, tick=None):
     """Allocate one arrival; remembered and prepended entries stay off stack."""
     before = state
     state, index = allocate_chunk(state, gate)
@@ -125,7 +134,7 @@ def deposit(state, value, gate, *, order=None, grammar_order=None, row=None,
     b = value.shape[0]
     defaults = {BUFFER:value, ORDERS:order, GRAMMAR:grammar_order, ROWS:row,
                 ACTIVATIONS:activation, REFS:refs, IDENTITY:identity,
-                TIMELINE:timeline, WHERE:where, WHEN:when}
+                TIMELINE:timeline, WHERE:where, WHEN:when, TRUTH:truth}
     for field, member in defaults.items():
         if member is None:
             continue

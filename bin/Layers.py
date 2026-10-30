@@ -13684,7 +13684,7 @@ class ShortTermMemory(Layer):
         super().__init__(nInput=0, nOutput=0)
         import STMChunks
         # Construction bound: nStreams × stmCapacity (default eight) × D.
-        # The same thirteen tensors serve parsing, recent entries and recall.
+        # The same fixed tensors serve parsing, recent entries and recall.
         self._init_capacity = int(capacity or self.DEFAULT_CAPACITY)
         self._init_concept_dim = int(concept_dim)
         self._init_batch = self._active_batch = int(batch)
@@ -13704,6 +13704,7 @@ class ShortTermMemory(Layer):
         # One unary-history entry per constructed chunk and depth per stream.
         self._live_last_unary = torch.full((batch, self._init_capacity), -1, dtype=torch.long)
         self._live_unary_history_depth = torch.zeros(batch,dtype=torch.long)
+        self._thought_contents = tuple((None,) * self._init_capacity for _ in range(batch))
 
     @property
     def state(self):
@@ -13713,7 +13714,7 @@ class ShortTermMemory(Layer):
     def set_state(self, state):
         import STMChunks
         if len(state) != len(STMChunks.FIELDS):
-            raise ValueError('STM requires the thirteen-tensor shared chunk state')
+            raise ValueError('STM requires the complete shared chunk state')
         batch = state[0].shape[0]
         self.ensure_batch(batch)
         for name, value in zip(STMChunks.FIELDS, state):
@@ -13721,7 +13722,11 @@ class ShortTermMemory(Layer):
             if value.shape[1:] != previous.shape[1:]:
                 raise ValueError('STM chunk shape exceeds its construction')
             full = value if batch == self._init_batch else torch.cat((value, previous[batch:].to(value)), 0)
-            self._assign_live(self, '_live_'+name, full)
+            if name == 'chunk_truth' and full.device == previous.device and full.dtype == previous.dtype:
+                with torch.no_grad():
+                    previous.copy_(full)
+            else:
+                self._assign_live(self, '_live_'+name, full)
         if not torch.compiler.is_compiling():
             self._max_depth_host = int(state[1].max())
 
@@ -14147,7 +14152,8 @@ class ShortTermMemory(Layer):
         import STMChunks
         return STMChunks.deposit(state, ideas, gate_b_1, stack=True,
             order=inserted_orders, grammar_order=inserted_grammar_orders,
-            row=inserted_concept_rows, activation=inserted_concept_activations)[0]
+            row=inserted_concept_rows, activation=inserted_concept_activations,
+            truth=(1., 0.))[0]
 
     @staticmethod
     def functional_snapshot_mask(buffer, depth, active_rows=None):

@@ -152,7 +152,7 @@ def test_not_exchanges_both_poles_and_preserves_content():
 
 
 def test_operations_all_declare_pairs_and_ast_never_returns_scalar():
-    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','isImplied','implies','gain'}
+    expected={'ask','bind','query','not','isTrue','exist','isPart','part','isEqual','equal','infer','intuit','implies','gain'}
     assert set(THOUGHT_EXECUTORS)==expected
     assert all(item.evidence_pair for item in THOUGHT_EXECUTORS.values())
     source=Path('bin/ThoughtFaces.py').read_text()
@@ -215,22 +215,19 @@ def test_modus_ponens_requires_premise_and_implication_witnesses(monkeypatch):
     for ref in (p,q):
         model.conceptualSpace._concept_allocator.symbol_types.setdefault(ref[1],set()).add('situation')
     rule=store.append_relation(p[1],q[1],truth_plus=.9)
-    chosen=[]
-    def choose(root,active,actions,**kwargs):
-        if None in actions and len(chosen)==2:return None
-        for action in actions:
-            if action is not None and action.semantic_id=='query' and action.request.constituents:
-                relation=bindings(action.request.constituents[0]).get('_query_relation')
-                if relation==('truth' if not chosen else 'implies'):
-                    chosen.append(action)
-                    return action
-        raise AssertionError('missing modus ponens query')
-    monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
-    result=run(model,registry.form('isImplied',p,q),work_budget=64)
-    assert len(chosen)==2
-    assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
-    assert set(bindings(result.meaning)['_thought_witnesses'])=={store.occurrence_of(source),rule}
-    assert store.part_row(rule[1])['evidence']==pytest.approx((.9,0.))
+    from test_thought_infer import invoke
+    from ThoughtChunks import attach
+    from ThoughtStream import query_pattern
+    memory = model._what_memory()
+    attach(memory, model.conceptualSpace.stm)
+    goal = registry.form('isPart', p, q)
+    memory.begin_thought_episode(goal, work_budget=128, opened_by_chooser=True)
+    premise_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', p, None)))
+    rule_read = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', p, q)))
+    result = invoke(model, registry, registry.form('infer', premise_read.evidence['meaning'], rule_read.evidence['meaning']))
+    assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
+    assert set(bindings(result.evidence['meaning'])['_thought_witnesses']) == {store.occurrence_of(source), rule}
+    assert store.part_row(rule[1])['evidence'] == pytest.approx((.9, 0.))
 
 
 def test_expectation_only_credit_does_not_enter_departure_comparison():
@@ -428,18 +425,24 @@ def event_world(positions):
 @pytest.mark.parametrize('positions,known', [((1,2),True),((2,1),False)])
 def test_event_implication_reads_endpoint_when_order(monkeypatch,positions,known):
     model,registry,store,events=event_world(positions)
-    goal=registry.form('isImplied',*events)
-    def choose(root,active,actions,**kwargs):
-        return None if kwargs.get('evidence') is not None else next(action for action in actions if action is not None and action.semantic_id=='isImplied')
-    monkeypatch.setattr(model,'_choose_selected_thought_action',choose)
-    result=run(model,goal,work_budget=24)
-    assert (evidence_pair(result.meaning)!=(0.,0.)) is known
+    from test_thought_infer import invoke
+    from ThoughtChunks import attach
+    from ThoughtStream import query_pattern
+    memory = model._what_memory()
+    attach(memory, model.conceptualSpace.stm)
+    goal = registry.form('isPart', *events)
+    memory.begin_thought_episode(goal, work_budget=128, opened_by_chooser=True)
+    premise = invoke(model, registry, registry.form('query', query_pattern(goal, 'truth', events[0], None)))
+    rule = invoke(model, registry, registry.form('query', query_pattern(goal, 'implies', *events)))
+    assert bool(rule.evidence.get('frames')) is known
     if known:
-        assert evidence_pair(result.meaning)==pytest.approx((.8,0.))
-        assert set(events).issubset(bindings(result.meaning)['_thought_witnesses'])
+        result = invoke(model, registry, registry.form('infer', premise.evidence['meaning'], rule.evidence['meaning']))
+        assert evidence_pair(result.evidence['meaning']) == pytest.approx((.8, 0.))
+        assert result.evidence['meaning'].role_refs[0] == events[1]
+        assert set(events).issubset(bindings(result.evidence['meaning'])['_thought_witnesses'])
         assert store.parts.find(events[0][1],events[1][1]) is not None
     else:
-        assert evidence_pair(result.meaning)==(0.,0.) and not open_slots(result.meaning)
+        assert (rule.support_true, rule.support_false) == (0., 0.)
 
 
 def test_event_implication_cannot_invent_an_order_for_unknown_legacy_time():

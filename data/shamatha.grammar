@@ -64,7 +64,9 @@
       <rule>exist_argout1 = exist.thought(exist_argin1)</rule>
       <rule>isPart_argout1 = isPart.thought(isPart_argin1, isPart_argin2)</rule>
       <rule>isEqual_argout1 = isEqual.thought(isEqual_argin1, isEqual_argin2)</rule>
-      <rule>isImplied_argout1 = isImplied.thought(isImplied_argin1, isImplied_argin2)</rule>
+      <rule>infer_argout1 = infer.thought(infer_argin1, infer_argin2)</rule>
+      <rule family="infer" permutation="argin2,argin1">inferBackward_argout1 = inferBackward.thought(inferBackward_argin1, inferBackward_argin2)</rule>
+      <rule>intuit_argout1 = intuit.thought(intuit_argin1)</rule>
       <rule>implies_argout1 = implies.thought(implies_argin1, implies_argin2)</rule>
       <rule>gain_argout1 = gain.thought(gain_argin1)</rule>
     </thought>

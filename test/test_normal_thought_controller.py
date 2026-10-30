@@ -471,8 +471,8 @@ def test_selected_program_resolution_releases_completed_eval_episode(monkeypatch
     assert len(episodes) == 2 and episodes[0] != episodes[1]
 
 
-def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monkeypatch):
-    """A completed thought's full grammar, not its trace, feeds output."""
+def test_normal_boundary_refuses_unproved_semantic_meaning_as_its_answer_seed(monkeypatch):
+    """A conceptual operation stays in the trace until a proof selects it."""
     from test_selected_relation_meaning import _program_owner
 
     cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
@@ -514,13 +514,15 @@ def test_normal_boundary_uses_selected_semantic_meaning_as_its_answer_seed(monke
             query=registry.form("equal", _part, _part)),)), WhatQuestion.present(0))
 
     selected = derivation.selected_thoughts[0][1]
-    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+    assert selected.meaning.role_mask.any()
+    assert not derivation.conceptual_answer.any()
+    assert not derivation.resolved and derivation.answer_meanings == ((),)
     assert derivation.source == "thought-concept"
 
 
-def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
+def test_normal_boundary_keeps_selected_prediction_provisional(
         monkeypatch):
-    """A selected ``arma`` estimate is a typed answer seed, never a fact."""
+    """A selected estimate retains its typed trace without answering."""
     from test_selected_relation_meaning import _program_owner
 
     cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
@@ -585,15 +587,15 @@ def test_normal_boundary_adapts_selected_prediction_result_as_its_answer_seed(
     derivation = model.resolveAnswer(
         Understanding(sentence_states=(sentence_state(language, program(), registry),)), WhatQuestion.present(0))
 
-    torch.testing.assert_close(
-        derivation.conceptual_answer[0], estimate_roles.detach())
+    assert not derivation.conceptual_answer.any()
+    assert not derivation.resolved and derivation.answer_meanings == ((),)
     assert not derivation.conceptual_answer.requires_grad
     assert derivation.source == "thought-prediction"
     assert derivation.grammar_trace[1]["result_kind"] == "prediction"
 
 
-def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch):
-    """A later catalog choice changes the answer meaning, not only its trace."""
+def test_normal_boundary_retains_the_unproved_controller_selected_operation(monkeypatch):
+    """Conceptual equality still executes, with its output awaiting proof."""
     from test_selected_relation_meaning import _program_owner
 
     cs, grammar, _legacy_registry, language, _leaves, program, _part, _whole = (
@@ -645,7 +647,8 @@ def test_normal_boundary_realizes_the_controller_selected_operation(monkeypatch)
 
     selected = derivation.selected_thoughts[0][1]
     assert registry.signature_for(selected.meaning).operation.semantic_id == "equal"
-    torch.testing.assert_close(derivation.conceptual_answer[0], selected.meaning.roles)
+    assert not derivation.conceptual_answer.any()
+    assert not derivation.resolved and derivation.answer_meanings == ((),)
     assert derivation.grammar_trace[1]["semantic_id"] == "equal"
 
 
@@ -761,7 +764,8 @@ def test_normal_boundary_never_falls_back_to_the_legacy_surface_reasoner(
     assert result.selected_thoughts[0][1].records == ()
     assert result.selected_thoughts[0][1].work.spent == 0
     assert result.source == "identity"
-    torch.testing.assert_close(result.conceptual_answer[0], sentence_state(language, program(), registry).meaning.roles)
+    assert not result.conceptual_answer.any()
+    assert not result.resolved and result.answer_meanings == ((),)
     assert memory.thought_history() == []
 
 

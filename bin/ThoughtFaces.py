@@ -79,16 +79,13 @@ def implies(context, arguments):
     return part(context, arguments)
 
 
-def is_implied(context, arguments):
-    link = context.ltm.relation_evidence('implies', arguments['argin1'], arguments['argin2'],
-        max_records=context.max_records, work=context.work)
-    premise = context.ltm.premise_evidence(arguments['argin1'],
-        max_records=context.max_records, work=context.work)
-    return pair(link.get('value'), min(link['support_true'], premise['support_true']),
-        min(link['support_false'], premise['support_true']),
-        witnesses=(*premise.get('witnesses',()), *link.get('witnesses',())),
-        frames=(*premise.get('frames',()), *link.get('frames',())),
-        evidence_kind='implication')
+def infer(context, arguments):
+    from ThoughtInference import derive
+    return derive(context, arguments)
+
+
+def intuit(context, arguments):
+    raise NotImplementedError('intuit execution is deferred to item 2.5 round B')
 
 
 def is_true(context, arguments):
@@ -109,8 +106,14 @@ def exist(context, arguments):
 
 
 def query(context, arguments):
+    from dataclasses import replace
+    from ThoughtReferences import bindings
+    requested = arguments['argin1']
+    subject = bindings(requested).get('_subgoal_subject')
+    if subject is not None:
+        requested = replace(requested, role_refs=(subject, *requested.role_refs[1:]))
     references = tuple(ref for _, ref in context.operand_references if ref and ref[0] == 'ltm')
-    return context.ltm.best_match(arguments['argin1'],
+    return context.ltm.best_match(requested,
         max_records=context.max_records, work=context.work, references=references)
 
 
@@ -144,9 +147,11 @@ def negate(context, arguments):
         from dataclasses import replace
         roles = (value.roles if context is None else torch.stack([
             context.conceptual_space.negate(role) for role in value.roles]))
-        result = with_slots(replace(value, roles=roles), open_slots(value), pair=(negative, positive))
+        data = bindings(value)
+        data['_operand_negated'] = not data.get('_operand_negated', False)
+        result = with_slots(replace(value, roles=roles, bindings=data), open_slots(value), pair=(negative, positive))
         return pair(result, negative, positive, meaning=result,
-                    witnesses=bindings(value).get('_thought_witnesses', ()))
+                    witnesses=bindings(value).get('_thought_witnesses', ()), operand_pair=(positive, negative))
     tensor = _vector(context, value)
     extent = context.conceptual_space.extent(tensor)
     return pair(context.conceptual_space.negate(tensor), extent['support_false'], extent['support_true'],

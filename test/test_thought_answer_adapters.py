@@ -140,7 +140,8 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
         program_meaning=lambda item, _registry: query,
         # This adapter fixture stubs every numerical synthesis operation.
         generation_scope=nullcontext))
-    object.__setattr__(model.conceptualSpace, 'stm', SimpleNamespace(concept_dim=8))
+    from Layers import ShortTermMemory
+    object.__setattr__(model.conceptualSpace, 'stm', ShortTermMemory(concept_dim=8))
     model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
     model._select_perceptual_bindings = lambda *_a: ()
     model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
@@ -172,10 +173,13 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model.eval()
     derivation = model.resolveAnswer(understanding, What.supervised(0))
     assert derivation.source == 'thought-' + kind
-    assert len(derivation.answer_meanings[0]) == 1
-    assert derivation.resolved
+    # Presence remains an executable operation, but its pair is not a proof
+    # accepted by the answer boundary. Recall and a recalled subgoal are.
+    assert len(derivation.answer_meanings[0]) == (0 if kind == 'concept' else 1)
+    assert derivation.resolved == (kind != 'concept')
     monkeypatch.setattr(registry, 'execute', lambda *_a, **_k: pytest.fail('output executed a query'))
     result = model.reverseOutput(understanding, derivation)
-    expected = torch.cat(tuple(item.roles for item in derivation.answer_meanings[0]))
+    expected = (torch.cat(tuple(item.roles for item in derivation.answer_meanings[0]))
+                if derivation.answer_meanings[0] else derivation.conceptual_answer[0])
     torch.testing.assert_close(result.actual[0], expected)
     assert memory.thought_state().finished

@@ -2616,6 +2616,21 @@ reward or learned-utility claim. See [shared query work](QueryWork.md).
 
 ### Retained grammatical occurrences
 
+Item 2.5 round A uses the fixed STM working set for serial thought.
+`chunk_truth [B, C, 2]` holds the independent evidence lanes beside each
+chunk's content and references. `STMChunks.locate` resolves exact four-float
+`.where` addresses; the episode pins its `focus_where` until finish.
+`ThoughtRecord.address` names the written chunk, while the record's ordinal
+identifies its chronological occurrence. History checkpoints use version 6.
+Recalled rules remain premises beside the focus. `infer` reads a premise and
+a rule by address, derives the consequent or opens the antecedent as a
+subgoal, and records its supports and ordered witnesses. Path support uses
+minimum, alternatives use maximum, and negation exchanges lanes. The answer
+reader requires inference, recall, or pervasion provenance; provisional
+intuition cannot supply an answer. A kept derived idea goes to LTM0 with its
+pair and witnesses and follows ordinary forgetting. The supplied referent's
+trial cost adds content coverage error to the text cost.
+
 The durable LTM owner retains the transitive closure of records addressed by
 surviving rows and ordinary-thought roots. A bounded derived view preserves
 ordered role edges, repeated references, scope and each occurrence's own

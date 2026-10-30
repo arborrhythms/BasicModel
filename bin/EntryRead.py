@@ -172,7 +172,8 @@ class EntryRead:
             identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
             where = point.new_zeros(4) if self.when_start is None or self.when_start < 4 else point[self.when_start-4:self.when_start]
             state,index = chunks.deposit(state,point.expand(state[0].shape[0],-1),gate,
-                refs=refs,order=frame['order'],identity=identity,where=where,when=frame['when'].to(point))
+                refs=refs,order=frame['order'],identity=identity,where=where,when=frame['when'].to(point),
+                truth=frame['evidence'])
             if int(index[stream]) < 0:
                 missing.append('stm_all_chunks_on_stack')
                 break

@@ -223,6 +223,8 @@ def fill(meaning, result, *, witnesses=(), operation=None, slots=None):
                                                    *witnesses)))
     if operation is not None:
         data['_producing_operation'] = operation
+    if evidence.get('evidence_kind') is not None:
+        data['_evidence_kind'] = evidence['evidence_kind']
     updated = replace(meaning, roles=roles, role_mask=mask,
                       role_refs=tuple(references), constituents=tuple(children), bindings=data)
     if '_pending' in data:

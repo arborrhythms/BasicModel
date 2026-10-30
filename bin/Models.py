@@ -5680,6 +5680,9 @@ class BasicModel(BaseModel):
                         if torch.is_tensor(primed) else ())),
             taxonomy=ThoughtTaxonomyCapability(concept_owner),
             work=work, continuation=continuation,
+            stm=getattr(self._what_memory(), '_thought_stm', None),
+            focus_where=(self._what_memory().thought_state(b=row).focus_where
+                if self._what_memory() is not None and self._what_memory().thought_state(b=row) is not None else None),
             boundary=self._assert_query_boundary, row=row)
 
     @staticmethod
@@ -6014,6 +6017,7 @@ class BasicModel(BaseModel):
                 "return_thought", "finish_thought", "thought_state",
                 "thought_history", "thought_reference")):
             raise RuntimeError("selected thought requires the interaction memory owner")
+        registry._thought_row = row
 
         meter = QueryWorkBudget(work_budget) if work is None else work
         opening_choice = None
@@ -6035,6 +6039,8 @@ class BasicModel(BaseModel):
             fork = None
         if fork is None:
             initial_spend = meter.spent
+            from ThoughtChunks import attach
+            attach(memory, self.conceptualSpace.stm)
             root = memory.begin_thought_episode(meaning, b=row, work_budget=meter.remaining,
                 opened_by_chooser=opening_choice is not None)
             episode = root.episode
@@ -6119,6 +6125,7 @@ class BasicModel(BaseModel):
                 support_false=evidence["support_false"],
                 evidence_kind=evidence["evidence_kind"],
                 sources=tuple(sources),
+                reason=evidence.get('reason', ''),
             )
             if kind == "thought":
                 record = memory.commit_thought(
@@ -6298,6 +6305,9 @@ class BasicModel(BaseModel):
                                     semantic_id=selected.semantic_id, plan=plan, template=raw))
                     from ThoughtStream import materialize
                     raw = materialize(raw)
+                    if child_pending is None:
+                        from ThoughtChunks import stage
+                        raw = stage(memory, raw, row)
                     from AccessibleMind import apply_thought_effect
                     if child_pending is None:
                         apply_thought_effect(self, raw, row=row, work=meter)
@@ -6326,12 +6336,15 @@ class BasicModel(BaseModel):
                 evidence = dict(evidence, incomplete=tuple(dict.fromkeys(
                     (*evidence['incomplete'], 'work_budget'))))
                 return dict(meaning=goal, evidence=evidence, result=checked, record=parent_record)
-            record = event("thought", current, evidence,
-                           operation=semantic_id,
-                           sources=refs(current), result=checked)
             history = tuple(item for item in memory.thought_history(b=row)
                             if item.episode == episode and item.level == state.level)
             resolved = integrate(registry, goal, checked, history, work=meter)
+            if checked is not None:
+                evidence['reason'] = checked.evidence.get('reason', '')
+            record = event("thought", resolved if semantic_id == 'infer' else current, evidence,
+                           operation=semantic_id,
+                           sources=checked.evidence.get('sources', refs(current)) if checked is not None else refs(current),
+                           result=checked)
             poles = evidence_pair(resolved)
             evidence = dict(evidence, support_true=poles[0], support_false=poles[1])
             return {"meaning": resolved, "evidence": evidence,
@@ -8841,8 +8854,13 @@ class BasicModel(BaseModel):
         for row, selected in selected_thoughts:
             checked = getattr(selected, "result", None)
             if not isinstance(checked, ThoughtResult):
+                answer_meanings[row] = ()
+                selected_answer_rows[row] = torch.zeros_like(selected_answer_rows[row])
+                resolved_all = False
+                selected_answer_applied = True
                 continue
-            items = thought_answer_meanings(selected)
+            from ThoughtAnswer import accepted
+            items = thought_answer_meanings(selected) if accepted(selected.meaning) else ()
             answer_meanings[row] = items
             if items:
                 selected_answer_rows[row] = torch.cat(tuple(
@@ -8850,7 +8868,7 @@ class BasicModel(BaseModel):
                     for item in items), dim=0)
             else:
                 selected_answer_rows[row] = torch.zeros_like(selected_answer_rows[row])
-                if checked.incomplete or checked.result_kind != "set":
+                if not accepted(selected.meaning) or checked.incomplete or checked.result_kind != "set":
                     resolved_all = False
             row_sources[row] = ("thought" if checked.result_kind == "truth"
                                 else "thought-" + checked.result_kind)
@@ -20474,8 +20492,8 @@ class BasicModel(BaseModel):
                         observation['reference_plans'][row], meaning)
                 values.append(cost.new_zeros(()) if not bool(active[row]) else
                     (cost[row] if cost.ndim else cost) if not referent else
-                    cost.new_ones(()) if judged is None else binding_cost(
-                        self, judged, answer.what, stream=row))
+                    (cost[row] if cost.ndim else cost) + (cost.new_ones(()) if judged is None else binding_cost(
+                        self, judged, answer.what, stream=row)))
                 if (registry is not None and bool(active[row]) and meaning is not None
                         and referent
                         and observation.get('reference_plans')):
@@ -20902,7 +20920,7 @@ class BasicModel(BaseModel):
             if field is not None and bool(active[b]):
                 history.setdefault(b, collections.deque(maxlen=64)).append(field.detached())
         from ThoughtClosing import close
-        from ThoughtAnswer import scorer, train_readers, bound_view
+        from ThoughtAnswer import scorer, train_readers, bound_view, accepted
         view['record'] = self._last_sentence_understanding
         score_thought, thought_readers = scorer(self, state, view, sid)
         ready = tuple(b for b, field in enumerate(fields) if field is not None and bool(active[b]))
@@ -20911,7 +20929,7 @@ class BasicModel(BaseModel):
         train_readers(self, thought_readers)
         for row, result in closed_thoughts:
             from ThoughtReferences import open_slots
-            if result.records and not open_slots(result.meaning) and int(result.meaning.role_mask.sum()) in (1, 3):
+            if result.records and accepted(result.meaning) and int(result.meaning.role_mask.sum()) in (1, 3):
                 _bound, view = bound_view(state, view, sid, row, result.meaning)
                 self._last_sentence_understanding = view['record']
                 self._sentence_understandings[sid] = view['record']

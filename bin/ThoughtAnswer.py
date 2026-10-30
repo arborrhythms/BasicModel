@@ -4,6 +4,14 @@ import torch
 from Layers import Error
 
 
+def accepted(meaning):
+    from ThoughtReferences import bindings, open_slots
+    data = bindings(meaning)
+    return (not open_slots(meaning) and data.get('_evidence_kind') != 'intuition'
+            and (data.get('_producing_operation') in ('infer', 'query', 'isTrue')
+                 or data.get('_evidence_kind') in ('pervasion', 'retrieval', 'truth')))
+
+
 def bound_view(state, observation, sentence, row, meaning):
     """Substitute only this row's completed content into the existing reader."""
     language = list(state[1])
@@ -11,7 +19,7 @@ def bound_view(state, observation, sentence, row, meaning):
         language[index] = language[index].clone()
     count = int(meaning.role_mask.sum())
     from ThoughtReferences import open_slots
-    if count not in (1, 3) or open_slots(meaning):
+    if count not in (1, 3) or not accepted(meaning):
         raise ValueError('the answer reader requires a completed one- or three-role meaning')
     slots = meaning.roles[meaning.role_mask]
     # Sentence physical order is NP2, NP1, VP for a ternary row.
@@ -43,7 +51,7 @@ def scorer(model, state, observation, sentence):
     trials = []
     def score(row, result):
         from ThoughtReferences import open_slots
-        bound, view = ((state, observation) if (open_slots(result.meaning)
+        bound, view = ((state, observation) if (not accepted(result.meaning)
                          or int(result.meaning.role_mask.sum()) not in (1, 3)) else
                       bound_view(state, observation, sentence, row, result.meaning))
         active = torch.zeros(len(observation['meanings']),device=result.meaning.roles.device,dtype=torch.bool)
@@ -66,7 +74,9 @@ def scorer(model, state, observation, sentence):
         answer = data.what(questions[row]) if row < len(questions) else None
         if answer is not None and answer.available and answer.kind == 'referent':
             from BindingAnswers import cost
-            return cost(model, result.meaning, answer.what,stream=row)
+            text_cost = 0. if value is None else value[row] if value.ndim else value
+            return (cost(model, result.meaning, answer.what,stream=row) if accepted(result.meaning)
+                    else result.meaning.roles.new_ones(())) + text_cost
         return 0. if value is None else value[row] if value.ndim else value
     return score,trials
 

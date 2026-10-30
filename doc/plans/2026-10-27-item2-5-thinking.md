@@ -952,3 +952,385 @@ change. The round's measurement runs the same lesson under both settings
 of each and reports step time, the lesson's answers and objects, the XOR
 and packing gates, and the per-operator dissonance; the comparison, not
 the design, decides the default.
+
+
+## 17. Codex round A implementation and review receipt (2026-10-29)
+
+The implementation starts at committed BasicModel `0aedc06414`. The
+predecessor's `472f5000850e` names its source snapshot, not a Git commit.
+No commit or publication has been made. Round B and the one-backward
+round remain outside this change.
+
+The serial path now keeps a fixed `chunk_truth` owner, exact `.where`
+lookup, and a pinned episode focus. Recalled premises are retained in
+addressed STM slots. `infer` handles forward and backward directions,
+equality, membership through the existing priming cache, substitution
+into relation conclusions, and operand negation. An unmatched inference
+leaves the open goal unchanged. Derived alternatives record their input
+pairs and combine by maximum without allocating another conclusion.
+The worked line replays with pair `(0.7, 0.3)` and ordered membership and
+rule witnesses; tampered support is rejected. Kept derived conclusions
+use the ordinary LTM0 writer and forgetting policy.
+
+The answer boundary accepts the specified provenance at both ordinary
+closing and answer resolution. Conceptual presence, equality, and
+prediction still execute and retain their typed trace; they do not
+supply an answer without accepted evidence. The corresponding adapter
+and controller tests are ported, with exact before/after files in the
+receipt. D8 uses detached content coverage plus text cost: the production
+paired-walk certificate measures costs approximately `1.8` and `1.2`,
+keeps the second binding, and produces chooser credit.
+
+The receipt is
+[`2026-10-29-item2-5-round-a`](../benchmarks/2026-10-29-item2-5-round-a/).
+`protocol/checks.py` records every gate command, environment, and source
+snapshot. `frozen-source.json` uses the compact canonical JSON hash of
+its inline `source_snapshot`; `ports.json` contains every changed test
+file before and after; `retirement.json` scopes the executable certificate
+to Python implementation and shipped grammars, excluding the archived
+original grammar fixture. `allocation-read.json` records construction,
+slot ownership, trial restoration, and the history-only compatibility
+boundary. Earlier development failures and the superseded candidate are
+retained under `development/`.
+
+The core gate also exposed an STM trial-restoration defect: restoring the
+full construction changed the active stream count to its preallocated
+maximum. A one-stream query consequently met a larger symbolic query in
+attention. `ThoughtTrialState` now restores both the active stream count
+and the stack-depth summary, while preserving the full fixed buffers.
+A direct three-stream-construction/one-stream-use regression covers this
+producer. The remaining old binding-cost assertions are ported to D8's
+content coverage and additive text rule.
+
+One policy question is outstanding for Alec. Sections 3.6 and 8 require
+`intuit` in the ordinary menu, while its round A executor must raise a
+clear error if selected. The implementation follows both requirements;
+a development regression sampled that action and raised the prescribed
+`NotImplementedError` (`development/thought-ports.log`). Codex asked
+whether to mask ordinary selection until round B, keeping the descriptor,
+grammar and direct-call error. No answer has yet been received, and no
+mask has been introduced. A green finite run would not remove this
+known reachable error.
+
+Final frozen results follow.
+No full sweep, `RUN_SLOW`, seed pinning, capacity change, or new model
+knob is part of this round.
+
+
+### 17.1 Frozen result and remaining menu decision (2026-10-29)
+
+Source SHA-256: `2515d19ee75ea69f0b9fe98488ef0d5588058fe3445568342a3d18d58b33f89d`
+(959 snapshot files). The compact canonical hash was recomputed after
+all checks and the tree still matches. The native smoke and both gate
+groups use this source. Exact commands and environments are in
+`commands.json`; detailed counts, skips and the complete failure are in
+`summary.json`. All eleven changed test files have before/after text.
+
+- Thought group: 254 passed, 4 skipped, no failures; all 13 new round A
+  certificates pass, including the worked-line replay, D8's kept
+  departure, and restoration of the active stream count.
+- Core unchanged selection: 1,644 passed, 36 skipped, 1 failed across
+  all 1,681 selected cases. The first two-worker invocation stopped at
+  its 8 GiB aggregate memory limit after 672 completed cases. Its
+  successful results were retained. The continuation selected exactly
+  the 1,009 unfinished cases, at 16 GiB aggregate on this 36 GiB machine;
+  it did not rerun completed cases. Both parts' commands, source and
+  resource receipts are retained. The result is a complete scoped
+  measurement with one failed case, not a green core gate.
+- Native smoke: four sentences, exit 0, approximately
+  39.626 seconds, 11 native forms and zero rung-zero audit errors.
+  Both supplied-answer checks remain incorrect and acquisition is false.
+  This certifies execution only.
+
+The sole frozen failure is
+`test_math_chain.py::test_native_worked_document_trains_unforced_without_numeric_oracles`:
+the ordinary chooser selected `intuit`, whose executor raised the clear
+round-B error required by §8. The earlier attention-shape exception is
+repaired; the native run progressed beyond it. No failing assertion or
+exception was suppressed, and no seed was chosen to avoid the menu item.
+
+Round A is implemented and frozen for review, with approval held on the
+menu decision described in §17. Codex recommends masking ordinary
+`intuit` selection until round B while retaining its registered grammar,
+descriptor and direct-call error. That is a change to §8 and remains for
+Alec to decide; it has not been implemented. No commit or publication.
+
+
+## 18. Claude's review of round A (`2515d19ee75e`) and D9 (2026-10-29)
+
+**Verified.** The hash recomputes from the inline snapshot and all 959
+files equal the live tree (new: `ThoughtChunks`, `ThoughtInference`,
+`test_thought_infer`). Every gate run (thought, core in two parts, the
+smoke) is on that hash with `RUN_SLOW` and `BASIC_SEED` unset; the core's
+second part selected exactly the 1,009 cases the first left at its memory
+stop, so together they cover all 1,681. All eleven ports carry before text
+equal to HEAD and after text equal to the tree. The retirement certificate
+finds no hit in the 154 source paths or the shipped grammars (the archived
+fixture grammar excluded, correctly). No seed, no resize, no knob:
+`chunk_truth` is preallocated with a constant pointer, and the sidecar
+`_thought_contents` is constructed per stream, saved and restored with the
+trial, and read only after `locate` confirms the address. The
+trial-restore defect Codex found (the active stream count) is repaired at
+its producer with a regression.
+
+**The exit holds.** The worked line runs `query`, backward `infer`,
+`query`, forward `infer`; the conclusion's pair is
+$(\min(.7,.9), \min(.7,.3)) = (.7, .3)$ with the membership and rule rows
+as ordered witnesses; the records replay with that pair, the derived row
+is in LTM0 with kind `inference`, and a tampered support is rejected. D8
+grades: two wrong-text trials with different bindings cost about 1.8 and
+1.2, the better is kept, and the chooser's surrogate carries credit.
+
+**Results.** Thought 254 passed, 4 skipped; core 1,644 passed, 36
+skipped, 1 failed; smoke four sentences, exit 0. The failure is D9.
+
+**Repairs.**
+
+1. *D9, decided (Alec, 2026-10-29): `intuit` leaves the ordinary menu
+   until round B.* The legal mask excludes it while its executor is
+   deferred; the descriptor, the grammar rule and the direct-call error
+   stay; round B enables it with the executor. §8 asked for both "offered"
+   and "refused if selected", which a sampling chooser cannot honor; the
+   defect was the spec's.
+2. *The match's support joins the path minimum (§3.7).* `derive` records a
+   membership or equality proof's witnesses but not its support, so the
+   pair is $(\min(p^+, r^+), \min(p^+, r^-))$ whatever the edge's
+   strength. The proof is a step on the path: the pair becomes
+   $(\min(p^+, m^+, r^+), \min(p^+, m^+, r^-))$, with $m^+ = 1$ for a
+   direct identity, recorded in `derivation` and recomputed by
+   `replay_pair`. Certificate: an edge weaker than premise and rule caps
+   both lanes at the edge.
+3. *A duplicate occupied `.where` fails loud.* `locate` returns the first
+   match silently. In `ThoughtChunks`, `put` without `existing` raises on
+   an occupied address and `_index` raises on more than one match;
+   `STMChunks.locate` stays traceable.
+4. *Gate 3's instantiation is asserted.* No test asserts
+   `reason == 'instantiation'`; the worked line's forward step takes that
+   route, so assert it there.
+
+Approval follows the repairs green on one new hash; that check is the
+hash, the four certificates and the formerly failing core case.
+
+## 19. Text for Codex: round A repairs (2026-10-29)
+
+~~~
+Item 2.5 round A, repairs on the review freeze 2515d19ee75e (thinking
+spec §18). Alec decided D9: intuit leaves the ordinary thought menu until
+round B; the legal mask excludes it while its executor is deferred, and
+the descriptor, grammar rule and direct-call NotImplementedError stay.
+
+Build: (1) D9, with a certificate that a thought step at a question never
+offers intuit and a direct call still raises; (2) the match's support in
+the path minimum: a membership or equality proof's support_true m+ enters
+the pair as (min(p+, m+, r+), min(p+, m+, r-)), m+ = 1 for a direct
+identity, recorded in `derivation` and recomputed by replay_pair;
+certificate: an edge weaker than premise and rule caps both lanes; (3) a
+duplicate occupied .where fails loud in ThoughtChunks (put without
+existing on an occupied address; _index on more than one match),
+STMChunks.locate unchanged; (4) assert reason 'instantiation' on the
+worked line's forward step.
+
+Then one new hash: the thought group, the core unchanged set (a second
+part only for cases a memory stop leaves, its selection recorded, as
+before) and the four-sentence smoke; the native worked-document core case
+must pass unseeded. Receipt under
+doc/benchmarks/2026-10-29-item2-5-round-a/repairs/; append the result to
+the thinking spec as §20. No full sweep, no RUN_SLOW, no seed, no resize,
+fail loud. Return through Alec; no commit.
+~~~
+
+## 20. Round A repairs and frozen verification (2026-10-29)
+
+The four §18 repairs are complete on source SHA-256
+`3a829495289c3687de9263cdd681d0b03e5160eac149a4a4a9b314bda7ead503`
+(959 snapshot files). The tree matched review freeze `2515d19ee75e`
+before editing. Five source/test files changed from that freeze; their
+before text hashes to the reviewed snapshot and their after text equals
+the repaired tree. The complete receipt is under
+[`repairs/`](../benchmarks/2026-10-29-item2-5-round-a/repairs/), including
+the [incremental patch](../benchmarks/2026-10-29-item2-5-round-a/repairs/repair-changes.patch),
+[before/after ports](../benchmarks/2026-10-29-item2-5-round-a/repairs/ports.json),
+[commands and environments](../benchmarks/2026-10-29-item2-5-round-a/repairs/commands.json),
+and [verified results](../benchmarks/2026-10-29-item2-5-round-a/repairs/summary.json).
+
+- **D9:** the controller's legal menu excludes `intuit` until round B,
+  including when it is the current request. The descriptor and shipped
+  grammar rules remain, and direct execution still raises the round-B
+  `NotImplementedError`. The question-step certificate observes the real
+  chooser's offered actions without replacing its selection and asserts
+  that no offered action is `intuit`; it also exercises the direct error.
+- **Match support:** membership and equality matches retain their positive
+  support as `derivation.match_support_true`. Forward inference and
+  `replay_pair` both use
+  $(\min(p^+, m^+, r^+), \min(p^+, m^+, r^-))$ before the existing
+  negation and alternative-path operations. Direct identity uses $m^+=1$;
+  a direct row identity does not spend a separate equality proof. Native
+  membership and equality witnesses with support `.2`, weaker than both
+  premise and rule lanes, each cap both resulting lanes at `(.2, .2)` in
+  execution and replay.
+- **Address uniqueness:** `ThoughtChunks.put(existing=False)` raises before
+  mutation on an occupied `.where`; `_index` raises if more than one
+  occupied chunk matches. The certificate checks rejection without a
+  state change, a valid explicit update, and duplicate reads/updates.
+  `STMChunks.locate` remains unchanged and traceable.
+- **Instantiation:** the worked line now explicitly asserts
+  `reason == 'instantiation'` on its forward inference record. Its ordered
+  witnesses, `(.7, .3)` pair, stored inference row, successful replay and
+  rejection of tampered support remain certified.
+
+The focused inference file passed all 15 certificates. The requested
+frozen checks then completed on the same hash:
+
+- Thought group: **256 passed, 4 skipped, no failures**; all 260 selected
+  cases completed.
+- Core unchanged set: **1,645 passed, 36 skipped, no failures**; all 1,681
+  selected cases completed. The selection and order equal the reviewed
+  run. This invocation used two workers with a 16 GiB aggregate process
+  limit and the existing 8 GiB per-worker limit. No memory stop or second
+  part was needed. The formerly failing
+  `test_native_worked_document_trains_unforced_without_numeric_oracles`
+  **passed unseeded**, completing its native training batches in about
+  60.65 seconds with the test's arithmetic-oracle and runtime-seed
+  prohibitions intact.
+- Four-sentence native smoke: **exit 0**, about **34.42 seconds**, **11
+  native forms**, and **zero rung-zero audit errors**. Both supplied-answer
+  checks remain incorrect and acquisition is false; this is an execution
+  certificate only.
+
+The receipt verifier confirms the live source still equals the frozen
+snapshot, all gate/smoke snapshots match it, the core selection is
+unchanged, every repair certificate passed, and the direct executor,
+`STMChunks` and shipped grammars equal the reviewed versions. Skip reasons
+and full native-case evidence are retained in `summary.json`.
+
+Returned through Alec for review. No full sweep, `RUN_SLOW`, seed pinning,
+model capacity resize, new model knob, commit or publication.
+
+
+## 21. Round A approved (`3a829495289c`; Claude, 2026-10-29)
+
+The hash recomputes and all 959 files equal the live tree; the thought
+group (256 passed, 4 skipped), the core unchanged set (1,645 passed, 36
+skipped, the same 1,681 cases in the same order, one part) and the smoke
+ran on it with `RUN_SLOW` and `BASIC_SEED` unset. The native
+worked-document case passes unseeded. The four repairs read as asked: the
+menu skips `intuit` while the descriptor, the grammar rule and the direct
+error stay (round B removes that skip with the executor); the match's
+support enters the path minimum in execution and in `replay_pair`, an
+edge at `.2` capping both lanes; a duplicate occupied `.where` raises,
+before mutation on `put`; the worked line asserts `instantiation`. Round
+A is approved as the serial path of item 2.5, with the worked line's
+replay as its exit. Recommended: commit it before round B, generated
+evidence excluded as before.
+
+## 22. Decided (Alec, 2026-10-29): the rest of item 2.5 in one text
+
+1. *Scope.* Round B, then the one-backward round, built in that order
+   from one text, with a freeze after each stage and one review at the
+   end; Codex stops early only on a gate it cannot repair at its producer
+   or a decision the spec does not settle. No separate design draft: the
+   spec is §§3.3–16.2.
+2. *D7: to future work.* Alec: subtraction is meaningful because the
+   expectation's gradient is stopped. Not confirmed; recorded in
+   `doc/FutureWork.md` and item 2.7 record §49. The conceptual residual
+   split (§15's last paragraph, 2.7 record §42) is not built in round B.
+3. *The concept-level expectation.* Alec: "Current concept state is
+   predicting the next concept state, so that will be a path in the
+   gradient computation. Intuition is performed by a sigma layer on top of
+   a pi layer, the relevant concepts and edges are extracted from there
+   for the STM slot." Claude's reading, as built: the open-pass `intuit` is
+   one Sigma-over-Pi step over the definition layer (§15), the current
+   concept state's prediction of the next; its error against the next
+   observed order-0 field is a gradient path into the Sigma and Pi edges
+   it used. By the standing rules the target is detached (a predictor
+   never trains its own target), the prediction is the value frozen at the
+   open, every consumer reads the expected knowing detached (the band
+   stopped at its output), and the term is booked to the definitions'
+   owner under the per-owner backward and summed under the single
+   backward, its gradient into the definitions separately attributable.
+   Thought-time `intuit` is the same Sigma over Pi over the selected rule
+   rows, and the slot holds the extracted concepts and edges as
+   references read live in training (§9). This amends §10: `intuit` has no
+   parameters of its own, and the edges it reads learn from its
+   prediction as well as from answers.
+4. *The §16 details, the cautious package.* The strength
+   $s \sim U[1 - j, 1]$ per step with $j$ = `<reconstructionJitter>`,
+   default 0; `<separateChooser>` default `true`; under `false` only the
+   compose chooser reads live features this round, thought and generate
+   staying detached; the chooser term's scale 1.0, its variance reported
+   per parameter group before any raise; the round follows round B in the
+   same text.
+
+## 23. Text for Codex: item 2.5 round B, then the one-backward round (2026-10-29)
+
+~~~
+Item 2.5, the rest of the item in one text: round B, then the
+one-backward round. Governing: thinking spec §§3.3-3.5, 9-16.2, §21
+(round A approved) and §22 (Alec's decisions today: scope, D7 to future
+work, the concept-level expectation, the §16 package). There is no design
+draft; build from the spec and append any reading you had to make.
+
+Precondition, on Alec's word: one BasicModel commit of the approved round
+A tree (3a829495289c), generated evidence excluded as before, push, bump
+WikiOracle; start from that commit.
+
+Stage 1, round B (gates 8-14 of §4):
+1. Thought-time intuit (§3.3, §9, §11, §22.3): one Sigma-over-Pi step over
+   the rule rows the expected knowing selects, within work_budget; NOT on
+   operands first, AND as the meet of the knowing with the antecedent, OR
+   as the per-lane union of consequents clipped at their firing; the slot
+   holds the extracted concepts and edges as references, read live in
+   training, the detached value deposited; one infer candidate per fired
+   rule, its firing pair in the request's semantic metadata reaching the
+   chooser's logit; order zero to order zero, with MTM candidates'
+   prepended values in the knowing (§12). Remove D9's menu skip.
+2. The implicit route (§3.5): narrowing by the Part edges and partOf, the
+   per-lane minimum over parts, kind pervasion, and the close's judgement
+   of implicit against explicit (agreement one lane, disagreement both).
+3. The open-pass intuit over the definition layer (§15, §22.3): the
+   expected knowing replaces _priming_boosts as what attention, the
+   chooser, retrieval and placement's context read, each consumer
+   detached; its error against the next observed order-0 field, the
+   prediction frozen at the open and the target detached, trains the
+   Sigma and Pi edges it used, booked to the definitions' owner. Desire
+   stays its own channel; location's other readers stay. The location
+   diffusion step, its controller, knobs and seen ledger retire after the
+   measurement in 5 has run on one hash with both available (a temporary
+   switch, not a knob, removed before the freeze). The parallel flag
+   retires once intuit reaches S on a grammar with no serial options,
+   with that certificate.
+4. Not built: the conceptual residual split (D7 is future work, §22.2).
+5. Measurement: lesson-13 once with the manifold step and once with the
+   location step on one hash: attention, answers, placement and objects.
+Freeze stage 1: gates 8-14, a certificate that the expectation's target
+receives no gradient, LTM byte-equal across an answer's backward and
+step, the thought groups, the core unchanged set and the smoke. Then
+continue.
+
+Stage 2, the one-backward round (§16, §16.1, §16.2, §22.4):
+<separateChooser> (default true, today's per-owner backward) and
+<reconstructionJitter> (default 0; s uniform in [1 - j, 1] per step) in
+the architecture section and Params.md. Under separateChooser false: one
+surrogate differentiated by one backward with one optimizer step per
+sentence; output's terms reach the understanding; the compose chooser
+reads live features while thought and generate stay detached; the
+chooser term at scale 1.0. Every band is stopped at its output where
+consumed. Percept expectation's arrival adaptation becomes loop state
+with the accumulated arrival loss in the step's backward (§16.2),
+replacing the per-arrival optimizer. Certificates: §16 (a)-(d); §16.1's
+XOR and packing gates and the per-operator dissonance, including the
+concept-expectation term on the definitions; §16.2's arrival-state
+certificate and the compiled brick equal to the eager loop. Measurement
+(e)-(f): lesson-13 under (true, 0), (false, 0) and (false, 0.5): step
+time, answers and objects, XOR and packing, dissonance per epoch, the
+chooser term's variance per group. Freeze stage 2.
+
+Both stages: receipts under doc/benchmarks/2026-10-3X-item2-5-round-b/
+and doc/benchmarks/2026-10-3X-item2-5-one-backward/ with
+frozen-source.json, commands with environments, ports with before/after
+text, retirement certificates and allocation reads; Architecture and
+Params.md by append or exact replacement; results appended to the
+thinking spec as §24 and §25. No full sweep, no RUN_SLOW, no seed, no
+resize, preallocated shapes, no language named in code, fail loud.
+Return through Alec for one review; no commit beyond round A's.
+~~~

@@ -191,11 +191,16 @@ class ThoughtTrialState:
     """
     def __init__(self,model, *, detach=False):
         memory=model._what_memory()
+        import STMChunks
+        stm = getattr(getattr(model, 'conceptualSpace', None), 'stm', None)
         owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
                 (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
                         '_last_output_comparison', '_last_output_walk_trace',
                         '_sentence_answer_cost', '_sentence_answer_predictions',
                         '_sentence_answer_raw_cost'))]
+        if stm is not None:
+            owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
+                           ('_thought_contents', '_active_batch', '_max_depth_host')))
         carrier=getattr(getattr(model,'conceptualSpace',None),'subspace',None)
         if carrier is not None:
             owners.append((carrier,tuple(name for name in vars(carrier)
@@ -205,10 +210,20 @@ class ThoughtTrialState:
         copy = _detached if detach else _copy_containers
         self.saved=[(owner,{name:copy(getattr(owner,name)) for name in names if hasattr(owner,name)},names)
                     for owner,names in owners if owner is not None]
+        for owner, values, names in self.saved:
+            if '_live_chunk_truth' in values:
+                values['_live_chunk_truth'] = values['_live_chunk_truth'].clone()
 
     def restore(self, *, effects_only=False):
         for owner,values,names in self.saved:
-            if effects_only and '_what_slots' in names:
+            if effects_only and ('_what_slots' in names or '_thought_contents' in names):
+                continue
+            if '_thought_contents' in names:
+                import STMChunks
+                owner.set_state(tuple(values['_live_' + name] for name in STMChunks.FIELDS))
+                owner.ensure_batch(values['_active_batch'])
+                owner._max_depth_host = values['_max_depth_host']
+                owner._thought_contents = values['_thought_contents']
                 continue
             # A trial may introduce a knowing carrier for the first time.
             dynamic=tuple(name for name in vars(owner) if name.startswith('_concept_')) if '_thought_occurrence' in names else ()

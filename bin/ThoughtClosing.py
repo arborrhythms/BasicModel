@@ -150,7 +150,8 @@ def close(model, fields, *, sentence, ready, score=None, images=None):
                 model._thought_image = previous
         results.append((row, result))
         fields[row] = replace(field, thought_completed=True)
-        if result.records and not open_slots(result.meaning):
+        from ThoughtAnswer import accepted
+        if result.records and accepted(result.meaning):
             # The answer is the binding; retain the original source field's
             # address separately from the newly concluded inference.
             if int(result.meaning.role_mask.sum()) in (1, 3):

@@ -2258,3 +2258,22 @@ whether an explicit learned residual inverse reduces required capacity before
 claiming that advantage from the native inverse's translated leaf chart. F2
 preserves conflicting explicit/implicit evidence; synchronization of their
 meanings remains the previously requested future work.
+
+## The residual split: a stopped subtraction or the correction (Alec, 2026-10-29)
+
+Asked to confirm D7 (item 2.7 record §44), Alec answered that subtracting
+the expectation is meaningful because the expectation term's gradient is
+stopped, and asked that the consideration be recorded here. Claude's note
+for the record: the stop keeps expectation's parameters out of the
+top-down gradient, the ownership half of item 2.7 record §42, and that is
+kept. Whether the inverse learns something different depends on what its
+output is compared with. In §42's rule as written, `correction =
+inverse(u)` is compared with `stop_gradient(observed - expected)`, so the
+inverse's optimum is $x - e$, a different function from $x$ (what §44
+called D7). In the form built in item 2.7 the detached expectation is
+subtracted from both sides, $(\hat{x} - e) - (x - e) = \hat{x} - x$, so the
+error and its gradient are as before, whatever is stopped. To settle:
+which form each layer builds, and whether the correction form reduces the
+capacity the inverse needs (the measurement the entry above asks for).
+Until then the percept layer keeps the built form, and the conceptual
+split is not built in item 2.5 round B (thinking spec §22).

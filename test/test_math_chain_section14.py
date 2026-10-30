@@ -113,7 +113,8 @@ def test_one_empty_region_query_permits_conclude_and_only_source_mints(monkeypat
         owner = SimpleNamespace(word_concepts=lambda _: (9,), _csw_row_of=lambda _:0,
             similarity_codebook=SimpleNamespace(lookup_rows=lambda _,**kw:torch.ones(1,root.roles.shape[-1])))
         scored = SimpleNamespace(_concept_owner=lambda:owner,symbolSpace=SimpleNamespace(ltm_store=store))
-        assert .5 <= cost(scored,result.meaning,'unrelated') < 1.
+        # The minted empty region has no content meeting the target.
+        assert cost(scored,result.meaning,'unrelated') == 1.
 
 
 def test_binding_answer_cost_scores_filled_referent_while_relation_is_open():

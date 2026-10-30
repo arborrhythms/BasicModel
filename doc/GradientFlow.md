@@ -56,8 +56,11 @@ residual`. The inverse side is split by residual (record §42): the
 completed understanding's inverse learns only `observed -
 stop_gradient(expected)`, using the value frozen at arrival, so no
 top-down gradient reaches expectation and expectation's loss reaches
-nothing else. Perceptual layer in item 2.7's final round; the conceptual
-layer, where `intuit` becomes the expectation, in item 2.5 round B.
+nothing else. Perceptual layer in item 2.7's final round. At the conceptual
+layer (item 2.5 round B) the open-pass `intuit` is the expectation, trained
+by predicting the next concept state with the target detached; the
+conceptual split and the correction-output form (D7) are future work
+(Alec, 2026-10-29; thinking spec §22).
 This supersedes, at the percept level, the 2026-10-20 amendment below
 that describes expectation as a gain field "never a subtraction": the
 residual is now signed (an expected absence is negative), and the full

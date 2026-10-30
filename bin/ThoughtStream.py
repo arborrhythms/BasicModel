@@ -24,7 +24,7 @@ def materialize(result):
             meaning = frames[0]['meaning']
         elif torch.is_tensor(evidence.get('value')) and evidence['value'].ndim == 1:
             meaning = ConceptualMeaning.from_description(evidence['value'])
-        elif result.semantic_id in ('query', 'ask'):
+        elif result.semantic_id in ('query', 'ask', 'infer'):
             # An empty or cut-off read has no returned content. Its request
             # can name a temporary question occurrence; treating that as an
             # answer would bind the question's own address into the goal.
@@ -47,8 +47,8 @@ def relation(registry, meaning):
     try:
         name = registry.signature_for(meaning, verify_reference=False).operation.semantic_id
     except (TypeError, ValueError):
-        return None
-    return {'isPart': 'part', 'isEqual': 'equal', 'isImplied': 'implies'}.get(name)
+        return bindings(meaning).get('_query_relation')
+    return {'isPart': 'part', 'isEqual': 'equal'}.get(name)
 
 
 def query_pattern(goal, kind, left, right, values=None, excluded=()):
@@ -71,9 +71,34 @@ def candidates(registry, root, active, current, records, descriptions=()):
     results = slots(records)
     meanings = tuple(result.evidence.get('meaning') for result in results)
     meanings = tuple(value for value in meanings if value is not None)
+    stm = getattr(registry.space, 'stm', None)
+    if stm is not None and hasattr(stm, 'state'):
+        from ThoughtChunks import held
+        resident = dict(held(stm, getattr(registry, '_thought_row', 0)))
+        meanings = tuple(resident[where] if where in resident else value
+            for value in meanings
+            if (where := bindings(value).get('_chunk_where')) is None
+                or (where in resident and resident[where].role_refs == value.role_refs))
     # Existing grammatical alternatives also bind to each result slot.
     requests = list(registry.controller_candidates(root, active, current,
         descriptions=descriptions, result_meanings=meanings))
+    if has_open_slots(root):
+        allowed = {'ask', 'query', 'infer', 'not', 'isTrue', 'bind', 'exist'}
+        requests = [item for item in requests if item.semantic_id in allowed]
+    if 'infer' in registry.executable_operation_ids:
+        from ThoughtChunks import held
+        stm = getattr(registry.space, 'stm', None)
+        premises = () if stm is None or not hasattr(stm, 'state') else held(stm, getattr(registry, '_thought_row', 0))
+        for where, rule in premises:
+            if not bindings(rule).get('_rule_row') or not bool(rule.role_mask[2]):
+                continue
+            for premise_where, premise in premises:
+                if premise_where == where:
+                    continue
+                for operation, operands in (('infer', (premise, rule)),
+                                            ('inferBackward', (rule, premise))):
+                    request = registry.form(operation, *operands)
+                    requests.append(ThoughtOperationCandidate(registry.operation_spec('infer'), request, ()))
     if 'bind' in registry.executable_operation_ids:
         attempted = {result.evidence.get('binding_role') for result in results
                      if result.semantic_id == 'bind'}
@@ -106,6 +131,10 @@ def candidates(registry, root, active, current, records, descriptions=()):
         left, right = root.role_refs[0], root.role_refs[2]
         patterns = [query_pattern(root, kind, left, right),
                     query_pattern(root, kind, left, None, excluded=excluded)]
+        if has_open_slots(root):
+            patterns.append(query_pattern(root, kind, None, right, excluded=excluded))
+        if bindings(current).get('_subgoal_subject') is not None:
+            patterns.insert(0, current)
         if kind == 'implies':
             patterns.insert(0, query_pattern(root, 'truth', left, None))
         for frame in frames:
@@ -129,6 +158,11 @@ def integrate(registry, goal, result, records, *, work=None):
     """Compose witnesses already read into serial slots; never search LTM here."""
     if result is None:
         return goal
+    if result.semantic_id == 'infer':
+        return result.evidence.get('meaning', goal)
+    if (result.semantic_id in ('query', 'ask') and bindings(goal).get('_subgoal_subject') is not None
+            and result.evidence.get('meaning') is not None):
+        return result.evidence['meaning']
     if result.semantic_id == 'bind' and result.evidence.get('meaning') is not None:
         return result.evidence['meaning']
     witnesses = result.evidence.get('witnesses', ())
@@ -206,7 +240,7 @@ def integrate(registry, goal, result, records, *, work=None):
             if next_point == target and positive > 0:
                 return fill(goal, dict(support_true=positive, support_false=0.),
                             witnesses=proof, operation='isPart' if kind == 'part' else
-                            'isEqual' if kind == 'equal' else 'isImplied')
+                            'isEqual' if kind == 'equal' else 'infer')
             if positive > 0:
                 pending.append((next_point, proof, positive))
     return goal
@@ -232,7 +266,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
     # relation it read is not a newly selected composing operation, and its
     # working binding must not mint another Part or grammatical occupation.
     data = bindings(meaning)
-    read_result = data.get('_producing_operation') in ('query', 'bind')
+    read_result = data.get('_producing_operation') in ('query', 'bind', 'infer')
     if read_result and data.get('_chain_view') and not data.get('_bound_roles'):
         # An unchanged recalled chain keeps its own entry and percept time.
         # A filled working variable still takes the inference path below.
@@ -402,7 +436,7 @@ def write(model, meaning, *, row, _active=None, _bound=None):
             raise ValueError('a multi-role thought requires a semantic chain or a checked binding')
         role = filled[-1]
         point = meaning.roles[role]
-        identity = meaning.role_refs[2-role] if data.get('_equality') and role in (0, 2) else meaning.role_refs[role]
+        identity = meaning.role_refs[2-role] if (data.get('_equality') or data.get('_producing_operation') == 'infer') and role in (0, 2) else meaning.role_refs[role]
         data['_bound_roles'] = (('referent', 0),)
         # The bound answer and the identity whose value changed are distinct
         # semantic bindings. Neither is a grammatical component of the idea.

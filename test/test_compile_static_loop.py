@@ -67,7 +67,7 @@ def test_per_word_body_callable_with_static_signature():
     m._publish_compiled_sentence_state(result)
     assert len(result) == 21
     assert isp._ar_embedded_N.shape[1] == extent
-    assert len(m.conceptualSpace.stm.state) == 13
+    assert len(m.conceptualSpace.stm.state) == 14
 
 
 @pytest.mark.slow

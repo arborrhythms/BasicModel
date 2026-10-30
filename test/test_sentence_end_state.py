@@ -190,7 +190,7 @@ def test_one_native_sentence_owns_only_its_end_state_after_the_boundary(tmp_path
         case = any(getattr(getattr(op,'gl',op),'case_head_role',0)
             and getattr(getattr(op,'gl',op),'meaning_layout',None) is not None
             for op in model.languageSpace._tree_layer(2).ops)
-        assert len(stm) == 13 and stm[0].shape[1] == 8
+        assert len(stm) == 14 and stm[0].shape[1] == 8
         assert len(lang) == 26+(6 if case else 0)
         observed_layouts.append((len(stm),len(lang)))
         return publish(state)

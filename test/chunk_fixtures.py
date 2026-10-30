@@ -14,7 +14,7 @@ from Spaces import LanguageOperationChoice
 
 
 def context(resolver, frames=()):
-    if len(frames) == 13 and torch.is_tensor(frames[0]):
+    if len(frames) == len(chunks.FIELDS) and torch.is_tensor(frames[0]):
         return frames
     store, pool = resolver.store, resolver.components.owner.mtm
     state = chunks.empty(1,8,store.nDim,device=store.slots.device,dtype=store.slots.dtype)
