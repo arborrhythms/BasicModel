@@ -1458,3 +1458,86 @@ later row. It may bear on the zero binding and is Alec's decision in item
 
 Codex's documentation ports (GradientFlow's read-first replacement,
 Training, §25.1) match the code I read; I have no corrections.
+
+### 26.1 Alec's decisions on retrieval, and the detail of D-i to D-iii (2026-10-30, later)
+
+**Retrieval (decided).** The model must be able to reach all of LTM0. The
+cued read keeps a window, but the window is a count of rows scored, not a
+count of rows read: its default rises from 32 to 1,024, and the matches
+return a top-$K$ by match, never the first $K$ in address order. In code
+names, for the next Codex round: `EntryRead.cued_rows` takes the explicit
+references first, then the window of the most recent occupied rows (1,024
+by default, `max_candidates`), scores every candidate in one product of the
+cue's roles against the candidates' stacked roles (cosine per role, masked
+by the cue's occupied roles, averaged, as the per-row cosine does today),
+applies the kind, scope, binding and role-mask filters as masks, and
+returns the top-$K$ by match with the address as the tie-break. $K$ is
+`max_records` under the shared meter, and the meter is charged one
+`record` per returned record, not per scanned candidate, since scoring the
+window is one read; `records_scanned` reports the window. Relation rows
+enter the window as today. The future-work parameter: an LTM `.when`
+bracket override, an interval in model time that replaces the count window
+as the bound on candidates, default unset (FutureWork.md, "LTM retrieval
+bounded by a `.when` bracket"). This is a behavior change, so it goes into
+the next round's text with the D-i repair and is measured by the same three
+arms; no with-and-without arm is needed, since Alec decided the direction.
+
+**D-i, detail.** Today `Generative.relative_residual` returns, per step and
+per lane (form, for, against), the ratio `_relative_energy(error, parent)`
+with the parent's energy live in the denominator; `walk_residual` sums the
+ratios over steps and lanes and adds the frontier ratio; `_sentence_path_cost`
+stacks the per-trial scalars, and the close registers the finished scalar
+through `errors.add('reconstruction.walk_residual', ...)`. The contract
+(`Error.error`) wants raw numerators and detached baselines, summed over the
+term's active entries, then divided once. The repair keeps the arithmetic of
+each step and changes where the division happens:
+
+1. `relative_residual` returns, per lane, the raw error energy
+   $\sum (\text{recovered} - \text{parent})^2$ and the raw parent energy
+   $\sum \text{parent}^2$ (the same quantities `_relative_energy` forms
+   before dividing, without the detached common scale, which cancels), the
+   parent energy detached.
+2. `walk_residual` sums each over the walk's steps, adds the frontier's
+   error energy and the initial energy to the same sums, and returns three
+   numerator and three baseline tensors, one pair per lane, not a ratio.
+3. The sentence close registers three named terms,
+   `reconstruction.walk_residual.form`, `.for`, `.against`, through
+   `errors.error(name, numerator, baseline, mask=active, category='reconstruction')`,
+   so the registry sums across the streams and divides once per term; an
+   exactly zero parent energy gives the ordinary squared penalty, as the
+   contract says; no floor anywhere. Three terms rather than one keep the
+   lanes in their own units, which is what 2.7 §38's per-lane normalization
+   wanted; what goes is the per-step division. A near-zero parent at one
+   step then adds a tiny numerator and a tiny baseline to the sentence's
+   sums and cannot create its own scale.
+4. The per-step ratio's live-denominator derivative disappears with the
+   division, so the $10^{43}$ cotangent has no site; the reproducer's
+   terminal gives a finite loss and finite gradients, and becomes a passing
+   certificate. The equality gate does not apply to this step: $R$ changes
+   value and therefore so can the kept trial; the gates are the certificate
+   above, the standing XOR, packing and native worked-document cases, and
+   the three lesson-13 arms.
+
+**D-ii, detail.** `eligibility_menu` and the kept-step accumulation call
+`relative_residual` per proposal to form the menu's residual features
+(form and the two lanes) and the exactness test `f <= 1e-8`. These are
+features for a detached chooser and a hard selection, so they stay
+per-step, but a per-step ratio with a near-zero parent is as meaningless a
+feature as it was a loss. Recommended: the menu's residual features become
+the raw error energies of the step divided by the *sentence's* detached
+parent energy accumulated so far, per lane (the same baselines D-i sums),
+with the first step dividing by its own parent energy; the exactness test
+reads the raw error energy against the same $10^{-8}$ of the parent energy.
+Detached as before. Alternative, cheaper: keep the ratios and clamp the
+feature at a fixed large value; rejected by the rules (a floor that changes
+a baseline), kept here only as the contrast.
+
+**D-iii, detail.** `separateChooser` stays `true` and `reconstructionJitter`
+stays `0` in `data/model.xml` and `data/BasicModel.xml` until the three arms
+$(\text{true}, 0)$, $(\text{false}, 0)$ and $(\text{false}, 0.5)$ complete on
+one hash with D-i in place. The decision then reads, per arm: bound and
+exact answers, objects and their orders, mean and median training step
+time, per-operator dissonance, chooser variance, and the new reading of the
+gradient norms into the shared parameters from $R$ and from $A$ per epoch.
+The single-backward arm's 2 of 32 is the hypothesis the rerun confirms or
+retires. Only Alec changes the default, after that reading.

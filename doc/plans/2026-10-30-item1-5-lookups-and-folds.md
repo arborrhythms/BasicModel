@@ -224,3 +224,11 @@ on the host once per batch and are cached per word type; heat retrieval
   `promote_candidates`, `witnessed_match`), `Models.py`
   (`_run_sentence_word_bricks`, `stage_cs_sub`, `stage_cs_sym`,
   `SentenceFork`).
+
+### 5.1 D2 resolved further (Alec, 2026-10-30, later)
+
+The cued read's window is a count of rows scored, not read: default 1,024,
+scored in one product, returning the top-$K$ by match; an LTM `.when`
+bracket override is future work (FutureWork.md). The step 2 matmul path is
+therefore decided and lands with item 2.5's repair round, not with this
+item; thinking spec §26.1 carries the code names.

@@ -2290,3 +2290,15 @@ which form each layer builds, and whether the correction form reduces the
 capacity the inverse needs (the measurement the entry above asks for).
 Until then the percept layer keeps the built form, and the conceptual
 split is not built in item 2.5 round B (thinking spec §22).
+
+## LTM retrieval bounded by a `.when` bracket (Alec, 2026-10-30)
+
+The cued LTM0 read reaches all of memory through a window of candidates it
+scores at once, returning the top-$K$ by match (default window 1,024 rows,
+thinking spec §26.1). The bound on that memory should be time, not a
+count: an LTM `.when` bracket override, a parameter giving an interval in
+model time, replaces the count window as the bound on the candidate rows
+when it is set, and is unset by default. The read then scores the rows
+whose `.when` stamp lies in the bracket, explicit references first, with
+the same filters and the same top-$K$. Not built; the count window lands
+with item 2.5's repair round.
