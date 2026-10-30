@@ -1843,6 +1843,28 @@ not by a passing identity lesson.
    5.5" (FutureWork has it); the [catalogue](doc/specs/2026-09-29-operator-catalogue.md)
    §12 headings still say "(uncommitted)" and its table lists `bind` as
    open (decided, thought-loop plan §3–§4).
+- **1.5. Lookups as one matmul, whole/part folds as scatters, the percept
+   pass per sentence** (Alec, 2026-10-30;
+   [plan](doc/plans/2026-10-30-item1-5-lookups-and-folds.md)). Before item 1, so the
+   compiler work compiles what this builds under `fullgraph`, and before
+   item 0. From the as-built cost reading of 2026-10-30 (plan §2): the
+   derived concept forms become a tensor kept current incrementally
+   (device CSR definitions, one segmented scatter per order, a validity
+   mask); content-based lookups over absolute truth concepts in LTM and
+   conceptual space become one matmul of the cue against the content
+   matrix with top-k under the work meter (`cued_rows`, `relation_evidence`,
+   taxonomy evidence, witnessed rows; LTM1's index maintained on `add`);
+   the percept pass runs once per sentence over all words with gradients,
+   since the percept depends on neither grammar state nor the expectation,
+   with ragged parts in place of the 64-wide padding and the forecast
+   scored for all words at once; the second trial forks at the departure
+   site. Grammar operations themselves stay serial; tokenization and
+   new-type admission stay on the host, cached per type. Gates (plan §4):
+   `fullgraph` compile of every rewritten brick, byte-equal or
+   certified-equal results against the current path, one before/after
+   timing on lesson-13 and the math chain with the July baseline retaken,
+   allocation reads with no resize. Decisions taken 2026-10-30 (plan §5):
+   one Codex round for the four steps.
 - **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
    `RUN_SLOW` (item 3, moved from 3.5 on 2026-10-21) is the compiler test at scale — compiled and eager
    runs of the identical corpus, seed and budget agree in actions,
@@ -1889,6 +1911,10 @@ not by a passing identity lesson.
    The explicit slow reconstruction-cache probe fails its nonzero
    compose-gradient assertion on the current baseline; the cache claim remains
    unverified by that probe ([audit](doc/benchmarks/2026-09-25-item9-parity/README.md#validation)).
+   *2026-10-30 (Alec):* the as-built cost reading and the lookups, folds and
+   percept-pass work are item 1.5 ([plan](doc/plans/2026-10-30-item1-5-lookups-and-folds.md)),
+   which runs before this item so the compiler work compiles what 1.5
+   builds under `fullgraph`.
 - **Item 0 binding evidence:** `test_live_pending_premise_closes_in_both_orders`
   retains the strict §14 arrival assertions verbatim, with `open_names=('x',)`
   and no named closure forcing. Its `pending_premise_learning` artifact is
@@ -1899,7 +1925,7 @@ not by a passing identity lesson.
   order 1; this certificate gets no fixture order, so learning that a name
   reads at order 1 is part of what it must show (reconstruction spec §12).
 
-- **0. The full training session**: the long FineWeb run, only with items 11–2
+- **0. The full training session**: the long FineWeb run, only with items 11–1.5
    done and item 1 measured. Expectation on in `model.xml`; the
    `BasicModel.xml` flip follows the plan's §10 gates. Stop on rising
    expectation discrepancy, a reconstruction regression against the

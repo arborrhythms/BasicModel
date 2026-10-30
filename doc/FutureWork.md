@@ -559,6 +559,10 @@ Compare by bytes seen and wall time only
 Compounded, these put the serial loop in the tens of sentences per second,
 NanoChat's order on the same machine; parity is not claimed.
 
+*The cost reading of 2026-10-30 and the lookups, folds and percept-pass
+work are item 1.5 of the todo, not future work (Alec, 2026-10-30):
+[plan](plans/2026-10-30-item1-5-lookups-and-folds.md). Moved the same day.*
+
 ## `.when` is redundant across the elements of one input (noted 2026-09-26)
 
 The relative `.when` value and stable sentence address were pulled forward
