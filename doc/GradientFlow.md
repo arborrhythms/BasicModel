@@ -863,13 +863,14 @@ factor, and through use 3 it could remove a correct proposal from the menu.
 **The repair, decided (D-i).** The loss is registered through the error
 registry like every other term, never as a finished scalar:
 
-1. `relative_residual` returns, per lane, the step's raw error (and no
-   longer divides).
+1. The per-step measure (`relative_residual`, renamed `absolute_residual`)
+   returns, per lane, the step's absolute error in the code's own chart
+   (below) and no longer divides.
 2. `walk_residual` sums the chosen steps' errors over the walk and adds the
    unresolved stack energy, per lane, without dilution by the step count.
 3. The sentence close registers three terms,
    `reconstruction.walk_residual.form`, `.for` and `.against`, through
-   `Error.error(name, per_stream_sum, baseline, mask=active,
+   `Error.error(name, per_stream_sum, 1., mask=active,
    category='reconstruction')`, one entry per active stream, so the registry
    averages over streams and divides once per term. Three terms keep each
    lane in its own units (2.7 record §38); what goes is the per-step
@@ -878,7 +879,7 @@ registry like every other term, never as a finished scalar:
    per-step live-denominator derivative has no site, so the overflowing
    terminal becomes a passing certificate.
 
-**The measure, recommended (D-ii; Alec objects to ratios of error terms).**
+**The measure, decided (D-ii; Alec: no ratios of error terms).**
 The residual is an absolute error in the code's own chart, in all four uses:
 
 - *Symbolic codes* are membership vectors in the unit cube (every admissible
@@ -906,5 +907,5 @@ The residual is an absolute error in the code's own chart, in all four uses:
 The absolute measure changes the scale of $R$ against $A$ in the kept-trial
 comparison ($R + A$) and, under `separateChooser` false, in the single
 backward. No balancing weight is introduced to compensate; the three
-lesson-13 arms measure the effect. Pending Alec's yes on the measure; the
-rest of this section is decided.
+lesson-13 arms measure the effect. Decided in full (Alec, 2026-10-30:
+"Yes, let's try that"); thinking spec §26.3 holds the round's text.

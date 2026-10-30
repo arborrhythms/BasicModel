@@ -1579,3 +1579,106 @@ mechanics stand: three per-lane terms through `Error.error`, summed over the
 walk without dilution, no floor. Consequence to measure, not compensate:
 $R$'s scale against $A$ changes in the kept-trial comparison and in the
 single backward; the three arms read it. Pending Alec's yes.
+
+### 26.3 D-ii decided: absolute error in all four uses; the text for Codex (Alec, 2026-10-30)
+
+Alec, on §26.2's recommendation: "Yes, let's try that." The generation
+residual is an absolute error in the code's own chart wherever it is used:
+the chooser's features, exactness, admissibility and the walk loss, which
+registers with the registry's constant unit baseline. GradientFlow.md's
+section "The generation residual: how it is used, and its repair" now reads
+as decided. With §26.1's retrieval decision, this is the next round:
+
+~~~
+Item 2.5, stage 2 repair round (2026-10-30). Governing: thinking spec
+§§16-16.2, §22, §25, §25.1, §26 and §§26.1-26.3; GradientFlow.md, "The
+generation residual: how it is used, and its repair"; the error registry
+contract (Layers.Error.error; objective-conflicts spec §10.2a). Build on
+your unaccepted stage 2 source f9fbf450 with its normalization-review
+documentation; round B stays frozen at c54db0a8; round A is committed at
+3718d9d0dc and the documentation commits since are on main. Defaults stay
+separateChooser true, reconstructionJitter 0.
+
+1. The generation residual, absolute in the code's own chart, in all four
+   uses.
+   a. Generative._relative_energy retires. relative_residual becomes
+      absolute_residual(parent, recovered, form_width, *, numeric): per
+      lane (form, for, against) the mean squared error of recovered against
+      parent. Symbolic walks (cube codes) compare plain values; numeric
+      walks (the menus built with cube_domain=False) compare the asinh of
+      both values. No division, no floor, no detached scale.
+   b. eligibility_menu, inverse_menu, decoder_eligibility and
+      selected_residual use it in the walk's chart. InverseMenu.features
+      keeps its five columns.
+   c. Exactness: absolute mean squared error at most 1e-8, an RMS code
+      error of 1e-4, the reader's existing code tolerance. One constant in
+      eligibility_menu, inverse_menu and decoder_eligibility, whose
+      parent-scaled, floored tolerance retires.
+   d. Admissibility: the finite-residual gate becomes a torch._assert_async
+      over admissible proposals. A non-finite residual on an admissible
+      proposal is a producer bug and fails loud; it removes nothing.
+   e. walk_residual sums the chosen steps' per-lane errors over the walk
+      and adds the unresolved stack energy per lane, its mean square in the
+      walk's chart, without dilution by the step count. It returns [B, 3].
+   f. The sentence close registers reconstruction.walk_residual.form, .for
+      and .against through errors.error(name, per_stream_sum, 1.,
+      mask=active, category='reconstruction'), replacing errors.add of the
+      finished scalar. The trial's R in the kept-trial comparison is the
+      same three terms.
+   Certificates: the native producer reproducer becomes a passing float32
+   test (finite loss and finite parameter gradients on the admissible
+   terminal that overflowed); menu features within [0, 1] per lane on cube
+   codes; a parent lane of exactly zero and one of 1e-30 give residuals
+   within 1e-12 of each other; the symbolic exact-pair choice unchanged on
+   the standing fixtures; a retirement certificate for _relative_energy and
+   relative_residual over bin/ and test/ (the documents name them as the
+   record).
+
+2. LTM0 retrieval reaches all of memory. EntryRead.cued_rows takes the
+   explicit references first, as today, then the newest occupied LTM0 rows
+   (highest address first; if address order is not time order after
+   forgetting, use the .when stamp and say so in the readings), then the
+   newest relation rows, up to a window of <architecture><ltmWindow>
+   candidates, default 1024, with a Params.md row. Every candidate is
+   scored in one batched product by the existing match: per-role cosine
+   over the cue's occupied roles, when-coordinates zeroed, clamped to
+   [0, 1], averaged. The existing kind, scope, binding and role-mask filters
+   apply, as masks where tensor-valued and in score order where they read
+   host metadata. The read returns the top-K by match with the address as
+   the tie-break, as today. K is max_records; the shared meter is charged
+   one 'record' per returned record, not per scanned candidate.
+   records_scanned reports the window; incomplete names 'ltm_window' when
+   the occupied rows exceed it and 'work_budget' when the meter cut K short.
+   Certificates: on a store whose candidates fit within 32 and the meter,
+   the same records in the same order as today; on a store of 2,000 rows, a
+   matching row past address 32 inside the newest 1,024 is returned and one
+   outside the window is not, with 'ltm_window' reported; the meter is
+   charged per returned record. Leave recall_time, premise_evidence and
+   relation_evidence unchanged, and list in your report every LTM reader
+   that still scans in address order under the meter.
+
+3. Gradient report, read-only: per epoch, the gradient norm R sends and the
+   norm A sends into the understanding's parameters (codes, grammar
+   operators and inverses, conceptual definitions), from the existing
+   diagnostic collection, its time excluded from step time as now. Under
+   separateChooser true, A's contribution there is zero by construction and
+   the reading shows it.
+
+4. Then, on one source hash: the required selections as in §25
+   (certificates, thought, core, ports-and-finite), the native worked
+   document unseeded, the four-sentence smoke, and lesson-13 under
+   (true, 0), (false, 0) and (false, 0.5), sequentially. Each arm reports
+   bound and exact answers, objects and their orders, mean and median
+   training step time, per-operator dissonance, chooser variance and the
+   R and A gradient reading per epoch. Freeze stage 2 on that hash.
+
+Receipts under doc/benchmarks/<date>-item2-5-repair/ (the real date):
+frozen-source.json, commands with environments, ports with before/after
+text, the retirement certificate, allocation reads. GradientFlow.md,
+Architecture.md, Training.md and Params.md by append or exact replacement;
+results appended to the thinking spec as §27. Stop and return early only on
+a gate you cannot repair at its producer or a decision the spec does not
+settle. No full sweep, no RUN_SLOW, no seed, no resize, preallocated shapes,
+no language named in code, fail loud. Do not read or merge the item 1.5
+sandbox branch. Return through Alec for one review; no commit.
+~~~
