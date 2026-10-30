@@ -3,7 +3,7 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 
 
 > **Status:** high-level target design, revised 2026-09-08. This revision
@@ -463,43 +463,7 @@ The implementation must verify a gradient at the shared understanding rather
 than infer one from reconstruction error. This prevents algebraic
 invertibility from being mistaken for learned understanding.
 
-For each protected perceptual/conceptual parameter tensor, let `r` and `o` be
-the reconstruction and output gradients **after** their actual loss weights
-and truth modulation. The accepted policy is asymmetric:
-
-```text
-if dot(r, o) < 0 and ||r|| > 0:
-    q = o - dot(r, o) / dot(r, r) * r
-else:
-    q = o
-
-q = q * min(1, rho * ||r|| / ||q||)  # zero q stays zero
-if r is missing or zero: q = 0
-shared_gradient = r + q + separately named auxiliary gradients
-0 <= rho < 1                       # initial rho = 0.5
-```
-
-Remove only the conflicting projection, preserving useful aligned output
-credit. This gives `dot(r, q) >= 0` and `||q|| <= rho * ||r||` within numerical
-precision. Reconstruction itself is not projected or downscaled. Independent
-symbolic/output heads receive ordinary output credit. Parameters tied into
-both analysis and synthesis receive protection on their complete derivative.
-Sparse codebooks must stay sparse over touched rows.
-
-This guarantees non-opposing output credit at the gradient level. It does
-not guarantee a decrease in reconstruction loss after a finite Adam/momentum
-step, nor protect against arbitrary auxiliary objectives; monitor actual
-reconstruction quality as well. Report branch norms, alignment, and the
-removed/capped contribution when joint output training is active.
-
-The zero-reference case is consequential: an exact inverse identity, detached
-reconstruction, or a disconnected encoder gives output no budget on protected
-parameters under this policy. Independent output heads can still learn. The
-current BasicModel uses `detachedReverse=true` and a non-grad, context-rotated
-concept dictionary; enabling projection does not create a reconstruction
-gradient through either boundary. Completing the field/answer architecture
-must resolve those ownership and credit paths explicitly. No residual channel
-is introduced merely to manufacture a reconstruction error.
+*A superseded passage beginning "For each protected perceptual/conceptual parameter tensor, l" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 Serial grammar introduces a separate credit boundary. Continuous answer loss
 can train the chosen operations, their operands, synthesis, and the shared
@@ -601,42 +565,7 @@ than one input remains open, forced best-effort answers continue from the top
 of the stack until parity is restored. The exact monotonic pressure schedule
 remains a specification decision.
 
-## 8. Context for the grammar chooser
-
-> **Target update, 2026-09-12:**
-> [Sentence-boundary thinking](specs/2026-09-11-sentence-boundary-thinking.md)
-> supersedes the shared-chooser decision below with separate sentence and
-> thought/query controllers. It defines their phase boundary and common
-> semantic interface for linguistic subgoals and typed tools. It also replaces
-> Q/A pairing and parity with depth-labelled thought contexts and implicit
-> serial LIFO return. Preserve append-only history, target isolation and
-> reconstruction/output separation; the Q/A layout here describes the earlier
-> runtime, not the replacement target.
-
-The grammar chooser already operates over a richer context than a new
-address-specific list would describe. Its context includes symbolic
-activation, STM, LTM, percepts, and grammatical operations, among the other
-state already supplied by the model.
-
-This design does not replace or duplicate that context. It requires the
-chooser to be able to distinguish only the new, relevant state:
-
-- the temporal meaning contained in the active `what()` question;
-- the input and output sides of LTM slots;
-- whether unmatched input-only slots remain; and
-- the current closure pressure while thinking.
-
-The chooser may use that context to answer, to leave an input unanswered
-while posing a subquestion, or to emit an output for the latest pending input.
-Those are grammatical/model choices within the existing run path, not calls
-to a separate query planner.
-
-The chooser also controls output realization after the answer is resolved. Its
-context includes the answer symbol, current derivation, output sentence
-location, already constructed output, and the perceptual/conceptual references
-available for synthesis. These values let it choose the next grammatical
-derivation and where that derivation contributes to the answer surface.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#8-context-for-the-grammar-chooser) (2026-10-30): "8. Context for the grammar chooser".*
 ## 9. Prediction, supervision, and completion
 
 Prediction and verification remain part of the existing `Model.run()`

@@ -2,10 +2,11 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
 > - Item 4 is closed as a mechanism (learning gates at item 0); item 3.5 carries the mechanism residue of items 6 and 5.5, including `bind`, LTM1/LTM3 and the row audit; item 3 carries the invertible-path program.
 
@@ -13,7 +14,7 @@
 Cross-cutting items that are decided in direction but not yet specified or
 built, with the decision that opened them and the document that owns the
 detail once it exists. Section-local future-work lists elsewhere
-([Language.md](Language.md#future-work-nouns-from-partspace-adjectives-from-wholespace),
+([Language.md](DevelopmentHistory.md#future-work-nouns-from-partspace-adjectives-from-wholespace),
 [SymbolFirewall.md](SymbolFirewall.md#future-work-out-of-scope-for-this-pass))
 stay where they are; this file indexes the items that span documents.
 Items marked **urgent** block ordinary operation before long.
@@ -521,7 +522,7 @@ the September eager, batch-1, expectation-on measurement ran at 0.26. The
 per-word arithmetic is of the same order as a depth-4 NanoChat's per-token
 arithmetic (about 40M parameters touched either way); the gap is scheduling.
 Compare by bytes seen and wall time only
-([pilot](NanoChatGrammarPilot.md#question-and-falsifiable-first-milestone)).
+([pilot](DevelopmentHistory.md#question-and-falsifiable-first-milestone)).
 
 1. **Batch across sentences.** The word loop is a recurrence, so positions
    cannot be parallelized, but sentences can; recurrent training scales
@@ -637,7 +638,7 @@ Smaller items from the same discussion, none of them scheduled:
   one above the clamp is unreachable. By the live-wiring rule they are
   `model.xml` parameters.
 * **Verb sparsity as a measurement.** On the complement of `w`'s support the
-  noun passes through exactly, so `‖w_v‖₀` bounds what can be recovered
+  noun passes through exactly, so $\lVert w_v \rVert_0$ bounds what can be recovered
   without the derivation (item 6). Log its distribution over the learned
   verbs, and whether the touched dimensions cluster, as a single-domain
   constraint on verbs would predict (item 4).
@@ -754,7 +755,7 @@ through the idea. Whether the grammar's choices should answer to a teacher
 at all, or only to reconstruction and expectation, is Alec's to decide when
 it is taken up.
 
-*Decided since (operators round 2, landed `3de37eef5`; [GradientFlow](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)):*
+*Decided since (operators round 2, landed `3de37eef5`; [GradientFlow](DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds)):*
 the answer does enter the chooser's credit — the trial cost is the
 owner-step total `R + E + A`, read by a comparison reader on both detached
 roots — while only reconstruction decides the keep and the presented
@@ -918,7 +919,7 @@ inverse learning, or read-back quality remaining poor despite decreasing cost.
 
 ## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
 
-**Superseded in its expectation half (2026-10-29).** Expectation and top-down reconstruction now split by residual: the inverse of the completed understanding learns only what the detached local expectation missed ([item 2.7 record §42](plans/2026-10-27-item2-7-corpus.md)); perceptual layer in item 2.7's final round, conceptual layer with `intuit` at item 2.5 round B.
+**Superseded in its expectation half (2026-10-29).** Expectation and top-down reconstruction now split by residual: the inverse of the completed understanding learns only what the detached local expectation missed ([item 2.7 record §42](plans/2026-10-27-item2-7-corpus.md)); perceptual layer in item 2.7's final round (built). Amended 2026-10-30: the conceptual layer's local predictor is `ActivationPredictor`, not `intuit`, and the conceptual split waits on the subtraction-or-correction question ("The residual split: a stopped subtraction or the correction", below); not built in item 2.5 round B.
 
 **Reassigned to Item 3, October 19:** this invertible-path program is independent
 of [Item 4 expectation](specs/2026-10-08-expectation-at-every-level.md). Local
@@ -938,7 +939,7 @@ Decided in the operators update plan
 [§12.2](plans/2026-10-05-operators-update.md#122-two-complete-derivations-subtracted-layer-by-layer),
 [§13](plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06) points 2–3)
 and recorded as "rounds 3–4" of the
-[target scheme](GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
+[target scheme](DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
 the combined step that closed the update (§36–§45) did not include it, so
 it is decided and unbuilt. Three parts:
 
@@ -960,7 +961,7 @@ it is decided and unbuilt. Three parts:
    chooser, the maps, the predictors and the readers, trained by
    expectation and output along one path. Where "mostly invertible" means
    approximately, the reconstruction term stays as a loss for that part
-   (§13.3). Today identified-word reconstruction is already the R≡0 audit
+   (§13.3). Today identified-word reconstruction is already the $R \equiv 0$ audit
    at gate width; the rest of the path keeps the loss.
 3. **The width.** Exact clean-up of `k` bound items against `N` bank
    entries needs `D ≈ c·k·log N` — thousands at production, far above the
@@ -968,7 +969,7 @@ it is decided and unbuilt. Three parts:
    derived; todo item 3 derives it for the run and reads the audit at that
    width.
 
-The milestone (§11.8): the audit at zero at production width ⇒ item 0
+The milestone (§11.8): the audit at zero at production width $\Rightarrow$ item 0
 trains by expectation and output through one path. Todo item 0 carries the
 condition; item 4.5 builds parts 1–2 and says what part 3 must be. A
 candidate gate for the spec: the expectation discrepancy and the class bars
@@ -1215,7 +1216,7 @@ the effective weight `bias·W + var·ε`: the learned weight, trusted by
 `bias`, plus sampled noise scaled by `var`, with `bias + var ≈ 1`. The
 optimizer does not train the two scalars. After each backward,
 `paramUpdate()` sets them from the observed gradient energy `s`:
-`var = s/(s+κ)`, at most .95. So exploration is high where the gradient is
+$\mathrm{var} = s/(s+\kappa)$, at most .95. So exploration is high where the gradient is
 still large and falls as learning settles.
 
 An ergodic layer starts from structure, not from chance:
@@ -1583,6 +1584,14 @@ which the answer and output are composed ([spec §5](plans/2026-10-21-intuit.md)
 The measurement above becomes relation rows and fan-out at matched
 accuracy, not parameter count.
 
+**Revised again (Alec, 2026-10-30; [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md)).** `intuit` has
+its own learned Sigma-over-Pi weights with negation at the literals, trained
+only by its use in output, because it is not understanding the input but
+doing something with it; so what it knows lives in weights after all, beside
+the rule rows it is seeded from, and the measurement above returns as
+parameter count at matched accuracy. The bottom-up expectation and spread
+are `ActivationPredictor`'s. Scheduled: item 2.5 round B.
+
 ## Re-identification in MTM (future work, Alec, 2026-10-21)
 
 Alec's §29 aside (2026-10-28): investigate whether a variable's identity by name should outlive the MTM horizon; within the horizon, names share tokens and bind's incompatibility rule can reject an antecedent.
@@ -1728,7 +1737,7 @@ catuṣkoṭi coverage over all idea rows, quadratic again; deducibility by one
 relation-reader step over the other rows for each part and implication
 row; and age by `history_age` over each stream's rows. At a million rows
 (item 3's capacity figure) the pairwise term alone is on the order of
-10¹² multiply-adds per pass.
+$10^{12}$ multiply-adds per pass.
 
 **The proposal.** Keep luminosity as a column, maintained incrementally
 rather than recomputed: when a row is written or re-witnessed, compare it
@@ -1884,7 +1893,7 @@ certainty. Claude's reading, under discussion:
   the columns first.
 - *Percept parthood is Kosko's subsethood,* `S(A, B) = M(A ∧ B) / M(A)`
   with `M(A) = Σ a_i`. On `{0, 1}` the meet is the product, so
-  `M(A ∧ B) = A·B`, subsethood is `|A ∩ B| / |A|`, and it stays a matmul
+  $M(A \wedge B) = A \cdot B$, subsethood is $|A \cap B| / |A|$, and it stays a matmul
   over letters; on graded amplitudes Σmin is a min-sum kernel, or the
   product t-norm keeps a matmul at the cost of a softer meet. Subsethood is
   asymmetric, so the five-relation table Mereology reserves for an
@@ -1898,9 +1907,9 @@ asymmetric score is read, and Kosko's fuzzy entropy of every letter
 percept is 0.
 
 **Kosko's cube.** The percept cube is Kosko's: fuzzy sets as points of the
-unit hypercube, with the sigma-count `M` as measure, `M(A △ B) = Σ|a_i − b_i|`
-as the fuzzy Hamming (ℓ1) distance, subsethood as above, and fuzzy entropy
-`E(A) = M(A ∧ Aᶜ) / M(A ∨ Aᶜ)` as the distance from the nearest corner
+unit hypercube, with the sigma-count `M` as measure, $M(A \triangle B) = \sum_i |a_i - b_i|$
+as the fuzzy Hamming ($\ell_1$) distance, subsethood as above, and fuzzy entropy
+$E(A) = M(A \wedge A^{c}) / M(A \vee A^{c})$ as the distance from the nearest corner
 (Kosko 1986, 1990, 1992). The complement `1 − x` is the cube's own
 ([Spaces](Spaces.md#percept-complement)). One quantity gives the metric,
 the asymmetric part relation and a crispness measure.
@@ -1908,7 +1917,7 @@ the asymmetric part relation and a crispness measure.
 **Images (future).**
 
 - *σ adds; π multiplies.* Lights mix additively (white light is
-  R + G + B; `x ⊕ x = 2x`), filters and pigments multiplicatively
+  R + G + B; $x \oplus x = 2x$), filters and pigments multiplicatively
   (transmittance `t₁·t₂`). Extents carry measures (radiance, area, count)
   under a sum with the overlap correction
   `M(A ∨ B) = M(A) + M(B) − M(A ∧ B)`, unbounded above for HDR; intents

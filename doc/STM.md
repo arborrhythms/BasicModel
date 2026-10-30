@@ -2,12 +2,13 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 
 
 ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
@@ -19,24 +20,7 @@ the Formal Concept Analysis side of the model: their slots point back to
 part/whole support, concept order, and codebook rows rather than floating as
 untyped context vectors.
 
-> **2026-06-02 update (subsymbolic analyzer).** Operators no longer enter
-> the STM idea space. They are kept in the SS **codebook**
-> (`WholeSpace.insert_operations`, wired into `SymbolSubSpace.__init__`)
-> and resolved as a soft superposition over the operator-prefixed parse
-> tree; the STM idea slots hold only **combined meanings** -- an operator
-> defines *how* meanings combine, contributing none of its own.
-
-> **Status (2026-05-30):** new chapter for the STM serial / parallel
-> modes work.
-> Documents the per-batch STM buffer, the predict-then-perceive cadence
-> (serial and parallel), the attentional-filtering regime (serial runs
-> **with** attention by design — the old serial-vs-attention guard was
-> lifted), the routing-parser SS-analysis / CS-execution split, the
-> in-STM `IntraSentenceLayer` AR predictor, masked-word reconstruction
-> via priming, the relative-vs-absolute end-state preservation with its
-> grammatical clause closing, and the LTM chain of end-states feeding
-> inter-sentence prediction. Where a piece is a deliberate scaffold or a
-> deferred wiring, this chapter says so.
+*A superseded passage beginning "**2026-06-02 update (subsymbolic analyzer).** Operators no l" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 ## Overview
 
@@ -69,7 +53,7 @@ The trainable target configuration is `MentalModel.xml` (serial,
 `<data><dataType>embedding</dataType>`, `<attention>` unset (resolves to
 `"off"` — see [Section 4](#4-attentional-filtering)), sentence prediction
 on, FineWeb data); the comparison framing against a transformer LM is
-[Section 12](#12-nanochat-comparison-framing).
+[Section 12](DevelopmentHistory.md#12-nanochat-comparison-framing).
 
 ---
 
@@ -89,6 +73,15 @@ the rolling-window length: at steady state the STM holds the last `cap`
 ideas and the general push API drops the oldest when full. Item 7.5 compose
 reserves a free slot through the online reduction deadline before the next
 push. An arrival at a full stack raises an assertion instead of dropping a word.
+
+**As built (item 3.0 chunks; recorded 2026-10-30).** The working set is
+`B x stmCapacity` chunks with the fourteen `STMChunks.FIELDS` tensors; the
+stack is metadata over chunks, not a physical shift. An arrival takes a free
+chunk, else the least-recently-read off-stack chunk, and refuses when every
+chunk is stacked; a kept close leaves its top as an off-stack recent entry
+(`keep_close`); `bind_menu` offers the dummy and the off-stack identity
+chunks. The physical shifter `_stm_shift_and_push` described below remains
+only on the ungated serial path.
 
 **Buffer.** The data is a single per-batch tensor
 `[B, cap, concept_dim]` plus a `[B]` long depth-pointer vector recording
@@ -212,7 +205,7 @@ implemented in `ConceptualSpace.forward`
    back to the original per-slot path.
 3. **Accumulate the intra-loss.** The held prediction is scored against
    the just-perceived `idea` as $\mathcal{L}_\text{intra} =
-   \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](#6-intrasentencelayer)).
+   \mathrm{MSE}(\hat{c}_t, c_t)$ (see [Section 6](DevelopmentHistory.md#6-intrasentencelayer)).
 4. **Language dispatch.** The signal router dispatches grammar ops over
    the STM contents (read-only via CS, write-required via SS).
 5. **One operation per round.** `LanguageSpace.choose_operation` presents
@@ -326,7 +319,7 @@ superseded by the `<attention>` element.
 > below (CS$\to$PS) and the taxonymic mask (CS$\to$SS), but **not** any
 > `<attention>` primer/second-order/low-rank retrieval mode. An earlier
 > draft of this chapter claimed `<attention>primer</attention>` was set;
-> that was wrong. See also [Section 12](#12-nanochat-comparison-framing).
+> that was wrong. See also [Section 12](DevelopmentHistory.md#12-nanochat-comparison-framing).
 
 **CS$\to$PS word input.** The word-major radix path and legacy serial inputs use
 different representations.
@@ -459,72 +452,7 @@ both `compose` and `generate`.
 
 ---
 
-## 6. IntraSentenceLayer
-
-`IntraSentenceLayer` ([Layers.py](../bin/Layers.py)) is the in-STM
-autoregressive predictor — the layer that stakes the prediction in
-predict-then-perceive. It is owned by ConceptualSpace (`self.intraSentenceLayer`).
-
-**Architecture: combined PI-then-Sigma, no intermediate $\tanh$.**
-
-- `self.pi`: `PiLayer(concept_dim $\to$ working_dim)`, `invertible=True`,
-  `nonlinear=True` — the log-domain multiplicative boundary fold lifts
-  each STM slot into the working width and bounds it to $[-1, 1]$.
-- `self.sigma`: `SigmaLayer(working_dim $\to$ concept_dim)`,
-  `invertible=True`, **`nonlinear=False`** — a raw linear $W x + b$ that
-  collapses the lifted slots into the predicted idea.
-
-The defining requirement is that there is **no extra activation
-interposed** between the PI body and the Sigma body: `sigma` is built
-`nonlinear=False` (a raw $W x + b$), so no additional $\tanh$ sits
-between PI's output and Sigma's input. This is **not** a linear fusion —
-`pi` is `nonlinear=True` (its symmetric log-domain $(1+x)/(1-x)$
-embedding is an intrinsic nonlinearity), so the composite is a nonlinear
-PI followed by a raw-linear Sigma, not two fusable linear cores.
-`working_dim` defaults to `concept_dim`, keeping both sublayers square
-isomorphisms so the parallel per-slot round-trip
-$\text{reverse}(\text{forward}(x)) \approx x$ is exact up to the LDU
-inverse tolerance.
-
-**Forward signature.** `forward(prior_slots, routing=None, parallel=False)`
-with `prior_slots: [B, K, D]`:
-
-- **Serial collapse** (`parallel=False`, the primary regime): PI-lift
-  every slot, **sum-fold over the slot axis**, then Sigma-collapse to one
-  idea $\to$ `[B, D]`.
-- **Parallel per-slot** (`parallel=True`): PI$\to$Sigma per slot, no
-  cross-slot mixing $\to$ `[B, N, D]`.
-
-The serial collapse is many-to-one (sum over $K$ slots), so its
-`reverse` is necessarily approximate (it divides the recovered fold
-equally across the $k = \text{stm\_capacity} - 1$ slots); the parallel
-per-slot path is width-preserving and exactly invertible.
-
-**Loss.** $\mathcal{L}_\text{intra} = \mathrm{MSE}(\hat{c}_t, c_t)$.
-`IntraSentenceLayer.intra_loss(pred, target)` ([Layers.py](../bin/Layers.py))
-is a plain `F.mse_loss` helper documented as the training-path wiring
-point, but the live path does **not** call it: `ConceptualSpace.
-_accumulate_intra_loss` ([Spaces.py](../bin/Spaces.py)) inlines the same
-math (`(prediction - target).square()`) directly. `intra_loss` is
-exercised only by `test/test_intra_sentence_layer.py`, not by any forward
-call site — an unused-but-documented helper, not dead code to delete.
-
-`_accumulate_intra_loss` keeps each per-word step's scalar loss in a
-**list** rather than folding it into a running `accum + step_loss` sum
-(2026-07-08 fix): the old running-sum pattern built a per-word add-chain
-*inside* the compiled forward, which Inductor inlines transitively into
-one kernel with a buffer argument per step — over Metal's 31-buffer
-kernel-arg limit on wide configs (e.g. `N=64` produced a 34-arg
-scalar-sum kernel, a fullgraph blocker immune to fusion caps). As a list,
-each step's scalar stays an independent graph output, and
-`consume_intra_loss` ([Spaces.py](../bin/Spaces.py)) chunk-sums the list
-**eagerly** (post-body, pre-backward, mirroring the ARMA term) and
-returns the per-step mean, resetting the accumulator. The weight is
-`<intraLossWeight>` (default `0.1`); the term is gated off when grad is
-disabled or the weight is non-positive.
-
----
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#6-intrasentencelayer) (2026-10-30): "6. IntraSentenceLayer".*
 ## 7. Per-word router firing
 
 The `<routerWireSerial>` knob ([model.xsd](../data/model.xsd)) gates
@@ -546,34 +474,7 @@ stage runs in the static host scheduler. The **boundary fire**
 (`BasicModel._chart_compose_at_C`, [Models.py](../bin/Models.py)) runs
 iff `router_wire_serial in ('boundary', 'both')`.
 
-> **Routing conditioning of the intra predictor is LANDED.** Every
-> `SymbolSubSpace.compose` call (per-word or boundary, default-only or
-> full-router) builds a first-class `RoutingState`
-> ([Language.py](../bin/Language.py)) ADDITIVE to the unchanged
-> `current_rules` host-side rule dict: `_synthesize_rule_probs`
-> ([Language.py](../bin/Language.py)) turns the fired rule_ids into a
-> dense `rule_probs: [B, n_rules]` distribution — a gradient-bearing
-> soft-marginal aggregation (`_synthesize_rule_probs_soft`) whenever the
-> router ran tensorially, or a DETACHED hard scatter
-> (`_synthesize_rule_probs_hard`: unit mass onto the fired rule-ids,
-> L1-normalized per row) on the default-only fast path — and stashes it
-> on `symbolSpace.routing_state.rule_probs`.
-> `ConceptualSpace._intra_routing_for_predict`
-> ([Spaces.py](../bin/Spaces.py)) reads that tensor, returns it only when
-> its last dim matches `n_rules == len(TheGrammar.rule_table)`
-> (`IntraSentenceLayer.routing_proj`'s expected width) and aligns its
-> batch dim to the predictor's STM-snapshot context (broadcast when one
-> side is `B=1`; `None` on an unreconcilable mismatch, fail-loud on a
-> non-finite tensor). Both `_stm_predict_then_perceive_serial` and
-> `_stm_predict_then_perceive_parallel` ([Spaces.py](../bin/Spaces.py))
-> pass the resolved routing tensor into `intraSentenceLayer.forward`,
-> which projects it `[B, n_rules] \to [B, concept_dim]` via
-> `routing_proj` and adds it as a bias to the Sigma output
-> ([Section 6](#6-intrasentencelayer)) — so the per-word fire now DOES
-> make the in-STM predictor rule-aware, not just the SS dispatch context.
-> `routing=None` (no reachable `symbolSpace`, wrong width, or an
-> unreconcilable batch mismatch) degrades to the un-biased predictor,
-> byte-identical to the pre-wiring behaviour.
+*A superseded passage beginning "**Routing conditioning of the intra predictor is LANDED.** E" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 ---
 
@@ -734,18 +635,24 @@ and reset at a document boundary, or after a stateful inference request.
 Default occupancy thresholds are 90% to trigger and 70% to target, with at
 least 256 completed presentations between passes. Value combines absolute
 `source_trust`, surprise/one-step utility, luminosity contribution and a bounded
-age penalty. Age is rows back in the witnessing stream, using the youngest
-position for a shared row. It is neither a document number nor time since use.
+age penalty. Age is model time since the row's `.when` stamp (`history_age`),
+the youngest stamp for a row reached through several parents; it is not time
+since use.
 Both profiles use it under pressure; neither runs free-standing age decay.
 
 Protected origins and live thought/expectation roots retain their semantic
 dependencies. Wording goes before subordinate structure; an idea operand can
-leave its cached point in the parent, whereas a missing relational operand
-cascades. Each row advances at most one detail stage per pass. Compaction
+leave its cached point in the parent; a referenced row is never deleted, and
+selecting it advances its owners' detail and ends the pass (there is no
+cascade or coarsening stage). Each row advances at most one detail stage per pass. Compaction
 preserves stable addresses and stream order, rebuilds physical indexes and
 DEF lookup, unlinks removed expectation endpoints, and retracts taxonomy
 edges supported only by deleted testimony. Legacy edges without recorded
 provenance remain conservative native structure. Predictor tensors are unchanged.
+The relation stratum has its own pass (`forget_parts`) at the same boundary with
+the same thresholds, valued by the maximum lane, surprise, the log access count
+and age, protecting rows that relations, expectations or retained structure
+reference.
 
 The pass logs its cut-off, deletions by origin, wording/coarsening/cascade
 counts and whether the target was reached. Its counters and separate source
@@ -804,186 +711,9 @@ cross-sentence carrier. Word provenance remains the current sentence's own
 reconstruction record when its subject refers to an earlier occurrence.
 
 
-### Structured production path
-
-`sentenceExpectationScope=structured` is the model default when sentence
-prediction is enabled. `SentenceExpectation` reads the bounded
-chronological observation view as `[K, 3, D]` values plus `[K, 3]` occupancy.
-The three positions are NP1, VP and NP2. Padding is masked before the network;
-role and chronological positions remain distinct. It predicts three separate
-vectors, three presence logits and one clause-kind logit. The loss combines
-role MSE with binary cross entropy for presence and clause kind. Targets are detached;
-current-step source representations remain live under the objective-local
-boundaries in [GradientFlow](GradientFlow.md). For individual-reference
-grammars, item 6.5 re-encodes the latest source through the current identity
-columns before each trial. Older context and the observation target detach.
-Once columns exist, role prediction error is measured in their coordinates;
-presence and clause-kind losses keep their existing meanings. This preserves
-sentence optimizer boundaries without keeping a preceding compose graph
-across an update. See [Layers.py](../bin/Layers.py) and
-[IndependentComponents.py](../bin/IndependentComponents.py).
-
-The independence population comes from retained external observation rows,
-excluding definitions, estimates and asserted facts. It is snapshotted before
-reading, independently of the batch partition. Accumulated innovations use
-identified object coordinates and retain occurrence addresses. A has at most
-two active noun columns per ordinary frame; B has at most one change column.
-The same expectation objective owns both dictionaries. Recurrence admission
-and witness counts happen only after the kept closing. These are mechanism
-contracts under review, not a finding of learned identity or verb reuse.
-
-The packed observer uses the existing ended end-slot/depth outputs for each
-sentence, with an explicit STM-to-infix permutation. Corpus source addresses
-identify each sentence's document, including changes within a packed row.
-`begin_document` clears only the selected prediction stream; already-scored
-losses, other rows and durable history survive. Soft packed-brick resets keep
-the same document stream; only hard resets or document changes make it cold.
-Weight restore starts the
-observation view cold. These are sequence and local-role contracts; retained
-compound references remain part of the separate nesting migration in the
-[integrated spec](plans/2026-09-15-next-sentence-as-the-production-objective.md).
-See [Layers.py](../bin/Layers.py) and
-[Models.py](../bin/Models.py).
-
-### Historical root baseline (`sentenceExpectationScope=root`)
-
-A **lifted `IntraSentenceLayer` instance** (`_inter_predictor`,
-[Layers.py](../bin/Layers.py)) predicts the next end-state over the
-external observation sequence — the same predictor class as the in-STM one,
-instantiated at the inter-sentence level. Its transient `_inter_context`
-view is bounded and per-row; durable LTM retains detached observations.
-Current-step source context keeps its encoder graph. Consuming the prediction
-loss and entering the next brick detach that view without deleting history.
-Document resets clear the selected view and pending estimate, preserving
-other rows and durable LTM ([Layers.py](../bin/Layers.py),
-[Layers.py](../bin/Layers.py),
-[Layers.py](../bin/Layers.py)). Its chain window is
-$K = \min(\text{ltmCapacity}, 8)$ (`_inter_chain_window`): the AR signal
-that predicts the next end-state lives in the last handful of sentences,
-so a small bounded window is used rather than the full `ltmCapacity`.
-
-`predict_next_end_state(b=0)` ([Layers.py](../bin/Layers.py))
-produces the next end-state **shape** $(\hat{d}, \hat{p}[\hat{d}, D])$:
-
-- **Chain reduction (ragged $\to$ fixed), mode-dependent.**
-  Each chain entry is reduced to its **root** by
-  `_reduce_end_state_to_root` ([Layers.py](../bin/Layers.py)) — but WHICH
-  slot is the root depends on the LTM mode ([Section 10](#10-ltm-as-the-chain-of-stm-end-states)):
-    - **Legacy mode.** The end-state is stored newest-first, so the root
-      lives at the **last** slot ($\text{depth}-1$): for an absolute
-      end-state (depth 1) that is slot $0$ (the collapsed idea); for a
-      relative end-state (depth 3) it is slot $2$, the predicate (the head
-      the relative structure hangs off).
-    - **Consolidated mode.** The payload is the store's native INFIX
-      `[idea1, predicate, idea2]` order, and the root is always **slot
-      $0$** = idea1 — the subject/topic, present even when there is no
-      predicate (an absolute row has no `predicate`/`idea2`, only
-      `idea1`), so it is the one slot every row shares regardless of
-      depth.
-
-  The last $K$ roots form a `[1, K, D]` context, left-padded with
-  zeros so the most recent sits at the tail (newest-at-$-1$, like the ARMA
-  ring).
-- **Root prediction.** `_inter_predictor.forward(context, routing=None,
-  parallel=False)` $\to$ `[1, D]`, the predicted root.
-- **Loss.** $\mathcal{L}_\text{inter} = \mathrm{MSE}(\hat{p}, p)$ on the
-  roots, accumulated by `_accumulate_inter_loss`
-  ([Layers.py](../bin/Layers.py)) and drained by
-  `consume_inter_loss`, weight `<interLossWeight>` (default `0.1`). The
-  actual root is detached for this comparison, while live preceding context
-  can train the encoder as well as `_inter_predictor`. Teacher reconstruction
-  does not disable this term. `observe_stm_end_state` scores each arriving
-  observation once. Evaluation does not accumulate training losses. Joint
-  gradients use the [objective-local gradient contract](GradientFlow.md).
-- **InfoNCE next-idea contrastive term (optional, additive).** When
-  `<interContrastiveWeight>` is positive (default `0.0`, off),
-  `observe_stm_end_state` also ranks the actual next root above the
-  chain's past roots (negatives) under $\cos(\hat{p}, \cdot) /
-  \text{temp}$ (`<interContrastiveTemp>`, default `0.1`) via
-  `_accumulate_inter_contrastive` $\to$ `consume_inter_contrastive_loss`
-  ([Layers.py](../bin/Layers.py)) — a `torch.nn.functional.cross_entropy`
-  over `[pos_root; neg_roots]` with the positive at index 0. Best-effort:
-  a short/odd chain simply yields fewer negatives (the accumulator no-ops
-  with none; the MSE term above still runs regardless). Fail-loud on a
-  non-finite step.
-
-The prediction is subtracted only at the closing, as described in
-[ExpectationRetention](ExpectationRetention.md). The observation remains in STM
-and LTM unchanged; the conceived roles are derived evidence for the chooser.
-`generate_sentence` sends a positive predicted idea directly to `<generate>`.
-There is no comprehension-time prediction injection.
-
-The following depth-copy behavior describes the explicit **root benchmark**;
-production structured expectation predicts three distinct vectors and presence.
-
-> **Honesty — $\hat{d}$ is a copy-last AR prior.**
-> The predicted **depth** $\hat{d}$ is a simple AR prior: the depth of the
-> **most recent** end-state in the chain (a relative sentence tends to be
-> followed by structure of the same shape; an absolute by an absolute).
-> This delivers `depth in {1, 3}` without a separate learned head, but it
-> is a **scaffold** — a tiny `concept_dim $\to$ 2` argmax head is the
-> documented upgrade path. The chain reduction always collapses each
-> end-state to ONE root vector rather than mean-pooling over depth (the
-> root carries the sentence-level signal, mirroring the ARMA
-> `_pool_sentence_rep`) — but which physical slot is "the root" is
-> mode-dependent (see the "Chain reduction" bullet above): it is
-> "slot-0" only in consolidated INFIX mode, where idea1 is always at
-> slot 0; in legacy mode the root is the OLDEST slot
-> ($\text{depth}-1$), which is slot 0 only for a depth-1 absolute
-> end-state. A non-finite predicted root raises.
-
----
-
-## 12. nanochat comparison framing
-
-The trainable target is `MentalModel.xml`:
-`<symbolicOrder>1</symbolicOrder>`,
-`<data><dataType>embedding</dataType>`,
-`<sentenceExpectation>true</sentenceExpectation>`,
-FineWeb data (`<shardDir>data/fineweb</shardDir>`). This is the
-configuration that exercises the full STM stack — serial sequencing, the
-CS$\to$PS windowing and CS$\to$SS taxonymic mask
-([Section 4](#4-attentional-filtering)), the in-STM and inter-sentence
-predictors, and the LTM chain. It does **not** set `<attention>`, so that
-knob resolves to its default `"off"` — see the correction in
-[Section 4](#4-attentional-filtering); the legacy `<hasAttention>` boolean
-is deprecated and inert regardless.
-
-The comparison loss, as trained by `runBatch`, is
-
-$$
-\mathcal{L} = \mathcal{L}_\text{IR} + \mathcal{L}_\text{intra}
-+ \mathcal{L}_\text{inter} + \mathcal{L}_\text{ARMA}
-+ \mathcal{L}_\text{inter-contrastive},
-$$
-
-the masked-LM information-reconstruction term at the subsymbolic (PS) (see
-[Spaces.md](Spaces.md#within-sentence-ar-retirement-2026-05-14)) plus the
-in-STM next-idea term ([Section 6](#6-intrasentencelayer)) plus the
-inter-sentence next-end-state term ([Section 11](#11-inter-sentence-prediction))
-plus the discourse ARMA($p$, $q$) term (`BasicModel._discourse_arma_loss`,
-[Models.py](../bin/Models.py); `InterSentenceLayer.observe`,
-[Architecture.md](Architecture.md) — a separate ring-based sentence-rep
-predictor on the SAME `InterSentenceLayer`, distinct from the STM-chain
-`_inter_predictor` of Section 11) plus the optional InfoNCE next-idea
-contrastive term ([Section 11](#11-inter-sentence-prediction), off by
-default via `<interContrastiveWeight>`). This is analogous to a
-transformer language model's next-token cross-entropy, but computed **in
-concept space** rather than over a token vocabulary:
-$\mathcal{L}_\text{intra}$ predicts the next idea within a sentence,
-$\mathcal{L}_\text{inter}$ the next sentence's end-state shape,
-$\mathcal{L}_\text{ARMA}$ the next sentence-level representation over the
-discourse AR/MA rings, and $\mathcal{L}_\text{IR}$ reconstructs masked
-content — together the concept-space counterpart of the autoregressive LM
-objective a system like nanochat trains.
-
-> **Out of scope.** The comparison harness itself — running this against a
-> transformer baseline and reporting the numbers — is a **separate plan**.
-> This chapter documents the loss that *would* be compared and the
-> configuration that produces it; it does not build the benchmark.
-
----
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#structured-production-path) (2026-10-30): "Structured production path".*
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#historical-root-baseline-sentenceexpectationscoperoot) (2026-10-30): "Historical root baseline (`sentenceExpectationScope=root`)".*
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#12-nanochat-comparison-framing) (2026-10-30): "12. nanochat comparison framing".*
 ## 13. Interaction LTM and the What stack
 
 Beside the chain of STM end-states (Section 10), `InterSentenceLayer` keeps
@@ -1160,3 +890,16 @@ source text, but a withdrawn accepted fact becomes unverified with zero trust;
 questions and estimates retain their own provenance. The truth view therefore
 does not surface a retained request row as accepted evidence. See
 [nested retention](NestedRetention.md).
+
+## Trust and addressing in the chunks (item 2.5 round A, 2026-10-29)
+
+The chunk state carries one more preallocated field, `chunk_truth [B, C, 2]`,
+the for and against lanes of each chunk's content: a recalled row's pair, the
+registered sentence's own ideas at `(1, 0)`, a derivation's pair, a question
+chunk at `(0, 0)`. Thought operands and results name a chunk by its `.where`
+band through `STMChunks.locate` (exact match, `-1` when absent; a duplicate
+occupied address raises in `ThoughtChunks`), and the episode's focus chunk is
+pinned on the stack while the episode is open. Trial restoration restores the
+active stream count with the fixed buffers. Record and design:
+[thinking spec §§3.1, 3.2, 17-21](plans/2026-10-27-item2-5-thinking.md); [Architecture](Architecture.md),
+"Retained grammatical occurrences".

@@ -1361,7 +1361,7 @@ changes supersede their relevant implementation claims. No commit is made.
   within float tolerance precedence over context, and standardizes activation
   coefficients. The separate generate policy learns undo/unary/STOP by CE from
   the actual compose structure, teacher-forced and detached; its free walk has
-  no straight-through gradient. [GradientFlow](../GradientFlow.md#operators-update-round-1-october-5)
+  no straight-through gradient. [GradientFlow](../DevelopmentHistory.md#operators-update-round-1-october-5)
   gives the reduction, tolerance and ownership details.
 * `not` exchanges explicit evidence poles; `non` zeroes the expressed pole,
   preserving the other. Neither changes a code's coordinates. The serial code
@@ -1446,7 +1446,7 @@ identically zero image. The nonzero-complement fixture checks all six cases.
 The pair search, decomposition teachers, owner lists, reconstruction objective,
 training budgets and bands remain unchanged. Later identity, meaning, attention
 filter and catalogue work follows the current plan §9.5/§12.3 schedule.
-[Gradient flow](../GradientFlow.md#operators-update-round-2-credit-october-6-uncommitted-candidate)
+[Gradient flow](../DevelopmentHistory.md#operators-update-round-2-credit-october-6-uncommitted-candidate)
 and the [round-2 receipt](../benchmarks/2026-10-06-operators-round2/README.md)
 record the implementation, old/new test texts, source freeze and measurements.
 

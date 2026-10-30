@@ -228,7 +228,7 @@ zero (the verb's `e^{w} > 0`), which is what keeps the operators invertible,
 and generativity needs the inverse that a true projection does not have.
 This hypothesis mostly undoes the older conjecture that part of speech falls
 out of a row's tower of origin
-([Language](../Language.md#future-work-nouns-from-partspace-adjectives-from-wholespace)).
+([Language](../DevelopmentHistory.md#future-work-nouns-from-partspace-adjectives-from-wholespace)).
 
 **Exclusion, and the word that excludes nothing** *(Alec, 2026-09-28)*.
 "The exclusion is framed in apoha theory as the non-affirming negation of

@@ -3,8 +3,9 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
 
@@ -42,7 +43,10 @@ and no priming. Thought operands, reads and writes detach.
 | Operator | Effect |
 |---|---|
 | `part`, `equal`, `implies`, `exist` | Conceptual content and an independent evidence pair over codes. |
-| `isPart`, `isEqual`, `isImplied`, `isTrue` | Symbolic evidence and witnessing rows read by reference from LTM or the taxonomy. |
+| `isPart`, `isEqual`, `isTrue` | Symbolic evidence and witnessing rows read by reference from LTM or the taxonomy. |
+| `infer` | Derives a held rule's consequent from a held premise (identity, membership, equality or instantiation), the pair the minimum along the path and the maximum across alternatives, or opens the antecedent as a subgoal at `(0, 0)`; operands and results are STM chunks addressed by `.where` (item 2.5 round A, 2026-10-29). `inferBackward` is its converse spelling (permutation `(I2, I1)`), the face that opens the antecedent as a subgoal. |
+| `bind` | Fills a selected reference site with its pair, evidence kind `reference`; the only binder, once per site. |
+| `intuit` | Declared in the executor table and the grammars; its executor raises until item 2.5 round B and the chooser's legal menu skips it (D9). |
 | `query` | The best matching cued row, retained as a serial result with its pair and occurrence. |
 | `ask` | Attempt to fill an open reference; a nested attempt shares the same history and meter. |
 | `not` | Exchanges a pair's poles, retaining its meaning; an uncancelled image concludes absence. |
@@ -50,8 +54,9 @@ and no priming. Thought operands, reads and writes detach.
 
 `quantize`, `arma` and `expect` are removed from thought. The old `what`,
 `lookup`, `chunk` and `true` names raise with their replacements for one release.
-Thought conclusions write only `inference` rows, with occurrence addresses and
-witness references. Unresolved `question` rows belong to closing. There is no
+The thought writer publishes `inference` rows, `unverified` rows for a `(0, 0)`
+pair and `question` rows for open slots, with occurrence addresses and
+witness references; unresolved questions belong to closing. There is no
 generic writable-store capability on an executor.
 
 Open referent columns are addressed by the source row and role and participate
@@ -102,8 +107,9 @@ a recovered code; unsuccessful unfolding remains explicitly incomplete.
 Structural references follow the actual referenced field.
 
 The durable index is inverted: `(code, role)` maps to store row addresses.
-Checkpoint columns `posting_codes`, `posting_roles` and `posting_rows` serialize
-those global postings; `leaf_complete` retains completion. The retired
+No posting column is checkpointed: postings are rebuilt in memory at load
+(`MemoryIndex`); the former `posting_*` and `leaf_complete` columns are retired
+restore inputs. The retired
 `index_stream` column does not restrict readers: LTM truth is shared, while
 document keys, occurrence addresses and timestamps distinguish its rows.
 Unfolding reads the current reader's priming row. Appends extend posting lists without copying all prior rows.
@@ -152,25 +158,4 @@ Stored recovery beyond two words, the zero-gradient order lesson, MM grammar
 recovery and compiled retention remain open. Item 5 cannot discard derivations
 on this evidence. Earlier nulls below remain historical measurements.
 
-The deterministic generativity probe uses distinct concept codes in each chain.
-It writes one compound per condition, keeps
-its stored idea fixed, then unfolds it with the current generate MLP and shared
-operator after 0, 1 and 8 small training updates. Original trees and leaf codes
-are used only to score the result; they are not unfold inputs. It compares both
-codes and operations.
-
-| Chain length | Composition depth | Exact codes and derivation at updates 0 / 1 / 8 |
-|---|---|---|
-| 1 | 0 | 1/1, 1/1, 1/1 |
-| 2 | 1 | 0/1, 0/1, 0/1 |
-| 3 | 2 | 0/1, 0/1, 0/1 |
-| 5 | 4 | 0/1, 0/1, 0/1 |
-
-These null results establish no learned compound generativity or chained-episode
-recovery. Those historical measurements used the earlier recorded-leaf index.
-Under the September 28 decision the index itself depends on generation from
-the actual field, making weak generativity a retrieval limitation too. The
-historical values are retained; they are not a passing learning claim for the
-new index. The small probe
-is also not a corpus estimate, multi-seed study or causal-utility comparison.
-[Probe](../test/test_mind_generativity.py), [receipts](Testing.md).
+*A superseded passage beginning "The deterministic generativity probe uses distinct concept c" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*

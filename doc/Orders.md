@@ -198,20 +198,7 @@ space or are distributed per order. Decided: **per order, ramsified; all
 symbols in the one mereological tree.** In his words: "ramsify over
 conceptual spaces, but keep all symbols in the mereological space."
 
-- **Ramsify over conceptual spaces.** A concept at order *n* is defined by
-  its relations to the symbols of order *n−1* — a kind by which symbols
-  are its members, an individual by which occurrences are its, with the
-  truth lanes as degree (§3). Those relations are its coordinates: order
-  *n*'s conceptual space is the cube over the order-(*n−1*) symbol index,
-  a concept there is its characteristic vector, and similarity at order
-  *n* is overlap of relation sets — the meet of two sparse membership
-  vectors. This is §2 made geometric: intension at order 0, extension
-  above. It is never meaningless: a discontinuous type is a sparse vector
-  over disjoint members. Order 0 is the base case, its concepts placed by
-  context in a dense similarity space — a compression of the same kind of
-  relation set, the symbol's contexts ([FutureWork, placement](FutureWork.md#placement-from-the-registered-priming-surface-one-metric-for-sbow-diffusion-and-bind-alec-2026-10-20-proposed-with-the-objective-to-decide)).
-  Nothing is stored for the orders above 0 beyond LTM2's `Part(member,
-  whole)` edges: the edges *are* the vectors.
+- *A superseded passage beginning "**Ramsify over conceptual spaces.** A concept at order *n* i" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 - **Keep all symbols in the mereological space.** Every symbol of every
   order lives in one structure, the symbol index with its Part tree
   (two truths §1, "LTM2, one relation"): a word form the centroid of its
@@ -245,25 +232,11 @@ conceptual spaces, but keep all symbols in the mereological space."
   own order. Distance between orders was never a meaningful quantity, and
   one shared space would buy only that, at the price of crowding and
   meaningless centroids.
-- **The priming surface is the same object, read stratified.** It is one
-  vector of energy over the codebook rows with each row's order known
-  (`priming_row_orders`). Restricted to the symbols of order *n−1* it is a
-  fuzzy set of them — a point in order *n*'s conceptual space: the
-  activation over words is the current context as a point in order 1's
-  space, over individuals the current scene in order 2's. One vector, one
-  point in every order's space at once. **The diffusion kernel per
-  stratum:** across orders, along the Part edges (member to whole, whole
-  to its other members — the existing two-hop); within an order above 0,
-  the same two-hop through shared members, so no code-derived channel
-  exists there; within order 0 only, the geometric overlap in the dense
-  similarity space — the one code-derived channel, which placement must
-  not read. **Read points per consumer:** placement reads the order-0
-  stratum after the seen bumps and the edge diffusion, before the
-  order-0 geometric channel; `bind` reads the request's order as its
-  expectation term and the Part edges for the verb's participants;
-  attention and the chooser read all strata; thought's desire channel
-  bumps the stratum it names. Decay, bumps, energy conservation and the
-  capped read are unchanged ([Architecture, priming](Architecture.md)).
+- *A superseded passage beginning "**The priming surface is the same object, read stratified.**" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
+- **Amended 2026-10-30 (Alec; [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md)):** at item 2.5
+  round B the code-derived channel and the location step give way to
+  `ActivationPredictor`'s predicted next state as the spread, read detached;
+  placement keeps the seen ledger; the strata remain LTM's structure. Not built.
 - **Where:** todo item 3, with placement; the stratified surface and the
   per-order kernel land with the LTM2 store (3.5 step 1b carries the
   edges; item 3 carries the strata and placement).
@@ -272,7 +245,10 @@ conceptual spaces, but keep all symbols in the mereological space."
 an order-0 concept's form is the center of the space of its parts and its
 wholes, each averaged over its count; a higher-order concept has no parts
 and wholes, so its content is the pure centroid of its members' content,
-weighted by their positive and negative evidence. The caches of §9 and the
+weighted by their positive and negative evidence (as built, a class row's
+`cover_members` fold weights by net positive evidence $\max(0, p - m)$ and
+drops non-positive members, while consolidation's fold weights by $p + m$;
+audit 2026-10-30). The caches of §9 and the
 promotion fold follow this rule, not a max or a min.
 
 ## 10. Orders are learned: definitions raise, three compositions lower (Alec, 2026-10-21; decided, built in item 3)
@@ -396,22 +372,7 @@ or the union that is its extension, is kept open in
 [FutureWork](FutureWork.md#intersection-or-union-as-the-basis-of-identity-alec-2026-10-21)
 (Alec, 2026-10-22: important for kinds and for the Buddhist reading).
 
-**The surface places the concepts (Alec, 2026-10-22).** "We are doing
-explicit spreading over the priming surface, and then using the activation
-of the priming surface to distribute vectors in conceptual space, including
-the order-zero concepts. That said, the priming is across orders, and the
-concepts each have their own space, so there is still some disconnect."
-Agreed, with §9's resolution of the disconnect (reversed in the next
-paragraph): the spread crosses orders
-along the Part edges and the shared occurrences, but the read is per
-stratum. Restricted to the symbols of order n-1, the surface is a point in
-order n's space, so each concept is placed by the one surface read at its
-own stratum. One energy, many strata, no shared space. In the code the
-spread crosses orders (`Priming.diffuse`) and each row's order is known
-(`priming_row_orders`), but no reader yet restricts the surface to a
-stratum; that read, with placement, is item 3's. Placement itself is
-unchanged: the same meet-raising objective at every order, over the stratum
-the concept's order names.
+*A superseded passage beginning "**The surface places the concepts (Alec, 2026-10-22).** "We " moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 **Decided (Alec, 2026-10-22, later): one conceptual space, not strata.**
 "I am not convinced we should sort by stratum, which is good for LTM. Here
@@ -425,8 +386,8 @@ with the same objective: raise its meet with what the surface activates,
 lower it against negatives. A kind is then placed among the words,
 individuals and events it occurs with, and an abstract concept sits beside
 the concrete ones it is used with. The code already has this shape: one
-`similarity_codebook` holds every order's rows, and `context_similarities`
-compares them in one space. What §9 keeps: all symbols in the one
+`similarity_codebook` holds every order's rows, and `Priming.propagate`
+(`context_similarities` is gone, audit 2026-10-30) compares them in one space. What §9 keeps: all symbols in the one
 mereological tree, the Part edges as the record of membership, membership
 read by edge rather than by distance, and the cross-order diffusion.
 Item 2.9 specifies cross-order diffusion by location in the one space, class

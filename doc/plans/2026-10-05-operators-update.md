@@ -1081,7 +1081,7 @@ Documents: the stale passages of §7.9 item 5 are already corrected by
 Claude (2026-10-06: GradientFlow's form/room/width/image lines,
 Architecture's position paragraph) and the target scheme is stated in
 [Architecture](../Architecture.md#the-scheme-confirmed-2026-10-06-expectation-and-surprise-through-the-architecture),
-[GradientFlow](../GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds)
+[GradientFlow](../DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds)
 and [Philosophy](../Philosophy.md#learning-is-surprise-at-every-layer-2026-10-06);
 leave those as they are. Codex adds: a GradientFlow "Operators update round
 2" section in the convention of round 1 (the total, the single departure,

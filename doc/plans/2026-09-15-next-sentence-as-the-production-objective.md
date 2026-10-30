@@ -10,7 +10,7 @@
 >
 > Supersedes the shared-controller rule in
 > [What §8](../specs/2026-07-27-teaching-modes-and-next-iteration.md#8-grammar-and-the-mind-boundary)
-> and [WhatSpacetimeDesign §8](../WhatSpacetimeDesign.md#8-context-for-the-grammar-chooser),
+> and [WhatSpacetimeDesign §8](../DevelopmentHistory.md#8-context-for-the-grammar-chooser),
 > and the lexical ANSWER/OPEN policy of the
 > [September 9 thinking spec](../specs/2026-09-09-mathematical-thinking.md),
 > where they conflict below. Internal thinking uses ordinary thoughts with
@@ -2219,7 +2219,7 @@ records; hard path selection has no ordinary derivative. The frame curriculum,
 geometric/world-row proposal helpers and their separate policy objectives are
 removed. The normal chooser's supplied-answer credit does not establish useful
 learned decomposition. [Current policy](../SelectedMeaning.md),
-[retirement dispositions](../KernelRetirement.md).
+[retirement dispositions](../DevelopmentHistory.md#frame-kernel-test-migration).
 
 The repository's **37 new probes pass in 3.33 s**. The sixteen affected
 files pass **277 tests, with one skip, two expected failures and seven

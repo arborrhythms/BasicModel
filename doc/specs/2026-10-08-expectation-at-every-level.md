@@ -124,7 +124,7 @@ and the novelty term it feeds; toys 5–6 added (§7).
   [§12.2](../plans/2026-10-05-operators-update.md#122-two-complete-derivations-subtracted-layer-by-layer),
   [§12.4](../plans/2026-10-05-operators-update.md#124-spsa-and-the-layer-wise-comparison-that-replaces-it-alec-2026-10-06),
   [§13](../plans/2026-10-05-operators-update.md#13-the-scheme-as-confirmed-alec-2026-10-06);
-  [GradientFlow, the target scheme](../GradientFlow.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
+  [GradientFlow, the target scheme](../DevelopmentHistory.md#the-target-scheme-october-6-decided-scheduled-by-rounds);
   [FutureWork, expectation by inversion](../FutureWork.md#expectation-by-inversion-and-the-reconstruction-audit-decided-2026-10-06-unscheduled)
   (the record this spec replaces).
 - Attention as a mask over `.where`: todo item 6.1;

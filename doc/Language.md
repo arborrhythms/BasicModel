@@ -3,9 +3,11 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - Amended 2026-10-23 (recorded 2026-10-30): `bind` is live both as a compose operation (`BindLayer`, `bind.forward` in `<compose>`) and as a thought operation (`bind.thought`), once per site; see [Architecture](Architecture.md)'s read-first box.
 > - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 
 
@@ -327,7 +329,7 @@ fabricating a split would corrupt the reconstruction.
 | `adverb` | 2 | CS | VP eigenmodifier (`apply_adverb`) | **not dispatchable** (`reverse_dispatchable = False`; lossy) |
 | `lower` | 2 | CS | intersection fold within the current order (internal PiLayer; DET); selects a particular under 11c's reference orders | `Ops.lowerReverseAll` w/ basis ($\to$ intersectionReverse); `_pi.generate` without |
 | `preposition` | 2 | CS | `.where`-relation refinement of NP/VP | `(x, x)` with the `.where` rotation undone (content-exact, marker-lossy) |
-| `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) | *(2026-10-19: deleted; `bind` is a thought operation, once per site — bind plan)* |
+| `bind` | 2 | CS | contextual missing/controlled-NP resolution | **raise** (context not preserved in the parent) | *(2026-10-19: deleted as a raise; 2026-10-23: `bind` is live as a compose operation, `BindLayer`, `bind.forward` in `<compose>`, and as a thought operation `bind.thought`, once per site; recorded 2026-10-30)* |
 | `tense` | 1 | CS | phase rotation of the `.when` band (`shift_time(+delta)`) | exact inverse rotation (`shift_time(-delta)`) | *(superseded: tense is `position` over the verb phrase's phases; no concept carries a `.when` band — occurrence §4, §13)* |
 | `aspect` | 1 | CS | identity (rewrite() planned; not a live rule) | identity |
 | `morphology` | 1 | CS | surface inflection $\to$ `.when` (tense/aspect feature ops) | analyzes features, undoes aspect ops in reverse order, then tense |
@@ -493,29 +495,7 @@ embedding is:
 SymbolSpace.category_embedding: nn.Embedding
 ```
 
-## STM Shift/Reduce
-
-`ShortTermMemory.shift` / `.reduce_step` / `.reduce_step_soft` and the
-`_RuleScorer` MLP (`bin/Layers.py`) are a typed admissibility-masked
-shift/reduce driver — SHIFT snaps an input vector to the nearest live
-reference and pushes `(payload, category, order, ref_id)`; REDUCE masks
-rule logits by typed admissibility, softmaxes over what's admissible,
-and records the argmax. It has **zero production callers**: every call
-site is `test/_stm_test_fixtures.py`, which keeps the surface alive as a
-compat shim for tests written before the 2026-05-21 SymbolSubSpace
-refactor. The live parsing mechanism is `LanguageLayer.compose`'s
-single softmax over operations and locations; see [STM.md Section 5](STM.md#routing-parser)
-for the accurate, audited account of SS-analysis vs CS-execution.
-
-`ConceptualSpace.stm` (a `ShortTermMemory` instance) is, in the live
-model, a plain payload/idea stack, not a typed parser stack: its
-per-batch slab and depth pointer (`_buffer` / `_depth`) are ordinary
-tensors written by `push_step_masked(ideas, gate)` (the gated
-newest-at-slot-0 push) and read back by `snapshot()`. It carries no
-category / order / ref-id typing — that typed buffer is what the dead
-shift/reduce driver above expects, and nothing in the live model
-populates it.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#stm-shiftreduce) (2026-10-30): "STM Shift/Reduce".*
 ## Syntax And SVO
 
 `BasicModel.write_syntax_tree()` (`bin/Models.py`) is currently unwired
@@ -599,56 +579,7 @@ and mechanism tests are not evidence of useful learned questioning.
 See [chooser tests](../test/test_chooser_architecture.py) and
 [review probes](../test/test_thought_review.py).
 
-### Soft Operator Superposition
-
-`operator_superposition(query_vec)` is a softmax over the cosine
-similarity between a query and every operator vector.
-`soft_operator_compose(dist, left, right)` is the distribution-weighted
-sum of each operator's `compose`, evaluated per operator *arity* ---
-unary operators such as `exist` are called as `compose(a)`, binary
-operators as `compose(a, b)`. A one-hot distribution reduces exactly to
-the typed grammar; a spread distribution superposes operators, and that
-superposition is the mechanism that discriminates `A AND B` from
-`A OR B` while a single layer is chosen.
-
-`shape_operators(examples, op_names, steps, lr, seed)` trains the
-operator vectors by backpropagating an MSE between the superposed
-prediction and the supervised result, writing the shaped vectors back
-into `_operation_vectors`. The op set may span the whole grammar, so the
-shaper filters to layers of arity 1 or 2 and dispatches `compose` by
-arity.
-
-**Status (D1 gate --- met).** Role-collapse does not swap declared POS for
-another single-label POS system; it replaces declared shared categories
-with operator-local participation categories that a word may fill several
-of (overlaps are expected). The D1 gate is therefore not a single-label POS
-recovery test --- it asks whether those participation patterns are
-*structured enough to drive a learned collapse* into the smaller
-mutually-exclusive category set the live parser needs. They are:
-`participation.learned_collapse` proposes merges by participation similarity
-and accepts only those that keep every grammar rule distinguishable
-(`collapse_conflicts == 0`); on the transitional `complete.grammar` it
-compacts 43 context-unique symbols into 14 mutually-exclusive categories
-with zero parser conflicts (`test/test_d1_pos_recovery_gate.py`). The exact
-substitutability congruence is trivial there (every symbol is
-context-unique), so "recovers the grammar" means the parser's rule
-decisions survive the collapse, not exact rule regeneration. With the gate
-met, the former standalone role-collapse file has been absorbed into
-`complete.grammar`, which is the broad live role-only grammar used by
-`MentalModel.xml`. The part relation is unified there: role-labelled structural
-faces declare `part` and its converse `whole`, and the loader derives their one
-canonical thought-operation family. There are no separate boundary declarations
-and no `query` rule attribute. A `what` structural wrapper marks a completed
-idea interrogative; only the completed-row boundary dispatcher can execute it.
-[Relation declarations](../data/complete.grammar#L99),
-[thought contract](QueryContracts.md).
-
-The historical `_SURFACE_TO_KIND` aliases remain an isolated compatibility
-adapter for the older reasoner. They do not define a production grammar
-operator, native VP, selected thought action, or learned feature.
-The declared thought catalog and participation clustering are live and tested.
-Production compose uses the hard derivations described below.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#soft-operator-superposition) (2026-10-30): "Soft Operator Superposition".*
 ### Distributional parts of speech
 
 The [parts-of-speech specification](specs/2026-10-18-parts-of-speech.md),
@@ -893,50 +824,7 @@ hard-coded. These are recorded in the specification's code notes and in
 [FutureWork](FutureWork.md#modality-as-the-third-index-noted-2026-09-28);
 none is changed here.
 
-## Future work: nouns from PartSpace, adjectives from WholeSpace
-
-> **Mostly superseded (Alec, 2026-09-28).** The opening of this section is
-> now decided in direction: a noun is the same kind of function as an
-> adjective, already mapped over the top domain, and that top domain is the
-> domain of discourse at its widest
-> ([above](#words-narrow-the-domain-of-discourse-2026-09-28)). The
-> conjecture that follows it — concrete nouns sourced from PartSpace and
-> adjectives from WholeSpace, so that part of speech falls out of the pole a
-> symbol is pre-applied to — is "an old conjecture, mostly undone by the
-> hypothesis that words are projection operators onto lower-dimensional or
-> smaller subspaces". Part of speech is a role in a derivation. The section
-> is kept for the record.
-
-The signed-space snap models a concrete
-noun as an adjective pre-applied to the top domain --- `black(cat($\ldots$))`
-treats "cat" as the same *kind* of function as "black", the later one
-already mapped over $\mathbb{1}$. That modeling choice is probably already
-latent in the mereology poles. The lattice poles are vectors of the
-presence domain (see `doc/Architecture.md`): **NOTHING** $= [0,0,\ldots]$
-is the part/bottom pole, **EVERYTHING** $= [1,1,\ldots]$ is the whole/top
-pole. So:
-
-- a **whole (property)** is pre-applied to EVERYTHING --- narrowing the
-  wide-open $\mathbb{1}$ object downward (the `assert_concept_relation`
-  first-concrete-whole-replaces-EVERYTHING move); this is the *adjective*
-  shape, a modifier that carves the domain;
-- a **part (particle)** is pre-applied to NOTHING --- building presence up
-  from $\mathbf{0}$ (the first-concrete-part-replaces-NOTHING move); this
-  is the *concrete-noun* shape, an object accreted from constituents.
-
-The conjecture for a future pass: source **concrete nouns from PartSpace**
-and **adjectives from WholeSpace**, so the grammatical part-of-speech
-distinction falls out of which pole a symbol is pre-applied to, rather than
-being a learned category. This would give the snap's ADJ(N) intersection a
-principled home --- the noun's broad PS-side support and the adjective's
-narrowing WS-side mask are then *typed by origin*, and the
-support-restricted metric (score over the parent's support, unaffected by
-the modifier's attenuation) becomes the natural recovery law rather than a
-tuning choice. Open questions: how order-raising (`maybe_raise_order`)
-interacts with a PS/WS part-of-speech split; whether abstract nouns want
-the WholeSpace (property-like) or PartSpace (object-like) origin; and how
-the `<Anchors>` technical operator spellings sit relative to this axis.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#future-work-nouns-from-partspace-adjectives-from-wholespace) (2026-10-30): "Future work: nouns from PartSpace, adjectives from WholeSpace".*
 ## Exist and thought operations at the completed boundary
 
 The pure `exist` compose wrapper retains its grammatical role; its structural

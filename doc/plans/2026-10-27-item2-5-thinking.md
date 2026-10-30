@@ -532,6 +532,10 @@ definition edges of a referenced idea receive gradient and the lanes
 none; the LTM state dict is byte-equal before and after an answer's
 backward and optimizer step.
 
+*Superseded in part (2026-10-30, §22.3): `intuit` has its own learned
+Sigma-over-Pi weights, trained only by its use in output; items 1-4 stand,
+and round B's gates are read as §23 states them.*
+
 ## 11. Order zero to order zero, and the conscious read (Alec's question, 2026-10-28; confirmed reading)
 
 Yes on both counts, with two precisions.
@@ -614,6 +618,8 @@ significant; the chooser is kept.
 - *Exit of the item:* the spec's gates green on one hash and one thought
   episode's records replaying a derivation with its pair (todo item
   2.5).
+- *Updated 2026-10-30:* round A landed (§21, `3718d9d0dc`); §22's decisions
+  govern round B and the one-backward round, one Codex text (§23).
 
 ## 13. `intuit` and the priming surface (Alec's question, 2026-10-28; Claude's reading)
 
@@ -811,6 +817,11 @@ completed understanding's readback into the order-0 concept field is trained
 on `observed - stop_gradient(expected)` per lane, conditioned on the detached
 expectation, using the frozen pre-arrival value; no top-down gradient reaches
 `intuit`'s inputs through it.
+
+*Superseded in part (2026-10-30, §22.3): the spreading mechanism at round B
+is `ActivationPredictor`'s predicted next state, not an open-pass `intuit`;
+the location step still retires after the measurement; the residual split is
+not built in round B (D7 to future work, §22.2).*
 
 ## 16. One error signal, one backward (Alec, 2026-10-29; decided direction)
 
@@ -1234,25 +1245,29 @@ evidence excluded as before.
    expectation's gradient is stopped. Not confirmed; recorded in
    `doc/FutureWork.md` and item 2.7 record §49. The conceptual residual
    split (§15's last paragraph, 2.7 record §42) is not built in round B.
-3. *The concept-level expectation.* Alec: "Current concept state is
-   predicting the next concept state, so that will be a path in the
-   gradient computation. Intuition is performed by a sigma layer on top of
-   a pi layer, the relevant concepts and edges are extracted from there
-   for the STM slot." Claude's reading, as built: the open-pass `intuit` is
-   one Sigma-over-Pi step over the definition layer (§15), the current
-   concept state's prediction of the next; its error against the next
-   observed order-0 field is a gradient path into the Sigma and Pi edges
-   it used. By the standing rules the target is detached (a predictor
-   never trains its own target), the prediction is the value frozen at the
-   open, every consumer reads the expected knowing detached (the band
-   stopped at its output), and the term is booked to the definitions'
-   owner under the per-owner backward and summed under the single
-   backward, its gradient into the definitions separately attributable.
-   Thought-time `intuit` is the same Sigma over Pi over the selected rule
-   rows, and the slot holds the extracted concepts and edges as
-   references read live in training (§9). This amends §10: `intuit` has no
-   parameters of its own, and the edges it reads learn from its
-   prediction as well as from answers.
+3. *Conceptual priming: bottom-up and top-down (Alec, 2026-10-30;
+   supersedes the reading first written here).* Bottom-up: the spread of
+   activation is an expectation about the next concept state, which
+   covers expectation and the spreading of observation alike; it is a
+   simple predictor as for percepts, the existing `ActivationPredictor`,
+   whose predicted field replaces `_priming_boosts` and the location
+   diffusion step as the spread, is read detached by every consumer, and
+   trains only on its own error against the detached next state.
+   Placement keeps the seen ledger as its context, since the predictor
+   reads keys and codes must not read a value computed from codes.
+   Top-down: restricted to `intuit()`, a Sigma over Pi with negation at
+   the literals (§1 item 4, §3.3) and its own learned weights (Alec:
+   "Because it is not understanding the input, it is biased toward doing
+   something with it (problem solving)"), from which the relations and
+   ideas that fired are pulled into an STM slot (§9's sparse subnetwork).
+   It is trained only by its use in output, its weights owned by output,
+   with zero gradient from reconstruction and expectation; its weights
+   shape what it proposes and how strongly, while an accepted pair is
+   still `infer`'s, computed from evidence (§3.6, §3.7). There is no
+   open-pass `intuit`. This amends §10 (a learned layer inside `intuit`,
+   there not proposed), §15 (expectation and priming consolidate into one
+   predictor, not into `intuit`) and the intuit spec §5 ("no learned
+   weights").
 4. *The §16 details, the cautious package.* The strength
    $s \sim U[1 - j, 1]$ per step with $j$ = `<reconstructionJitter>`,
    default 0; `<separateChooser>` default `true`; under `false` only the
@@ -1261,51 +1276,72 @@ evidence excluded as before.
    per parameter group before any raise; the round follows round B in the
    same text.
 
-## 23. Text for Codex: item 2.5 round B, then the one-backward round (2026-10-29)
+### 22.1 The architecture in psychological terms (Alec and Claude, 2026-10-30)
+
+Alec: "Intuition is beyond understanding, it is conditioned by desired
+output, and thoughts are a distillation of intuition." Understanding
+explains the input, intuition is understanding put to use, and thought is
+intuition that has been checked. The reading, with where it fits and where
+it departs psychologically, is in `doc/Reasoning.md`, "Intuition,
+understanding and thought".
+
+## 23. Text for Codex: item 2.5 round B, then the one-backward round (2026-10-30)
 
 ~~~
 Item 2.5, the rest of the item in one text: round B, then the
-one-backward round. Governing: thinking spec §§3.3-3.5, 9-16.2, §21
-(round A approved) and §22 (Alec's decisions today: scope, D7 to future
-work, the concept-level expectation, the §16 package). There is no design
-draft; build from the spec and append any reading you had to make.
+one-backward round. Governing: thinking spec §§1, 3.3-3.7, 9-16.2, §21
+(round A approved) and §22 (Alec's decisions of 2026-10-29/30: scope, D7
+to future work, conceptual priming bottom-up and top-down with intuit's
+own layer, the §16 package). Build from the spec; append any reading you
+had to make.
 
-Precondition, on Alec's word: one BasicModel commit of the approved round
-A tree (3a829495289c), generated evidence excluded as before, push, bump
-WikiOracle; start from that commit.
+This replaces the earlier §23 text you began from. Withdrawn from it: the
+open-pass Sigma-over-Pi prediction over the definition edges (what you
+started as ConceptExpectation), since the bottom-up spread is now
+ActivationPredictor's; and intuit re-reading the definition edges, since
+intuit now has its own learned weights. Keep what still fits (the
+measurement switch, the reference plans' addressing), rework the rest, and
+record what you discarded. Round A is committed at 3718d9d0dc.
 
-Stage 1, round B (gates 8-14 of §4):
-1. Thought-time intuit (§3.3, §9, §11, §22.3): one Sigma-over-Pi step over
-   the rule rows the expected knowing selects, within work_budget; NOT on
-   operands first, AND as the meet of the knowing with the antecedent, OR
-   as the per-lane union of consequents clipped at their firing; the slot
-   holds the extracted concepts and edges as references, read live in
-   training, the detached value deposited; one infer candidate per fired
-   rule, its firing pair in the request's semantic metadata reaching the
-   chooser's logit; order zero to order zero, with MTM candidates'
-   prepended values in the knowing (§12). Remove D9's menu skip.
-2. The implicit route (§3.5): narrowing by the Part edges and partOf, the
+Stage 1, round B:
+1. Bottom-up spread (§22.3): ActivationPredictor's predicted next concept
+   state replaces _priming_boosts and the location diffusion step as the
+   spread; attention, the chooser, retrieval and intuit's rule selection
+   read it detached; it trains only on its own error against the
+   detached next observed state. Placement keeps the seen ledger as its
+   context. Desire stays its own channel; location's other readers stay.
+   The location diffusion step, its controller and knobs retire after the
+   measurement in 5 has run on one hash with both available (a temporary
+   switch, not a knob, removed before the freeze).
+2. Top-down intuit (§1 item 4, §3.3, §9, §22.3): thought-time only; a
+   Sigma over Pi with negation at the literals and its own learned
+   weights in preallocated sparse banks (no inventory-square tensor; one
+   capacity knob in Params.md, its default proposed and recorded); terms
+   and edges seeded from the rule rows the predicted field selects,
+   within work_budget; at its initial weights it equals §3.3's max-min
+   DNF over the seeded rules, per lane, NOT before AND. The fired terms'
+   concepts and relations are pulled into one STM slot as references,
+   the value deposited detached; one infer candidate per fired rule, its
+   firing pair in the request's semantic metadata reaching the chooser's
+   logit; order zero to order zero, with MTM candidates' prepended values
+   in the knowing (§12). Its weights are output's: trained only by its
+   use in output, zero gradient from reconstruction and expectation; an
+   accepted pair is still infer's, computed from evidence (§3.6, §3.7).
+   Remove D9's menu skip. Once intuit reaches S on a grammar with no
+   serial options, retire the parallel flag with that certificate.
+3. The implicit route (§3.5): narrowing by the Part edges and partOf, the
    per-lane minimum over parts, kind pervasion, and the close's judgement
    of implicit against explicit (agreement one lane, disagreement both).
-3. The open-pass intuit over the definition layer (§15, §22.3): the
-   expected knowing replaces _priming_boosts as what attention, the
-   chooser, retrieval and placement's context read, each consumer
-   detached; its error against the next observed order-0 field, the
-   prediction frozen at the open and the target detached, trains the
-   Sigma and Pi edges it used, booked to the definitions' owner. Desire
-   stays its own channel; location's other readers stay. The location
-   diffusion step, its controller, knobs and seen ledger retire after the
-   measurement in 5 has run on one hash with both available (a temporary
-   switch, not a knob, removed before the freeze). The parallel flag
-   retires once intuit reaches S on a grammar with no serial options,
-   with that certificate.
-4. Not built: the conceptual residual split (D7 is future work, §22.2).
-5. Measurement: lesson-13 once with the manifold step and once with the
-   location step on one hash: attention, answers, placement and objects.
-Freeze stage 1: gates 8-14, a certificate that the expectation's target
-receives no gradient, LTM byte-equal across an answer's backward and
-step, the thought groups, the core unchanged set and the smoke. Then
-continue.
+4. Not built: the conceptual residual split (D7 is future work).
+5. Measurement: lesson-13 once with the predictor's spread and once with
+   the location step on one hash: attention, answers, placement, objects.
+Gates: §4's 8-10 and 13 as written, 8 and 14 at intuit's initial
+weights; 11 and 12 read with §22.3: an answer loss through intuit
+reaches intuit's weights on the fired subnetwork and the chooser, no lane
+and no LTM byte (state dict byte-equal across the backward and step), and
+a wrong answer through one rule moves that rule's weights and no row;
+plus the predictor's target receives no gradient. Freeze stage 1 with
+the thought groups, the core unchanged set and the smoke; then continue.
 
 Stage 2, the one-backward round (§16, §16.1, §16.2, §22.4):
 <separateChooser> (default true, today's per-owner backward) and
@@ -1317,20 +1353,24 @@ reads live features while thought and generate stay detached; the
 chooser term at scale 1.0. Every band is stopped at its output where
 consumed. Percept expectation's arrival adaptation becomes loop state
 with the accumulated arrival loss in the step's backward (§16.2),
-replacing the per-arrival optimizer. Certificates: §16 (a)-(d); §16.1's
-XOR and packing gates and the per-operator dissonance, including the
-concept-expectation term on the definitions; §16.2's arrival-state
-certificate and the compiled brick equal to the eager loop. Measurement
-(e)-(f): lesson-13 under (true, 0), (false, 0) and (false, 0.5): step
-time, answers and objects, XOR and packing, dissonance per epoch, the
-chooser term's variance per group. Freeze stage 2.
+replacing the per-arrival optimizer. Certificates: §16 (a)-(d), with (b)
+covering ActivationPredictor as an expectation band and intuit's weights
+as output's; §16.1's XOR and packing gates and the per-operator
+dissonance; §16.2's arrival-state certificate and the compiled brick
+equal to the eager loop. Measurement (e)-(f): lesson-13 under (true, 0),
+(false, 0) and (false, 0.5): step time, answers and objects, XOR and
+packing, dissonance per epoch, the chooser term's variance per group.
+Freeze stage 2.
 
-Both stages: receipts under doc/benchmarks/2026-10-3X-item2-5-round-b/
-and doc/benchmarks/2026-10-3X-item2-5-one-backward/ with
+Both stages: receipts under doc/benchmarks/<date>-item2-5-round-b/ and
+doc/benchmarks/<date>-item2-5-one-backward/ (the real date; rename the
+3X folder) with
 frozen-source.json, commands with environments, ports with before/after
 text, retirement certificates and allocation reads; Architecture and
 Params.md by append or exact replacement; results appended to the
-thinking spec as §24 and §25. No full sweep, no RUN_SLOW, no seed, no
-resize, preallocated shapes, no language named in code, fail loud.
-Return through Alec for one review; no commit beyond round A's.
+thinking spec as §24 and §25. Stop and return early only on a gate you
+cannot repair at its producer or a decision the spec does not settle. No
+full sweep, no RUN_SLOW, no seed, no resize, preallocated shapes, no
+language named in code, fail loud. Return through Alec for one review; no
+commit beyond round A's.
 ~~~

@@ -4,6 +4,7 @@
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
+> - Amended 2026-10-23 (recorded 2026-10-30): `bind` is live both as a compose operation (`BindLayer`, `bind.forward` in `<compose>`) and as a thought operation (`bind.thought`), once per site; see [Architecture](Architecture.md)'s read-first box.
 
 
 *A governing architectural principle. This document is the code-anchored,
@@ -66,7 +67,8 @@ that bifurcation needs to be complete; we don't want leakage."
   crossing. The architecture is Levelt on representation and Dell on
   dynamics, which is where the field settled.
 - **Consequences for the decided mechanisms.** `bind`'s content term, the
-  conceptual diffusion channel of the priming surface, placement by the
+  conceptual diffusion channel of the priming surface (from item 2.5 round B,
+  `ActivationPredictor`'s spread; thinking spec §22.3), placement by the
   registered surface, and the two identity models (intersection, union)
   are all **in conceptual space**. The perceptual fold enters identity
   only as form identification (the word symbol). Where earlier text says
@@ -118,11 +120,11 @@ already built, plus a small set of identified gaps.
 |---|---|---|---|
 | 1 | No anonymous persistent state | **satisfied** | `Codebook` rows are addressed by integer position; `part_parents` meronomy (Spaces.py, `Codebook.part_parents`, `Codebook.set_part_parent`) |
 | 2 | No unrestricted global residual stream | **satisfied** | Five-Space pipeline; cross-module signal goes through STM + the grammar router, not a shared hidden vector ([Architecture.md](Architecture.md), [Spaces.md](Spaces.md)) |
-| 3 | All latent vectors owned by symbols | **satisfied** | META taxonomy binds every latent to a position: `WholeSpace.insert_whole`, `WholeSpace.insert_meta`, `WholeSpace.taxonomy_parent` (Spaces.py; note `ConceptualSpace` also defines an unrelated, same-named `taxonomy_parent` — disambiguate by class) |
-| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask`, `update_mask_fn` (installed by `install_reference_update_law`), `intent_priming_weights` (Spaces.py). **No per-operation *feature* mask** until the verb edit below. |
+| 3 | All latent vectors owned by symbols | **satisfied** | Every concept is an allocator id with a `similarity_codebook` row; a word's latent is bound by the DEF row `interpret` writes (Interpret.py) and parthood by LTM1 Part rows (re-anchored 2026-10-30; the META taxonomy APIs named before are retired) |
+| 4 | Operations declare read/write masks | **partial** | Mode-partitioned `reference_update_mask`, `update_mask_fn` (installed by `install_reference_update_law`), `intent_priming_weights` (Spaces.py). **No per-operation *feature* mask** until the verb edit below. Inert under the default `<architecture><meronomy>` setting: the law returns no mask unless it is on (audit 2026-10-30). |
 | 5 | Semantic mutation emits a delta | **partial** | Truth-domain only: luminosity + `extrapolate` deltas ([Logic.md](Logic.md), [Reasoning.md](Reasoning.md)). Not yet generalized to all mutations. |
 | 6 | Temporary latent is compressed or discarded | **satisfied (by design)** | Bounded STM depth + reset cascade ([STM.md](STM.md), [Spaces.md](Spaces.md)); no indefinite latent workspace |
-| 7 | Recurrent useful patterns are promoted | **satisfied** | LBG codebook split + meta auto-bind `ConceptualSpace._maybe_autobind_meta` (Spaces.py) |
+| 7 | Recurrent useful patterns are promoted | **satisfied** | MTM recurrence promotion (`FamiliarTier.promote_candidates`, `conceptMintCount`); the LBG split and `_maybe_autobind_meta` named before are retired (re-anchored 2026-10-30) |
 
 "Partial" rows (#4, #5) are where this body of work makes concrete progress; the
 remaining gaps are listed under *Future work*.
@@ -132,19 +134,7 @@ remaining gaps are listed under *Future work*.
 These are not new doctrine — they are the firewall principle applied at two
 specific seams, each gated dark by default (flag-off is byte-identical).
 
-### A. MetaSymbol participation categories — *a typed symbol owns a latent
-category* (invariants #3, #7)
-
-A word's syntactic category is learned as its **frequency of participation across
-operator roles** (`<method>_I<n>` inputs / `<method>_O1` outputs), stored as a
-small `VectorQuantize` codebook keyed by the **MetaSymbol** (the equivalence
-class uniting a word with its object). The latent category is therefore *owned*
-by an addressable symbol — not floating in a residual stream — and recurrent
-role profiles are *promoted* into stable centroids that decay when unused
-(`codebook_retire=False`). The structured grammar layers condition routing on
-this typed category context through `<categoryCodebook>` for all transform
-choosers. Design: [Language.md](Language.md) "Participation Categories".
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#a-metasymbol-participation-categories--a-typed-symbol-owns-a-latent) (2026-10-30): "A. MetaSymbol participation categories".*
 ### B. Verb application as a masked, sparse semantic edit (invariants #4, #5)
 
 A verb does not transform a noun phrase as an undifferentiated vector. It selects
@@ -161,7 +151,7 @@ eigenbasis (the LDU diagonal is the eigenvalue-like component, in `Layers.py`
 `SigmaLayer`'s triangular L/D/U factorization), made sparse by an in-forward
 soft-threshold plus the L1 hook `gate_l1_loss`. The edit is a **zero-init residual branch**
 (untrained ⇒ no-op ⇒ the sigma fold), and stashes an introspectable
-`adverb_purchase` diagnostic — a first, bounded form of the emitted semantic
+`adverb_purchase` diagnostic (no longer in the code; audit 2026-10-30) — a first, bounded form of the emitted semantic
 delta. NOTE (2026-06-20, corrected): only the `verbEigEdit` **residual branch** in
 `LiftLayer.forward` was removed (the sparse edit that used to ride on top of the
 symmetric sigma fold); that mechanism is now the **adverb** eigenmodifier. A

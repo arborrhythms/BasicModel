@@ -253,7 +253,7 @@ re-declared from item 9 at the word bracket.
 - [Accessible mind spec](../specs/2026-09-20-accessible-mind-subsystems.md):
   §2.2–2.4 restated as bracket widths; §4's table gains the bracket
   candidates' row.
-- [NanoChatGrammarPilot](../NanoChatGrammarPilot.md): the gate is scored by
+- [NanoChatGrammarPilot](../DevelopmentHistory.md#nanochat-sized-grammar-pilot): the gate is scored by
   the word-level predictor.
 - [LLMEquivalence](../LLMEquivalence.md): condition 2 notes the word-level
   predictor as the discrete distribution.

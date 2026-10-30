@@ -3,7 +3,7 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 
 
 ## Overview
@@ -45,12 +45,13 @@ Objects: vector sets $(B, N, D)$ interpreted as RBF / luminosity fields.
 
 ### Operators
 
-- **Union**: `Ops.union` --- the saturating RadMax lattice fold (dual to
-  `intersection`), NOT concatenation. The additive combine that briefly held
+- **Union**: `Ops.union` --- as built an elementwise `max` (the RadMax lattice
+  fold exists only under `kind='radial'`; audit 2026-10-30), NOT concatenation. The additive combine that briefly held
   the `union` name was renamed `chunk` (2026-07-05) and moved to
   `<PartSpace>` as a structural op (`ChunkLayer`: `left + right`,
   residual-bearing).
-- **Intersection**: Co-supported regions (RadMin lattice fold; RBF merge).
+- **Intersection**: Co-supported regions (as built an elementwise `min` where a
+  zero coordinate is unspecified and yields the other operand; audit 2026-10-30).
 - **Negation (affirming)**: `neg(x) = -x`. Antipodal opposition on hypersphere.
 - **Non (non-affirming)**: `Ops.non` (the `_non_kernel`; `NonLayer` is the
   grammar-surface form, which complements the leading bivector poles) ---
@@ -94,24 +95,7 @@ part kernel.) The scalar form satisfies Boole's contrapositive trivially
 
 ---
 
-## 2. Symbolization
-
-> **Historical (design note only).** The norm-projection formula below has
-> no implementation: `Basis.symbolize` was removed in the 2026-05-01
-> Step-9 cleanup (no live callers), and live symbol emission is the
-> WholeSpace codebook snap (the quantize/lookup that names a
-> whole-percept's prototype row). The formula is kept as the original
-> design reading of "symbolization = norm projection".
-
-For $X \in (B, N, D)$:
-
-$$
-s(X) = 2 \cdot \mathrm{mean}(\lVert x_i \rVert) - 1 \quad \in [-1, 1]
-$$
-
-Interpretation: $+1$ = strong presence, $0$ = neutral, $-1$ = absence.
-
----
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#2-symbolization) (2026-10-30): "2. Symbolization".*
 
 ## 3. Symbolic Layer (Scalars in [-1,1])
 
@@ -127,8 +111,8 @@ Let $a, b \in [-1,1]$.
 |----------|---------|-----------|
 | Negation (affirming) | $\operatorname{neg}(a) = -a$ | --- |
 | Non (non-affirming) | $\operatorname{non}(a) = 1 - |a|$ (triangular residual) | $\operatorname{non}(a) = \operatorname{relu}(a - \tau)$ when $\tau$ is supplied, else $0$ ($\tau$ is a plain argument, not learned) |
-| Union | soft RadMax (LSE-smoothed; Section 7) | $a \cup b = \max(a, b)$ |
-| Intersection | soft RadMin (LSE-smoothed; Section 7) | $a \cap b = \min(a, b)$ |
+| Union | elementwise max as built (soft RadMax only under the radial kind) | $a \cup b = \max(a, b)$ |
+| Intersection | elementwise min as built, a zero coordinate unspecified (soft RadMin only under the radial kind) | $a \cap b = \min(a, b)$ |
 
 ### Parthood as Projection
 

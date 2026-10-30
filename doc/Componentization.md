@@ -4,6 +4,7 @@
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 
 
 ## Peer-pipelined space execution (2026-07-22)
@@ -24,7 +25,10 @@ Space-owned storage. The legacy compatibility aliases remain internal to CS
 only.
 
 The production word scheduler is one tensor-only, three-stage
-`torch.while_loop`:
+`torch.while_loop` *(as built, audit 2026-10-30: with a grammar the serial path is
+`_run_sentence_word_bricks`, a Python loop per sentence and word with compiled
+word bricks and eager closings; the three-stage `while_loop` remains for
+grammar-less configurations)*:
 
 ```
 CSSub(w):    IS(w) -> { PS(w), WS(w) } -> CS reduction
@@ -147,13 +151,7 @@ transitions.
 > CUDAGraph counters so capture and its speedup can be proven on the final CUDA
 > hardware rather than inferred from `fullgraph=True`.
 
-> **Packed-root scan experiment (2026-07-26).** Replacing the detached
-> `[B,S,D]` sentence-root FIFO with a per-word `torch.scan` output preserved
-> roots bit-for-bit, but PyTorch 2.14's prototype scan increased saved
-> autograd state from 720,900 to 2,742,395 bytes on the W16 canonical probe
-> (3.8×). A same-width integer bit-transport probe also left peak memory
-> unchanged, confirming that AOTAutograd already excludes the detached FIFO
-> from the effective differentiated tape. Neither variant is retained.
+*A superseded passage beginning "**Packed-root scan experiment (2026-07-26).** Replacing the " moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 > **CSLang capacity invariant (2026-07-26).** The canonical tensor recurrence
 > no longer evaluates a pre-deposit Binary on every word. Its ordinary

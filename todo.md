@@ -23,7 +23,12 @@ review freeze `472f5000850e` ([record](doc/plans/2026-10-27-item2-7-corpus.md)
 §47); its carried work and November landing round remain below. Item 2.5
 round A starts from the commit of that reviewed tree
 ([thinking spec §8](doc/plans/2026-10-27-item2-5-thinking.md)), including
-D8's graded answer cost. Hand-off for a new conversation:
+D8's graded answer cost. **Update 2026-10-30:** round A LANDED at
+`3718d9d0dc` ([spec §21](doc/plans/2026-10-27-item2-5-thinking.md); D9 masks `intuit` until round B);
+round B and the one-backward round run as one Codex text (spec §23) under
+spec §22: `intuit` a top-down Sigma over Pi with its own weights trained by
+output, `ActivationPredictor`'s prediction the bottom-up spread replacing
+location diffusion, D7 to future work, the cautious §16 package. Hand-off for a new conversation:
 [2026-10-29](doc/plans/2026-10-29-handoff-2-5.md). No `RUN_SLOW` before
 November.
 
@@ -301,7 +306,7 @@ Work follows
 [2026-09-15-next-sentence-as-the-production-objective.md](doc/plans/2026-09-15-next-sentence-as-the-production-objective.md)
 §10 and its completion gates. Current contracts, limits and receipts are in
 [SelectedMeaning](doc/SelectedMeaning.md),
-[KernelRetirement](doc/KernelRetirement.md),
+[KernelRetirement](doc/DevelopmentHistory.md#frame-kernel-test-migration),
 [ExpectationRetention](doc/ExpectationRetention.md) and
 [Testing](doc/Testing.md). The September 17 handoff and preserved candidates
 are in [the checkpoint](doc/checkpoints/2026-09-17-production-spec/README.md).
@@ -1128,7 +1133,8 @@ not by a passing identity lesson.
      query concept reference at sentence 132, and the earlier
      order/parts disagreement. These producer failures remain unresolved.
    - **Item 2.5 round A:** D8, graded binding cost plus text cost so a
-     better binding can win and credit the chooser.
+     better binding can win and credit the chooser. Done (round A landed,
+     `3718d9d0dc`).
    - **Item 0's learning remainders:** the unforced 1-to-2 raise and
      the mass, count and kind-verb measurements, with their budgets.
    - **The next round opening `WordIdentity`:** atom property fill
@@ -1779,7 +1785,13 @@ not by a passing identity lesson.
    round remains in November. Decided direction (Alec, 2026-10-29), spec §16:
    one error signal and one backward: stop-gradient for attention and
    expectation, jitter of reconstruction's strength against output, and the
-   chooser's log-probabilities in the same objective.*
+   chooser's log-probabilities in the same objective. Round A landed
+   2026-10-29 at `3718d9d0dc` (spec §§17-21: `chunk_truth`, `.where`
+   addressing, `infer`, D8, D9). Decided 2026-10-30 (spec §22): `intuit` is
+   top-down with its own Sigma-over-Pi weights trained only by output; the
+   bottom-up spread is `ActivationPredictor`'s prediction; no open-pass
+   `intuit`; D7 to future work; round B and the one-backward round in one
+   Codex text (spec §23).*
    The serial slot becomes the episode's focus chunk among the shared
    eight; `descend`/`return` follow tagged LTM1 references; operators
    `infer`, `refute`, `substitute` beside the catalogue; `intuit` proposes
@@ -1793,7 +1805,7 @@ not by a passing identity lesson.
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or
    omit cases; reconsider [fixture reuse](doc/plans/2026-09-17-bounded-fixture-reuse.md)
-   if useful ([evidence](doc/Testing.md#forward-owned-lexical-forms-september-19)).
+   if useful ([evidence](doc/DevelopmentHistory.md#forward-owned-lexical-forms-september-19)).
    Delete the radix-backed non-word-major meronomy path (no legacy paths), and
    remove the stale `dispatch_per_row_reset` note in
    [the fold-ladder plan](doc/plans/2026-09-10-meronomy-fold-ladder.md#open-defects-found-on-the-way)
@@ -2136,28 +2148,28 @@ Everything that is decided in direction but not on this path is in
 - `aa235d2` Item 11b accepted-review corrections: recurrent parts, containment over canonical ids, and order-0 fields bound per turn with persistent concept identity ([receipt](doc/benchmarks/2026-09-24-item11b-corrections/README.md)).
 - `db73581` Item 11b: native membership definitions, located fused parts and pervading wholes, with alternatives preserved through refinement; normalization residue closed ([review receipt](doc/benchmarks/2026-09-24-item11b-review/README.md), [design](doc/Architecture.md#item-11b-membership-read-and-extent-truth-corners-september-23)).
 
-- `4b097dc` Item 11a learns WholeSpace properties over byte primitives, retains grounded extent evidence and passes six unseeded native XOR runs ([receipt](doc/Testing.md#item-11a-primitive-properties-and-grounded-extents-2026-09-23)).
-- `e917d9c` Item 11 review corrections carry paired evidence through scoped dual folds, symbols, thought and checkpoints; calibrated background rejection and the full receipt pass, learned XOR remains null for item 11a ([receipt](doc/Testing.md#item-11-review-corrections-paired-evidence-september-23)).
-- `eb45ae4` Item 11 lands the union default, optional conjunction pass and context-backed provisional rows; unseeded XOR learning remains null ([receipt](doc/Testing.md#item-11-concept-parts-and-provisional-rows-september-22)).
-- `d4dc385` Item 10 (the first of that number) records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/Testing.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
-- `f8aa23c` Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/Testing.md#item-11-generation-ownership-september-21)).
-- `afdcdfa` Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/Testing.md#item-12-review-corrections-september-21)).
-- `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/Testing.md#negative-image-expectation-september-21)).
-- `6bf211a` Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#item-1d-review-corrections-september-21)).
-- `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/Testing.md#accessible-mind-effects-september-20)).
-- `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/Testing.md#gradient-factorization-september-20)).
-- `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/Testing.md#working-grammar-wording-gate-september-20)).
-- `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md#grammar-owned-wording-architecture-september-20)).
+- `4b097dc` Item 11a learns WholeSpace properties over byte primitives, retains grounded extent evidence and passes six unseeded native XOR runs ([receipt](doc/DevelopmentHistory.md#item-11a-primitive-properties-and-grounded-extents-2026-09-23)).
+- `e917d9c` Item 11 review corrections carry paired evidence through scoped dual folds, symbols, thought and checkpoints; calibrated background rejection and the full receipt pass, learned XOR remains null for item 11a ([receipt](doc/DevelopmentHistory.md#item-11-review-corrections-paired-evidence-september-23)).
+- `eb45ae4` Item 11 lands the union default, optional conjunction pass and context-backed provisional rows; unseeded XOR learning remains null ([receipt](doc/DevelopmentHistory.md#item-11-concept-parts-and-provisional-rows-september-22)).
+- `d4dc385` Item 10 (the first of that number) records the reconstruction baseline and packed/single parity gap, fixes MentalModel compaction overflow, and removes selected passing seeds (taken early from item 2; [receipt](doc/DevelopmentHistory.md#item-10-reconstruction-baseline-and-seed-audit-september-21)).
+- `f8aa23c` Item 11 completes generation catalogue ownership, scoped output dispatch, checkpoint/Adam migration and supervised gradient boundaries ([receipt](doc/DevelopmentHistory.md#item-11-generation-ownership-september-21)).
+- `afdcdfa` Item 12 completes the expectation review corrections: role-normalized retention surprise, indexed pairs, reading purity, bounded cache recovery and gradient norm ratios ([receipt](doc/DevelopmentHistory.md#item-12-review-corrections-september-21)).
+- `7d7dc4f` Item 2 implements negative-image expectation and residual credit; measured joint/useful-query learning remains open under item 9 ([design](doc/ExpectationRetention.md), [receipt](doc/DevelopmentHistory.md#negative-image-expectation-september-21)).
+- `6bf211a` Item 1d restores rotation-owned concept codes and completes the 1b/1c review corrections ([GradientFlow](doc/GradientFlow.md), [receipt](doc/DevelopmentHistory.md#item-1d-review-corrections-september-21)).
+- `101dc22` Item 1c complete in mechanism: checked subsystem effects, indexed cued retrieval and retained frames; compound recovery remains unproven ([AccessibleMind](doc/AccessibleMind.md), [receipt](doc/DevelopmentHistory.md#accessible-mind-effects-september-20)).
+- `7c2fa5a` Item 1b complete: objective-local state gradients and measured shared operator/codebook credit ([GradientFlow](doc/GradientFlow.md), [receipt](doc/DevelopmentHistory.md#gradient-factorization-september-20)).
+- `6a6bb21` Item 1 complete: grammar-owned wording on real parsed text, held-out complete wordings/nouns, converse/sense controls and full-vocabulary generation/recomposition ([evidence and receipt](doc/DevelopmentHistory.md#working-grammar-wording-gate-september-20)).
+- `d1d8b5b` Ordered compose-MLP inputs and production generate wiring (item 1 increment; the wording gate remains open, [SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/DevelopmentHistory.md#grammar-owned-wording-architecture-september-20)).
 - `02db7ef` Review corrections: removed the standalone codec and legacy policy; completed chooser context, bounded memory and nested-controller mechanisms ([SelectedMeaning](doc/SelectedMeaning.md), [Testing](doc/Testing.md)).
-- `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/Testing.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/KernelRetirement.md)).
-- `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19); item 1 increment).
+- `288b56b` Initial controller replacement; review reopened item 1's wording gate ([current design and limits](doc/SelectedMeaning.md), [original receipt and review corrections](doc/DevelopmentHistory.md#selected-meaning-and-one-controller-september-20), [test dispositions](doc/DevelopmentHistory.md#frame-kernel-test-migration)).
+- `60b1497` Forward owns anchored lexical forms by WORD row; capture reads retained provenance ([Testing](doc/DevelopmentHistory.md#forward-owned-lexical-forms-september-19); item 1 increment).
 - `a70c77d` Direct `concept`-unary selected meaning (`what(quantize(x))`)
   preserves its live leaf into the normal controller; description operands
   still require owned occurrences. Ordinary pytest failures now complete their
   selected receipt while resource/protocol failures remain bounded/fail-fast
-  ([Testing](doc/Testing.md#complete-diagnostic-receipts-september-19)).
+  ([Testing](doc/DevelopmentHistory.md#complete-diagnostic-receipts-september-19)).
 - `943a64f` Lexical converse forms: `whole` vs `part` provenance frozen at
-  program capture ([Testing](doc/Testing.md#forward-owned-lexical-forms-september-19)
+  program capture ([Testing](doc/DevelopmentHistory.md#forward-owned-lexical-forms-september-19)
   records the later forward-ownership correction).
 - `fb5611c` Normal thought resolution grammar-owned; `resolveAnswer()` no
   longer calls `answer_query()` from a raw prompt (item 1 increment).
@@ -2165,7 +2177,7 @@ Everything that is decided in direction but not on this path is in
   `<compose>` and `<generate>`; `<Queries>`, the `is`-aliases and
   `query="false"` retired. [Spec](doc/specs/2026-09-18-thought-operations-in-compose.md),
   [plan](doc/plans/2026-09-18-thought-operator-unification.md),
-  [receipts](doc/Testing.md#explicit-thought-catalogue-september-19).
+  [receipts](doc/DevelopmentHistory.md#explicit-thought-catalogue-september-19).
 - `573fe0c` Bounded tests fast: no background QoS, `cpu−4` one-thread pool,
   28 GiB aggregate cap; 4,649 cases in 197 s (was 4,165 s serial).
 - `6a34bbf` Sentence expectations retained as `estimate` occurrences without

@@ -3,8 +3,28 @@
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 
+
+> **As built at `3718d9d0dc` (audit 2026-10-30; read second).** The body below is the
+> record; where it differs, the code is this. Concepts are allocator ids with
+> one row each in `similarity_codebook`; parthood, kind and definition
+> statements are LTM1 `Part(member, whole)` rows owned by `ConceptAllocator.parts`,
+> mirrored as sigma edges on the one `ConceptualAttentionLayer` (written by
+> `cover_members`, taught by `DefinitionFold.loss` from the LTM1 lanes) and a
+> centroid row; the META taxonomy (`insert_meta`, `taxonomy_parent_map`,
+> `meta_pair_to_idx`, `meta_trust`, `part_chain`) and `record_cross_tower_meronomy`
+> are gone. Concept composition is `fold_presence` (scatter min and max with
+> $q^{w}$ and $1 - (1 - q)^{w}$); `PiLayer2`, `SigmaLayer2` and
+> `MeronymicFoldAdapter` are library classes with no production consumer;
+> `Ops.union` is an elementwise max and `Ops.intersection` an elementwise min
+> where a zero coordinate is unspecified. `ImpenetrableLayer` is unwired and no
+> `impenetrable*` knob is read. Percept parthood is `.where` span containment
+> (`RunStructureLayer`, `FormContainment`); `Ops.partOf` has no caller. The
+> property split is `record_property_pulls` / `maybe_split_property_row` with
+> fixed thresholds; only `lbgThreshold` is read, for the admission radius.
+> Interrogative mode is a structural `what` wrapper; `QueryLayer` and `queryPart`
+> survive only in checkpoint migration.
 
 Single-page reference for the mereological grammar: parthood as the
 fundamental operation, the five mereological relations, and the
@@ -72,16 +92,7 @@ language layer composes these ordered meanings according to typed grammar.
 > passes `basis=space_role_basis` at the call site; no back-ref is stored
 > on the layer.
 
-> **Codebook IS the meronymic structure.** The standalone
-> `MereologicalTree` sidecar that formerly stored explicit parent /
-> equality links was retired in favour of pure-geometric parthood
-> on the `WholeSpace` bivector codebook. The grammar layers
-> `PartLayer`, `IsEqualLayer`, `EqualLayer`, and `QueryLayer` operate directly on
-> codebook bivector activations via clipped cosine projection --- no
-> separate adjacency table, no `<architecture><mereologicalTreeSize>`
-> XML knob (silently ignored if present). Asserted meronymic
-> relations are learned by training pulling the codebook geometry
-> into the right configuration.
+*A superseded passage beginning "**Codebook IS the meronymic structure.** The standalone" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 ---
 
@@ -140,14 +151,7 @@ $[0, 1]$ tabulated below, which is what every other formula on this page and
 | `boundary(A, B)` | $|\mathrm{part}(A, B) - \mathrm{part}(B, A)|$ | Asymmetry of containment (zero under clipped cosine; for bases with asymmetric `part`). |
 | `copart(A, B)` | $1 - \mathrm{part}(A, B)$, clamped to $[0, 1]$ | The part of B *not* accounted for by A. |
 
-**Exact dominance vs. retrieval score.** `part`/`whole`/`equal`/`overlap`/
-`underlap`/`boundary`/`copart` above are the graded clipped-cosine *score*
-(see the Meronomy reconciliation note above, item 1). The boolean dominance
-trio `Ops.partOf(S1, S2)` / `Ops.wholeOf(S1, S2)` / `Ops.overlapOf(S1, S2)`
-(`bin/Layers.py`) is the separate exact ground truth: elementwise $\le$ /
-$\ge$ reduced over the last dim with `all` (`overlapOf` is the zero-directed
-elementwise min, `Ops._radmin`) --- not a `part`-suite formula, and not what
-this page's scores approximate at retrieval time.
+*A superseded passage beginning "**Exact dominance vs. retrieval score.** `part`/`whole`/`equ" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 ---
 
@@ -204,92 +208,13 @@ leading-bivector / paired-index layout caveat.
 
 ---
 
-## ImpenetrableLayer: Five-Relations Regularizer
-
-`ImpenetrableLayer` regularizes the WholeSpace whole-percept codebook. It
-classifies each ordered pair of codebook rows $(i, j)$ into one of the five
-mereological relations (using `Basis.part`), and penalizes partial overlap
-when paired with a trust mismatch. The learned half of the [Codebook
-Uniqueness Contract](Spaces.md#codebook-uniqueness-contract).
-
-### Penalty
-
-$$
-\mathcal{L} = \mathrm{overlap\_weight} \cdot
-   \frac{\sum_{i \neq j} \mathrm{overlap}(i, j)
-                        \cdot |\mathrm{trust}(i) - \mathrm{trust}(j)|}
-        {K(K-1)}
-   + \mathrm{variance\_floor\ term}
-$$
-
-Overlap strength is damped to zero as the pair approaches `equal`:
-
-$$
-\mathrm{overlap\_strength}(i, j) =
-   \min(P[i,j],\ P[j,i]) \cdot
-   \left( 1 - \max(P[i,j],\ P[j,i])^k \right)
-$$
-
-with $k = \mathrm{equal\_suppression}$ (default 4.0). This is a continuous
-formula, not the discrete five-way classification below it: $\min(P[i,j],
-P[j,i])$ already reads near-zero for `disjoint` and strict `part` (one or
-both scores near 0), so only `equal` needs an explicit damp --- the
-$(1 - \max(\dots)^k)$ factor pushes the penalty toward zero as a pair's
-mutual parthood approaches 1.
-
-A separate `variance_floor` term guards against row collapse.
-
-### Trust
-
-Per-row usage frequency, derived from VQ EMA counts:
-
-$$
-\mathrm{trust}(i) = \frac{\mathrm{cluster\_size}[i]}{\sum_j \mathrm{cluster\_size}[j]}
-$$
-
-When VQ is absent, trust falls back to $\|cb[i]\| / \max_j \|cb[j]\|$.
-
-> **Relative relations and tetralemma trust.** A relative sentence in
-> the `part` / `isEqual` predicate family is preserved at depth 3 as
-> `[predicate, idea1, idea2]` and may be learned into the codebook as a
-> ternary META edge (predicate as parent, the two ideas as children) via
-> `WholeSpace.insert_relation`. An accepted relation carries a
-> **tetralemma trust 4-tuple** $(t, f, b, n)$ (TRUE / FALSE / BOTH /
-> NEITHER, summing to $1$) from the TruthSet posture, gated by the
-> content-aware learn-score against `<truthCriterion>`. See
-> [STM.md Section 9](STM.md#9-relative-vs-absolute-end-states).
-
-### Diagnostics
-
-After `forward()`: `last_overlap_loss` and `last_variance` populate whenever
-their weight is nonzero. `last_relation_counts` (dict summing to $K(K-1)$)
-populates only under `MODEL_DEBUG` --- the five `.sum().item()` calls it
-needs are host syncs that would otherwise break CUDA-graph capture.
-
-### Configuration
-
-XML knobs (under WholeSpace):
-
-| Knob | Default | Meaning |
-|------|---------|---------|
-| `impenetrableOverlap` | 0.0 | Weight of overlap $\times$ trust-diff penalty |
-| `impenetrableVariance` | 0.0 | Minimum variance regularizer weight |
-| `impenetrableAntisymmetry` | 0.0 | Legacy antisymmetry weight, still accepted by schema |
-| `impenetrableTransitivity` | 0.0 | Legacy transitivity weight, still accepted by schema |
-
----
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#impenetrablelayer-five-relations-regularizer) (2026-10-30): "ImpenetrableLayer: Five-Relations Regularizer".*
 
 ## Order-raising (building the meronymic lattice)
 
 Gated behind `<mereologyRaise>` (default off $\to$ byte-identical).
 
-> **Terminology note.** The cross-tower link that ties one part-percept to one
-> whole-percept by reference is a **concept** (a `ConceptualSpace` relation);
-> `insert_meta` allocates it into the **Concept codebook** --- the
-> `WholeSpace.taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` /
-> `meta_trust` / `part_chain` tables. The earlier `_sym_*` placeholder name
-> no longer exists in code (it survives only in older comments); prose below
-> uses "concept" for the relation.
+*A superseded passage beginning "**Terminology note.** The cross-tower link that ties one par" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 The two towers stay **in-kind** — `PartSpace` *composes parts $\to$ parts*,
 `WholeSpace` *analyses wholes $\to$ wholes* — and the **concept (META node) is the
@@ -321,34 +246,7 @@ belong to the attentive field, never to a permanent conceptual location.
 
 ### Automatic analysis: dividing wholes by LBG splitting {#lbg-division}
 
-Parts are synthesized automatically (the join over atoms, every pass);
-wholes are analysed automatically too, by division, and the mechanism is
-the Linde-Buzo-Gray split already on WholeSpace (`bin/Spaces.py`,
-`record_lbg_pull` / `maybe_split_lbg`, 2026-05-28). As implemented:
-
-- **Pull accumulation.** Every time a percept binds to a WholeSpace row
-  (the autobind path in `ConceptualSpace`), the row records the pull the
-  percept's code exerts on it: per row, the displacement sum
-  `Σ (v − W[row])`, the sum of squares `Σ (v − W[row])²` and the count.
-  Cost O(D) per binding; only WS-side rows (raw wholes and META rows
-  whose vectors live on the WS codebook) participate; non-finite pulls
-  raise (fail loud).
-- **Trigger.** A row splits when its count is at least `lbgMinCount`
-  (default 8) and the maximum per-coordinate assignment variance,
-  `E[x²] − E[x]²` over the accumulated displacements, exceeds
-  `lbgThreshold` (default 0.5): the positions bound to the row have
-  come to lie in (at least) two places.
-- **Direction and split.** The split direction is the unit-norm mean
-  displacement, the principal pull (no eigendecomposition). The
-  original row moves to `old + ε·d` in place; a fresh row is allocated
-  at `old − ε·d` through `insert_whole` (`lbgEpsilon`, default 0.1). The
-  split-off row inherits the original's fold provenance, and if the
-  original was the child of a META node a META edge is registered for
-  the new row too, so both halves stay reachable on the reverse walk.
-  The accumulators of the original row reset.
-- **Unsupervised.** Nothing about the trigger reads a loss: the
-  variance is a property of where the bound codes lie. Training only
-  shapes the code geometry over time; the division itself is automatic.
+*A superseded passage beginning "Parts are synthesized automatically (the join over atoms, ev" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 **On the property inventory (2026-09-11).** The legacy split above is
 gated off under the canonical property basis (its constructor calls the
@@ -389,101 +287,7 @@ tiling over a window of presentations, ties toward the more general
 column; a varied text corpus turns a whitespace boundary on from the
 atomic cold start and leaves single letters' boundaries off.
 
-### The corpus callosum links the towers (part `isa` whole)
-
-The full mechanism (see the spec): the **corpus callosum** in ConceptualSpace (the
-learned `[2N,N]` `self.callosum` glue) is what joins the towers into one meronomy. A
-part-percept `A` (PartSpace) and a whole-percept `B` (WholeSpace) have `.what`
-codes from *different* codebooks (incomparable), but their **`.where` is
-comparable** — so the callosum asks whether `A.where` is *part of* `B.where`
-(a direct span-tuple containment test, `record_cross_tower_meronomy`; see the
-2026-07-09 delta below for why this is no longer a `WhereEncoding` decode);
-when it is (and no greater part / lesser whole intervenes, per codebook
-activation) it forms the **concept `A isa B`** (token `isa` type; the type *names*
-the token). Co-occurrence at the same `.where`/`.when` drives the link, weakening
-when they dissociate — a **Hebbian** coupling between codebooks.
-
-Since the 2026-06-16 redesign `.where` carried an **endpoint-sum bracket**
-`[start, end]` (angle = span center, magnitude = extent); containment was
-`A.start >= B.start && A.end <= B.end`, and **contiguity** (adjacency / gap)
-between sibling parts was the same endpoint comparison. An instant snaps to
-zero extent, so atoms compare as points. (See `doc/Spaces.md` for the
-encoding. 2026-07-04: `.when` left the bracket — it is the 4-dim start
-ladder; temporal extents ride the record store / exact clock, not the band.
-**2026-07-09:** the muxed `.where` band itself moved to a 2-rung quadrature
-*ladder* over the byte START only (`WhereEncoding`, `bin/Spaces.py`) — range
-rung + resolution rung, no END in the band. `WhereEncoding.decode_span` is
-retired. The standalone analyzer's distinct `EndpointSumWhere` codec was
-also retired in the October 1 suite trim; the live WhereEncoding tests remain. The
-runtime containment test above no longer goes through a `WhereEncoding`
-decode at all: `WholeSpace.record_cross_tower_meronomy` (`bin/Spaces.py`) and
-`RunStructureLayer.contained_mask` (`bin/Layers.py`) read `.where` span
-tuples directly.)
-
-**Design decision (2026-06-29, REVISIT) -- the `.where` support of percepts vs
-symbols.** Every PERCEPT (a part from PartSpace or a whole from WholeSpace) MUST
-carry a real `.where` (`nWhere > 0`): a definite `[start, end]` extent. A percept
-with no location is not admissible. A SYMBOL (a concept-level relation entry, or an
-SS reference) MAY instead either (a) carry `nWhere = 0` (no location of its own), or
-(b) carry a RECOMBINED `.where` equal to the bounding span of its constituents --
-`start` = the leftmost constituent's `start`, `end` = the rightmost constituent's
-`end` (the support of a symbol is the sum of the supports of its members). If the
-recombination is hard to implement, the fallback is to give every symbol a `.where`
-of "everywhere" (universal support). THE ANT-COLONY QUESTION: is the location of an
-ant colony IN each ant (distributed -- every ant keeps its own `.where`), or is
-there a SINGLE location that subsumes all the ants' locations (the bounding region)?
-The recombined bounding-span (b) takes the single-subsuming-extent view; "everywhere"
-is its degenerate limit. This choice determines whether a concept's `.where` is
-distributed over its parts or collapsed to one subsuming extent, and should be
-revisited.
-
-Word $\leftrightarrow$ object cannot be linked this way (too unlike; no convex set is specific
-enough), so a **second-order meta-object** is synthesized in PartSpace, **outside
-`.where`/`.when`**, fusing the word-code and object-code into the symbol used in
-serial communication (the MetaSymbol). *(Language update 2026-07-02, revised
-same day by the two-phase rework: in the ramsified CS this is a FIRST-order
-META-concept -- the sec-4c ORDERED PAIR $[whole=word\text{-}symbol,
-part=object\text{-}symbol]$, roles as positional slots of an ordered pair
-rather than containment claims; the typed read-out recovers (word, object) by
-INTERSECTION with the word-symbol class (`meta_word_object`), and the
-reference-table pairing remains the serial-mode access path. See
-doc/Architecture.md sec A.)* Because symbols are outliers, the
-part$\leftrightarrow$whole **concepts** live in a **two-code LUT** and the symbolic taxonomy is
-**relations over symbol indices** — which are the TruthLayer's **absolute truths**
-(propositions) and **relative truths** (`RelativeTruthStore`), to be integrated.
-Taxonomy relations are also learned **explicitly from trusted language** ("cats are
-furry" $\to$ `[cats] <= [furry]`).
-
-**Granularity / the part-whole ratio** is the correctness signal (and the MM_20M
-mean-collapse fix): *many parts $\to$ one whole* = under-analysed; *one part $\to$ one whole*
-= over-analysed. An incorrect ratio is the criterion to request **further synthesis
-($\sigma$, e.g. radix) or analysis ($\pi$, property tiling) within the problematic `.where`** —
-until words emerge as parts. MM_20M collapses because its byte chunker never climbs
-and its analyser never descends, so no word-granularity parts exist for XOR.
-
-**Design decision (2026-06-29, REVISIT; brake updated 2026-07-03) -- locking in the
-"basic level" of analysis.** The mereological analysis should converge on and
-STABILISE at Eleanor Rosch's BASIC LEVEL -- the granularity where the part-whole
-ratio is correct (neither many-parts-one-whole nor one-part-one-whole). The radix
-climb builds parts UPWARD (byte -> prefix -> word -> ...); left unbounded it
-over-climbs (a whole short sentence promotes to one percept). Two principled brakes
-hold it at the basic level: (a) a STRUCTURAL bound -- word tiling: a chunk cannot
-cross a word boundary, where the cut is WHITESPACE AND PUNCTUATION (separator runs
--- whitespace or punctuation -- are themselves maximal same-class tiles that get
-observed/promoted just like word tiles; see ``PartSpace._embed_radix`` under
-``_meronomy_words`` and ``RadixLayer``'s ``word_bounded`` promotion gate); and (b)
-the part-whole-ratio convergence signal above (request more synthesis/analysis
-until the ratio is right). The ideal is to LOCK IN whatever basic level the corpus
-implies. As a pragmatic HEDGE -- and because **word-level is essentially the basic
-level for a symbolic LLM** -- the analyser cuts on the word tiling (PS
-observes/promotes per tile so parts top out at word size), which is a hard
-structural bound rather than a size threshold: the earlier ``<basicLevelMinSize>``
-/ ``<basicLevelMaxSize>`` letter-count bounds were too loose to separate a short
-sentence from its words on their own, could not express "don't cross a boundary"
-at all, and are now REMOVED (dead config, never wired to anything -- the word
-tiling supersedes them); the full ratio-driven basic-level convergence remains the
-to-revisit principled version.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#the-corpus-callosum-links-the-towers-part-isa-whole) (2026-10-30): "The corpus callosum links the towers (part `isa` whole)".*
 **Design contract -- types from properties, word-sized `.where` (Alec, 2026-07-03).**
 The enabled analysis methods are a set of PROPERTIES identifying the TYPES we
 attend to, dividing the input (left of space, right of space, punctuation,
@@ -494,14 +298,7 @@ covering exactly that `.where` (spell-out bounded by the span).
 
 ### Explicit concepts $\longleftrightarrow$ implicit subsymbolic representations (dual-coded, 2026-06-21)
 
-> **Terminology note.** This section formerly called the explicit part$\leftrightarrow$whole
-> relation entry a "symbol." Per the convention, that relation — one part-percept
-> tied to one whole-percept by reference, held in the Concept codebook's
-> `taxonomy` / `taxonomy_parent_map` / `meta_pair_to_idx` / `meta_trust` /
-> `part_chain` tables — is a **concept**. The 0-D `SymbolSpace` **symbol** is a
-> separate, intensional reference *to* such a concept and is not what those
-> entries are. Prose below says "concept"; the code no longer carries a
-> `_sym_*` placeholder (that name survives only in older comments).
+*A superseded passage beginning "**Terminology note.** This section formerly called the expli" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 The architecture carries **two coordinating structures** for the same content — an
 **explicit relational** tower (the concepts) and an **implicit subsymbolic** one —
@@ -563,11 +360,7 @@ second tower of permanent row identities.
   1 - \operatorname{dist}(y, x \cup y))$ mixed set-valued operands
   with a distance.
 
-- **Overlap penalty (not antisymmetry).** Legacy `ImpenetrableLayer`
-  penalized mutual parthood $P[i,j] \cdot P[j,i]$ directly, pushing
-  *every* overlapping pair apart including synonyms. The five-relations
-  design leaves `equal` pairs alone and only penalizes the ambiguous middle
-  region, gated by trust mismatch.
+- *A superseded passage beginning "**Overlap penalty (not antisymmetry).** Legacy `Impenetrable" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 - **Trust via VQ EMA.** Already tracked for VQ commit loss.
 

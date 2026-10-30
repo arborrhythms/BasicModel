@@ -4,8 +4,9 @@
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 
 
 > **Architecture relation.** The Space/SubSpace split is where BasicModel most
@@ -267,7 +268,9 @@ inside a tower. There is no perceptual layer stack kept beside this route.
 **Composition (per-mode):**
 
 - **SERIAL / GRAMMATICAL** (`<serial>true</serial>`): one
-  iteration per word.
+  iteration per word *(as built, audit 2026-10-30: with a grammar the path is
+  `_run_sentence_word_bricks`; the capacity-Binary/Unary transaction below is
+  the record)*.
 
   ```
   CSSub(w):    IS(w) -> { PS(w), WS(w) } -> CS reduction
@@ -384,7 +387,7 @@ Parameter savings: `O(N · log N)` scalars per cascade vs `O(N² · D²)`
 for a single big matrix. The `<sigmaPi>` mode selects the grammatical
 layers' implementation. Perceptual passes do not allocate these layers.
 The primitive XOR gate uses located conceptual definitions and sigma over
-their symbols; see [Testing](Testing.md#item-11c-located-xor-and-native-perception-2026-09-24).
+their symbols; see [Testing](DevelopmentHistory.md#item-11c-located-xor-and-native-perception-2026-09-24).
 
 ---
 
@@ -399,7 +402,7 @@ their symbols; see [Testing](Testing.md#item-11c-located-xor-and-native-percepti
 | SymbolSpace | 0-D references to ConceptualSpace concept ids | reference activation |
 | OutputSpace | Rescaled from activation range to original data range | Data range |
 
-`SyntacticSpace` is retired (see Section "SyntacticSpace --- retired" below).
+`SyntacticSpace` is retired (see "SyntacticSpace --- retired" in DevelopmentHistory.md).
 Grammar / chart machinery lives on downstream `SymbolSpace`; it is not owned
 by the WholeSpace property inventory.
 
@@ -1052,18 +1055,7 @@ exhaustion of that row's contiguous corpus stream.
 `_end_of_stream` is a host-side `list[bool]` diagnostic only; the canonical
 hard-reset signal is the cursor's `hard_eos`.
 
-### AR cursor unfold retirement (2026-05-13)
-
-The legacy AR-training path padded + unfolded the embedded sentence
-into `[B, K, N, D]` cursor windows so the body could see a
-`[B*K, N, D]` parallel view of every prefix. At `bs=128`, `K=128`,
-`N=1024`, `D=10`, the unfolded tensor alone was ~320 MB.
-
-The unfold was retired for AR training on 2026-05-13, replaced with a
-serial K-cursor loop (`_forward_per_stage_no_unfold`) that walked
-the same prefixes with a `[B, N, D]` tensor and a per-cursor causal
-mask.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#ar-cursor-unfold-retirement-2026-05-13) (2026-10-30): "AR cursor unfold retirement (2026-05-13)".*
 ### Within-sentence AR retirement (2026-05-14)
 
 The serial K-cursor loop itself was retired one day later: the
@@ -1422,22 +1414,7 @@ prototypes when its XML weights are enabled. See
 
 ---
 
-## SyntacticSpace --- retired
-
-The standalone `SyntacticSpace` class has been retired. LanguageSpace owns
-one operation-selection layer for compose, the serial STM reducer and the
-shared numerical grammar catalog. It chooses one binary or unary operation
-per round, with STOP eligible only when the sentence fits its row.
-
-WholeSpace supplies property memberships and has no word dictionary or
-symbolic compose path. The temporary reading record supports reconstruction
-and the forced explore deviation while a sentence is open. A completed row
-stores its one-slot or three-slot end state; readback generates from that state.
-
-See [Language.md](Language.md) for grammar and parser dispatch.
-
----
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#syntacticspace-----retired) (2026-10-30): "SyntacticSpace --- retired".*
 ## OutputSpace
 
 **Role.** Maps symbolic (or syntactic) vectors to task targets. Three

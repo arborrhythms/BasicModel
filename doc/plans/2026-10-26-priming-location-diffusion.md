@@ -579,3 +579,14 @@ then, while placement, the derived class centroids, `bind`'s content
 term, MTM matching and the bank's selection keep reading positions.
 This step runs as built until that round lands; item 2.7 does not touch
 it.
+
+## 10. Retirement decided (Alec, 2026-10-28/30)
+
+At item 2.5 round B the location diffusion step of §8, its radius controller,
+the `geometric*` knobs and `_priming_boosts` retire after a measurement of
+this step against `ActivationPredictor`'s predicted next state on one hash,
+which becomes the spread attention, the chooser and retrieval read. Placement
+keeps `_priming_seen` as its context; `bind`'s content term, the class
+centroids, MTM's candidate matching, the reconstruction bank's selection and
+the tower projection keep reading positions; desire stays its own channel.
+Record: [thinking spec §§15, 22.3, 23](2026-10-27-item2-5-thinking.md).

@@ -2,7 +2,7 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 
 
@@ -139,33 +139,4 @@ gradient boundaries remain documented in [GradientFlow](GradientFlow.md).
 [detached write](../bin/Layers.py),
 [hard lookup](../bin/reasoning.py).
 
-## Historical validation (September 16)
-
-Current controller/effect receipts are in [Testing](Testing.md).
-
-The repository's 51 new probes pass in 3.11 s; ten affected existing files
-pass 281 tests with one skip and three warnings in 89.56 s. The full suite
-passes with exit status zero: **4279 passed, 51 skipped, 7 xfailed, 185 warnings, 4 subtests passed in 4175.57s (1:09:35)**. All 561 runtime/test/configuration
-files remained frozen.
-[Full-suite green](benchmarks/2026-09-16-existence-evidence-data/full-suite-green.log),
-[source manifest](benchmarks/2026-09-16-existence-evidence-data/full-suite-source-manifest.json).
-[Focused tests](benchmarks/2026-09-16-existence-evidence-data/focused-green.log),
-[affected tests](benchmarks/2026-09-16-existence-evidence-data/affected-green.log).
-
-Original lookup, metadata and ingestion probes failed before implementation.
-Follow-up candidate probes exposed lost final-result provenance, incomplete
-checkpoints, replaced scope, public-input flattening and incomplete legacy
-fact admission; each failed before its corresponding fix.
-[Lookup red](benchmarks/2026-09-16-existence-evidence-data/lookup-red.log),
-[metadata red](benchmarks/2026-09-16-existence-evidence-data/metadata-red.log),
-[ingestion red](benchmarks/2026-09-16-existence-evidence-data/ingestion-red.log),
-[provenance red](benchmarks/2026-09-16-existence-evidence-data/provenance-red.log),
-[sidecar red](benchmarks/2026-09-16-existence-evidence-data/sidecar-red.log),
-[public-input red](benchmarks/2026-09-16-existence-evidence-data/public-input-red.log),
-[legacy admission red](benchmarks/2026-09-16-existence-evidence-data/legacy-admission-red.log).
-
-The isolated candidate checks are preparation evidence. Repository checks
-above describe the September 16 runtime. Grammatical routing, ordinary thought
-history and nested retention now use the one controller. Residual policy credit
-remains item 2. Taxonomy evidence is documented separately
-in [Taxonomy queries](TaxonomyQueries.md).
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#historical-validation-september-16) (2026-10-30): "Historical validation (September 16)".*

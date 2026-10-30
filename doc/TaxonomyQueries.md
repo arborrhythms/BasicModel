@@ -106,36 +106,4 @@ is removed. Expectation/residual credit,
 generation ownership and causal utility remain explicit todo items. The separate
 two-truths design remains deferred. See [SelectedMeaning](SelectedMeaning.md).
 
-## Historical validation (September 16)
-
-Current controller/effect receipts are in [Testing](Testing.md).
-
-The repository's **37 new probes pass in 3.33 s**. The sixteen affected
-files pass **277 tests, with one skip, two expected failures and seven
-warnings, in 173.39 s**. The full suite passes with exit status zero: **4317 passed, 51 skipped, 7 xfailed, 184 warnings, 4 subtests passed in 5604.66s (1:33:24)**. All 569
-runtime/test/configuration files remained frozen.
-[Focused green](benchmarks/2026-09-16-taxonomy-query-data/focused-green.log),
-[affected green](benchmarks/2026-09-16-taxonomy-query-data/affected-green.log),
-[full green](benchmarks/2026-09-16-taxonomy-query-data/full-green.log),
-[frozen source manifest](benchmarks/2026-09-16-taxonomy-query-data/full-validation-manifest.json).
-
-Full-suite command:
-
-```sh
-OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 DEVELOPER_DIR=/Library/Developer/CommandLineTools \
-  .venv/bin/python -m pytest test -q -x -p no:cacheprovider
-```
-
-
-The existing public-routing probes failed before the fix. Further failures
-caught native read accounting, public entry points, operation-head curriculum,
-unrelated child testimony, public-helper bypasses and zero-threshold unknown
-classification. Each received a regression test.
-[Routing red](benchmarks/2026-09-16-taxonomy-query-data/routing-red.log),
-[view red](benchmarks/2026-09-16-taxonomy-query-data/view-red.log),
-[work counter red](benchmarks/2026-09-16-taxonomy-query-data/work-counter-red.log),
-[entry red](benchmarks/2026-09-16-taxonomy-query-data/entry-red.log),
-[policy red](benchmarks/2026-09-16-taxonomy-query-data/policy-red.log),
-[boundary red](benchmarks/2026-09-16-taxonomy-query-data/boundary-red.log),
-[public helper red](benchmarks/2026-09-16-taxonomy-query-data/public-helper-red.log),
-[unknown red](benchmarks/2026-09-16-taxonomy-query-data/unknown-red.log).
+*A superseded passage beginning "## Historical validation (September 16)" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*

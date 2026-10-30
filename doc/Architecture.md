@@ -2,15 +2,16 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded, never read by composition but read by recall (Alec, 2026-10-23: a query with only its `.when` filled returns the entries at that time; item 3, [layout spec](plans/2026-10-23-layout-and-removal.md)); the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - STM is the open sentence's three concept-width working slots plus an **index** of the most recent rows (about eight addresses) and the symbol activation field; the intersection `bind` needs is computed on read, never stored. **MTM** (`ConceptualSpace.mtm`, default capacity 64) retains token membership as introduction/use addresses, kind, access count and last model time, independently of LTM. *Amended 2026-10-22 (Alec): MTM stores working content: each identity's current value, the state after its latest verb, with names mapped to identities ([step-2 spec §35](plans/2026-10-21-step2-one-ltm.md#35-decided-alec-2026-10-22-mtm-stores-working-content)).* In focus means the STM frames; familiar means the pool; known means a minted concept. Kept closes alone add bindings; revision computes working groups on read. Each noun site adds an object to the pool without a price. Before the sentence closes, its trial-local own-object record keeps the site’s content for later mentions; only the kept close writes it to MTM. A reference site is a participant in the kept derivation at stamped order one: the reading supplies a leaf’s order and a determiner supplies its result order. Site, marker and reference-mode decisions read grammatical positions and occupations, never lexical definitions. Noun candidates follow those participant positions and declared heads; surface markers and predicate heads, including their lexical copies, are excluded. Bind chooses an accessible antecedent only if it beats a zero-logit dummy; an unlinked named site keeps an anonymous token, and an arrival may refine it while its occurrence still owns that token. Joined sites are left intact; observed incompatibility excludes an antecedent for a new mention, and no incompatibility is recognized at initialization. A merge adopts the joined kind only when the antecedent has none. Bind choices receive the sentence or thought episode's R + A credit through the ordinary departure rule. Closing reconstruction adds `reconstruction.reference`: the bound mention’s uncovered description share, with independent weight 0.1, read from the preview’s selected record; first mentions, own objects, mints, gaps, arrivals and thought episodes add zero. Eviction loses the link and leaves the rows intact. Candidates still come from the frames; content access beyond that window and recurrence promotion are later steps ([bind plan §10.3](plans/2026-10-19-bind-thought-operation.md#103-decided-alec-2026-10-21-mtm-a-medium-term-identity-pool-on-conceptualspace)).
 > - **Identity threading (2026-10-23, reviewed source `65ab7fbe9`):** `bind.forward` is a compose-grammar operation, with one action per frame-accessible or trial-local location plus the zero-logit dummy in the ordinary chooser. Determiners keep their folds without reference variants. MTM retains each identity’s current value, mention readings and verb/role event histories; VP results replace the value and description mentions join it. Each trial owns a numerical overlay, so a later clause reads an earlier VP’s result through identity before the sentence closes. Only the kept close publishes detached values. Pathwise derivatives reach the live value and VP; the discrete choice keeps ordinary R + A credit. Role evidence lasts with the token. Reference reconstruction uses the record captured at the bind. A word cannot be another word’s definition object. This amends the earlier thought-only bind and membership-only pool descriptions above. The LTM0 idea/LTM1 binary-chain layout and eight shared STM chunks are specified for a later round, not implemented here. [Identity specification and source receipt](plans/2026-10-23-identity-threading.md).
-> - **2c consolidation (2026-10-23, frozen `fcaff2d19`, awaiting review):** a reading recurring across three source documents becomes a concept; a token recurring across three source sentences gains a concept containing the union fold of its mention occurrences, preserving its current state and introducing address. MTM expires after sixteen intervening kept closes without reference in its stream and at document end. Today's embedded addresses keep their format; consolidation checkpoints the originating source sentence beside its reading cache. Definitions remain derived from retained Part edges. These changes precede item 3's layout and STM work. [2c receipt](benchmarks/2026-10-23-item3-5-step2c/README.md).
+> - **2c consolidation (2026-10-23, frozen `fcaff2d19`, awaiting review):** a reading recurring across three source documents becomes a concept; a token recurring across three source sentences gains a concept containing the union fold of its mention occurrences, preserving its current state and introducing address. MTM expires after sixteen intervening kept closes without reference in its stream; it persists across documents within an epoch and is cleared at the epoch boundary (`end_document` ends only the cover; corrected 2026-10-30). Today's embedded addresses keep their format; consolidation checkpoints the originating source sentence beside its reading cache. Definitions remain derived from retained Part edges. These changes precede item 3's layout and STM work. [2c receipt](benchmarks/2026-10-23-item3-5-step2c/README.md).
 > - **Modal implementation (2026-10-24, awaiting combined review):** a token owns an actual timeline and alternative timelines, each with events and current value. A chosen `adverb` withholds NP+VP lowering; its idea stays above order 0 and extends the latest alternative while leaving the actual state intact. Only actual order-0 occurrences enter promotion. A bound composition reads the identity's current value and its written idea retains the identity reference. Equal-time actual/alternative events supply `modal_teacher`; bounded reads distinguish actual events from abstractions and fold some/every timelines. The numerical overlay only mirrors Token while a sentence is open. Prepending MTM symbols for compositions at every order remains item 3's STM integration. [Iteration specification](plans/2026-10-23-verb-and-modal.md).
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - Item 4 is closed as a mechanism (learning gates at item 0); item 3.5 carries the mechanism residue of items 6 and 5.5, including `bind`, LTM1/LTM3 and the row audit; item 3 carries the invertible-path program.
 > - **Operations on meaning, centroids on form** (Alec, 2026-10-23; item 3, [layout spec](plans/2026-10-23-layout-and-removal.md)): every grammar and logical operation acts on the meaning block in conceptual space, logical ones by exact rules and grammatical ones by learned kernels; a reduce's percept part is the centroid of its constituents' forms; zeroth-order concepts start random and are placed by the priming surface. Today's kernels on the form block and the headed operations' meaning passthrough are the state this replaces. *Moved to item 3.5's first remaining iteration the same day (Alec: "The whole swap now"; [spec](plans/2026-10-23-verb-and-modal.md) §2).* *Verified 2026-10-24: centroids are for concepts and are stored on the concept's symbol row in the shared index; percepts keep the towers' interval mereology (lower bound over parts, upper bound over wholes); concepts are arranged by context, today the occurrence-context mean, in item 3 the priming surface ([context-wholes spec §2b](plans/2026-10-24-context-wholes.md)).*
 > - **Orders are learned, not written into the grammar** (Alec, 2026-10-21; [Orders §10](Orders.md#10-orders-are-learned-definitions-raise-three-compositions-lower-alec-2026-10-21-decided-built-in-item-3); built in item 3). Parts of speech stay order-free. Definitions raise: several "is" rows sharing a side with distinct other sides make an equivalence class one order up, which creates individuals from events ("this is Felix, that is Felix") and kinds from individuals. The determiner, NP + VP and VP + MP each lower one order, returning to S0. Definitions are kept as LTM1 rows and as folds; the rows train the fold in the symbolic order loop, and their match or mismatch is judged in the two truth lanes. Until item 3, a determiner outputs order 1 and unit tests force a name's order. *Amended 2026-10-23 (Alec): only NP + VP lowers; the modal withholds the lowering ([iteration spec §4](plans/2026-10-23-verb-and-modal.md)).*
@@ -207,52 +208,9 @@ These six stores are the substrate for the four foundations of mindfulness; the
 mapping (and the trust-sign-as-vedana / luminosity-as-joy reading of `LTM`) is in
 [Philosophy.md](Philosophy.md#the-four-foundations-of-mindfulness).
 
-> **Status (2026-05-29 update):** further architectural pivots landed
-> on top of the 2026-05-27 substrate refactor:
->
-> - **PerceptStore $\to$ RadixLayer.** The radix-trie input encoder is
->   now a first-class `Layer` subclass in `bin/Layers.py`;
->   `PartSpace.reverse` invokes `RadixLayer.reverse` for the
->   structural decode.
-> - **MetaLayer $\to$ SymbolizeLayer.** The binary GrammarLayer that
->   promotes a freshly-seen percept to a symbolic prototype is now
->   `SymbolizeLayer`; no semantic change.
-> - **Auto-META moves PS $\to$ CS.** The cross-codebook bind (META entry:
->   PS chunk-id $\leftrightarrow$ SS prototype-id) fires from
->   `ConceptualSpace._maybe_autobind_meta` at stage 0; PS no longer
->   holds a back-ref to SS.
-> - **Clean-stack STM.** `ConceptualSpace.forward` bypasses
->   `sigma_in` / `sigma_cs` on forward — `folded = primary` at stage
->   0, `folded = sym` at k > 0. The Stage-10 additive composition is
->   retired; per-stage space-role attribution is trivially invertible.
-> - **`basis=` kwarg for grammar reverses.** `UnionLayer.reverse(parent,
->   basis=None)` / `IntersectionLayer.reverse(parent, basis=None)`
->   accept a Codebook / Basis object (typically
->   `WholeSpace.subspace.what`) instead of a raw `W` tensor;
->   `bin/Language.py::unreduce()` dispatches accordingly.
-> - **LSE soft-max kernels.** `Ops._disjunction_kernel` /
->   `Ops._conjunction_kernel` default to LogSumExp smooth variants
->   when `monotonic=False`; the hard branch is retained for
->   monotonic-mode and exact idempotency tests.
-> - **LBG-style WS property splitting.** Gray (1990) EMA + per-row variance
->   tracking can split a dynamic property along its top-variance
->   eigendirection. This grows properties, never concepts or symbols.
+*A superseded passage beginning "**Status (2026-05-29 update):** further architectural pivo" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
-> **Historical status (2026-05-27; ownership superseded 2026-07-20):** the
-> **substrate refactor** had landed end-to-end.
-> PS is a single-arg input processor (synthesis front end + sigma fold). CS is a STM container +
-> grammatical CPU (no atomic forward fold; sigma_percept retired). The paired
-> word-codebook ownership described then no longer belongs to WholeSpace. The
-> CKY `Chart` and STM shift-reduce parsers retire entirely; `LanguageLayer`
-> (signal router) is the canonical parser. `LiftLayer` / `LowerLayer` are
-> binary `GrammarLayer` subclasses with internal Sigma / Pi (no longer
-> borrowing substrate folds). `GrammarLayer` gains an optional butterfly
-> cascade mode for cross-position mixing — closes the XOR convergence
-> target. Two operating modes selected by `<serial>`: **SERIAL/GRAMMATICAL** (per-word PS with
-> grammar dispatch over STM) and **PARALLEL** (T = `<subsymbolicOrder>`
-> iterations of PS over CS). The `<parserBackend>`, `<routerKind>`,
-> `<chartTau>`, `<chartTopK>`, `<chartNoiseEps>` XML knobs are retired;
-> `<symbolicOrder>` is now the symbolic / relational loop budget.
+*A superseded passage beginning "**Historical status (2026-05-27; ownership superseded 2026" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 ## Symbolic weights, reconstruction, parse-time, attention (2026-06-30)
 
@@ -275,7 +233,7 @@ the closest links using within-tower relations only). The iterated-loop
 rework (v3, landed 2026-07-03) kept this substrate and collapsed the
 per-order families into ONE square untyped **`ConceptualAttentionLayer`**
 subclass; its *forward composition* was in turn superseded by the
-2026-07-10 dual-towers rev-2 feedforward sigma-pyramid (below) -- the
+2026-07-10 dual-towers rev-2 feedforward sigma-pyramid (the 2026-07-10 note, now in DevelopmentHistory.md) -- the
 `SparseLayer` substrate itself (edges, COO forward/reverse, `add_edge` /
 `remove_edges`) is unchanged by either rework.
 
@@ -317,7 +275,7 @@ retires it). Self-edges raise (the Quine atom $x = \{x\}$); longer cycles
 are deliberate -- a documented fact of un-ramsified taxonomies and of human
 minds, which nothing in the current codebase observes or damps at runtime
 (the diagnostic that used to watch them, `cs_groundedness_probe`, is
-retired -- see below).
+retired -- see DevelopmentHistory.md).
 
 The feedforward concept pyramid (`cs_forward_content`) retains
 `[concept, batch, extent, 2]`. The order-0 membership read composes field
@@ -330,28 +288,13 @@ define independent pole reductions and attribution descent.
 transform is active (`_sparse_active`), it is a tile-based taper
 `[base, base>>1, .., 1]` (`conceptLayers` bounds the inventory's orders,
 `base = min(outputShape[0], nVectors)`, shrunk until the taper fits the
-inventory) -- inventory rows past `sum(caps)` stay inert. Off that path,
+inventory) -- inventory rows past `sum(caps)` stay inert (as built, audit 2026-10-30: the taper is a
+placement preference; definitions and raised classes seat in the tail and
+every reachable row is gathered into the attended field). Off that path,
 the caps fall back to the pre-rev-2 `(n_snap, n_pool)` 50/50 split
 (`n_snap = max(1, N // 2)`), a fossil of the superseded design below.
 
-> **Historical note (forward composition superseded 2026-07-10).** The v3
-> iterated-symbolic-loop design (landed 2026-07-03)
-> ran the store as an ITERATED WAVE with an additive source term every
-> step, $a^{i+1} = \tanh(W [a^i \mid 1] + s)$, $i = 0..K{-}1$, over a row
-> space split 50/50 into a SNAP block (rows $[0, n_{\text{snap}})$,
-> order-0 concepts, no in-edges) and a RELATION POOL (the rest, minted
-> relations, first-come with a loud overflow warning). A fresh probe on
-> `MM_sparse_concept` found the wave DARK end-to-end -- sign-then-clamp
-> annihilation at the order-0 rectifier, scale-blindness between the
-> settled field and the codebook, and a capacity gap where `<nVectors>`
-> never reached the per-stage store (the dual-towers rev-2 design's
-> "Why"). Rev 2's correction: the concept base is the 8-tile corpus-callosum
-> frame, not the codebook inventory, so attention is a top-K taper over
-> that frame rather than a settling recurrence -- replacing the wave with
-> the feedforward pyramid above closes the darkness (no trivial fixed
-> point left to go dark). The `(n_snap, n_pool)` split above is the only
-> surviving trace of the v3 design, kept as the `_order_caps` off-path
-> fallback.
+*A superseded passage beginning "**Historical note (forward composition superseded 2026-07-" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 Alongside this weighted reading, the store holds the DISCRETE relation
 table: ordered role-tagged constituent records (`embed_pair` stores the
@@ -373,47 +316,7 @@ tied reconstruction; they do not determine conceptual presence.
 
 #### Relation-table entry contract
 
-The [two-truths clause closing](specs/2026-09-16-two-truths-ideas-and-relations.md)
-uses the native concept allocator for word and object addresses. An ended
-clause's identity is its occurrences in LTM, tied by the references in their
-slots; it takes no concept inventory row. Each LTM row has `row_ids`, three `refs`, an `order` stamp, independent
-`c_plus`/`c_minus` identification evidence, a separate scalar source `trust`,
-and the ended field's four-coordinate `.where` and `.when`. Trust concerns
-the event's veridicality; changing it never replaces the evidence pair.
-An abstract row is decoded through the sigma inverses down its stamped
-order. An idea occupies
-one point slot containing the actual end state. Its two pre-fusion operand
-references are a cache; no factored target or derivation persists. A
-relation occupies three slots and has kind `part`, `implies` or `operator`;
-there is no catch-all relation. Referenced relations have null point slots
-and are read by row identity, including implication over two relations.
-
-Item 7's September 29 amendment adds a fourth relation kind, `REL_DEF`:
-`word DEF object`. Its operands name native identities in `refs[0]` and
-`refs[2]`; their vector slots are null, and the middle slot has the fixed
-DEF atom. Learning either concept's code cannot redirect the definition.
-Word and object operands belong to the grammar registry's ConceptualSpace,
-including bodies with independent stage dictionaries; another stage's allocator
-cannot supply their identities. The DEF utterance and each ended clause have
-stable LTM source-address keys. A grammar predicate has one identity per operation,
-tied by the relation slots in which it occurs, without an inventory row. A
-referenced phrase likewise keeps its point in its LTM row. An identity-to-row
-cache locates these occurrences. A full inventory refuses optional
-symbolization atomically and the reading continues.
-Only `interpret` writes definitions; only the closing writes what a sentence
-asserts. A definition is keyed by `(DEF, word, object)`, has an unlocated zero
-`.when` band, remains in recency, and may be forgotten. Re-reading refreshes
-its timestamp without changing its address.
-
-The taxonomy is the native concept hierarchy, read by sigma union. A part
-row between object concepts places the parent one order above its child;
-word identities are never taxonomic operands. One index derived from DEF
-rows supplies form/unit → word, word → objects, and object → words, without
-lookup scans. It rebuilds on load and store compaction. The word/object META,
-its fold and its part edge are retired in every reading; old checkpoint
-bindings migrate to DEF rows. WholeSpace owns only properties. Evidence and
-source trust stay on the LTM row. Clause admission and witnessed context
-discovery write the hierarchy; testimony does not pass the discovery gate.
+*A superseded passage beginning "The [two-truths clause closing](specs/2026-09-16-two-truths-" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 
 At the sparse-entry level, one entry binds one concept row index to one symbol
@@ -431,17 +334,7 @@ preserve the whole/part distinction exactly, while recursive nesting and wave
 iteration make the sequence order operational. In short: repeated entries for
 one concept define a set; recursively nested relation concepts define a vine.
 
-**Groundedness and cycles -- REMOVED (2026-07-10).** `cs_groundedness_probe`
-does not exist in the current codebase (zero grep hits). It was the KRIPKE
-grounded/ungrounded reading of the v3 iterated wave, in two runs (source-driven,
-then source-released) -- a diagnostic over settling dynamics that the
-feedforward pyramid does not have. The design pass that replaced the wave
-accepted the loss outright ("the wave was dark anyway," per the rev-2
-design's "Theory"). The posture on cycles it used to report stands as a design
-statement even without the probe: loops are a documented FACT -- of
-un-ramsified taxonomies and of human minds -- and nothing in the current
-codebase observes or damps them at runtime. Solutions are invited -- for
-both human and machine minds.
+*A superseded passage beginning "**Groundedness and cycles -- REMOVED (2026-07-10).** `cs_gro" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 The lattice poles are VECTORS of the presence domain: **NOTHING**
 $= [0,0,\ldots]$ (bottom; a part contributing $W \cdot 0 = 0$ -- no edge)
@@ -466,7 +359,7 @@ successor design (the iterated-symbolic-loop, landed 2026-07-03),
 which FIXES it: iteration over the one untyped square `ConceptualAttentionLayer`
 replaces stratification, so a link of any order simply arrives one rung
 later (originally a wave hop, now a feedforward pyramid rung -- the
-2026-07-10 historical note above); see "Parse time" sec C.
+2026-07-10 historical note, now in DevelopmentHistory.md); see "Parse time" sec C.
 
 ### B. Reconstruction (parts $\to$ `.what`, wholes $\to$ `.where`)
 
@@ -558,7 +451,7 @@ which properties/level).
   to mereology; there is no separate `ReadingAttention` module.
 
 **Amended 2026-10-20 (Alec):** the diffusion is the layer's spreading
-activation and stays on by default at a **small** value — `primingSpread`
+activation and stays on by default at a **small** value — `primingSpread` (now `geometricSpread`)
 default lowered from 0.25 to **0.05** — over the sparse mereological
 context, never an N×N matrix: today the concept store's untyped part and
 kind edges plus the word-to-sentence membership graph; under LTM2 these
@@ -581,7 +474,9 @@ space.** The per-order reading above is reversed: the surface is read
 whole, not per order, and every concept of every order is placed by
 context in the one similarity space, concrete and abstract intermingled.
 The edge channel still crosses orders along the Part and membership
-edges. The conceptual channel, the overlap of placed codes, then applies
+edges (as built, `Priming.propagate` reads only the placement field; the Part
+edges feed centroid evidence and conduct no energy, as the as-built paragraph
+below says; audit 2026-10-30). The conceptual channel, the overlap of placed codes, then applies
 at every order rather than at order 0 only (confirmed and built in item 2.9).
 The loop guard keeps its form: placement reads the seen ledger, the chooser
 and attention the propagated surface (item 2.9). Strata remain the structure of LTM.
@@ -641,6 +536,8 @@ what is observed and composed; decay, the small conservative spread and the
 capped read keep it a bias on sampling. In `bind`, priming enters only the
 expectation term, never the content term, and recurrence mints.
 
+**Decided for item 2.5 round B (Alec, 2026-10-28/30; [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md)); not built.** The spread becomes an expectation: `ActivationPredictor`'s predicted next concept state replaces `_priming_boosts` and the stored location diffusion step as what attention, the chooser, retrieval and `intuit`'s rule selection read, each consumer detached; the predictor trains only on its own error against the detached next observed state. Placement keeps `_priming_seen` as its context, so the guard holds as built: codes never read a value computed from codes. Desire stays its own channel; location's other readers (`bind`'s content term, the class centroids, MTM's candidate matching, the reconstruction bank's selection, the tower projection) stay. The diffusion step, its radius controller and the `geometric*` knobs retire after round B's measurement of the two spreads on one hash. `intuit` is the separate top-down component, a Sigma over Pi with its own weights trained only by output, at thought time only ([Reasoning](Reasoning.md), "Intuition, understanding and thought").
+
 **Frozen concepts (`freeze_concept` / `_frozen_concepts`, Alec 2026-07-11).**
 A concept's relational structure can be FROZEN: no FORMING of new edges, no
 FORGETTING of existing ones, no WEIGHT drift on them
@@ -656,7 +553,8 @@ directly onto the inventory rows as the ranking score
 \mathrm{score})$, spreading upward through edge magnitudes, admitted rows
 only) — selection changes, activations never distort. The pyramid's
 ADMITTED rows write back through `prime_seen`: awareness primes. Gated
-`<architecture><relevance>` (default false, byte-identical);
+`<architecture><relevance>` (parsed but gating nothing: the priority read runs
+unconditionally on the parallel path and not at all on the serial path; audit 2026-10-30);
 `<primingDecay>` sets the seen decay.
 
 **Attention and expectation share a gain mechanism (Item 4, 2026-10-19).**
@@ -834,20 +732,16 @@ refactor:
 The forward pass transforms raw input into predictions; the reverse pass
 reconstructs the original input from the symbolic representation. Both
 directions are trained simultaneously with a single optimizer minimizing a
-combined loss:
+combined loss (superseded, audit 2026-10-30: training is per-sentence exploit/explore
+trials with reconstruction at `reconstructionScale`, expectation and output
+terms over owned parameters, plus percept expectation's own local Adam; no
+`reconRatio` exists; see [GradientFlow](GradientFlow.md)):
 
 ```
 totalLoss = (1 - reconRatio) * outputLoss + reconRatio * reconstructionLoss
 ```
 
-The legacy `SubwholeSpace` and `SyntacticSpace` classes have been
-retired. The subsymbolic role is filled by `PartSpace`; syntax /
-grammar dispatch lives on `SymbolSubSpace.languageLayer` (the signal router,
-which subsumes the retired `Chart`). The `MereologicalTree` sidecar that
-backed `part` / `equals` / `query` is also retired --- those operations are
-pure-geometric clipped-cosine projections over WholeSpace codebook
-activations.
-
+*A superseded passage beginning "The legacy `SubwholeSpace` and `SyntacticSpace` classes have" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 `PartSpace` and `WholeSpace` (renamed 2026-06-12 from `PerceptualSpace`
 / the original `SymbolSpace`) both subclass `Space` directly — both views
 are perceptual, but there is no shared intermediate base class. A thin
@@ -981,7 +875,8 @@ Conference*, 2001, doi:
 ### Training Loop
 
 Single Adam optimizer with persistent state (momentum/variance accumulate
-across epochs):
+across epochs; as built one main optimizer with per-objective restricted
+backward, and `PerceptExpectation` owns a second local Adam, audit 2026-10-30):
 
 1. Forward pass: input $\to$ prediction + `end_state`
 2. Compute `outputLoss` from prediction vs. target
@@ -1146,7 +1041,9 @@ concatenating per-tick slabs for any row reproduces the original document
 byte-exact. `valid_mask: [B, K]` handles partial-fill tails via NULL-padding.
 
 **Compute-brick contract.** No `.item()`, no `.tolist()`, no Python
-conditional on a tensor value, no GPU$\to$host copy inside `runBatch`. The
+conditional on a tensor value, no GPU$\to$host copy inside the compiled
+per-word bricks (as built, audit 2026-10-30: `runBatch` itself runs priming,
+closings, trials and commit eagerly between the bricks, with host reads). The
 chart's residual `.tolist()` calls retired with the `Chart` class itself in
 the substrate refactor.
 
@@ -1188,7 +1085,10 @@ directly as `self.languageLayer`. The pre-substrate CKY `Chart` and STM
 shift-reduce parsers retired in Stage 3 of the substrate refactor.
 
 The signal router represents STM as a slab `[B, N, D]`; per-layer scorers
-emit per-position copy/reduce scores; `binary_tiling_soft_dp` produces
+emit per-position copy/reduce scores *(superseded, audit 2026-10-30: one
+`OperationSelectionLayer` softmax selects one binary or unary operation or
+STOP per round; no tiling DP or Viterbi pass exists, and `rule_probability`
+survives only as a dormant gate)*; `binary_tiling_soft_dp` produced
 marginals at training (soft superposition), `binary_tiling_viterbi`
 produces the best tiling at eval. `Grammar.rule_probability(body)` is
 generalized to the per-position, per-op score head — dormant defaults
@@ -1200,7 +1100,9 @@ Grammar ops are GrammarLayer subclasses dispatched by the router as
 unary (copy-side) or binary (reduce-side):
 
 - **Unary symbolic operators**: `not(S)`, `non(S)`, `swap`, `copy`,
-  `true`, `false`.
+  `true`, `false` *(as built, audit 2026-10-30: `swap`, `copy`, `true` and `false`
+  are dormant `Legacy` operators; the live inventory is [Language](Language.md)'s
+  compose, thought and generate sections)*.
 - **Binary symbolic operators**: `intersection(S, S)`, `union(S, S)`,
   `conjunction`, `disjunction`.
 - **Mereological operators**: canonical `part(S, S)`, converse `whole(S, S)`,
@@ -1270,8 +1172,8 @@ serial-vs-attention guard was lifted; `MentalModel.xml` is serial +
 In SERIAL / GRAMMATICAL mode, each word traverses a per-word path:
 
 ```
-byte stream  ->  PS.forward(IS_t)    # MPHF surface lookup -> PS lexicon
-                                     # then pi(x) + sigma(x), no outer tanh
+byte stream  ->  PS.forward(IS_t)    # radix part ids (RadixLayer); no MPHF
+                                     # synthesized by max over constituent codes
              ->  CS.forward(idea)    # STM shift toward higher indices; push idea onto slot 0
              ->  signal router dispatches grammar ops over STM
                                      # (read-only via CS; write-required via SS)
@@ -1415,6 +1317,8 @@ travelling through the field, symbol readout and checkpoints, and the
 `n0` truncation of `_bind_attended_concepts` all go; the where they
 carried stays with the percept events.
 
+**Parallel mode is not a mode (Alec, 2026-10-28; [2.7 record §22](plans/2026-10-27-item2-7-corpus.md)).** A grammar with no serial options forces `intuit` to reach S by the one-pass calculus; the flag retires once `intuit` does so, with that certificate (item 2.5 round B, [thinking spec §23](plans/2026-10-27-item2-5-thinking.md)).
+
 **Attention is one convex bracket.** Open attention (parallel mode) sets
 the bracket to the whole input; focused attention (serial mode) narrows it
 to the current word's extent and neighbourhood; the region-of-interest
@@ -1468,29 +1372,7 @@ input location stays with the percepts. The LTM0 `where` column, its row
 export and `SituationFrame.where` are removed. Loading an older checkpoint
 discards that retired column while preserving `.when`.
 
-**Historical (Alec, 2026-09-25; row `.where` superseded above): every LTM
-row carried a `.where` and a `.when`**, the field's pair, written once by
-the closing (item 7). **`.where`
-uses one address space over input and stored percepts**: input positions
-come first, then PartSpace and WholeSpace rows, then one address per symbol
-pole. A word's percept and symbol occurrences carry its input byte start,
-not its stored row's location. Thought-produced symbols use their symbol-row
-address. The same row can therefore appear at several input locations
-without reserving extra symbol slots. Codebook identity stays the row index
-per Spaces' Codebook Uniqueness Contract.
-Stable slices use fixed physical capacity for every perceptual codebook,
-with logical admission into existing rows (plan entry 4e). Exhaustion names
-`nVectors`; it never replaces a Parameter or migrates optimizer state.
-The `.where` band itself carries the registry address.
-One model-owned two-rung ladder is shared by input, part, whole and symbol
-spaces. Its long period covers the entire fixed registry; its short period
-resolves adjacent locations. Captured programs retain these bands, and an
-integer location is decoded from them when needed. There is no second saved
-integer address and no separately configured 8192-byte period. `.when` uses
-one shared bracket encoder; every word of a sentence receives the same
-relative index. Per-word objectives exclude that shared band. Sentence
-addresses include source document, relative index and identified content;
-`.when` alone does not distinguish documents.
+*A superseded passage beginning "**Historical (Alec, 2026-09-25; row `.where` superseded abov" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 **Open and focused readings share one structure.** The order-0 rows,
 definitions, symbol pairs and memberships belong to one inventory. The open
@@ -1697,355 +1579,7 @@ remain live for user-supplied truths; they are explicit truth/operator
 surfaces rather than a space-wide output mode.
 See [Spaces.md](Spaces.md#monotonicity-of-the-lift--lower-chain).
 
-### Proposal: bounded pi and sigma folds as normalized means (Alec, 2026-09-21)
-
-**Decided: dropped (Alec, September 25).** Item 10 evaluated these means in
-real grammar folds and rejected them. The normalization mixin, constructor
-arguments, XML parameters and mode tests are removed. The [measurement
-receipt](benchmarks/2026-09-24-item10/README.md) and archived evaluated source
-preserve the historical proposal and results below. Native min/max perception
-and the max concept pyramid remain the definition.
-
-#### 1. Problem
-
-The current SigmaLayer is tanh(W·atanh(x) + b) and the current PiLayer is
-tanh((W·2atanh(x) + b)/2). These are the same map up to a factor of 2 in W
-and b. Multiplying odds is adding log-odds, so pi and sigma operate in the
-same chart, and any stack pi(sigma(...)) collapses to a single affine map
-in the atanh chart followed by one tanh (verified numerically to 1e-16).
-The network can only express a nonlinearity by driving values into the
-clamp at ±(1 − eps), where the chart derivative 1/(1 − x²) explodes.
-This is the root of both the wasted tanh/atanh pairs and the gradient
-blow-up in the packed-row folds.
-
-#### 2. Principle
-
-A sigma-pi network gets its nonlinearity from the mismatch between the
-chart where it multiplies and the chart where it adds. Therefore:
-
-- sigma adds in the raw chart, with no entry or exit transform;
-- pi multiplies in the log chart, and exits back to the raw chart.
-
-Boundedness comes from making both folds *means*: every output lies between
-the min and max of its inputs. A stack of means of any depth stays inside
-the interval with no squashing and no clamp (only a log floor for pi).
-
-#### 3. Definitions
-
-All folds run on the perceptual chart u in [0, 1]. Conceptual space
-x in [-1, 1] enters through u = (x + 1)/2 and leaves through x = 2u − 1.
-Both maps are affine and exactly invertible; a signed product would give
-parity rather than AND, so the rescale is not optional for pi.
-
-Row-vector convention as in Layers.py: y = u @ W, so columns are outputs.
-
-Weights. W = L D U as in NonNegativeInvertibleLinearLayer (softplus, so
-every entry >= 0; init raw = −5 so W ~ I). Define the column sums
-s = 1ᵀ W (a vector of length nOutput, s_j >= nInput · eps > 0) and
-
-    W_n = W / s          (each column of W_n sums to 1)
-
-W_n is a convex combination per output. It is invertible iff W is,
-because W_n = W diag(1/s) and diag(1/s) is invertible.
-
-Sigma (weighted arithmetic mean):
-
-    forward:  y = u @ W_n
-    reverse:  u = (y * s) @ W^-1          (the existing LDU solve)
-
-Pi (weighted geometric mean):
-
-    forward:  y = exp( log(max(u, EPS_LOG)) @ W_n )
-    reverse:  u = exp( (log(y) * s) @ W^-1 ).clamp(0, 1)
-
-Bias. An additive bias is what broke boundedness. Replace it with a convex
-mix against a learned constant c in [0, 1] and a gate beta in [0, 1):
-
-    sigma:  y = (1 − beta) * (u @ W_n) + beta * c
-    pi:     y = (u-fold)^(1 − beta) * c^beta      (same thing in log chart)
-
-with beta = sigmoid(raw_beta) and c = sigmoid(raw_c), init raw_beta = −5
-so beta ~ 0 (no bias at init, matching today's near-identity init).
-Reverse: u @ W_n = (y − beta c)/(1 − beta), then the solve above. Exact
-because beta < 1 by construction.
-
-#### 4. Invertibility and reconstruction
-
-- The normalization is a rescale of the *weights*, computed from W alone,
-  so it is a fixed positive diagonal and inverts exactly. It does not
-  normalize activations and loses no degree of freedom in the data.
-- Uniform averaging (W = 11ᵀ / n) is rank one and NOT invertible. That is
-  why the fold must be a learned convex combination, not a plain average.
-  Near-identity init gives an invertible start.
-- Unary reverse: exact when y is in the image of the interval under W_n.
-  When y is a reconstruction seed that no in-interval u produces, the
-  solve can leave [0, 1]; clamp on the way out, as PiLayer2.reverse
-  already does. No other guard is needed.
-- Binary compose (chart parser): y = w_l * a_l + w_r * a_r per element
-  (sigma) or the same in log chart (pi), with w_l + w_r = 1.
-  Balanced split: a_l = a_r = y. The mean of equal operands is the
-  operand itself, so generate() becomes the identity instead of
-  tanh(s/2). synthesize_over_set: all M constituents = y.
-  Known-reference split: a_r = (y − w_l a_l)/w_r, requires w_r > 0,
-  which softplus guarantees; clamp to [0, 1].
-- Gate on the LDU diagonal: unchanged. It scales columns before
-  normalization; s is recomputed from the gated W.
-
-#### 5. Sharpness (optional, same framework)
-
-Means have no saturation, so crisp fits (XOR) may converge more slowly
-than with tanh. If needed, both folds are members of the power-mean
-family, which stays bounded for every exponent:
-
-    M_p(u) = ( u^p @ W_n )^(1/p)
-
-p = 1 is sigma, p -> 0 is pi, p -> +inf is max (OR), p -> −inf is min
-(AND). One learned or scheduled p per layer buys sharpness without
-leaving the interval. Reverse for fixed p: u^p = (y^p * s) @ W^-1, then
-the 1/p root, clamped at 0 from below.
-
-#### 6. Cost
-
-Per element and layer today: atanh, clamp, matmul, tanh, plus a
-singular gradient. Proposed: sigma is one matmul; pi is log, matmul,
-exp. The reverse adds one elementwise multiply by s to the existing
-solve. No custom autograd Function, no slope cap, no clamp inside the
-grammar folds.
-
-#### 7. Minimal implementation path
-
-1. NonNegativeInvertibleLinearLayer: add a `normalize=True` mode that
-   computes s = 1ᵀ W in compute_W_current and returns W / s; the
-   reverse multiplies by s before the LDU solve. Gate flows as today.
-2. SigmaLayer(nonlinear=False, invertible=True, monotonic=True,
-   normalize=True): remove the atanh/tanh branches on this path; add the
-   (beta, c) convex bias in place of the additive bias.
-3. PiLayer: same inner layer; forward log -> matmul -> exp with the
-   EPS_LOG floor; reverse as in section 3; drop _to_mult/_from_mult and
-   _BoundedLogMult on this path.
-4. generate / generate_functional / factorize_over_set: balanced split
-   returns y; known-reference split per section 4.
-5. Conceptual-space call sites: wrap with the [-1, 1] <-> [0, 1] affine
-   rescale.
-6. Tests: 30-deep alternating stack stays in [0, 1] without clamp;
-   round-trip reverse(forward(u)) == u to solve tolerance; compose /
-   generate round-trip; test_sigmapi and test_explicit_dimensions
-   (crisp XOR) as the regression gate for section 5.
-
-#### Evaluation (Claude, 2026-09-21)
-
-Measured with small scratch scripts outside the repository, unseeded, every
-run reported. Codex repeats them in the real layers under item 10.
-
-**The algebra holds.** Sigma and Pi are one map in the atanh chart today, so
-the diagnosis is right (the item 10 seed audit reached the same identity).
-Weighted arithmetic and geometric means with convex weights stay inside
-`[min, max]` of their inputs at any depth; `W_n = W diag(1/s)` is invertible
-iff `W` is; the reverse formulas and the convex bias invert exactly; and the
-rescale to `[0, 1]` is needed for pi.
-
-**1. As written this is the monotone form, and that is its place.** Every
-fold is non-decreasing in every input, for every power-mean exponent, and so
-is any stack of them. That is what parts and wholes need — it is what keeps
-parthood through a fold — and it is why this form cannot fit XOR (MSE .2500
-in every run, a constant ½), and need not. That was the proposed placement before 11c deleted perceptual fold layers;
-the current native membership read remains min/max.
-
-**2. XOR belongs to conceptual space, with the monotonic flags off** (Alec,
-2026-09-21). Conceptual space needs no monotone operations, so its folds
-take signed weights, and a negative weight *is* the complement: weight `−w`
-on `x` is weight `w` on `not x`. No second rail is needed. What conceptual
-space does need is that sigma and pi stop sharing a chart, and that they are
-not *both* normalised: a mean has gain at most one, and a crisp XOR needs one
-fold that can amplify. Inputs ±.9, targets ±1, eight runs each:
-
-| signed pair in conceptual space | 2 hidden | 4 hidden |
-|---|---|---|
-| today: sigma and pi both in the log-odds chart | 0 of 8 (MSE 1.0) | 0 of 8 |
-| pi → sigma in the raw chart, plain weights, tanh exit | 2 of 8 | 8 of 8 |
-| **mean sigma in the raw chart → pi as it is today** | 6 of 8 | **8 of 8** |
-| mean sigma → pi with normalised exponents too | 0 of 8 (MSE ≥ .63) | 0 of 8 |
-
-The third row is the pair to try: **sigma** a signed, normalised combination
-in the raw chart, with the convex bias toward a learned `c` in `[−1, 1]`,
-inverting exactly as in §3 with `s` the column norm — feeding **pi
-unchanged**, linear in the log-odds chart, where a signed exponent is a
-literal (`m(−x) = 1/m(x)`) and the exit tanh bounds the result whatever the
-weights. The gate should have at least four hidden units: at two it is
-solved in six runs of eight, and a gate written at the minimal width invites
-a seed again.
-
-**Which norm: L2 for signed weights, L1 for the monotone means** (Alec,
-2026-09-21: "signed weights will need an L2 norm, not an L1 norm (or both),
-otherwise they might go unstable"). Measured on a signed near-identity
-`L D U` (off-diagonals ±.0067):
-
-| signed fold, column-normalised by | own-input weight at width 1032 | energy kept by one layer | gain of the reverse | 20 layers at width 264: energy kept / reverse gain |
-|---|---|---|---|---|
-| L1, `Σ|W|` | .13 | .13 | 10.8 | .0000 / 1.3 × 10⁹ |
-| L2, `‖W‖₂` | .98 | 1.00 | 1.4 | 1.00 / 2.3 |
-
-Under L1 the many small signed entries count in full in the normaliser and
-cancel in the output, so the signal dies and its reverse explodes. L2 keeps
-the energy and keeps the reverse tame, and it removes finding 4's width
-problem for signed folds. Its bound is Cauchy–Schwarz, `|y| ≤ ‖w‖₂ ‖x‖₂`, so
-it is exact on inputs of **at most unit energy** — which isolated normalized codes are. Actual grammar operands also include
-composed values; their energy must be measured rather than inferred from
-the codebook normalization. On cube-valued activations
-(coordinates near ±1, energy above one) L2 alone overshoots into pi's clamp:
-with XOR inputs of ±.9 per coordinate it was solved in 4 of 8 runs with a
-third of sigma's outputs at the clamp, against 8 of 8 and none at the clamp
-once the input vectors had energy .9. So: L2 for signed folds over unit-energy
-vectors; L1, the plain column sum, for the non-negative means over
-memberships; and where a signed fold must take cube-valued activations, both
-— rescale to unit energy at entry, or keep the L1 bound there.
-
-For the record, the monotone form can be made to fit XOR by giving it the
-complement `[u, 1 − u]` and a learned power-mean sigma (`p` → 20): unsolved
-with an arithmetic sigma (MSE .1669 every run; .125 is the best possible,
-above the test's bar of .1), solved in 2 of 8 runs at two hidden units and
-8 of 8 at four. That is not the recommended route — it puts negation into
-the chart that does not carry it.
-
-**3. The power mean must be computed in the log chart.** The literal
-`(u^p @ W_n)^(1/p)` returned NaN in every run once an input sat at the floor.
-`exp(logsumexp(p·log u + log W_n) / p)` is stable, and it is what the
-complement runs above used.
-
-**4. Near-identity does not survive normalisation at width.** With the
-documented init (`raw = −5`, off-diagonals ≈ .007) the dense `L D U` product
-has many small entries per column, and after column normalisation:
-
-| width | own-input weight | spread kept by one layer | cond(W_n) |
-|---|---|---|---|
-| 8 | .95 | .96 | 1.1 |
-| 64 | .66 – .70 | .68 | 1.5 |
-| 264 | .23 – .36 | .27 | 4.4 |
-| 1032 | .03 – .13 | .06 | 33 |
-
-At production width one layer is already close to the uniform average the
-proposal rules out as rank one. The off-diagonal init has to scale with
-width (`raw ≈ −10` restores .95 at 1032), or the normalisation has to be per
-node in butterfly mode, where every 2 × 2 node stays near identity whatever
-the width. §7 step 1 should say which.
-
-**5. The singular gradient moves; it does not vanish.** The atanh chart is
-singular at both rails. The geometric mean is singular only at zero — but
-zero is the common value of a sparse membership, and for a weight `w < 1`
-the slope `w·u^(w−1)` is unbounded there. "No slope cap" needs checking in
-the packed-row folds: a larger floor, or a cap at the floor only.
-
-**6. Where inputs sit near ½, pi and sigma agree.** For `u = ½ + δ`,
-`AM − GM ≈ (δ₁ − δ₂)² / 4`: second order. Coordinates of unit-norm codes at
-production width are ≈ ½ ± .015, so folds over idea vectors stay close to
-linear under this design, as they do under today's. The mismatch does its
-work on memberships and activations, which span the interval. That may be
-the right division — superposition is what keeps an idea decodable — but it
-should be measured: the distribution of fold inputs in a trained model.
-
-**7. A stack of means drifts to consensus.** Each layer's Jacobian is a
-stochastic matrix, so spread and gradient both contract with depth (row 4
-shows how fast when the weights are not near identity). The 30-deep test
-should assert that spread survives, not only that the range holds.
-
-**8. It does not help stored-idea generativity.** The balanced split returns
-the parent for both children, which is what the reference-free inverse does
-today (todo item 6). A mean is bundling: two codes are recovered from it by
-correlation against the codebook, and their order only if the two weights
-differ.
-
-**9. Cost.** Sigma loses its chart entirely (one matmul and the bias mix);
-pi goes from about nine elementwise kernels to about six; the custom
-autograd function and the rail clamps go. The model is bound by kernel
-launches, so that is where a gain would come from. Swapping one chart for
-another, by itself, measured no faster.
-
-**10. Where sigma alone builds higher orders, a normalised mean kills the
-signal** (Alec's question, 2026-09-21). The concept pyramid is sigma only:
-one hop per rung, a higher-order symbol from its members. A higher-order
-symbol denotes a kind — any of its members — and activity is sparse, so usually
-one member of several is active. A mean then gives the symbol the *share* of
-its members that is active, and the shares multiply up the orders. With
-equal weights and the leaf at 1:
-
-| sigma at each rung, 8 members | one member active, orders 1 → 4 | all members active |
-|---|---|---|
-| normalised arithmetic mean (L1) | .125 → .016 → .002 → .000 | 1 at every order |
-| L2-normalised, non-negative | .354 → .125 → .044 → .016 | 2.8 → 8 → 23 → 64 |
-| power mean, `p = 20` | .90 → .81 → .73 → .66 | 1 at every order |
-| max (`p → ∞`) | 1 at every order | 1 at every order |
-| probabilistic sum `1 − ∏(1 − u)` | 1 at every order | 1 at every order |
-| pre-11 tanh of the sum at weight 1 | .76 → .64 → .57 → .51 | 1 at every order |
-
-At 32 members the mean is at .001 by the second order. The L2 form is worse
-here: it still decays when one member is active and it grows without bound
-when all are. So the arithmetic mean is the wrong sigma wherever sigma means
-*union*. The laws this document already gives for sigma — identity 0,
-absorber 1 — say the same: a mean has neither (`mean(x, 0) ≠ x`), while max
-and the probabilistic sum have both, and neither decays. In the family of §5
-that places the pyramid's sigma toward `p → ∞`. The probabilistic sum is the
-other candidate, and it may be the cleaner monotone form: it is pi's De
-Morgan dual, adding in the chart `log(1 − u)` where pi adds in `log u` — two
-charts, so §2's mismatch holds — with non-negative exponents that need **no
-normalisation** to stay in `[0, 1]`, and the same exact reverse through the
-`L D U` solve. Its risk is the opposite of the mean's: many weakly active
-members accumulate toward 1, which learned exponents below one and the
-pyramid's top-K taper have to hold down. The arithmetic mean remains right
-where an average is what is meant.
-
-*Does pi build higher orders too?* The September 21 proposal predates 11c.
-Perceptual towers now use native min/max and have no learned fold layers;
-subsymbolic passes retarget perception. Pi intersects located concepts only
-in the order-0 field. Higher orders use max sigma over symbols of the
-preceding order. Their sigma is a union that does not decay, and the store
-rejects conjunctive edges above order 0. The comparison above does not
-authorize an alternating pi/sigma symbolic pyramid.
-
-**September 21 recommendation.** Evaluate behind a `normalize` mode, turned on
-selectively. First the two XOR gates, in conceptual space with the monotonic
-flags off: the signed mean sigma in the raw chart feeding today's pi, at
-least four hidden units. Then the membership folds of the perceptual towers,
-which already live on `[0, 1]`, comparing the monotone means as proposed
-against the union forms of finding 10; the concept pyramid keeps a sigma that
-does not decay. The grammar's idea-vector folds last, after finding 6 is
-measured. Where a form
-is adopted, the path it replaces is deleted rather than kept as a second
-mode.
-
-#### Real-layer evaluation: dropped (September 25)
-
-The [item 10 receipt](benchmarks/2026-09-24-item10/README.md) records Alec's
-decision to **drop normalized means**. The experimental mode is deleted,
-including its lift/lower arguments, configuration and mode tests. The
-following measurements explain that decision; they describe the archived
-evaluation source, not a callable production mode.
-
-Signed L2 raw-chart Sigma followed by unchanged Pi solves all eight declared
-unit-energy XOR runs at both widths 4 and 8, without reaching Pi's clamp.
-The same-chart control and the both-normalized control solve none. On
-cube-valued inputs the selective pair solves 0/8 at width 4 and 1/8 at width
-8. Actual native grammar operands exceed unit energy: 25 of 68 operands in
-34 retained binary windows, with a maximum norm of 1.7753 and a coordinate
-of 1.0695. Normalized codebook leaves do not establish the required bound
-for composed operands. No activation rescaling is added.
-
-Width-scaled monotone initialization restores the own-input weight at width
-1032 from .0486 to .9482, but 30 alternating arithmetic/geometric means keep
-only about .166 of the input spread at width 264. The geometric floor has
-zero gradient below it and a slope of 353.6 immediately above it in the
-two-input probe. Convex bias and the log floor produce nonzero outputs on
-all-zero membership input, conflicting with exact unknown evidence. They
-are therefore unsuitable replacements for the native membership read.
-
-The serial measurement ends at reconstruction .0891618710 with the current
-folds and .0914028883 with selective normalization. Two timing pairs disagree
-on the direction of the throughput difference; no consistent speedup is
-shown. Balanced binary reverse reproduces the parent but cannot recover
-distinct children without a known reference. Mean union decays through the
-pyramid; max and probabilistic union preserve a single full member. The
-historical 11a projection limit of 256 positions remains in that comparison;
-11b/11c unrelated membership evidence is exactly zero and has no such
-accumulation limit.
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#proposal-bounded-pi-and-sigma-folds-as-normalized-means-alec-2026-09-21) (2026-10-30): "Proposal: bounded pi and sigma folds as normalized means (Alec, 2026-09-21)".*
 
 #### Decided in direction: a concept is sigma over pi (Alec, 2026-09-21)
 
@@ -2220,124 +1754,9 @@ remain in the [item 11](benchmarks/2026-09-23-item11/README.md) and
    There is no sigma inverse or balanced probabilistic split. Attention and
    expectation use this concept-to-percept route.
 
-6. **A pool of unminted concepts, learning all the time, with a gate on
-   participation — in place of minting by significance** (Alec, 2026-09-22:
-   "the minting of a term is difficult, since it may mean that we miss
-   things that are not seen as significant, but they turn out to have large
-   effect. I would prefer to have some number of 'unminted' concepts
-   learning at any given time, with a gate that allows them to participate
-   as concepts… almost like unassigned vectors in a VQ pool"). Concrete
-   form, settled by the September 22 handoff:
+6. *A superseded passage beginning "**A pool of unminted concepts, learning all the time, wit" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
-   - **The pool becomes rows.** Each order keeps `P` provisional concepts
-     in the store beside its minted ones (`P` a `model.xml` element). A
-     provisional concept computes forward like any concept, but the next
-     rung, the taper and the symbolic layer read it only through its
-     **participation gate** `g ∈ [0, 1]`: they see `g · y`.
-   - **Assignment, as in VQ.** By default (kinds): when two concepts'
-     contexts match above a bar — the same where on different occasions —
-     and no kind already holds both, the pair is assigned to the least-used
-     provisional concept as its first two disjunctive parts; a concept whose
-     context matches an existing kind's is added to it. With `<conceptualPi>`
-     on (wholes as well): an incoming co-present set that no whole matches
-     above the bar — cosine over conjunctive parts, as now — is assigned to
-     the least-used provisional concept as its conjunctive parts, all of
-     them, each necessary. Assignment is among unminted concepts only;
-     minted concepts do not compete for input.
-   - **Learning before minting.** A provisional concept's parts are tracked
-     by EWMA — as the entry's member weights are now — and trained by the
-     ordinary gradient through `g`, as the pyramid's weights are. Its
-     context signature, the entry's context weights, is its where. This
-     applies to what the mind witnesses: words and other percepts.
-     Object-concepts are not witnessed, so their kinds are written by the
-     closing from testimony, not discovered by the pool. The gate is **use,
-     not gradient**: an EWMA of the concept's own activation being above a
-     floor on recent inputs — earned by recurring, never optimised, so a
-     concept cannot learn to participate by making itself cheap. `g` rises
-     with use and decays without it.
-   - **Where, for a concept, is its context — and that makes co-presence
-     and substitution one rule** (proposal for Alec's question of
-     2026-09-22: "We need to integrate the 'same space and time' that
-     creates wholes and parts, and the 'substitution' that creates
-     syntactic categories and parts of speech. I think we proceed by
-     defining 'where' in terms of context, or perhaps by using the location
-     as embedded in conceptual space (which reflects previous embeddings)").
-     A percept has a `.where`, its span in the input. A concept has none;
-     define its **where as its context**: what else is present in the field
-     when it is — the leave-one-out bag the promotion observer already keeps
-     as an entry's context weights, and the rotation updater already uses to
-     place codes. Then one rule has two consequences:
-
-     | | same time, different where | same where, different time |
-     |---|---|---|
-     | what it is | co-presence: parts of one whole | substitution: alternatives at one position |
-     | fold | pi, a conjunction over what is present together | sigma, a union over what fills the same context |
-     | in the towers | adjacent spans at one `.when`: a whole of its parts — its presence the conjunction of theirs, its extent the union of their spans (the synthesis fold) | one span position filled differently on other occasions: a type (WholeSpace's property rows) |
-     | in the pyramid | with the switch on, the assigned co-present set: conjunctive parts, a whole | concepts whose contexts match: disjunctive parts, a kind — the default |
-     | in linguistics | the syntagmatic axis | the paradigmatic axis (Saussure; Harris 1954) |
-
-     Sigma over pi is then paradigmatic over syntagmatic: a concept is a
-     union, over occasions, of conjunctions over what was present. The two
-     definitions Alec offers are one thing at two time scales. The
-     occurrence's where is its context *now*, and the code's location in
-     conceptual space is its where *accumulated* — the rotation updater is
-     the EMA that turns the first into the second, so "codes by
-     distribution" is exactly substitution learned over time. Discovery uses
-     the first within a pass (two concepts whose contexts match; with the
-     switch on, a co-present set) and the second as the cue across passes (a
-     nearby code is a candidate alternative). Geometry is the *evidence*; the edge is the
-     *record*: a category is still membership, written when two concepts'
-     wheres coincide above a bar, and a nearby code that is never seen in a
-     matching context writes nothing. The category this discovers is the
-     one the contexts distinguish: syntactic when the context is the frame
-     ("the __ is": Mintz 2003; Redington, Chater & Finch 1998), semantic
-     when it is the predicates ("__ purrs"), which is the distributional
-     hypothesis at each grain. It applies to what the mind witnesses.
-     Object-concepts have no witnessed where until there is a video feed, so
-     their categories still come only from testimony; a word's discovered
-     categories reach its object only through what language asserts.
-     The context weights therefore stay in the pool: they are the where.
-     The philosophical reading — particulars now, universals over time; the
-     paradigm as the domain of exclusion; testimony for the unwitnessed — is
-     in [Philosophy](Philosophy.md#where-is-context-particulars-universals-and-the-two-axes-2026-09-22).
-
-   - **Discovery.** At `g ≥ θ_mint`, the
-     concept is discovered: it gets its symbol and its code, LTM may
-     reference it, and it is no longer recyclable. Use management is cleared
-     and its gate is fixed at one, so its symbol survives non-use. Below `θ_recycle`, the
-     least-used provisional concept is recycled when a new set needs one.
-     Nothing is missed for being insignificant at first sight: every
-     recurring substitution, and with the switch on every recurring
-     co-present set, has a concept from its first recurrence, and an effect
-     that shows late raises the gate then.
-   - **Cost.** `P` rows per order in the store, dense within the pool's
-     edges at first and pruned to the strong edges at minting; the host
-     dictionaries go. The forward cost is that of `P` more rows per rung.
-   - **The XOR gate.** Four or eight provisional conjunctions observe
-     located primitive-input cases, without seeded selection. A sigma row
-     learns which symbolized cases supply XOR. Its positive pole must match
-     the truth table; a corner read cannot satisfy the gate.
-   - **The switch, restated.** `<conceptualPi>` (default off) is whether the
-     pyramid discovers wholes from co-presence as well as kinds from
-     substitution: off, it is a taxonomy of kinds and every discovered
-     concept is a union of sufficient parts; on, co-present sets also mint
-     wholes of necessary parts, and the two stages of the computation both
-     run.
-
-**Implementation and evidence (September 22–23).** The original
-[landing record](benchmarks/2026-09-22-item11/README.md) records the union
-replacement, both sparse part matrices, provisional rows and context weights,
-transpose, checkpoint and optimizer ownership. The default remains sigma
-alone; `conceptualPi` enables the conjunction stage. The
-[review correction](benchmarks/2026-09-23-item11/README.md) implements the
-paired representation, scoped dual folds, measured admission floor, dense
-host contexts, permanent discovered gates and one sidecar owner for part
-values. Rung and declared-part XOR checks establish composition. At those
-commits, the two unseeded learning gates remained null and the serial
-reconstruction baseline was unchanged; the trained live parallel measurement
-records its weak-evidence limitation. Item 11a below supplies learned
-primitive properties and replaces the expected-failure learning assertions;
-its reconstruction and calibration differences are recorded separately.
+*A superseded passage beginning "**Implementation and evidence (September 22–23).** The origi" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 #### Item 11a: primitive properties and grounded extents (September 23)
 
@@ -2571,6 +1990,9 @@ context contains only actual external observations, with independent evidence
 lanes. Predictions are made before their targets and never feed their own
 future context. The same head is read at symbol arrival, row closing and next
 row prediction. The original identity and activation gain stay separate.
+At item 2.5 round B the head's predicted field is also the conceptual spread
+that primes attention, the chooser and retrieval, read detached (decided
+2026-10-30, [thinking spec §22.3](plans/2026-10-27-item2-5-thinking.md); not built).
 
 Document addresses from the corpus cursor reset only the affected row's
 transient prediction context. Soft boundaries retain it; hard resets and
@@ -2944,7 +2366,8 @@ At the eager per-word boundary, before the next arrival, its own Adam consumes
 `expectation.percept` once; the main optimizer excludes these parameters. Its
 pre-arrival value is frozen for both trials. Moments observe each external arrival
 once, including a valid expected absence. Every model checkpoint saves the
-local optimizer; `CorpusCheckpoint` additionally preserves mid-epoch context.
+local optimizer; `CorpusCheckpoint` additionally preserves mid-epoch context, including both
+priming ledgers and MTM.
 Completed-epoch saves retain its moments even with no continuation cursor.
 Percept content recombines to the exact attended input,
 with its identity Jacobian; the arithmetic `expected + (observed - expected)` is

@@ -2,7 +2,7 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 
@@ -14,7 +14,7 @@ Structural-preference and routing-share measurements remain design goals.
 The separate codec in `288b56b`
 did not satisfy this architecture; its passing regression receipt never proved
 otherwise. See [Testing](Testing.md) for receipts and
-[KernelRetirement](KernelRetirement.md) for the earlier test dispositions.
+[KernelRetirement](DevelopmentHistory.md#frame-kernel-test-migration) for the earlier test dispositions.
 
 ## Ownership and execution
 
@@ -127,12 +127,13 @@ and estimate/question rows cannot become retrieved frames. See
 [AccessibleMind](AccessibleMind.md) for cue ranking and index ownership.
 Attention reads the active meaning and detached memory values; its final chooser features detach. It has no
 answer target or additional learned head. `ThoughtFeatures.context_width`
-owns the input dimension (`15D + 3509`, plus two action flags).
+owns the input dimension (`18D + 3501`, plus two action flags).
 
 Zero final weights preserve the deterministic execute/conclude baseline.
 Candidate values, checked results and root/active chooser observations detach. Output also cuts state at the concluded idea; shared generation operators remain trainable.
-Each eligible supplied-answer row earns `-answer_error - 0.01 * actual_work`
-with one EMA baseline, added to the real `runBatch` total. Old thinking-weight
+Credit is compose's paired rule, $K \cdot R \cdot p(a_{dep}) \cdot \Delta C$ on the
+detached cost difference with the other trial as baseline
+(`ThoughtCredit.surrogate`); the EMA baseline is retired. Old thinking-weight
 aliases select this same objective once. FineWeb has no answer labels, so
 residual credit remains item 2. Old incomplete-context policy weights and
 optimizer moments reset explicitly; current policies restore strictly.
@@ -179,7 +180,7 @@ No held-out annotation enters parsing or generation. Metadata recomposition
 checks role identity/order, mode, polarity, bindings and scope. The separate
 wrapper check also preserves the complete role values.
 
-[Testing](Testing.md#working-grammar-wording-gate-september-20) records commands,
+[Testing](DevelopmentHistory.md#working-grammar-wording-gate-september-20) records commands,
 development failures, the normal training smoke, the explicit slow language
 run and the full default receipt. The slow case is retained for reproduction;
 the preference measurements below need not become artificial passing tests.

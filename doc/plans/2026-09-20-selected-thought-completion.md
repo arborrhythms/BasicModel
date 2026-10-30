@@ -8,7 +8,7 @@ context, exercises actual policy-selected nested descent, retires the remaining
 bridge/legacy paths and reconciles the test deletions.
 
 [SelectedMeaning](../SelectedMeaning.md) is the current implementation contract;
-[KernelRetirement](../KernelRetirement.md) records individual dispositions and
+[KernelRetirement](../DevelopmentHistory.md#frame-kernel-test-migration) records individual dispositions and
 [Testing](../Testing.md) records both the original and corrective receipts.
 The user-owned three-grammar specification remains outside this commit.
 

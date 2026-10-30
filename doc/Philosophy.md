@@ -2,11 +2,12 @@
 
 > **Amendment of 2026-10-20 (read first).** Decisions of 2026-10-19/20 supersede statements below where they conflict; the text is kept as the record. Record: [two truths §1, "The row, field by field"](specs/2026-09-16-two-truths-ideas-and-relations.md#1-definitions-decided); [bind plan §6–§6.3](plans/2026-10-19-bind-thought-operation.md); [occurrence spec §13–§14](specs/2026-09-30-occurrence-tense-aspect.md); [expectation spec rev 5](specs/2026-10-08-expectation-at-every-level.md).
 > - Naming (2026-10-21, Alec): LTM0 is the occurrence store (old LTM1); LTM1 is its relation stratum (old LTM2); LTM2 denotes relations over relations. The old LTM3 name is retired. Earlier names below belong to the retained record.
-> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else.
+> - Rows: an LTM1 row is **one** concept slot; an LTM3 row is **three symbol references** (argument, kind, argument) of kind definition, attribution or conditional. The three-slot relation row with a REL code in the middle, null outer vectors, `refs`, `rel_type`, `role_mask`, `order`, `polarity`, `grammatical_mode`, `row_ids`, the address columns and the semantic sidecar are superseded: a row holds its slots, `.when` (model time, a column composition never reads), `truth_plus`/`truth_minus` (the lanes, renamed from `c_plus`/`c_minus`), the access count (renamed from `witness_count`) and `surprise`, and nothing else. **Amended (decided 2026-10-23, [step 2 §71](plans/2026-10-21-step2-one-ltm.md); recorded 2026-10-30):** an LTM1 row is two tagged references with its kind read from the referents, not three. As built at `3718d9d0dc`, `LTM0` still carries `c_plus`/`c_minus`, `source_trust`, `order`, `row_ids`, `origin`, `record_kind`, `polarity` and `witness_count` columns; only `refs`, `grammatical_mode` and the index columns are retired (audit 2026-10-30, Alec to decide).
 > - Parthood, subsumption and kind statements ("cats are animals") are **folds** in the meronomy and the taxonomy over symbols, not rows; equality is membership in a singleton; no `REL_PARTOF` row exists.
 > - Identity lives only in the major structures: a **minted** concept row at the shared index (its content the fold of its occurrences, rebuildable) or a **short-term** concept (the NP's fold point with its `.where`/`.when` band, for the situation). The nouns dictionary, the resolver's count tables and the ICA event chart are off the identity path; minting is by recurrence in LTM1; **`bind`** is the only binder (a thought operation, once per site), determiners are cue inputs, and its content term is the meet, not distance.
 > - `.where` is inside the concept's reserved band (no column); **symbols have `.where` and `.when`**, concepts keep the extent and never the clock; `.when` is model time, sinusoidally encoded; the document and the stream are **context wholes** in WholeSpace, so "sentence *k* of document *d*", source address hashes, timestamps and situation wholes are superseded.
 > - Expectation is a **gain field** `c = m⊙a⊙o` with the residual in two lanes, never a subtraction or a sign-reversed image; per level with a local error (no inversion across levels — the invertible path is item 3's); one activation predictor over the symbol bank (the slot-structured `SentenceExpectation`, `BracketExpectation`, the byte level and the ARMA heads are retired); keep and credit both read `R + A`; defaults gains 0, prime on, `φ = .5`.
+> - Amended 2026-10-29/30 (Alec; [thinking spec §§16, 22](plans/2026-10-27-item2-5-thinking.md), [2.7 record §42](plans/2026-10-27-item2-7-corpus.md)): at the percept level the residual is signed and the forward path carries `expected + residual`, so "never a subtraction" is superseded there (built in item 2.7's final round); at the concept level the expectation is `ActivationPredictor`'s predicted next state, which at item 2.5 round B is also the spread that primes attention, the chooser and retrieval; `intuit` is a separate top-down layer with its own weights, trained only by output; one backward with each band stopped at its output is the decided direction. The round B and one-backward parts are not built.
 > - Operators are minimal: tense, aspect, the preposition and the modal are one `position` operation (the modal with a world as object; no `MP` rule); the verb is a group element (`verbSpectrum` diagonal, log-ratio teacher); `surface` is absorb and transpose only; no language is named or special-cased in code, configuration, fixtures or tests. Defaults: NP = everything, VP = *occurs* (read for "exists"), MP = all possible worlds.
 
 
@@ -553,32 +554,7 @@ sign, and negation is the swap of that pair.
 > Opposite of non-pot is a non-affirming negation. So I guess attention does
 > not need full prediction in order to focus (which makes sense).
 
-### The rule
-
-With `o` the idea composed from a sentence, `ê` the idea that was expected,
-`κ` how strongly each role was expected to be filled, `g` a gain and `m` the
-attention on each role, what is **conceived** is
-
-```text
-c = o − g · (1 − m) ⊙ κ ⊙ ê
-```
-
-A sentence that was perfectly predicted conceives nothing. One that departs
-from its prediction conceives the departure. A role that was expected and did
-not come conceives `−ê`: an absence. And `o = c + g(1 − m)κê` exactly while
-the estimate is kept, so nothing of the input is lost: the sentence is met
-from the expected point instead of from zero. It is a change of origin, not a
-distortion.
-
-This is the opposite sign to the natural first idea, that expecting something
-should *raise* it in the mind. Raising the expected makes comprehension lean
-toward its own prediction: the input is no longer accepted as it is, and a
-predictor trained on what was understood is then trained on its own echo.
-Subtracting leaves the understanding alone. "If we do not predict, we process
-exactly what is there" (Alec); under this rule that is equally true when we
-do predict, and the difference expectation makes is confined to what is
-*new*.
-
+*Moved to [DevelopmentHistory](DevelopmentHistory.md#the-rule) (2026-10-30): "The rule".*
 ### Perception carries no negation
 
 The third statement is settled by the percept geometry
@@ -687,6 +663,15 @@ is the object.
   context and its open role is the object of observation. Laid over a
   remembered frame, the bound roles cancel and what remains conceived is the
   answer. *Answering is subtracting the question.*
+
+**Amended 2026-10-30 (Alec; [thinking spec §22](plans/2026-10-27-item2-5-thinking.md)).** Attention still
+excludes without needing a prediction, but the bias on what it is likely to
+take up is now an expectation: the conceptual spread that primes attention,
+the chooser and retrieval is `ActivationPredictor`'s predicted next state,
+read detached (item 2.5 round B). Intuition is the separate top-down faculty,
+`intuit`, with its own weights trained by output; a thought is an intuition
+`infer` has checked ([Reasoning](Reasoning.md), "Intuition, understanding and
+thought").
 
 ### Absence is inferred, never perceived
 
