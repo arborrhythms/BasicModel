@@ -286,7 +286,10 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         # until its predicate arrives. Offering a current identity is legal.
         from operation_fixtures import selected_action
         columns=[i for i,local in enumerate(binary) if local==bind]
-        eligible=reference['binary_valid'][:,0,columns] & (reference['binary_refs'][:,0,columns,1]>0)
+        # Reading also offers the words' pending identities. This fixture
+        # binds its supplied prior, not whichever positive id is first.
+        eligible=reference['binary_valid'][:,0,columns] & (
+            reference['binary_refs'][:,0,columns,1] == held_identity)
         at=eligible.long().argmax(-1)
         target=torch.tensor(columns)[at]
         selected=torch.where(kwargs['depth']>=2,binary.index(op),
@@ -315,6 +318,7 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         force_order(owner, word, 1)
     occurrence = store.occurrence_of(index)
     owner.mtm.open(occurrence, kind=None, when=0, value=prior, pending=False)
+    held_identity = owner.mtm.entries[owner.mtm.token_of(occurrence)].transient
     frame = SituationAddress(occurrence).read(store)
     # The live pool is prepended by the production boundary; no frame
     # overlay staging override supplies the identity anymore.
@@ -344,17 +348,25 @@ def test_public_reading_fuses_the_reference_before_capture_and_write(tmp_path, m
         assert int(actions.sum()) == len(entry.leaves)-1
         frame = entry.operation_values[actions][-1]
         content_width=store.when_start-4
+        binding = (entry.actions[:,0] == 1) & (entry.actions[:,1] == bind)
+        assert int(binding.sum()) == 1
+        read_value = entry.operation_values[binding][0,0]
         torch.testing.assert_close(frame[0,:content_width],
-            torch.maximum(entry.leaves[0],prior)[:content_width],rtol=0,atol=0)
+            torch.maximum(read_value,prior)[:content_width],rtol=0,atol=0)
         # Prepended occurrences now carry their own current percept bands.
         assert torch.isfinite(frame[0,content_width:]).all()
         # A fixed projection evaluated as a single word or a bank GEMM can
         # differ by float32 accumulation order; it retains the same direction.
-        torch.testing.assert_close(frame[1,:content_width], entry.leaves[-1,:content_width], rtol=1e-6, atol=2e-7)
-        torch.testing.assert_close(frame[1,store.when_start:], entry.symbol_when[-1],rtol=0,atol=0)
-        assert entry.identity_actions[actions][-1, 1].item() == 1
-        assert clause.children[0].identity['handle'] == 1
-        assert tuple(entry.identity_origins[0, :2].tolist()) == (2, occurrence[-1])
+        beta = owner.interpret.word_for_form('beta')
+        beta_token = owner.mtm.entries[owner.mtm.token_of(('name', beta))]
+        torch.testing.assert_close(frame[1,:content_width], beta_token.value[:content_width], rtol=1e-6, atol=2e-7)
+        staged = model.inputSpace.symbol_entries
+        beta_site = (staged.object_ids[0,:staged.prepend] == beta_token.transient).nonzero().item()
+        torch.testing.assert_close(frame[1,store.when_start:], staged.symbol_when[0,beta_site],rtol=0,atol=0)
+        handle = int((entry.identity_ids == held_identity).nonzero().item()) + 1
+        assert entry.identity_actions[actions][-1, 1].item() == handle
+        assert clause.children[0].identity['handle'] == handle
+        assert tuple(entry.identity_origins[handle-1, :2].tolist()) == (2, occurrence[-1])
         torch.testing.assert_close(clause.composition.point, frame[2], rtol=0, atol=0)
         # Thought may complete a different working field after the close.
         # The shared recent chunk retains the written sentence's own value.

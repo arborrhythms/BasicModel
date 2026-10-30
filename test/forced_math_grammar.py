@@ -27,6 +27,19 @@ class ForcedGrammar:
         choose, forward, select = language.choose_operation, layer.forward, layer.select_logits
         resolver = self.model._concept_owner().components.reference_close
         select_reference = resolver.select
+        def reading_names(names):
+            # Reading sites now carry named MTM ids before their DEF objects
+            # exist. Preserve the fixture's lexical ranking across that port.
+            pool = self.model._concept_owner().mtm
+            for mention in pool.names.values():
+                entry = pool.entries.get(mention.token)
+                if entry is None:
+                    continue
+                labels = names.get(mention.reading, set())
+                for identity in (entry.transient, entry.symbol):
+                    if identity is not None:
+                        names.setdefault(int(identity), set()).update(labels)
+            return names
         def reference_choice(choices, logits, *, forward_identity=None, individuals=None):
             if forward_identity is None:
                 return select_reference(choices, logits, individuals=individuals)
@@ -38,6 +51,7 @@ class ForcedGrammar:
                 word = word.decode() if isinstance(word, bytes) else str(word)
                 for identity in (*identities, *owner.word_concepts(word)):
                     names.setdefault(identity, set()).add(word.lower())
+            reading_names(names)
             labels = names.get(forward_identity, set()) - self.live_references
             if not labels.intersection(self.open_names | self.named_bindings.keys()):
                 return select_reference(choices, logits, forward_identity=forward_identity,
@@ -102,6 +116,7 @@ class ForcedGrammar:
                 word = word.decode() if isinstance(word, bytes) else str(word)
                 for identity in ids:
                     names.setdefault(int(identity), set()).add(word.lower())
+            reading_names(names)
             nb, nu = len(data['binary_ops']), len(data['unary_ops'])
             for b in range(len(chosen)):
                 if not bool(active[b]):

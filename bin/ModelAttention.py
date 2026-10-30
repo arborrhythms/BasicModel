@@ -327,29 +327,57 @@ def stage_symbol_bank(model, owner):
 
 
 def stage_percept_expectation(model, active):
-    """One causal field-wide moment update per external input, before trials."""
-    moments = model.percept_expectation
-    fi = getattr(model.perceptualSpace, '_forward_input', None) or {}
-    values = fi.get('seed_event')
-    indices = fi.get('indices')
-    model._percept_word_gain = None
-    model._percept_prior = tuple(value.detach().clone() for value in
-                                (moments.mean, moments.variance, moments.count))
-    if not torch.is_tensor(values) or not torch.is_tensor(indices):
-        return
-    width = moments.mean.numel()
-    values = values[..., :width]
-    if values.shape[-1] != width:
-        raise ValueError('percept field differs from its moment width')
-    valid = indices >= 0
-    z = moments.residual(values)
-    model._percept_residual = z
-    groups = fi.get('word_groups')
-    if torch.is_tensor(groups) and groups.shape == valid.shape:
-        # A word bracket is the perceptual region by construction: the
-        # accepted reduction consumes exactly these valid source positions.
-        model._percept_word_gain = moments.region_gain(values, valid,
-            strength=model.percept_expectation_gain, groups=groups, regions=active.shape[1])
-    discourse = getattr(model.symbolSpace, 'expectation', None)
-    if model.training and not getattr(discourse, '_external_observations_suspended', False):
-        moments.observe(values, valid)
+    """Allocate this brick's immutable arrival ledger; do not observe yet."""
+    owner = model.percept_expectation
+    shape = (*active.shape, owner.width)
+    model._percept_expected = owner.context_mean.new_zeros(shape)
+    model._percept_arrival_loss = owner.context_mean.new_zeros(active.shape)
+    model._percept_arrivals = []
+    model._percept_prior = None
+
+
+def forecast_percept(model, active):
+    """Eager serial boundary, before the current word's percept is computed."""
+    owner, expectation = model._concept_owner(), model.percept_expectation
+    rows = sorted({row for cid in owner.interpret.lexical_identities()
+                   if (row := owner._csw_row_of(cid)) is not None})
+    def bank():
+        reference = owner.similarity_codebook.W
+        for lo in range(0,len(rows),256):
+            ids = torch.tensor(rows[lo:lo+256],device=reference.device,dtype=torch.long)
+            codes = owner.similarity_codebook.lookup_rows(
+                ids[None].expand(len(active),-1), streams=True)[...,:expectation.width]
+            yield ids, codes.detach()
+    earlier = getattr(model,'_last_sentence_understanding',None)
+    completed = None
+    if earlier is not None:
+        from Expectation import ActivationPredictor
+        values = earlier.end_slots.detach()[...,:expectation.width]
+        occupied = torch.arange(values.shape[1],device=values.device)[None] < earlier.end_depth[:,None]
+        completed = ActivationPredictor.context_from(values,occupied)
+    return expectation.forecast(bank,len(active),completed=completed)
+
+
+def observe_percept(model, forecast, payload, sub, index, active):
+    """One local update, then both composition trials share the frozen value."""
+    expectation = model.percept_expectation
+    width = expectation.width
+    native = sub[1][:,int(index)]
+    observed = native[...,:width]
+    discourse = getattr(model.symbolSpace,'expectation',None)
+    training = bool(getattr(model,'_sentence_training',False) and torch.is_grad_enabled()
+        and not getattr(discourse,'_external_observations_suspended',False))
+    arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
+    model._percept_expected[:,int(index)] = arrival.expected
+    model._percept_arrival_loss[:,int(index)] = expectation.last_arrival['local_loss']
+    model._percept_arrivals.append(dict(expectation.last_arrival,index=int(index)))
+    # Identity-valued forward chart, retaining the ordinary source pullback.
+    # The two poles of conceptual evidence are unchanged by this P interface.
+    from Expectation import recombine_percept
+    values = list(payload)
+    for offset in (0,6):
+        value = values[offset]
+        prior = arrival.expected[:,None] if value.ndim == 3 else arrival.expected
+        form = recombine_percept(value[...,:width],prior).content
+        values[offset] = torch.cat((form,value[...,width:]),-1)
+    return tuple(values)

@@ -158,7 +158,7 @@ class Reading:
                     events.shape != (self.actions.shape[0], 6) or events.dtype != torch.long or
                     handles.shape != ids.shape or handles.dtype != torch.long):
                 raise ValueError('identity correspondence must align with values, actions and leaves')
-            if (bool(((origins[:, 0] < 0) | (origins[:, 0] > 4)).any()) or
+            if (bool(((origins[:, 0] < 0) | (origins[:, 0] > 6)).any()) or
                     bool(((origins[:, 2] < 0) | (origins[:, 2] > 1)).any()) or
                     bool(((handles < 0) | (handles > count)).any()) or
                     bool(((events[:, :3] < 0) | (events[:, :3] > count)).any()) or

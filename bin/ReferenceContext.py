@@ -578,6 +578,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             newest = (active.long().sum(-1)-1).clamp_min(0)[:,None]
             mention = window.gather(1,newest[...,None].expand(B,1,D))
             own = identities.gather(1,newest)
+            own_relative = flags.gather(1,newest).bitwise_and(1) != 0
             points, ids, chunks, available = STMChunks.bind_menu(chunk_state,mention,
                 exclusions=getattr(bank,'exclusions',None))
             for column in range(points.shape[2]):
@@ -589,7 +590,10 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 brefs.append(torch.stack((own,ids[:,:,column]),-1))
                 bchoices.append(torch.stack((torch.full_like(own,-1),chunks[:,:,column]),-1))
                 bfound.append(torch.stack((torch.zeros_like(own,dtype=torch.bool),available[:,:,column] & (column > 0)),-1))
-                brels.append(torch.zeros_like(brefs[-1],dtype=torch.bool))
+                # The description keeps its actual clause kind, including
+                # when the dummy returns it unchanged. Field identities on
+                # the right carry working points, not relative addresses.
+                brels.append(torch.stack((own_relative,torch.zeros_like(own_relative)),-1))
                 bvalid.append(available[:,:,column] & active.any(-1)[:,None])
                 case_weights.append(window.new_zeros(B,N-1,case_count,2))
             continue

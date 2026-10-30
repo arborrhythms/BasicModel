@@ -88,13 +88,13 @@
     },
     {
       "file": "bin/MediumTermMemory.py",
-      "function": "MediumTermMemory.open",
+      "function": "MediumTermMemory._room",
       "attributes": [
         "when"
       ],
       "role": "retention priority",
       "previous_absolute_time": false,
-      "now": "The oldest retained token tick selects capacity eviction; the tick comes from RowTime.stamp."
+      "now": "Identities and familiar candidates share oldest-access eviction; the retained token tick breaks equal-access ties."
     },
     {
       "file": "bin/MediumTermMemory.py",
@@ -239,6 +239,16 @@
       "role": "shared chunk provenance",
       "previous_absolute_time": false,
       "now": "Stamps the prepended identity at the present RowTime while retaining its last mention location."
+    },
+    {
+      "file": "bin/ReferenceClose.py",
+      "function": "ReferenceClose.accessible",
+      "attributes": [
+        "when"
+      ],
+      "role": "working identity history",
+      "previous_absolute_time": false,
+      "now": "Orders the retained MTM mention and event histories of identities reached through the shared chunks."
     },
     {
       "file": "bin/ReferenceContext.py",
@@ -748,6 +758,26 @@
       "now": "Selects a fixed coarse/fine period above both LTM capacity and the loaded document bound."
     },
     {
+      "file": "bin/corpus_capacity.py",
+      "function": "construct",
+      "attributes": [
+        "whenEncoding"
+      ],
+      "role": "construction measurement",
+      "previous_absolute_time": false,
+      "now": "Reports the constructed clock dimensions without reading a timestamp or advancing the clock."
+    },
+    {
+      "file": "bin/corpus_capacity.py",
+      "function": "train_brick",
+      "attributes": [
+        "whenEncoding"
+      ],
+      "role": "capacity exit measurement",
+      "previous_absolute_time": false,
+      "now": "Reports the existing when ladder periods and RowTime horizon; neither supplies a semantic feature nor changes either clock."
+    },
+    {
       "file": "bin/pipeline.py",
       "function": "BoundaryAdapter.adapt",
       "attributes": [
@@ -827,16 +857,6 @@
       "role": "carrier",
       "previous_absolute_time": false,
       "now": "Carries, slices, copies, validates or transports the relative bracket without interpreting its value."
-    },
-    {
-      "file": "bin/ReferenceClose.py",
-      "function": "ReferenceClose.accessible",
-      "attributes": [
-        "when"
-      ],
-      "role": "working identity history",
-      "previous_absolute_time": false,
-      "now": "Orders the retained MTM mention and event histories of identities reached through the shared chunks."
     }
   ],
   "dynamic_readers": [

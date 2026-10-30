@@ -151,12 +151,16 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     model.attention_budget = 128
     model.reconstruct_in_loop = False
     # Numerical generation is an explicit identity stub in this adapter test.
+    import Generative
+    monkeypatch.setattr(Generative,'walk_bank',lambda model,idea,bank:bank)
     model._walk_operand=lambda value, **kwargs: value
     def walk(idea, *args, **kwargs):
         model._adapter_words=idea
+        from generation_fixtures import suffix
+        pending=torch.zeros(len(idea),dtype=torch.bool)
         return (idea,torch.full((len(idea),),idea.shape[1]),
-                torch.zeros(len(idea),dtype=torch.bool),None,
-                torch.zeros(len(idea),1,dtype=torch.long))
+                pending,idea.new_zeros(len(idea)),
+                torch.zeros(len(idea),1,dtype=torch.long),*suffix(idea[:,:1],pending))
     model._compiled_output_walk=lambda: walk
     model.conceptualSpace.commit_event=lambda value: None
     model._reverse_body=lambda sub: model._adapter_words

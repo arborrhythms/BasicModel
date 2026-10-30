@@ -34,7 +34,7 @@ def request(clause, written, store):
     if reference is None:
         tag, address = record['origins'][subject-1, :2].tolist()
         if tag in (1, 2):
-            reference = int(address) if tag == 1 else ('ltm', store.address_domain, int(address))
+            reference = resolver.origin_reference(tag, address)
     if reference is None:
         return None
     return reference, resolver._event_symbol(int(verb)), int(clause.order)

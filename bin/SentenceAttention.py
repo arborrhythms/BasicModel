@@ -163,7 +163,7 @@ class SentenceField(FieldTraversal):
         """
         return torch.where(self.scope, self.full_admission().detach().bool(), prior)
 
-    def costs(self, record, recovered, *, defined, step_cost, programs=()):
+    def costs(self, record, recovered, *, defined, step_cost, programs=(), certified=None):
         from AttentionObjective import field_cost
         admission = self.full_admission()
         B, W, D = record.word_values.shape
@@ -182,12 +182,34 @@ class SentenceField(FieldTraversal):
             entry['defined_coordinates'] = coordinates & live[:, None]
             entry['unrecovered_words'] = (live & ~coordinates.all(-1)).long()
             entry['unrecovered_coordinates'] = (live[:, None] & ~coordinates).sum(-1)
-            error = torch.where(coordinates, target-value, 0.).abs().sum(-1)
+            if record.percept_expected is None:
+                error = torch.where(coordinates, target-value, 0.).abs().sum(-1)
+            else:
+                from Expectation import percept_reconstruction
+                prior = record.percept_expected
+                width = prior.shape[-1]
+                prior = prior.gather(1,index[:,None,None].expand(B,1,width)).squeeze(1)
+                correction, teacher, rebuilt, squared = percept_reconstruction(value[...,:width],target[...,:width],prior)
+                error = torch.where(coordinates[...,:width],squared,0.).sum(-1)
+                error = error + torch.where(coordinates[...,width:],target[...,width:]-value[...,width:],0.).abs().sum(-1)
+                entry['percept_correction'] = correction.detach()
+                entry['percept_target'] = teacher
+                entry['percept_reconstructed'] = rebuilt.detach()
             entry['inside'] = torch.where(live, error, 0.).detach()
             entry['work'] = live.to(value) * step_cost
-        costs = field_cost(self.observed, recovered, admission, self.scope,
+        trained_value = recovered
+        if certified is not None:
+            if certified.shape != recovered.shape or certified.dtype != torch.bool:
+                raise ValueError('native inverse certificate must align with the recovered field')
+            trained_value = torch.where(certified, recovered.detach(), recovered)
+        costs = field_cost(self.observed, trained_value, admission, self.scope,
             floor=self.model.attention_floor, defined=defined,
-            iterations=self.iterations, step_cost=step_cost)
+            iterations=self.iterations, step_cost=step_cost, expected=record.percept_expected)
+        if certified is not None:
+            audit = field_cost(self.observed,recovered.detach(),admission.detach(),self.scope,
+                floor=self.model.attention_floor,defined=defined & certified,expected=record.percept_expected)
+            costs['certified_inside'] = audit['inside'].detach()
+            costs['certified_coordinates'] = certified.sum((1,2))
         steps = recovered.new_tensor([0 if entry is None else int((entry.actions[:,0] > 0).sum())
                                       for entry in programs]) if programs else recovered.new_zeros(B)
         costs['compose_steps'] = steps

@@ -13,10 +13,11 @@ def test_output_pair_costs_complete_paths_and_keeps_greedy_ties():
         explore=options.get('exploit_actions') is not None
         calls.append(('realize',explore))
         costs=torch.tensor([1.,2.,4.] if explore else [4.,2.,1.])*parameter
-        trace=(torch.full((3,4),int(explore)),torch.ones(3,4,dtype=torch.bool))
+        trace=(torch.full((3,4),int(explore)),torch.ones(3,4,dtype=torch.bool), torch.zeros(3,dtype=torch.bool), torch.zeros(3), torch.ones(3,dtype=torch.bool), torch.zeros(3,4,1,5), torch.zeros(3,4,2))
         result=AnswerConstruction(actual=costs[:,None],derivation=None,
             concepts=torch.full((3,2,2),float(explore))*parameter,
-            percepts=costs[:,None,None],surface=None,trace=(),texts=())
+            percepts=costs[:,None,None],surface=None,trace=(),
+            texts=tuple(f'{"explore" if explore else "greedy"}-{row}' for row in range(3)))
         return result,trace
     def cost(construction):
         calls.append(('cost',int(construction.concepts[0,0,0].detach())))
@@ -26,6 +27,7 @@ def test_output_pair_costs_complete_paths_and_keeps_greedy_ties():
     assert audit['wins'].tolist() == [True,False,False]
     assert audit['stable'].tolist() == [False,False,False]
     assert result.concepts[:,0,0].tolist() == [1.,0.,0.]
+    assert result.texts == ('explore-0','greedy-1','greedy-2')
     result.actual.sum().backward()
     assert parameter.grad.item() == 4.
 
@@ -35,14 +37,14 @@ def test_output_without_a_legal_alternative_never_switches():
     from Output import AnswerConstruction
     def realize(**options):
         x=torch.ones(2,1)
-        return AnswerConstruction(x,None,x,x,None,(),()), (torch.zeros(2,3,dtype=torch.long),torch.zeros(2,3,dtype=torch.bool))
+        return AnswerConstruction(x,None,x,x,None,(),()), (torch.zeros(2,3,dtype=torch.long),torch.zeros(2,3,dtype=torch.bool),torch.zeros(2,dtype=torch.bool),torch.zeros(2),torch.ones(2,dtype=torch.bool),torch.zeros(2,3,1,5),torch.zeros(2,3,2))
     value,audit=output_pair(realize,lambda result:result.actual[:,0])
     assert not audit['wins'].any()
     assert audit['departure'].tolist() == [-1,-1]
     assert audit['stable'].all()
 
 
-def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
+def test_thought_pair_keeps_only_the_selected_episode_and_costs_before_policy_backward():
     from test_normal_thought_controller import _catalog_world
     model,registry,memory,part,whole=_catalog_world()
     model.train()
@@ -59,8 +61,17 @@ def test_thought_pair_keeps_one_episode_and_costs_before_policy_backward():
     assert audit['explore_kept']
     assert audit['costs'][1]<audit['costs'][0]
     assert tuple(memory.thought_history())==result.records
-    assert len([record for record in result.records if record.kind=='begin'])==1
-    assert result.work.spent==memory.thought_state().work_spent
+    if result.records:
+        assert len([record for record in result.records if record.kind=='begin'])==1
+        assert len({record.episode for record in result.records})==1
+        assert result.work.spent==memory.thought_state().work_spent
+    else:
+        # Conclude is a legal opening alternative for a closed field. If
+        # that trial wins, no episode was opened and no work was charged.
+        assert audit['departure']==0
+        assert memory.thought_state() is None
+        assert result.work.spent==0
+        assert result.meaning is question
     assert model._last_thought_score_function['surrogate'] is not None
     assert not hasattr(model,'selected_thought_choosers')
 

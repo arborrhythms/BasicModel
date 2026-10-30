@@ -3,13 +3,84 @@ from dataclasses import dataclass, replace
 import torch
 
 
-def departure_at(eligible):
+def departure_at(eligible, *, uniform=None):
     """One uniformly selected legal departure per row; -1 means none."""
     if eligible.shape[-1] == 0:
         return torch.full((eligible.shape[0],), -1, device=eligible.device, dtype=torch.long)
-    rank=(torch.rand(eligible.shape[0],device=eligible.device)*eligible.sum(-1)).long()
+    if uniform is None:
+        uniform=torch.rand(eligible.shape[0],device=eligible.device)
+    elif uniform.shape != eligible.shape[:1] or uniform.device != eligible.device:
+        raise ValueError('a departure draw must align with its streams')
+    rank=(uniform*eligible.sum(-1)).long()
     selected=eligible & (eligible.long().cumsum(-1)==rank[:,None]+1)
     return torch.where(eligible.any(-1),selected.long().argmax(-1),-1)
+
+
+def paired_departure(owner, kind, eligible):
+    """Common fresh randomness for corresponding walks of a sentence pair.
+
+    Each menu still gets a uniform legal departure. Sharing its quantile
+    prevents unchanged understandings from winning an outer comparison just
+    because the inner decoder happened to explore a better path. No RNG
+    state is restored and no random seed is supplied.
+    """
+    draws=getattr(owner,'_sentence_generation_draws',None)
+    if draws is None:
+        return departure_at(eligible)
+    cursors=owner._sentence_generation_cursors
+    index=cursors.get(kind,0);cursors[kind]=index+1
+    key=kind,index
+    if key not in draws:
+        draws[key]=torch.rand(eligible.shape[0],device=eligible.device)
+    return departure_at(eligible,uniform=draws[key])
+
+
+def paired_action_draw(owner, kind, like):
+    """Share the alternate-action quantile across corresponding outer trials.
+
+    A shared departure alone still lets two identical decoder inputs take
+    different exploratory inverses. Each menu maps this fresh quantile through
+    its own eligible distribution; no action is forced across different menus.
+    """
+    draws=getattr(owner,'_sentence_generation_draws',None)
+    if draws is None:
+        return torch.rand(like.shape[0],1,device=like.device,dtype=like.dtype)
+    cursors=owner._sentence_generation_cursors
+    kind=kind+'.action'
+    index=cursors.get(kind,0);cursors[kind]=index+1
+    key=kind,index
+    if key not in draws:
+        draws[key]=torch.rand(like.shape[0],1,device=like.device,dtype=like.dtype)
+    return draws[key]
+
+
+def finished_wins(costs, pending, *, certified=None):
+    """Certified completion takes precedence; otherwise compare full costs."""
+    finished=~pending if certified is None else certified
+    return (~finished[:,0]&finished[:,1]) | (
+        (finished[:,0]==finished[:,1]) & (costs[:,1]<costs[:,0]))
+
+
+def generate_credit(language, audit, tops, features=None):
+    """Teach only winning departures, on the policy's detached input."""
+    departure = audit['departure']
+    ar = torch.arange(len(departure), device=tops.device)
+    step = departure.clamp_min(0)
+    logits = language.generate_policy_logits(tops[ar, step].detach(),
+        **({} if features is None else dict(features=features[ar,step].detach())))
+    return language.generate_policy_credit(logits, audit['explore'][ar, step],
+        valid=audit['wins'] & (departure >= 0))
+
+
+def stage_generate_credit(model, audit, tops, features=None):
+    """The paired sentence owner collects both decoder and output credits."""
+    held = getattr(model, '_sentence_walk_credits', None)
+    if held is not None and torch.is_grad_enabled():
+        credit = generate_credit(model.languageSpace, audit, tops,features)
+        held.append(credit)
+        audit['credit'] = credit.detach()
+    else:
+        audit['credit'] = audit['costs'].new_zeros(audit['costs'].shape[0])
 
 
 def select_output(greedy,explore,wins):
@@ -27,7 +98,7 @@ def select_output(greedy,explore,wins):
     return replace(greedy,**values,texts=texts)
 
 
-def output_pair(realize,score):
+def output_pair(realize,score,*,owner=None):
     """Realize, then cost, both paths before returning either live graph.
 
     The scorer is loss-side only. It never enters the walk. Shared generate
@@ -35,12 +106,18 @@ def output_pair(realize,score):
     """
     greedy,trace=realize(return_candidates=True)
     first=score(greedy)
-    departure=departure_at(trace[1])
-    explore,other=realize(exploit_actions=trace[0],departure=departure)
+    departure=paired_departure(owner,'output',trace[1])
+    explore,other=realize(exploit_actions=trace[0],departure=departure,
+        departure_uniform=paired_action_draw(owner,'output',trace[3]))
     second=score(explore)
-    costs=torch.stack((first,second),-1).detach()
-    wins=trace[1].any(-1)&(costs[:,1]<costs[:,0])
+    residual=torch.stack((trace[3],other[3]),-1)
+    costs=torch.stack((first,second),-1).detach()+residual.detach()
+    pending=torch.stack((trace[2],other[2]),-1).detach()
+    certified=torch.stack((trace[4],other[4]),-1).detach()
+    wins=trace[1].any(-1)&finished_wins(costs,pending,certified=certified)
     audit=dict(costs=costs,wins=wins,departure=departure,
+               pending=pending,certified=certified,residual=residual.detach(),
+               selected_residual=torch.where(wins,residual[:,1],residual[:,0]),
                greedy=trace[0].detach(),explore=other[0].detach(),
                stable=(trace[0]==other[0]).all(-1))
     result=replace(select_output(greedy,explore,wins),trace=greedy.trace+(
@@ -250,7 +327,9 @@ def observe_comparison(model,kind,audit,*,sentence=None,row=None,active=None):
         key=(kind,surface,sentence)
         kept=tuple((explore if bool(wins[b]) else greedy)[b].tolist())
         result['walks']+=1;result['explorable']+=int(departure[min(b,len(departure)-1)]>=0)
-        result['explore_wins']+=int(wins[b]);result['strict_violations']+=int(wins[b] and not costs[b,1]<costs[b,0])
+        allowed = (finished_wins(costs, torch.as_tensor(audit['pending']).detach().cpu())[b]
+                   if 'pending' in audit else costs[b,1] < costs[b,0])
+        result['explore_wins']+=int(wins[b]);result['strict_violations']+=int(wins[b] and not allowed)
         if key in previous:
             result['stability_pairs']+=1;result['stable_pairs']+=int(previous[key]==kept)
         previous[key]=kept;previous.move_to_end(key)

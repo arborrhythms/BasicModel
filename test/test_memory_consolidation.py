@@ -94,6 +94,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
         row = store.write_clause(prepared, document_key='consolidation', sentence_index=position,
                                  stream=0, written_rows=written)
         resolver.commit(plan, row, written, document='consolidation', position=position, training=False)
+        owner.mtm.promote_candidates(owner)
         return store.location(written[('occurrence', id(plan['items'][0]['written_node']))]), plan
     first, _ = actual(mention(atoms[0], reference=kind))
     token = store.occurrence_of(first)
@@ -114,7 +115,7 @@ def test_token_promotes_at_three_sentences_with_the_occurrence_fold_and_keeps_it
     consolidate(owner, store)
     torch.testing.assert_close(pool.value_of(token), atoms[3])
     torch.testing.assert_close(owner.similarity_codebook.W[owner._csw_row_of(entry.symbol)], expected)
-    restored = MediumTermMemory(pool.capacity,pool.horizon,n_vectors=int(pool.transient_ids[0]))
+    restored = MediumTermMemory(pool.capacity,pool.horizon,n_vectors=int(pool.transient_ids[0]), field_width=pool.field_width)
     restored.restore(pool.state())
     assert restored.entries[token].symbol == entry.symbol and restored.names == pool.names
     assert restored.closes == pool.closes and restored.accesses == pool.accesses
@@ -162,6 +163,9 @@ def test_expiry_counts_kept_closes_per_stream_and_document_end_keeps_rows():
     model = SimpleNamespace(_thought_document_ends=(True,), _sentence_sources=((('second', 1),),),
         _concept_owner=lambda: owner)
     BasicModel._end_step(model)
+    assert token in pool.entries and pool.names
+    for _ in range(pool.horizon + 1):
+        pool.close(store, stream=0)
     assert token not in pool.entries and not pool.names
     unchanged(resolver, before)
 
@@ -382,6 +386,7 @@ def test_retiring_a_token_keeps_another_tokens_event_until_row_reclamation(retir
     events = pool.entries[a].events
     before = snapshot(resolver)
     if retirement == 'capacity':
+        pool.close(store, stream=0, references=(a,))  # Capacity now uses the shared access clock.
         pool.open(c, kind=None, when=51, value=atoms[2])
     else:
         for _ in range(17):

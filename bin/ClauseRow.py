@@ -679,6 +679,10 @@ class ClauseRows:
                 # terminating the address walk. A parent keeps its token.
                 target = ('sym', kind) if site == occurrence and kind is not None else token
                 uses = mtm.entries[token].occurrences
+            # A forward word names the missing referent. Its lexical form
+            # cannot fill that role merely because it now has a DEF row.
+            if kind == _name and _name in owner.definitions.word_ids:
+                point = None
             # The retained parent already points at its anonymous child. That
             # structural pointer is not the pending role's bound content.
             references = list(meaning.role_refs)

@@ -1,261 +1,197 @@
-"""Provisional concept rows retain witnessed context and observed use.
-
-Matching contexts assign disjunctive parts; conceptualPi admits complete
-co-present sets as conjunctive parts. Detached use EWMA promotes the same
-row in place and replenishes the per-order provisional pool.
-"""
-from order_fixtures import force_order
-import os
-import sys
-
-os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
-os.environ.setdefault("BASICMODEL_DEVICE", "cpu")
-os.environ.setdefault("MODEL_COMPILE", "eager")
-
-_BIN = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin")
-if _BIN not in sys.path:
-    sys.path.insert(0, _BIN)
-
+"""Familiar candidates share MTM's lifecycle; only kept closes mint them."""
+from dataclasses import replace
 import pytest
 import torch
 from definition_fixtures import with_definitions
-
+from order_fixtures import force_order
 import Spaces
-from test_cs_sparse_weights import _evidence
 from test_basicmodel import _populate_test_config
+from FamiliarTier import centroid, observe_candidate
+from MediumTermMemory import MediumTermMemory
 
 _D = 8
 
 
 def _cs(nS=64, order=3, promote=True):
-    nP = 4
-    _populate_test_config(
-        inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
-        wordDim=_D, outputDim=_D,
-        nInput=nP, nPercepts=nP, nConcepts=nS, nSymbols=nS,
-        nWords=nS, nOutput=nS, nWhere=0, nWhen=0,
-    )
-    cs = Spaces.ConceptualSpace([nP, _D], [nS, _D], [nS, _D])
-    object.__setattr__(cs, "_symbolic_order", order)
-    object.__setattr__(cs, "_serial", False)
-    if promote:
-        object.__setattr__(cs, "_promotion_enabled", True)
+    _populate_test_config(inputDim=_D, perceptDim=_D, conceptDim=_D, symbolDim=_D,
+        wordDim=_D, outputDim=_D, nInput=4, nPercepts=4, nConcepts=nS,
+        nSymbols=nS, nWords=nS, nOutput=nS, nWhere=0, nWhen=0)
+    cs = Spaces.ConceptualSpace([4, _D], [nS, _D], [nS, _D])
+    cs._symbolic_order, cs._serial, cs._promotion_enabled = order, False, promote
     return with_definitions(cs)
 
 
 def _mint_order0(cs, n):
-    """Mint ``n`` order-0 concepts with reserved snap rows; returns
-    ``[(cid, row)]`` in allocation order (rows 0, 1, 2, ...)."""
-    alloc = Spaces._concept_alloc_of(cs)
     out = []
-    for _ in range(n):
-        cid = alloc.new_concept()
+    for index in range(n):
+        cid = Spaces._concept_alloc_of(cs).new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        assert row is not None
-        out.append((cid, int(row)))
+        with torch.no_grad():
+            cs.similarity_codebook.W[row].copy_(torch.eye(_D)[index % _D])
+        out.append((cid, row))
     return out
-
-
-def _observe(cs, active, B_rows=None):
-    """Stage a synthetic admitted field (one batch row) on the promotion
-    stashes and run the collector. ``active`` maps global row -> signed
-    activation; the level-rows stash is the full snap block (order-0 rows
-    are always staged by the pyramid)."""
-    N = int(cs.nVectors)
-    a = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
-    for r, v in active.items():
-        a[int(r), 0, 0, 0] = float(v)
-    snap = torch.arange(cs._order_caps()[0]).unsqueeze(-1)
-    object.__setattr__(cs, "_promo_last_acts", a)
-    object.__setattr__(cs, "_cs_level_rows", [snap])
-    cs.promotion_observe()
-
-
-
-def _pool_rows(cs, *, assigned=True):
-    ly = Spaces._concept_alloc_of(cs).layer()
-    mask = ly.provisional & ly.assigned if assigned else ly.provisional
-    return mask.nonzero().flatten().tolist()
 
 
 def _fixture(pi=False):
     cs = _cs(nS=128, order=2)
     cs.conceptual_pi = pi
-    cs.concept_pool_size = 2
-    rows = _mint_order0(cs, 6)
-    return cs, rows
+    return cs, _mint_order0(cs, 6)
 
 
-def test_first_matching_context_assigns_pair_before_discovery():
-    cs, rows = _fixture()
-    (x, a), (y, b), (_, c), *_ = rows
-    _observe(cs, {a: 1., c: 1.})
-    assert not _pool_rows(cs)
-    _observe(cs, {b: 1., c: 1.})
-    ly = Spaces._concept_alloc_of(cs).layer()
-    assigned = _pool_rows(cs)
-    assert len(assigned) == 1
-    r = assigned[0]
-    assert dict(cs.concept_weights(r)) == {a: 1., b: 1.}
-    assert ly.participation[r].item() == pytest.approx(.1)
-    assert cs.concept_id_at_row(r) is None
-    assert cs.promotion_pass() == []
-    assert ly.where[r][c] > 0
-    assert not hasattr(cs, '_promotion_cache_state')
+def _close(cs, batch=0):
+    cs.mtm.close(None, stream=batch,
+        references=getattr(cs, '_field_activated_references', {}).get(batch, ()))
+    cs._field_activated_references = {}
 
 
-def test_use_discovers_identity_in_place_and_replenishes_pool():
+def _observe(cs, active, *, close=True):
+    a = torch.zeros(sum(cs._order_caps()), 1, 1, 2)
+    for row, pair in active.items():
+        a[row, 0, 0] = torch.tensor(pair if isinstance(pair, tuple) else (pair, 0.))
+    result = cs.observe_open_field(a)
+    if close:
+        _close(cs)
+    return result
+
+
+def _candidates(cs, *, order=None):
+    return {key: entry for key, entry in cs.mtm.entries.items()
+            if entry.order is not None and (order is None or entry.order == order)}
+
+
+def test_open_matches_and_updates_centroid_with_bounded_support():
+    pool = MediumTermMemory(4, n_vectors=8, field_width=2)
+    key = pool.open_candidate(order=1, when=0, value=torch.tensor([1., 0.]), support={0: 2.})
+    assert key == ('candidate', 0) and pool.match_candidate(1, torch.tensor([1., .1])) == key
+    assert pool.match_candidate(2, torch.tensor([1., 0.])) is None
+    pool.update_candidate(key, when=1, value=torch.tensor([0., 1.]), support={1: 2., 2: 1.})
+    entry = pool.entries[key]
+    assert entry.count == 2 and len(entry.support) == 2 and entry.when == 1
+    torch.testing.assert_close(entry.value, torch.tensor([.4, .6]))
+    assert entry.support == {0: 2., 1: 2.}
+
+
+def test_capacity_and_access_horizon_are_shared_with_identities():
+    pool = MediumTermMemory(2, horizon=1, n_vectors=8)
+    origin = ('ltm', 'fixture', 1)
+    pool.open(origin, kind=None, when=0, value=torch.ones(2))
+    key = pool.open_candidate(order=0, when=1, value=torch.ones(2), support={0: 1.})
+    pool.close(None, stream=0, references=(origin, key))
+    pool.close(None, stream=0, references=(origin,))
+    fresh = pool.open_candidate(order=0, when=3, value=torch.ones(2), support={1: 1.})
+    assert key not in pool.entries and origin in pool.entries
+    pool.close(None, stream=0, references=(fresh,))
+    pool.close(None, stream=0)
+    pool.close(None, stream=0)
+    assert not pool.entries and not pool.transient_used.any()
+
+
+def test_first_open_field_is_familiar_without_allocating_an_inventory_identity():
     cs, rows = _fixture()
     a, b, c = [r for _, r in rows[:3]]
-    _observe(cs, {a: 1., c: 1.})
-    _observe(cs, {b: 1., c: 1.})
-    r = _pool_rows(cs)[0]
-    cs.truth_criterion = 1.  # truth significance no longer controls discovery
-    for i in range(20):
-        _observe(cs, {a if i % 2 else b: 1., c: 1.})
-    discovered = cs.promotion_pass()
-    assert len(discovered) == 1
-    assert cs.concept_id_at_row(r) == discovered[0]
-    assert set(cs.concept_parts(discovered[0])) == {('sym', rows[0][0]), ('sym', rows[1][0])}
-    start, end = cs.order_slice(1)
-    ly = Spaces._concept_alloc_of(cs).layer()
-    assert int(ly.provisional[start:end].sum()) == cs.concept_pool_size
-    assert not ly.participation.requires_grad
+    before = cs._concept_allocator.next_id
+    _observe(cs, {a: 1., b: 1., c: 1.}, close=False)
+    assert len(_candidates(cs)) == 3
+    assert cs._concept_allocator.next_id == before
+    assert all(entry.symbol is None and entry.count == 1 for entry in _candidates(cs).values())
 
 
-def test_matching_alternative_joins_existing_kind_without_context_as_part():
+def test_matching_witnessed_context_opens_next_order_with_context_in_support():
     cs, rows = _fixture()
     a, b, c, d = [r for _, r in rows[:4]]
-    _observe(cs, {a: 1., c: 1.})
-    _observe(cs, {b: 1., c: 1.})
-    r = _pool_rows(cs)[0]
-    _observe(cs, {d: 1., c: 1.})
-    assert set(dict(cs.concept_weights(r))) == {a, b, d}
-    assert c not in dict(cs.concept_weights(r))
+    _observe(cs, {a: 1., c: 1., d: 1.})
+    _observe(cs, {b: 1., c: 1., d: 1.})
+    kinds = _candidates(cs, order=1)
+    assert len(kinds) == 1
+    assert set(next(iter(kinds.values())).support) == {a, b, c, d}
+    assert cs.mtm.promote_candidates(cs) == []
 
 
-def test_nonrecurring_row_decays_and_is_recycled():
+def test_count_mints_once_with_weighted_definition_form_and_released_transient():
     cs, rows = _fixture()
-    cs.concept_pool_size = 1
-    a, b, c, d, e, f = [r for _, r in rows]
-    _observe(cs, {a: 1., c: 1.})
-    _observe(cs, {b: 1., c: 1.})
-    old = _pool_rows(cs)[0]
-    for _ in range(5):
-        _observe(cs, {d: 1., f: 1.})
-    _observe(cs, {e: 1., f: 1.})
-    assert _pool_rows(cs) == [old]
-    assert set(dict(cs.concept_weights(old))) == {d, e}
-    assert cs.concept_id_at_row(old) is None
+    pool = cs.mtm
+    pointers = pool.transient_ids.data_ptr(), pool.transient_used.data_ptr(), cs.similarity_codebook.W.data_ptr()
+    support = {rows[0][1]: 2., rows[1][1]: 1.}
+    for count in range(cs.concept_mint_count):
+        key = observe_candidate(cs, 1, support)
+        transient = pool.entries[key].transient
+        _close(cs)
+        if count < cs.concept_mint_count-1:
+            assert pool.promote_candidates(cs) == []
+    expected = centroid(cs, support)
+    minted = pool.promote_candidates(cs)
+    assert len(minted) == 1 and pool.entries[key].symbol == minted[0]
+    assert pool.entries[key].transient is None
+    assert not pool.transient_used[transient-int(pool.transient_ids[0])]
+    row = cs._csw_row_of(minted[0])
+    assert dict(cs.concept_weights(row)) == {r: w*3 for r, w in support.items()}
+    torch.testing.assert_close(cs.similarity_codebook.W[row], expected)
+    assert pool.promote_candidates(cs) == []
+    assert pointers == (pool.transient_ids.data_ptr(), pool.transient_used.data_ptr(), cs.similarity_codebook.W.data_ptr())
 
 
-def test_interpretation_retains_the_form_and_supplied_object_without_inventing_a_kind():
-    cs, _ = _fixture()
-    before = len(cs._concept_allocator.layer()._tensor_rows)
-    word, _ = cs.interpret_word([1], 2, key='cat')
-    from reading_fixtures import supply_object
-    obj = supply_object(cs, word)
-    assert cs._csw_row_of(word) is not None
-    row = cs._csw_row_of(obj)
-    assert row in cs._witnessed_rows()
-    assert len(cs._concept_allocator.layer()._tensor_rows) == before + 2
-    assert cs.taxonomy_parents(obj) == []
+def test_both_corner_refines_and_cannot_mint_until_it_leaves_the_horizon():
+    cs, rows = _fixture()
+    cs.mtm.horizon = 2
+    for _ in range(3):
+        key = observe_candidate(cs, 1, {rows[0][1]: 1., rows[1][1]: 1.}, pair=(1., 1.))
+        _close(cs)
+    assert cs.mtm.entries[key].refinement['stale'] == 2
+    assert cs.mtm.promote_candidates(cs) == []
+    for _ in range(3):
+        key = observe_candidate(cs, 1, {rows[0][1]: 1., rows[1][1]: 1.})
+        _close(cs)
+    assert cs.mtm.promote_candidates(cs)
 
 
-def test_pool_parameter_controls_reservation_and_gate_off_is_inert():
-    cs = _cs(promote=False)
-    cs._ensure_concept_pool()
-    assert not _pool_rows(cs, assigned=False)
+def test_gate_off_is_inert_and_nonfinite_field_fails_loud():
+    cs, rows = _fixture()
+    cs._promotion_enabled = False
+    _observe(cs, {0: 1., 1: 1.})
+    assert not cs.mtm.entries
     cs._promotion_enabled = True
-    cs.concept_pool_size = 2
-    cs._ensure_concept_pool()
-    ly = Spaces._concept_alloc_of(cs).layer()
-    for order in range(1, len(cs._order_caps())):
-        start, end = cs.order_slice(order)
-        assert int(ly.provisional[start:end].sum()) == 2
-
-
-def test_nonfinite_acts_fail_loud():
-    cs, _ = _fixture()
     with pytest.raises(RuntimeError, match='NaN/Inf'):
         _observe(cs, {0: float('nan')})
 
 
-def test_provisional_parts_receive_gradient_through_use_gate():
+def test_candidate_read_has_gradient_on_members_and_no_inventory_pool():
     cs, rows = _fixture()
-    a, b, c = [r for _, r in rows[:3]]
-    _observe(cs, {a: .8, c: .8})
-    _observe(cs, {b: .8, c: .8})
-    r = _pool_rows(cs)[0]
-    ly = Spaces._concept_alloc_of(cs).layer()
-    a0 = torch.full((cs._order_caps()[0], 1), .5, requires_grad=True)
-    _, acts = cs.cs_forward_content(_evidence(a0), torch.randn(128, 8))
-    acts[r].sum().backward()
-    assert ly.values.grad.abs().sum() > 0
-    assert ly.participation.grad is None
+    key = observe_candidate(cs, 1, {rows[0][1]: 2., rows[1][1]: 1.})
+    value = cs.mtm.read_candidates(cs)[key]
+    value.sum().backward()
+    grad = cs.similarity_codebook.W.grad
+    torch.testing.assert_close(grad[rows[0][1]], torch.full((_D,), 2/3))
+    torch.testing.assert_close(grad[rows[1][1]], torch.full((_D,), 1/3))
+    assert not hasattr(cs._concept_allocator.layer(), 'participation')
 
 
-def test_pool_checkpoint_preserves_both_parts_where_use_and_next_assignment():
-    cs, rows = _fixture(pi=True)
-    _observe(cs, {r: 1. for _, r in rows[:3]})
-    from test_structural_checkpoint import _model_with
-    from types import SimpleNamespace
-    model = _model_with(cs, SimpleNamespace())
-    saved = model._collect_structural_extras()
-    restored, _ = _fixture(pi=True)
-    target = _model_with(restored, SimpleNamespace())
-    target._restore_structural_extras(saved)
-    before = Spaces._concept_alloc_of(cs).layer()
-    after = Spaces._concept_alloc_of(restored).layer()
-    assert before._tensor_rows == after._tensor_rows
-    torch.testing.assert_close(before.participation, after.participation)
-    torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
-    torch.testing.assert_close(before.where, after.where)
-    for space in (cs, restored):
-        _observe(space, {r: 1. for _, r in rows[:3]})
-    torch.testing.assert_close(before.participation, after.participation)
-
-
-def test_registered_pool_checkpoint_has_one_sidecar_restore(tmp_path):
-    from test_structural_checkpoint import _model_with
-    from types import SimpleNamespace
-    cs, rows = _fixture(pi=True)
-    _observe(cs, {r: 1. for _, r in rows[:3]})
-    model = _model_with(cs, SimpleNamespace())
-    model.conceptualSpaces = torch.nn.ModuleList([cs])
-    model.conceptualSpace = cs
-    path = tmp_path / 'pool.pt'
-    model.save_weights(path)
-    restored, _ = _fixture(pi=True)
-    target = _model_with(restored, SimpleNamespace())
-    target.conceptualSpaces = torch.nn.ModuleList([restored])
-    target.conceptualSpace = restored
-    assert target.load_weights(path, require_match=True)
-    before = Spaces._concept_alloc_of(cs).layer()
-    after = Spaces._concept_alloc_of(restored).layer()
-    torch.testing.assert_close(before.participation, after.participation)
-    torch.testing.assert_close(before.conjunctive.values, after.conjunctive.values)
-
-
-def test_row_pool_prunes_weak_edges_when_use_discovers_it():
+def test_candidate_checkpoint_restores_counter_support_lanes_and_next_match():
     cs, rows = _fixture()
-    a, b, c = [r for _, r in rows[:3]]
-    _observe(cs, {a: 1., c: 1.})
-    _observe(cs, {b: 1., c: 1.})
-    r = _pool_rows(cs)[0]
-    ly = Spaces._concept_alloc_of(cs).layer()
-    cs.add_concept_edge(r, rows[3][1], weight=.0001)
-    frozen = Spaces._concept_alloc_of(cs).new_concept()
-    force_order(cs, frozen, 1)
-    frozen_row = cs._csw_concept_row(1, frozen)
-    cs.add_concept_edge(frozen_row, a, weight=.4)
-    cs.freeze_concept(frozen)
-    ly.participation[r] = .9
-    assert cs.promotion_pass()
-    assert rows[3][1] not in dict(cs.concept_weights(r))
-    _, activation = cs.cs_forward_content(
-        _evidence(torch.full((cs._order_caps()[0], 1), .25)), torch.zeros(128, _D))
-    activation[frozen_row].sum().backward()
-    assert ly.values.grad[ly._index[(frozen_row, a)]] == 0
+    key = observe_candidate(cs, 1, {rows[0][1]: .7, rows[1][1]: .3}, pair=(.7,.2))
+    _close(cs)
+    state = cs.mtm.state()
+    restored = MediumTermMemory(cs.mtm.capacity, n_vectors=cs.nVectors, field_width=cs.mtm.field_width)
+    pointers = restored.transient_ids.data_ptr(), restored.transient_used.data_ptr()
+    restored.restore(state)
+    assert restored.candidate_counter == 1 and restored.entries[key].support == cs.mtm.entries[key].support
+    assert restored.entries[key].readings == cs.mtm.entries[key].readings
+    assert restored.match_candidate(1, cs.mtm.entries[key].value) == key
+    assert restored.open_candidate(order=0, when=2, value=torch.ones(_D), support={0:1.}) == ('candidate',1)
+    assert pointers == (restored.transient_ids.data_ptr(), restored.transient_used.data_ptr())
+    state['entries'][0]['support'][0] = 99.
+    assert restored.entries[key].support[0] == .7
+
+
+def test_cover_merges_by_maximum_and_does_not_reinitialize_learned_edges():
+    cs, rows = _fixture()
+    for _ in range(3):
+        key = observe_candidate(cs, 1, {rows[0][1]: .3, rows[1][1]: .2})
+        _close(cs)
+    cid = cs.mtm.promote_candidates(cs)[0]
+    row = cs._csw_row_of(cid)
+    store = cs._concept_allocator.layer()
+    with torch.no_grad():
+        store.values[store._index[row, rows[0][1]]] = 4.
+    cs.cover_members(cid, {rows[0][1]: .5, rows[1][1]: .1})
+    assert dict(cs.concept_weights(row)) == pytest.approx({rows[0][1]:4., rows[1][1]:.6})

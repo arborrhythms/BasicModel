@@ -26,7 +26,7 @@ def tolerate_heterogeneity(lanes, tolerance):
 
 
 def field_cost(observed, reconstructed, admission, valid, *, floor,
-               defined=None, iterations=None, step_cost=0.):
+               defined=None, iterations=None, step_cost=0., expected=None):
     """Return per-row terms, summing every located item exactly once.
 
     ``admission`` is the hard union of candidates already read.
@@ -49,7 +49,17 @@ def field_cost(observed, reconstructed, admission, valid, *, floor,
     difference = target - reconstructed
     if defined is not None:
         difference = torch.where(defined, difference, 0.)
-    error = difference.abs().flatten(2).sum(-1)
+    if expected is None:
+        error = difference.abs().flatten(2).sum(-1)
+    else:
+        from Expectation import percept_reconstruction
+        width = expected.shape[-1]
+        _, residual_target, _, squared = percept_reconstruction(
+            reconstructed[...,:width], target[...,:width], expected)
+        if defined is not None:
+            squared = torch.where(defined[...,:width], squared, 0.)
+        error = squared.sum(-1) + difference[...,width:].abs().flatten(2).sum(-1)
+        residual = residual_target.square().sum(-1) + target[...,width:].abs().flatten(2).sum(-1)
     inside = torch.where(valid, admission * error, 0.).sum(-1)
     outside = torch.where(valid, floor * (1. - admission) * residual, 0.).sum(-1)
     work = (torch.zeros_like(inside) if iterations is None else

@@ -19,21 +19,24 @@ def test_known_concept_read_preserves_the_parameter_magnitude():
     torch.testing.assert_close(cb.W.grad, torch.tensor([[1., 1.], [0., 0.]]))
 
 
-def test_promoting_an_identity_does_not_rewrite_its_code():
-    from test_attention_promotion import _fixture, _observe, _pool_rows
+def test_promoting_a_candidate_initializes_only_its_new_row():
+    from test_attention_promotion import _fixture, _close
+    from FamiliarTier import observe_candidate, centroid
     cs, rows = _fixture()
-    a, b, context = [r for _, r in rows[:3]]
-    cs.concept_mint_threshold = .15
-    _observe(cs, {a: 1., context: 1.})
-    _observe(cs, {b: 1., context: 1.})
-    row = _pool_rows(cs)[0]
-    _observe(cs, {a: 1., context: 1.})
-    W = cs.similarity_codebook.getW()
+    support = {row: 1. for _, row in rows[:2]}
+    for _ in range(3):
+        key = observe_candidate(cs, 1, support)
+        _close(cs)
+    W = cs.similarity_codebook.W
     before = W.detach().clone()
-    discovered = cs.promotion_pass()
-    assert discovered
-    assert cs.concept_id_at_row(row) in discovered
-    torch.testing.assert_close(W, before, rtol=0, atol=0)
+    expected = centroid(cs, support)
+    discovered = cs.mtm.promote_candidates(cs)
+    assert len(discovered) == 1
+    row = cs._csw_row_of(discovered[0])
+    keep = torch.arange(len(W)) != row
+    torch.testing.assert_close(W[keep], before[keep], rtol=0, atol=0)
+    torch.testing.assert_close(W[row], expected)
+
 
 
 def test_admitting_a_phrase_does_not_compose_or_normalize_its_code():

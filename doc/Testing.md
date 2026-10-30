@@ -3241,3 +3241,25 @@ sweep. The copular
 producing lesson remains after stage 4e in Item 3.5. Graded/shuffled,
 derivation-optimality, long-run collapse and the separate 5.5 learning
 track remain open; no failed learning run is resumed or regraded.
+
+
+### Item 2.7 large-file corpus tier — 2026-10-29
+
+At Alec's request, the capacity search and selected large corpus prefix are
+registered as `test/test_corpus_large_slow.py::test_capacity_search_and_selected_corpus_prefix`.
+Ordinary collection skips this test before construction with `RUN_SLOW` unset.
+The November weekly runner discovers it alongside the existing slow cases,
+then runs it alone with a 28 GiB process-tree budget and 48-hour outer guard.
+Its fixed-grid search uses fresh native B28/W256 construction, optimizer state,
+backward and update, with 28 GiB/one-hour per-trial guards. A selected prefix
+must pass whole-document admission and a fresh brick before a full epoch
+(24-hour guard). Known native admission exhaustion may select the preceding
+whole document; unrelated errors cannot be classified as capacity pressure.
+
+The test writes its commands, source snapshot, grid, trial results, admission,
+selected configuration, and initial/periodic/final checkpoints under the weekly
+receipt's `corpus-measurements`. It never overwrites the checked-in candidate
+configuration. The development search was interrupted before choosing a final
+size; its partial results remain in the item 2.7 final-round receipt. No slow
+run was performed to register this test. The ordinary scoped and lesson gates
+remain in the current round.

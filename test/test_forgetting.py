@@ -319,6 +319,11 @@ def test_real_model_forgets_at_document_boundary_then_reads_writes_and_reloads(
     # Single-word documents exercise memory turnover independently of
     # random initial grammar choices. This is a mechanism certificate.
     model.languageSpace.language_layer.operation_layer.set_stage_menu(('STOP',))
+    # These are known words in this memory-turnover fixture. Pending name
+    # acquisition has its own certificates and also writes mention records.
+    from test_definition_rows import admit
+    for word in ('cat', 'dog', 'bird', 'horse'):
+        admit(model, word)
     data = model.inputSpace.data
     monkeypatch.setattr(data, 'has_supervised_outputs', False)
     store = model.symbolSpace.ltm_store

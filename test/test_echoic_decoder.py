@@ -32,7 +32,8 @@ def test_generate_unary_calls_generate_face():
 
 def test_generate_chooser_belongs_to_reconstruction():
     from Models import BasicModel
-    policy = torch.nn.Linear(2, 3)
+    from Language import GeneratePolicy
+    policy = GeneratePolicy(2, 3)
     reader = torch.nn.Linear(2, 1)
     language = SimpleNamespace(generate_policy=policy)
     model = SimpleNamespace(languageSpace=language, outputSpace=reader,
@@ -91,7 +92,8 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
         def reverse(self, x): return -x
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     conjunction = ConjunctionLayer()
-    policy = torch.nn.Linear(2, 3)
+    from Language import GeneratePolicy
+    policy = GeneratePolicy(2, 3)
     with torch.no_grad():
         policy.weight.copy_(torch.tensor([[1., 1.], [-1., -1.], [0., 0.]]))
         # The composed root has unit activation, independent of form norms.
@@ -117,7 +119,9 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
             basis=bank, basis_valid=torch.ones(2, 2, dtype=torch.bool),
             basis_priming=torch.ones(2, 2), candidate_limit=2, return_trace=True)
     fn = torch.compile(walk, backend='inductor', fullgraph=True) if compiled else walk
-    out, count, truncated, _, actions = fn(event, bank)
+    decoded = fn(event, bank)
+    out, count, truncated, _, actions = decoded[:5]
+    tops=decoded[-1]
     assert count.tolist() == [2, 2]
     assert not truncated.any()
     torch.testing.assert_close(out[:, :2], bank)
@@ -131,7 +135,9 @@ def test_same_walk_infers_binary_and_unary_without_a_journal(monkeypatch, compil
         # by expecting a norm threshold to distinguish roots from words.
         leaf = (valid & (codes == parent[:, None]).all(-1)).any(-1)
         stop = torch.arange(available.shape[-1], device=parent.device) == available.shape[-1] - 1
-        return available & (~leaf[:, None] | stop)
+        legal=available & (~leaf[:, None] | stop)
+        from generation_fixtures import exact_menu
+        return exact_menu(lefts,rights,legal,len(ops)) if kwargs.get("details") else legal
     monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(choice_at_compound))
     credited = fn(event, bank)[0]
     torch.testing.assert_close(credited, out)

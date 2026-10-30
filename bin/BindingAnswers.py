@@ -51,9 +51,9 @@ def _matches(model, meaning, word, values):
             continue
         if reference[0] == 'constituent':
             current = current.constituents[reference[1]]
-        elif reference[0] == 'ltm' and store is not None:
+        elif reference[0] in ('ltm', 'name') and store is not None:
             index = store._index_occurrences.get(reference)
-            if index is None:
+            if index is None and reference[0] == 'ltm':
                 return False
             owner = model._concept_owner()
             token = owner.mtm.token_of(reference)
@@ -70,6 +70,11 @@ def _matches(model, meaning, word, values):
                         if owner.mtm.token_of(left) == token:
                             reference = right
                             continue
+            if reference[0] == 'name':
+                if entry is None or entry.pending or entry.symbol is None:
+                    return False
+                reference = ('sym', entry.symbol)
+                continue
             if int(store.row_ids[index]) in known:
                 return True
             current = store.meaning_of(index)

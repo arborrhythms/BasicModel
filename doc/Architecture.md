@@ -905,19 +905,27 @@ The legacy composition `C = sigma_percept(pi_input(IS) + pi_concept(C_prev))`
 is **retired**. Per-stage feedback is absent at the substrate; grammar
 dispatch over STM provides the recurrent character via the signal router.
 
-**Attention-to-relation promotion** (gated `<attentionPromotion>`, default
-off $\to$ byte-identical): the pyramid's admitted field is also the
-discovery surface for provisional concept definitions. The cutover stashes
-the admitted pairs; `promotion_observe` consumes them at the sentence
-boundary. Candidate contexts live on the provisional rows themselves.
-Each focal concept observes the rest of the active field as its context;
-cosine matching assigns a pair of alternatives to a sigma row in the next
-order. With `conceptualPi`, located co-present literals can also define a
-conjunction in the order-0 field. Use updates participation by EWMA.
-Beyond order-1 symbolization, context assignment passes through the 11c
-refinement/convergence gate below. It does not mint from significance or
-turn a word form into an object kind; object-kind testimony belongs to
-item 7.
+**The familiar tier (item 2.7, 2026-10-28)** (gated
+`attentionPromotion`, default off): candidates and identities share
+`MediumTermMemory`'s entries, transient ids, access clock, capacity,
+eviction and checkpoint. Each candidate retains a bounded sparse support
+and its evidence-weighted centroid in conceptual width. At the open end
+of the sentence, every present word bracket is read once, before grammar
+narrows attention. Positive field rows join lexical rows for the one
+`prime_seen(..., propagate=True)` step; that same field opens or updates
+candidates, including located conjunctions under `conceptualPi`, without
+minting. `PrependedSymbols.stage` carries these familiar entries beside
+pending identities. At the kept end, activated references advance MTM's
+clock; after placement, `promote_candidates` applies one recurrence rule:
+`conceptMintCount` observations within the horizon, outside the both corner.
+Both readings retain candidate refinement and wait. A defining equality
+or IS clause can promote its pending subject at that kept close. Neither
+route supplies a grammatical order. Explicit raises and promoted
+candidates share `cover_members`: sigma edges merge by maximum, placement
+uses the members' centroid, and form uses their evidence-weighted fold.
+Transient occurrence members wait for a durable symbol. The inventory
+pool and its close-time observer are retired; §§9 and 13 of the item 2.7
+spec remain for the following round.
 
 See [Spaces.md Section "Sigma / Pi ownership"](Spaces.md#sigma-pi-ownership)
 for the cognitive rationale and the migration trail.
@@ -1068,6 +1076,36 @@ an old interaction history over a new observation.
 See the [6.8 plan](plans/2026-09-27-item-6-8-one-attention.md)
 and the [implementation receipt](benchmarks/2026-10-03-operators-attention/README.md)
 for validation status.
+
+**Generation completion and credit (item 2.7 §34, 2026-10-28).**
+For the decoder and output comparisons, a drained stack now beats a pending
+stack; pairs with the same completion status retain the strictly lower cost
+rule. Each stack slot permits at most the number of unary generate rules in
+consecutive unary rewrites. Binary rewrites and pushes reset both affected
+slots, and STOP resets the vacated slot. A top with no legal move stays pending.
+The step budget, stack capacity and inverse-menu cache are unchanged.
+Detached policy inputs accompany the action trace. A winning exploration
+teaches its departure through `reconstruction.walk_credit`, beside the recorded
+tree's `reconstruction.walk_policy`; the reconstruction owner remains the sole
+writer of the generate policy, including credit from output comparisons.
+
+**Presentation and epoch boundaries (item 2.7, Alec, 2026-10-28).**
+`BaseModel.begin_presentation` retains the live-sentence guard and starts the
+per-document cover rewrite. Occurrence memory and MTM persist across documents
+within an epoch. `model_boundary(epoch_boundary=True)` owns experience deletion,
+recurrence clearing and `mtm.restore(None)`; learned concepts, definitions and
+class coverage survive. The lesson and math drivers invoke this boundary once
+before an epoch's first document. The corpus cursor clears at a completed epoch
+and never clears when resuming an incomplete checkpoint. Sentence reading takes
+each identified word's DEF object or its named pending MTM identity; kept mention
+recurrence or a defining clause promotes and defines it. The thought grammar's
+`interpret.forward` operation and chooser alternatives remain available.
+
+**Identity order at creation (item 2.7 §34, 2026-10-28).** MTM promotion
+records the individual's witnessed order in `alloc.reference_orders` while its
+occurrence is present. Later forgetting and epoch resets can remove occurrence
+rows without removing that order. A missing witness fails at creation with the
+occurrence record; the epoch-boundary guard remains in force.
 
 ### Pipeline as a unit, two-space-role reset
 
@@ -1538,6 +1576,17 @@ Output keeps its generate policy, answer-side state and termination budget.
 It receives no input reconstruction witnesses or basis. Selected numerical
 kernels remain shared pending the separate comprehension/generation catalog
 migration in [integrated §10.6](plans/2026-09-15-next-sentence-as-the-production-objective.md#10-consolidated-implementation-and-verification-order).
+**Amended 2026-10-28 (item 2.7, inverse work):** each unary menu entry evaluates
+its own operator once. Within one eager CPU output walk, exact repeated parent
+values and active masks reuse detached inverse menus, bounded by the existing
+stack capacity. The selected inverse builds a fresh pullback at every step;
+the first full menu retains rejected operators' zero-gradient participation.
+The complete menu, action choices and termination budget remain the same.
+This cache expires with the walk; it is absent from checkpoints. The eager
+walk also reuses the detached dictionary-only whole-centroid read. Reads
+depending on proposed operands remain live. The selected unary pullback
+evaluates only operators selected by live streams; the first full menu still
+keeps all operators in the optimizer graph.
 Its final modality readout uses the output-relevant rectangular LDU factors,
 with all generated percept coordinates available to the learned projection.
 This preserves the former forward function and gradients while avoiding an
@@ -2851,3 +2900,68 @@ rows plus four DEF rows out of 1,024. The source and per-trial costs remain
 in the receipt. Alec accepted the repair under plan §45 on October 7 and
 authorized commit, push and the WikiOracle bump. Item 6.5 is next, with §44's
 magnitude as definedness first.
+
+
+**Item 2.7 final-round implementation (2026-10-29; §§38–42).** A training
+phase admits its input and supplied-answer forms through `Corpus.admit_training_forms`
+before reading, without meanings, occurrences or priming. `Generative.walk_bank`
+retrieves a bounded lexical shortlist once from each walk's root; steps reuse it.
+`InverseMenu` separates native admissibility from exactness and carries form and
+two-lane recomposition residuals. In-cube native proposals may be approximate;
+an unavailable inverse remains unavailable. The numeric, nonsymbolic path keeps
+its own domain. The 144-step lesson budget, stack and unary bound are unchanged.
+Only a drained walk with every chosen step exact is certified; paired selection
+prefers certification, then total cost. The unresolved frontier and each chosen
+step contribute to `reconstruction.walk_residual`. Detached menu features teach
+the sole reconstruction-owned generate policy alongside its existing teacher
+and winning-departure credit.
+
+`DefinitionFold` reads actual witnessed members and both LTM1 evidence poles,
+with DEF names as provenance. It teaches sigma's independent lanes toward the
+maximum of its detached current reading and the member's bounded evidence.
+Missing lanes teach nothing; repeated witnesses join by maximum. Sparse additions
+preserve optimizer moments. The kept-close mask applies, and configurations that
+already assign sigma to output keep this term in output. The lesson reports
+both-corner saturation instead of netting away conflict.
+
+`PerceptExpectation` forecasts native percept forms from prior detached context.
+At the eager per-word boundary, before the next arrival, its own Adam consumes
+`expectation.percept` once; the main optimizer excludes these parameters. Its
+pre-arrival value is frozen for both trials. Moments observe each external arrival
+once, including a valid expected absence. Every model checkpoint saves the
+local optimizer; `CorpusCheckpoint` additionally preserves mid-epoch context.
+Completed-epoch saves retain its moments even with no continuation cursor.
+Percept content recombines to the exact attended input,
+with its identity Jacobian; the arithmetic `expected + (observed - expected)` is
+also reported so floating-point cancellation is visible. Candidate attention may
+read the signed residual as a feature; the old `_percept_word_gain` content
+multiplication has no reader.
+
+The committed inverse starts at completed `SentenceUnderstanding.end_slots` and
+its forest, with live occurrence witnesses for the certified paired surface,
+counted sum and surface-unary maps. Transpose reverses the two retained slots.
+Only certified coordinates that numerically recover their source are detached
+from the field reconstruction gradient; their errors remain audits. Unsupported
+or approximate coordinates retain their losses. Free walks keep their independent
+choices and residual costs. At both leaf-error boundaries (§42), the inverse's
+native form is translated into a signed correction conditioned on the detached
+arrival expectation; the detached teacher is `observed - expected`. Adding the
+same expectation back gives the full-signal reconstruction error. This coordinate
+translation certifies loss/gradient separation, not an empirical reduction in
+inverse capacity. No conceptual residual teacher or new learned inverse head is
+introduced; the conceptual half remains item 2.5 round B.
+
+**Paired generation draws (item 2.7 final round, 2026-10-29).** The two
+readings of a sentence share a fresh uniform quantile for each corresponding
+free decoder and output comparison. Each legal menu maps the quantile to its
+own departure. Thus an unchanged understanding does not acquire a different
+reconstruction score just because the nested exploration drew differently.
+The draw belongs to the sentence, is discarded after its comparison, and is
+neither a seed nor a checkpointed random schedule.
+
+**Native percept-event ledger (item 2.7 final round, 2026-10-29).**
+`PerceptField` stores actual occurrence columns with their native spans.
+Trailing columns with zero extent in every stream are omitted before crossing
+events with features and attention brackets. Interior gaps remain, preserving
+canonical tile adjacency. The reading axis,
+B28/W256 carriers and constructed inventories keep their configured sizes.

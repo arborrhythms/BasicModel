@@ -337,6 +337,33 @@ def test_later_bind_keeps_its_earlier_determination_under_a_wrapper(monkeypatch,
     unchanged(resolver, retained)
 
 
+def test_three_slot_close_keeps_the_introduction_used_by_its_embedded_bind(monkeypatch):
+    """Captured final curriculum: a three-slot root orphaned a determined subject."""
+    from dataclasses import replace
+    from ClauseJournal import finish_clause
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    entry, _, handle = recorded_identity_reading(f, ('sum', ('lower_unary', 'subject'),
+        ('sum', 'predicate', ('implies', ('bind', 'alias'), 'tail'))))
+    # Stop the fixed operation journal before its final two sums. The three
+    # surviving roots are subject, predicate, and an embedded relative clause.
+    action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
+        'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
+        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts')
+    entry = replace(entry, **{name: getattr(entry, name)[:-2] for name in action_fields
+                              if getattr(entry, name) is not None})
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, chunk_context(resolver, ()))
+    introduction = next(item for item in plan['items']
+        if item['node'].identity['handle'] == handle and item['node'].identity['introduction'])
+    use = next(item for item in plan['items']
+        if item['node'].reference_request.get('compose_bind') == handle)
+    assert use['selected'] == introduction['selected']
+    assert clause.refs[0][0] == 'clause'
+    assert clause.children[clause.refs[0][1]] is introduction['node']
+
+
 def test_dummy_bind_preserves_a_carried_object_with_different_working_content(monkeypatch):
     from ClauseRow import Clause, Composition
     from Meaning import ConceptualMeaning
@@ -354,6 +381,52 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
     assert record['reference'] == (closing.parts.SYMBOL, reference)
     assert record['resolved']
     assert (int(closing.alloc.next_id), len(closing.parts)) == before
+
+
+def test_dummy_binds_preserve_the_relative_operand_in_a_three_slot_close(monkeypatch):
+    """Captured whole + repeated dummy binds must not become three plain points."""
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from ClauseJournal import finish_clause
+    from ClauseScope import ClauseScope
+    from ReferenceContext import prepare_operands
+    from test_clause_acceptance import SentenceFixture
+    import STMChunks
+    f = SentenceFixture(monkeypatch)
+    tree = ('sum', 'prefix', ('sum', 'predicate',
+        ('bind', ('bind', ('whole', 'subject', 'tail')))))
+    entry, _, _ = recorded_identity_reading(f, tree, dummy_binds=(0, 1))
+    action_fields = ('actions', 'operation_values', 'operation_refs', 'operation_relations',
+        'operation_probabilities', 'identity_actions', 'timeline_actions', 'case_values',
+        'case_selected', 'operand_counts', 'form_wholes', 'form_whole_counts')
+    entry = replace(entry, **{name:getattr(entry, name)[:-2] for name in action_fields
+                             if getattr(entry, name) is not None})
+    relations = torch.zeros(len(entry.actions), 2, dtype=torch.bool)
+    rule = next(rule for rule in f.binary if rule.method_name == 'bind')
+    field = STMChunks.empty(1, 8, 8, device=entry.leaves.device, dtype=entry.leaves.dtype)
+    for index, (kind, operation, _) in enumerate(entry.actions.tolist()):
+        if kind != 1 or f.binary[operation].method_name != 'bind':
+            continue
+        left = entry.operation_values[index, 0]
+        menu = prepare_operands(torch.stack((left*0, left))[None],
+            torch.tensor([[0, -2]]), torch.tensor([[0, ClauseScope.RELATIVE | ClauseScope.LOCAL]]),
+            torch.tensor([[0, 1]]), orders=torch.zeros(1, 2, dtype=torch.long),
+            rules=(rule,), unary_rules=(), bank=SimpleNamespace(interpreter=None,cases=None),
+            live=(), active=torch.ones(1, 2, dtype=torch.bool), chunk_state=field)
+        relations[index] = menu['binary_relations'][0, 0, 0]
+    clause = finish_clause(f.language, replace(entry, operation_relations=relations), registry=f.registry)
+    assert clause.relation == 'operator'
+    assert clause.refs[2][0] == 'clause'
+    child = clause.children[clause.refs[2][1]]
+    assert child.relation == 'part' and child.point is None
+    assert child.reference_request is None
+    # The close still rejects three point roots with no relative grammar.
+    from reading_fixtures import record_reading
+    plain = record_reading(f.language, f.program(('sum', 'prefix', ('sum', 'predicate', 'tail'))))
+    plain = replace(plain, actions=plain.actions[:-2], operation_values=plain.operation_values[:-2],
+                    operation_refs=plain.operation_refs[:-2])
+    with pytest.raises(ValueError, match='three slots have no selected relative clause'):
+        finish_clause(f.language, plain, registry=f.registry)
 
 
 @pytest.mark.parametrize('open_sibling', (False, True))
@@ -521,7 +594,7 @@ def test_unminted_value_and_anonymous_name_have_distinct_pending_state(pending):
     if not pending:
         assert read.role_refs[0]==token
         torch.testing.assert_close(read.roles[0],atoms[0])
-    restored=MediumTermMemory(pool.capacity,n_vectors=int(pool.transient_ids[0]))
+    restored=MediumTermMemory(pool.capacity,n_vectors=int(pool.transient_ids[0]),field_width=pool.field_width)
     restored.restore(pool.state())
     assert restored.entries[token].pending==pending and restored.entries[token].kind is None
     torch.testing.assert_close(restored.value_of(token),atoms[0])
@@ -749,3 +822,52 @@ def test_missing_determined_event_introduction_fails_loudly():
     with pytest.raises(RuntimeError, match='lost its determined introduction'):
         resolver._commit_events(plan, written, when=1)
     assert not resolver.components.owner.mtm.entries
+
+
+@pytest.mark.parametrize('evict', (False, True))
+@pytest.mark.parametrize('pool_aliases', (0, 2))
+def test_journal_native_bind_without_a_pool_token_keeps_its_symbol_origin(monkeypatch, evict, pool_aliases):
+    from dataclasses import replace
+    from ChunkJournal import capture
+    from ClauseJournal import finish_clause
+    from IdentityRows import mint
+    from test_clause_acceptance import SentenceFixture
+    f = SentenceFixture(monkeypatch)
+    entry = f.program(('bind', 'alias'))
+    content = entry.leaves[0].clone()
+    symbol = mint(f.cs, content)
+    for index in range(pool_aliases):
+        f.cs.mtm.open(address(index+1), kind=symbol, native=symbol, when=index, value=content)
+    # No token and an ambiguous pair both leave the durable symbol usable.
+    assert f.cs.mtm.token_of(symbol) is None
+    state = chunks.empty(1, 8, len(content))
+    state, _ = chunks.deposit(state, content[None], torch.tensor([True]), identity=symbol,
+        refs=torch.tensor([[[chunks.SYMBOL, symbol], [0, 0]]]), order=1)
+    walk = Walk(f.binary, f.unary)
+    state = walk.empty(content[None], 2, state=state)
+    state = walk.shift(state, content[None], word=int(entry.concept_ids[0]), index=0)
+    local = next(i for i, rule in enumerate(f.binary) if rule.method_name == 'bind')
+    offered, ids, indices, valid = chunks.bind_menu(state[0], content[None, None])
+    column = int(((ids[0, 0] == symbol) & valid[0, 0]).long().argmax())
+    selected = choice(content[None], local=local, identity=symbol,
+                      chunk=int(indices[0, 0, column]), bind=True)
+    operands = torch.stack((content[None], offered[:, 0, column]), 1)
+    state = walk.apply(state, selected, operands, 1)
+    stm, scope, records, values = state
+    if evict:
+        # Closing must retain the journal's durable address even after its
+        # numerical working chunk has left the shared eight-slot cache.
+        stm = chunks.empty(1, 8, len(content))
+    identity = capture(f.cs, stm, scope, records, values, batch=0,
+        positions=torch.tensor([0]), columns=torch.tensor([0, 1]), actions=entry.actions)
+    handle = int(identity['identity_actions'][1, 4])
+    assert identity['identity_origins'][handle-1].tolist() == [1, symbol, 1]
+    entry = replace(entry, operation_values=values[0].reshape(2, 3, -1),
+        operation_refs=records[0, :, :2], leaf_orders=torch.ones(1, dtype=torch.long),
+        close_references=True, **identity)
+    clause = finish_clause(f.language, entry, registry=f.registry)
+    resolver = f.cs.components.reference_close
+    plan = resolver.preview(clause, state[0])
+    assert plan['items'][0]['selected'] == symbol
+    assert not plan['items'][0]['own_object']
+    assert f.cs.mtm.token_of(symbol) is None

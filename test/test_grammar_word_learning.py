@@ -179,7 +179,8 @@ def test_normal_text_reconstruction_updates_the_grammar_chooser(tmp_path, monkey
     live_choices = []
     def observe_eligibility(parent, *args, **kwargs):
         legal = eligibility(parent, *args, **kwargs)
-        live_choices.append(bool((parent.ne(0).any(-1) & legal.sum(-1).gt(1)).any()))
+        mask=legal.admissible if hasattr(legal, "admissible") else legal
+        live_choices.append(bool((parent.ne(0).any(-1) & mask.sum(-1).gt(1)).any()))
         return legal
     monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(observe_eligibility))
     optimizer = model.getOptimizer(lr=1e-3)

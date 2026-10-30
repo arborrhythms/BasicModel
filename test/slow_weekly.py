@@ -1,7 +1,7 @@
 """Run the complete slow selection once, in fresh bounded workers.
 
-Ordinary cases retain 8 GiB. Only the two native production objective arms
-receive 24 GiB, one worker at a time. Both tiers reserve 24 GiB in aggregate.
+Ordinary cases retain 8 GiB; native objective arms receive 24 GiB. The large
+corpus capacity search and selected prefix receive a sequential 28 GiB tier.
 This command never rebuilds the environment or installs a schedule.
 """
 from collections import Counter
@@ -20,6 +20,9 @@ import uuid
 import bounded_tests as bounded
 
 NATIVE_FILE = 'test/test_objective_conflicts_slow.py'
+CORPUS_FILE = 'test/test_corpus_large_slow.py'
+CORPUS_WORKER_GIB = 28
+CORPUS_TIMEOUT = 172800
 NATIVE_WORKER_GIB = 24
 ORDINARY_WORKER_GIB = 8
 AGGREGATE_GIB = 24
@@ -54,7 +57,17 @@ def snapshot_source(root, destination):
         (destination / '.venv').symlink_to(runtime.resolve(), target_is_directory=True)
 
 
-def run_tier(root, nodes, directory, ceiling):
+def selected_tiers(nodes):
+    """Route each slow case once, keeping the large corpus run isolated."""
+    special = (NATIVE_FILE + '::', CORPUS_FILE + '::')
+    return [
+        ('ordinary', [n for n in nodes if not n.startswith(special)], ORDINARY_WORKER_GIB, 1800),
+        ('native', [n for n in nodes if n.startswith(special[0])], NATIVE_WORKER_GIB, 1800),
+        ('corpus', [n for n in nodes if n.startswith(special[1])], CORPUS_WORKER_GIB, CORPUS_TIMEOUT),
+    ]
+
+
+def run_tier(root, nodes, directory, ceiling, *, timeout=1800):
     """Attempt every selected case once, continuing after a bounded stop.
 
     A killed worker remains a failed attempt. Never retry it; only dispatch
@@ -65,9 +78,9 @@ def run_tier(root, nodes, directory, ceiling):
     while remaining:
         folder = directory if not results else directory.with_name(directory.name + f'-continued-{len(results):02}')
         result = bounded.run_suite(root=root, selectors=remaining, run_dir=folder,
-            memory_bytes=AGGREGATE_GIB*bounded.GIB,
+            memory_bytes=max(AGGREGATE_GIB, ceiling)*bounded.GIB,
             worker_memory_bytes=ceiling*bounded.GIB, workers=1,
-            timeout=1800, suite_timeout=86400, batch_size=1, max_files=1)
+            timeout=timeout, suite_timeout=max(86400, timeout + 600), batch_size=1, max_files=1)
         results.append((folder, result))
         started = {node for worker in result['workers'] for node in worker['selected']}
         if not started:
@@ -109,7 +122,8 @@ def run(root=None):
         complete=False, selected=0, completed=0, attempted=0, counts={}, failures=[], runs=[],
         duration_seconds=0, source_matched=False,
         ceilings_gib=dict(ordinary_worker=ORDINARY_WORKER_GIB,
-                          native_worker=NATIVE_WORKER_GIB, aggregate=AGGREGATE_GIB),
+                          native_worker=NATIVE_WORKER_GIB, aggregate=AGGREGATE_GIB,
+                          corpus_worker=CORPUS_WORKER_GIB, corpus_aggregate=CORPUS_WORKER_GIB),
         record_directory=str(directory), working_tree=str(root), inline_runs=[])
     frozen = bounded.source_snapshot(root)
     source = directory / 'source'
@@ -119,11 +133,12 @@ def run(root=None):
     bounded.write_json(directory / 'source.json', frozen)
     root = source
     previous = {key:os.environ.get(key) for key in
-                ('RUN_SLOW', 'RUN_MPS_SLOW', 'OBJECTIVE_CONFLICTS_OUTPUT', 'BASICMODEL_DEVICE')}
+                ('RUN_SLOW', 'RUN_MPS_SLOW', 'OBJECTIVE_CONFLICTS_OUTPUT', 'CORPUS_LARGE_OUTPUT', 'BASICMODEL_DEVICE')}
     # The suite's ordinary fixtures declare CPU. MPS-only cases explicitly
     # switch to MPS; CUDA-only cases keep their availability skips.
     os.environ.update(RUN_SLOW='1', RUN_MPS_SLOW='1',
-                      OBJECTIVE_CONFLICTS_OUTPUT=str(directory/'native-measurements'))
+                      OBJECTIVE_CONFLICTS_OUTPUT=str(directory/'native-measurements'),
+                      CORPUS_LARGE_OUTPUT=str(directory/'corpus-measurements'))
     # Only explicit device marks choose accelerators; slow proofs retain CPU.
     os.environ.pop('BASICMODEL_DEVICE', None)
     exit_code = 125
@@ -144,10 +159,7 @@ def run(root=None):
                 return exit_code, directory
             slow = json.loads(response.read_text())['slow_selected']
             assert slow and len(slow) == len(set(slow))
-            tiers = [('ordinary', [node for node in slow if not node.startswith(NATIVE_FILE+'::')],
-                      ORDINARY_WORKER_GIB),
-                     ('native', [node for node in slow if node.startswith(NATIVE_FILE+'::')],
-                      NATIVE_WORKER_GIB)]
+            tiers = selected_tiers(slow)
             record['selected'] = len(slow)
             bounded.write_json(directory/'selected.json', slow)
             counts = Counter()
@@ -164,12 +176,13 @@ def run(root=None):
                     record['failures'].append(result)
             record['counts'] = dict(counts)
             bounded.write_json(directory/'record.json', record)
-            for name, nodes, ceiling in tiers:
+            for name, nodes, ceiling, timeout in tiers:
                 if not nodes:
                     continue
                 assert bounded.source_snapshot(root) == frozen, 'source changed between slow tiers'
-                print(f'Slow {name}: {len(nodes)} cases, {ceiling} GiB worker / 24 GiB aggregate', flush=True)
-                segments, attempted = run_tier(root, nodes, directory/name, ceiling)
+                print(f'Slow {name}: {len(nodes)} cases, {ceiling} GiB worker / '
+                      f'{max(AGGREGATE_GIB, ceiling)} GiB aggregate, {timeout}s timeout', flush=True)
+                segments, attempted = run_tier(root, nodes, directory/name, ceiling, timeout=timeout)
                 record['attempted'] += len(attempted)
                 for folder, result in segments:
                     record['runs'].append(dict(tier=name, result=str(folder/'result.json'),

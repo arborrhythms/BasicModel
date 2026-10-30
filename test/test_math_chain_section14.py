@@ -293,15 +293,14 @@ def test_forced_c_e_closings_exercise_empty_search_mint_and_question_storage(tmp
     from math_chain_ordinary import ordinary_model, train_documents
     from math_chain_corpus import ChainDocument
     model = ordinary_model(tmp_path)
-    # This mechanism fixture supplies the noun reading, as the pending-premise
-    # certificate does. Formation choices do not assign a word's order.
-    from Spaces import _concept_alloc_of
+    # This forced mechanism fixture supplies its vocabulary, as the pending-
+    # premise certificate does. Reading now takes DEF objects; putting the
+    # fixture's orders on forms would leave every site a new pending token.
+    from test_definition_rows import admit
     owner = model._concept_owner()
-    for word in ('x', 'what'):
-        if not owner.word_concepts(word):
-            owner.interpret.lookup_word(tuple(map(ord, word)), (), form=word)
-        for identity in owner.word_concepts(word):
-            force_order(owner, identity, 1)
+    for word in ('x', 'what', 'y', 'is', 'plus', 'two'):
+        _, obj = admit(model, word)
+        force_order(owner, obj, 1 if word in ('x', 'what') else 0)
     chooser = model._selected_thought_chooser(None)
     logits = chooser.thought_logits
     def query_then_conclude(active, requests):
@@ -378,12 +377,17 @@ def test_forced_ordinary_pending_premise_in_both_orders(tmp_path, reverse, eager
     from math_chain_corpus import ChainDocument
     from BindingAnswers import matches
     model = ordinary_model(tmp_path, budget=0)
-    from Spaces import _concept_alloc_of
     owner = model._concept_owner()
-    if not owner.word_concepts('x'):
-        owner.interpret.lookup_word((ord('x'),), (), form='x')
-    for identity in owner.word_concepts('x'):
-        force_order(owner, identity, 1)
+    # The forced premise fixture needs an order-1 referent. Reading now
+    # interprets every word, so provision its DEF object instead of putting
+    # order 1 on the lexical form and implicitly raising it again.
+    from test_definition_rows import admit
+    _, obj = admit(model, 'x')
+    force_order(owner, obj, 1)
+    # Other words were order-0 forms in this forced grammar fixture. Give
+    # them their order-0 objects so D6 preserves that supplied vocabulary.
+    for word in ('y', 'is', 'plus', 'two', 'three'):
+        admit(model, word)
     sentences = ('y is x plus two.', 'x is three.')
     if reverse:
         sentences = sentences[::-1]

@@ -1,4 +1,4 @@
-"""Discard an experienced presentation while preserving learned concepts."""
+"""Rewrite document covers and discard epoch experience, retaining concepts."""
 import torch
 
 
@@ -32,17 +32,39 @@ _ABSENT = (
 )
 
 
-@torch.no_grad()
 def begin(model):
-    """Eager epoch boundary, after the preceding presentation's backward."""
+    """Begin a document presentation; its cover is rewritten on first read."""
     if getattr(model, '_sentence_run_active', False) or getattr(model, '_open_sentence_slot', None) is not None:
         raise RuntimeError('a presentation cannot begin inside a live sentence')
+    model._document_covers = {}
+
+
+@torch.no_grad()
+def epoch(model):
+    """Discard epoch experience after backward, preserving learned concepts."""
+    begin(model)
+    percept = getattr(model,'percept_expectation',None)
+    if percept is not None:
+        percept.clear_context()
     symbol = getattr(model, 'symbolSpace', None)
     store = getattr(symbol, 'ltm_store', None)
     owners = list(getattr(model, 'conceptualSpaces', ()) or ())
     owner = getattr(model, 'conceptualSpace', None)
     if owner is not None and all(owner is not item for item in owners):
         owners.append(owner)
+    # Promotion derives an individual's order from its retained occurrence.
+    # Capture that witnessed result before retiring the epoch's experience,
+    # as consolidation does when it retains a learned object without its rows.
+    witnesses, witnessed_allocators = [], set()
+    for item in owners:
+        alloc = getattr(item, '_concept_allocator', None)
+        if alloc is not None and id(alloc) not in witnessed_allocators:
+            witnessed_allocators.add(id(alloc))
+            for cid in alloc.individuals:
+                refs = [ref for role, ref in alloc.store_of(cid).constituents(cid)
+                        if role == 'part' and isinstance(ref, tuple) and ref[:1] == ('occ',)]
+                if refs:
+                    witnesses.append((alloc, cid, alloc.order_of(cid), refs))
     for item in owners:
         item.mtm.restore(None)
     removed, removed_parts = set(), set()
@@ -76,6 +98,15 @@ def begin(model):
                      'last_part_forgetting_report'):
             store.__dict__.pop(name, None)
         store.rebuild_addresses()
+    for alloc, cid, order, refs in witnesses:
+        expired = [ref for ref in refs if ref[1] in removed]
+        if expired:
+            if order < 0:
+                raise RuntimeError('a promoted identity has no witnessed order at the epoch boundary')
+            alloc.reference_orders[cid] = order
+            for ref in expired:
+                alloc.store_of(cid).remove_constituent(cid, 'part', ref)
+            alloc.settle(cid)
     seen = set()
     for item in owners:
         alloc = getattr(item, '_concept_allocator', None)

@@ -322,3 +322,194 @@ class SymbolRead:
         field = gain_field(actual, expected, strength=self.strength,
             epsilon=self.epsilon, saturation=self.saturation)
         return torch.where(matched & occupied, field.gain, 1.)
+
+
+@dataclass(frozen=True)
+class PerceptArrival:
+    observed: torch.Tensor
+    expected: torch.Tensor
+    residual: torch.Tensor
+    content: torch.Tensor
+    attention: torch.Tensor
+    excess: torch.Tensor
+    omission: torch.Tensor
+    arithmetic: torch.Tensor
+
+
+class _PerceptIdentity(torch.autograd.Function):
+    """The certified full-signal chart; cancellation is measured separately."""
+    @staticmethod
+    def forward(ctx, observed, expected):
+        return observed.clone()
+
+    @staticmethod
+    def backward(ctx, gradient):
+        return gradient, None
+
+
+def recombine_percept(observed, expected, attention=1.):
+    expected = expected.detach().clone().to(observed)
+    residual = observed - expected
+    arithmetic = expected + residual
+    # Extreme cancellation can lose low bits. The chart's forward value and
+    # Jacobian are exactly the observed signal, including at zero residual.
+    content = _PerceptIdentity.apply(observed, expected)
+    attention = torch.as_tensor(attention, device=observed.device, dtype=observed.dtype)
+    content = attention * content
+    return PerceptArrival(observed, expected, residual, content, attention,
+                          residual.relu(), (-residual).relu(), arithmetic)
+
+
+def percept_correction(recovered, expected):
+    """Condition the native inverse's leaf chart on the frozen arrival prior.
+
+    Native maps still invert complete grammatical understandings. Translating
+    their form coordinates gives a signed correction without sending a signed
+    residual through a cube-only native operator. This loss-side chart alone
+    does not claim a reduction in the native inverse's parameter capacity.
+    """
+    return recovered - expected.detach().to(recovered)
+
+
+def percept_reconstruction(recovered, observed, expected):
+    """Residual and full-signal errors with the identical detached teacher."""
+    expected = expected.detach().to(recovered)
+    target = (observed.detach().to(recovered) - expected).detach()
+    correction = percept_correction(recovered, expected)
+    reconstructed = expected + correction
+    return correction, target, reconstructed, (correction-target).square()
+
+
+class PerceptExpectation(nn.Module):
+    """Causal native-form expectation, updated only at eager word boundaries.
+
+    Context and the sparse bank contain detached external observations. A new
+    bank key has a cold zero forecast for its first boundary; the next arrival
+    can use it. The local Adam optimizer never joins the sentence optimizer.
+    """
+    def __init__(self, width, *, streams, capacity, moment_width=None, rate=.05,
+                 epsilon=1e-6, saturation='clip'):
+        super().__init__()
+        self.width = int(width)
+        with torch.random.fork_rng(devices=[]):
+            self.predictor = ActivationPredictor(self.width)
+        self.moments = PerceptMoments(moment_width or width, rate=rate,
+                                     epsilon=epsilon, saturation=saturation)
+        self.register_buffer('context_mean', torch.zeros(streams, self.width))
+        self.register_buffer('context_recent', torch.zeros(streams, self.width))
+        self.register_buffer('context_count', torch.zeros(streams, dtype=torch.long))
+        self.register_buffer('last_expected', torch.zeros(streams, self.width))
+        self.register_buffer('known', torch.zeros(capacity, dtype=torch.bool))
+        self.register_buffer('updates', torch.zeros((), dtype=torch.long))
+        self.optimizer = None
+        self.learning_rate = .001
+
+    def ensure_optimizer(self, lr=None):
+        if self.optimizer is None:
+            self.learning_rate = self.learning_rate if lr is None else float(lr)
+            self.optimizer = torch.optim.Adam(self.predictor.parameters(), lr=self.learning_rate)
+        return self.optimizer
+
+    def forecast(self, bank, batch, *, completed=None):
+        if batch > len(self.context_count):
+            raise ValueError('percept expectation exceeds constructed streams')
+        context = torch.cat((self.context_mean[:batch], self.context_recent[:batch]), -1).detach().clone()
+        if completed is not None:
+            context = context + completed.detach().to(context)
+        total = context.new_zeros(batch, self.width)
+        mass = context.new_zeros(batch, 1)
+        admitted = []
+        for rows, keys in bank():
+            rows, keys = rows.detach(), keys.detach()
+            if keys.shape != (batch, len(rows), self.width):
+                raise ValueError('percept forecast bank has a different native width')
+            if bool(((rows < 0) | (rows >= len(self.known))).any()):
+                raise ValueError('percept forecast key exceeds constructed inventory')
+            probability = self.predictor(keys, context).sigmoid()[..., 0]
+            probability = probability * self.known[rows].to(probability)[None]
+            total = total + torch.einsum('bn,bnd->bd', probability, keys)
+            mass = mass + probability.sum(-1, keepdim=True)
+            admitted.extend(rows.tolist())
+        if not admitted:
+            # Keep the empty-domain local objective differentiable and zero.
+            total = total + sum(p.sum()*0 for p in self.predictor.parameters())
+        return total/mass.clamp_min(1.), tuple(admitted)
+
+    def arrive(self, forecast, observed, active, *, native=None, training=False):
+        expected, admitted = forecast
+        if observed.shape != expected.shape or active.shape != observed.shape[:1]:
+            raise ValueError('percept arrival requires a batched native form and domain')
+        frozen = expected.detach().clone()
+        value = recombine_percept(observed, frozen)
+        local = .5*(expected-observed.detach()).square().mean(-1)
+        local = torch.where(active, local, 0.)
+        before = int(self.updates)
+        if training and bool(active.any()):
+            optimizer = self.ensure_optimizer()
+            optimizer.zero_grad(set_to_none=True)
+            local.sum().div(active.sum()).backward()
+            if any(p.grad is not None and not torch.isfinite(p.grad).all() for p in self.parameters()):
+                raise FloatingPointError('nonfinite percept expectation gradient')
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+            self.updates.add_(1)
+        with torch.no_grad():
+            B = len(active)
+            count = self.context_count[:B]
+            new_count = count + active.long()
+            mean = self.context_mean[:B]
+            mean.copy_(torch.where(active[:, None], mean+(observed.detach()-mean)/new_count.clamp_min(1)[:, None], mean))
+            self.context_recent[:B].copy_(torch.where(active[:, None],observed.detach(),self.context_recent[:B]))
+            count.copy_(new_count)
+            self.last_expected[:B].copy_(torch.where(active[:, None],frozen,self.last_expected[:B]))
+            if admitted:
+                self.known[list(admitted)] = True
+            if training:
+                self.moments.observe(observed if native is None else native, active)
+        difference = (value.arithmetic.detach()-observed.detach()).abs()
+        self.last_arrival = dict(expected=frozen, observed=observed.detach().clone(),
+            residual=value.residual.detach(), local_loss=local.detach(), active=active.detach().clone(),
+            updates_before=before, updates_after=int(self.updates),
+            unequal=int(((value.arithmetic.detach()!=observed.detach()) & active[:,None]).sum()),
+            max_difference=float(torch.where(active[:,None],difference,0.).max()))
+        return value
+
+    def attention_residual(self, native):
+        width = min(self.width, native.shape[-1])
+        expected = self.last_expected[:len(native), None, :width].to(native)
+        return F.pad(native[..., :width].detach()-expected, (0,native.shape[-1]-width))
+
+    @torch.no_grad()
+    def clear_context(self):
+        for name in ('context_mean','context_recent','context_count','last_expected'):
+            getattr(self,name).zero_()
+
+    def continuation(self):
+        return dict(optimizer=None if self.optimizer is None else self.optimizer.state_dict(),
+                    learning_rate=self.learning_rate)
+
+    def restore_continuation(self, state):
+        self.learning_rate = float(state['learning_rate'])
+        if state['optimizer'] is not None:
+            self.ensure_optimizer().load_state_dict(state['optimizer'])
+        elif self.optimizer is not None:
+            self.optimizer.state.clear()
+
+    def migrate_expectation_checkpoint(self, state_dict, prefix=''):
+        changed = False
+        for name in ('mean','variance','count'):
+            old = prefix+name
+            if old in state_dict:
+                state_dict[prefix+'moments.'+name] = state_dict.pop(old)
+                changed = True
+        for name, value in self.state_dict().items():
+            if prefix+name not in state_dict:
+                state_dict[prefix+name] = value.detach().clone()
+                changed = True
+        return changed
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        self.migrate_expectation_checkpoint(state_dict,prefix)
+        super()._load_from_state_dict(state_dict,prefix,local_metadata,strict,
+                                     missing_keys,unexpected_keys,error_msgs)

@@ -68,13 +68,14 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
         spent += 1
         gate = torch.ones(1, dtype=torch.bool, device=top.device)
         from Generative import inverse_menu
-        lefts, rights, legal = inverse_menu(language, top, gate,
+        menu = inverse_menu(language, top, gate,
             basis=candidate_basis[None], basis_valid=gate[:, None].expand(1, len(candidates)),
             priming=weights[candidates][None].to(top), limit=candidate_limit,
             constituents=constituents, constituent_valid=constituent_valid,
             constituent_families=constituent_families,
             terminal_valid=(None if candidate_orders is None else
                             ((candidate_orders >= 0) & (candidate_orders <= current_order))[None]))
+        lefts,rights,legal=menu.left,menu.right,menu.exact & menu.admissible
         determined = {}
         if candidate_orders is not None:
             # A higher-order noun may share its point with a particular.
@@ -96,7 +97,7 @@ def unfold_idea(language, basis, idea, limit, *, work=None, activation=None,
             break
         from Language import LanguageSpace
         action = int(LanguageSpace.choose_generate(language,
-            language.generate_policy_logits(top).masked_fill(~legal, -torch.inf)))
+            language.generate_policy_logits(top,menu.features).masked_fill(~legal, -torch.inf)))
         if action < len(binary):
             operations.append(('binary', action))
             if action in determined:

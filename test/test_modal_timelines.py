@@ -316,6 +316,9 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     ideas=[]
     for position in (1,2):
         _,frame,row,_=close(f,recording(f,tree,(frame,)),(frame,),position=position)
+        # This direct resolver fixture supplies the model's per-sentence
+        # promotion boundary after the close and its placement work.
+        f.cs.mtm.promote_candidates(f.cs)
         ideas.append(f.store.occurrence_of(row))
     entry=f.cs.mtm.entries[token]
     assert entry.symbol is not None and len(entry.occurrences)==3
@@ -324,6 +327,10 @@ def test_promotion_folds_only_actual_events_and_document_end_keeps_ideas(monkeyp
     rows,bank=f.store.slots.clone(),f.cs.similarity_codebook.W.clone()
     consolidate(f.cs,f.store)
     f.cs.mtm.end_document(f.cover,store=f.store)
+    assert token in f.cs.mtm.entries and f.cs.mtm.names
+    for stream in tuple(f.cs.mtm.closes):
+        for _ in range(f.cs.mtm.horizon + 1):
+            f.cs.mtm.close(f.store,stream=stream)
     assert not f.cs.mtm.entries and not f.cs.mtm.names
     assert all(int(f.store.order[f.store.location(ref)])>=1 for ref in ideas)
     torch.testing.assert_close(f.store.slots,rows)
@@ -388,6 +395,10 @@ def test_retained_idea_keeps_its_subject_reference_after_token_expiry(monkeypatc
     query=replace(ConceptualMeaning.from_description(f.store.slots[row]),
         bindings={'_query_event':(token,entry.timelines[1].events[-1].verb,1)})
     f.cs.mtm.end_document(f.cover,store=f.store)
+    assert token in f.cs.mtm.entries
+    for stream in tuple(f.cs.mtm.closes):
+        for _ in range(f.cs.mtm.horizon + 1):
+            f.cs.mtm.close(f.store,stream=stream)
     reader=ThoughtLTMCapability(store=lambda:f.store,equal=lambda a,b:1.,tau_id=.9)
     found=reader.best_match(query,max_records=64,work=QueryWorkBudget(256))
     assert found['witnesses'] == () and found['support_true'] == 0.

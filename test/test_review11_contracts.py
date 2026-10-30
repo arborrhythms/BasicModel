@@ -29,14 +29,14 @@ def test_numeric_head_does_not_call_learned_retrieval():
 
 
 def decoder():
-    from Language import LanguageSpace
+    from Language import LanguageSpace, GeneratePolicy
     from Models import BasicModel
     class Sum:
         inverse_kind = 'search'
         @staticmethod
         def compose(left, right):
             return left + right
-    policy = torch.nn.Linear(2, 2)
+    policy = GeneratePolicy(2, 2)
     with torch.no_grad():
         policy.weight.zero_()
         policy.bias.copy_(torch.tensor([0., 20.]))
@@ -63,7 +63,7 @@ def test_supported_compound_cannot_stop_even_with_a_chunk_code(monkeypatch, chun
     valid = torch.tensor([[True, True, chunk_in_bank]])
     fn = (torch.compile(model._output_generate_walk, backend='inductor', fullgraph=True)
           if compiled else model._output_generate_walk)
-    out, count, truncated, _, actions = fn(
+    out, count, truncated, _, actions, certified, residuals, frontier, features, tops = fn(
         event, 6, basis=bank, basis_valid=valid, return_trace=True)
     assert count.tolist() == [2]
     assert not truncated.any()
@@ -79,7 +79,7 @@ def test_single_symbol_cannot_be_split_by_a_large_undo_logit(monkeypatch):
         policy.bias.copy_(torch.tensor([20., 0.]))
     event = torch.tensor([[[1., 0.], [0., 0.], [0., 0.]]])
     bank = torch.tensor([[[1., 0.], [0., 1.]]])
-    out, count, truncated, _, actions = model._output_generate_walk(
+    out, count, truncated, _, actions, certified, residuals, frontier, features, tops = model._output_generate_walk(
         event, 6, basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool), return_trace=True)
     assert count.tolist() == [1]
     assert not truncated.any()
@@ -92,7 +92,7 @@ def test_no_shortlist_support_is_unavailable_not_a_pseudo_terminal(monkeypatch):
     monkeypatch.setattr(util, 'TheCompileBackend', 'none')
     model, _ = decoder()
     event = torch.tensor([[[1., 1.], [0., 0.]]], requires_grad=True)
-    out, count, truncated, _, actions = model._output_generate_walk(
+    out, count, truncated, _, actions, certified, residuals, frontier, features, tops = model._output_generate_walk(
         event, 4, basis=event, basis_valid=torch.zeros(1, 2, dtype=torch.bool), return_trace=True)
     assert count.tolist() == [0]
     assert truncated.all()
@@ -106,7 +106,7 @@ def test_capacity_does_not_make_stop_eligible_for_a_compound(monkeypatch):
     model, _ = decoder()
     event = torch.tensor([[[1., 1.]]])
     bank = torch.tensor([[[1., 0.], [0., 1.]]])
-    out, count, truncated, _, actions = model._output_generate_walk(
+    out, count, truncated, _, actions, certified, residuals, frontier, features, tops = model._output_generate_walk(
         event, 4, basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool), return_trace=True)
     assert count.tolist() == [0] and truncated.all()
     assert actions.tolist() == [[-1, -1, -1, -1]]
@@ -124,13 +124,14 @@ def test_free_policy_has_no_pathwise_credit_between_supported_operations(monkeyp
         def compose(left, right):
             return left - right
     language._generate_binary_ops += (Difference(),)
-    language.generate_policy = torch.nn.Linear(2, 3)
+    from Language import GeneratePolicy
+    language.generate_policy = GeneratePolicy(2, 3)
     with torch.no_grad():
         language.generate_policy.weight.zero_()
         language.generate_policy.bias.copy_(torch.tensor([1., 0., 20.]))
     event = torch.tensor([[[.5, .5], [0., 0.], [0., 0.]]], requires_grad=True)
     bank = torch.tensor([[[.5, 0.], [0., .5], [.5, 1.]]])
-    out, count, truncated, _, actions, alternatives = model._output_generate_walk(
+    out, count, truncated, _, actions, alternatives, certified, residuals, frontier, features, tops = model._output_generate_walk(
         event, 6, basis=bank, basis_valid=torch.ones(1, 3, dtype=torch.bool), return_candidates=True)
     assert alternatives[0, 0] and actions[0, 0] == 0
     assert count.tolist() == [2] and not truncated.any()

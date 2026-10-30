@@ -162,10 +162,18 @@ def test_trust_to_pair_and_negation(trust, polarity, expected):
     assert float(store.trust[row]) == pytest.approx(expected[0]-expected[1])
 
 
-def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
+def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monkeypatch):
     from test_mm_xor import _fresh_model
     from Language import ConjunctionLayer, DisjunctionLayer
     model, _, data = _fresh_model('data/XOR_grammar.xml')
+    import Forgetting
+    boundary = Forgetting.model_boundary
+    ending = {}
+    def capture(model, **kwargs):
+        if kwargs.get('epoch_boundary'):
+            ending.update(record=model._last_sentence_understanding, credit=model._last_sentence_credit)
+        return boundary(model, **kwargs)
+    monkeypatch.setattr(Forgetting, 'model_boundary', capture)
     try:
         optimizer = model.getOptimizer(lr=.01)
         model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
@@ -185,11 +193,12 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0():
         for layer in [ConjunctionLayer(), DisjunctionLayer()]:
             roots = torch.stack([layer.compose(dense[a],dense[b]) for a,b in [(0,1),(0,3),(2,1),(2,3)]])
             assert (roots.norm(dim=-1)>0).all()
-        record = model._last_sentence_understanding
+        record = ending['record']
         assert record is not None
+        assert model._last_sentence_understanding is None
         assert record.primed.forms is not None
         assert model._last_rung0_identity_audit['errors'] == 0
         assert identity.audit()['reconstruction_errors'] == 0
-        assert model._last_sentence_credit['components'][:,:,0].isfinite().all()
+        assert ending['credit']['components'][:,:,0].isfinite().all()
     finally:
         model.End(); model.symbolSpace.soft_reset()

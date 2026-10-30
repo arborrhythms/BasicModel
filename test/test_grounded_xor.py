@@ -29,7 +29,7 @@ def grounded_model(tmp_path, pool=4, inventory=None, load_data=False, field_slot
         'architecture/conceptLayers': 2,
         'architecture/bindingDepth': 2, 'architecture/conceptualPi': True,
         'architecture/symbolTower': True, 'architecture/conceptBinding': 'aligned',
-        'architecture/attentionPromotion': True, 'architecture/conceptPoolSize': pool,
+        'architecture/attentionPromotion': True, 'ConceptualSpace/mtmCapacity': 64,
         'architecture/training/autoload': False, 'architecture/training/maskRate': 0.,
         'InputSpace/nVectors': slots, 'InputSpace/nOutput': slots,
         'PartSpace/nInput': slots, 'PartSpace/nOutput': slots,
@@ -116,30 +116,35 @@ def learn_grounded_xor(tmp_path, pool):
     torch.testing.assert_close(torch.minimum(torch.maximum(a[:, 0], b[:, 0]),
                                             torch.maximum(a[:, 1], b[:, 1])),
                                torch.tensor([0., 1., 1., 0.]))
-    pool_rows = [r for r in store.provisional.nonzero().flatten().tolist()
-                 if cs._order0_inventory_row(r)]
-    assert len(pool_rows) == pool
-    assert torch.count_nonzero(store.participation[pool_rows]) == 0
-    assert not store.participation.requires_grad
-    # The ordinary observer receives all four unlabeled primitive fields.
-    # It records complete located witnesses, including both repeated-pole
-    # patterns. No XOR-specific part or output edge is supplied.
-    # The second presentation admits the recurrent units in PartSpace.
+    cs.observe_open_field(model._combine_last_cs_sub._concept_activations)
+    for batch in range(4):
+        cs.mtm.close(None, stream=batch,
+            references=cs._field_activated_references.get(batch, ()))
+    # The first close observes the complete native conjunctions. The
+    # second presentation recognizes four familiar cases, still in MTM.
     model.End()
     model.forward(x)
-    cs.promotion_observe()
-    rows = [r for r in pool_rows if bool(store.assigned[r])]
-    assert len(rows) == 4
-    assert all(any(r == row and (col // 2) % 2 == 0
-                   for r, col in store.features._index) for row in rows)
-    assert not hasattr(store.conjunctive, "locations")
-    witness_updates = math.ceil(math.log(1 - cs.concept_mint_threshold) / math.log(cs.concept_use_ewma))
-    for _ in range(witness_updates):
+    cs.observe_open_field(model._combine_last_cs_sub._concept_activations)
+    cases = {key: entry for key, entry in cs.mtm.entries.items()
+             if entry.order == 0 and entry.refinement.get('literal') is not None}
+    assert len(cases) == 4
+    assert all(entry.symbol is None for entry in cases.values())
+    for batch in range(4):
+        cs.mtm.close(None, stream=batch,
+            references=cs._field_activated_references.get(batch, ()))
+    for _ in range(cs.concept_mint_count-2):
         model.End()
         model.forward(x)
-        cs.observe_concept_use(model._combine_last_cs_sub._concept_activations)
-    cs.promotion_pass()
-    assert all(not bool(store.provisional[r]) and store.participation[r] == 1 for r in rows)
+        cs.observe_open_field(model._combine_last_cs_sub._concept_activations)
+        for batch in range(4):
+            cs.mtm.close(None, stream=batch,
+                references=cs._field_activated_references.get(batch, ()))
+    cs.mtm.promote_candidates(cs)
+    assert all(cs.mtm.entries[key].symbol is not None for key in cases)
+    rows = [cs._csw_row_of(cs.mtm.entries[key].symbol) for key in cases]
+    assert all(any(r == row and (col // 2) % 2 == 0
+                   for r, col in store.features._index) for row in rows)
+    assert not hasattr(store.conjunctive, 'locations')
     force_order(cs, 20001, 1)
     xor = cs._csw_concept_row(1, 20001)
     assert xor is not None
@@ -174,7 +179,7 @@ def learn_grounded_xor(tmp_path, pool):
         mse = float((output - target).square().mean())
     print({'pool': pool, 'primitive_updates': 32, 'definition_updates': 32,
            'concept_updates': 32, 'initial_mse': initial_mse, 'mse': mse, 'output': output.tolist(),
-           'conjunctions': len(rows), 'gates': store.participation[rows].tolist(),
+           'conjunctions': len(rows), 'counts': [cs.mtm.entries[key].count for key in cases],
            'xor_parts': cs.concept_weights(xor),
            'native_cases': [(r, c) for r, c in store.features._index if r in rows]})
     assert mse < 1e-6
@@ -198,9 +203,18 @@ def learn_grounded_xor(tmp_path, pool):
     with torch.no_grad():
         model.forward(controls)
         leg = model.symbolSpace.forward_concept_to_symbol(model._combine_last_cs_sub)
-        assert cs._percept_field.events.count_nonzero() == 0
-        assert leg._concept_activations.count_nonzero() == 0
-        assert leg._symbol_evidence.count_nonzero() == 0
+        # New lexical rows retain their own native field. The learned cases
+        # and XOR still exclude every control, on both evidence lanes.
+        literals = [('ws', 9), ('ws', 10)] + [cs.mtm.entries[key].refinement['literal'] for key in cases]
+        assert cs._percept_field.event_evidence(literals).count_nonzero() == 0
+        bound = leg._concept_inventory_rows
+        selected = torch.isin(bound, torch.tensor([0, xor, *rows]))
+        if bound.ndim == 2:
+            assert leg._concept_activations[selected].count_nonzero() == 0
+            assert leg._symbol_evidence[selected].count_nonzero() == 0
+        else:
+            assert leg._concept_activations[selected].count_nonzero() == 0
+            assert leg._symbol_evidence[selected].count_nonzero() == 0
     model.End()
     return mse
 

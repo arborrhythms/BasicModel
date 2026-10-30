@@ -432,7 +432,8 @@ class Probe:
                     positive_margins=(extra_score-own_score)[wins])
         if model._sentence_reconstruction:
             with torch.no_grad():
-                leaves, counts, truncated, _, actions = model._last_decoder_trace
+                leaves, counts, truncated, _, actions = model._last_decoder_trace[:5]
+                tops = model._last_decoder_trace[-1]
                 bank = record.primed
                 from SentenceUnderstanding import readback_decisions
                 self.log('readback_decisions', epoch=self.epoch, train=bool(model._sentence_training),

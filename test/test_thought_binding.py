@@ -240,6 +240,29 @@ def test_unbound_read_of_unrecognized_multi_role_content_still_fails(monkeypatch
         write(model, meaning, row=0)
     assert (len(store), len(store.parts)) == before
 
+
+@pytest.mark.parametrize('pair', [(1., 0.), (0., 1.)])
+def test_unrelated_query_evidence_does_not_rewrite_a_closed_unknown_chain(pair):
+    """Captured curriculum crash: an object's negative evidence reached a clause."""
+    from ThoughtStream import integrate as integrate_thought, materialize
+    from Queries import ThoughtResult, _freeze_boundary_value
+    goal = with_slots(ConceptualMeaning(torch.eye(3), torch.tensor([True, True, False]),
+        role_refs=(('ltm', 'test', 1), ('ltm', 'test', 2), None),
+        bindings={'_chain_view': True, '_query_occurrence': ('sym', 47)},
+        sentence_kind='relation'), (), pair=(0., 0.), source_evidence=(0., 0.))
+    point = ConceptualMeaning.from_description(torch.tensor([.2, .3, .4]))
+    raw = ThoughtResult('query', 'conceptual-lookup', 'set', 'retrieval', goal,
+        _freeze_boundary_value(dict(frames=(dict(meaning=point, occurrence=('ltm', 'test', 1)),),
+            support_true=pair[0], support_false=pair[1], witnesses=(('ltm', 'test', 1),))))
+    def signature(*args, **kwargs):
+        raise ValueError('an ordinary predicate is not a registered thought operation')
+    registry = SimpleNamespace(signature_for=signature, space=SimpleNamespace())
+    result = integrate_thought(registry, goal, materialize(raw), ())
+    assert evidence_pair(result) == (0., 0.) and result.role_refs == goal.role_refs
+    torch.testing.assert_close(result.roles, goal.roles, rtol=0, atol=0)
+    assert bindings(result)['_producing_operation'] == 'query'
+    assert not bindings(result).get('_thought_witnesses')
+
 @pytest.mark.parametrize('producer', ('query', 'bind'))
 def test_unchanged_read_chain_still_reuses_its_witness(monkeypatch, producer):
     from dataclasses import replace
@@ -253,3 +276,67 @@ def test_unchanged_read_chain_still_reuses_its_witness(monkeypatch, producer):
     before = len(store), len(store.parts)
     assert write(model, meaning, row=0) == reference
     assert (len(store), len(store.parts)) == before
+
+
+@pytest.mark.parametrize('producer', ('ask', 'query'))
+@pytest.mark.parametrize('incomplete', ((), ('work_budget',)))
+def test_empty_read_does_not_bind_its_temporary_question_address(producer, incomplete):
+    """Captured native Part crash: a cutoff ask materialized its own request."""
+    from Queries import ThoughtResult, _freeze_boundary_value
+    from ThoughtReferences import open_slots, validate_local_references
+    from ThoughtStream import integrate as integrate_thought, materialize, write
+    goal = with_slots(ConceptualMeaning(torch.eye(3), torch.ones(3, dtype=torch.bool),
+        role_refs=(None, ('sym', 99), ('sym', 75)), sentence_kind='relation',
+        bindings={'_forward_references': ((0, 15),)}), (('referent', 0),),
+        pair=(1., 1.), source_evidence=(1., 1.))
+    request = ConceptualMeaning(torch.eye(3), torch.tensor([True, True, False]),
+        role_refs=(('thought', 'address-v1', 123), ('sym', 1), None))
+    raw = ThoughtResult(producer, 'conceptual-subgoal', 'subgoal', 'subgoal', request,
+        _freeze_boundary_value(dict(value=None, frames=(), support_true=0., support_false=0.,
+                                    incomplete=incomplete, records_scanned=0)))
+    materialized = materialize(raw)
+    assert materialized.evidence.get('meaning') is None
+    assert materialized.incomplete == incomplete
+    def signature(value, **kwargs):
+        if value.role_refs[1] is None:
+            raise ValueError('a point is not a registered relation')
+        return SimpleNamespace(operation=SimpleNamespace(
+            semantic_id='part' if value.role_refs[1] == ('sym', 99) else producer))
+    registry = SimpleNamespace(signature_for=signature, space=SimpleNamespace())
+    result = integrate_thought(registry, goal, materialized, ())
+    assert result.role_refs == goal.role_refs and open_slots(result) == (('referent', 0),)
+    torch.testing.assert_close(result.roles, goal.roles, rtol=0, atol=0)
+    assert evidence_pair(result) == (1., 1.)
+    assert bindings(result)['_producing_operation'] == producer
+    assert not bindings(result).get('_bound_roles')
+    store = SimpleNamespace(_validate_local_references=validate_local_references,
+        write_clause=lambda clause, **kwargs: (clause, kwargs))
+    model = SimpleNamespace(grammatical_thoughts=registry, symbolSpace=SimpleNamespace(ltm_store=store))
+    clause, metadata = write(model, result, row=0)
+    assert metadata['kind'] == 'question'
+    assert clause.refs[0] == ('clause', 0) and clause.refs[2] == 75
+
+
+@pytest.mark.parametrize('payload', ('meaning', 'frames'))
+@pytest.mark.parametrize('pair', ((0., .7), (.4, .7)))
+def test_returned_ask_content_keeps_both_evidence_poles(payload, pair):
+    from dataclasses import replace
+    from Queries import ThoughtResult, _freeze_boundary_value
+    from ThoughtReferences import open_slots
+    from ThoughtStream import integrate as integrate_thought, materialize
+    goal = with_slots(ConceptualMeaning(torch.eye(3), torch.ones(3, dtype=torch.bool),
+        role_refs=(None, ('sym', 99), ('sym', 75)), sentence_kind='relation'),
+        (('referent', 0),), pair=(0., 0.))
+    returned = with_slots(replace(goal, role_refs=(('sym', 77), ('sym', 99), ('sym', 75))), ())
+    request = replace(goal, role_refs=(('thought', 'address-v1', 123), ('sym', 1), None))
+    evidence = dict(support_true=pair[0], support_false=pair[1], witnesses=(('ltm', 'test', 3),))
+    evidence[payload] = returned if payload == 'meaning' else (
+        dict(meaning=returned, occurrence=('ltm', 'test', 3), evidence=pair),)
+    result = materialize(ThoughtResult('ask', 'conceptual-subgoal', 'subgoal', 'subgoal',
+        request, _freeze_boundary_value(evidence)))
+    registry = SimpleNamespace(signature_for=lambda *args, **kwargs:
+        SimpleNamespace(operation=SimpleNamespace(semantic_id='part')), space=SimpleNamespace())
+    bound = integrate_thought(registry, goal, result, ())
+    assert bound.role_refs == returned.role_refs and not open_slots(bound)
+    assert evidence_pair(bound) == pair
+    assert bindings(bound)['_thought_witnesses'] == (('ltm', 'test', 3),)

@@ -94,23 +94,16 @@ def test_context_observer_cannot_bypass_refinement_before_assigning_a_kind():
     cs, focal, field = field_case([49, 65, 48])
     alternative = _mint_row(cs, 1, 102)
     cs._promotion_enabled = True
-    cs._ensure_concept_pool()
     store = Spaces._concept_alloc_of(cs).layer()
     store.witnessed[[focal, alternative]] = True
-    context = torch.zeros(store.nOutput)
-    context[0] = 1.
-    store.write_context(alternative, context, 0.)
-    store.observation.fill_(1)
-    store.context_seen[alternative] = 1
-    start, end = cs.order_slice(2)
+    from FamiliarTier import observe_candidate
+    key = observe_candidate(cs, 1, {0: 1.}, focal=alternative)
     for step in range(3):
         cs._model._training_step_count = step
-        cs._promo_last_acts = field.detach()
-        cs.promotion_observe()
-        assigned = (store.provisional & store.assigned)[start:end].nonzero().flatten()
+        cs.observe_open_field(field.detach())
+        assigned = [entry for entry in cs.mtm.entries.values() if entry.order == 2]
         assert len(assigned) == (1 if step == 2 else 0)
-    row = start + int(assigned[0])
-    assert {c for r, c in store._index if r == row} == {focal, alternative}
+    assert {focal, alternative, 0} <= set(assigned[0].support)
 
 
 def test_releasing_one_batch_row_preserves_the_other_fields():
@@ -155,7 +148,6 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     garfield = _mint_row(cs, 1, 102)
     cs.add_concept_edge(garfield, 0, 1., negated=True)
     cs._promotion_enabled = True
-    cs._ensure_concept_pool()
     store = Spaces._concept_alloc_of(cs).layer()
     # Both primitive poles are now directly observed. Learn the particular's
     # link to that predicate instead of relearning its already-known absence.
@@ -183,7 +175,8 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
     _, field = cs.cs_forward_content(read, dictionary)
     torch.testing.assert_close(field[felix, 0, 0], torch.tensor([1., 0.]))
     observe(cs, field, 32)
-    context = torch.ones(store.nOutput)
+    context = torch.zeros(store.nOutput)
+    context[0] = 1.
     evidence = torch.ones(2 * (store.nOutput + 1))
     assert cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence) is None
     # The same learned property over separated particulars cannot become
@@ -199,9 +192,9 @@ def test_learned_particular_stays_at_one_scattered_kind_raises_to_two(run):
         store.project_parts()
         observe(cs, field, step)
     cat = cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence)
-    assert cat is not None and cs.order_slice(2)[0] <= cat < cs.order_slice(2)[1]
-    assert {col for row, col in store._index if row == cat} == {felix, garfield}
-    assert not any(row == cat for row, _ in store.conjunctive._index)
+    assert cat is not None and cs.mtm.entries[cat].order == 2
+    assert set(cs.mtm.entries[cat].support) == {0, felix, garfield}
+    assert cs.mtm.entries[cat].symbol is None
     # The geometry and permission are per turn, never the row's identity.
     cs._clear_percept_field()
     assert cs.maybe_raise_order(felix, garfield, context, batch=0, evidence=evidence) is None

@@ -63,8 +63,8 @@ def _walk_control_oracle(monkeypatch):
     transitions. Production support eligibility has separate real-op probes.
     """
     from Language import LanguageSpace
-    monkeypatch.setattr(LanguageSpace, 'decoder_eligibility', staticmethod(
-        lambda parent, left, right, available, *a, **k: available))
+    from generation_fixtures import all_available
+    monkeypatch.setattr(LanguageSpace,'decoder_eligibility',staticmethod(all_available))
 
 
 def _independent_split(m, rule, event):
@@ -80,7 +80,7 @@ def _independent_split(m, rule, event):
     event[:,0]=left*.17
     event[:,1]=parent
     bank=torch.stack((left,right),1)
-    def policy(top):
+    def policy(top,features=None):
         match=(top-parent).abs().amax(-1)<1e-6
         scores=top.new_full((top.shape[0],language.generate_policy.out_features),-1000.)
         scores[:,-1]=0.
@@ -123,15 +123,16 @@ def test_walk_reports_truncation_when_work_is_pending():
     event,gl,cw,live=_stamped_event(m,'lift',N=2)
     language=m.languageSpace
     _prefer(m,len(language._generate_binary_ops)+list(language._generate_unary_names).index('null'))
-    # Identical copies are one explanation. These distinct, equally poor
-    # candidates supply neither a terminal nor a supported decomposition.
+    # No lexical terminal is available. Approximate native emission now
+    # permits a poor but admitted terminal; this case tests an unavailable one.
     event[0, 1].zero_()
     event[0, 1, :2] = .8
     bank = torch.zeros_like(event[:, :2])
     bank[0, 0, :2] = bank.new_tensor([.1, .2])
     bank[0, 1, :2] = bank.new_tensor([.2, .1])
     out,n_emitted,truncated,_cost=m._output_generate_walk(event,budget=3,
-        basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool))
+        basis=bank, basis_valid=torch.ones(1, 2, dtype=torch.bool),
+        terminal_valid=torch.zeros(1, 2, dtype=torch.bool))
     assert bool(truncated.all()) and n_emitted.tolist()==[0]
 
 
@@ -220,7 +221,7 @@ def test_generate_policy_decides_an_unstamped_top(monkeypatch):
     _prefer(m, names.index("lift"))
     out, n_emitted, truncated, cost = m._output_generate_walk(event, budget=1, basis=event[:, :live],basis_valid=torch.ones(event.shape[0],live,dtype=torch.bool))
     assert n_emitted.tolist() == [0] and bool(truncated.all())
-    assert float(cost) == 0.0                               # deterministic choices have no imitation loss
+    assert float(cost) > 0.0  # The pending frontier has residual, not imitation loss.
     _stop(m)
     out2, n_emitted2, truncated2, _c = m._output_generate_walk(event, budget=8)
     assert n_emitted2.tolist() == [live] and not bool(truncated2.any())
@@ -384,7 +385,8 @@ def test_runbatch_trains_generate_policy_from_reconstruction(supplied,eager_read
     try:
         got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
         assert any(g is not None and bool(g.abs().sum()>0) for row in got['reconstruction'] for g in row)
-        assert all(got['changed'])
+        assert all(got['changed'][:2])  # The original action weight and bias learn.
+        assert got['changed'][-1]  # The new zero-initialized menu scorer opens first.
         owned=[id(p) for group in opt.param_groups for p in group['params']]
         assert all(owned.count(id(p))==1 for p in m.languageSpace.generate_policy.parameters())
         groups=m.objective_parameter_groups(opt)
@@ -401,12 +403,14 @@ def test_runbatch_answer_availability_never_reassigns_the_decoder(eager_reading)
         for supplied in (True,False):
             m.inputSpace.data.has_supervised_outputs=supplied
             got=_policy_training_probe(m,opt,(What.supervised(0),What.supervised(1)))
-            assert all(got['changed'])
+            assert all(got['changed'][:2])  # The original action weight and bias learn.
+            assert got['changed'][-1]  # The new zero-initialized menu scorer opens first.
             groups=m.objective_parameter_groups(opt)
             assert not any(any(p is q for q in groups['output']) for p in m.languageSpace.generate_policy.parameters())
         m.answer_synthesis=False
         got=_policy_training_probe(m,opt,(What.present(0),What.present(1)))
-        assert all(got['changed'])
+        assert all(got['changed'][:2])  # The original action weight and bias learn.
+        assert got['changed'][-1]  # The new zero-initialized menu scorer opens first.
     finally:
         m.End();m.symbolSpace.soft_reset()
 
@@ -418,7 +422,8 @@ def test_runbatch_output_masks_rows_without_reassigning_decoder_credit(eager_rea
     try:
         got=_policy_training_probe(m,opt,(What.supervised(0),What.inference(1,split='train')))
         assert got['mask']==[True,False]
-        assert all(got['changed'])
+        assert all(got['changed'][:2])  # The original action weight and bias learn.
+        assert got['changed'][-1]  # The new zero-initialized menu scorer opens first.
     finally:
         m.End();m.symbolSpace.soft_reset()
 
@@ -445,7 +450,7 @@ def test_question_conditioners_persist_per_answer_width():
 def _conditioner_pair(m):
     modules = [m._question_conditioner(width, device=torch.device("cpu"),
                                        dtype=torch.float32)
-               for width in (104, 1000)]
+               for width in (m._generate_walk_width(), 1000)]
     with torch.no_grad():
         for i, module in enumerate(modules):
             module.weight.fill_(0.125 * (i + 1))
@@ -464,11 +469,12 @@ def test_question_conditioner_checkpoint_reloads_both_widths_strictly(tmp_path):
     fresh = _model()
     try:
         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
-        assert set(fresh.question_conditioners) == {"104", "1000"}
+        native_width = str(m._generate_walk_width())
+        assert set(fresh.question_conditioners) == {native_width, "1000"}
         for module in modules:
             restored = fresh.question_conditioners[str(module.out_features)]
             torch.testing.assert_close(restored.weight, module.weight, rtol=0, atol=0)
-        assert fresh.question_conditioner is fresh.question_conditioners["104"]
+        assert fresh.question_conditioner is fresh.question_conditioners[native_width]
         assert set(fresh.state_dict()) == set(m.state_dict())
     finally:
         for model in (m, fresh):
@@ -529,7 +535,7 @@ def test_question_conditioner_legacy_singular_checkpoint_reloads_strictly(tmp_pa
         assert fresh.load_weights(str(checkpoint), strict=True, require_match=True)
         torch.testing.assert_close(fresh.question_conditioner.weight,
                                    m.question_conditioner.weight, rtol=0, atol=0)
-        assert fresh.question_conditioner is fresh.question_conditioners["104"]
+        assert fresh.question_conditioner is fresh.question_conditioners[str(m._generate_walk_width())]
     finally:
         for model in (m, fresh):
             model.End()
@@ -680,7 +686,9 @@ def test_generate_checkpoint_migrates_action_weights_and_adam_moments(tmp_path, 
     policy = torch.nn.Linear(language._generate_policy_width, len(saved_keys))
     language.generate_policy = policy
     replacements = {id(old): new for old, new in zip(old_params, policy.parameters())}
-    m.symbolSpace.params[:] = [replacements.get(id(p), p) for p in m.symbolSpace.params]
+    retired = {id(p) for p in old_params[2:]}
+    m.symbolSpace.params[:] = [replacements.get(id(p), p) for p in m.symbolSpace.params
+                               if id(p) not in retired]
     if legacy:
         del language._buffers["_generate_rule_keys"]
     else:
@@ -707,6 +715,8 @@ def test_generate_checkpoint_migrates_action_weights_and_adam_moments(tmp_path, 
     m.save_weights(str(path))
     fresh = _generate_variant(tmp_path, ("sum",), remove_compose=removed)
     for name, p in fresh.languageSpace.generate_policy.named_parameters():
+        if name.startswith('menu_score.'):
+            continue  # New scorer has no state in this legacy checkpoint.
         expected[name][~known] = p.detach()[~known]
         for value in moments[name].values():
             if value.ndim:
@@ -715,6 +725,9 @@ def test_generate_checkpoint_migrates_action_weights_and_adam_moments(tmp_path, 
         assert fresh.load_weights(str(path), strict=True, require_match=True)
         restored_opt = fresh.getOptimizer(lr=1e-3)
         for name, p in fresh.languageSpace.generate_policy.named_parameters():
+            if name.startswith('menu_score.'):
+                assert p not in restored_opt.state
+                continue
             torch.testing.assert_close(p, expected[name], rtol=0, atol=0)
             for key, value in moments[name].items():
                 torch.testing.assert_close(restored_opt.state[p][key], value, rtol=0, atol=0)

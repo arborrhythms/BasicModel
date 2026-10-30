@@ -3625,8 +3625,15 @@ class SurfaceLayer(GrammarLayer):
         # move along the affine line toward zero translation until the
         # content has a valid inverse. No content coordinate is clipped.
         endpoint = torch.where(change > 0, rail - target, -rail - target)
-        fraction = torch.where(change != 0, endpoint / torch.where(
-            change != 0, change, 1.), torch.ones_like(change)).amin(-1, keepdim=True).clamp(0, 1)
+        # Classify the clamped cases before dividing. A tiny translation
+        # otherwise computes a huge, unused ratio whose backward pass can
+        # overflow even though the final fraction is clamped to one.
+        moving = change != 0
+        same_direction = endpoint.sign() == change.sign()
+        interior = moving & same_direction & (endpoint != 0) & (endpoint.abs() < change.abs())
+        boundary = torch.where(moving & (~same_direction | (endpoint == 0)), 0., 1.)
+        ratio = torch.where(interior, endpoint, 0.) / torch.where(interior, change, 1.)
+        fraction = torch.where(interior, ratio, boundary).amin(-1, keepdim=True)
         neutral = torch.linalg.solve(self.marker_map.weight,
                                      -self.marker_map.bias.unsqueeze(-1)).squeeze(-1)
         marker = cube_unchart(neutral + fraction * (proposed - neutral))
@@ -9461,6 +9468,7 @@ class SymbolSubSpace(SubSpace):
         # form event owns the clock band before the conceptual complement.
         _paired = getattr(getattr(conceptualSpace, 'similarity_codebook', None), 'mereology', None)
         self.ltm_store = LTM0(muxed, capacity=_ltm_cap, content_width=symbol_dim,
+            relation_capacity=int(TheXMLConfig.space("SymbolSpace","relationCapacity",8192)),
             percept_width=getattr(_paired, 'percept_event_width', muxed),
             # Reading summaries are bounded by the concept inventory, not by
             # the larger episodic store. An explicit override never grows.
@@ -12320,6 +12328,20 @@ _SYMBOLSPACE_FORWARD_WRITES = {
 
 
 
+class GeneratePolicy(nn.Linear):
+    """One reconstruction-owned policy, with shared menu-quality features."""
+    def __init__(self,width,choices):
+        super().__init__(width,choices)
+        # Adding a scorer must not shift unrelated model initialization.
+        with torch.random.fork_rng(devices=[]):
+            self.menu_score=nn.Sequential(nn.Linear(5,8),nn.Tanh(),nn.Linear(8,1,bias=False))
+        nn.init.zeros_(self.menu_score[-1].weight)
+
+    def forward(self,top,features=None):
+        logits=super().forward(top)
+        return logits if features is None else logits+self.menu_score(features.detach()).squeeze(-1)
+
+
 class LanguageSpace(nn.Module):
     """Scheduling owner for the grammar layer without owning a second copy.
 
@@ -12511,7 +12533,7 @@ class LanguageSpace(nn.Module):
         self._generate_policy_width = int(cw)
         # Reconstruction owns this chooser in every numerical grammar.
         self.generate_policy = (
-            nn.Linear(int(cw), n_choices) if cw else None)
+            GeneratePolicy(int(cw), n_choices) if cw else None)
         if self.generate_policy is not None:
             self.register_buffer("_generate_rule_keys", torch.tensor(keys, dtype=torch.long))
             with torch.no_grad():
@@ -12593,6 +12615,12 @@ class LanguageSpace(nn.Module):
         migrations = {}
         for name, live in self.generate_policy.state_dict().items():
             key = prefix + "generate_policy." + name
+            if name.startswith('menu_score.'):
+                if key not in state:
+                    state[key]=live.detach().clone()
+                elif state[key].shape!=live.shape:
+                    raise ValueError(f'generate menu feature shape changed: {key}')
+                continue
             saved = state[key]
             if tuple(saved.shape[1:]) != tuple(live.shape[1:]):
                 raise ValueError(f"generate-policy content width changed: {key}")
@@ -12606,7 +12634,7 @@ class LanguageSpace(nn.Module):
         state[marker] = self._generate_rule_keys.detach().clone()
         return migrations
 
-    def generate_policy_logits(self, top):
+    def generate_policy_logits(self, top, features=None):
         """``[B, R2 + R1 + 1]`` logits of the generate policy on the top
         slot's content (binary rules, unary rules, stop); zeros (stop) when
         the policy does not exist."""
@@ -12614,7 +12642,8 @@ class LanguageSpace(nn.Module):
         if self.generate_policy is None:
             return top.new_zeros(B, 1)
         cw = self._generate_policy_width
-        return self.generate_policy(top[:, :cw])
+        return (self.generate_policy(top[:, :cw]) if features is None else
+                self.generate_policy(top[:, :cw],features))
 
     def generate_policy_credit(self, logits, target, valid):
         """``[B]`` cross-entropy of the policy against the recorded choice
@@ -13643,65 +13672,70 @@ class LanguageSpace(nn.Module):
         K = left_candidates.shape[1]
         older = left_candidates[:, :, None, :].expand(B, K, K, D)
         newer = right_candidates[:, None, :, :].expand(B, K, K, D)
-        reference = reference.detach()
-        older = torch.where((known & ~on_right)[:, None, None, None],
-                            reference[:, None, None, :], older)
-        newer = torch.where((known & on_right)[:, None, None, None],
-                            reference[:, None, None, :], newer)
-        allowed = left_active[:, :, None] & right_active[:, None, :]
-        if require_progress:
+        # Pair ranking is discrete. Keep its values and masks, then replay
+        # only the selected pair's live inverse below. Retaining all K² lane
+        # recoveries would save candidate-by-code intermediates for backward
+        # even though every unselected pair receives zero cotangent.
+        with torch.no_grad():
+            reference = reference.detach()
+            older = torch.where((known & ~on_right)[:, None, None, None],
+                                reference[:, None, None, :], older)
+            newer = torch.where((known & on_right)[:, None, None, None],
+                                reference[:, None, None, :], newer)
+            allowed = left_active[:, :, None] & right_active[:, None, :]
+            if require_progress:
+                form = parent if form_width is None else parent[..., :form_width]
+                lf = older if form_width is None else older[..., :form_width]
+                rf = newer if form_width is None else newer[..., :form_width]
+                tolerance = 1e-8 * form.square().mean(-1).clamp_min(1. / form.shape[-1])
+                progressing = (((lf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None])
+                              & ((rf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None]))
+                # Reject self-reproducing pairs before ranking, so a live whole
+                # cannot hide a supported lexical split with the same residual.
+                allowed = allowed & progressing
+            counts, whole = None, None
+            if form_width is not None:
+                # A symbol bank is signless. Solve each candidate's two evidence
+                # lanes before judging an exact logical fold, as the selected
+                # inverse has always done. Its stored stance is not this reading.
+                from MeaningCodes import recover_lanes
+                recovered_left, recovered_right = recover_lanes(getattr(op, 'meaning_rule', None),
+                    parent[:, None, None], older, newer, form_width)
+                older = torch.where((known & ~on_right)[:, None, None, None], older, recovered_left)
+                newer = torch.where((known & on_right)[:, None, None, None], newer, recovered_right)
+                domain = ((older >= 0) & (older <= 1) & (newer >= 0) & (newer <= 1)).all(-1)
+                allowed = allowed & domain
+                older, newer = (torch.where(domain[..., None], value, 0.) for value in (older, newer))
+                # Free generation proposes two contents, not a saved tree. Fit the
+                # centroid mixture from their forms; this is the count ratio.
+                from FormCentroids import fit
+                ratio, whole = fit(parent[:, None, None, :form_width], older, newer, whole_bank)
+                # A child occupies at least one leaf; endpoints are not splits.
+                allowed = allowed & (ratio > 0) & (ratio < 1)
+                counts = (ratio, 1-ratio)
+            case_view = (case_bank.for_values(newer, form_width=form_width)
+                         if case_bank is not None and form_width is not None and
+                         callable(getattr(op, 'compose_case_meaning', None)) else None)
+            folded = (op.compose_blocks(op.compose, older, newer, counts=counts, whole=whole, case_view=case_view) if form_width is not None else
+                      older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer))
+            if form_width is None and getattr(op, 'same_reference_idempotent', False):
+                same = left_indices[:, :, None] == right_indices[:, None, :]
+                # A known occurrence is not identified by an unrelated basis row.
+                same = same & ~known[:, None, None] & (older == newer).all(-1)
+                from MeaningCodes import repeated_symbol
+                folded = torch.where(same[..., None], repeated_symbol(older, form_width), folded)
             form = parent if form_width is None else parent[..., :form_width]
-            lf = older if form_width is None else older[..., :form_width]
-            rf = newer if form_width is None else newer[..., :form_width]
-            tolerance = 1e-8 * form.square().mean(-1).clamp_min(1. / form.shape[-1])
-            progressing = (((lf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None])
-                          & ((rf - form[:, None, None]).square().mean(-1) > tolerance[:, None, None]))
-            # Reject self-reproducing pairs before ranking, so a live whole
-            # cannot hide a supported lexical split with the same residual.
-            allowed = allowed & progressing
-        counts, whole = None, None
-        if form_width is not None:
-            # A symbol bank is signless. Solve each candidate's two evidence
-            # lanes before judging an exact logical fold, as the selected
-            # inverse has always done. Its stored stance is not this reading.
-            from MeaningCodes import recover_lanes
-            recovered_left, recovered_right = recover_lanes(getattr(op, 'meaning_rule', None),
-                parent[:, None, None], older, newer, form_width)
-            older = torch.where((known & ~on_right)[:, None, None, None], older, recovered_left)
-            newer = torch.where((known & on_right)[:, None, None, None], newer, recovered_right)
-            domain = ((older >= 0) & (older <= 1) & (newer >= 0) & (newer <= 1)).all(-1)
-            allowed = allowed & domain
-            older, newer = (torch.where(domain[..., None], value, 0.) for value in (older, newer))
-            # Free generation proposes two contents, not a saved tree. Fit the
-            # centroid mixture from their forms; this is the count ratio.
-            from FormCentroids import fit
-            ratio, whole = fit(parent[:, None, None, :form_width], older, newer, whole_bank)
-            # A child occupies at least one leaf; endpoints are not splits.
-            allowed = allowed & (ratio > 0) & (ratio < 1)
-            counts = (ratio, 1-ratio)
-        case_view = (case_bank.for_values(newer, form_width=form_width)
-                     if case_bank is not None and form_width is not None and
-                     callable(getattr(op, 'compose_case_meaning', None)) else None)
-        folded = (op.compose_blocks(op.compose, older, newer, counts=counts, whole=whole, case_view=case_view) if form_width is not None else
-                  older if getattr(op, 'reconstructs_left', False) else op.compose(older, newer))
-        if form_width is None and getattr(op, 'same_reference_idempotent', False):
-            same = left_indices[:, :, None] == right_indices[:, None, :]
-            # A known occurrence is not identified by an unrelated basis row.
-            same = same & ~known[:, None, None] & (older == newer).all(-1)
-            from MeaningCodes import repeated_symbol
-            folded = torch.where(same[..., None], repeated_symbol(older, form_width), folded)
-        form = parent if form_width is None else parent[..., :form_width]
-        folded_form = folded if form_width is None else folded[..., :form_width]
-        residual = (folded_form - form[:, None, None, :]).square().mean(-1)
-        energy = form.square().mean(-1)[:, None, None]
-        # Exact zero origins use the existing Error squared-penalty convention;
-        # no floor changes any positive parent scale.
-        residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
-        if form_width is not None:
-            meaning = parent[..., form_width:]
-            meaning_energy = meaning.square().mean(-1)[:, None, None]
-            residual = residual + (folded[..., form_width:] - meaning[:, None, None]).square().mean(-1) / torch.where(
-                meaning_energy > 0, meaning_energy, 1.)
+            folded_form = folded if form_width is None else folded[..., :form_width]
+            residual = (folded_form - form[:, None, None, :]).square().mean(-1)
+            energy = form.square().mean(-1)[:, None, None]
+            # Exact zero origins use the existing Error squared-penalty convention;
+            # no floor changes any positive parent scale.
+            residual = residual / torch.where(energy > 0, energy, torch.ones_like(energy))
+            if form_width is not None:
+                meaning = parent[..., form_width:]
+                meaning_energy = meaning.square().mean(-1)[:, None, None]
+                residual = residual + (folded[..., form_width:] - meaning[:, None, None]).square().mean(-1) / torch.where(
+                    meaning_energy > 0, meaning_energy, 1.)
         # The shortlist and eligibility are unchanged. Context learns only
         # through the separate teacher loss, never through candidate codes.
         def candidate_features(candidates, indices, priming, active):
@@ -13741,13 +13775,28 @@ class LanguageSpace(nn.Module):
         hard_right = newer.reshape(B, K * K, D).gather(1, gather).squeeze(1)
         if form_width is not None:
             from MeaningCodes import recover_lanes
+            # Reproduce the first lane recovery and its domain mask on the
+            # chosen raw pair, before the original final recovery. The hard
+            # indices carry no search gradient; parent/selected inverse
+            # parameters retain exactly the native pullback.
+            left_raw = left_candidates.gather(1, (selected // K)[:, None, None].expand(B, 1, D))[:, 0]
+            right_raw = right_candidates.gather(1, (selected % K)[:, None, None].expand(B, 1, D))[:, 0]
+            left_raw = torch.where((known & ~on_right)[:, None], reference, left_raw)
+            right_raw = torch.where((known & on_right)[:, None], reference, right_raw)
+            first_left, first_right = recover_lanes(getattr(op, 'meaning_rule', None),
+                parent, left_raw, right_raw, form_width)
+            hard_left = torch.where((known & ~on_right)[:, None], left_raw, first_left)
+            hard_right = torch.where((known & on_right)[:, None], right_raw, first_right)
+            domain = ((hard_left >= 0) & (hard_left <= 1) &
+                      (hard_right >= 0) & (hard_right <= 1)).all(-1)
+            hard_left, hard_right = (torch.where(domain[:, None], value, 0.)
+                                     for value in (hard_left, hard_right))
             hard_left, hard_right = recover_lanes(getattr(op, 'meaning_rule', None),
                 parent, hard_left, hard_right, form_width)
             if (not callable(getattr(op, 'compose_case_meaning', None)) and
                     (getattr(op, 'meaning_kernel', None) is not None or getattr(op, 'meaning_action', None) is not None)):
-                fraction = ratio.flatten(1).gather(1, selected[:, None])[:, 0]
+                fraction, selected_whole = fit(parent[..., :form_width], hard_left, hard_right, whole_bank)
                 right_known = op.meaning_head_role == 0 or getattr(op, 'meaning_action', None) is not None
-                _, selected_whole = fit(parent[..., :form_width], hard_left, hard_right, whole_bank)
                 left, right = op.reverse_blocks(parent, hard_right if right_known else hard_left,
                     counts=(fraction, 1-fraction), reference_right=right_known, whole=selected_whole)
                 # The inverse recovers meaning; the selected symbol supplies
@@ -13770,7 +13819,8 @@ class LanguageSpace(nn.Module):
     @staticmethod
     def decoder_eligibility(parent, lefts, rights, available, binary_ops,
                             basis, basis_valid, *, case_bank=None,
-                            terminal_basis=None, terminal_valid=None, whole_bank=None):
+                            terminal_basis=None, terminal_valid=None, whole_bank=None,
+                            details=False, unary_ops=()):
         """A supported pair takes precedence over a single-symbol projection.
 
         Use the pair search's squared reconstruction residual, compared with
@@ -13783,7 +13833,11 @@ class LanguageSpace(nn.Module):
         binary_count = len(binary_ops)
         singular = torch.zeros_like(parent[:, 0], dtype=torch.bool)
         pair_masks = []
+        proposals, recomposed = [], []
         if basis is None or basis_valid is None or basis.shape[1] == 0:
+            if details:
+                from Generative import empty_menu
+                return empty_menu(parent, lefts, rights, available)
             return torch.zeros_like(available)
         # Inverse kernels read content, so their eligibility must use the
         # same coordinates. Chunk location/time stamps are not unexplained
@@ -13794,6 +13848,7 @@ class LanguageSpace(nn.Module):
             parent, basis = content(parent), content(basis)
             terminal_basis = None if terminal_basis is None else content(terminal_basis)
             lefts, rights = [content(value) for value in lefts], [content(value) for value in rights]
+        full_terminals = basis if terminal_basis is None else terminal_basis
         bank = basis.detach()
         value = parent.detach()
         layout = next((getattr(getattr(op, 'gl', op), 'meaning_layout', None)
@@ -13843,6 +13898,7 @@ class LanguageSpace(nn.Module):
             right_readable = (valid & (bank == rf[:, None]).all(-1)).any(-1)
             progress = (((lf - value).square().mean(-1) > tolerance)
                         & ((rf - value).square().mean(-1) > tolerance))
+            proposals.append(admissible & left_readable & right_readable & progress)
             if form_width is not None:
                 from FormCentroids import fit
                 ratio, whole = fit(value, left, right, whole_bank)
@@ -13855,6 +13911,8 @@ class LanguageSpace(nn.Module):
             elif getattr(op, 'inverse_kind', None) == 'case_search':
                 if case_bank is None:
                     pair_masks.append(torch.zeros_like(singular))
+                    proposals[-1] = torch.zeros_like(singular)
+                    recomposed.append(parent)
                     continue
                 from CaseSelection import select_cases, fold_cases
                 codes = case_bank.codes if case_bank.codes.ndim == 3 else case_bank.codes[None]
@@ -13867,6 +13925,7 @@ class LanguageSpace(nn.Module):
                     from MeaningCodes import repeated_symbol
                     folded = torch.where(left.eq(right).all(-1)[:, None],
                                          repeated_symbol(left, form_width), folded)
+            recomposed.append(folded)
             folded = folded if form_width is None else folded[..., :form_width]
             pair_error = (folded.detach() - value).square().mean(-1)
             pair_masks.append(admissible & left_readable & right_readable
@@ -13876,14 +13935,22 @@ class LanguageSpace(nn.Module):
                  available[:, :0])
         compound = pairs.any(-1)
         unaries = available[:, binary_count:-1] & (~compound & ~singular)[:, None]
-        return torch.cat((pairs, unaries, (singular & ~compound)[:, None]), -1)
+        exact_legal = torch.cat((pairs, unaries, (singular & ~compound)[:, None]), -1)
+        if not details:
+            return exact_legal
+        from Generative import eligibility_menu
+        terminal = full_terminals.gather(1, residual.argmin(-1)[:, None, None].expand(
+            -1, 1, parent.shape[-1]))[:, 0]
+        return eligibility_menu(parent, lefts, rights, available, binary_ops, unary_ops,
+            proposals, recomposed, pairs, singular, terminal, terminal_mask.any(-1),
+            form_width, whole_bank=whole_bank, case_bank=case_bank)
 
     def generate_unary_step(self, x, op_local, valid, *, return_status=False, whole_bank=None,
-                            case_bank=None):
+                            case_bank=None, ops=None):
         """Decode a unary through its declared generate face, never its journal."""
         result = x.clone()
         available = torch.zeros_like(valid, dtype=torch.bool)
-        for index, wrapped in enumerate(self._generate_unary_ops):
+        for index, wrapped in enumerate(self._generate_unary_ops if ops is None else ops):
             selected = valid.bool() & (op_local == index)
             op = getattr(wrapped, 'gl', wrapped)
             content = op.content_operand(x) if hasattr(op, 'content_operand') else x

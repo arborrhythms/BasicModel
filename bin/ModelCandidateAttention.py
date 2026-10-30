@@ -179,9 +179,8 @@ def context(model, values, addresses, valid, *, when=None, parts=None, wholes=No
                 present &= matches.any(-1)
                 prime[b].index_copy_(0, ids[present], prediction.expected_activation.detach()[present].to(values))
     native = _fit(parts, B, *geometry[0], values)
-    prior = getattr(model, '_percept_prior', None)
-    z = (torch.ones_like(native) if expectation_free else
-         model.percept_expectation.residual(native, prior=prior))
+    z = (torch.zeros_like(native) if expectation_free else
+         model.percept_expectation.attention_residual(native) * model.percept_expectation_gain)
     needs = _needs(model, B, D, values, need)
     inputs = torch.cat((spread.flatten(1), heat, time.flatten(1), prime.flatten(1), z.flatten(1), *keys, conceptual.flatten(1),
                         needs), -1).detach()

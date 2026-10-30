@@ -20,7 +20,7 @@ def additive_language():
                  'generate_unary_step', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
-    language.generate_policy_logits = lambda value: value.new_tensor([1., 0.]).expand(len(value), -1)
+    language.generate_policy_logits = lambda value, features=None: value.new_tensor([1., 0.]).expand(len(value), -1)
     return language
 
 
@@ -57,7 +57,8 @@ def test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback(compi
     def walk(value):
         return Models.BasicModel._output_generate_walk(owner, value, 12,
             basis=words, basis_valid=torch.ones(2, 2, dtype=torch.bool),
-            sample_actions=True, return_candidates=True)
+            sample_actions=True, return_candidates=True,
+            terminal_valid=torch.tensor([[True,True],[False,False]]))
     ordinary_loop = Models._reconstruction_while_loop
     trips = []
     def full_budget(condition, body, values):
@@ -76,8 +77,13 @@ def test_stationary_pending_walk_keeps_the_full_budget_result_and_pullback(compi
     decode = torch.compile(walk, fullgraph=True, backend='eager') if compiled else walk
     actual = decode(event)
     actual_gradient, = torch.autograd.grad(actual[0].sum(), event)
-    for a, b in zip(actual, expected):
+    for a, b in zip(actual[:-1], expected[:-1]):
         torch.testing.assert_close(a, b, rtol=0, atol=0)
+    # The diagnostic full-budget loop also visits the stationary suffix;
+    # only actual decisions supply a policy-credit input.
+    decisions = actual[4] >= 0
+    torch.testing.assert_close(actual[-1][decisions], expected[-1][decisions], rtol=0, atol=0)
+    assert not actual[-1].requires_grad
     torch.testing.assert_close(actual_gradient, expected_gradient, rtol=0, atol=0)
     assert torch.equal(torch.get_rng_state(), expected_rng)
     assert actual[1].tolist() == [2, 0] and actual[2].tolist() == [False, True]
@@ -164,7 +170,7 @@ def test_every_family_can_occupy_either_side_when_recomposition_fits(compiled):
             constituents=constituents, constituent_valid=torch.ones(16, 4, dtype=torch.bool),
             constituent_families=families)
     decode = torch.compile(menu, fullgraph=True, backend='inductor') if compiled else menu
-    left, right, legal = decode(expected_left + 2 * expected_right, basis, constituents, families)
+    left, right, legal = decode(expected_left + 2 * expected_right, basis, constituents, families)[:3]
     assert legal.tolist() == [[True, False]] * 16
     torch.testing.assert_close(left[:, 0], expected_left)
     torch.testing.assert_close(right[:, 0], expected_right)
@@ -186,6 +192,35 @@ def test_live_inverse_snapshot_is_bounded_detached_and_excludes_singletons():
     torch.testing.assert_close(snapshot.codes[0, 0], words[0, :3].sum(0))
     torch.testing.assert_close(snapshot.codes[0, 1], words[0].sum(0))
     assert set(snapshot.__dict__) == {'words', 'word_valid', 'codes', 'valid'}
+
+
+def test_sentence_fork_carries_each_rows_inverse_prefix_without_aliasing(monkeypatch):
+    from Generative import LiveConstituents
+    from SentenceFork import SentenceFork
+    words = torch.zeros(2, 1, 4)
+    field = LiveConstituents(words, torch.zeros(2, 1, dtype=torch.bool), 2)
+    field.codes[:, -1] = torch.tensor([[1., 2., 3., 4.], [5., 6., 7., 8.]])
+    field.valid[:, -1] = True
+    fork = SentenceFork(torch.tensor([True, True]))
+    fork.inverse_candidates = field
+    draws = iter((torch.tensor([0., 0.]), torch.tensor([.9, .1])))
+    monkeypatch.setattr(torch, 'rand_like', lambda *args, **kwargs: next(draws))
+    choice = SimpleNamespace(valid=torch.tensor([True, True]),
+        alternative_count=torch.ones(2, dtype=torch.long), action=torch.zeros(2, dtype=torch.long))
+    fork.record(choice, torch.tensor(0), (words,), word=torch.tensor(0), latches=())
+    field.codes[:, -1] += 10
+    fork.record(choice, torch.tensor(1), (words,), word=torch.tensor(1), latches=())
+    # Row 0 departs at the first choice, row 1 at the second. Neither may
+    # inherit a constituent formed later in the greedy continuation.
+    field.codes[:, -1] += 10
+    assert fork.slot.tolist() == [0, 1]
+    assert fork.inverse_prefix[0][:, -1].tolist() == [[1., 2., 3., 4.], [15., 16., 17., 18.]]
+    assert not fork.inverse_prefix[0].requires_grad
+    trial = LiveConstituents(words, field.word_valid, 2)
+    trial.restore(field.snapshot(), torch.tensor([False, True]))  # bind-only row
+    trial.restore(fork.inverse_prefix, torch.tensor([True, False]))  # compose departure
+    assert trial.codes[:, -1].tolist() == [[1., 2., 3., 4.], [25., 26., 27., 28.]]
+    assert trial.valid.tolist() == [[False, True], [False, True]]
 
 
 def test_type_family_snapshot_uses_learned_membership_and_row_local_priming():
@@ -221,7 +256,7 @@ def determiner_language(words):
     language._generate_rule_key = lambda rule, arity: rule.key
     language.language_layer = SimpleNamespace(operation_layer=layer)
     language._generate_binary_ops = (LowerLayer(4, 4), LowerLayer(4, 4))
-    language.generate_policy_logits = lambda value: value.new_tensor([2., 1., 0.]).expand(len(value), -1)
+    language.generate_policy_logits = lambda value, features=None: value.new_tensor([2., 1., 0.]).expand(len(value), -1)
     return language, seen
 
 
@@ -331,7 +366,11 @@ def test_unnamed_primed_concept_cannot_complete_as_a_word(monkeypatch):
         record.roots, record.depths, end, record.end_depth, record.sentence,
         understanding=record, return_decoded=True)
     assert result[3].tolist() == [True]
-    assert trace[1].tolist() == [0]
+    # Approximate native words may emit, but the unspelled whole cannot
+    # masquerade as a lexical leaf or obtain an exact completion certificate.
+    assert not trace[-5].any()
+    assert not any(torch.equal(value, root[0]) for value in trace[0][0,:int(trace[1][0])])
+    assert trace[3].item() > 0
     # It stays available as structure; lexical exclusion does not erase it.
     assert record.constituent_valid.all() and bank.valid.all()
 
@@ -395,7 +434,8 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
     result, trace = BasicModel._reconstruct_sentences(owner, root, words, record.roots,
         record.depths, end, record.end_depth, record.sentence, understanding=record, return_decoded=True)
     assert trace[1].tolist() == [1]
-    assert trace[2].tolist() == result[3].tolist() == [True]
+    assert trace[2].tolist() == [False]  # The stack drained.
+    assert result[3].tolist() == [True]  # Dropped coverage is still a failure.
     assert result[2].tolist() == [.5]
 
     # Under the field objective, free_bytes is reporting-only. Verify that
@@ -412,7 +452,7 @@ def test_dropped_constituent_is_charged_and_never_complete(near, eager_reading, 
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *a: record,
         _tensor_pushed_ideas=words, _sentence_field=field, _last_decoder_trace=trace,
         _sentence_leaf_positions=lambda *a: torch.arange(2), WHAT_STEP_COST=1.,
-        _reconstruct_trial=lambda rec: result,
+        _reconstruct_trial=lambda rec: result, _last_decoder_byte_identity=result[2],
         _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
     owner.inputSpace._reconstruction_sentence_available = torch.ones(1, 1, dtype=torch.bool)
     lang = [None] * 12
@@ -449,6 +489,7 @@ def test_keep_cost_charges_erased_meaning_even_with_every_surface_leaf(available
         _publish_sentence_scratch=lambda state: None, _trial_understanding=lambda *a: record,
         _tensor_pushed_ideas=words, _sentence_field=None,
         _reconstruct_trial=lambda rec: (returned, root.new_zeros(1), root.new_zeros(1)),
+        _last_decoder_byte_identity=root.new_zeros(1),
         _sentence_observation=lambda *a: dict(entries=(None,), meanings=(None,)))
     lang = [None] * 12
     lang[6], lang[10], lang[11] = root[:, None], record.roots, record.depths

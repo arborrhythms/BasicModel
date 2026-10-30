@@ -17,7 +17,17 @@ be taken early when it does not depend on a higher-numbered one. Codex builds;
 Claude writes the specs and reviews each landing (Alec, 2026-09-21). "Done"
 lines below keep the numbers their items had when they landed.
 
-**Current:** Item 3.5 is LANDED. Iteration 1 published at BasicModel
+**Current (2026-10-29):** Items 3.5, 3.0, 2.9 (BasicModel `17e9454763`)
+and 2.8 (`a8a09a6acb`) are LANDED. Item 2.7 is closed code-complete at
+review freeze `472f5000850e` ([record](doc/plans/2026-10-27-item2-7-corpus.md)
+§47); its carried work and November landing round remain below. Item 2.5
+round A starts from the commit of that reviewed tree
+([thinking spec §8](doc/plans/2026-10-27-item2-5-thinking.md)), including
+D8's graded answer cost. Hand-off for a new conversation:
+[2026-10-29](doc/plans/2026-10-29-handoff-2-5.md). No `RUN_SLOW` before
+November.
+
+**History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
 BasicModel `75345f891e` (published main
 `4f136f76faabafc24397765f4ffe90d01d3dc4bc`, WikiOracle
@@ -1096,7 +1106,130 @@ not by a passing identity lesson.
 - **2.7. Corpus at target size** (formerly item 3; renumbered 2026-10-26
    below the landed 3.0 by the countdown rule: work that follows a landed
    number takes a smaller one; the record below keeps its "item 3"
-   wording). Still to do here: the unforced 1-to-2 raise certificate; the
+   wording). **Closed code-complete (2026-10-29):** review freeze
+   `472f5000850e`, reviewed in
+   [spec §47](doc/plans/2026-10-27-item2-7-corpus.md#47-claudes-review-of-the-producer-repair-round-472f5000850e-and-the-closing-of-item-27--2026-10-29).
+   Lesson-13 completed 160/160: ideas pass (two distinct order-1 objects),
+   relations fail (no shared order-2 kind), answers **0/80 with text**.
+   Final curriculum completed **131/304**: proper phase passes, mass
+   phase fails, count and kind-verb phases not reached. These are the
+   measured results; code completion does not claim acquisition or the
+   November landing. The thirteen scoped groups at the review freeze
+   passed (2,545 passes, 57 skips); no tests or `RUN_SLOW` rerun for this
+   close. [Receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
+   **Carried work and owners (spec §47):**
+
+   - **Item 2.7's November landing round:** capacity search and the run
+     on this computer, D5's snapshot regeneration, the slow suite and
+     one full sweep. Before those runs: repair the supplied `yes`
+     admission defect; build D7 (the inverse's output as the correction);
+     capture and repair the rejected MTM identity value, the non-finite
+     owned meaning-kernel gradient, the final curriculum's unavailable
+     query concept reference at sentence 132, and the earlier
+     order/parts disagreement. These producer failures remain unresolved.
+   - **Item 2.5 round A:** D8, graded binding cost plus text cost so a
+     better binding can win and credit the chooser.
+   - **Item 0's learning remainders:** the unforced 1-to-2 raise and
+     the mass, count and kind-verb measurements, with their budgets.
+   - **The next round opening `WordIdentity`:** atom property fill
+     (item 2.8 spec §11 O1).
+
+   **Earlier implementation record (superseded by the closing status above):**
+   [implementation record](doc/plans/2026-10-27-item2-7-corpus.md),
+   [local development receipt](doc/benchmarks/2026-10-27-item2-7-corpus/README.md).
+   Corpus assembly, stage-preserving packing and native checkpoint continuation
+   are built; 157 scoped checks pass after the capacity, centroid and serial
+   discovery repairs. The 12-sentence native diagnostic now runs the serial
+   observer and passes identity checks, but acquires no named objects or classes.
+   The full target constructs within a 28 GiB guard; training memory and
+   the separate relation/witness capacities still need provisioning. The
+   completed-understanding inverse has a native mechanism certificate.
+   Shared initial class learning, exactness of the remaining approximate
+   paths and unforced acquisition remain open; no completion or landing is claimed.
+   **Familiar-tier round (2026-10-28; spec §§26, 28):** built on frozen
+   source `4b83dec0bd0e` (938 files), including shared initial class learning.
+   All scoped groups passed: 2,236 passing executions and 44 skips across
+   overlapping groups, zero failures. The native lesson completed all 48
+   sentences, four presentations per stage, with clean form identity audits;
+   acquisition failed: neither proper name acquired an object, and `cat`
+   did not acquire the shared order-2 kind. The existing presentation boundary
+   clears MTM between repetitions; the receipt records each presentation's
+   candidate counts. [Review receipt](doc/benchmarks/2026-10-28-item2-7-familiar-tier/README.md).
+   Return through Alec for Claude's review; no commit or publication.
+   **Reading and epoch round (2026-10-28; spec §§29–32):** repairs and
+   supplied-answer lesson-13 are built. Freeze `b84b983d2ddc` preserved the first
+   inverse performance repair; its partial lesson was stopped for the additional
+   repair. Freeze `103c66621c4c` passed 81 acceptance checks and 2,388 scoped
+   executions (53 skips). Its lesson was paused at 44/160 sentences and then
+   terminated for the §34 repair; the partial result is preserved.
+   A native 144-step walk is exactly preserved at 9.74 s before / 0.62 s
+   after. The separate c/e sample is 19/20
+   against baseline 20/20. It and the earlier introduction failure remain
+   review issues.
+   [Reading receipt](doc/benchmarks/2026-10-28-item2-7-reading/README.md).
+   **Generation repair (spec §34):** frozen at `aa1b32288f71`; the unary-chain
+   bound, completion-first comparisons, winning-departure credit and creation-time
+   identity order are built. All twelve groups pass: 2,421 passes, 55 skips,
+   zero failures; the native smoke passes. The fresh lesson completes 37/160
+   sentences (median 11.77 s) then fails at sentence 38 with a dangling local
+   constituent reference in a supplied query result. Relations were not reached;
+   the cube failure did not recur and remains carried. The 48-sentence diagnostic
+   did not reproduce the reference error; the candidate-table-loss probe is a
+   lead, not a confirmed native cause. Returned through Alec for Claude's review
+   in spec §35; no commit or publication.
+   [Repair receipt](doc/benchmarks/2026-10-28-item2-7-reading-repair/README.md).
+   **Reading census (2026-10-29; spec §§36–37):** source `765e7667a680`
+   repairs the candidate binding/table defect; the R4 diagnostic finds no
+   MTM candidate scan/charge defect. All twelve groups pass (2,423 passes,
+   55 skips), and lesson-13 completes 160/160 sentences without a fill or
+   cube crash. Acquisition fails: Felix gains an order-1 object, Ciao does
+   not, no shared order-2 kind forms, and answers score 0/80. The census
+   records 3,306 of 3,520 walks ending at the unary bound and zero departure
+   wins; the supplied yes is absent from all 576 applicable terminal banks.
+   [Census receipt](doc/benchmarks/2026-10-29-item2-7-reading-census/README.md).
+   **Final-round design proposed (2026-10-29; spec §38):** generation,
+   two-lane DEF learning, percept recombination/inversion, noun/kind
+   measurements, guarded B28/W256 capacity search and corpus run, then the
+   November snapshots/slow cases and landing sweep. **F1–F3 approved by
+   Alec (2026-10-29; spec §39):** F3 is percept expectation, trained in the
+   processing loop as percepts arrive, with one local update per external
+   arrival and a frozen prior shared by both trials. Full content and the
+   signed residual remain separately available. Claude approved the design
+   with A1–A4 in §40. **Final-round implementation (2026-10-29; §43):**
+   F1–F3 and the percept-only §42 residual split are built in the live tree;
+   source verification, scoped gates, lesson measurements and guarded capacity
+   work are in progress in the [final-round receipt](doc/benchmarks/2026-10-29-item2-7-final/README.md).
+   No acceptance freeze or landing is claimed. The conceptual residual half
+   remains item 2.5 round B; D5, slow cases and the landing sweep await November.
+   **Alec's deferral (2026-10-29):** large-file B28/W256 capacity search and
+   selected-prefix training are registered in `test/test_corpus_large_slow.py`
+   for November; the partial search has no final fit. Scoped gates and the
+   lesson curricula continue now, with `RUN_SLOW` unset.
+   **Review freeze `ccc5e461740f` (2026-10-29; spec §43):** 956 files;
+   2,515 scoped passes, 57 skips, two core failures. Lesson-13 completed
+   160/160: ideas pass, relations fail, answers 0/80; no acquisition artifact.
+   The final curriculum stopped at sentence 15 with an unwritten-introduction
+   bind. §42's current chart conversion retains the full reconstruction
+   gradient and needs explicit review. These remain open; return through Alec
+   for Claude, with no landing claim. [Review receipt](doc/benchmarks/2026-10-29-item2-7-final/REVIEW.md).
+   **Producer repairs, spec §46:** freeze `0be76c6f84f4` passes all thirteen
+   scoped groups (2,541 passes, 57 skips). Lesson-13 completes all 160
+   sentences: ideas pass, relations fail, text available for all 80 answers
+   but exact accuracy 0/80. Final curriculum exposes two further failures;
+   the native-symbol origin repair and epoch capture continue in §46.
+   §44's correction-output form of §42 awaits Alec's D7 confirmation and is
+   unbuilt. [Current receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-final/README.md).
+   **Review handback `472f5000850e`, spec §46:** all thirteen scoped
+   groups pass (2,545 passes, 57 skips), with native smoke and allocation
+   checks. Diagnostic lesson-13 completes 160/160: ideas pass, relations
+   fail, answers 0/80 with text present. Final curriculum stops at sentence
+   132 with an unavailable query concept reference; earlier MTM-value and
+   owned-gradient failures remain unresolved. D7 is pending and unbuilt;
+   return through Alec, no landing claim. [Receipt](doc/benchmarks/2026-10-29-item2-7-producer-repair-review/README.md).
+   **Clarified 2026-10-27 (Alec):** expectation predicts at each level;
+   the approximately inverted object is the fully processed grammatical
+   understanding ([spec §13](doc/plans/2026-10-27-item2-7-corpus.md#13-local-expectation-and-inversion-of-the-understanding--alec-2026-10-27)).
+   *Earlier scope (ownership now follows §47 above):* the unforced 1-to-2 raise certificate; the
    fold trained from DEF rows with explicit and implicit definitions judged
    in the two lanes; parts of speech learned in order (proper, mass, count)
    and measured, not forced; order-2 kinds and kind-level verbs; the
@@ -1535,6 +1668,12 @@ not by a passing identity lesson.
      and a mismatch fills both, the corner already decided to prompt
      refinement (Alec, 2026-09-23). The lanes are never netted.
 
+     **Clarified 2026-10-27 (Alec):** raised classes need initial learning
+     to cover their members; explicit and implicit classes receive the
+     same treatment ([item 2.7 spec §12](doc/plans/2026-10-27-item2-7-corpus.md#12-initial-learning-for-every-raised-class--alec-2026-10-27)).
+     Synchronizing explicit and implicit meanings is a separate
+     [future-work item](doc/FutureWork.md#synchronize-explicit-and-implicit-meanings-alec-2026-10-27).
+
    *Added 2026-10-20 (Alec):* placement from
    the registered priming surface — SBOW's context is the surface after
    the seen bumps and the symbolic diffusion, before the conceptual
@@ -1624,10 +1763,23 @@ not by a passing identity lesson.
    shows the order, not only the content, is what lets one departure escape
    multi-step minima ([4.5 spec §5.3–§5.4](doc/specs/2026-10-08-expectation-at-every-level.md)).
 - **2.5. Thinking: derivation over chunks with trust, and `intuit`.**
-   *Spec to write (Claude) after Alec's eight decisions, from the
-   [exploration notes](doc/plans/2026-10-26-thought-design-notes.md) and the
-   [`intuit` spec](doc/plans/2026-10-21-intuit.md) §5, whose leaf-index
-   scan and `Mind.SERIAL` dependency are amended by step 1 and 2.9.*
+   *Spec written (Claude, 2026-10-27):
+   [doc/plans/2026-10-27-item2-5-thinking.md](doc/plans/2026-10-27-item2-5-thinking.md),
+   from Alec's eight answers ([notes §10](doc/plans/2026-10-26-thought-design-notes.md))
+   and the [`intuit` spec](doc/plans/2026-10-21-intuit.md) §5, whose
+   leaf-index scan and `Mind.SERIAL` dependency it amends. D1–D4 decided
+   (spec §7); the 2026-10-28 readings on training, fixed LTM, order zero
+   and the pick are spec §§9–11. Two rounds: A (the serial path; Codex
+   text in spec §8, starting from item 2.7's code-complete commit at
+   review freeze `472f5000850e`) and B (`intuit`, which
+   at round B also replaces item 2.9's location diffusion as the
+   spreading mechanism, consolidating conceptual expectation and priming
+   into one operator; spec §15, Alec 2026-10-28). Round A carries D8's
+   graded binding cost plus text cost (2.7 record §47); 2.7's landing
+   round remains in November. Decided direction (Alec, 2026-10-29), spec §16:
+   one error signal and one backward: stop-gradient for attention and
+   expectation, jitter of reconstruction's strength against output, and the
+   chooser's log-probabilities in the same objective.*
    The serial slot becomes the episode's focus chunk among the shared
    eight; `descend`/`return` follow tagged LTM1 references; operators
    `infer`, `refute`, `substitute` beside the catalogue; `intuit` proposes

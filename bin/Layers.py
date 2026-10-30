@@ -5447,7 +5447,7 @@ class ConceptualAttentionLayer(SparseLayer):
     """Concept records and disjunctive parts W_sigma on one row inventory.
 
     W_pi stores conjunctive parts of the same concepts. Context weights are
-    the witnessed where; participation is an EWMA buffer, never a parameter.
+    native definitions. Familiar candidates live in MediumTermMemory.
     """
 
     def __init__(self, nInput, nOutput, nonlinear=True, kernel="scatter",
@@ -5476,20 +5476,12 @@ class ConceptualAttentionLayer(SparseLayer):
         self.feature_groups = {}
         self._sidecar_owned = self.conjunctive._sidecar_owned = True
         self._paired_sources = self.conjunctive._paired_sources = nInput == 2 * (nOutput + 1)
-        # Context is sparse over persistent inventory addresses, never field slots.
-        self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
-                                             torch.empty(0, device='cpu'), (0, 0), device='cpu').coalesce()
         for name, value in (
-                ('participation', torch.ones(nOutput)),
-                ('provisional', torch.zeros(nOutput, dtype=torch.bool)),
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
-                ('managed', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
-                ('witness_strength', torch.zeros(nOutput)),
                 ('refinement_best', torch.full((nOutput,), float('inf'))),
                 ('refinement_stale', torch.zeros(nOutput, dtype=torch.long)),
                 ('refinement_step', torch.full((nOutput,), -1, dtype=torch.long)),
-                ('context_seen', torch.zeros(nOutput, dtype=torch.long)),
                 ('observation', torch.zeros((), dtype=torch.long))):
             # The structural sidecar owns these row-aligned values. Keeping
             # them out of state_dict also preserves strict loads for a store
@@ -5504,20 +5496,12 @@ class ConceptualAttentionLayer(SparseLayer):
 
     @torch.no_grad()
     def project_parts(self):
-        """Preserve polarity; only provisional alternatives normalize support."""
+        """Preserve polarity and the learned nonnegative definition weights."""
         for matrix in self.part_matrices():
             if matrix.values is not None:
                 matrix.values.clamp_min_(0)
         if self.features.values is not None:
             self.features.values.clamp_(0, 1)
-        if self.values is not None:
-            rows, _ = self._indices(self.values.device)
-            maxima = self.values.new_zeros(self.nOutput).scatter_reduce_(
-                0, rows, self.values, reduce='amax')
-            managed = (self.assigned & self.provisional).to(rows.device)
-            divisor = torch.where(managed[rows],
-                                  maxima[rows].clamp_min(1e-12), 1.)
-            self.values.div_(divisor)
 
     def migrate_part_moments(self, optimizer):
         """A signed-to-pole checkpoint conversion reverses first moments."""
@@ -5531,12 +5515,6 @@ class ConceptualAttentionLayer(SparseLayer):
                     moment.mul_(signs.to(moment))
             del matrix._checkpoint_exponent_signs
 
-    def ensure_context(self):
-        """Allocate only when the parallel pool observes its bounded span."""
-        if self.where.numel() == 0:
-            self.where = torch.sparse_coo_tensor(torch.empty(2, 0, dtype=torch.long, device='cpu'),
-                                                 torch.empty(0, device='cpu'), (self.nOutput, self.nOutput), device='cpu').coalesce()
-        return self.where
 
     def grow_inventory(self, size):
         """Grow definition storage independently of the bounded attended field."""
@@ -5552,37 +5530,9 @@ class ConceptualAttentionLayer(SparseLayer):
         self.features.nOutput = size
         for name, value in list(self.named_buffers(recurse=False)):
             if value.ndim == 1:
-                fill = {'participation': 1, 'refinement_best': float('inf'),
+                fill = {'refinement_best': float('inf'),
                         'refinement_step': -1}.get(name, 0)
                 setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
-        if self.where.numel():
-            self.where = torch.sparse_coo_tensor(self.where.indices(), self.where.values(),
-                                                 (size, size), device='cpu').coalesce()
-
-    def context_similarities(self, context):
-        """Sparse inventory context dot products and row norms, without a square slab."""
-        where = self.ensure_context().coalesce()
-        dot = torch.sparse.mm(where, context.cpu()[:, None]).flatten()
-        norm = dot.new_zeros(self.nOutput).index_add_(0, where.indices()[0], where.values().square()).sqrt_()
-        return dot / (norm * context.norm()).clamp_min(1e-12)
-
-    def write_context(self, row, context, beta):
-        where = self.ensure_context().coalesce()
-        indices, values = where.indices(), where.values()
-        previous = values.new_zeros(self.nOutput)
-        selected = indices[0] == row
-        previous[indices[1, selected]] = values[selected]
-        updated = beta * previous + (1 - beta) * context.cpu()
-        columns = updated.nonzero().flatten()
-        new = torch.stack((torch.full_like(columns, row), columns))
-        self.where = torch.sparse_coo_tensor(torch.cat((indices[:, ~selected], new), 1),
-            torch.cat((values[~selected], updated[columns])), where.shape, device='cpu').coalesce()
-
-    def clear_context(self, row):
-        where = self.ensure_context().coalesce()
-        indices = where.indices()
-        keep = (indices != row).all(0)
-        self.where = torch.sparse_coo_tensor(indices[:, keep], where.values()[keep], where.shape, device='cpu').coalesce()
 
     @classmethod
     def square(cls, n_concepts, device=None):
@@ -5608,7 +5558,7 @@ class ConceptualAttentionLayer(SparseLayer):
             matrices[name] = dict(rows=list(matrix._rows), cols=list(matrix._cols),
                                   nInput=matrix.nInput,
                                   values=None if matrix.values is None else matrix.values.detach().cpu().clone())
-        return dict(version=4, matrices=matrices, where=self.where.clone(),
+        return dict(version=6, matrices=matrices,
                     feature_groups=dict(self.feature_groups),
                     buffers={name: value.detach().cpu().clone()
                              for name, value in self.named_buffers(recurse=False)})
@@ -5618,23 +5568,10 @@ class ConceptualAttentionLayer(SparseLayer):
             return
         if any(blob.get('locations') for blob in saved.get('matrices', {}).values()):
             raise ValueError('positional concept definitions predate item 9b; re-teach exact conjunctions as native fused percepts')
-        if saved.get('version') not in (1, 2, 3, 4, 5):
+        if saved.get('version') not in (1, 2, 3, 4, 5, 6):
             raise ValueError('unsupported conceptual parts checkpoint')
         self.feature_groups = dict(saved.get('feature_groups', {}))
         old_span = self.nOutput if old_size is None else old_size
-        self.where.zero_()
-        if saved['version'] == 1:
-            blob = saved['matrices']['where']
-            context = torch.sparse_coo_tensor(torch.tensor([blob['rows'], blob['cols']], dtype=torch.long),
-                torch.empty(0) if blob['values'] is None else blob['values'].cpu(), (old_span, old_span)).coalesce()
-        else:
-            context = saved['where']
-            if context.numel() and tuple(context.shape) != (old_span, old_span):
-                raise ValueError('concept context shape mismatch')
-        if context.numel():
-            context = context.cpu().to_sparse_coo().coalesce()
-            self.where = torch.sparse_coo_tensor(context.indices(), context.values(),
-                (self.nOutput, self.nOutput), device='cpu').coalesce()
         for name in ('conjunctive', 'features'):
             matrix = getattr(self, name)
             blob = saved['matrices'].get(name, dict(rows=[], cols=[], values=None, nInput=1))
@@ -5667,6 +5604,8 @@ class ConceptualAttentionLayer(SparseLayer):
             matrix.values = None if values is None else nn.Parameter(
                 values.to(self._device()).clone(), requires_grad=name != 'where')
         for name, value in saved['buffers'].items():
+            if name not in self._buffers:
+                continue  # Pre-familiar checkpoints may carry retired pool state.
             target = getattr(self, name)
             if target.shape == value.shape:
                 target.copy_(value.to(target))
@@ -5858,7 +5797,7 @@ class ConceptAllocator:
     (``self.layer()``, a :class:`ConceptualAttentionLayer`); rows are
     permanent -- nothing migrates by order."""
 
-    def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=None, member_width=0):
+    def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=8192, member_width=0, relation_capacity=8192):
         self.next_id = 1                 # 0 reserved
         self.reclaimed_seats = 0         # capacity credits, never recycled handles
         self.placement = {}              # cid -> derived order (bookkeeping)
@@ -5873,13 +5812,15 @@ class ConceptAllocator:
         self.testimony_seen = {}         # object id -> first two distinct occurrences
         self.testimony_current = {}      # deduplication within this observation boundary
         from LTM1 import LTM1
-        self.parts = LTM1()         # LTM1 and the symbol taxonomy, one owner
+        self.parts = LTM1(relation_capacity)  # LTM1 and the symbol taxonomy, one owner
         self.parts.allocate = self._allocate_part_symbol
         # Each first equality witness requires an LTM1 equality row. Its
         # right side may be an occurrence/token outside the codebook, so the
         # relation capacity bounds this slab, not the symbol-vector inventory.
         # Each row holds one native concept vector; the slab never grows.
-        capacity = self.parts.capacity if member_capacity is None else int(member_capacity)
+        capacity = 8192 if member_capacity is None else int(member_capacity)
+        if capacity < 1:
+            raise ValueError("equality witness capacity must be positive")
         self.singleton_values = torch.zeros(capacity, int(member_width))
         self.symbol_types = {}           # types of bank arguments, never edge kinds
         self.word_descriptions = {}      # native form definitions, keyed by word symbol
@@ -8875,7 +8816,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
     KINDS = ("unverified", "fact", "question", "estimate", "observation", "inference", "cover")
 
     def __init__(self, nDim: int, capacity: int = 1024, content_width=None, *, percept_width=None,
-                 stream_capacity=None, recurrence_capacity=None):
+                 stream_capacity=None, recurrence_capacity=None, relation_capacity=8192):
         super().__init__(nDim, nDim)
         self.nDim = int(nDim)
         self.capacity = int(capacity)
@@ -8961,7 +8902,7 @@ class LTM0(OccurrenceRows, ClauseRows, EntryRead, Layer):
         self._expectation_rows = {}
         self._index_occurrences = AddressIndex()
         from LTM1 import LTM1
-        object.__setattr__(self, 'parts', LTM1())
+        object.__setattr__(self, 'parts', LTM1(relation_capacity))
 
     def clear_recurrence(self):
         """Discard presentation evidence; promoted concepts keep their own seats."""

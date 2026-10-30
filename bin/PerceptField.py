@@ -15,7 +15,7 @@ from PerceptProperties import counts_in_spans
 class PerceptField:
     keys: tuple
     values: torch.Tensor       # [percept, batch, reading, pole]
-    events: torch.Tensor       # [percept, batch, reading, event, pole]
+    events: torch.Tensor       # [percept, batch, reading, event prefix, pole]
     spans: torch.Tensor        # [batch, event, 2], perception's coordinates
     where: torch.Tensor        # [batch, reading, 2], one bracket per reading
     when: torch.Tensor         # [batch, reading, 2], one interval per reading
@@ -56,6 +56,22 @@ def read_percepts(percepts, brackets, keys, *, part_reader, native=None,
     raw = raw[:, 0] if raw.ndim == 3 else raw
     keys = tuple(dict.fromkeys(keys))
     B, E = raw.shape[0], brackets.shape[1]
+    # Padding is not a native occurrence. Preserve each retained event's
+    # identity and coordinates, but do not cross the fixed input capacity
+    # with every feature, stream and reading. In B28/W256 that product can
+    # exceed host memory before the first word is processed. Reading and
+    # inventory axes keep their existing shapes; only absent event columns
+    # (zero extent in every stream) are omitted from this location ledger.
+    # Keep interior gaps: ordered literal matching uses canonical tile
+    # adjacency, so removing a gap must not join two previously separate runs.
+    def prefix(spans):
+        if not spans.shape[1]:return 0
+        positions=torch.arange(1,spans.shape[1]+1,device=spans.device)
+        return int(torch.where((spans[...,1]>spans[...,0]).any(0),positions,0).amax())
+    parts,wholes=prefix(part_spans),prefix(whole_spans)
+    part_ids=part_ids[:,:parts]
+    part_spans=part_spans[:,:parts]
+    whole_spans=whole_spans[:,:wholes]
     spans = torch.cat((part_spans, whole_spans), 1).to(raw.device)
     P = spans.shape[1]
     contained = ((spans[:, None, :, 0] >= brackets[..., 0, None])

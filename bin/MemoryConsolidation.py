@@ -75,13 +75,19 @@ def recurrence_groups(store):
     return groups
 
 
-def _fold(owner, store, rows, *, order=1):
+def _fold(owner, store, rows, *, order=1, members=None):
     """Evidence-weighted form centroid; bands and meanings are not folded."""
     cb = owner.similarity_codebook
     derived = getattr(cb, 'mereology', None)
     width = cb.W.shape[-1] if derived is None else derived.percept_width
     if not rows:
         return None
+    if members is not None:
+        weights = cb.W.new_tensor([members[row] for row in rows])
+        codes = cb.lookup_rows(rows)[:, :width]
+        value = cb.W.new_zeros(cb.W.shape[-1])
+        value[:width] = (codes * weights[:, None]).sum(0) / weights.sum()
+        return value
     weights = store.c_plus[rows] + store.c_minus[rows]
     if not bool(weights.any()):
         return None
@@ -116,9 +122,9 @@ def _preflight(owner, plans):
 
 @torch.no_grad()
 def consolidate(owner, store, *, context=None, key=None, batch=0):
-    """Three source documents for a reading, three sentences for an identity."""
+    """Consolidate a reading witnessed in three source documents."""
     from Spaces import _concept_alloc_of
-    alloc, pool = _concept_alloc_of(owner), owner.mtm
+    alloc = _concept_alloc_of(owner)
     close_key = key
     readings = recurrence_groups(store)
     plans, actions = [], []
@@ -140,26 +146,6 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
         if value is not None:
             plans.append((int(store.order[rows[0]]), value))
             actions.append(('reading', reading))
-    for key, entry in pool.entries.items():
-        if entry.symbol is not None:
-            continue
-        rows = [store.location(address) for address in entry.occurrences]
-        rows = [row for row in rows if isinstance(row, int)]
-        sentences = set(rows)
-        if len(sentences) < 3:
-            continue
-        if entry.native is not None:
-            pool.promote(key, entry.native)
-            continue
-        # Mention recurrence admits promotion; only actual occurrences give
-        # the promoted identity content. Alternative ideas stay references.
-        actual = set(entry.occurrences) | {event.occurrence for event in entry.events if event.role == 0}
-        rows = [store.location(address) for address in actual]
-        rows = [row for row in rows if isinstance(row, int) and int(store.order[row]) == 0]
-        value = _fold(owner, store, rows)
-        if value is not None:
-            plans.append((1, value))
-            actions.append(('token', key))
     if plans:
         _preflight(owner, plans)
     promoted = []
@@ -179,11 +165,7 @@ def consolidate(owner, store, *, context=None, key=None, batch=0):
         owner.similarity_codebook.W[row].copy_(value)
         promoted.append(row)
         alloc.settle(symbol)
-        if kind == 'token':
-            alloc.individuals.add(symbol)
-            pool.promote(key, symbol)
-        else:
-            store.recurrence_symbols[key] = symbol
+        store.recurrence_symbols[key] = symbol
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if promoted and derived is not None:
         if context is None:

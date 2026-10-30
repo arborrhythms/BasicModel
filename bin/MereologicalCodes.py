@@ -159,6 +159,9 @@ class MereologicalCodes(nn.Module):
                 src, dst, weight = edges
                 selected = (dst == row) & (weight > 0)
                 members, weights = src[selected], weight[selected]
+                # A deferred/unplaced member cannot supply a location yet.
+                if not bool((self.placement_witnesses[members] > 0).all()):
+                    members, weights = members[:0], weights[:0]
             count = 0 if members is None else len(members)
             self.placement_witnesses[row] = count
             if count:

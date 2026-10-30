@@ -72,10 +72,10 @@ def test_membership_cache_follows_native_addresses_evidence_forgetting_and_load(
     part_edges(native)
     parts.add((parts.OCCURRENCE, -8), (parts.SYMBOL, 2))
     part_edges(native)
-    assert native._priming_edge_rebuilds == rebuilds
+    assert native._priming_edge_rebuilds == rebuilds+1
     parts.add(1, 2, truth_minus=.7)
     assert part_edges(native)[2][0] == pytest.approx(.1)
-    assert native._priming_edge_rebuilds == rebuilds+1
+    assert native._priming_edge_rebuilds == rebuilds+2
     restored = LTM1(parts.capacity)
     restored.load_state_dict(parts.state_dict())
     native._concept_allocator.parts = restored

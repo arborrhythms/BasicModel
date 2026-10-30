@@ -13,7 +13,7 @@ def slots(records):
 
 
 def materialize(result):
-    """Every checked result supplies an ordinary bindable serial value."""
+    """Materialize returned content without inventing an answer to a read."""
     from Queries import _freeze_boundary_value
     from Meaning import ConceptualMeaning
     evidence = dict(result.evidence)
@@ -24,6 +24,11 @@ def materialize(result):
             meaning = frames[0]['meaning']
         elif torch.is_tensor(evidence.get('value')) and evidence['value'].ndim == 1:
             meaning = ConceptualMeaning.from_description(evidence['value'])
+        elif result.semantic_id in ('query', 'ask'):
+            # An empty or cut-off read has no returned content. Its request
+            # can name a temporary question occurrence; treating that as an
+            # answer would bind the question's own address into the goal.
+            return result
         else:
             meaning = (result.request.constituents[0] if len(result.request.constituents) == 1
                        else result.request)
@@ -153,6 +158,13 @@ def integrate(registry, goal, result, records, *, work=None):
                 isomorphic=lambda left, right: isomorphic(kernels, left, right, work))
             if aligned is not None:
                 return aligned
+            if not has_open_slots(goal):
+                # A retrieved object's evidence belongs to that object. It
+                # cannot revise an unrelated closed field merely because a
+                # query was selected while considering the field. Checked
+                # operation/equality proofs are handled above; fill below
+                # has an actual open site to receive a returned reference.
+                return fill(goal, {}, operation=result.semantic_id)
             return fill(goal, result, witnesses=witnesses, operation=result.semantic_id)
         return goal
     results = (*slots(records), result)
@@ -257,6 +269,23 @@ def write(model, meaning, *, row, _active=None, _bound=None):
                 refs = []
                 for role in (0, 2):
                     reference = value.role_refs[role]
+                    if reference is not None and reference[0] == 'name':
+                        # A reading name is a working MTM address. Persist
+                        # its promoted symbol or an actual retained mention,
+                        # never the transient name in a native Part edge.
+                        owner = store._concept_owner()
+                        pool = owner.mtm
+                        token = pool.token_of(reference)
+                        if token is None:
+                            raise ValueError('a concluded Part argument names an unavailable MTM identity')
+                        entry = pool.entries[token]
+                        if entry.symbol is not None:
+                            reference = ('sym', entry.symbol)
+                        else:
+                            reference = next((address for address in reversed(entry.occurrences)
+                                if isinstance(store.location(address), int)), None)
+                            if reference is None:
+                                raise ValueError('a concluded Part argument names an identity without a retained occurrence')
                     if reference is not None and reference[0] == 'sym':
                         refs.append(int(reference[1]))
                     elif reference is not None and reference[0] == 'constituent':

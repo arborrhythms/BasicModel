@@ -11,6 +11,33 @@ The current cross-architecture reference is
 [Gradient flow across the architecture](GradientFlow.md): what each objective
 trains, where gradients stop, and how optimizer ownership is audited.
 
+**Item 2.7 corpus implementation, 2026-10-27 (in progress).** The pinned
+recipe is `data/corpus-sources.json`. Assemble it in a fresh directory:
+
+```sh
+.venv/bin/python bin/prepare_corpus.py --recipe data/corpus-sources.json --output data/corpus/assembly-01
+```
+
+The recipe presents the Wordbank vocabulary prefix, then adult AO-CHILDES
+utterances in age bands, then written FineWeb text. Stage and age metadata
+schedule input; they supply no grammatical classes, object definitions or
+answers. The source tables, SQLite assembly and generated shards are ignored
+artifacts. The immutable manifest records fingerprints, filtering and
+document-disjoint splits.
+
+`data/BasicModel_corpus.xml` is the measured million-training-sentence sizing
+candidate. It is **not yet a fitting production configuration**: its full
+constructor exceeded the 24 GiB guard on this 36 GiB host. The loader and
+fixed word-identity inventory can be audited independently with
+`bin/corpus_audit.py` and `bin/corpus_capacity.py`. The run and retained failures
+are recorded in [the item 2.7 plan](plans/2026-10-27-item2-7-corpus.md).
+Training and evaluation finish each corpus stage across all streams before
+advancing. Packs stop at document boundaries. A mid-presentation checkpoint
+saves consumed stream positions, including with prefetch, plus the priming,
+identity, live STM and expectation continuation state. Replaying a tick count under a
+later learned tiling is not a safe resume method. Native update parity is a
+separate measurement in the plan; cursor equality alone does not establish it.
+
 **Concept dictionary ownership (October 2, 6.9 §20).** Codes are parameters
 trained only by reconstruction, without a norm constraint. The canonical
 configurations set `conceptualContextLearningRate=0`; contextual rotation and
@@ -1454,3 +1481,87 @@ credit, not a second thought-policy objective. Shared parameters still obey
 the separate-state/shared-operator contract in [GradientFlow](GradientFlow.md). See [SelectedMeaning](SelectedMeaning.md)
 for the bounded wording result and its limits, and [GradientFlow](GradientFlow.md)
 for the detach/ownership boundaries.
+
+## Item 2.7 lesson-13: ideas before relations (Alec, 2026-10-28)
+
+The version-2 `data/corpus-lessons.json` has two curriculum phases. Four distinct
+idea documents name both measured objects with demonstratives and supplied-answer
+questions. Four relation documents state their kind and a kind-level sentence,
+then ask for the kind and yes/no membership. Each phase runs four epochs, each
+document once per epoch. The epoch boundary clears experience and MTM once before
+the first document; document covers are rewritten without clearing familiarity.
+The corpus checkpoint still preserves an incomplete epoch on resume.
+
+`corpus_lessons.py` uses the math corpus's `ChainDocument`/`ReferentTarget` path;
+answers are loss-side data. No order, grammatical operation or part of speech is
+supplied. Every epoch reports objects and their orders, classes and members,
+candidate counts/symbols/support/both status, and scored answers. The ideas exit
+requires two order-1 objects; relations requires an order-2 kind containing both.
+The relations phase is the registered producer of `copular_identity`. It writes a
+qualified artifact only on acquisition success; a failed acquisition remains the
+reported result. This round does not implement spec §§9 or 13.
+
+
+**Item 2.7 final-round protocol, 2026-10-29.** `corpus_lessons.py --curriculum
+lesson-13` preserves the original two phases and 160 training sentences.
+`--curriculum final` selects the separately frozen proper, mass, count-kind and
+kind-verb documents in `data/corpus-lessons.json`, four documents and four epochs
+per phase, with supplied answers through `MathChainTraining.present`. Read-only
+measurements inspect kept meanings, references, witnessed orders, candidates,
+answer scores and class both-corner fractions. Per-phase held-out recombinations
+run without an optimizer or vocabulary admission; their answers never enter the
+training vocabulary union. A failed acquisition remains the result. Only an
+unforced passing relations phase can write `copular_identity`.
+
+At a corpus stage boundary, `Corpus.admit_stage` admits that stage's training
+vocabulary before native input construction. Capacity trials declare their grid,
+28 GiB aggregate process-tree RSS guard, host swap/pressure samples and one-hour
+limit before launch. On macOS the same limit also guards charged physical
+footprint, including compressed memory and lifetime peaks between samples.
+`corpus_capacity.py --train-brick` loads the selected metadata, admits the
+training vocabulary through the first native stage with all 28 document windows
+nonempty, and enters that native cursor without training the skipped prefix.
+It touches reservations, allocates the configured dense optimizer state,
+and runs a populated B28/W256 forward/backward/step. `--search-grid` brackets and
+refines inventories, relations, witnesses, bridge and recurrence in that order;
+a timeout or non-memory error stops that search as inconclusive or failed. A
+constructor-only result never establishes a fit. The selected full-prefix run
+uses stage admission, ordinary checkpoint continuation and the same guard.
+D5 regeneration, slow cases and the full landing sweep remain deferred to
+November; these instructions do not enable `RUN_SLOW`.
+
+**Paired decoder comparison repair (2026-10-29).** A pass-through capture found
+identical completed understandings with different decoder residual costs due
+to independent inner departure draws. Corresponding decoder/output calls now
+share one fresh uniform quantile across the outer sentence pair. The legal
+menus, work limits and one-writer objectives are unchanged; each menu still
+gets a uniform departure, and the sentence boundary discards the draws.
+
+**Percept expectation and residual reconstruction (item 2.7, 2026-10-29).**
+For the perceptual layer, §§39 and 42 supersede the earlier gain-only rule.
+`PerceptExpectation` learns at the eager word boundary with detached context
+and observation, using its own Adam state outside the main optimizer. The
+forecast made before arrival is frozen for both sentence trials. The committed
+forest and free decoder compare signed leaf corrections with the detached
+`observed - expected_at_arrival` target; their losses cannot update this local
+predictor. Forward recombination retains the full attended signal and its
+Jacobian. Every checkpoint preserves the private optimizer, including a
+completed epoch with no corpus cursor; a trained checkpoint missing that state
+fails on load. The conceptual residual split remains item 2.5 round B.
+
+
+**Item 2.7 large-file deferral (Alec, 2026-10-29).** The B28/W256 capacity
+search and subsequent selected corpus prefix now belong to the November
+`RUN_SLOW` run, registered in `test/test_corpus_large_slow.py`. Partial capacity
+measurements do not select a production size. The ordinary scoped tests,
+lesson-13 and final noun/kind/kind-verb measurements continue in this round.
+
+
+**Item 2.7 review measurement (2026-10-29; `ccc5e461740f`).** Lesson-13
+completed all 160 sentences. Both named individuals acquired order-1 objects;
+the shared order-2 kind did not form, and supplied answers scored 0/80.
+No acquisition artifact was written. The separate ordered final curriculum
+stopped during the proper-name phase at sentence 15 with an unwritten
+introduction in `ReferenceClose.preview`, so mass/kind/kind-verb results are
+unavailable. See the final-round review receipt; this is not a completed
+production corpus or landing certificate.

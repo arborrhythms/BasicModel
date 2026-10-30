@@ -214,11 +214,13 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
     # The grammar leaf mask covers presented words; skip the MTM prefix.
     base = ids.shape[1] - active.shape[1]
     for word, obj in zip(ids[:,base:][active].tolist(), objects[:,base:][active].tolist()):
-        if operator.no_object(word):
-            assert obj == word
+        if not owner.definitions.objects(word):
+            token = owner.mtm.token_of(obj)
+            assert token is not None and owner.mtm.entries[token].pending
+            assert any(name.reading == word and name.token == token for name in owner.mtm.names.values())
         else:
             assert obj in owner.definitions.objects(word)
-        assert operator.reverse(obj) == word
+            assert operator.reverse(obj) == word
     model.End()
 
 

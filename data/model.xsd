@@ -192,11 +192,8 @@
       <!-- Discover concepts in a row pool by witnessed context and use. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="conceptPoolSize" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="conceptUseEWMA" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptMintThreshold" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptRecycleThreshold" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
 
@@ -725,6 +722,7 @@
       <xs:enumeration value="mnist"/>
       <xs:enumeration value="tomatoes"/>
       <xs:enumeration value="text"/>
+      <xs:enumeration value="curriculum"/>
       <xs:enumeration value="inline"/>
       <!-- exact dependency-arithmetic / linear-constraint problems
            (bin/exact.py MathProblemGenerator; mathematical thinking spec 4). -->
@@ -784,8 +782,10 @@
       <!-- Whole-sentence admission ceiling. Records above the limit are
            excluded intact; they are never truncated into partial examples. -->
       <xs:element name="maxSentenceWords" type="xs:positiveInteger"/>
+      <xs:element name="maxSentenceUnits" type="xs:positiveInteger"/>
       <xs:element name="shardDir" type="xs:string"/>
       <xs:element name="grammarLessons" type="xs:string"/>
+      <xs:element name="corpusManifest" type="xs:string"/>
       <!-- Stable name of the corpus/book/conversation whole that scopes
            objective Teacher addresses. This is not written into the model's
            subjective .where/.when event bands. -->
@@ -1138,6 +1138,7 @@
       <xs:element name="placementNegatives" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="placementNegativeWeight" type="nonNegativeFloat" minOccurs="0"/>
       <xs:element name="geometricSpread" type="unitInterval" minOccurs="0"/>
+      <xs:element name="primingBridgeCapacity" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="geometricNeighbours" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="geometricRadius" type="xs:decimal" minOccurs="0"/>
       <xs:element name="geometricRadiusRate" type="xs:decimal" minOccurs="0"/>
@@ -1229,11 +1230,8 @@
       <!-- Per-space override of architecture.attentionPromotion. -->
       <xs:element name="attentionPromotion" type="xs:boolean" minOccurs="0"/>
       <xs:element name="conceptualPi" type="xs:boolean" minOccurs="0"/>
-      <xs:element name="conceptPoolSize" type="xs:positiveInteger" minOccurs="0"/>
-      <xs:element name="conceptUseEWMA" type="unitInterval" minOccurs="0"/>
+      <xs:element name="conceptMintCount" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="conceptUseFloor" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptMintThreshold" type="unitInterval" minOccurs="0"/>
-      <xs:element name="conceptRecycleThreshold" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptMatchCos" type="unitInterval" minOccurs="0"/>
       <xs:element name="conceptPartFloor" type="unitInterval" minOccurs="0"/>
 
@@ -1435,6 +1433,8 @@
            Separate from <truthMaxEntries> (TruthLayer's SS-codebook
            capacity). Default 1024. -->
       <xs:element name="ltmCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="relationCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="equalityWitnessCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Stage 3 cleanup (2026-05-27): parserBackend, routerKind,
            chartTau, chartTopK, chartNoiseEps retired alongside
            the chart. The signal router (LanguageLayer) is the

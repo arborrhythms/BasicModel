@@ -9,6 +9,7 @@ shared by both embed.py (embedding training) and BasicModel.py (model training).
 """
 
 import hashlib
+import json
 import os
 import random
 import time
@@ -355,6 +356,12 @@ class SentenceStreamDataset(IterableDataset):
             return self._trial_next_tick()
         return self._byte_next_tick()
 
+    def _packed_window(self, stream):
+        return stream * self.stream_length, (stream + 1) * self.stream_length
+
+    def _packed_boundary(self, previous, current):
+        return False
+
     def next_packed_tick(
             self, max_words, word_counter, *, max_bytes=None,
             byte_counter=None, max_sentences=None):
@@ -416,8 +423,9 @@ class SentenceStreamDataset(IterableDataset):
         source_rows = []
         output_rows = [] if self.outputs is not None else None
         hard_eos = []
-        L = self.stream_length
         for b in range(self.num_streams):
+            start, end = self._packed_window(b)
+            L = end - start
             row_items = []
             row_sources = []
             row_outputs = [] if output_rows is not None else None
@@ -428,7 +436,9 @@ class SentenceStreamDataset(IterableDataset):
                 if (max_sentences is not None
                         and len(row_items) >= max_sentences):
                     break
-                source_index = b * L + cursor
+                source_index = start + cursor
+                if row_items and self._packed_boundary(source_index - 1, source_index):
+                    break
                 item = (self.inputs[source_index]
                         if not isinstance(self.inputs, torch.Tensor)
                         else self.inputs[source_index])
@@ -476,7 +486,8 @@ class SentenceStreamDataset(IterableDataset):
             source_rows.append(row_sources)
             if output_rows is not None:
                 output_rows.append(row_outputs)
-            hard_eos.append(cursor >= L)
+            hard_eos.append(cursor >= L or (cursor > 0 and self._packed_boundary(
+                start + cursor - 1, start + cursor)))
         self.last_source_indices = source_rows
         return rows, output_rows, hard_eos
 
@@ -783,6 +794,12 @@ class Data():
             self.loadShards(num_shards, max_docs, shard_dir,
                             random_shards=random_shards,
                             max_tokens=max_tokens,
+                            max_sentence_words=max_sentence_words)
+        if dataset == "curriculum":
+            if max_tokens is not None:
+                raise ValueError('curriculum inputs are complete sentences; max_tokens would clip them')
+            from Corpus import load_curriculum
+            load_curriculum(self, dat or {}, max_docs=max_docs,
                             max_sentence_words=max_sentence_words)
         if dataset == "inline":
             self.loadInline(dat or {})
@@ -1897,10 +1914,18 @@ class Data():
         addresses = self.source_addresses.get(str(split), ())
         document_ids = ([address["document"] for address in addresses]
                         if len(addresses) == n else None)
-        ds = SentenceStreamDataset(inputs, num_streams=streams,
-                                   outputs=outputs,
-                                   slab_bytes=slab_bytes,
-                                   document_ids=document_ids)
+        if (self.source_manifest or {}).get('dataset') == 'curriculum' and split != 'runtime':
+            from Corpus import CurriculumStreamDataset
+            ds = CurriculumStreamDataset(inputs, num_streams=streams,
+                outputs=outputs, slab_bytes=slab_bytes, document_ids=document_ids,
+                stages=[address['stage'] for address in addresses])
+            ds.source_token = hashlib.sha256(json.dumps(self.source_manifest,
+                sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        else:
+            ds = SentenceStreamDataset(inputs, num_streams=streams,
+                                       outputs=outputs,
+                                       slab_bytes=slab_bytes,
+                                       document_ids=document_ids)
 
         self._address_cursor, self._address_split = ds, str(split)
         kwargs = {"batch_size": None, "num_workers": num_workers,

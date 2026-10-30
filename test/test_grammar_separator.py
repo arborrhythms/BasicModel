@@ -53,7 +53,7 @@ def test_mixing_separator_is_perceived_but_not_pushed_or_read_back(monkeypatch, 
         policy = language.generate_policy_logits
         count = [0]
         choice = list(language._generate_binary_names).index('conjunction')
-        def logits(top):
+        def logits(top,features=None):
             value = top.new_full((top.shape[0], language.generate_policy.out_features), -1000.)
             value[:, choice if count[0] == 0 else -1] = 0.
             count[0] += 1

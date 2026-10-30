@@ -7,7 +7,7 @@ import torch
 
 def _attention_model(keys):
     from Language import OperationSelectionLayer
-    from Expectation import PerceptMoments
+    from Expectation import PerceptExpectation
     batch, words, width = keys.shape
     starts = torch.arange(words) * 2
     spans = torch.stack((starts, starts + 1), -1).expand(batch, -1, -1)
@@ -23,7 +23,7 @@ def _attention_model(keys):
         perceptualSpace=SimpleNamespace(_forward_input={
             'word_texts': [[chr(ord('a') + w) for w in range(words)] for _ in range(batch)]}),
         conceptualSpace=SimpleNamespace(), attention_budget=8,
-        percept_expectation=PerceptMoments(width), percept_expectation_gain=0.,
+        percept_expectation=PerceptExpectation(width,streams=batch,capacity=words), percept_expectation_gain=0.,
         training=False, symbolSpace=SimpleNamespace(expectation=None),
         _concept_owner=lambda: owner, _stm_reducer=lambda: chooser,
         languageSpace=SimpleNamespace(modules=lambda: []))

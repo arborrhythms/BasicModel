@@ -2,13 +2,26 @@
 
 The free decoder owns a different problem: choosing a tree and its children.
 This reader follows the already committed tree; no word bank or target is
-used to choose a child. A retained co-operand is a detached inverse witness.
+used to choose a child. A retained co-operand is an occurrence witness. Certified native maps keep
+that source live; unsupported maps retain their detached witness contract.
 """
 import torch
 
 
+def certified_map(op):
+    """Maps with the complete native-width inverse/pullback certificate.
+
+    This is the committed-forest certificate, never free-search eligibility.
+    A runtime leaf comparison still rejects roundoff or unsupported paths.
+    """
+    from Language import SurfaceLayer, SurfaceUnaryLayer, SumLayer
+    op = getattr(op, 'gl', op)
+    return (isinstance(op, (SurfaceLayer, SurfaceUnaryLayer, SumLayer))
+            and getattr(op, 'meaning_layout', None) is not None)
+
+
 def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, case_bank=None,
-                 counts=(1, 1), whole=None):
+                 counts=(1, 1), whole=None, live_witness=False):
     """Invert one step and return each child's value and defined coordinates.
 
     Omit coordinates to measure this operation's own inverse domain at its
@@ -16,6 +29,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     the parent. A later undefined inverse must not make an earlier operation
     responsible for loss it did not cause.
     """
+    witness_frame = frame if live_witness else frame.detach()
     coordinates = (torch.isfinite(parent) if coordinates is None else
                    coordinates & torch.isfinite(parent))
     # Missing coordinates carry no value into a later inverse. Their mask
@@ -43,7 +57,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
             # A withholding operation explicitly retains its operand in the
             # committed journal. This is an occurrence witness, not a free
             # inverse of exclusion or a prediction of a missing operand.
-            witness = frame[:1].detach()
+            witness = witness_frame[:1]
             return ((witness, torch.isfinite(witness)),)
         if whole is not None and getattr(op, 'meaning_layout', None) is not None:
             width = op.meaning_layout[0]
@@ -60,13 +74,13 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
     if getattr(op, 'field_operand', None) == 2:
         # The second field position is an identity, not a presented word.
         # Binding retains the mention as an occurrence witness in the journal.
-        witness = frame[:1].detach()
+        witness = witness_frame[:1]
         return ((witness, torch.isfinite(witness)),)
     if (getattr(op, 'meaning_layout', None) is not None
                 and callable(getattr(op, 'compose_case_meaning', None))):
         from MeaningKernels import split_centroid
         width = op.meaning_layout[0]
-        witness = frame[0:1].detach()
+        witness = witness_frame[0:1]
         if whole is not None:
             whole = (torch.nn.functional.pad(whole[0], (0, width-whole[0].shape[-1])), whole[1])
         form = split_centroid(parent[..., :width], witness[..., :width], counts,
@@ -78,7 +92,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
             getattr(op, 'meaning_kernel', None) is not None or
             getattr(op, 'meaning_action', None) is not None or op.meaning_rule == 'sum'):
         right_known = getattr(op, 'meaning_action', None) is not None or op.meaning_head_role == 0
-        witness = frame[1 if right_known else 0].detach()[None]
+        witness = witness_frame[1 if right_known else 0][None]
         left, right = op.reverse_blocks(parent, witness, counts=counts,
                                         reference_right=right_known, whole=whole)
         valid = ((left >= -1e-6) & (left <= 1+1e-6) & (right >= -1e-6) & (right <= 1+1e-6)).all(-1)
@@ -86,7 +100,7 @@ def inverse_step(language, kind, operation, parent, frame, *, coordinates=None, 
         return ((left, domain), (right, domain))
     inverse = getattr(op, 'inverse_kind', None)
     side = 'left' if inverse in ('right', 'surface') else 'right'
-    witness = frame[0 if side == 'left' else 1].detach()[None]
+    witness = witness_frame[0 if side == 'left' else 1][None]
     if inverse == 'search':
         # No derivation inverse: a free search or occurrence target must not
         # invent an expectation. Free-byte reconstruction is a separate path.
@@ -117,6 +131,7 @@ def reconstruct(language, record, programs, positions):
     B, W, D = record.word_values.shape
     recovered = torch.zeros_like(record.word_values)
     defined = torch.zeros_like(recovered, dtype=torch.bool)
+    certified = torch.zeros_like(defined)
     for b, program in enumerate(programs):
         if program is None:
             continue
@@ -142,15 +157,20 @@ def reconstruct(language, record, programs, positions):
         values = record.end_slots[b, :depth]
         # The compose forest is oldest first; STM's occupied slots are newest first.
         pending = [(node, values[depth-1-i:depth-i],
-                    torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool))
+                    torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool), True)
                    for i, node in enumerate(forest)]
         while pending:
-            node, parent, coordinates = pending.pop()
+            node, parent, coordinates, exact_path = pending.pop()
             coordinates = coordinates & torch.isfinite(parent)
             if node[0] == 0:
                 position = source[node[1]]
                 recovered[b, position] = parent[0]
                 defined[b, position] = coordinates[0]
+                # A learned map can approach a numerical rail: no exact
+                # audit exemption survives a failed leaf recovery.
+                source_value = record.word_values[b,position].detach()
+                certified[b,position] = coordinates[0] & exact_path & torch.isclose(
+                    parent[0].detach(),source_value,rtol=1e-5,atol=1e-6)
                 continue
             kind, operation, index = node[:3]
             rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
@@ -162,11 +182,15 @@ def reconstruct(language, record, programs, positions):
                 parent = program.operation_values[index, 2:3]
             bank = getattr(getattr(record, 'primed', None), 'case_bank', None)
             from FormCentroids import inverse_context
+            layer = language._tree_layer(2 if kind == 1 else 1)
+            op = (layer.ops if kind == 1 else layer.unary_ops)[operation]
+            native_exact = certified_map(op)
             children = inverse_step(language, kind, operation, parent,
                 program.operation_values[index], coordinates=coordinates,
-                case_bank=None if bank is None else bank.for_stream(b),
+                case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
                 **inverse_context(program, index))
-            pending.extend((child_node, value, domain)
+            pending.extend((child_node, value, domain, exact_path and native_exact)
                 for child_node, (value, domain) in zip(node[3:], children, strict=True))
+    language._last_derivation_certified = certified
     unavailable = record.word_valid & ~defined.all(-1)
     return recovered, unavailable, defined

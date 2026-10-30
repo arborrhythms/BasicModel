@@ -116,12 +116,19 @@ def forced_prefix_certificate():
         flag=torch.zeros(len(root),dtype=torch.bool)
         left,right,valid=LanguageSpace._bounded_binary_reconstruction(op,root,
             torch.zeros_like(root),flag,flag,bank.codes,bank.valid,16)
+        registry=m._sentence_cost_registry
+        def charge(name):
+            term=registry._terms[name]
+            return registry._value(term)*term['weight']*term.get('multiplier',1.)
+        content=charge('reconstruction.content')
+        percept=charge('reconstruction.free_percept')
         reads.append(dict(texts=texts, unavailable=unavailable.tolist(),
             residual=(op.compose(left,right)-root).square().sum(-1).tolist(),
             R=m._last_sentence_credit['components'][:,0,0].tolist(),
-            content_cost=(m._sentence_cost_registry._value(
-                m._sentence_cost_registry._terms['reconstruction.content'])
-                * m.loss.reconstruction_scale).detach().tolist(),
+            content_cost=content.detach().tolist(),
+            percept_cost=percept.detach().tolist(),
+            leaf_cost=(content+percept).detach().tolist(),
+            byte_identity=m._last_decoder_byte_identity.detach().tolist(),
             actions=m._attention_words.actions.tolist(),
             meaning_norm=bank.codes[...,104:].norm().item(),
             form_snapshot=id(m._concept_owner().similarity_codebook.mereology._forms)))
@@ -156,10 +163,12 @@ def test_forced_not_and_or_descend_and_snapshot_certificate():
     for read in report['reads']:
         assert read['multisets'] == 4 and read['residual'] == [0.]*4
         # Distinct negative meanings can be erased by disjunction's meet.
-        # Exact lexical recovery cannot waive that existing content charge.
-        assert read['R'] == read['content_cost']
-    assert report['reads'][0]['R'] == [0.]*4
-    assert report['reads'][1]['R'][2] > 0
+        # Exact spelling cannot waive the meaning charge. §42 adds the
+        # signed native-form leaf objective even when spelling is exact.
+        assert read['R'] == read['leaf_cost']
+        assert read['byte_identity'] == [0.]*4
+    assert report['reads'][0]['content_cost'] == [0.]*4
+    assert report['reads'][1]['content_cost'][2] > 0
 
 
 def test_both_training_trials_share_bootstrap_snapshot(monkeypatch, tmp_path):

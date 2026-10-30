@@ -74,15 +74,12 @@ sub-elements `<training>` and `<data>` (see below).
 | `conceptLayers` | positive int | `1` | Concept inventory depth including order zero. It does not run repeated symbolic promotion passes. |
 | Removed attention controls | — | rejected | `subsymbolicOrder`, `symbolicOrder`, `subsymbolicLoop`, `serial`, `modeSchedule`, `readingAttention`, `globalAttention` and `globalAttentionConsume` are rejected by schema and runtime validation. |
 | `composeTemperature` | finite float ≥ 0 | `0` | Shared hard-choice sampling temperature for exploit and explore. Zero selects the greatest logit, with item 8's structural rule on exact ties. Positive values sample `softmax(logits / temperature)` during training. Evaluation always uses argmax. Straight-through credit always uses the untempered model softmax; this parameter never scales its gradients. |
-| `conceptualPi` | bool | `false` | Enable conjunctive parts in the order-0 field before max over alternatives. The pool discovers recurring fused native parts; conceptual conjunction means co-presence inside the field bracket. Pi edges above order 0 are rejected. |
-| `attentionPromotion` | bool | `false` | Enable witnessed-context discovery in the conceptual row pool at the parallel sentence boundary. Grammatical clause admission is independent of this discovery switch. |
-| `conceptPoolSize` | positive int | `1` | Provisional rows reserved per conceptual order, replenished after discovery, within the fixed inventory. Exhaustion is reported; discovered rows are never recycled. |
-| `conceptUseEWMA` | decimal | `0.9` | Previous-value coefficient for context, part support and participation updates; must be less than one. |
-| `conceptUseFloor` | decimal | `0.5` | Raw presence must exceed this floor to count as use, before participation gates it. |
-| `conceptMintThreshold` | decimal | `0.8` | Participation at or above this value gives the row a permanent concept identity and distributed code, clears use management, and fixes participation at one. |
-| `conceptRecycleThreshold` | decimal | `0.2` | Reassign the least-used provisional row below this value when no free row remains. Must be below the discovery threshold. |
-| `conceptMatchCos` | decimal | `0.8` | Minimum cosine between witnessed context weights for substitution. A conjunction reuses only its complete observed part set. |
-| `conceptPartFloor` | decimal | `0.001` | Prune exponents weaker in magnitude than this floor when a provisional concept is discovered. |
+| `conceptualPi` | bool | `false` | Open or update located native conjunction candidates in MTM; their order-0 definitions precede higher-order sigma folds. Pi edges above order 0 are rejected. |
+| `attentionPromotion` | bool | `false` | Enable familiar candidates in MTM. The open sentence field observes them; the kept close promotes them. Explicit clause admission is independent of this switch. |
+| `conceptMintCount` | positive int | `3` | Recurrences within `mtmHorizon` required to promote a familiar candidate or identity; a candidate whose horizon reading is both refines and waits. A kept defining clause also promotes its pending subject. |
+| `conceptUseFloor` | decimal | `0.5` | Field activation must exceed this floor to count as an MTM access. |
+| `conceptMatchCos` | decimal | `0.8` | Minimum cosine for a same-order MTM candidate match, using conceptual-width centroids. Located conjunctions retain the complete native literal identity. |
+| `conceptPartFloor` | decimal | `0.001` | Drop support below this magnitude when a candidate is promoted; retained definition edges merge by maximum. |
 | `sparseReplace` | — | — | RETIRED (2026-07-02 P3 two-phase forward): phase separation makes non-replacement structural — the symbolic phase's outputs feed the SS leg, the head-side losses, and the concept table, never substituting the subsymbolic advance. Parsed only to emit a `DeprecationWarning`. |
 | `routerWireSerial` | string | `"both"` | Per-word router-fire gating on the serial path: `per-word` (fire per word, boundary off), `boundary` (fire only at the sentence boundary), `both` (default — both fire), `off` (neither). The per-word fire populates `symbolSpace.current_rules` for SS dispatch. See [STM.md Section 7](STM.md#7-per-word-router-firing). |
 | `transformChooser` | string | `"anchordot"` | Placement scorer for the structured grammar layers. `anchordot` = stateless cosine-to-anchor (byte-identical default, no new params); `mlp` = learned `MLPTransformChooser` (owns tool-embedding + MLP params $\to$ deliberate fresh-basin cutover). See [Language.md](Language.md). |
@@ -141,10 +138,12 @@ Data loading and filtering.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `conceptLessons` | string | (empty) | Optional JSON primitive memberships and single-occurrence name lessons, resolved relative to `data/`. Runs before ordinary supervised training; unlabelled training inputs witness located conjunctions and output sigma weights start at zero. Used by `XOR_exact.xml`. |
-| `dataset` | string | `"xor"` | Dataset key: `xor`, `mnist`, `tomatoes`, `text`, `inline`, `grammar`. Omit for inference-only models. |
+| `dataset` | string | `"xor"` | Dataset key: `xor`, `mnist`, `tomatoes`, `text`, `inline`, `grammar`, `curriculum`. Curriculum reads verified shards in stage order with whole-document stream partitions. Omit for inference-only models. |
 | `numShards` | int | `1` | Shard count (streaming text datasets). |
-| `maxDocs` | int | `10000` | Per-shard document cap. |
+| `maxDocs` | int | `10000` | Per-shard document cap for text. For curriculum, selects a whole-document prefix across the manifest, before sentence admission filters and across all three splits. |
 | `maxSentenceWords` | int | *(unbounded)* | Whole-sentence admission ceiling for text shards. Longer splitter records are excluded intact, never clipped. Set this no higher than `serialWordCapacity` when packed training is enabled. |
+| `maxSentenceUnits` | int | *(unbounded)* | Curriculum's conservative whole-sentence limit: pinned maximal letter words plus every remaining byte, including the packing separator. This remains safe when learned boundary cuts change. Exclusions and source-address gaps are recorded. |
+| `corpusManifest` | string | *(required for curriculum)* | Version-1 corpus manifest, relative to the project unless absolute. Pins shard hashes and row counts; every row supplies its split, stage, document and sentence address. Curriculum requires complete-sentence packing and rejects `max_tokens` clipping. |
 | `grammarLessons` | string | `grammar_wording.json` | Annotated text curriculum for `dataset=grammar`, resolved relative to `data/` unless absolute. Train/validation/test text enters the ordinary loader; only train annotations supply post-forward grammar loss. Use unpacked sentences. See [SelectedMeaning](SelectedMeaning.md). |
 | `shardDir` | string | (empty) | Text shard directory (e.g. `data/fineweb`). Only used when `dataset=text`. |
 | `minFrequency` | float | `0.0` | Vocabulary admission threshold (fraction of corpus). Words below it are held in a pending buffer until they accumulate enough occurrences. `0.0` admits everything. |
@@ -199,8 +198,9 @@ Training loop and I/O.
 | `wordExpectationLossWeight` | nonnegative float | `0.1` | Local activation MSE weight at accepted word brackets. |
 | `sentenceExpectation` | bool | `true` | Enables symbol/closing/document expectation and residuals. Explicit `false` bypasses this cycle while understanding and the single What memory remain available. |
 | `expectationPrime` | bool | `true` | Enables the selection prime in compose and candidate attention independently of attenuation. Off only in the declared Item 4 §9.1 parity configuration; prediction, residuals and retention stay enabled. |
-| `perceptExpectationGain`, `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Independent P/S/R/D attenuation strengths. Zero passes admitted content whole; one permits zero content for a perfect prediction. R and D gains compose at closing. |
-| `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. |
+| `perceptExpectationGain` | float in `[0,1]` | `0` | Item 2.7 (2026-10-29): scales the detached signed percept residual feature read by `ModelCandidateAttention`. The forward content is the exact attended observation; this knob does not attenuate it a second time. |
+| `symbolExpectationGain`, `rowExpectationGain`, `documentExpectationGain` | float in `[0,1]` | `0` each | Existing S/R/D attenuation strengths, unchanged by item 2.7. R and D gains compose at closing. |
+| `perceptExpectationRate` | float in `(0,1]` | `0.05` | Moment EMA rate after the first external observation; padding, evaluation and speculative trials do not update it. The context-conditioned percept expectation uses its own Adam state at the existing training `learningRate`, updated once at each eager word boundary; this EMA knob does not set the optimizer rate. |
 | `expectationOmissionThreshold` | float in `[0,1]` | `0.5` | Minimum for-lane omission confidence for the conceived absence thought. |
 | `expectationEpsilon` | positive finite float | `1e-6` | Denominator floor for normalized percept and symbol residuals. |
 | `expectationSaturation` | enum | `clip` | `clip` uses `min(1, ratio)`; `smooth` uses `magnitude/(denominator+magnitude)`. The entire gain is detached. |
@@ -403,8 +403,9 @@ unions symbols at higher orders. Grammatical lift/lower own their chart maps.
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. |
 | `butterfly` | bool | — | **Silently ignored**: ConceptualSpace never reads a per-space `<butterfly>` — only PartSpace and WholeSpace carry the per-space read (the deprecated alias for architecture-level `<sigmaPi>`). A `<ConceptualSpace><butterfly>` element in a config has no effect. |
 | `stmCapacity` | int | `8` | STM ring depth (within Miller's $7 \pm 2$ band). Per-batch buffer `[B, stmCapacity, nDim]` + depth pointers `[B]`. |
-| `mtmCapacity` | positive int | `64` | Capacity of `ConceptualSpace.mtm`. Kept closes retain current identity values, mention readings and event histories; oldest access is evicted at capacity without changing LTM rows. No parameters; pool reads stay outside the compiled body. |
-| `mtmHorizon` | positive int | `16` | Maximum intervening kept closes in a stream since the last reference. Entries expire when age exceeds 16 or their document ends. Promotion counts three distinct sentences, independently of access count. |
+| `mtmCapacity` | positive int | `64` | Shared capacity of `ConceptualSpace.mtm` for identities and familiar candidates. Identities retain working values, mention readings and event histories; candidates retain bounded sparse support, a centroid and two-lane readings. Oldest access is evicted at capacity without changing LTM rows. Candidate content reads through the live member codes. |
+| `mtmHorizon` | positive int | `16` | Maximum intervening kept closes in a stream since the last reference. Identities and candidates share this access clock and horizon; document end also retires its introduced identities. Recurrence for `conceptMintCount` counts retained observations within the horizon, independently of access count. |
+| `mtmPrepend` | positive int | `64` | Leading symbol entries reserved at construction for MTM identities and candidates together. |
 | `verbGroups` | positive int | `24` | Maximum learned intransitive bases on paired meaning configurations. A third distinct failed-fit occurrence joins the best fitting group or opens one; capacity is reported. |
 | `verbBasisReflections` | positive even int | `4` | Householder reflections per object/group basis. Identical initial pairs give the identity. |
 | `verbGroupFit` | nonnegative float | `0.1` | Maximum mean squared chart residual for admitting a verb to an existing basis. |
@@ -503,6 +504,8 @@ Grammar infrastructure (SyntacticLayers, TruthLayer). Lives outside
 | `syntacticHiddenDim` | int | `64` | SyntacticLayer MLP hidden size. |
 | `truthMaxEntries` | int | `1024` | TruthLayer SS-codebook capacity. |
 | `ltmCapacity` | int | `1024` | Capacity of the shared LTM occurrence store, the bounded inter-sentence history, and the shared `.when` ladder. An explicit value takes precedence over `truthMaxEntries` for LTM; `truthMaxEntries` sizes the truth activation view. The store raises when full. MM_math_chain reserves 131,072 rows for the seventeen graded presentations declared in thinking §14.8, following 4,510 rows observed in the development epoch; later growth and evaluation use the reserve, and exhaustion still raises. See [STM.md Section 10](STM.md#10-ltm-as-the-chain-of-stm-end-states). |
+| `relationCapacity` | positive int | `8192` | Fixed `SymbolSpace` shared-ID `LTM1` reservation, wired through both `ConceptAllocator` and `LTM0`. It must cover the highest handle, not only occupied membership records. Construction and strict checkpoint restore check this shape; exhaustion raises before allocation. |
+| `equalityWitnessCapacity` | positive int | `8192` | Fixed `SymbolSpace` first-equality-witness row reservation in `ConceptAllocator.singleton_values`; independent of relation storage. Snapshots use the actual conceptual width. No live resizing. |
 | `parserBackend` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): the chart backend is gone and the signal router (`LanguageLayer`) is now the sole, fixed parser. The element is rejected — leaving it in an XML config raises a loud `ValueError` at load time (`Language._assert_retired_chart_knobs_absent`). |
 | `routerKind` | — | — | RETIRED (Stage 3 cleanup, 2026-05-27): there is no longer a selectable router; the signal router is fixed. Rejected with a loud `ValueError` if present in a config. |
 | `chartCollapse` | string | `"root"` | **Unparsed**: declared in `data/model.xml` / the schema, read by nothing in `bin/` (the writeback contract it described rode out with the chart). |
@@ -560,6 +563,7 @@ symbol (line anchors drift).
 | `relevance` | `Models.py` (BaseModel init) | `false` | Relevance-integration gate (Architecture.md sec C). |
 | `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Priming-energy decay per prime event. |
 | `geometricSpread` | `ConceptualSpace`, `Priming.py` | `0.05` | Fraction of positive excess transferred by the stored sentence location step; zero disables transfer. Also the gain `BaseModel.priming_spread` hands to `project_priming_to_towers`, which read `primingSpread` before item 2.9. |
+| `primingBridgeCapacity` | `ConceptualSpace` | `0` | Fixed reservation in sparse 32-destination blocks for projection to the percept and property towers together. Zero preserves the complete bipartite reservation. A positive value caps that reservation; a rebuild that exceeds it raises before writing the cache or target surfaces. No resize or dropped connection. The corpus candidate reserves 8,388,608 blocks per stage. |
 | `geometricNeighbours` | `ConceptualSpace`, `Priming.py` | `8` | Fixed top-k receiver cap after the cosine radius mask; also the radius controller's target count. |
 | `geometricRadius` | `ConceptualSpace`, `Priming.py` | `15` | Initial radius in degrees; stored in a preallocated one-element radians buffer. Also tests class contiguity. |
 | `geometricRadiusRate` | `ConceptualSpace`, `Priming.py` | `0.02` | Fractional radius change after each sentence: shrink above the active mean target count, grow below, unchanged at equality. |
@@ -888,3 +892,5 @@ cannot be silently decoded as a concrete row.
 There is no reduction-versus-description switch or alternative relation
 store. The situation weight, anchor bound and expectation weight above are
 the three amendments from todo item 7; they do not grant compose LTM access.
+
+**Item 2.7 final-round readers (2026-10-29).** `reconstructionBasisLimit` also bounds the lexical shortlist obtained once per generate walk, from all admitted training forms at neutral or positive heat. Structural candidates remain separate. `expectationEpsilon` and `expectationSaturation` remain moment/confidence settings; the signed percept residual is never saturated. F2 has unit relative weight in sigma's existing owner; F1's `reconstruction.walk_residual` also has unit relative weight. Neither introduces a tuning knob.

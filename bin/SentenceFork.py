@@ -27,6 +27,7 @@ class SentenceFork:
         self.slot = torch.full_like(self.count, -1)
         self.action = torch.full_like(self.count, -1)
         self.state = self.latches = None
+        self.inverse_candidates = self.inverse_prefix = None
         self.explore = False
         self.selected = torch.zeros_like(active)
         self.joined = torch.zeros_like(active)
@@ -50,6 +51,10 @@ class SentenceFork:
         state, latches = detached(state), detached(tuple(latches))
         self.state = state if self.state is None else select_rows(self.state, state, take)
         self.latches = latches if self.latches is None else select_rows(self.latches, latches, take)
+        if self.inverse_candidates is not None:
+            prefix=self.inverse_candidates.snapshot()
+            self.inverse_prefix=(prefix if self.inverse_prefix is None else
+                                 select_rows(self.inverse_prefix,prefix,take))
         self.word = torch.where(take, word, self.word)
         self.slot = torch.where(take, slot, self.slot)
         self.action = torch.where(take, choice.action, self.action)

@@ -62,11 +62,8 @@
          discovers co-present wholes. Pool participation is an EWMA of use. -->
     <attentionPromotion>false</attentionPromotion>
     <conceptualPi>false</conceptualPi>
-    <conceptPoolSize>1</conceptPoolSize>
-    <conceptUseEWMA>0.9</conceptUseEWMA>
+    <conceptMintCount>3</conceptMintCount>
     <conceptUseFloor>0.5</conceptUseFloor>
-    <conceptMintThreshold>0.8</conceptMintThreshold>
-    <conceptRecycleThreshold>0.2</conceptRecycleThreshold>
     <conceptMatchCos>0.8</conceptMatchCos>
     <conceptPartFloor>0.001</conceptPartFloor>
 
@@ -343,6 +340,8 @@
          used for inter-sentence prediction).  Separate from
          <truthMaxEntries>.  Default 1024. -->
     <ltmCapacity>1024</ltmCapacity>
+    <relationCapacity>8192</relationCapacity>
+    <equalityWitnessCapacity>8192</equalityWitnessCapacity>
 
     <!-- Stage 3 cleanup (2026-05-27): the chart and STM shift-reduce
          parsers retired in favour of the signal router (LanguageLayer).
@@ -507,6 +506,9 @@
     <placementNegatives>5</placementNegatives>
     <placementNegativeWeight>1.0</placementNegativeWeight>
     <geometricSpread>0.05</geometricSpread>
+    <!-- Zero retains the complete bridge reservation; a positive capacity
+         bounds the sparse 32-destination blocks and raises on exhaustion. -->
+    <primingBridgeCapacity>0</primingBridgeCapacity>
     <geometricNeighbours>8</geometricNeighbours>
     <geometricRadius>15</geometricRadius>
     <geometricRadiusRate>0.02</geometricRadiusRate>
@@ -514,7 +516,7 @@
     <geometricRadiusMax>90</geometricRadiusMax>
     <recurrenceAngle>15</recurrenceAngle>
     <raiseEvidence>0</raiseEvidence>
-    <mtmPrepend>8</mtmPrepend>
+    <mtmPrepend>64</mtmPrepend>
     <!-- recurrenceCapacity defaults to this space's resolved nVectors. -->
     <primingMaxBoost>2.0</primingMaxBoost>
     <readerBlockNormalization>true</readerBlockNormalization>

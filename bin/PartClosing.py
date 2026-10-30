@@ -162,18 +162,22 @@ class PartClosing:
         token, value = self._equality_member(left)
         if value is None:
             return
-        from ConceptIndex import index_part_row
+        from ConceptIndex import index_part_row, unbound_label
         if (right[0] == SYMBOL and ('part-base', right[1]) in self.alloc.relate_idx
                 and self.owner._concept_source_order(left[1]) == self.alloc.order_of(right[1]) - 1):
             index_part_row(self.owner, left, right)
             return
-        # A next-order class requires members at its shared side's order.
-        # Unlike-order testimony remains an equality with both evidence lanes;
-        # it cannot start or partly extend a class before the index rejects it.
+        # An unbound word supplies a name, not an object's order. Its first
+        # witnesses are kept separately by member order until two agree.
+        # An already denoted side still requires order-compatible members.
         member_order = self.owner._concept_source_order(left[1])
         shared_order = self.owner._concept_source_order(right[1])
-        if member_order < 0 or member_order != shared_order:
+        if member_order < 0:
             return
+        if member_order != shared_order:
+            if not unbound_label(self.owner, right):
+                return
+            key = (right, member_order)
         right_token, _ = self._equality_member(right)
         if right[0] == OCCURRENCE and right_token is not None:
             key = right_token
@@ -276,6 +280,12 @@ class PartClosing:
             row = self.parts.add(left, right, truth_plus=pair[0], truth_minus=pair[1],
                 when=self.when if sentence else None, surprise=surprise, witness=sentence)
             self.edges.append(row)
+            if assertion and term.operation in ('equal', 'part', 'assertPart') and pair[0] > 0:
+                from FamiliarTier import define_pending
+                word = children[0]['value'].word_id
+                word = None if word in (None, -1, 0) else word
+                if not define_pending(self.owner, left, right, word=word):
+                    self.owner.__dict__.setdefault('_kept_definition_witnesses', []).append((left, right, word))
             if assertion and term.operation == 'equal':
                 self.alloc.singletons.add(right[1] if right[0] == SYMBOL else right)
                 self._observe_equality(left, right, record, pair)

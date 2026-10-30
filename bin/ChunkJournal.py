@@ -61,14 +61,19 @@ def fresh_identity(state, records, free_ids, *, trial_base=None, trial_limit=Non
     return torch.where(available.any(-1),candidate,fallback)
 
 
-def push(state, scope, gate, *, word, index, resolved, free_ids, records, trial_base=None, trial_limit=None):
+def push(state, scope, gate, *, word, index, resolved, free_ids, records, trial_base=None, trial_limit=None, pending_ids=None, lexical_word=None):
     """Give a shifted individual a trial identity without admitting a concept."""
     physical = chunks.at(state)
     order = chunks.gather(state[chunks.ORDERS], physical.clamp_min(0)[:,None])[:,0]
-    named = gate.reshape(-1).bool() & (order == 1)
+    pending = (torch.zeros_like(word, dtype=torch.bool) if pending_ids is None else
+               (word[:, None] == pending_ids[None]).any(-1) & word.ge(0))
+    named = gate.reshape(-1).bool() & ((order == 1) | pending)
     identity = fresh_identity(state, records, free_ids,trial_base=trial_base,trial_limit=trial_limit)
     torch._assert_async((~named | (identity >= 0)).all(), 'open reading exhausted its constructed transient id pool')
-    identity = torch.where(named, identity, -1)
+    identity = torch.where(pending, word, torch.where(named, identity, -1))
+    resolved = resolved & ~pending
+    if lexical_word is not None:
+        word = torch.where(pending & (lexical_word >= 0), lexical_word, word)
     result = list(state)
     result[chunks.IDENTITY] = chunks.write(state[chunks.IDENTITY], physical, identity, gate)
     refs = state[chunks.REFS].new_zeros(len(word),2,2)
@@ -305,7 +310,9 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     These compact host records have the Reading's lifetime. Their values are
     read from chunks or the existing numerical journal, never replayed.
     """
+    from IdentityRows import allocator
     pool = owner.mtm
+    alloc = allocator(owner)
     row = records[batch]
     selected = row.index_select(0,columns.clamp_min(0))
     metadata = torch.cat((row[:,12:24],row[:,24:36],scope[batch,:,2:]),0)
@@ -330,7 +337,21 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
         token = pool.token_of(identity)
         introduction = None
         if token is not None:
-            origins[index] = row.new_tensor((2,token[-1],not pool.entries[token].pending))
+            entry = pool.entries[token]
+            # Candidate counters are pool keys, never LTM occurrence addresses
+            # (in particular, candidate zero is a valid retained candidate).
+            origins[index] = row.new_tensor((5 if entry.order is not None else 6 if token[0] == 'name' else 2,
+                token[-1], not entry.pending))
+            if entry.pending and entry.order is None:
+                for shifted in members[members[:,SOURCE-2] < 0]:
+                    source = pos.get(-int(shifted[SOURCE-2])-1)
+                    if source is not None:
+                        leaves[source] = index+1
+        elif identity in alloc.placement and identity not in alloc.retired:
+            # A durable symbol can be recalled without a current MTM token.
+            # Its first bind in this journal is a use, not an introduction;
+            # the closing must keep that symbol even if its chunk is evicted.
+            origins[index] = row.new_tensor((1, identity, 1))
         else:
             shifted = members[members[:,SOURCE-2] < 0]
             if len(shifted):

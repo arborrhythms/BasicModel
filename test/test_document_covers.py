@@ -144,7 +144,7 @@ def test_equal_time_boundary_and_two_streams_keep_exact_ownership():
     torch.testing.assert_close(torch.stack([entry[1][0] for entry in chain]), store.slots[[2, b_row]])
 
 
-def test_end_document_retires_only_tokens_introduced_in_its_segment():
+def test_end_document_retains_tokens_across_segments_until_epoch():
     resolver, store, atoms = fixture()
     owner, pool = resolver.components.owner, resolver.components.owner.mtm
     covers, tokens = [], []
@@ -157,10 +157,10 @@ def test_end_document_retires_only_tokens_introduced_in_its_segment():
         pool.close(store, stream=0, references=(token,))
     before = store.slots.clone(), owner.similarity_codebook.W.clone()
     pool.end_document(covers[0], store=store)
-    assert tokens[0] not in pool.entries and tokens[1] in pool.entries
+    assert all(token in pool.entries for token in tokens)
     model = SimpleNamespace(_concept_owner=lambda: owner)
     end_document(model, 0)
-    assert not pool.entries
+    assert all(token in pool.entries for token in tokens)
     torch.testing.assert_close(store.slots, before[0], rtol=0, atol=0)
     torch.testing.assert_close(owner.similarity_codebook.W, before[1], rtol=0, atol=0)
 

@@ -28,7 +28,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
     from Models import BasicModel
     root = resolver.policy.new_zeros(len(plans), 12)
     active = torch.ones(len(plans), dtype=torch.bool) if active is None else active
-    record = SimpleNamespace(primed=SimpleNamespace(meaning_start=None))
+    record = SimpleNamespace(primed=SimpleNamespace(meaning_start=None),percept_expected=None)
     observation = dict(reference_plans=plans, entries=(None,)*len(plans), meanings=(None,)*len(plans))
     model = SimpleNamespace(reconstruct_in_loop=True, _sentence_reconstruction=enabled,
         reconstruction_reference_weight=weight, loss=SimpleNamespace(reconstruction_scale=7.),
@@ -38,6 +38,7 @@ def sentence_cost(resolver, plans, *, active=None, enabled=True, weight=.1):
         _publish_sentence_scratch=lambda state: None,
         _trial_understanding=lambda *args: record,
         _tensor_pushed_ideas=root[:, None],
+        _last_decoder_byte_identity=root[:,0],
         _sentence_observation=lambda *args: observation,
         _reconstruct_trial=lambda *args: (root[:, None], root[:, 0], root[:, 0],
                                          active, root[:, 0]))

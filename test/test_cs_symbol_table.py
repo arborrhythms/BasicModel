@@ -474,18 +474,12 @@ def test_prune_drops_everything_when_other_whole_linked():
 
 # -- Hebbian word/object tie strengthening (2026-07-02 plan, Task 11) ----------
 
-def test_word_object_testimony_participation_strengthens_on_reoccurrence():
+def test_word_object_testimony_retains_distinct_reoccurrences():
     cs = _cs_sparse_active()
     A, _ = cs.interpret_word([1, 2], 3, key="cat")
     from reading_fixtures import supply_object
     B = supply_object(cs, A)
     assert cs.interpret.forward(A, occurrence=(0, 0)) == B
-    row = cs._csw_row_of(B)
-    store = cs._concept_allocator.layer()
-    # Exercise re-use after the ordinary value decay, not an already saturated gate.
-    store.participation[row] = .25
-    before = float(store.participation[row])
-    assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B
     assert cs.interpret_word([1, 2], 3, key="cat", occurrence=(1, 0)) == (A, B)
-    assert before < float(store.participation[row]) <= 1.
+    assert cs._concept_allocator.testimony_seen[B] == {(0, 0), (1, 0)}
     assert cs._csw_row_of(A) is not None and cs.definitions.deref(A) == B

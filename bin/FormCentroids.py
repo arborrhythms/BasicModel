@@ -8,6 +8,27 @@ from typing import NamedTuple
 import torch
 
 
+def weighted_mean(weights, codes):
+    """A convex mean without different dot/sum rounding at the cube rails.
+
+    WholeSpace has a small fixed property inventory. Successive convex
+    interpolation keeps common zero/one coordinates exact in float32,
+    including on devices without float64, and preserves both gradients.
+    """
+    from Layers import assert_cube
+    assert_cube(codes)
+    torch._assert_async((torch.isfinite(weights) & (weights >= 0)).all(),
+                        'whole centroid weights must be finite and nonnegative')
+    mean = codes.new_zeros(*weights.shape[:-1], codes.shape[-1])
+    total = weights.new_zeros(*weights.shape[:-1], 1)
+    for index in range(codes.shape[0]):
+        mass = weights[..., index:index+1]
+        total = total + mass
+        fraction = mass / torch.where(total > 0, total, 1.)
+        mean = torch.lerp(mean, codes[index], fraction)
+    return mean, weights.sum(-1, keepdim=True)
+
+
 class SpanWholes(NamedTuple):
     prefix: torch.Tensor
     properties: torch.Tensor
@@ -23,9 +44,7 @@ class SpanWholes(NamedTuple):
         support = counts > 0
         weights = torch.where(support[..., None, :], self.properties, 1.).amin(-1)
         weights = weights * (support.any(-1) & (spans[..., 0] >= 0) & (hi > lo))[..., None]
-        count = weights.sum(-1, keepdim=True)
-        mean = weights @ self.codes / count.clamp_min(torch.finfo(self.codes.dtype).tiny)
-        return mean, count
+        return weighted_mean(weights, self.codes)
 
 
 class CandidateWholes(NamedTuple):
@@ -57,12 +76,36 @@ class CandidateWholes(NamedTuple):
         available = torch.stack(complete).all(0) & support.any(-1)
         weights = torch.where(support[..., None, :], self.properties, 1.).amin(-1)
         weights = weights * available[..., None]
-        count = weights.sum(-1, keepdim=True)
-        return weights @ self.codes / count.clamp_min(torch.finfo(self.codes.dtype).tiny), count
+        return weighted_mean(weights, self.codes)
 
     def for_stream(self, stream):
         return self._replace(forms=self.forms[stream:stream+1], support=self.support[stream:stream+1],
                              valid=self.valid[stream:stream+1])
+
+
+class PreparedCandidateWholes:
+    """An eager inverse walk's invariant, detached dictionary-whole read."""
+    def __init__(self, bank, dictionary):
+        self.bank, self.dictionary = bank, dictionary
+
+    def __getattr__(self, name):
+        return getattr(self.bank, name)
+
+    def read(self, *parts):
+        if len(parts) == 1 and parts[0] is self.bank.forms:
+            return self.dictionary
+        return self.bank.read(*parts)
+
+    def for_stream(self, stream):
+        return type(self)(self.bank.for_stream(stream),
+                          tuple(value[stream:stream+1] for value in self.dictionary))
+
+
+def prepare_inverse(bank):
+    """Reuse dictionary-only work; argument-dependent reads and graphs stay live."""
+    if bank is None or any(value.requires_grad for value in bank):
+        return bank
+    return PreparedCandidateWholes(bank, bank.read(bank.forms))
 
 
 def candidates(whole_space, bank):

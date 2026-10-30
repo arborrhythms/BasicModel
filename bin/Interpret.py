@@ -206,6 +206,9 @@ class InterpretLayer(GrammarLayer):
                 cs.add_part(word, part)
             for whole in wholes:
                 cs.add_whole(word, whole)
+            alloc.singletons.add(word)
+            cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
+            cs._csw_concept_row(0, word)
             self._pending[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
             self._description_revision += 1
             if form is not None:
@@ -409,12 +412,34 @@ class InterpretLayer(GrammarLayer):
                 current.add(token)
                 if len(seen) < 2:
                     seen.add(token)
-                row = cs._csw_row_of(obj)
-                if row is not None:
-                    store = alloc.layer()
-                    beta = cs.concept_use_ewma
-                    store.participation[row] = beta * store.participation[row] + (1 - beta)
         return obj
+
+    def reading(self, word):
+        """Identify a read site's object, retaining an objectless name in MTM.
+
+        The grammar's forward operation remains a choice in thought. This
+        eager word boundary supplies no grammatical order or operation.
+        """
+        word = int(word)
+        objects = self.denotations(word)
+        if objects:
+            obj = objects[0]
+            return obj, self.owner._csw_row_of(obj), self.owner._concept_source_order(obj)
+        row = self.owner._csw_row_of(word)
+        if row is None:
+            raise RuntimeError('an identified word has no conceptual row')
+        if getattr(self.owner, '_online_learning_frozen', False):
+            return word, row, self.owner._concept_source_order(word)
+        pool = self.owner.mtm
+        key = pool.named(word, value=self.owner.similarity_codebook.lookup_rows([row])[0],
+                         when=max(pool.closes.values(), default=0))
+        entry = pool.entries[key]
+        if entry.symbol is not None:
+            self.define(word, entry.symbol)
+            return entry.symbol, self.owner._csw_row_of(entry.symbol), self.owner._concept_source_order(entry.symbol)
+        # The pending site's code and order are its observed word's witness.
+        # Its transient identity is not a new row or an assigned object order.
+        return entry.transient, row, self.owner._concept_source_order(word)
 
     def admit_discovered(self, word=None):
         """Finish reserved definitions when the field's cases receive IDs."""
@@ -428,13 +453,16 @@ class InterpretLayer(GrammarLayer):
         result = None
         for pending in tuple(self._field_pending) if word is None else (word,):
             value = self._pending[pending]
+            # A lexical form's letters identify the word, never its object.
+            if any(self.word_for_form(form) is not None for form in value['forms']):
+                continue
             for parts in value['parts']:
                 fused = tuple(ps.fuse_parts(parts)) if ps is not None else parts
                 if len(fused) != 1:
                     continue
-                row = next((r for (r, col) in layer.features._index
-                            if col == 4 * fused[0] and bool(layer.assigned[r])), None)
-                obj = None if row is None else cs.concept_id_at_row(row)
+                obj = next((entry.symbol for entry in cs.mtm.entries.values()
+                    if entry.symbol is not None and entry.order is not None
+                    and entry.refinement.get('literal') == ('ps', fused)), None)
                 if obj is not None:
                     self.define(pending, obj)
                     result = obj

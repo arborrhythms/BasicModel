@@ -93,17 +93,13 @@ def test_part_values_have_only_one_checkpoint_owner():
     cs.add_concept_edge(row, 0, .7, negated=True)
     cs.add_concept_edge(row, 1, .8, conjunctive=True)
     store = Spaces._concept_alloc_of(cs).layer()
-    context = torch.zeros(store.nOutput)
-    context[0] = .4
-    store.write_context(row, context, 0.)
     assert not any('concept_parts_layer' in name for name in cs.state_dict())
     assert any(parameter is store.values for parameter in cs.parameters())
     saved = store.parts_extras()
     store.conjunctive.values.data.zero_()
-    store.where.zero_()
     store.load_parts_extras(saved)
     assert store.conjunctive.values.item() == pytest.approx(.8)
-    assert store.where[row, 0] == pytest.approx(.4)
+    assert 'where' not in saved and 'provisional_orders' not in saved
 
 
 def test_checkpoint_preserves_both_and_neither_in_occurrence_field():
@@ -123,53 +119,48 @@ def test_checkpoint_preserves_both_and_neither_in_occurrence_field():
 
 
 def test_discovered_symbol_remains_available_after_nonuse():
-    from test_attention_promotion import _fixture, _observe, _pool_rows
+    from test_attention_promotion import _fixture, _close
+    from FamiliarTier import observe_candidate
     cs, rows = _fixture()
-    a, b, context = [r for _, r in rows[:3]]
-    cs.concept_mint_threshold = .15
-    _observe(cs, {a: 1., context: 1.})
-    _observe(cs, {b: 1., context: 1.})
-    row = _pool_rows(cs)[0]
-    _observe(cs, {a: 1., context: 1.})
-    assert cs.promotion_pass()
-    store = Spaces._concept_alloc_of(cs).layer()
-    assert not store.managed[row] and store.participation[row] == 1
-    for _ in range(30):
-        _observe(cs, {})
-    assert store.participation[row] == 1
+    a, b = [r for _, r in rows[:2]]
+    for _ in range(3):
+        key = observe_candidate(cs, 1, {a: 1., b: 1.})
+        _close(cs)
+    cid = cs.mtm.promote_candidates(cs)[0]
+    row = cs._csw_row_of(cid)
+    for _ in range(cs.mtm.horizon+2):
+        _close(cs)
+    assert key not in cs.mtm.entries and cs.concept_id_at_row(row) == cid
     a0 = field(cs)
     a0[a, 0, 0, 0] = 1.
     _, result = cs.cs_forward_content(a0, cs.similarity_codebook.getW())
     assert result[row, 0, 0, 0] == 1
 
 
-def test_alternatives_normalize_each_update_before_discovery():
-    from test_attention_promotion import _fixture, _observe, _pool_rows
+
+def test_candidate_alternatives_merge_sparse_support_before_discovery():
+    from test_attention_promotion import _fixture, _close
+    from FamiliarTier import observe_candidate, centroid
     cs, rows = _fixture()
-    alternatives = [r for _, r in rows[:4]]
-    context = rows[4][1]
-    row = None
-    for step in range(40):
-        _observe(cs, {alternatives[step % 4]: .9, context: .9})
-        if step:
-            row = _pool_rows(cs)[0]
-            weights = dict(cs.concept_weights(row))
-            assert max(weights.values()) == pytest.approx(1.)
-    assert set(weights) == set(alternatives)
-    assert Spaces._concept_alloc_of(cs).layer().participation[row] > .8
+    support = {row: .9 for _, row in rows[:4]}
+    for _ in range(4):
+        key = observe_candidate(cs, 1, support)
+        _close(cs)
+        entry = cs.mtm.entries[key]
+        torch.testing.assert_close(entry.value, centroid(cs, entry.support))
+    assert entry.count == 4 and set(entry.support) == set(support)
+    assert entry.symbol is None
 
 
-def test_context_allocation_is_sparse_over_the_shared_inventory():
-    cs = _cs(nS=128)
-    cs.nVectors = 1048576
-    cs.outputShape = (8, 8)
-    cs._promotion_enabled = True
-    cs._ensure_concept_pool()
-    store = Spaces._concept_alloc_of(cs).layer()
-    assert store.where.shape == (1048576, 1048576)
-    assert store.where.layout == torch.sparse_coo
-    assert store.where._nnz() == 0
-    assert store.where.device.type == 'cpu'
+
+def test_context_allocation_is_bounded_independently_of_the_shared_inventory():
+    from MediumTermMemory import MediumTermMemory
+    pool = MediumTermMemory(64, n_vectors=1048576, field_width=8)
+    key = pool.open_candidate(order=0, when=0, value=torch.ones(8), support={1048575: 1.})
+    assert pool.entries[key].support == {1048575: 1.}
+    assert pool.transient_ids.shape == (64,)
+    assert not any(torch.is_tensor(value) and value.ndim > 1 for value in pool.__dict__.values())
+
 
 
 def test_projected_updates_keep_nonnegative_parts_and_kind_maximum():
@@ -179,11 +170,10 @@ def test_projected_updates_keep_nonnegative_parts_and_kind_maximum():
         cs.add_concept_edge(row, part, .1)
     store = Spaces._concept_alloc_of(cs).layer()
     store.assigned[row] = True
-    store.provisional[row] = True
     with torch.no_grad():
         store.values.copy_(torch.tensor([-.1, .2, .4]))
     store.project_parts()
-    torch.testing.assert_close(store.values, torch.tensor([0., .5, 1.]))
+    torch.testing.assert_close(store.values, torch.tensor([0., .2, .4]))
     with pytest.raises(ValueError, match='self-edge'):
         store.conjunctive.add_edge(row, row + store.nOutput + 1, 1.)
 

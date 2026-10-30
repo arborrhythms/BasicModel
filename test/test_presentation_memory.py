@@ -9,11 +9,15 @@ import torch
 from DocumentCover import open_cover
 from Layers import LTM0
 from Meaning import ConceptualMeaning
-from PresentationMemory import begin
+from PresentationMemory import begin as begin_document
+from Forgetting import model_boundary
+
+def begin(model):
+    return model_boundary(model, epoch_boundary=True)
 from test_document_covers import fixture
 
 
-def test_document_driver_clears_once_per_training_presentation_and_keeps_evaluation_memory():
+def test_document_driver_clears_once_per_epoch_and_keeps_evaluation_memory(monkeypatch):
     from MathChainTraining import present
     addresses = [dict(document=book, sentence=sentence)
                  for book in ('first', 'second') for sentence in range(2)]
@@ -22,9 +26,15 @@ def test_document_driver_clears_once_per_training_presentation_and_keeps_evaluat
         setattr(data, split + '_input', ['first 0', 'first 1', 'second 0', 'second 1'])
         setattr(data, split + '_output', [0.] * 4)
     memory, starts, reads = [], [], []
-    def begin_presentation():
+    def boundary(model, *, epoch_boundary):
+        assert epoch_boundary
         starts.append(tuple(memory))
         memory.clear()
+    import Forgetting
+    monkeypatch.setattr(Forgetting, 'model_boundary', boundary)
+    documents = []
+    def begin_presentation():
+        documents.append(tuple(memory))
     def batch(**kwargs):
         reads.append((kwargs['split'], tuple(memory), tuple(kwargs['source_rows'])))
         memory.extend(kwargs['source_rows'])
@@ -41,6 +51,7 @@ def test_document_driver_clears_once_per_training_presentation_and_keeps_evaluat
         assert report == dict(sentences=4, batches=4)
         assert memory == [0, 1, 2, 3]
     assert starts == [(), (0, 1, 2, 3)]
+    assert documents == [(), (0, 1)] * 2
     assert [before for _, before, _ in reads] == [(), (0,), (0, 1), (0, 1, 2)] * 2
     present(model, split='validation', batch_size=1)
     assert len(starts) == 2

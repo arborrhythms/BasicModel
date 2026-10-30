@@ -159,13 +159,13 @@ class LTM1(nn.Module):
             self.refs[row] = self.refs.new_tensor((left[1], right[1]))
             self.ref_kinds[row] = self.ref_kinds.new_tensor((left[0], right[0]))
             self.count += 1
-            if left[0] == right[0] == SYMBOL:
+            if right[0] == SYMBOL and (left[0] == SYMBOL or right[1] in getattr(self, '_class_rows', ())):
                 self._symbol_epoch += 1
         elif symbol is not None and int(symbol) != row:
             raise ValueError('a tagged pair already has a different handle')
         positive = max(float(self.truth_plus[row]), float(truth_plus))
         negative = max(float(self.truth_minus[row]), float(truth_minus))
-        if (left[0] == right[0] == SYMBOL and
+        if (right[0] == SYMBOL and (left[0] == SYMBOL or right[1] in getattr(self, '_class_rows', ())) and
                 (positive != float(self.truth_plus[row]) or negative != float(self.truth_minus[row]))):
             self._symbol_epoch += 1
         self.truth_plus[row] = positive
@@ -187,7 +187,7 @@ class LTM1(nn.Module):
             raise ValueError('cannot discard a retained relation dependency')
         erase = torch.ones(self.capacity, dtype=torch.bool, device=self.refs.device)
         erase[indices] = False
-        if bool((erase & self.ref_kinds.eq(SYMBOL).all(-1)).any()):
+        if bool((erase & self.ref_kinds[:, 1].eq(SYMBOL)).any()):
             self._symbol_epoch += 1
         for name in self.columns:
             getattr(self, name)[erase] = -1 if name in ('refs', 'surprise') else 0

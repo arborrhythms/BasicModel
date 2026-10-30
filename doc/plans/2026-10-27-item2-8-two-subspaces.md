@@ -598,3 +598,7 @@ tree with generated evidence excluded as 2.9 and 3.0 did; todo.md item 2.8
 records the hash and this section; push; bump WikiOracle. No tests, no
 `RUN_SLOW`. The deferred slow cases and D5's regeneration ride the
 November sweep.
+
+**Landed (2026-10-27).** BasicModel `a8a09a6acb`, "Land item 2.8: identity
+and property form subspaces", on `555e63e2f521`; the O1 atom-fill
+observation of §11 is carried to the next round that opens `WordIdentity`.

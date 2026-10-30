@@ -53,7 +53,7 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
     torch.testing.assert_close(seen[-1][1],seen[0][1])
 
 
-def test_order_zero_pole_handoff_applies_percept_gain_only():
+def test_order_zero_pole_handoff_keeps_the_full_percept_signal():
     from Models import BasicModel
     pair=torch.tensor([[[.6,.2]]])
     model=SimpleNamespace(_attention_poles=pair,_attention_words=SimpleNamespace(accepted=torch.ones(1,1,dtype=torch.bool)),
@@ -61,7 +61,7 @@ def test_order_zero_pole_handoff_applies_percept_gain_only():
     x=torch.ones(1,1,4); one=torch.ones(1,1,dtype=torch.bool)
     payload=(x,None,None,torch.ones(1,1),None,None,x[:,0],one,one,None,None,pair[:,0])
     result=BasicModel._attention_sentence_payload(model,payload,torch.tensor(0))
-    torch.testing.assert_close(result[-1],pair[:,0]*.8)
+    torch.testing.assert_close(result[-1],pair[:,0])
 
 
 def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
@@ -114,22 +114,25 @@ def test_closing_confidence_multiplies_gain_and_open_role_keeps_prime(confidence
     torch.testing.assert_close(view.expected,prior.expected_activation)
 
 
-def test_percept_staging_is_training_only_and_bracket_pool_uses_shared_owner():
+def test_percept_staging_never_teaches_and_native_arrivals_update_shared_owner_once():
     from ModelAttention import stage_percept_expectation
-    moments=PerceptMoments(2)
+    from Expectation import PerceptExpectation
+    owner=PerceptExpectation(2,streams=1,capacity=3)
     values=torch.tensor([[[.1,.3],[.3,.5],[.7,.9]]])
-    valid=torch.ones(1,3,dtype=torch.bool); groups=torch.tensor([[0,0,1]])
-    model=SimpleNamespace(percept_expectation=moments,percept_expectation_gain=.8,training=False,
-        perceptualSpace=SimpleNamespace(_forward_input=dict(seed_event=values,indices=torch.arange(3)[None],word_groups=groups)),
-        symbolSpace=SimpleNamespace(expectation=None))
+    model=SimpleNamespace(percept_expectation=owner,training=False)
     stage_percept_expectation(model,torch.ones(1,2,dtype=torch.bool))
-    assert moments.count == 0
-    model.training=True; stage_percept_expectation(model,torch.ones(1,2,dtype=torch.bool))
-    assert moments.count == 3
-    torch.testing.assert_close(model._percept_word_gain,torch.ones(1,2))
-    model.training=False; stage_percept_expectation(model,torch.ones(1,2,dtype=torch.bool))
-    torch.testing.assert_close(model._percept_word_gain,moments.region_gain(values,valid,strength=.8,groups=groups,regions=2))
-    assert moments.count == 3
+    assert owner.moments.count == owner.updates == 0
+    model.training=True
+    stage_percept_expectation(model,torch.ones(1,2,dtype=torch.bool))
+    assert owner.moments.count == owner.updates == 0
+    bank=lambda: iter([(torch.arange(3),values)])
+    for index in range(3):
+        owner.arrive(owner.forecast(bank,1),values[:,index],torch.tensor([True]),training=True)
+    assert owner.moments.count == owner.updates == 3
+    model.training=False
+    stage_percept_expectation(model,torch.ones(1,2,dtype=torch.bool))
+    assert owner.moments.count == owner.updates == 3
+    assert not hasattr(model,'_percept_word_gain')
 
 
 def test_content_assertion_and_exact_tie_credit_are_fail_loud():

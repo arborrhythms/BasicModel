@@ -120,36 +120,47 @@ def test_pre_layout_checkpoint_is_rejected_without_migration():
         torch.testing.assert_close(restored.state_dict()[name], value, rtol=0, atol=0)
 
 
-def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time():
+def test_live_gate_presentation_reuses_covers_and_addresses_with_new_time(monkeypatch):
     from test_mm_xor import _fresh_model
+    import Forgetting
     model, _, data = _fresh_model('data/XOR_grammar.xml')
     from test_definition_rows import admit
     for form in ('hello', 'world', 'there', 'loving'):
         admit(model, form)
+    boundary, endings = Forgetting.model_boundary, []
+    def capture(model, **kwargs):
+        if kwargs.get('epoch_boundary'):
+            store = model.symbolSpace.ltm_store
+            rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
+            assert len(rows) == 4
+            endings.append(dict(content={store.content_key(int(row)) for row in rows},
+                addresses=store.address_keys[rows].clone(),
+                bands=torch.stack([store.entry_when(int(row)) for row in rows]).clone(),
+                covers={store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
+                        if store.row(i)['kind'] == 'cover'},
+                kinds=[store.row(i)['kind'] for i in range(len(store))],
+                witnesses=store.witness_count[:len(store)].tolist()))
+        return boundary(model, **kwargs)
+    monkeypatch.setattr(Forgetting, 'model_boundary', capture)
     try:
         optimizer = model.getOptimizer(lr=.01)
-        model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
-        store = model.symbolSpace.ltm_store
-        rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
-        assert len(rows) == 4
+        for _ in range(2):
+            model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
+            assert len(model.symbolSpace.ltm_store) == 0
+            assert not model._concept_owner().mtm.entries
+        first, second = endings
         expected = {sentence_key(tuple(text.split())) for text in
                     (b'hello world', b'hello there', b'loving world', b'loving there')}
-        assert {store.content_key(int(row)) for row in rows} == expected
-        addresses, bands = store.address_keys[rows].clone(), torch.stack([store.entry_when(int(row)) for row in rows]).clone()
-        covers = {store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
-                  if store.row(i)['kind'] == 'cover'}
-        model.runEpoch(optimizer=optimizer, batchSize=4, split='train')
-        kinds = [store.row(i)['kind'] for i in range(len(store))]
+        assert first['content'] == second['content'] == expected
+        kinds = second['kinds']
         assert {kind: kinds.count(kind) for kind in ('cover', 'estimate', 'observation')} == {
             'cover': 4, 'estimate': 4, 'observation': 4}
         assert set(kinds) <= {'cover', 'estimate', 'observation', 'question', 'inference'}
-        assert {store.raw_meaning_of(i).role_refs[0][1] for i in range(len(store))
-                if store.row(i)['kind'] == 'cover'} == covers
-        assert len(covers) == 4
-        rows = (store.record_kind[:len(store)] == store.KINDS.index('observation')).nonzero().flatten()
-        assert torch.equal(store.address_keys[rows], addresses)
-        assert not torch.equal(torch.stack([store.entry_when(int(row)) for row in rows]), bands)
-        assert store.witness_count[:len(store)].tolist() == [1] * len(store)
+        assert first['covers'] == second['covers'] and len(first['covers']) == 4
+        assert torch.equal(first['addresses'], second['addresses'])
+        assert not torch.equal(first['bands'], second['bands'])
+        assert first['witnesses'] == [1] * len(first['kinds'])
+        assert second['witnesses'] == [1] * len(second['kinds'])
     finally:
         model.End()
 

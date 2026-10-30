@@ -1,5 +1,6 @@
 """Bounded identities, current values and mention readings between kept closes."""
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
+import copy
 from typing import NamedTuple
 
 import torch
@@ -43,6 +44,11 @@ class Token:
     symbol: int | None = None
     transient: int | None = None
     where: torch.Tensor | None = None
+    order: int | None = None
+    support: dict = field(default_factory=dict)
+    mass: float = 0.
+    readings: tuple = ()
+    refinement: dict = field(default_factory=dict)
 
     @property
     def value(self):
@@ -66,7 +72,8 @@ class MediumTermMemory:
     Mention membership, used by the settled-join guard, excludes events.
     """
 
-    def __init__(self, capacity=64, horizon=16, *, n_vectors=1):
+    def __init__(self, capacity=64, horizon=16, *, n_vectors=1,
+                 field_width=None, match_cos=.8, mint_count=3):
         if capacity < 1:
             raise ValueError('mtmCapacity must be positive')
         if type(horizon) is not int or horizon < 1:
@@ -76,6 +83,11 @@ class MediumTermMemory:
         self.closes, self.accesses = {}, {}
         self.entries = {}
         self.names = {}
+        self.field_width = min(256, int(n_vectors)) if field_width is None else int(field_width)
+        self.match_cos, self.mint_count = float(match_cos), int(mint_count)
+        if self.field_width < 1 or not 0 < self.match_cos <= 1 or self.mint_count < 1:
+            raise ValueError('invalid familiar-tier construction bounds')
+        self.candidate_counter = 0
         # One reserved id for each possible unpromoted MTM token. These lie
         # beyond nVectors, never in the codebook, and are reused only after
         # their owner expires or acquires a durable symbol.
@@ -111,7 +123,21 @@ class MediumTermMemory:
             raise ValueError('promotion requires a retained token')
         entry = self.entries[key]
         self._release_id(entry)
-        self.entries[key] = replace(entry, symbol=int(symbol), transient=None)
+        self.entries[key] = replace(entry, symbol=int(symbol), transient=None, pending=False)
+        reference = getattr(self, '_owner', None)
+        owner = None if reference is None else reference()
+        if owner is not None:
+            owner._priming_edge_revision = None
+            from FamiliarTier import class_members
+            from LTM1 import OCCURRENCE, SYMBOL
+            alloc = owner._concept_allocator
+            affected = {parent for occurrence in entry.occurrences
+                        for kind, parent in alloc.parts.wholes((OCCURRENCE, occurrence[-1]))
+                        if kind == SYMBOL and parent in alloc.raised}
+            for parent in affected:
+                members = class_members(owner, parent)
+                if members:
+                    owner.cover_members(parent, members)
 
     @staticmethod
     def _value(value):
@@ -121,6 +147,8 @@ class MediumTermMemory:
         return value.detach().clone()
 
     def token_of(self, occurrence):
+        if occurrence in self.entries:
+            return occurrence
         name = self.names.get(occurrence)
         if name is not None:
             return name.token
@@ -130,6 +158,92 @@ class MediumTermMemory:
         return next((key for key, entry in self.entries.items()
                      if any(event.occurrence == occurrence and event.role == 0
                             for timeline in entry.timelines for event in timeline.events)), None)
+
+    def _room(self):
+        if len(self.entries) >= self.capacity:
+            # The common access clock governs both kinds of entry.
+            oldest = min(self.entries, key=lambda key: (
+                max(self.accesses.get(key, {}).values(), default=-1), self.entries[key].when))
+            self._detach(oldest)
+
+    def _support(self, support):
+        import math
+        if any(type(row) is not int or not 0 <= row < int(self.transient_ids[0])
+               or not math.isfinite(float(weight)) or float(weight) < 0 for row, weight in support.items()):
+            raise ValueError('candidate support requires nonnegative finite inventory evidence')
+        return dict(sorted(((row, float(weight)) for row, weight in support.items() if weight > 0),
+                           key=lambda item: (-item[1], item[0]))[:self.field_width])
+
+    def open_candidate(self, key=None, *, order, when, value, support):
+        value, support = self._value(value), self._support(support)
+        if type(order) is not int or order < 0 or not support:
+            raise ValueError('a candidate requires a witnessed order and support')
+        expected = ('candidate', self.candidate_counter)
+        if key is not None and key != expected:
+            raise ValueError('candidate key must use the pool counter')
+        self._room()
+        self.candidate_counter += 1
+        self.entries[expected] = Token((), None, 1, int(when), (Timeline((), value),),
+            transient=self._allocate_id(), pending=True, where=self._where(None), order=order,
+            support=support, mass=sum(support.values()))
+        return expected
+
+    def match_candidate(self, order, value):
+        value = self._value(value)
+        scored = [(float(torch.nn.functional.cosine_similarity(entry.value.to(value), value, dim=0)), key)
+                  for key, entry in self.entries.items() if entry.order == order]
+        score, key = max(scored, key=lambda item: item[0], default=(-1., None))
+        return key if score >= self.match_cos else None
+
+    def update_candidate(self, key, *, when, value, support):
+        entry = self.entries[key]
+        if entry.order is None:
+            raise ValueError('candidate update requires a candidate')
+        value, support = self._value(value), self._support(support)
+        if value.shape != entry.value.shape or not support:
+            raise ValueError('candidate update differs from its construction')
+        mass = sum(support.values())
+        merged = dict(entry.support)
+        for row, weight in support.items():
+            merged[row] = merged.get(row, 0.) + weight
+        self.entries[key] = entry.with_actual(value=torch.lerp(entry.value.to(value), value,
+            mass / (entry.mass + mass)), count=entry.count+1, when=int(when),
+            mass=entry.mass+mass, support=self._support(merged))
+        return key
+
+    def read_candidates(self, owner):
+        """A differentiable, sparse read through the current member codes."""
+        result = {}
+        for key, entry in self.entries.items():
+            if entry.order is not None:
+                rows = list(entry.support)
+                codes = owner.similarity_codebook.lookup_rows(rows)
+                weights = codes.new_tensor(list(entry.support.values()))
+                result[key] = (codes * weights[:, None]).sum(0) / weights.sum()
+        return result
+
+    def record_reading(self, key, stream, pair):
+        """One two-lane witness per kept-close clock, retained within the horizon."""
+        entry = self.entries[key]
+        clock = self.closes.get(stream, 0)+1
+        import math
+        pair = tuple(float(x) for x in pair)
+        if len(pair) != 2 or any(not math.isfinite(x) or x < 0 for x in pair):
+            raise ValueError('candidate reading requires two finite nonnegative lanes')
+        # Several focal rows can identify one candidate in the same field.
+        # Retain both lanes independently; the last focal must not erase one.
+        prior = next((item[2:] for item in entry.readings if item[:2] == (stream, clock)), (0., 0.))
+        pair = tuple(max(a, b) for a, b in zip(pair, prior))
+        retained = tuple(item for item in entry.readings
+            if item[:2] != (stream, clock) and
+            self.closes.get(item[0], 0)+1-item[1] <= self.horizon)
+        readings = (*retained, (stream, clock, *pair))
+        self.entries[key] = replace(entry, readings=readings,
+            count=len(readings) if entry.order is not None else entry.count)
+
+    def promote_candidates(self, owner):
+        from FamiliarTier import promote_candidates
+        return promote_candidates(owner)
 
     def reading_of(self, occurrence):
         name = self.names.get(occurrence)
@@ -153,15 +267,31 @@ class MediumTermMemory:
                 pending=entry.pending and pending, where=self._where(where, entry.where))
             self.names[occurrence] = Name(occurrence, reading)
             return occurrence
-        if len(self.entries) >= self.capacity:
-            # Capacity retires an identity, not the occurrence row that may
-            # still witness an event owned by another retained identity.
-            self._detach(min(self.entries, key=lambda key: self.entries[key].when))
+        self._room()
         identity = self._allocate_id(transient)
         self.entries[occurrence] = Token((occurrence,), kind, 1, when, (Timeline((), value),),
             native=native, pending=pending, transient=identity, where=self._where(where))
         self.names[occurrence] = Name(occurrence, reading)
         return occurrence
+
+    def named(self, word, *, value, when=0):
+        """Read a name's pending identity; first sight has no kept occurrence."""
+        word = int(word)
+        named = self.names.get(('name', word))
+        if named is not None and named.token in self.entries:
+            return named.token
+        key = next((name.token for name in reversed(tuple(self.names.values()))
+                    if name.reading == word and name.token in self.entries), None)
+        if key is not None:
+            self.names['name', word] = Name(key, word)
+            return key
+        key = ('name', word)
+        self._room()
+        self.entries[key] = Token((), None, 0, int(when),
+            (Timeline((), self._value(value)),), pending=True,
+            transient=self._allocate_id(), where=self._where(None))
+        self.names[key] = Name(key, word)
+        return key
 
     def bind(self, antecedent, occurrence, *, kind, when, value=None, reading=None, where=None):
         token = self.token_of(antecedent)
@@ -242,6 +372,10 @@ class MediumTermMemory:
 
     def _detach(self, occurrence):
         """Detach a mention; an event with this address has its own owner."""
+        if occurrence in self.entries and self.entries[occurrence].order is not None:
+            self._release_id(self.entries.pop(occurrence))
+            self.accesses.pop(occurrence, None)
+            return
         name = self.names.pop(occurrence, None)
         if name is not None:
             token, entry = name.token, self.entries[name.token]
@@ -249,8 +383,7 @@ class MediumTermMemory:
                 self._release_id(entry)
                 del self.entries[token]
                 self.accesses.pop(token, None)
-                for address in entry.occurrences:
-                    self.names.pop(address, None)
+                self.names = {address: name for address, name in self.names.items() if name.token != token}
             else:
                 self.entries[token] = replace(entry, occurrences=tuple(
                     address for address in entry.occurrences if address != occurrence))
@@ -281,8 +414,13 @@ class MediumTermMemory:
                            for other in antecedent.events)))
         self.entries[target] = replace(self.entries[target], timelines=(
             *self.entries[target].timelines, *previous.timelines[1:]))
-        for occurrence in previous.occurrences:
-            self.names[occurrence] = replace(self.names[occurrence], token=target)
+        for occurrence, name in tuple(self.names.items()):
+            if name.token == source:
+                self.names[occurrence] = replace(name, token=target)
+        refinement = dict(self.entries[target].refinement)
+        refinement['mentions'] = {**previous.refinement.get('mentions', {}),
+                                  **refinement.get('mentions', {})}
+        self.entries[target] = replace(self.entries[target], refinement=refinement)
         for stream, clock in self.accesses.pop(source, {}).items():
             retained = self.accesses.setdefault(target, {})
             retained[stream] = max(clock, retained.get(stream, 0))
@@ -295,10 +433,12 @@ class MediumTermMemory:
         clock = self.closes.get(stream, 0) + 1
         self.closes[stream] = clock
         from DocumentCover import latest, segments
-        current = None if stream is None else latest(store, stream)
-        membership = segments(store, stream)
+        current = None if stream is None or store is None else latest(store, stream)
+        membership = {} if store is None else segments(store, stream)
         for key in self.entries:
-            row = store.location(key)
+            if self.entries[key].order is not None:
+                continue  # A candidate belongs only to streams that read it.
+            row = None if store is None else store.location(key)
             if current is not None and current not in membership.get(row, ()):
                 continue
             # Uncovered legacy/fixture rows retain the original stream aging.
@@ -310,21 +450,29 @@ class MediumTermMemory:
             key = self.token_of(reference)
             if key is not None:
                 self.accesses.setdefault(key, {})[stream] = clock
+                entry = self.entries[key]
+                if entry.order is None and reference in self.names:
+                    refinement = dict(entry.refinement)
+                    mentions = {address: seen for address, seen in refinement.get('mentions', {}).items()
+                                if self.closes.get(seen[0], 0)-seen[1] <= self.horizon}
+                    mentions.setdefault(reference, (stream, clock))
+                    refinement['mentions'] = mentions
+                    self.entries[key] = replace(entry, refinement=refinement)
         for key, accesses in tuple(self.accesses.items()):
             if stream in accesses and clock - accesses[stream] > self.horizon:
                 del accesses[stream]
                 if not accesses:
                     self._detach(key)
+        for key, entry in tuple(self.entries.items()):
+            readings = tuple(item for item in entry.readings
+                if self.closes.get(item[0], 0)-item[1] <= self.horizon)
+            if readings != entry.readings:
+                self.entries[key] = replace(entry, readings=readings,
+                    count=len(readings) if entry.order is not None else entry.count)
 
     def end_document(self, cover, *, store):
-        """Retire entries introduced in this retained document segment."""
-        if cover is None:
-            return
-        from DocumentCover import segments
-        membership = segments(store)
-        for key in tuple(self.entries):
-            if cover in membership.get(store.location(key), ()):
-                self._detach(key)
+        """A document ends its cover, not the epoch's familiarity horizon."""
+        return None
 
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
@@ -335,12 +483,15 @@ class MediumTermMemory:
                 snapshot(event.before), snapshot(event.basis), event.taught,
                 snapshot(event.after), tuple(map(snapshot, event.modifiers)), event.modal_taught,
                 snapshot(event.case_value))
-        return dict(version=8, transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
+        return dict(version=10, candidate_counter=self.candidate_counter, field_width=self.field_width,
+            transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
             closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
             entries=tuple(dict(key=key, occurrences=entry.occurrences,
             kind=entry.kind, count=entry.count, when=entry.when,
             native=entry.native, pending=entry.pending, symbol=entry.symbol, transient=entry.transient, where=snapshot(entry.where),
+            order=entry.order, support=dict(entry.support), mass=entry.mass,
+            readings=entry.readings, refinement=copy.deepcopy(entry.refinement),
             timelines=tuple((tuple(map(event_state, timeline.events)), snapshot(timeline.value))
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()))
@@ -351,9 +502,13 @@ class MediumTermMemory:
             self.entries, self.names = {}, {}
             self.closes, self.accesses = {}, {}
             self.transient_used.zero_()
+            self.candidate_counter = 0
             return
-        if not isinstance(state, dict) or state.get('version') != 8:
-            raise ValueError('identity checkpoint requires transient pool version 8')
+        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10):
+            raise ValueError('MTM checkpoint requires transient pool version 8, 9 or 10')
+        counter = state.get('candidate_counter', 0)
+        if type(counter) is not int or counter < 0 or state.get('field_width', self.field_width) != self.field_width:
+            raise ValueError('candidate checkpoint disagrees with construction')
         ids, used = state.get('transient_ids'), state.get('transient_used')
         if (not torch.is_tensor(ids) or ids.dtype != torch.long or not torch.equal(ids.cpu(), self.transient_ids)
                 or not torch.is_tensor(used) or used.dtype != torch.bool or used.shape != self.transient_used.shape):
@@ -363,6 +518,9 @@ class MediumTermMemory:
         def address(value):
             return (isinstance(value, tuple) and len(value) == 3 and value[0] == 'ltm'
                     and isinstance(value[1], str) and type(value[2]) is int)
+        def named(value):
+            return (state['version'] >= 10 and isinstance(value, tuple) and len(value) == 2
+                    and value[0] == 'name' and type(value[1]) is int and value[1] > 0)
         def symbol(value):
             return value is None or type(value) is int and value > 0
         def sentence(value):
@@ -377,9 +535,18 @@ class MediumTermMemory:
                     'when', 'native', *required)) <= record.keys():
                 raise ValueError('incomplete identity checkpoint entry')
             key, uses = record['key'], tuple(record['occurrences'])
-            if (not address(key) or not all(map(address, uses)) or key in entries or
-                    not uses or uses[0] != key or len(set(uses)) != len(uses)):
+            candidate = (isinstance(key, tuple) and len(key) == 2 and key[0] == 'candidate'
+                         and type(key[1]) is int and 0 <= key[1] < counter)
+            if (key in entries or (candidate and uses) or (not candidate and
+                    (not (address(key) or named(key)) or not all(map(address, uses))
+                     or (not named(key) and (not uses or uses[0] != key))
+                     or len(set(uses)) != len(uses)))):
                 raise ValueError('invalid identity checkpoint membership')
+            order, support = record.get('order'), self._support(record.get('support', {}))
+            if (candidate and (type(order) is not int or order < 0 or not support)
+                    or not candidate and (order is not None or support)
+                    or len(support) != len(record.get('support', {}))):
+                raise ValueError('invalid candidate checkpoint support')
             if (not symbol(record['kind']) or not symbol(record['native']) or
                     type(record['count']) is not int or record['count'] < len(uses) or
                     type(record['when']) is not int):
@@ -434,16 +601,19 @@ class MediumTermMemory:
                 timelines.append(Timeline(events, value))
             entries[key] = Token(uses, record['kind'], record['count'], record['when'],
                                  tuple(timelines), record['native'], pending, record.get('symbol'),
-                                 record.get('transient'), self._where(record.get('where')))
+                                 record.get('transient'), self._where(record.get('where')),
+                                 order, support, float(record.get('mass', 0.)),
+                                 tuple(record.get('readings', ())), copy.deepcopy(record.get('refinement', {})))
             if not symbol(record.get('symbol')):
                 raise ValueError('invalid identity checkpoint promoted symbol')
         for mention, token, reading in state['names']:
-            if (not address(mention) or not address(token) or not symbol(reading) or
-                    mention in names or token not in entries or mention not in entries[token].occurrences):
+            if (not (address(mention) or named(mention)) or not (address(token) or named(token))
+                    or not symbol(reading) or mention in names or token not in entries
+                    or (mention not in entries[token].occurrences and not (named(mention) and reading == mention[1]))):
                 raise ValueError('invalid identity checkpoint name')
             names[mention] = Name(token, reading)
         if (len(entries) > self.capacity or len(names) != sum(len(entry.occurrences)
-                for entry in entries.values())):
+                for entry in entries.values()) + sum(named(mention) for mention in names)):
             raise ValueError('identity checkpoint exceeds capacity or omits a name')
         clocks, accesses = {}, {}
         if state['version'] >= 3:
@@ -467,3 +637,4 @@ class MediumTermMemory:
         self.transient_used.copy_(used.cpu())
         self.entries, self.names = entries, names
         self.closes, self.accesses = clocks, accesses
+        self.candidate_counter = counter

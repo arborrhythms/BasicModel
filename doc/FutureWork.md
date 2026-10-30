@@ -918,6 +918,8 @@ inverse learning, or read-back quality remaining poor despite decreasing cost.
 
 ## Expectation by inversion and the reconstruction audit (decided 2026-10-06, unscheduled)
 
+**Superseded in its expectation half (2026-10-29).** Expectation and top-down reconstruction now split by residual: the inverse of the completed understanding learns only what the detached local expectation missed ([item 2.7 record §42](plans/2026-10-27-item2-7-corpus.md)); perceptual layer in item 2.7's final round, conceptual layer with `intuit` at item 2.5 round B.
+
 **Reassigned to Item 3, October 19:** this invertible-path program is independent
 of [Item 4 expectation](specs/2026-10-08-expectation-at-every-level.md). Local
 expectation uses detached symbol activations and observed context; it does not
@@ -1583,6 +1585,10 @@ accuracy, not parameter count.
 
 ## Re-identification in MTM (future work, Alec, 2026-10-21)
 
+Alec's §29 aside (2026-10-28): investigate whether a variable's identity by name should outlive the MTM horizon; within the horizon, names share tokens and bind's incompatibility rule can reject an antecedent.
+
+Item 2.7 adds `MediumTermMemory.match_candidate` for familiar-context recognition; later identity re-identification can build from that common cosine and MTM access history.
+
 Alec: when a later mention's evidence is incompatible with an earlier
 binding ("x is the box", then "x is the ball"), x becomes a new MTM
 identity, which "doesn't disturb earlier binding, but also misses an
@@ -2216,3 +2222,39 @@ in the [final receipt](benchmarks/2026-10-27-item2-8-subspaces-r3/README.md).
 This supersedes the blocked gate status above. Slow cases and D5's
 snapshot regeneration remain deferred to November. Item 2.8 remains
 uncommitted, for review through Alec; no push or WikiOracle bump.
+
+## Synchronize explicit and implicit meanings (Alec, 2026-10-27)
+
+Alec, during item 2.7: "Classes which get raised will need initial learning
+to cover their members. Explicit and implicit classes should be treated
+the same; please add a future work to synchronize explicit and implicit
+meanings."
+
+Every raised class needs the same initial learning to cover its members,
+whether raised explicitly or implicitly; that requirement belongs to
+[item 2.7](plans/2026-10-27-item2-7-corpus.md#12-initial-learning-for-every-raised-class--alec-2026-10-27).
+The future work is to synchronize the meanings learned through those two
+routes. Keep explicit and implicit definitions available for judgement,
+as decided on 2026-10-21: agreement and disagreement retain independent
+for and against evidence. This entry does not choose an automatic class
+merge or identity rule. The synchronization mechanism and its checks
+remain to be specified.
+
+**Re-identification by name beyond the horizon (Alec, 2026-10-28, aside
+during item 2.7).** "We need a persistent identity store by name, but we
+also need to reject that identity sometimes": the variable of a math
+problem keeps its identity across the problem and must be rejected when a
+new problem reuses the name. Today `MediumTermMemory.names` holds the
+name within `mtmHorizon` and bind's incompatibility rule rejects an
+antecedent for a new mention. Whether a name's identity should persist
+beyond the horizon, and what rejects it, is unspecified; see the
+re-identification item above and item 2.7's record §29.
+
+
+**2026-10-29, item 2.7 §§39/42.** The percept expectation/residual interface is
+implemented at arrivals and reconstruction leaves. Conceptual expectation and
+its independent for/against residual targets wait for item 2.5 round B. Measure
+whether an explicit learned residual inverse reduces required capacity before
+claiming that advantage from the native inverse's translated leaf chart. F2
+preserves conflicting explicit/implicit evidence; synchronization of their
+meanings remains the previously requested future work.

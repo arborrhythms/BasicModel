@@ -234,12 +234,13 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                 row = store.location(event.occurrence)
                 if change is None or row is None:
                     continue
-                if store.KINDS[int(store.record_kind[row])] in ('cover', 'estimate', 'question'):
+                record = store.row(row)
+                if record['kind'] in ('cover', 'estimate', 'question'):
                     continue
                 seen.add(key)
                 for target in targets:
                     current_values[b, identity, target] = token.value
-                pair = bank.codes.new_tensor((store.c_plus[row], store.c_minus[row]))
+                pair = bank.codes.new_tensor(record['evidence'])
                 for value in (event.before, change, event.after):
                     additions.append((b, targets, value, pair))
                 remaining -= 3

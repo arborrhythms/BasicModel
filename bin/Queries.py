@@ -2270,9 +2270,13 @@ class GrammaticalThoughtRegistry:
         execution later resolves typed references or descriptions through the
         descriptor-scoped context.
         """
+        from ThoughtReferences import open_slots
         slot = self._slot_for_operand(role)
         for source in sources:
-            if not bool(source.role_mask[slot]):
+            if (not bool(source.role_mask[slot]) or
+                    any(open_role == slot for _, open_role in open_slots(source))):
+                # A pending site can retain a percept vector and occupancy.
+                # That placeholder is not a fixed operand of a new request.
                 continue
             value, reference = source.roles[slot], source.role_refs[slot]
             if reference and reference[0] == 'constituent' and kind in ('concept', 'meaning'):
@@ -2337,11 +2341,26 @@ class GrammaticalThoughtRegistry:
              True,
              bool('argin2' in operation.operand_roles and 'argin2' not in open_roles)],
             dtype=torch.bool, device=vp_payload.device)
-        return ConceptualMeaning(
+        def portable(value):
+            # A new request owns its operands, not the source's local child
+            # table. Drop a binding as a whole if any of its values address
+            # that table; retaining the address would name no constituent.
+            return not isinstance(value, tuple) or (
+                (not value or value[0] != 'constituent')
+                and all(portable(item) for item in value))
+        result = ConceptualMeaning(
             torch.stack(payloads), mask,
             polarity=source.polarity,
-            role_refs=tuple(references), bindings=source.bindings,
+            role_refs=tuple(references),
+            bindings=tuple(item for item in source.bindings if portable(item)),
             scope=source.scope)
+        # This request has a new role assignment. A recalled chain's open
+        # slots describe that chain, not the newly selected operation.
+        # In particular, _chain_view disables inference from an empty mask;
+        # carry the grammar-declared holes explicitly, as form() does.
+        from ThoughtReferences import with_slots
+        return with_slots(result, tuple(('referent', self._slot_for_operand(role))
+                                       for role in open_roles))
 
     def controller_candidates(self, root, active, candidate, *, descriptions=(), result_meanings=()):
         """Return catalog-derived executable requests without touching readers.

@@ -6,7 +6,7 @@ from GradientDiagnostics import _sum_gradients
 PRIMARY = ('reconstruction', 'expectation', 'output', 'attention')
 
 
-def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
+def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definition_rows=None):
     """Read trained terms from Error, retaining lesson and penalty boundaries."""
     result = {}
     for name, term in registry._terms.items():
@@ -33,6 +33,8 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None):
             value = raw
             rows = (reader_rows if owner in ('output', 'penalty.output') else
                     expectation_rows if owner in ('expectation', 'penalty.expectation') else None)
+            if name == 'reconstruction.definition_fold':
+                rows = definition_rows
             if rows is not None:
                 # A discarded trial supplies no Adam step, including no
                 # momentum-only update from a fabricated zero gradient.

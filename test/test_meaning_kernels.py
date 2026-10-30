@@ -397,7 +397,7 @@ def test_selected_inverse_matches_full_menu_values_and_pullbacks(paired):
     valid = torch.ones(4, dtype=torch.bool)
     choices = torch.arange(4)
     options = dict(basis=basis, basis_valid=torch.ones(4, 3, dtype=torch.bool))
-    lefts, rights, legal = inverse_menu(language, parent, valid, **options)
+    lefts, rights, legal = inverse_menu(language, parent, valid, **options)[:3]
     expected = (lefts[torch.arange(4), choices], rights[torch.arange(4), choices])
     actual = selected_inverse(language, parent, choices, valid, **options)
     for a, b in zip(actual, expected):
@@ -430,7 +430,7 @@ def test_selected_walk_preserves_unused_gradients_and_optimizer_steps(paired, mo
                  'generate_unary_step', 'choose_generate'):
         setattr(language, name, MethodType(getattr(LanguageSpace, name), language))
     language._bounded_binary_reconstruction = LanguageSpace._bounded_binary_reconstruction
-    language.generate_policy_logits = lambda p: p.new_tensor([2., 1., 0., 3.]).expand(len(p), -1)
+    language.generate_policy_logits = lambda p,features=None: p.new_tensor([2., 1., 0., 3.]).expand(len(p), -1)
     words = torch.tensor([[[.1,.2,.3,.4,.1,.2,.3,.4,.5,.6,.7,.8],
                            [.7,.6,.5,.4,.2,.3,.4,.5,.6,.7,.8,.9]]], dtype=torch.float64)
     parent = binary[0].compose(words[:, 0], words[:, 1]) if compound else words[:, 0]
@@ -447,7 +447,7 @@ def test_selected_walk_preserves_unused_gradients_and_optimizer_steps(paired, mo
     import Generative
     selected_inverse = Generative.selected_inverse
     def full_menu(language, parent, choice, live, **kwargs):
-        left, right, _ = Generative.inverse_menu(language, parent, live, **kwargs)
+        left, right, _ = Generative.inverse_menu(language, parent, live, **kwargs)[:3]
         selected = torch.nn.functional.one_hot(choice, left.shape[1]).to(left)
         return (left*selected[..., None]).sum(1), (right*selected[..., None]).sum(1)
     for inverse in (full_menu, selected_inverse):

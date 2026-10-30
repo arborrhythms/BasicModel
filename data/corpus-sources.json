@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "name": "developmental-text-2026-10-27",
+  "groups": [
+    {
+      "name": "Wordbank vocabulary",
+      "adapter": "vocabulary_responses",
+      "source_repository": "https://github.com/langcog/wordbank-datapage",
+      "git_tree": "e9401fc8f54579f5283bde391cc70cd5569f0d8f",
+      "sources": [
+        {
+          "url": "https://raw.githubusercontent.com/langcog/wordbank-datapage/e9401fc8f54579f5283bde391cc70cd5569f0d8f/slices/responses/english_american_wg.parquet",
+          "git_blob_sha1": "6f63a3e80a7e0ccd25e0ca751a575192df94a6fd"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/langcog/wordbank-datapage/e9401fc8f54579f5283bde391cc70cd5569f0d8f/slices/responses/english_american_ws.parquet",
+          "git_blob_sha1": "552a3bd21aaeb47cef7ef910fe18eea1e9bd065c"
+        }
+      ],
+      "production_threshold": 0.5,
+      "citation": "https://langcog.github.io/wordbank-datapage/data.html"
+    },
+    {
+      "name": "Age-ordered child-directed transcripts",
+      "adapter": "utterance_csv",
+      "source_repository": "https://github.com/UIUCLearningLanguageLab/AOCHILDES",
+      "git_tree": "e25348138282c35f4270800e592676b8713e67a1",
+      "sources": [
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bates.csv",
+          "git_blob_sha1": "0aab33c6480f8a58466877863de9ca2dc7325db4"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bernstein.csv",
+          "git_blob_sha1": "4321d0bd0dbd94cf4923870566a0c26e91b4fbd5"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bliss.csv",
+          "git_blob_sha1": "a2e6db80654d2dbe809411da4d06ed83e99fa089"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bloom70.csv",
+          "git_blob_sha1": "18e08699daffbf08bdb33c74b08ea3f64217c6cd"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bloom73.csv",
+          "git_blob_sha1": "560bc56163fe485a81115c5c0554c8c3b6ce657a"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Bohannon.csv",
+          "git_blob_sha1": "e3d4b9ca3c85fef39815ecda20d3b8e66199e6eb"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Braunwald.csv",
+          "git_blob_sha1": "870aef6da389541a3f801055ab6a33576f1f1aab"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Brent.csv",
+          "git_blob_sha1": "ceb5c8534c52d943acdd90b9ad1a47b13c93e662"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Brown.csv",
+          "git_blob_sha1": "9e8a2463e6df2fb0b0d579483d820fc3d17cb688"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Cornell.csv",
+          "git_blob_sha1": "e87e0ea9471057d774e2d0565a6f96d9b9bac1b4"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Demetras1.csv",
+          "git_blob_sha1": "c5ebc9b625e7dc043681c25e1f97505ddb8e6ba3"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Demetras2.csv",
+          "git_blob_sha1": "28a7ca8ff5e9490ff7a21fe7badb40a5bc8cb106"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Feldman.csv",
+          "git_blob_sha1": "d5236204a8c975347e9a4c384ef0d9892d7b44dc"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Garvey.csv",
+          "git_blob_sha1": "6a8eb625d0369bdf1f2dc534a32ed781cb40850e"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Gathercole.csv",
+          "git_blob_sha1": "a1897d12f365358dca777cb71f729702f99b5849"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Gleason.csv",
+          "git_blob_sha1": "209c4bf7ab9f3d261fab04e4c896fd19e403216a"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Higginson.csv",
+          "git_blob_sha1": "c6f6f582efa9d1837322efdc12ccf0aa0238995e"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Kuczaj.csv",
+          "git_blob_sha1": "4c653b77c8dd0f5f6aa32cc017eef86e7632c55b"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/MacWhinney.csv",
+          "git_blob_sha1": "241ec9c607e6839358c2e0cde6f879ed65876ef0"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/McCune.csv",
+          "git_blob_sha1": "bf02649ad679d28fe7ae3663d5e5546c04dea6b1"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/McMillan.csv",
+          "git_blob_sha1": "b6be5f0467259458095786e2211161c2d3dc79e9"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Morisset.csv",
+          "git_blob_sha1": "311798808c1b38e3065b2326baa0dca30a8095a4"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Nelson.csv",
+          "git_blob_sha1": "348605cc367b67f8ad8fb2dd481e88a98f22e42a"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/NewEngland.csv",
+          "git_blob_sha1": "f6e7b3fc51c957c463ad1439aebf263028271e0d"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Peters.csv",
+          "git_blob_sha1": "1e8cc1b0cbbe8f0c7f4c51ac2343fcad84b317da"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Post.csv",
+          "git_blob_sha1": "b9300edd78eccf3a7c1f46588466e60c4cefa150"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Providence.csv",
+          "git_blob_sha1": "8a226c785115a72cb22a87ae4dc65ca4068aae8a"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Rollins.csv",
+          "git_blob_sha1": "9e1aac5dc85a29dbbb870390f3902be9f3e52c8c"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Sachs.csv",
+          "git_blob_sha1": "f8202c2589489882d3062ccabaebd72e33b265d2"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Sawyer.csv",
+          "git_blob_sha1": "012b1ec42e89f5c3ef4c647356fd0a74c8029730"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Snow.csv",
+          "git_blob_sha1": "93ab769a7a9cce216205292dac5644d749a03303"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Soderstrom.csv",
+          "git_blob_sha1": "eac92c6b58ee911f5a66d71893c0f562b066509b"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Suppes.csv",
+          "git_blob_sha1": "9f9e45b1f5268fa1cdb22adea9c6b221e122ba56"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Tardif.csv",
+          "git_blob_sha1": "4212efadb4fbf47c0f92045ef23edf770d64a772"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/VanHouten.csv",
+          "git_blob_sha1": "d0adf64c1f8336abf91f1d1c320a7f668898aae7"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Warren.csv",
+          "git_blob_sha1": "010c950b4bef9a8caeeed5d9670c2f841c171445"
+        },
+        {
+          "url": "https://raw.githubusercontent.com/UIUCLearningLanguageLab/AOCHILDES/e25348138282c35f4270800e592676b8713e67a1/aochildes/original_transcripts/Weist.csv",
+          "git_blob_sha1": "da41de565ca559ea9632e8e824f5428e2143880e"
+        }
+      ],
+      "max_age_days": 2190,
+      "band_days": 365,
+      "collections": [
+        "Eng-NA"
+      ],
+      "exclude_roles": [
+        "Target_Child",
+        "Child"
+      ],
+      "unknown_tokens": [
+        "\ufffd",
+        "www",
+        "xxx",
+        "yyy"
+      ],
+      "citation": "https://github.com/UIUCLearningLanguageLab/AOCHILDES",
+      "punctuation": {
+        "imperative": "!",
+        "imperative_emphatic": "!",
+        "question exclamation": "!",
+        "declarative": ".",
+        "interruption": ".",
+        "self interruption": ".",
+        "quotation next line": ".",
+        "quotation precedes": ".",
+        "broken for coding": ".",
+        "question": "?",
+        "self interruption question": "?",
+        "interruption question": "?",
+        "trail off question": "?",
+        "trail off": "."
+      }
+    },
+    {
+      "name": "Later written text",
+      "adapter": "document_parquet",
+      "citation": "https://huggingface.co/datasets/karpathy/fineweb-edu-100b-shuffle",
+      "sources": [
+        {
+          "path": "data/fineweb/shard_00000.parquet",
+          "sha256": "6a3450ea745ee6b6830c09819c0f2c72682eba443022de595bcb50ceb3092c22"
+        }
+      ]
+    }
+  ]
+}

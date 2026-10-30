@@ -565,3 +565,17 @@ follows. The deferred slow cases ride the November sweep. Item 2.8 is
 independent and its spec is next; item 2.7's certificate still carries the
 unforced 1-to-2 raise, which orders §70 reads as not supplied by either
 existing path.
+
+**Landed (2026-10-27).** BasicModel `17e9454763`, "Land item 2.9:
+location-based priming diffusion and reviewed documents", on
+`b031b11ee9f2` with the R1 and R2 document repairs of §9 applied.
+
+**Superseded at item 2.5 round B (decided by Alec, 2026-10-28; thinking
+spec §15).** The open-pass `intuit` step over the learned definition
+manifold becomes the spreading mechanism, consolidating conceptual
+expectation and priming into one operator; `Priming.propagate`, the
+radius controller, the `geometric*` knobs and the seen ledger retire
+then, while placement, the derived class centroids, `bind`'s content
+term, MTM matching and the bank's selection keep reading positions.
+This step runs as built until that round lands; item 2.7 does not touch
+it.

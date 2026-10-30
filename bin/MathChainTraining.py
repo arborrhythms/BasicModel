@@ -25,21 +25,26 @@ def document_batches(addresses, batch_size):
                 yield [indices[sentence] for indices in group], sentence == size - 1
 
 
-def present(model, *, split, optimizer=None, batch_size=8, after_batch=None):
+def present(model, *, split, optimizer=None, batch_size=8, after_batch=None, epoch_boundary=True):
     """Use the normal sentence owner, chooser, credit and reset boundaries."""
     data = model.inputSpace.data
     inputs, outputs = getattr(data, split + '_input'), getattr(data, split + '_output')
     training = optimizer is not None
     model.train(training)
-    if training and split == 'train':
-        model.begin_presentation()
+    if training and split == 'train' and epoch_boundary:
+        from Forgetting import model_boundary
+        model_boundary(model, epoch_boundary=True)
     model.symbolSpace.expectation.reset()
     memory = model._what_memory()
     if memory is not None:
         memory.reset()
     total, batches = 0, 0
     with torch.set_grad_enabled(training):
+        previous_end = True
         for rows, end in document_batches(data.source_addresses[split], batch_size):
+            if training and split == 'train' and previous_end:
+                model.begin_presentation()
+            previous_end = end
             texts = [inputs[index] for index in rows]
             x = model.inputSpace.prepInput(texts)
             y = model.outputSpace.prepOutput([outputs[index] for index in rows])

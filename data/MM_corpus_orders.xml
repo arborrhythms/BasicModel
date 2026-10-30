@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="model.xsd">
+  <!-- Item 2.7 bounded native lesson measurement. Orders zero through two
+       are reserved before construction; words, orders and choices are learned. -->
+  <architecture>
+    <bindingDepth>3</bindingDepth><conceptLayers>3</conceptLayers>
+    <conceptBinding>aligned</conceptBinding><syntacticOrder>0</syntacticOrder>
+    <mereologyRaise>true</mereologyRaise><serialObjectMeta>true</serialObjectMeta>
+    <sentenceProtocol>false</sentenceProtocol>
+    <serialWordCapacity>32</serialWordCapacity><serialWordBuckets>32</serialWordBuckets>
+    <serialResidualPartCapacity>64</serialResidualPartCapacity>
+    <sigmaPi>butterfly</sigmaPi><transformChooser>mlp</transformChooser>
+    <answerSynthesis>true</answerSynthesis><attentionBudget>32</attentionBudget>
+    <data><dataType>embedding</dataType><dataset>text</dataset></data>
+    <training>
+      <batchSize>1</batchSize><packSentences>false</packSentences><numWorkers>0</numWorkers>
+      <learningRate>0.001</learningRate><autoload>false</autoload><autosave>false</autosave>
+      <reconstructionScale>0.1</reconstructionScale><equalityLossWeight>1</equalityLossWeight>
+      <sentenceExpectation>true</sentenceExpectation><sentenceExpectationLossWeight>0.1</sentenceExpectationLossWeight>
+      <outputInLoop>true</outputInLoop>
+    </training>
+  </architecture>
+  <InputSpace><nOutput>256</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>
+  <PartSpace>
+    <nInput>256</nInput><nInputDim>104</nInputDim><nVectors>4096</nVectors><nDim>104</nDim>
+    <nOutput>8</nOutput><nOutputDim>104</nOutputDim><synthesis>meronomy</synthesis><invertible>true</invertible>
+  </PartSpace>
+  <ConceptualSpace>
+    <attentionPromotion>true</attentionPromotion><conceptualPi>true</conceptualPi>
+    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
+    <nDim>136</nDim><nOutput>8</nOutput><nOutputDim>136</nOutputDim>
+    <meaningWidth>32</meaningWidth><invertible>true</invertible>
+  </ConceptualSpace>
+  <WholeSpace>
+    <analysis>meronomy</analysis><butterfly>true</butterfly><whitespaceUnits>true</whitespaceUnits>
+    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>9</nVectors><nDim>104</nDim>
+    <nOutput>8</nOutput><nOutputDim>104</nOutputDim><invertible>true</invertible>
+  </WholeSpace>
+  <OutputSpace>
+    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>1</nVectors><nDim>1</nDim>
+    <nOutput>1</nOutput><nOutputDim>1</nOutputDim>
+  </OutputSpace>
+  <SymbolSpace><ltmCapacity>16384</ltmCapacity>
+    <language><grammar>complete.grammar</grammar></language>
+  </SymbolSpace>
+</model>

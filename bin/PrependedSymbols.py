@@ -26,7 +26,7 @@ class SymbolEntries(nn.Module):
         if min(self.streams, self.words, self.prepend) < 1:
             raise ValueError('symbol field requires positive construction bounds')
         self.extents = {}
-        # B=nStreams; base=mtmPrepend (default eight); W is the largest
+        # B=nStreams; base=mtmPrepend (default 64); W is the largest
         # constructed serial-word bucket. The existing inverse bank contains
         # two W blocks (word and object), so its extent is base+2W.
         for name in WORD_FIELDS:
@@ -71,6 +71,9 @@ class SymbolEntries(nn.Module):
 def symbolize(owner, store, key, token, timeline=0):
     """The name/mention form beside the selected timeline's working meaning."""
     from IdentityRows import point
+    if token.order is not None:
+        from FamiliarTier import centroid
+        return centroid(owner, token.support)
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     # Legacy numerical fixtures have no separate form/meaning chart; their
     # entire point is content. The paired model supplies both explicit widths.
@@ -78,6 +81,10 @@ def symbolize(owner, store, key, token, timeline=0):
     width = derived.percept_event_width if paired else 0
     form_width = derived.percept_width if paired else 0
     form = None
+    if key[:1] == ('name',):
+        name = point(owner, key[1])
+        if name is not None:
+            form = name[:form_width]
     for occurrence in reversed(token.occurrences):
         reading = owner.mtm.reading_of(occurrence)
         if reading is not None:
@@ -104,6 +111,10 @@ def chunk_token(pool, store, state, batch, index):
     """
     import STMChunks as chunks
     refs = state[chunks.REFS][batch,index]
+    if int(refs[1,0]) == chunks.IDENTITY_REF:
+        code = int(refs[1,1])
+        key = ('candidate', code) if code >= 0 else ('name', -code-1)
+        return key if key in pool.entries else None
     for position in (1,0):
         if int(refs[position,0]) == chunks.OCCURRENCE:
             occurrence = ('ltm',store.address_domain,int(refs[position,1]))
@@ -119,7 +130,7 @@ def reconcile(state, pool, store):
     for b in range(state[0].shape[0]):
         for index in range(state[0].shape[1]):
             refs = state[chunks.REFS][b,index]
-            if not bool((refs[:,0] == chunks.OCCURRENCE).any()):
+            if not bool((refs[:,0] == chunks.OCCURRENCE).any()) and int(refs[1,0]) != chunks.IDENTITY_REF:
                 continue
             key = chunk_token(pool,store,state,b,index)
             entry = pool.entries.get(key)
@@ -154,6 +165,8 @@ def stage(model, state, present):
             continue
         records = resolver.accessible(tuple(value[b:b+1] for value in state), stream=b, include_pool=True)
         keys = {record.get('token') for _, record in records.values()} - {None}
+        keys.update(key for key, token in pool.entries.items() if (token.order is not None or key[0] == 'name')
+                    and (not pool.accesses.get(key) or b in pool.accesses[key]))
         keys = sorted(keys, key=lambda key: (max((event.when for timeline in pool.entries[key].timelines
             for event in timeline.events), default=pool.entries[key].when), pool.entries[key].when), reverse=True)
         choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))]
@@ -163,10 +176,11 @@ def stage(model, state, present):
             if identity is None:
                 raise RuntimeError('a prepended identity has neither a transient id nor a symbol')
             row = owner._csw_row_of(identity) if token.symbol is not None else None
-            order = owner._row_order(row) if row is not None else 1
+            order = (token.order if token.order is not None else owner._row_order(row) if row is not None
+                     else owner._concept_source_order(key[1]) if key[0] == 'name' else 1)
             value = symbolize(owner, store, key, token, timeline).to(state[0])
             where = token.where.to(value)
-            if store.when_start is not None:
+            if store.when_start is not None and token.order is None:
                 value[store.when_start:store.when_start+4] = stamp
                 if store.when_start >= 4:
                     value[store.when_start-4:store.when_start] = where
@@ -181,7 +195,8 @@ def stage(model, state, present):
             refs = state[chunks.REFS].new_zeros(len(present),2,2)
             refs[:,0,0] = chunks.SYMBOL if token.symbol is not None else chunks.IDENTITY_REF
             refs[:,0,1] = identity
-            refs[:,1,0],refs[:,1,1] = chunks.OCCURRENCE,key[-1]
+            refs[:,1,0] = chunks.IDENTITY_REF if token.order is not None or key[0] == 'name' else chunks.OCCURRENCE
+            refs[:,1,1] = -key[1]-1 if key[0] == 'name' else key[-1]
             # Copying the working value from MTM is an arrival/read. Merely
             # enumerating the subsequent bind menu does not read this seat.
             match = ((state[chunks.IDENTITY][b] == identity) & (state[chunks.TIMELINE][b] == timeline)

@@ -19,7 +19,7 @@ def constituents(clause):
         if id(node) in seen:
             return
         seen.add(id(node))
-        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request):
+        if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request):
             result.append(node)
         for child in (*node.children, *node.companions):
             visit(child)
@@ -44,12 +44,28 @@ class ReferenceClose(nn.Module):
 
     def address(self, reference):
         if isinstance(reference, tuple):
+            if reference[:1] in (('candidate',), ('name',)):
+                pool = self.components.owner.mtm
+                entry = pool.entries.get(pool.token_of(reference))
+                return None if entry is None else entry.symbol
             if len(reference) == 2 and reference[0] == 'sym':
                 return int(reference[1])
             if len(reference) != 3 or reference[:2] != ('ltm', self.store.address_domain):
                 return None
             return int(reference[2])
         return reference
+
+    def origin_reference(self, tag, address):
+        """Decode a kept journal origin without aliasing pool and LTM keys."""
+        if tag == 1:
+            return int(address)
+        if tag == 2:
+            return ('ltm', self.store.address_domain, int(address))
+        if tag == 5:
+            return ('candidate', int(address))
+        if tag == 6:
+            return ('name', int(address))
+        return None
 
     def coordinates(self, point):
         from IdentityRows import coordinates
@@ -88,6 +104,8 @@ class ReferenceClose(nn.Module):
         """Read a token's retained kind/fold without making it an individual."""
         if reference is None:
             return None
+        if isinstance(reference, tuple) and reference[:1] in (('candidate',), ('name',)):
+            return self.address(reference)
         if isinstance(reference, int) and (self.store is None or self.store.index_of_row(reference) is None):
             return None if self.components.owner.interpret.no_object(reference) else reference
         if isinstance(reference, tuple) and reference[:1] == ('sym',):
@@ -202,6 +220,8 @@ class ReferenceClose(nn.Module):
                 tokens.append(key)
         for position, key in enumerate(dict.fromkeys(tokens)):
             entry = pool.entries[key]
+            if entry.order is not None:
+                continue
             records.pop(entry.native,None)
             # Chunks determine accessibility; the held token supplies its
             # bounded mention history. Reading that history never admits an
@@ -539,6 +559,14 @@ class ReferenceClose(nn.Module):
                         reference_cost=1., incomplete=('no_accessible_individual',))
         identity = choices[index]
         probability = float(decision['probabilities'][index+1].detach())
+        pool = self.components.owner.mtm
+        entry = pool.entries.get(pool.token_of(identity))
+        if entry is not None and entry.pending:
+            # Selecting an unresolved identity is still a legal choice. Its
+            # name does not supply the missing referent merely by being read.
+            return dict(base, meaning=meaning, value=meaning, support_true=0., support_false=0.,
+                        reference_cost=float(self.choice_cost(features, logits, index).detach()),
+                        incomplete=('pending_antecedent',))
         point = individuals[identity]['value'].detach().to(meaning.roles)
         witnesses = tuple(('sym', context['identity']) if isinstance(context.get('identity'), int)
                           else self.store.occurrence_of(location)
@@ -611,10 +639,18 @@ class ReferenceClose(nn.Module):
                 continue
             if isinstance(identity, tuple) and identity[:1] == ('new',):
                 continue
-            candidate = plan['individuals'][identity]
             if isinstance(identity, tuple) and self._derivation_symbol(identity) is None:
                 continue
-            result = fill(result, dict(reference=('sym', identity) if isinstance(identity, int) else identity,
+            # A compose bind carries the actual selected working value. Its
+            # token need not belong to the later individual-choice menu:
+            # familiar candidates are deliberately excluded from that menu.
+            candidate = item.get('record')
+            if candidate is None:
+                candidate = plan['individuals'][identity]
+            reference = ('sym', identity) if isinstance(identity, int) else identity
+            if isinstance(identity, tuple) and identity[:1] == ('candidate',):
+                reference = ('sym', self._derivation_symbol(identity))
+            result = fill(result, dict(reference=reference,
                 binding_value=candidate['value'], support_true=1., support_false=0.),
                 operation='bind', slots=tuple(('referent', role) for role in sorted(answered)))
         return result
@@ -674,7 +710,7 @@ class ReferenceClose(nn.Module):
                 return
             seen.add(id(node))
             nodes.append(node)
-            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request):
+            if node.reference_request is not None and (node.order == 1 or 'compose_bind' in node.reference_request or 'reading_identity' in node.reference_request):
                 if not self.has_word(node) or id(node) in participants:
                     result.append(dict(node=node, parent=None, site_role=None))
             else:
@@ -819,6 +855,13 @@ class ReferenceClose(nn.Module):
                 # a determiner word to either operation.
                 if choices:
                     cost = cost + phi[:, 1].amax().clamp(0, 1)
+            elif 'reading_identity' in request:
+                handle = request['reading_identity']
+                tag, address = node.identity['origins'][handle-1, :2].tolist()
+                selected = self.origin_reference(tag, address)
+                if self.components.owner.mtm.token_of(selected) is None:
+                    raise RuntimeError('a read word lost its pending identity')
+                choices, phi = (), None
             elif 'compose_bind' in request:
                 handle = request['compose_bind']
                 if handle <= 0 and node.identity is not None:
@@ -829,8 +872,7 @@ class ReferenceClose(nn.Module):
                     if node.identity is None:
                         raise RuntimeError('a recorded bind lost its identity transaction')
                     tag, address = node.identity['origins'][handle - 1, :2].tolist()
-                    selected = (int(address) if tag == 1 else
-                        ('ltm', self.store.address_domain, int(address)) if tag == 2 else handles.get(handle))
+                    selected = self.origin_reference(tag, address) if tag in (1, 2, 5, 6) else handles.get(handle)
                     if selected is None:
                         raise RuntimeError('a compose bind names an unwritten introduction')
                 # The global operation chooser already owns this decision and
@@ -862,6 +904,9 @@ class ReferenceClose(nn.Module):
                 compose_dummy='compose_bind' in request and request['compose_bind'] <= 0))
             if 'record' in request and selected is not None and not own_object:
                 items[-1]['record'] = dict(value=request['record'])
+            elif 'reading_identity' in request:
+                token = self.components.owner.mtm.token_of(selected)
+                items[-1]['record'] = dict(value=self.components.owner.mtm.entries[token].value.detach().clone())
         plan['cost'] = cost
         plan['individuals'] = individuals
         self._arrival_plan(clause, plan, individuals, stream=stream)
@@ -1133,7 +1178,8 @@ class ReferenceClose(nn.Module):
     @torch.no_grad()
     def commit(self, plan, row, written, *, document, position, training,
                verb_action=None, errors=None, verb_teacher_weight=.1, teacher_records=None,
-               modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None):
+               modifier_action=None, modal_teacher_weight=.1, modal_records=None, reading=None,
+               word_occurrences=None):
         """Record training inputs and the kept working decision, never rewrite LTM."""
         kept_reading = reading
         from collections import OrderedDict
@@ -1148,12 +1194,18 @@ class ReferenceClose(nn.Module):
         mentions = self.__dict__.setdefault('_mentions', OrderedDict())
         allocated, audit, uses, sites, native_tokens = {}, [], [], {}, {}
         closed_mentions, refinements = set(), []
+        mention_occurrences = plan['mention_occurrences'] = {}
         for number, item in enumerate(plan['items']):
             node = item['written_node']
             location = written.get(id(node), row if node is plan['prepared_root'] else None)
             if location is None:
                 raise RuntimeError('kept reference constituent has no closing address')
             occurrence = self.store.occurrence_of(location)
+            if occurrence[:1] == ('sym',) and word_occurrences and item['leaves']:
+                # A durable concept is the mention's referent, not its address.
+                # Reading already retained the located word occurrence.
+                occurrence = word_occurrences.get(item['leaves'][-1], occurrence)
+            mention_occurrences[id(node)] = occurrence
             sites[('site', number)] = occurrence
             reference = item['reference']
             if item['mode'] == 'mint' or item.get('own_object'):
@@ -1172,10 +1224,18 @@ class ReferenceClose(nn.Module):
             # Binding a second timeline records the alias and its bracket,
             # while that timeline's event publishes its own value below.
             joined_value = None if node.identity is not None and node.identity.get('alternative') else node.point
-            if isinstance(reference, tuple) and reference[:1] == ('ltm',):
+            if isinstance(reference, tuple) and reference[:1] == ('candidate',):
+                # A selected familiar concept is a use, not an identity
+                # mention or another field observation. Its centroid/count
+                # are owned by the open pass and its mint by the update.
+                closed_mentions.add(reference)
+            elif isinstance(reference, tuple) and reference[:1] in (('ltm',), ('name',)):
                 from RowTime import encoder, stamp
                 kind = self._derivation_symbol(occurrence)
-                if kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
+                token = mtm.token_of(reference)
+                if reference[:1] == ('name',) and (token is None or mtm.entries[token].pending):
+                    kind = None
+                elif kind is None and item['mode'] != 'mint' and not item.get('anonymous'):
                     kind = self._derivation_symbol(reference)
                 if item['mode'] == 'mint' or item.get('own_object'):
                     mtm.open(occurrence, kind=None if item.get('anonymous') else kind,
@@ -1281,14 +1341,18 @@ class ReferenceClose(nn.Module):
         # Several kept closes can share one model-present tick. Actual
         # mention/refinement/event references, not equal timestamps, refresh
         # the pool's independent kept-close access counter.
+        from FamiliarTier import finish_definitions
+        finish_definitions(self.components.owner)
         mtm.close(self.store, stream=plan.get('stream'),
-            references=(*closed_mentions, *refinements, *events))
+            references=(*closed_mentions, *refinements, *events,
+                *getattr(self.components.owner, '_field_activated_references', {}).get(plan.get('stream'), ())))
         from MemoryConsolidation import consolidate
         owner = self.components.owner
         derived = getattr(owner.similarity_codebook, 'mereology', None)
         batch = int(plan.get('stream') or 0)
         context = None if derived is None else derived.observe_close(kept_reading, batch)
         key = None if derived is None or kept_reading is None else derived.reading_key(kept_reading)
+        owner.__dict__.setdefault('_mtm_placement_contexts', {})[batch] = (context, key)
         consolidate(owner, self.store, context=context, key=key, batch=batch)
         while len(mentions) > self.components.source_capacity:
             mentions.popitem(last=False)
@@ -1310,10 +1374,13 @@ class ReferenceClose(nn.Module):
             record = node.identity
             if record is None or record.get('ids') is None or not record['handle']:
                 continue
-            location = written.get(id(node))
-            if location is None:
-                continue
-            token = pool.token_of(self.store.occurrence_of(location))
+            occurrence = plan.get('mention_occurrences', {}).get(id(node))
+            if occurrence is None:
+                occurrence = written.get(('occurrence', id(node)), written.get('root_occurrence')
+                                         if node is plan['prepared_root'] else None)
+                if occurrence is None:
+                    continue
+            token = pool.token_of(occurrence)
             if token is not None:
                 mapping[int(record['ids'][record['handle']-1])] = token
         result = [value.clone() for value in state]
@@ -1322,7 +1389,7 @@ class ReferenceClose(nn.Module):
                 continue
             refs = state[chunks.REFS][stream,index]
             token = (chunk_token(pool,self.store,state,stream,index)
-                     if bool((refs[:,0] == chunks.OCCURRENCE).any())
+                     if bool((refs[:,0] == chunks.OCCURRENCE).any()) or int(refs[1,0]) == chunks.IDENTITY_REF
                      else mapping.get(identity,pool.token_of(identity)))
             if token is None:
                 result[chunks.IDENTITY][stream,index] = -1
@@ -1331,10 +1398,10 @@ class ReferenceClose(nn.Module):
             assigned = entry.symbol if entry.symbol is not None else entry.transient
             result[chunks.IDENTITY][stream,index] = assigned
             refs = result[chunks.REFS][stream,index]
-            replace_ref = (refs[:,0] == chunks.IDENTITY_REF) & (refs[:,1] == identity)
-            refs[replace_ref,0] = chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF
-            refs[replace_ref,1] = assigned
-            refs[1] = refs.new_tensor((chunks.OCCURRENCE,token[-1]))
+            if int(refs[0,0]) == chunks.IDENTITY_REF and int(refs[0,1]) == identity:
+                refs[0] = refs.new_tensor((chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF, assigned))
+            refs[1] = refs.new_tensor((chunks.IDENTITY_REF if entry.order is not None or token[0] == 'name' else chunks.OCCURRENCE,
+                                      -token[1]-1 if token[0] == 'name' else token[-1]))
             timeline = int(state[chunks.TIMELINE][stream,index])
             if timeline >= len(entry.timelines):
                 # Conceiving a branch does not publish it. A recent top can
@@ -1351,7 +1418,7 @@ class ReferenceClose(nn.Module):
             if int(state[chunks.STACK][stream,index]) < 0:
                 result[0][stream,index] = symbolize(owner,self.store,token,entry,timeline).to(result[0])
                 result[chunks.WHERE][stream,index] = entry.where.to(result[chunks.WHERE])
-                if self.store.when_start is not None:
+                if self.store.when_start is not None and entry.order is None:
                     result[0][stream,index,self.store.when_start:self.store.when_start+4] = result[chunks.WHEN][stream,index]
                     if self.store.when_start >= 4:
                         result[0][stream,index,self.store.when_start-4:self.store.when_start] = result[chunks.WHERE][stream,index]
@@ -1369,7 +1436,10 @@ class ReferenceClose(nn.Module):
                                if node is plan['prepared_root'] else None)
         for item in plan['items']:
             node = item['written_node']
-            occurrence = occurrence_of(node)
+            # The reading close can attach a durable referent to its located
+            # word occurrence. Event roles must use that actual mention,
+            # while event addresses themselves remain the written rows.
+            occurrence = plan.get('mention_occurrences', {}).get(id(node), occurrence_of(node))
             if node.identity is not None and occurrence in closed_mentions:
                 introduced.add(node.identity['handle'])
             token = mtm.token_of(occurrence)
@@ -1447,14 +1517,17 @@ class ReferenceClose(nn.Module):
                 token = identities.get(handle)
                 if token is None:
                     tag, address = record['origins'][handle-1, :2].tolist()
-                    reference = int(address) if tag == 1 else ('ltm', self.store.address_domain, int(address))
-                    token = mtm.token_of(reference) if tag in (1, 2) else None
+                    reference = self.origin_reference(tag, address)
+                    token = mtm.token_of(reference)
                 if token is None:
                     # Capacity can retire an earlier mention during this
                     # same close. Its event history ends with its token.
                     # A determination that never closed is still an error.
                     if int(record['origins'][handle-1, 0]) == 3 and handle not in introduced:
                         raise RuntimeError('a kept identity event lost its determined introduction')
+                    continue
+                if mtm.entries[token].order is not None:
+                    referenced.add(token)
                     continue
                 alternative = record.get('alternative', False)
                 timeline = (mtm.alternative(token, when=when,

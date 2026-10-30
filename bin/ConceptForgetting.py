@@ -89,8 +89,10 @@ def protected_concepts(owner, store, retained=()):
                     protected.add(cid)
     # Situation and borrowed identity ties are additional live references.
     protected.update(_integers(alloc.identity))
-    if layer.where._nnz():
-        for row in layer.where.coalesce().indices().flatten().tolist():
+    for entry in owner.mtm.entries.values():
+        if entry.symbol is not None:
+            protected.add(entry.symbol)
+        for row in entry.support:
             cid = owner.concept_id_at_row(row)
             if cid is not None:
                 protected.add(cid)
@@ -150,7 +152,7 @@ def _unused_mint(alloc, layer, cid, row, definitions, sparse_rows):
     if any(row in rows for rows in definitions[0]) or row in definitions[1]:
         return False
     return not any(bool(getattr(layer, name)[row]) for name in
-        ('assigned', 'managed', 'witnessed', 'witness_strength', 'context_seen'))
+        ('assigned', 'witnessed'))
 
 
 def _forget_parameters(model, parameters):
@@ -258,11 +260,8 @@ def reclaim_concepts(owner, store=None, *, retained=(), model=None):
         for matrix in layer.definition_matrices():
             matrix.remove_edges([(r, c) for r, c in matrix._index if r == row])
         layer.feature_groups = {key: value for key, value in layer.feature_groups.items() if key[0] != row}
-        layer.clear_context(row)
-        for name in ('participation', 'provisional', 'assigned', 'managed', 'witnessed',
-                     'witness_strength', 'refinement_best', 'refinement_stale', 'refinement_step', 'context_seen'):
-            getattr(layer, name)[row] = (1 if name == 'participation' else
-                float('inf') if name == 'refinement_best' else -1 if name == 'refinement_step' else 0)
+        for name in ('assigned', 'witnessed', 'refinement_best', 'refinement_stale', 'refinement_step'):
+            getattr(layer, name)[row] = (float('inf') if name == 'refinement_best' else -1 if name == 'refinement_step' else 0)
         key = layer._tensor_row_keys.pop(row)
         del layer._tensor_rows[key]
         for base, next_row in list(layer._row_next.items()):

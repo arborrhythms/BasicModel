@@ -73,6 +73,7 @@ def _serial_read(tmp_path, clock=0, offset=0):
         return dict(programs=[p.actions.detach().clone() for p in programs],
             rows={k:v.detach().clone() for k,v in store.state_dict().items()},
             time_start=store.when_start,
+            part_times=store.parts.percept[store.parts.ref_kinds[:,0].ne(0),4:].detach().clone(),
             omissions=omissions, forecasts=forecasts,
             semantics=canonical(semantics),
             initial_rows=initial_rows, initial_clock=initial_clock, count=len(store),
@@ -166,6 +167,9 @@ def test_clock_independence(tmp_path):
         assert torch.isfinite(value['answer']).all()
         start = value['time_start']
         stamps = value['rows']['slots'][value['initial_rows']:value['count'],start:start+4]
+        # Reading pending identities can close into a Part row. Both durable
+        # row stores use the same model clock and carry its percept stamp.
+        stamps = torch.cat((stamps, value['part_times']))
         stamped = stamps.ne(0).any(-1)
         times = encoder().decode_index(stamps[stamped])
         assert times.numel() and int(value['rows']['model_clock']) == max(
@@ -213,6 +217,7 @@ def test_clock_independence(tmp_path):
                 torch.testing.assert_close(value['rows'][name][:before],baseline['rows'][name][:before],rtol=0,atol=0)
                 torch.testing.assert_close(value['rows'][name][after:],baseline['rows'][name][after:],rtol=0,atol=0)
                 earlier = baseline['rows'][name][before:after,start:start+4]
+                earlier = torch.cat((earlier, baseline['part_times']))
                 assert torch.equal(stamped,earlier.ne(0).any(-1))
                 expected = encoder().decode_index(earlier[stamped])+clock
                 torch.testing.assert_close(times,expected,rtol=0,atol=0)
@@ -490,6 +495,12 @@ def _native_step_comparison(tmp_path, monkeypatch):
             observe = model._sentence_observation
             def capture(*a,**k):
                 result = observe(*a,**k)
+                pool = model._concept_owner().mtm
+                result['reading_tokens'] = {word: (token.pending, token.symbol, token.value.clone())
+                    for program in result['entries'] if program is not None
+                    for word in program.word_ids.tolist()
+                    if (key := pool.token_of(('name',word))) is not None
+                    for token in (pool.entries[key],)}
                 observed.append(result)
                 return result
             patch.setattr(model,'_sentence_observation',capture)
@@ -518,7 +529,17 @@ def _native_step_comparison(tmp_path, monkeypatch):
                     recovered,unavailable,defined=reconstruct(language,record,programs,
                         lambda b:model._sentence_leaf_positions(record,b))
                     assert not unavailable.any()
-                    torch.testing.assert_close(recovered[record.word_valid],record.word_values[record.word_valid])
+                    # D6 interprets each identified word before the surface
+                    # operations. Their exact inverse returns the pending
+                    # token's value, whose magnitude is not form attention.
+                    expected = record.word_values.clone()
+                    for b, program in enumerate(programs):
+                        positions = model._sentence_leaf_positions(record,b)
+                        for position, word in zip(positions,program.word_ids.tolist()):
+                            pending, symbol, point = observed[0]['reading_tokens'][word]
+                            assert pending and symbol is None
+                            expected[b,position] = point
+                    torch.testing.assert_close(recovered[record.word_valid],expected[record.word_valid])
                     continue
                 audit = model._last_sentence_credit
                 torch.testing.assert_close(audit['keep_costs'][:,1]-audit['keep_costs'][:,0],

@@ -11,7 +11,6 @@
     <conceptLayers>2</conceptLayers>
     <conceptualPi>true</conceptualPi>
     <attentionPromotion>true</attentionPromotion>
-    <conceptPoolSize>4</conceptPoolSize>
     <symbolTower>true</symbolTower>
     <conceptBinding>aligned</conceptBinding>
     <data>

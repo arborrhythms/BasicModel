@@ -91,12 +91,16 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             stack.append(dict(value=values[word], composed_value=values[word], ref=int(refs[word]), rule=None,
                               order=-1 if orders is None else int(orders[word]),
                               children=(), leaves=(word,), has_point=has_point))
-            if stack[-1]['order'] == 1:
+            handle = 0 if program.identity_leaves is None else int(program.identity_leaves[word])
+            named = handle > 0 and int(program.identity_origins[handle-1, 0]) == 6
+            if stack[-1]['order'] == 1 or named:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
                     cue=values[word], content=values[word],
                     forward_identity=forward_name(word), leaf=True)
             if program.identity_leaves is not None:
-                stack[-1]['identity_handle'] = int(program.identity_leaves[word]) if stack[-1]['order'] == 1 else 0
+                stack[-1]['identity_handle'] = handle if stack[-1]['order'] == 1 or named else 0
+                if named:
+                    stack[-1]['close_request']['reading_identity'] = handle
                 if stack[-1]['identity_handle']:
                     introductions.setdefault(stack[-1]['identity_handle'], stack[-1])
             continue
@@ -239,6 +243,9 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
             source = operands[0]
             request = dict(source.get('close_request', {}))
             request.pop('introduction', None)
+            # An explicit bind supersedes the reading site's initial token.
+            # Keep the chosen handle; the close must not select the old name.
+            request.pop('reading_identity', None)
             request.update(mode='bind', leaves=source['leaves'],
                 content=request.get('content', frames[action, 0]),
                 cue=request.get('cue', frames[action, 0]),
@@ -500,7 +507,12 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         excluded = False
         def close_member(item, *, referent=True):
             own_request = item.get('close_request', {})
-            if not item['has_point'] and not (own_request.get('introduction') or 'compose_bind' in own_request):
+            if not item['has_point'] and not (own_request.get('introduction')
+                    or 'compose_bind' in own_request and (
+                        own_request['compose_bind'] > 0 or own_request.get('determined'))):
+                # A dummy bind over a relative field preserves that field.
+                # Only an actual selected object or a retained determination
+                # supplies a point-valued reference request around it.
                 return None
             current = item
             request = current.get('close_request')
@@ -515,7 +527,8 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
                     break
                 current = current['children'][role - 1]
                 request = current.get('close_request')
-            if request is None or (item['order'] != 1 and 'compose_bind' not in request):
+            if request is None or (item['order'] != 1
+                    and 'compose_bind' not in request and 'reading_identity' not in request):
                 return None
             if program.identity_actions is not None:
                 request = dict(request, compose_bind=request.get('compose_bind', 0))
@@ -902,10 +915,14 @@ def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
         children, references = [], []
         roles = []
         for slot, node in enumerate(stack):
-            node = head(node)
-            if is_clause(node) or concept(node) == -1:
+            # A three-slot field still owns its selected determinations and
+            # binds. Stripping to the lexical head here can orphan the very
+            # introduction that a later operand's recorded bind names.
+            child = recover(node) if slot in (0, 2) else None
+            if (is_clause(node) or concept(node) == -1
+                    or child is not None and child.reference_request is not None):
                 references.append(('clause', len(children)))
-                child = recover(node)
+                child = recover(node) if child is None else child
                 children.append(child)
                 roles.append(torch.zeros_like(
                     program.leaves[0]) if child.point is None else child.point)

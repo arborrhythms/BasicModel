@@ -181,3 +181,85 @@ per-part pairs aggregate (minimum for pervasion, with the mixed case kept
 as both lanes rather than averaged); and whether the implicit answer is
 written into a chunk with evidence kind `pervasion` so the explicit chain
 can confirm or contest it.
+
+## 10. Alec's answers to the eight decisions (2026-10-27), with Claude's readings and the open points
+
+1. **Chunk ownership: yes, and the trust channel is stored in the chunk**
+   when the row is pulled from LTM. Directly observed text carries trust
+   1; when the words are turned into objects, the trust goes to 0, since
+   the truth of the statement as it applies to other objects is unknown
+   (0 is unknown). *Reading:* a chunk carries its own pair beside its
+   reference; observation fills the for lane at 1 for the token it was
+   about; a generalization to the type or to another object starts at
+   (0, 0) and is filled by derivation or evidence.
+2. **The focus chunk: yes, addressed by `.where`** like the percept and
+   concept banks; the serial accumulation is one of those slots, pinned.
+   *Reading:* no `Mind.SERIAL` enum address; STM slots are located by
+   `.where`, and the episode's focus is the pinned one.
+3. **`descend`/`return`: not understood as proposed.** Alec: LTM is
+   pulled into STM by `query()`, and an STM slot constitutes either a
+   relation or a truth (a leaf) of a proof tree. *Reading:* the proof tree
+   is the chunks and their references, not a push/pop discipline; a
+   subgoal is a question chunk (an open slot) that `query` or `ask` fills;
+   a derived truth records its relation chunk and premise chunk as
+   `sources`. `descend` and `return` are withdrawn from this design.
+4. **`intuit`'s output: let's talk.** Alec: `intuit` has as its answer a
+   number of relations over a number of ideas, held in one STM slot; how
+   AND, OR, NOT produce that structure is not clear. *Claude's proposal
+   for the conversation:* AND is the meet of the knowing with a rule's
+   antecedent (the firing degree), OR is the union of the fired
+   consequents into the slot's one wide vector, NOT is the lane exchange;
+   the "relations over ideas" are not in that vector but in the candidate
+   list that produced it, one entry per fired rule (rule reference,
+   premise reference, degree), the shape of an LTM2 row (two references
+   and a pair). The slot holds the union; the candidates sit beside it as
+   the menu `infer` selects from (answer 7).
+5. **Logic rules: let's discuss.** Alec: for `infer`, "if A then B" is a
+   relation; finding A (a type) or a (a token of that type) adds B (or b)
+   if not already present. `refute` is the same rule with negation
+   allowed on one or more operands, so no separate operator. `substitute`
+   not understood. Reasoning must run from antecedent to consequent and
+   from consequent back toward antecedent. *Reading:* one operator,
+   `infer(premise, rule)`, with `not` on operands giving the
+   contrapositive and an equality row as the rule giving substitution
+   (Leibniz: from a = b and an idea about a, the idea about b), so
+   `refute` and `substitute` are calls of `infer`, not rules. Backward:
+   from a goal B and the rule A then B, `infer` writes A as a question
+   chunk with pair (0, 0), unknown until found, never as a truth; that is
+   the backward direction and the subgoal of answer 3 at once.
+6. **`intuit` writes chunks: yes** (see 5).
+7. **Forcing.** Alec: intuition builds the candidates and `infer` selects
+   from them, creating a backprop chain over them. *Reading:* both
+   forcings by one mechanism. The grammar at a question offers `intuit`,
+   `query`, `ask`, `infer`, `not`, `isTrue`, `bind` and conclude (weak);
+   the closing accepts only focus content that carries a pair, which only
+   `infer`'s selection or recall supplies (strong); credit flows through
+   the selection among the candidates.
+8. **Derived conclusions to LTM0: yes.** Reasoning chains are preserved
+   and forgotten later if unused.
+
+Open for the conversation: the shape of `intuit`'s slot (4) and the one
+`infer` with direction and negation (5).
+
+**Second exchange (Alec, 2026-10-27).** From answer 4: sets of STM0
+ideas are combined into terms (AND), and STM1 relations over those terms
+build an equivalence class of disjunction (OR): a disjunctive normal form.
+NOT, having no operator of its own, is applied as the last operation to
+the ideas, before the relations (as high as it can go without an
+operator). (1) The structure lives in one STM slot. (2) A question chunk
+is just the empty reference; no upper bound on its trust is needed.
+*Claude's reading:* the order is right. A term is a set of ideas whose
+truth is their meet (AND, the minimum over lanes); the slot's vector is
+the union over terms (OR, the maximum); NOT is the lane exchange on an
+idea's pair, applied once after the idea is read and before the meet, so
+relations are never negated, only their operands. One wide vector holds
+the DNF as the pi-over-sigma fold the spaces already compute, and `infer`
+selects a term from it by reading it back, the rule reference coming from
+the firing record in the thought history. A backward `infer` writes the
+antecedent as a chunk whose reference is open, with no trust claimed.
+
+**Pointer (2026-10-28).** The spec written from these notes is
+[2026-10-27-item2-5-thinking.md](2026-10-27-item2-5-thinking.md); it
+supersedes §§1–9 where they differ (no `descend`/`return` discipline, one
+`infer`, the DNF in one slot, fixed LTM). §10 and the second exchange
+above remain the record of Alec's answers.

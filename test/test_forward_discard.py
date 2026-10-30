@@ -76,7 +76,8 @@ def test_exact_or_reading_pays_zero_forward_discard(monkeypatch):
     monkeypatch.setattr(BasicModel, '_sentence_path_cost', observed)
     report = forced_prefix_certificate()
     assert report['reads'][1]['meaning_norm'] > 0
-    assert all(read['multisets'] == 4 and read['R'] == read['content_cost'] for read in report['reads'])
+    assert all(read['multisets'] == 4 and read['R'] == read['leaf_cost']
+               and read['byte_identity'] == [0.]*4 for read in report['reads'])
     assert charges and all(not value.any() for value in charges)
 
 

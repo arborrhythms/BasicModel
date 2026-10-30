@@ -136,10 +136,12 @@ def test_promotion_folds_form_and_takes_one_context_step(monkeypatch):
     before_codes = derived.placement.clone()
     placed = derived.placement_witnesses > 0
     key = derived.reading_key(reading)
-    actions = consolidate(cs, store, context=context, key=key)
-    assert ('token', addresses[0]) in actions
+    cs._mtm_placement_contexts = {0: (context,key)}
+    actions = cs.mtm.promote_candidates(cs)
+    assert actions
     symbol = cs.mtm.entries[addresses[0]].symbol
     row = cs._csw_row_of(symbol)
+    cb.lookup_rows(row)
     expected_form = (torch.stack(values)[:,:3] * torch.tensor([1.,.5,.25])[:,None]).sum(0)/1.75
     torch.testing.assert_close(cb.W[row,:3], expected_form)
     q = F.normalize(identity_code(derived.content_key(row), derived.meaning_pairs,

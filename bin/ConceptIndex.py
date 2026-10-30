@@ -24,6 +24,15 @@ def _available(cs, values):
     return values
 
 
+def unbound_label(cs, reference):
+    """A lexical form with no denotation has no witnessed object order."""
+    from LTM1 import SYMBOL
+    alloc = _concept_alloc_of(cs)
+    return (reference[0] == SYMBOL
+            and 'word' in alloc.symbol_types.get(reference[1], ())
+            and not cs.definitions.objects(reference[1]))
+
+
 def index_part_row(cs, part, whole):
     """Admit a witnessed member to the next-order class of the shared side."""
     from LTM1 import SYMBOL
@@ -40,6 +49,10 @@ def index_part_row(cs, part, whole):
         # A later member joins the witnessed equivalence class. Naming its
         # parent after the first raise must not raise that same class again.
         whole_ref, whole_order = base, whole_order - 1
+    elif unbound_label(cs, whole_ref):
+        # The word's form is order zero; two equality witnesses establish
+        # its object's order without stamping the word at the first witness.
+        whole_order = part_order
     if part_order < 0 or whole_order < 0:
         raise ValueError('a class requires witnessed member and shared-side orders')
     order = whole_order + 1
@@ -60,7 +73,7 @@ def index_part_row(cs, part, whole):
         _inherit_forms(cs, whole_ref[1], parent)
     destination = cs._csw_concept_row(order, parent)
     meaning = getattr(cs.similarity_codebook, 'mereology', None)
-    if meaning is not None and part_ref[0] == SYMBOL:
+    if meaning is not None:
         meaning.placement_derived[destination] = True
         meaning.placement_valid[destination] = False
         # Admission can allocate the destination after the relation is written.
@@ -69,7 +82,8 @@ def index_part_row(cs, part, whole):
     if source is not None:
         with torch.no_grad():
             cs.similarity_codebook.W[destination].copy_(cs.similarity_codebook.W[source])
-    cs._populate_concept_weights(parent)
+    from FamiliarTier import class_members
+    cs.cover_members(parent, class_members(cs, parent))
     return int(parent)
 
 

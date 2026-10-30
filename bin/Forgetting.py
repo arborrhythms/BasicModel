@@ -385,6 +385,9 @@ def _live_occurrences(value, namespace):
 
 def model_boundary(model, *, document_boundary=False, epoch_boundary=False):
     """Training/stateful host hook; live owners provide their actual roots."""
+    if epoch_boundary:
+        from PresentationMemory import epoch
+        return epoch(model)
     store = getattr(getattr(model, 'symbolSpace', None), 'ltm_store', None)
     if store is None:
         return None

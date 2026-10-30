@@ -132,8 +132,8 @@ def test_expectation_free_placement_is_independent_of_forecasts_and_percept_mome
         predicted=replace(predicted,symbol_ids=head._bank_ids)
         head._inter_last_meaning=[SimpleNamespace(prediction=predicted) for _ in range(2)]
         model._stm_predicted_idea=torch.full((2,3,model.conceptualSpace.stm.concept_dim),17.)
-        model.percept_expectation.mean.fill_(1.)
-        model.percept_expectation.count.fill_(100)
+        model.percept_expectation.moments.mean.fill_(1.)
+        model.percept_expectation.moments.count.fill_(100)
         model._percept_prior=None
         after=context(model,values,addresses,valid,parts=parts,expectation_free=True)
         torch.testing.assert_close(before,after,rtol=0,atol=0)
@@ -144,7 +144,7 @@ def test_expectation_free_placement_is_independent_of_forecasts_and_percept_mome
 
 
 @pytest.mark.parametrize('percept_gain',[0.,.75])
-def test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload(tmp_path,monkeypatch,eager_reading,percept_gain):
+def test_native_s_gain_uses_raw_arrival_and_p_preserves_the_full_payload(tmp_path,monkeypatch,eager_reading,percept_gain):
     from test_compiled_word_chunk import _tiny_canonical_model,_stage_fullgraph_tensor_peer
     from SymbolField import SymbolField
     import ModelAttention
@@ -155,8 +155,8 @@ def test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload(tmp_path,mo
     stage=ModelAttention.stage_percept_expectation
     def perfect_percept_prior(owner,active):
         stage(owner,active)
-        # A controlled perfect P prior supplies its declared content floor.
-        owner._percept_word_gain=torch.full_like(owner._percept_word_gain,1.-percept_gain)
+        # A P expectation feature cannot attenuate either conceptual pole.
+        owner.percept_expectation.last_expected.fill_(1.)
     monkeypatch.setattr(ModelAttention,'stage_percept_expectation',perfect_percept_prior)
     payload=model._attention_sentence_payload
     current={};records=[]
@@ -179,7 +179,7 @@ def test_native_s_gain_uses_raw_arrival_even_when_p_dims_the_payload(tmp_path,mo
         selected=known.long().argmax(-1)
         live=live & known.any(-1) & raw.ne(0).any(-1)
         torch.testing.assert_close(kwargs['incoming_lanes'][live],raw[live])
-        torch.testing.assert_close(content[live],raw[live]*(1.-percept_gain))
+        torch.testing.assert_close(content[live],raw[live])
         # Hold the same perfect S prior over the raw observation at every P
         # setting; no source or head is trained by this mechanism probe.
         expected=result.expected.clone()

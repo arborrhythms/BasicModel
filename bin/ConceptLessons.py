@@ -1,7 +1,7 @@
 """Teacher-owned primitive and name lessons for native conceptual output.
 
 Only primitive memberships and single-occurrence names are taught here.
-Located conjunctions come from the ordinary, target-free pool observer;
+Located conjunctions come from the ordinary, target-free field observer;
 output definitions begin with zero weights over every witnessed case.
 """
 import json
@@ -82,7 +82,7 @@ def teach_concept_lessons(model):
         history.append(float(loss.detach()))
 
     # The cases are unlabelled training inputs. Observe their located field,
-    # then let raw use (never the optimizer) earn pool participation.
+    # then advance the same kept-close clock and recurrence mint rule.
     inputs = model.inputSpace.data.train_input
     with torch.no_grad():
         for _ in range(int(lesson['witness_updates'])):
@@ -91,11 +91,15 @@ def teach_concept_lessons(model):
                          bytes(x.reshape(-1).tolist()).rstrip(b'\0').decode('utf8')
                          for x in inputs[start:start + 64]]
                 model.forward(encode(texts))
-                cs.promotion_observe()
-                cs.promotion_pass()
+                cs.observe_open_field()
+                for stream in range(len(texts)):
+                    cs.mtm.close(None, stream=stream, references=
+                        cs._field_activated_references.get(stream, ()))
+                cs._field_activated_references = {}
+                cs.mtm.promote_candidates(cs)
                 model.End()
     cases = sorted({r for r, col in store.features._index
-                    if (col // 2) % 2 == 0 and cs._order0_inventory_row(r) and not bool(store.provisional[r])})
+                    if (col // 2) % 2 == 0 and cs._order0_inventory_row(r) and cs.concept_id_at_row(r) in alloc.raised})
     # Exclude directly taught names; cases are the recurrent native parts.
     cases = [r for r in cases if any(target == r and (col // 2) % 2 == 0
                                    for target, col in store.features._index)]

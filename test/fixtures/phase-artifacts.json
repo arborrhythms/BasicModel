@@ -9,5 +9,13 @@
     "stage4e": null,
     "pending_premise_learning": null,
     "mtm_reidentification": null
+  },
+  "producers": {
+    "copular_identity": {
+      "lesson": "data/corpus-lessons.json",
+      "phase": "relations",
+      "runner": "bin/corpus_lessons.py",
+      "criterion": "unforced order-1 names and order-2 kind containing both"
+    }
   }
 }

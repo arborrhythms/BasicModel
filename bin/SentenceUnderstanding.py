@@ -119,6 +119,7 @@ class SentenceUnderstanding:
     constituents: torch.Tensor | None = None
     constituent_valid: torch.Tensor | None = None
     constituent_families: torch.Tensor | None = None
+    percept_expected: torch.Tensor | None = None
 
     def reader_features(self, *, attention=None):
         """Fixed linear summaries; all evidence is detached at this boundary.
