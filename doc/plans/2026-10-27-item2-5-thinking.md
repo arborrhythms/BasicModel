@@ -1541,3 +1541,41 @@ time, per-operator dissonance, chooser variance, and the new reading of the
 gradient norms into the shared parameters from $R$ and from $A$ per epoch.
 The single-backward arm's 2 of 32 is the hypothesis the rerun confirms or
 retires. Only Alec changes the default, after that reading.
+
+### 26.2 D-i accepted; D-ii reopened: no ratios of error terms (Alec, 2026-10-30)
+
+Alec: D-i "seems reasonable, make sure the mechanics are in the doc/*.md";
+on D-ii, "I object to ratios of error terms. Can't we find a better option?
+How exactly is this being used?" The mechanics are now in GradientFlow.md,
+"The generation residual: how it is used, and its repair".
+
+**How the residual is used** (code read 2026-10-30, the live tree): the
+menu's per-proposal residuals are (1) three of the five detached features
+the generate chooser scores (`InverseMenu.features`,
+`generate_policy_logits`), (2) the exactness test ($\le 10^{-8}$, with the
+pair-first rule), (3) an admissibility gate (non-finite removes the
+proposal), and (4) the chosen step's term in `walk_residual`, recomputed
+with gradient by `selected_residual` so it trains the operators.
+
+**Why the ratio fails in all four.** All proposals at one step share the
+parent, so the division never changed the ranking at a step; it rescaled
+the features by a factor that explodes as the parent's lane energy goes to
+zero, falls back to the raw error at exactly zero (a discontinuity), and
+through the gate can remove a correct proposal. My D-ii recommendation of
+dividing by the sentence's accumulated parent energy was still a ratio;
+withdrawn. D-i as first written has the same flaw at sentence scale: the
+against lane is usually zero or nearly so for a whole sentence.
+
+**Recommended instead: absolute error in the code's own chart, in all four
+uses.** Symbolic codes are in the unit cube, so the mean squared error per
+lane is bounded in $[0, 1]$; the symbolic exact-pair test in
+`decoder_eligibility` already uses it. Numeric walks (`cube_domain=False`)
+use the squared difference of $\operatorname{asinh}$ values. Exactness reads
+the same measure against the same tolerance; the finiteness gate becomes a
+fail-loud assertion; the loss registers with the constant unit baseline the
+registry already uses for `reconstruction.reference`,
+`reconstruction.free_percept` and the expectation terms. D-i's other
+mechanics stand: three per-lane terms through `Error.error`, summed over the
+walk without dilution, no floor. Consequence to measure, not compensate:
+$R$'s scale against $A$ changes in the kept-trial comparison and in the
+single backward; the three arms read it. Pending Alec's yes.

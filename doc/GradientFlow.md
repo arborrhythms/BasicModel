@@ -816,3 +816,95 @@ sign is formed anywhere between the walk and the stored row; the inverse
 identifies a word by its signless form and reads both lanes with the
 leaf's pair. The row's `(c⁺, c⁻)` is the spec's required-evidence read: min
 over nonzero contributions on each pole independently.
+
+## The generation residual: how it is used, and its repair (Alec, 2026-10-30)
+
+*Decided in conversation on 2026-10-30 (thinking spec §§26.1, 26.2). Not
+built: item 2.5's repair round builds it. Where this section and the
+"generation exception" paragraph above disagree, the paragraph above
+describes the code as it stands and this section the decided repair.*
+
+**What the residual is.** Generation reads a concept back into words by a
+walk over a stack: at each step the top code (the parent) is split by an
+inverse binary operation, rewritten by an inverse unary operation, or
+emitted as a word (STOP). For every legal proposal at the step, the menu
+(`Generative.eligibility_menu`) composes the proposed pieces forward again
+and measures how well that reproduces the parent, separately for the form
+block and the two meaning lanes (for and against). That measurement is the
+residual. It is used four ways:
+
+1. *Chooser features.* Each proposal carries five detached numbers into the
+   generate chooser (`InverseMenu.features`, scored by
+   `LanguageSpace.generate_policy_logits`): the form residual, the two lane
+   residuals, an exactness flag and the stack effect ($+1$ binary, $0$
+   unary, $-1$ STOP).
+2. *Exactness.* A proposal is exact when its residuals are at most
+   $10^{-8}$; an exact binary pair or exact terminal pre-empts every
+   approximate proposal at that step (the pair-first rule).
+3. *Admissibility.* A proposal whose residual is not finite is removed from
+   the menu.
+4. *The loss.* The chosen proposal's residual at each step, summed over the
+   walk, plus the energy left unresolved on the stack, is the reconstruction
+   term `reconstruction.walk_residual`. On the gradient path it is recomputed
+   through the chosen recomposition (`Generative.selected_residual`), so its
+   gradient trains the grammar operators and their inverses.
+
+**What was wrong.** Today every residual is a ratio: the step's error energy
+divided by the parent's own energy, per lane, with the parent live
+(`Generative._relative_energy`). The against lane is usually exactly zero,
+where the code falls back to the raw error, or nearly zero, where the ratio
+is the raw error times an arbitrarily large factor: the measure is
+discontinuous at zero. That produced the loss of about $10^{29}$ and the
+non-finite gradient of the one-backward arm (thinking spec §25). Within one
+step every proposal shares the parent, so the division never changed the
+ranking among proposals; it only rescaled the features by a step-dependent
+factor, and through use 3 it could remove a correct proposal from the menu.
+
+**The repair, decided (D-i).** The loss is registered through the error
+registry like every other term, never as a finished scalar:
+
+1. `relative_residual` returns, per lane, the step's raw error (and no
+   longer divides).
+2. `walk_residual` sums the chosen steps' errors over the walk and adds the
+   unresolved stack energy, per lane, without dilution by the step count.
+3. The sentence close registers three terms,
+   `reconstruction.walk_residual.form`, `.for` and `.against`, through
+   `Error.error(name, per_stream_sum, baseline, mask=active,
+   category='reconstruction')`, one entry per active stream, so the registry
+   averages over streams and divides once per term. Three terms keep each
+   lane in its own units (2.7 record §38); what goes is the per-step
+   division.
+4. No floor, cap, detachment of the error, or dropped term anywhere. The
+   per-step live-denominator derivative has no site, so the overflowing
+   terminal becomes a passing certificate.
+
+**The measure, recommended (D-ii; Alec objects to ratios of error terms).**
+The residual is an absolute error in the code's own chart, in all four uses:
+
+- *Symbolic codes* are membership vectors in the unit cube (every admissible
+  symbolic proposal is checked `in_cube`), so the mean squared error per
+  lane is already bounded in $[0, 1]$ and in fixed units. The symbolic
+  exact-pair test in `LanguageSpace.decoder_eligibility` already uses exactly
+  this measure.
+- *Numeric codes* (the math chain's walks, `cube_domain=False`) are not
+  membership coordinates and span magnitudes. Their error is the squared
+  difference in an $\operatorname{asinh}$ chart,
+  $(\operatorname{asinh} r - \operatorname{asinh} p)^2$: absolute near zero,
+  logarithmic for large magnitudes, continuous, and with no division.
+- *Exactness* reads the same absolute error against the same tolerance.
+- *Admissibility*: an absolute error of finite codes is finite, so the
+  finiteness gate becomes an assertion that fails loud instead of a silent
+  exclusion.
+- *The loss* then registers with the registry's constant unit baseline, as
+  `reconstruction.reference`, `reconstruction.free_percept` and the
+  expectation terms already do. D-i as first written divided by the
+  sentence's detached parent energy per lane; that is still a ratio, and for
+  the against lane, usually zero or nearly so, it keeps the same
+  discontinuity at sentence scale. With the absolute measure no
+  data-dependent denominator remains anywhere in the generation residual.
+
+The absolute measure changes the scale of $R$ against $A$ in the kept-trial
+comparison ($R + A$) and, under `separateChooser` false, in the single
+backward. No balancing weight is introduced to compensate; the three
+lesson-13 arms measure the effect. Pending Alec's yes on the measure; the
+rest of this section is decided.
