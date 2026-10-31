@@ -1971,3 +1971,89 @@ concepts is dropped; its per-sentence resolution report stays.
 Receipts, Architecture.md and Params.md by append or exact replacement,
 results in §29, and every other condition as §28.1.
 ~~~
+
+## 30. Claude's review of the completion return (2026-10-31)
+
+Reviewed §29 and §29.1 with the receipt under
+`doc/benchmarks/2026-10-31-item2-5-completion/`. Verified here: the
+candidate's source hash `30f6e1613555` is the working tree's (971 files,
+recomputed), its base is `7723cfce2a`, and it is built from the repair
+source `cb8a159a6792`. The twelve completion certificates pass; the
+standing raise, fold, taxonomy, sweep and presentation-memory files give
+109 passed and the one failure Codex reports from the baseline. Codex's
+selection of 156 (155 passed, 1 failed) did not include
+`test_sweep_repairs.py`, so that test's state on the candidate is from my
+run: it fails at line 17 as it did on `cb8a159a6792`.
+
+**As specified.** Item 2a: the absolute residual against
+`EXACT_RESIDUAL_TOLERANCE`; parent lanes of 0 and 1e-30 decide alike. Item
+2b: the R and A reading keyed by parameter name, with edge identities
+across a replaced sparse parameter. Addendum item 4: `DefinitionFold.examples`
+and `FamiliarTier.class_members` gate on `ConceptAllocator.class_member`;
+the three certificate cases pass. Addendum item 5: `raiseCount`, default 3,
+below 2 rejected at construction, with its Params.md row and schema floor;
+`PartClosing.observe_members` admits each endpoint as a member of the
+other, so no position is read; witnesses sit in `raiseCount - 1` seats on
+the fixed slab with their rows in `singleton_rows`, checkpointed; the
+minting path calls the same observation with the minted symbol and its
+original row, which the seat check recognizes and does not count twice; the
+standing raise tests gain a third witness and none is returned. Addendum
+item 6: no break counter and no relation count; the epoch record now lists
+the LTM1 rows with their references and evidence, which is the inspection.
+The per-sentence operand observation of §28.1 item 3 is built; the
+measurement is not run.
+
+**Two notes, no action.** `_admit_member` skips a symbol member that has
+no MTM token instead of seating it; the earlier code seated it and could
+never judge it distinct, so the seat stayed blocked until forgotten. The
+definition index skips, on rebuild, an object-to-word row whose object is
+a member of the word's own raised class, keyed on the `part-base` index
+entry; the certificate that rebuilds the index after a raise passes.
+
+**One deviation, Alec's decision (D-v).** §28.1 item 1a and Orders §11 read
+a positive row between two symbols with recorded orders as a member only
+one order below and otherwise as a relation, a member of neither. The
+candidate adds an exception at order 0: `ConceptAllocator.records` keeps a
+positive row between two order-0 symbols as a structural part, visible to
+`refs`, `taxonomy_children` and pervasion, while a second reading,
+`records(cid, order_only=True)`, excludes it from `_part_order` and
+`settle`, and `class_member` excludes it from the fold and the cover.
+Codex names Orders §1's "overlap and containment" at order 0 and "the last
+clarification in the hand-off" as the ground. Orders §1's containment is
+among percepts in the field; an order-0 symbol is a word form or a placed
+type, and Orders §11 has no order-0 clause. The exception does not rescue
+the standing test that prompted §29, whose rows carry no evidence.
+Claude's recommendation: one rule at every order, as recorded; remove the
+exception and the second reading, return `_part_order` to `refs`, rewrite
+the containment certificate to the one rule, and correct the first
+paragraph of Architecture.md's new section. If Alec wants containment
+between order-0 symbols, it is a decision for Orders §11, recorded there
+first. If the clarification Codex cites was Alec's, it is recorded the
+same way.
+
+**Two tests, Alec's disposition.**
+
+- `test_sweep_repairs.py::test_semantic_word_chain_does_not_redefine_a_word_form_order`
+  (item 3.0). Failing on the starting source already: its chain row has
+  evidence (0, 0), which the structural filter excludes; it was outside the
+  §27 selections. Both halves encode the earlier reading: a same-order row
+  as a structural part (line 17) and a same-order part forcing an order
+  disagreement (lines 23 to 26). Under Orders §11 both are false. Claude's
+  recommendation: keep the test's name and purpose, rewrite its body to
+  the one rule: the row is found by `parts.find`, absent from both
+  structural projections, both orders stay 0, and a third order-0 concept
+  joined to the left word by a positive row also stays 0 with no error
+  from `settle`.
+- `test_item25_repair.py::test_reflexive_part_fact_is_not_an_intuition_definition_cycle`
+  (Codex's own, stage 2 repair, unaccepted). Its last assertion expects
+  reciprocal positive rows between two order-1 concepts to form a
+  structural cycle; under Orders §11 they are relations and nothing
+  cycles. Codex's proposed patch asserts both rows readable and neither a
+  member, the intuition value unchanged, then writes an actual constituent
+  cycle through the store's own writer and expects the guard's error.
+  Claude's recommendation: accept the patch as proposed.
+
+**Pending on the next hash.** Thought, core with the native worked
+document, ports-and-finite, smoke, the three lesson-13 arms and the stage
+2 freeze, all on one source hash after the edits above; §28.1's conditions
+unchanged. The Codex text follows Alec's two answers.
