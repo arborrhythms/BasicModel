@@ -556,3 +556,9 @@ mention of "this" carries a cue that constrains nothing, so location,
 recency and expectation decide the bind, and the mention finds only its
 temporary match in MTM. Alec to correct if the intent is instead that an
 indexical is never minted at all.
+
+**One rule at every order, order zero included (Alec, 2026-10-31, after review).** The membership and raise rules above hold at order zero as at every other order. A positive row between two order-zero symbols is a relation: it is found by `parts.find`, it is a member of neither symbol, and it derives no order. The order-zero containment reading in the Architecture.md section of the completion round is withdrawn. Orders §1's containment concerns percepts in the field, not symbols.
+
+**Relations are built first, in STM1 or LTM1 (Alec, 2026-10-31).** Alec: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." STM1 holds relations over STM0 ideas, as the second exchange of 2026-10-27 in the [thought design notes](plans/2026-10-26-thought-design-notes.md) has it. LTM1 is the long-term relation stratum, by the naming at the head of this file (2026-10-21). A relation is built first in one of the two strata, and it becomes evidence for a raise later. This completes "Relations are immediate" above with its two strata. The completion round changes neither where a relation is built nor which rows the raise reads.
+
+**The second-member threshold above is superseded.** "Relations are immediate" says the raise fires at the second distinct member. The count is `raiseCount`, default 3, as the bullet "The raise counts distinct members" and the paragraph "No symmetry handling" above state.

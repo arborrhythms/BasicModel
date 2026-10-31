@@ -2057,3 +2057,32 @@ same way.
 document, ports-and-finite, smoke, the three lesson-13 arms and the stage
 2 freeze, all on one source hash after the edits above; §28.1's conditions
 unchanged. The Codex text follows Alec's two answers.
+
+### 30.1 Alec's decisions on the review (2026-10-31)
+
+Alec accepted the recommendations in §30 and asked that one thing be recorded.
+
+- **One rule at every order.** The order-zero containment exception is withdrawn. The rule of Orders §11 holds at order zero (Orders §11, 2026-10-31). §30.2 item 7 gives Codex the change.
+- **The word-chain test.** `test/test_sweep_repairs.py::test_semantic_word_chain_does_not_redefine_a_word_form_order` is rewritten to the one rule, keeping its name and purpose (§30.2 item 8).
+- **The reflexive-cycle test.** Codex's proposed patch, `doc/benchmarks/2026-10-31-item2-5-completion/proposed-cycle-fixture.patch`, is accepted as proposed. It applies cleanly to the current `test/test_item25_repair.py`.
+- **Relations are built first.** Alec: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." Recorded in Orders §11 with the two strata named. The completion round changes neither where a relation is built nor which rows the raise reads.
+
+### 30.2 Addendum for Codex, items 7 to 10 (Alec, 2026-10-31)
+
+Governing as §28.1 and §28.3, with §30.1 as Alec's decisions, on one source hash. Results go in §31.
+
+7. One rule at every order, order zero included. Remove the containment exception that the completion round added.
+   - In `ConceptAllocator.records`, delete the branch that keeps a positive row between two order-zero symbols as a structural part, and delete the `order_only` reading. A positive row between two symbols with recorded orders is a structural part only when the member is exactly one order below the whole. Otherwise it is a relation: found by `parts.find`, absent from `refs` and `taxonomy_children`, and deriving no order.
+   - `_part_order` reads `refs` again.
+   - `class_member` keeps its reads for members and wholes with no recorded order, as §28.1 item 1 says.
+   - In `test/test_item25_completion.py`, rewrite the order-boundary certificate to the one rule and rename it `test_order_boundary_membership_follows_one_rule`. A positive row between two order-zero symbols is a relation, and a member one order below still yields membership.
+   - In the section you appended to `doc/Architecture.md`, replace the two sentences on containment at the same order in its first paragraph with the one rule, keep the rest, and retitle the heading to "Class membership and the counted raise (2026-10-31)".
+
+8. Two standing tests, by Alec's decision.
+   - In `test/test_sweep_repairs.py`, rewrite `test_semantic_word_chain_does_not_redefine_a_word_form_order` to the one rule, keeping its name and purpose. The row is found by `parts.find`. Neither word is listed in the other's `refs` or `taxonomy_children`. Both orders stay 0. A third order-zero concept joined to the left word by a positive row also leaves both orders at 0, and `settle` raises nothing. Drop the disagreement assertion.
+   - Apply `doc/benchmarks/2026-10-31-item2-5-completion/proposed-cycle-fixture.patch` to `test/test_item25_repair.py` as proposed.
+   - These are the only standing tests this addendum changes. If another standing test fails after item 7, return it by name and do not edit it.
+
+9. Relations come first. Alec, 2026-10-31: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." Nothing in this round changes where a relation is built or which rows the raise reads.
+
+10. Run and freeze. After items 7 to 9, on one source hash, run the standing selection, now including `test/test_sweep_repairs.py`; the twelve completion certificates; thought; core with the native worked document; ports-and-finite; smoke; and the three lesson-13 arms, (true,0), (false,0) and (false,0.5). Then take the stage 2 freeze. Receipts go under `doc/benchmarks/2026-10-31-item2-5-completion/`. The conditions of §28.1 hold: no RUN_SLOW, and targeted node IDs while iterating. Stop and return early only as §28.1 says.
