@@ -1682,3 +1682,64 @@ settle. No full sweep, no RUN_SLOW, no seed, no resize, preallocated shapes,
 no language named in code, fail loud. Do not read or merge the item 1.5
 sandbox branch. Return through Alec for one review; no commit.
 ~~~
+
+## 28. Claude's review of the stage 2 repair return (2026-10-30)
+
+Reviewed: §27, `review.md`, `readings.md`, the order-boundary reproducer and
+the code at `cb8a159a6792...`. The frozen source verifies against the live
+tree (970 files, none differ). The early return is the right call: the
+order case is a decision the spec does not settle, and Codex changed no
+contract to get past it.
+
+**The repair is built as §26.3 reads.** `absolute_residual` is the per-lane
+mean squared error, plain for cube codes and in the $\operatorname{asinh}$
+chart for numeric walks; `walk_residual` returns the undiluted per-lane sums
+plus the unresolved stack energy; the close registers the three lanes
+through `Error.error` with the unit baseline; one exactness constant,
+`EXACT_RESIDUAL_TOLERANCE`, serves the menu, the inverse menu and the
+decoder; admissible proposals assert finiteness. The overflow reproducer
+now gives a finite loss of 0.25 with finite gradients. The cued read scores
+one window (explicit references, then the newest LTM0 rows, then relation
+rows by stamp) in one batched product, returns the top-$K$ by match and
+charges one record per returned record; the 2,000-row certificate reaches
+row 1777. The R and A reading shows 125.36 and 0 under the separate
+chooser, as ownership requires.
+
+**Decision for Alec (D-iv): which positive rows between same-order
+individuals are structure.** Two individuals already witnessed at order 1,
+and a sentence asserts `equal` or `part` between them. The structural
+projection (`ConceptAllocator.refs(cid, 'part')`, read by `_part_order`)
+counts every positive Part row as a member, so the whole derives order 2
+against its recorded order 1 and the epoch boundary raises, correctly, by
+the guard. Recommended: *order counts only lower-order members.* For a whole
+with a recorded order $n$, a positive row whose member has order $n$ is
+testimony: stored with its pair and read by queries, thought, `intuit` and
+pervasion, but not a structural member, so it neither derives the whole's
+order nor teaches its definition or class membership. A member below $n$ is
+structure as today; a member above $n$ still trips the guard, as the
+presentation-memory test requires. A whole with no recorded order (an
+implicit definition or a class) counts every positive member, as today. No
+new column: the projection reads the members' recorded orders. This agrees
+with the orders spec: one equality writes its row without changing order,
+and distinct witnesses form a separate raised class, whose members are of
+lower order. Rejected: typing the row at write time (the grammar supplies no
+such type); restamping the whole or dropping the row (Codex's reasons).
+
+**Three small items for the same round.**
+
+1. `LanguageSpace._bounded_binary_reconstruction` still tests progress
+   against a threshold scaled by the parent's energy. It was outside the
+   named sites, but it is the same ratio test; it takes
+   `EXACT_RESIDUAL_TOLERANCE`.
+2. The R and A reading keys its epoch vectors by parameter identity, so
+   contributions to a sparse definition parameter replaced mid-epoch are
+   dropped. Key by parameter name so the reading survives growth.
+3. For item 1.5, not this round: the cued read calls `LTM0.row()` for every
+   window candidate, about fifteen host reads each, before scoring. Roles
+   for occurrence rows can be gathered from `slots`, and host metadata read
+   only in rank order. This may explain part of the first epoch's mean step
+   of 22.6 s against 12.8 s before (medians 8.4 and 9.2); one epoch is not a
+   measurement.
+
+On Alec's answer the next round implements D-iv and the two items, then runs
+the three arms and freezes stage 2 on one hash.
