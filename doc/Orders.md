@@ -473,3 +473,22 @@ the operator or the origin of a row. The store keeps its two-reference LTM1
 rows; how equals() eventually stores a relation is open. This withdraws
 thinking spec §28's "order counts only lower-order members" and the
 testimony column proposed in conversation.
+
+**Relations are immediate; order is evidence over trials (Alec,
+2026-10-31).** Alec: "building relations can happen immediately, but that
+will not immediately raise the order; it serves as evidence over many
+trials. This will help us disambiguate synonyms, indexicals, and relations
+of order." The row is written at the sentence close; no single row moves an
+order. The raise reads the accumulated rows: today it fires at the second
+distinct member above the `raiseEvidence` threshold
+(`PartClosing._observe_equality`; default 0, Params.md), and that threshold
+is the one knob on how much evidence a class needs. What the accumulated
+rows then settle, by reading rather than by marking: two concepts whose
+members coincide are synonyms; a word whose relata share nothing is an
+indexical, a pointer; and which concept sits above which is read from
+whether every member of one is a member of the other, as `pervasion` reads
+the Part store. *Claude's reading, pending Alec's yes:* the same principle
+settles the definition fold and the class cover, which today read every row
+of the store. A row between two known concepts at other than one below is
+evidence for a later raise and teaches neither side's definition in either
+lane; content enters a class at the raise, through its cover.
