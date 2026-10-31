@@ -418,3 +418,58 @@ speech").
   LTM1 rows. Alec's reading would store each in the stratum of the class
   it builds, putting the second in LTM2. The stratum is derived when read,
   so this changes reading, not storage.
+
+## 11. Pointers, identity, and relations across known concepts (Alec, 2026-10-31)
+
+*Decided in conversation on 2026-10-31 ([thinking spec §28.1](plans/2026-10-27-item2-5-thinking.md)).
+The reading of rows between known concepts is built in item 2.5's
+completion round; pointers and polymorphic words are future work
+([FutureWork](FutureWork.md), "Polymorphic words, suchness and `point()`").*
+
+**Demonstratives are pointers.** Alec: "This is a special word; it does
+not reference a static concept, it draws attention to a region in space.
+It's not that useful for a text-only learner, but we need an operation for
+it, maybe point(), which is a generic." And: "It can point to a variable
+concept." A demonstrative has no order of its own; what it points at may be
+an event, an individual or a variable. §10's "demonstratives point at
+events, at order 0" is the first case, not the rule.
+
+**Pointers are found by their confusion, not named.** Alec: "the way to
+detect it is first to let confusion build up, as already happened, and then
+disambiguate when the identity shifts too much; 'this' should get a
+higher-order promotion, but identity can't be assigned until we see the
+word on both the lhs and rhs." And: "when a word is very polymorphic, it can
+only be known as 'this' or 'suchness', it cannot be assigned a consistent
+differentiating identity." The learner first gives the word one identity.
+Lesson 13 under item 2.5 did: both demonstratives resolved to one order-1
+concept, and both names' noun phrases to one referent, while the names' own
+objects stayed distinct. When the identity shifts too much, the word is
+promoted above what it has pointed at, and the promoted concept carries no
+differentiating content.
+
+**Identity is marked by articles and shown by non-commutativity.** Alec:
+"IS of identity typically carries a definite or indefinite article to
+indicate differences of order; the lack of sentence commutativity makes
+that clear (the cat is black, but black is not the cat)." A predication
+does not commute; an identity ("Paris is the capital of France") does. The
+determiners carry the difference by selection (§10, amended 2026-10-22),
+learned from the grammar's positions; no article is named in code.
+
+**IS is not special; a row between known concepts is a relation across
+them.** Alec: "We shouldn't mark 'is' as special, this is just a part of the
+equals() operator that will eventually store known concepts across a
+relation rather than as a single idea. The way those ideas are combined and
+associated can be revisited, because they are stored in LTM." The reading
+item 2.5 builds now, for the order projection only: a positive LTM1 row
+whose two referents are both concepts with recorded orders is a member of
+the whole only when the member is exactly one order below it, a class and
+its member as §10 defines them. Any other such row is a relation across two
+known concepts. It is stored with its pair and read as before by queries,
+thought, `intuit`, pervasion and the raise, but it is a member of neither
+concept, so it derives no order and does not enter either definition.
+Occurrence and relation members define as before, and the order guard
+checks them. The kind is read from the referents (step 2 §71); nothing marks
+the operator or the origin of a row. The store keeps its two-reference LTM1
+rows; how equals() eventually stores a relation is open. This withdraws
+thinking spec §28's "order counts only lower-order members" and the
+testimony column proposed in conversation.

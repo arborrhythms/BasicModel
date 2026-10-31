@@ -2302,3 +2302,38 @@ when it is set, and is unset by default. The read then scores the rows
 whose `.when` stamp lies in the bracket, explicit references first, with
 the same filters and the same top-$K$. Not built; the count window lands
 with item 2.5's repair round.
+
+## Polymorphic words, suchness and `point()` (Alec, 2026-10-31)
+
+*Direction from Alec, recorded in [Orders §11](Orders.md); not built and
+not yet scheduled. Proposed for item 2.7's November round, where lesson 13
+is measured; Alec to place it.*
+
+- **`point()`.** One language-independent operation that draws attention to
+  a region. For a text-only learner the regions are the ones attention
+  already returns: the current sentence, document and stream wholes and the
+  recent rows. With perception, a region of the percept field. What it
+  points at may be an event, an individual or a variable concept. Its
+  reverse writes back the word it was applied to, as `bind`'s does. It is
+  learned: no word list says which words point.
+- **Detection by confusion.** The learner gives a pointing word one identity
+  and lets the confusion build. When that identity shifts too much, the word
+  is very polymorphic: it is promoted above what it has pointed at, and the
+  promoted concept carries no differentiating identity, "this" or
+  suchness. Each use's referent then comes from the sentence and the
+  situation.
+- **What the code does (read 2026-10-31).** The raise fires only on a shared
+  right-hand side: `PartClosing._observe_equality` passes the right side to
+  `ConceptIndex.index_part_row` as the shared side. A shared left-hand side
+  ("this is Felix", "this is Ciao") raises nothing, so the promotion has no
+  route yet. In lesson 13 the confusion collapsed both sides (one concept
+  for both demonstratives, one referent for both names), so the shift must
+  be measured on something the confusion did not collapse, such as the own
+  objects of the words on the other side.
+- **A measure (Claude's proposal, not decided).** A promoted class whose
+  members share nothing: its common part, the meet of its members, carries
+  no differentiating content, where a kind like "cat" keeps one. No ratio.
+- **Relations across known concepts.** Alec: equals() "will eventually store
+  known concepts across a relation rather than as a single idea", and how
+  those ideas are combined and associated can be revisited from LTM. Item
+  2.5 applies only the order reading of Orders §11.

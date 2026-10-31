@@ -1743,3 +1743,105 @@ such type); restamping the whole or dropping the row (Codex's reasons).
 
 On Alec's answer the next round implements D-iv and the two items, then runs
 the three arms and freezes stage 2 on one hash.
+
+### 28.1 D-iv decided: IS is not marked; rows between known concepts are relations; the text for Codex (Alec, 2026-10-31)
+
+Alec answered D-iv through the demonstratives in the failing epoch; his
+words are in Orders.md §11. In short:
+
+- A demonstrative is a pointer. It draws attention to a region and can point
+  at an event, an individual or a variable concept; the operation for it,
+  maybe `point()`, is language-independent. Pointers are found by their
+  confusion: the identity the learner gives the word is left to build up
+  confusion and is disambiguated when it shifts too much. A very polymorphic
+  word "can only be known as 'this' or 'suchness'" and is promoted with no
+  consistent differentiating identity. Future work (FutureWork.md,
+  "Polymorphic words, suchness and `point()`").
+- Identity is marked by articles and shown by non-commutativity: "the cat is
+  black, but black is not the cat."
+- "We shouldn't mark 'is' as special." The testimony column proposed in
+  conversation is withdrawn, and so is §28's "order counts only lower-order
+  members". An equality between known concepts is a relation across them,
+  not a single idea.
+
+The reading this round builds (Orders §11): a positive LTM1 row whose two
+referents are both symbols with recorded orders is a member of the whole
+only when the member is exactly one order below, a class and its member;
+any other such row is a relation across two known concepts, kept and read as
+before but a member of neither. In the failing epoch, row 72 joins two
+order-1 concepts, so it is a relation, concept 56 keeps order 1 and the
+confusion is left to build, as Alec wants. The presentation-memory guard
+case, an affirmed relation member, is unchanged.
+
+~~~
+Item 2.5, stage 2 completion round (2026-10-31). Governing: thinking spec
+§§26.3, 27, 28 and 28.1; Orders.md §10 and §11; step 2 §71 (a row's kind is
+read from its referents). Build on your unaccepted repair source
+cb8a159a6792 with its receipts; round B stays frozen at c54db0a8; round A is
+committed at 3718d9d0dc. Defaults stay separateChooser true,
+reconstructionJitter 0.
+
+1. A row between known concepts is a relation across them (Orders §11).
+   a. In the structural projection, the reading that
+      ConceptAllocator.refs(cid, 'part') and records give to _part_order,
+      settle, taxonomy_children, class_members and every other reader of
+      that projection: a positive LTM1 row whose two referents are both
+      symbols with recorded orders (reference_orders) is a member of the
+      whole only when the member's order is exactly one below the whole's.
+      Any other such row is a relation across two known concepts and a
+      member of neither.
+   b. The row itself is unchanged: written with its pair and stamp, kept in
+      LTM1, and read as before by queries, thought, intuit, pervasion,
+      define_pending and the raise. PartClosing._observe_equality and
+      ConceptIndex.index_part_row are unchanged.
+   c. Occurrence and relation members, and every member of a whole with no
+      recorded order, are read as today; settle still raises when they
+      disagree with the recorded order.
+   d. Nothing reads the operator, the clause or the row's origin; no
+      column, flag or write-time type is added.
+   Certificates: your order-boundary reproducer becomes a passing test for
+   equal and for part: the row is written with its pair, both concepts keep
+   order 1, the row is found by parts.find and is absent from the whole's
+   structural records, and the epoch boundary passes. A known member one
+   order below a known whole remains a structural member; a known member
+   above it is a relation, not a member, and the boundary passes.
+   test_unasserted_part_does_not_raise_a_retained_identity_order passes
+   unchanged, and so do the existing raise tests, including the second
+   distinct witness raising the shared side. If a standing test asserts
+   that a symbol with a recorded order is a structural member of a known
+   whole at any order other than one above it, stop and return the test
+   named; do not edit it.
+
+2. The two small items of §28.
+   a. LanguageSpace._bounded_binary_reconstruction's progress test reads
+      the absolute residual against EXACT_RESIDUAL_TOLERANCE; its
+      parent-scaled threshold retires. Certificate: parent lanes of exactly
+      zero and of 1e-30 give the same decision.
+   b. The R and A reading keys its epoch vectors by parameter name, so a
+      sparse definition parameter replaced mid-epoch keeps its
+      contribution. Certificate: a replacement mid-epoch retains the
+      earlier contribution under the same name.
+   §28's third item (the cued read's per-candidate LTM0.row calls) belongs
+   to item 1.5, not this round.
+
+3. Then, on one source hash: the required selections as in §25
+   (certificates, thought, core, ports-and-finite), the native worked
+   document unseeded, the four-sentence smoke, and lesson-13 under
+   (true, 0), (false, 0) and (false, 0.5), sequentially. Each arm reports
+   per epoch: bound and exact answers, objects and their orders, mean and
+   median training step time, per-operator dissonance, chooser variance and
+   the R and A reading. Also per epoch, as observation for the future work
+   on polymorphic words: for each idea sentence, the symbols its two sides
+   resolved to, with their orders, and the count of relations across known
+   concepts written. Freeze stage 2 on that hash.
+
+Receipts under doc/benchmarks/<date>-item2-5-completion/ (the real date):
+frozen-source.json, commands with environments, ports with before/after
+text, allocation reads. Architecture.md by append or exact replacement for
+the projection's reading; results appended to the thinking spec as §29.
+Stop and return early only on a gate you cannot repair at its producer or a
+decision the spec does not settle. No full sweep, no RUN_SLOW, no seed, no
+resize, preallocated shapes, no language named in code, fail loud. Do not
+read or merge the item 1.5 sandbox branch. Return through Alec for one
+review; no commit.
+~~~
