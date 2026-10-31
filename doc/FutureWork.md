@@ -2337,3 +2337,18 @@ is measured; Alec to place it.*
   known concepts across a relation rather than as a single idea", and how
   those ideas are combined and associated can be revisited from LTM. Item
   2.5 applies only the order reading of Orders §11.
+
+**Detection by broken transitivity (Alec, 2026-10-31, later).** Alec:
+"'this is Felix' and 'this is ciao' are actually better read as symmetric,
+because that creates a transitivity that breaks (which is what we want as
+evidence for a polymorphic reference)." The signal for a pointer is not the
+meet measure above, which is withdrawn, but the transitive closure of
+symmetric equality among same-order known concepts: this $=$ Felix and
+this $=$ Ciao give Felix $=$ Ciao, which their witnessed distinctness
+contradicts. The shared concept is the polymorphic reference. With
+`raiseCount` ([Orders §11](Orders.md)) it is promoted one order with no
+differentiating content once that many distinct others have been equated
+with it. This closes the shared-LHS gap noted above: the raise reads the
+shared side in either position. Item 2.5's completion round reports the
+breaks per epoch (thinking spec §28.2, item 6) and raises on none of them;
+this section builds the symmetric raise, the promotion and `point()`.

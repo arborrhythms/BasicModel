@@ -1845,3 +1845,68 @@ resize, preallocated shapes, no language named in code, fail loud. Do not
 read or merge the item 1.5 sandbox branch. Return through Alec for one
 review; no commit.
 ~~~
+
+### 28.2 Alec's answers of 2026-10-31, later: the fold and the cover, `raiseCount`, symmetric equality; the addendum for Codex
+
+Alec, on Claude's question whether the fold and the cover follow §11:
+"This should be done now; extension in LTM1 creates higher-order concepts
+(classes), and a raiseCount of at least 3 seems necessary." On the
+disambiguation of indexicals: "'this is Felix' and 'this is ciao' are
+actually better read as symmetric, because that creates a transitivity that
+breaks (which is what we want as evidence for a polymorphic reference)."
+Recorded in Orders §11 (its last paragraph) and FutureWork ("Detection by
+broken transitivity"). Correction to §28.1's item 1a: `class_members`
+(FamiliarTier) is not a reader of the projection; it and
+`DefinitionFold.examples` walk the Part store directly, which is why item 4
+below exists. The symmetric raise itself is not in this round; the round
+observes it (item 6). This text follows §28.1's, and Codex applies both on
+one source hash:
+
+~~~
+Item 2.5, stage 2 completion round, addendum (2026-10-31). Governing as
+§28.1, plus Orders §11's last paragraph (extension creates classes;
+raiseCount; symmetric equality) and FutureWork, "Detection by broken
+transitivity". Applies with §28.1's text on the same source hash.
+
+4. The definition fold and the class cover read membership as the order
+   projection does. DefinitionFold.examples and FamiliarTier.class_members
+   exclude a row whose two referents are both symbols with recorded orders
+   unless the member's order is exactly one below the whole's. Every other
+   row they read today they still read, in both lanes: negative evidence
+   on a whole with no recorded order, occurrence members, members of an
+   unbound shared side. Certificates: a positive row between two order-1
+   concepts yields no fold example and no cover weight for either side; a
+   member one below still yields both; a negative row on an unbound shared
+   side still yields its example; the standing fold tests pass unchanged.
+
+5. The raise counts distinct members: <ConceptualSpace><raiseCount>,
+   default 3, with a Params.md row; a value below 2 is rejected. The
+   shared side acquires its class, one order up, when the number of
+   pairwise distinct members witnessed above raiseEvidence reaches
+   raiseCount, in PartClosing._observe_equality and on define_pending's
+   minting path alike. Until then the witnesses are kept, the singleton
+   bookkeeping extended to raiseCount - 1 members per shared side with
+   distinctness judged as today, by token or by event; the rows are
+   present as evidence; no concept exists one order above the shared side;
+   a word on that side has no object. At the count, one parent is created
+   with every kept member as a structural row and the word is defined to
+   it, as today's second witness does; a later one-below member joins as
+   today. conceptMintCount, already 3, is unchanged. Certificates: two distinct
+   witnesses raise nothing, both rows are found by parts.find and neither
+   concept changes order; the third raises one parent at the shared side's
+   order plus one with three members, and the word's object is that
+   parent; a fourth joins it. The standing raise tests gain a third
+   distinct witness rather than a lowered count; a test that cannot be
+   given one is returned by name, not edited.
+
+6. Observation only, per epoch in each lesson arm, beside item 3's: for
+   each concept with a recorded order, the number of distinct concepts of
+   the same recorded order joined to it by positive LTM1 rows, read in
+   either position; the number of concepts for which that count is 2 or
+   more, the transitivity breaks of Orders §11; and for each such concept
+   its word forms and the joined concepts with their orders. No raise,
+   promotion or fold reads this.
+
+Receipts, Architecture.md and Params.md by append or exact replacement,
+results in §29, and every other condition as §28.1.
+~~~

@@ -492,3 +492,42 @@ settles the definition fold and the class cover, which today read every row
 of the store. A row between two known concepts at other than one below is
 evidence for a later raise and teaches neither side's definition in either
 lane; content enters a class at the raise, through its cover.
+
+**Extension creates classes; the raise counts; equality is symmetric
+(Alec, 2026-10-31, later).** On the fold and the cover: "This should be
+done now; extension in LTM1 creates higher-order concepts (classes), and a
+raiseCount of at least 3 seems necessary." On §10's Frege: "The analogy
+with Frege is a good one." On the disambiguation of indexicals: "'this is
+Felix' and 'this is ciao' are actually better read as symmetric, because
+that creates a transitivity that breaks (which is what we want as evidence
+for a polymorphic reference)." Decided; the first two are built in item
+2.5's completion round ([thinking spec §28.2](plans/2026-10-27-item2-5-thinking.md)):
+
+- **A class is its extension in LTM1.** A row between two known concepts
+  at other than one below is evidence and teaches neither side's
+  definition in either lane: the definition fold and the class cover read
+  membership as the order projection does. Content enters a class at the
+  raise, through the cover of its members.
+- **The raise counts distinct members.** A new `raiseCount`
+  (`<ConceptualSpace><raiseCount>`, default 3; a value below 2 is
+  rejected): the shared side acquires its class, one order up, when the
+  number of pairwise distinct members witnessed above `raiseEvidence`
+  reaches it. Before that, no concept exists one order above the shared
+  side and a word on that side has no object; the rows stand as evidence.
+  Minting an individual from its recurrent mentions keeps its own
+  threshold, `conceptMintCount`, already 3; Alec to say whether `raiseCount` should
+  govern that step as well.
+- **Equality is symmetric.** A relation across two known concepts of the
+  same order, the rows named above, is read in both directions. *Claude's
+  reading:* its transitive closure through a shared concept either holds,
+  and the two concepts it identifies are synonyms, or breaks, because the
+  two concepts it would identify are witnessed distinct, as different
+  identities or as events at different places or times. The break is the
+  evidence of a polymorphic reference: the shared concept refers to
+  different things at different times, a pointer, and after `raiseCount`
+  such others it is promoted one order with no differentiating content.
+  Membership, one below, is not transitive in this way, so a kind raised
+  from its members breaks nothing. The completion round reports the breaks
+  per epoch and does not yet raise on them; the symmetric raise and the
+  promotion are built with `point()` ([FutureWork](FutureWork.md),
+  "Detection by broken transitivity").
