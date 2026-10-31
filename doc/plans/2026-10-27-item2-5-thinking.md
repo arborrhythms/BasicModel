@@ -1910,3 +1910,64 @@ transitivity". Applies with §28.1's text on the same source hash.
 Receipts, Architecture.md and Params.md by append or exact replacement,
 results in §29, and every other condition as §28.1.
 ~~~
+
+### 28.3 Alec's correction of 2026-10-31, later still: no symmetry handling, no break counter, no `point()`; the addendum for Codex, replacing §28.2's
+
+Alec: "The 'symmetric raise' should just be a raise on raiseCount, we
+don't need any symmetry handling (the architecture itself is symmetric).
+And we don't need to count breaks, that can be seen by inspecting LTM1, so
+we just need to do that periodically. This eliminates an explicit point(),
+words that are pronouns or indexicals will not find an identity in
+concepts, so they will find only temporary matches in MTM." Recorded in
+Orders §11 and FutureWork, both in their closing paragraphs. §28.2's item 6
+is withdrawn, and so is §28.1 item 3's count of relations across known
+concepts, for the same reason: both are read off the LTM1 rows the epoch
+receipts already keep. §28.2's item 5 is restated so that the count reads
+no position. Codex applies this text with §28.1's, in place of §28.2's:
+
+~~~
+Item 2.5, stage 2 completion round, addendum (2026-10-31, replacing the
+earlier addendum). Governing as §28.1, plus Orders §11's last two
+paragraphs and FutureWork's closing paragraph. Applies with §28.1's text
+on the same source hash. §28.1 item 3's count of relations across known
+concepts is dropped; its per-sentence resolution report stays.
+
+4. The definition fold and the class cover read membership as the order
+   projection does. DefinitionFold.examples and FamiliarTier.class_members
+   exclude a row whose two referents are both symbols with recorded orders
+   unless the member's order is exactly one below the whole's. Every other
+   row they read today they still read, in both lanes: negative evidence
+   on a whole with no recorded order, occurrence members, members of an
+   unbound shared side. Certificates: a positive row between two order-1
+   concepts yields no fold example and no cover weight for either side; a
+   member one below still yields both; a negative row on an unbound shared
+   side still yields its example; the standing fold tests pass unchanged.
+
+5. The raise counts distinct members: <ConceptualSpace><raiseCount>,
+   default 3, with a Params.md row; a value below 2 is rejected. A concept
+   joined by positive rows above raiseEvidence to raiseCount pairwise
+   distinct concepts at its own order, distinctness judged as today by
+   token or by event, acquires its class one order up with those concepts
+   as structural members. A row's two positions are not read for this
+   count. An unbound shared side takes its members' order as today. This
+   holds in PartClosing._observe_equality and on define_pending's minting
+   path alike. Until the count the witnesses are kept, the singleton
+   bookkeeping extended to raiseCount - 1 per concept; the rows are present
+   as evidence; no concept exists for it one order above; a word on that
+   side has no object. At the count, one parent is created and the word is
+   defined to it, as today's second witness does; a later one-below member
+   joins as today. conceptMintCount, already 3, is unchanged. Certificates:
+   two distinct witnesses raise nothing, both rows are found by parts.find
+   and neither concept changes order; the third raises one parent at the
+   concept's order plus one with three members, and the word's object is
+   that parent; a fourth joins it; three rows that share their first
+   referent raise it as three that share their second do. The standing
+   raise tests gain a third distinct witness rather than a lowered count;
+   a test that cannot be given one is returned by name, not edited.
+
+6. Nothing counts breaks and no pointer operation is built. The epoch
+   receipts keep their LTM1 rows as they do now; that is the inspection.
+
+Receipts, Architecture.md and Params.md by append or exact replacement,
+results in §29, and every other condition as §28.1.
+~~~

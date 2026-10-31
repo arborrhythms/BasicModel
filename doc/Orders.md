@@ -531,3 +531,28 @@ for a polymorphic reference)." Decided; the first two are built in item
   per epoch and does not yet raise on them; the symmetric raise and the
   promotion are built with `point()` ([FutureWork](FutureWork.md),
   "Detection by broken transitivity").
+
+**No symmetry handling, no break counter, no `point()` (Alec, 2026-10-31,
+later still).** Alec: "The 'symmetric raise' should just be a raise on
+raiseCount, we don't need any symmetry handling (the architecture itself is
+symmetric). And we don't need to count breaks, that can be seen by
+inspecting LTM1, so we just need to do that periodically. This eliminates
+an explicit point(), words that are pronouns or indexicals will not find an
+identity in concepts, so they will find only temporary matches in MTM."
+This replaces the previous paragraph's third item and its deferral. The
+raise is one rule at every order: a concept joined by positive rows, above
+`raiseEvidence`, to `raiseCount` pairwise distinct concepts at its own
+order acquires its class one order up, with those concepts as its members.
+A row's positions are not read for this count, so the shared-LHS gap closes
+with nothing added. No closure is computed and nothing counts breaks: a
+concept joined to several distinct concepts at its order is read off the
+LTM1 rows in the receipts, periodically, by inspection. `point()` is not
+built. *Claude's reading of the last sentence against lesson 13:* a kept
+definition mints its pending subject, so "this" was minted at its first
+"this is Felix". Under this rule its later equations with distinct names
+are evidence until `raiseCount` of them raise it to a class with no
+differentiating content, which becomes the word's object; from then a
+mention of "this" carries a cue that constrains nothing, so location,
+recency and expectation decide the bind, and the mention finds only its
+temporary match in MTM. Alec to correct if the intent is instead that an
+indexical is never minted at all.

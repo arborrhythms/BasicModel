@@ -2352,3 +2352,18 @@ with it. This closes the shared-LHS gap noted above: the raise reads the
 shared side in either position. Item 2.5's completion round reports the
 breaks per epoch (thinking spec §28.2, item 6) and raises on none of them;
 this section builds the symmetric raise, the promotion and `point()`.
+
+**Closed: no `point()`, no symmetric raise, no break counter (Alec,
+2026-10-31, later still).** Alec: "The 'symmetric raise' should just be a
+raise on raiseCount, we don't need any symmetry handling (the architecture
+itself is symmetric). And we don't need to count breaks, that can be seen
+by inspecting LTM1, so we just need to do that periodically. This
+eliminates an explicit point(), words that are pronouns or indexicals will
+not find an identity in concepts, so they will find only temporary matches
+in MTM." The raise on `raiseCount` ([Orders §11](Orders.md), closing
+paragraph) is the whole mechanism for this section: a concept joined to
+that many distinct concepts at its order raises, whichever position it
+holds in its rows. What remains is a practice, not work: inspect the LTM1
+rows in the receipts periodically for concepts joined to several distinct
+concepts at their order, the breaks of the paragraph above. Nothing in this
+section is scheduled for the November round.
