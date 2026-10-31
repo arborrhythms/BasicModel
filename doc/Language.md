@@ -754,7 +754,7 @@ learned credit.
 | tense, aspect | individuates the time *(`position` over the verb phrase's phases)* | time |
 | conditional | narrows which alternatives are in play | |
 | modal | individuates: "might" some, "must" all *(`position` with a world as object; default all possible worlds — occurrence §14.3–§14.4)* | alternative |
-| deictic: pronoun, indexical *(proposed 2026-10-31; [Orders §11](Orders.md), "The deictic class"; built in item 2.5's completion round)* | points: individuates without narrowing and never acquires an object; a pronoun finds its referent among MTM's identities, an indexical among the field's percepts (future work; until then it does what a pronoun does) | thing |
+| deictic: pronoun, indexical *(a reading, not a built class; Alec, 2026-10-31; [Orders §11](Orders.md), "No forcing; the class is the raise's outcome")* | points: a word minted at its first definition and raised at `raiseCount` distinct relata, whose class content, the centroid of its members, empties of differentiating share as they diversify; its mention then constrains nothing, and location, recency and expectation decide the bind; an indexical's candidates come from the field once there is one (future work) | thing |
 
 **Which operators commute.** One that acts the same on any domain commutes
 with the others (*fake*, *wooden*, *noble*). One that reads its scale from
