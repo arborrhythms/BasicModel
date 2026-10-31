@@ -2086,3 +2086,34 @@ Governing as §28.1 and §28.3, with §30.1 as Alec's decisions, on one source h
 9. Relations come first. Alec, 2026-10-31: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." Nothing in this round changes where a relation is built or which rows the raise reads.
 
 10. Run and freeze. After items 7 to 9, on one source hash, run the standing selection, now including `test/test_sweep_repairs.py`; the twelve completion certificates; thought; core with the native worked document; ports-and-finite; smoke; and the three lesson-13 arms, (true,0), (false,0) and (false,0.5). Then take the stage 2 freeze. Receipts go under `doc/benchmarks/2026-10-31-item2-5-completion/`. The conditions of §28.1 hold: no RUN_SLOW, and targeted node IDs while iterating. Stop and return early only as §28.1 says.
+
+### 30.3 Alec's answers to the open items (2026-10-31); the addendum for Codex, items 7 to 10, revised (replaces §30.2)
+
+Alec answered the three questions left open after §30.2. Each answer is recorded in Orders §11, under its own paragraph.
+
+- **Pronouns and indexicals.** One word class, not noun; its name is open, and nothing in this round builds it. Orders §11's reading that an indexical is minted first and raised to an amorphous class was not corrected, so it stands. Whether an indexical is minted at all stays open until Alec says otherwise.
+- **Minting and raising.** Alec: "Minting and raising are different." `raiseCount` governs raising only, and `conceptMintCount` governs minting only. The minting path still feeds the raise as evidence, as §28.3 item 5 has it; that observation is not a mint. Items 7 to 10 change neither count.
+- **The clarification.** The sentence the readings cite as "the last clarification in the hand-off" is "The conflict is whether a row joining two order-0 symbols makes one a structural part of the other." Alec's answer: "No, it's a part/whole relation if it's below symbols, and a set/superset if it's above symbols." The answer is no, so the ground the readings give for the order-zero exception does not hold. Item 7 records this and corrects the citation.
+
+The addendum for Codex follows. It replaces §30.2's items 7 to 10 and applies on one source hash.
+
+~~~
+Item 2.5, stage 2 completion round, addendum 2, revised (Alec, 2026-10-31). Governing as §28.1 and §28.3, with §30.1 and §30.3 as Alec's decisions, on one source hash. Results go in §31.
+
+7. One rule at every order, order zero included. Remove the containment exception that the completion round added. Alec's answer to the clarification that readings.md cites is no (Orders §11, 2026-10-31).
+   - In `ConceptAllocator.records`, delete the branch that keeps a positive row between two order-zero symbols as a structural part, and delete the `order_only` reading. A positive row between two symbols with recorded orders is a structural part only when the member is exactly one order below the whole. Otherwise it is a relation: found by `parts.find`, absent from `refs` and `taxonomy_children`, and deriving no order.
+   - `_part_order` reads `refs` again.
+   - `class_member` keeps its reads for members and wholes with no recorded order, as §28.1 item 1 says.
+   - In `test/test_item25_completion.py`, rewrite the order-boundary certificate to the one rule and rename it `test_order_boundary_membership_follows_one_rule`. A positive row between two order-zero symbols is a relation, and a member one order below still yields membership.
+   - In the section you appended to `doc/Architecture.md`, replace the two sentences on containment at the same order in its first paragraph with the one rule, keep the rest, and retitle the heading to "Class membership and the counted raise (2026-10-31)".
+   - In `doc/benchmarks/2026-10-31-item2-5-completion/readings.md`, correct line 3 to the one rule: the clarification it cites is answered no, and its same-order and concrete containment readings are withdrawn. Bring the rest of that file into line with items 7 and 8.
+
+8. Two standing tests, by Alec's decision.
+   - In `test/test_sweep_repairs.py`, rewrite `test_semantic_word_chain_does_not_redefine_a_word_form_order` to the one rule, keeping its name and purpose. The row is found by `parts.find`. Neither word is listed in the other's `refs` or `taxonomy_children`. Both orders stay 0. A third order-zero concept joined to the left word by a positive row also leaves both orders at 0, and `settle` raises nothing. Drop the disagreement assertion.
+   - Apply `doc/benchmarks/2026-10-31-item2-5-completion/proposed-cycle-fixture.patch` to `test/test_item25_repair.py` as proposed.
+   - These are the only standing tests this addendum changes. If another standing test fails after item 7, return it by name and do not edit it.
+
+9. Relations come first. Alec, 2026-10-31: "we build relations in stm1 or ltm1 first, and those will eventually become evidence for raising the order of concepts." Nothing in this round changes where a relation is built or which rows the raise reads.
+
+10. Run and freeze. After items 7 to 9, on one source hash, run the standing selection, now including `test/test_sweep_repairs.py`; the twelve completion certificates; thought; core with the native worked document; ports-and-finite; smoke; and the three lesson-13 arms, (true,0), (false,0) and (false,0.5). Then take the stage 2 freeze. Receipts go under `doc/benchmarks/2026-10-31-item2-5-completion/`. The conditions of §28.1 hold: no RUN_SLOW, and targeted node IDs while iterating. Stop and return early only as §28.1 says.
+~~~

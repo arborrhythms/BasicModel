@@ -2367,3 +2367,5 @@ holds in its rows. What remains is a practice, not work: inspect the LTM1
 rows in the receipts periodically for concepts joined to several distinct
 concepts at their order, the breaks of the paragraph above. Nothing in this
 section is scheduled for the November round.
+
+**A word class for pronouns and indexicals (Alec, 2026-10-31).** Pronouns and indexicals are one class, not noun: both are generic, indexicals have perceptual intension, and both have an amorphous identity, which sets them apart from nouns. Alec: "we need some class other than noun." The class is not named and not built. Whether an indexical is minted at all is open too; the reading in [Orders §11](Orders.md) stands until Alec corrects it.
