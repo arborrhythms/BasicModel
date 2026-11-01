@@ -1,0 +1,52 @@
+<svg width='1180' height='744' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1180' height='744' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker></defs>
+<rect x='0' y='0' width='1180' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='590' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>BasicModel reference configuration  (data/BasicModel.xml)</text>
+<text x='590' y='68' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>read from the model file when the figure is generated  ·  rows × width of each dictionary; live locations × event width</text>
+<rect x='390' y='86' width='400' height='98' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='2'/>
+<text x='590' y='112' text-anchor='middle' font-size='16' fill='#2980b9' font-weight='bold'>InputSpace</text>
+<text x='590' y='138' text-anchor='middle' font-size='13' fill='#2c3e50'>byte surface, ceiling 8,192</text>
+<text x='590' y='160' text-anchor='middle' font-size='13' fill='#2c3e50'>lift 256 × 512</text>
+<rect x='40' y='236' width='340' height='164' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='2'/>
+<text x='210' y='262' text-anchor='middle' font-size='16' fill='#2980b9' font-weight='bold'>PartSpace</text>
+<text x='210' y='288' text-anchor='middle' font-size='13' fill='#2c3e50'>percept dictionary 32,768 × 104</text>
+<text x='210' y='310' text-anchor='middle' font-size='13' fill='#2c3e50'>event 104 = what 96 + where/when 8</text>
+<text x='210' y='332' text-anchor='middle' font-size='13' fill='#2c3e50'>8 live locations × 104</text>
+<text x='210' y='354' text-anchor='middle' font-size='13' fill='#2c3e50'>synthesis: meronomy; 4 native passes</text>
+<text x='210' y='376' text-anchor='middle' font-size='13' fill='#2c3e50'>chunk promotion at 2 uses</text>
+<rect x='420' y='236' width='340' height='164' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#27ae60' stroke-width='2'/>
+<text x='590' y='262' text-anchor='middle' font-size='16' fill='#27ae60' font-weight='bold'>WholeSpace</text>
+<text x='590' y='288' text-anchor='middle' font-size='13' fill='#2c3e50'>property basis 9 × 104</text>
+<text x='590' y='310' text-anchor='middle' font-size='13' fill='#2c3e50'>input 8 × 1,000: conceptual context</text>
+<text x='590' y='332' text-anchor='middle' font-size='13' fill='#2c3e50'>8 live locations × 104</text>
+<text x='590' y='354' text-anchor='middle' font-size='13' fill='#2c3e50'>analysis: meronomy; butterfly: true</text>
+<text x='590' y='376' text-anchor='middle' font-size='13' fill='#2c3e50'></text>
+<rect x='800' y='236' width='340' height='164' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
+<text x='970' y='262' text-anchor='middle' font-size='16' fill='#ca6f1e' font-weight='bold'>SymbolSpace + LanguageSpace</text>
+<text x='970' y='288' text-anchor='middle' font-size='13' fill='#2c3e50'>grammar: complete.grammar</text>
+<text x='970' y='310' text-anchor='middle' font-size='13' fill='#2c3e50'>LTM0 occurrence store: 262,144 rows</text>
+<text x='970' y='332' text-anchor='middle' font-size='13' fill='#2c3e50'>references to CS concepts</text>
+<text x='970' y='354' text-anchor='middle' font-size='13' fill='#2c3e50'>no percept codebook</text>
+<text x='970' y='376' text-anchor='middle' font-size='13' fill='#2c3e50'></text>
+<rect x='190' y='460' width='800' height='164' fill='#f5eef8' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='2'/>
+<text x='590' y='486' text-anchor='middle' font-size='16' fill='#8e44ad' font-weight='bold'>ConceptualSpace</text>
+<text x='590' y='512' text-anchor='middle' font-size='13' fill='#2c3e50'>concept dictionary 65,536 rows (32,768 active) × 1,000</text>
+<text x='590' y='534' text-anchor='middle' font-size='13' fill='#2c3e50'>code 1,000 = form 104 + meaning 896  (448 pole pairs)</text>
+<text x='590' y='556' text-anchor='middle' font-size='13' fill='#2c3e50'>input 8 × 1,000; output 8 × 1,000</text>
+<text x='590' y='578' text-anchor='middle' font-size='13' fill='#2c3e50'>orders 0 to 4 (conceptLayers 5); STM 8 ideas; binding: aligned</text>
+<text x='590' y='600' text-anchor='middle' font-size='13' fill='#2c3e50'>sigma/pi: butterfly; word axis capacity 256 (storage, not length)</text>
+<rect x='440' y='664' width='300' height='64' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
+<text x='590' y='690' text-anchor='middle' font-size='16' fill='#ca6f1e' font-weight='bold'>OutputSpace</text>
+<text x='590' y='716' text-anchor='middle' font-size='13' fill='#2c3e50'>8 × 1,000  →  1 × 1</text>
+<path d='M 470 184 L 470 212 L 210 212 L 210 236' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
+<path d='M 590 184 L 590 236' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
+<path d='M 210 400 L 210 430 L 310 430 L 310 460' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
+<path d='M 540 400 L 540 460' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
+<path d='M 640 460 L 640 400' fill='none' stroke='#8e44ad' stroke-width='1.8' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
+<text x='650' y='436' text-anchor='start' font-size='12' fill='#8e44ad' font-style='italic'>context</text>
+<path d='M 930 460 L 930 400' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
+<path d='M 1080 400 L 1080 520 L 990 520' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<path d='M 540 624 L 540 664' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='1160' y='730' text-anchor='end' font-size='12' fill='#626567' font-style='italic'>batch 28  ·  max sentence 256 words  ·  grammar complete.grammar</text>
+</svg>

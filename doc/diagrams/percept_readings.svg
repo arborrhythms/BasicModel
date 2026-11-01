@@ -1,0 +1,56 @@
+<svg width='1180' height='690' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1180' height='690' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker><marker id='arrr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#c0392b'/></marker><marker id='arrt' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#16a085'/></marker></defs>
+<rect x='0' y='0' width='1180' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='590' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>The readings of a percept: interpret or not; if so, a sign or a symbol</text>
+<text x='590' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Orders.md §11 · Language.md, interpret · thinking spec §32.3–§32.4, item 22 (Alec, 2026-11-01)</text>
+<rect x='380' y='84' width='420' height='62' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='590.0' y='108' text-anchor='middle' font-size='15' fill='#2980b9' font-weight='bold'>A percept at a leaf</text>
+<text x='590.0' y='132' text-anchor='middle' font-size='12' fill='#2c3e50'>a word-occurrence, read as its form; with a field, a native percept</text>
+<polygon points='590,172.0 685.0,214 590,256.0 495.0,214' fill='#fff' stroke='#2c3e50' stroke-width='1.8'/><text x='590' y='219' text-anchor='middle' font-size='15' fill='#2c3e50' font-weight='bold'>interpret?</text>
+<path d='M 590 146 L 590 172' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='700' y='196' text-anchor='start' font-size='12.5' fill='#2c3e50' font-style='italic'>optional in the architecture;</text>
+<text x='700' y='214' text-anchor='start' font-size='12.5' fill='#2c3e50' font-style='italic'>initially forced in reading mode,</text>
+<text x='700' y='232' text-anchor='start' font-size='12.5' fill='#2c3e50' font-style='italic'>since words are so often</text>
+<text x='700' y='250' text-anchor='start' font-size='12.5' fill='#2c3e50' font-style='italic'>meaningful beyond themselves</text>
+<path d='M 495 214 L 210 214 L 210 300' fill='none' stroke='#16a085' stroke-width='1.8' marker-end='url(#arrt)'/>
+<text x='470' y='206' text-anchor='middle' font-size='13' fill='#16a085' font-weight='bold'>no</text>
+<rect x='30' y='300' width='360' height='196' fill='#d1f2eb' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.8'/>
+<text x='44' y='324' text-anchor='start' font-size='15' fill='#16a085' font-weight='bold'>no-op · Peirce's icon</text>
+<text x='44' y='348' text-anchor='start' font-size='12.5' fill='#2c3e50'>the percept stands for itself</text>
+<text x='44' y='367' text-anchor='start' font-size='12.5' fill='#2c3e50'>value: its form code (interpret_I1)</text>
+<text x='44' y='386' text-anchor='start' font-size='12.5' fill='#2c3e50'>token: its own occurrence, content</text>
+<text x='44' y='405' text-anchor='start' font-size='12.5' fill='#2c3e50'>the form, kind the null-concept</text>
+<text x='44' y='424' text-anchor='start' font-size='12.5' fill='#2c3e50'>reverse: the form itself, so a mention</text>
+<text x='44' y='443' text-anchor='start' font-size='12.5' fill='#2c3e50'>is said as it was</text>
+<text x='44' y='462' text-anchor='start' font-size='12.5' fill='#2c3e50'>e.g. 'woof', a quoted word, a word</text>
+<text x='44' y='481' text-anchor='start' font-size='12.5' fill='#2c3e50'>heard only as a sound</text>
+<polygon points='790,300.0 895.0,340 790,380.0 685.0,340' fill='#fff' stroke='#2c3e50' stroke-width='1.8'/><text x='790' y='345' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'>a sign or a symbol?</text>
+<path d='M 590 256 L 590 278 L 790 278 L 790 300' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='604' y='274' text-anchor='start' font-size='13' fill='#2c3e50' font-weight='bold'>yes</text>
+<path d='M 685 340 L 595 340 L 595 430' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<path d='M 895 340 L 975 340 L 975 430' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
+<rect x='420' y='430' width='350' height='168' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='434' y='454' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>sign · Peirce's index</text>
+<text x='434' y='478' text-anchor='start' font-size='12.5' fill='#2c3e50'>the percept points at something co-present</text>
+<text x='434' y='497' text-anchor='start' font-size='12.5' fill='#2c3e50'>token: the pointed-at occurrence, kind</text>
+<text x='434' y='516' text-anchor='start' font-size='12.5' fill='#2c3e50'>the null-concept</text>
+<text x='434' y='535' text-anchor='start' font-size='12.5' fill='#2c3e50'>content: zero in a text; with a field,</text>
+<text x='434' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>the pointed-at percept</text>
+<text x='434' y='573' text-anchor='start' font-size='12.5' fill='#2c3e50'>e.g. 'this', 'that'</text>
+<rect x='800' y='430' width='350' height='168' fill='#f5eef8' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='814' y='454' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>symbol · Peirce's symbol</text>
+<text x='814' y='478' text-anchor='start' font-size='12.5' fill='#2c3e50'>the word's conventional object</text>
+<text x='814' y='497' text-anchor='start' font-size='12.5' fill='#2c3e50'>the interpreted leaf stands as its</text>
+<text x='814' y='516' text-anchor='start' font-size='12.5' fill='#2c3e50'>object, with no rule of its own</text>
+<text x='814' y='535' text-anchor='start' font-size='12.5' fill='#2c3e50'>a pending word is minted at its first</text>
+<text x='814' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>kept definition</text>
+<text x='814' y='573' text-anchor='start' font-size='12.5' fill='#2c3e50'>e.g. 'dog', 'bark'</text>
+<text x='30' y='530' text-anchor='start' font-size='12' fill='#16a085' font-weight='bold'>Certificate (v):</text>
+<text x='30' y='548' text-anchor='start' font-size='12' fill='#2c3e50' font-style='italic'>“The dog went woof. That was a bark.”</text>
+<text x='30' y='566' text-anchor='start' font-size='12' fill='#626567'>the no-op at 'woof' opens a token that</text>
+<text x='30' y='582' text-anchor='start' font-size='12' fill='#626567'>'that' binds and the definition kinds bark</text>
+<rect x='30' y='620' width='1120' height='52' fill='#f2f3f4' fill-opacity='1.0' rx='8' stroke='#aab7b8' stroke-width='1'/>
+<text x='46' y='641' text-anchor='start' font-size='12' fill='#2c3e50'>Built: interpret is mandatory in reading mode, the sign operation is declared as witness and valid at an open handle, and with a field the chooser may leave a percept alone.</text>
+<text x='46' y='661' text-anchor='start' font-size='12' fill='#2c3e50'>Decided 2026-11-01, not built (item 22): the rename to sign, sign at every interpreted leaf, and the no-op's token, reached in reading mode only with the forcing lifted.</text>
+</svg>

@@ -832,7 +832,7 @@ Dimensions (`nDim`) are read from `TheObjectEncoding`. Codebook sizes
 (`nVectors`) are likewise on `TheObjectEncoding`; the factory validates
 `nVectors >= nActive`.
 
-![MM_5M Architecture](diagrams/mm5m_architecture.svg)
+![BasicModel reference configuration, read from data/BasicModel.xml](diagrams/basicmodel_reference.svg)
 
 Layer selection by `invertible` (the `<reconstruct>` element / `reconstructEnum`
 were **RETIRED** in A1, 2026-06-09; reconstruction is now seeded from concepts

@@ -1,0 +1,80 @@
+<svg width='1260' height='700' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1260' height='700' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker><marker id='arrr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#c0392b'/></marker><marker id='arrt' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#16a085'/></marker></defs>
+<rect x='0' y='0' width='1260' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='630' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>One sentence, two readings: the trial comparison</text>
+<text x='630' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>GradientFlow.md: the training step and the current gradient boundaries</text>
+<rect x='30' y='110' width='230' height='132' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='44' y='134' text-anchor='start' font-size='15' fill='#2980b9' font-weight='bold'>Sentence, perceived once</text>
+<text x='44' y='158' text-anchor='start' font-size='12.5' fill='#2c3e50'>every word perceived and</text>
+<text x='44' y='177' text-anchor='start' font-size='12.5' fill='#2c3e50'>symbolized once, after the</text>
+<text x='44' y='196' text-anchor='start' font-size='12.5' fill='#2c3e50'>previous sentence's commit;</text>
+<text x='44' y='215' text-anchor='start' font-size='12.5' fill='#2c3e50'>the primed bank staged</text>
+<rect x='300' y='88' width='390' height='78' fill='#fff' fill-opacity='1.0' rx='10' stroke='#2c3e50' stroke-width='1.8'/>
+<text x='314' y='112' text-anchor='start' font-size='15' fill='#2c3e50' font-weight='bold'>Greedy reading</text>
+<text x='314' y='136' text-anchor='start' font-size='12.5' fill='#2c3e50'>the chooser's best option at every round</text>
+<rect x='300' y='184' width='390' height='104' fill='#fff' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='314' y='208' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>Explore reading: one departure</text>
+<text x='314' y='232' text-anchor='start' font-size='12.5' fill='#2c3e50'>draw a walk, an eligible round, an alternative;</text>
+<text x='314' y='251' text-anchor='start' font-size='12.5' fill='#2c3e50'>greedy everywhere else; the credit is corrected</text>
+<text x='314' y='270' text-anchor='start' font-size='12.5' fill='#2c3e50'>by K · R_walk · W</text>
+<text x='495' y='308' text-anchor='middle' font-size='12' fill='#626567' font-style='italic'>both composed and costed at identical parameters before either trains</text>
+<path d='M 260 176 L 280 176 L 280 127 L 300 127' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 260 176 L 280 176 L 280 236 L 300 236' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<rect x='730' y='92' width='160' height='70' fill='#f2f3f4' fill-opacity='1.0' rx='10' stroke='#2c3e50' stroke-width='1.8'/>
+<text x='810.0' y='116' text-anchor='middle' font-size='15' fill='#2c3e50' font-weight='bold'>R + A</text>
+<text x='810.0' y='140' text-anchor='middle' font-size='12.5' fill='#2c3e50'>detached cost</text>
+<rect x='730' y='201' width='160' height='70' fill='#f2f3f4' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='810.0' y='225' text-anchor='middle' font-size='15' fill='#ca6f1e' font-weight='bold'>R + A</text>
+<text x='810.0' y='249' text-anchor='middle' font-size='12.5' fill='#2c3e50'>detached cost</text>
+<path d='M 690 127 L 730 127' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 690 236 L 730 236' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='716' y='290' text-anchor='start' font-size='11.5' fill='#626567' font-style='italic'>R: reconstruction · A: answer error, when supplied</text>
+<polygon points='990,132.0 1060.0,182 990,232.0 920.0,182' fill='#fff' stroke='#2c3e50' stroke-width='1.8'/><text x='990' y='187' text-anchor='middle' font-size='15' fill='#2c3e50' font-weight='bold'>keep?</text>
+<path d='M 890 127 L 905 127 L 905 182 L 918 182' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 890 236 L 905 236 L 905 182 L 918 182' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='1072' y='166' text-anchor='start' font-size='12.5' fill='#2c3e50'>explore is kept only if</text>
+<text x='1072' y='186' text-anchor='start' font-size='12.5' fill='#2c3e50'>its R + A is strictly lower;</text>
+<text x='1072' y='206' text-anchor='start' font-size='12.5' fill='#2c3e50'>a tie keeps greedy</text>
+<rect x='30' y='342' width='390' height='112' fill='#d1f2eb' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.8'/>
+<text x='44' y='366' text-anchor='start' font-size='15' fill='#16a085' font-weight='bold'>Expectation (E)</text>
+<text x='44' y='390' text-anchor='start' font-size='12.5' fill='#2c3e50'>trains on both trials, each on its own local</text>
+<text x='44' y='409' text-anchor='start' font-size='12.5' fill='#2c3e50'>residual, with inputs and targets detached;</text>
+<text x='44' y='428' text-anchor='start' font-size='12.5' fill='#2c3e50'>it enters neither keeping nor credit</text>
+<rect x='450' y='342' width='390' height='112' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='464' y='366' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>Chooser credit</text>
+<text x='464' y='390' text-anchor='start' font-size='12.5' fill='#2c3e50'>the score function on the detached advantage,</text>
+<text x='464' y='409' text-anchor='start' font-size='12.5' fill='#2c3e50'>greedy cost minus explore cost, at the</text>
+<text x='464' y='428' text-anchor='start' font-size='12.5' fill='#2c3e50'>departure the explore reading took</text>
+<rect x='870' y='342' width='360' height='112' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#1a7a38' stroke-width='1.8'/>
+<text x='884' y='366' text-anchor='start' font-size='15' fill='#1a7a38' font-weight='bold'>Commit the kept reading</text>
+<text x='884' y='390' text-anchor='start' font-size='12.5' fill='#2c3e50'>its end state is written at the kept close</text>
+<text x='884' y='409' text-anchor='start' font-size='12.5' fill='#2c3e50'>(MTM tokens, LTM0 rows), detached: no</text>
+<text x='884' y='428' text-anchor='start' font-size='12.5' fill='#2c3e50'>gradient crosses into the next sentence</text>
+<path d='M 990 232 L 990 324 L 1050 324 L 1050 342' fill='none' stroke='#1a7a38' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 990 324 L 645 324 L 645 342' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='30' y='494' text-anchor='start' font-size='15' fill='#2c3e50' font-weight='bold'>Parameter owners  (separateChooser = true, the default)</text>
+<rect x='30' y='506' width='390' height='136' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='44' y='530' text-anchor='start' font-size='15' fill='#2980b9' font-weight='bold'>Reconstruction (R)</text>
+<text x='44' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>perception, the sole writer of native PS/WS</text>
+<text x='44' y='573' text-anchor='start' font-size='12.5' fill='#2c3e50'>prototypes and their evidence; the field</text>
+<text x='44' y='592' text-anchor='start' font-size='12.5' fill='#2c3e50'>dictionaries; compose operators and their</text>
+<text x='44' y='611' text-anchor='start' font-size='12.5' fill='#2c3e50'>tied inverses; the compose chooser; the</text>
+<text x='44' y='630' text-anchor='start' font-size='12.5' fill='#2c3e50'>shared generate decoder</text>
+<rect x='450' y='506' width='390' height='136' fill='#d1f2eb' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.8'/>
+<text x='464' y='530' text-anchor='start' font-size='15' fill='#16a085' font-weight='bold'>Expectation (E)</text>
+<text x='464' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>the shared symbol activation predictor</text>
+<text x='464' y='573' text-anchor='start' font-size='12.5' fill='#2c3e50'>(ActivationPredictor) on local residuals;</text>
+<text x='464' y='592' text-anchor='start' font-size='12.5' fill='#2c3e50'>every source and target detached; percept</text>
+<text x='464' y='611' text-anchor='start' font-size='12.5' fill='#2c3e50'>moments update from observations without</text>
+<text x='464' y='630' text-anchor='start' font-size='12.5' fill='#2c3e50'>gradients</text>
+<rect x='870' y='506' width='360' height='136' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='884' y='530' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>Answer (A)</text>
+<text x='884' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>answer readers, presented and comparison;</text>
+<text x='884' y='573' text-anchor='start' font-size='12.5' fill='#2c3e50'>learned retrieval for thought and generation;</text>
+<text x='884' y='592' text-anchor='start' font-size='12.5' fill='#2c3e50'>question conditioners; intuit's weights;</text>
+<text x='884' y='611' text-anchor='start' font-size='12.5' fill='#2c3e50'>the concluded understanding is detached, and</text>
+<text x='884' y='630' text-anchor='start' font-size='12.5' fill='#2c3e50'>supplied-answer gradients never reach R</text>
+<text x='630' y='666' text-anchor='middle' font-size='12' fill='#626567' font-style='italic'>With separateChooser = false the shared understanding parameters receive s·R + A + C, one s ~ U[1 − j, 1] per sentence.</text>
+<text x='630' y='688' text-anchor='middle' font-size='12' fill='#626567' font-style='italic'>The backward arrangement is under the Stage 2 review (GradientFlow.md, Read first).</text>
+</svg>

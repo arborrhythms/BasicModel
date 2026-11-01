@@ -1,0 +1,137 @@
+<svg width='1240' height='650' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1240' height='650' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker><marker id='arrr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#c0392b'/></marker><marker id='arrt' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#16a085'/></marker></defs>
+<rect x='0' y='0' width='1240' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='620' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>A concept: sigma over pi, one signed code, two evidence lanes</text>
+<text x='620' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Architecture.md, a concept is sigma over pi · Spaces.md, ConceptualSpace geometry</text>
+<rect x='30' y='84' width='380' height='520' fill='#fff' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.6'/>
+<rect x='30' y='84' width='380' height='32' fill='#8e44ad' fill-opacity='1.0' rx='8'/><rect x='30' y='100' width='380' height='16' fill='#8e44ad' fill-opacity='1.0' rx='0'/><text x='220' y='109' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Definition: graded DNF</text>
+<rect x='440' y='84' width='380' height='520' fill='#fff' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.6'/>
+<rect x='440' y='84' width='380' height='32' fill='#2980b9' fill-opacity='1.0' rx='8'/><rect x='440' y='100' width='380' height='16' fill='#2980b9' fill-opacity='1.0' rx='0'/><text x='630' y='109' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>The code</text>
+<rect x='850' y='84' width='380' height='520' fill='#fff' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.6'/>
+<rect x='850' y='84' width='380' height='32' fill='#ca6f1e' fill-opacity='1.0' rx='8'/><rect x='850' y='100' width='380' height='16' fill='#ca6f1e' fill-opacity='1.0' rx='0'/><text x='1040' y='109' text-anchor='middle' font-size='14' fill='white' font-weight='bold'>Two symbols, two lanes</text>
+<line x1='220' y1='150' x2='220' y2='218' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='220' y1='218' x2='130' y2='300' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='220' y1='218' x2='310' y2='300' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='130' y1='300' x2='80' y2='384' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='130' y1='300' x2='175' y2='384' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='310' y1='300' x2='265' y2='384' stroke='#aab7b8' stroke-width='1.6'/>
+<line x1='310' y1='300' x2='360' y2='384' stroke='#aab7b8' stroke-width='1.6'/>
+<circle cx='220' cy='150' r='22' fill='#fff' fill-opacity='1' stroke='#8e44ad' stroke-width='1.8'/><text x='220' y='155' text-anchor='middle' font-size='13' fill='#8e44ad' font-weight='bold'>c</text>
+<circle cx='220' cy='218' r='22' fill='#fff' fill-opacity='1' stroke='#8e44ad' stroke-width='1.8'/><text x='220' y='223' text-anchor='middle' font-size='13' fill='#8e44ad' font-weight='bold'>σ</text>
+<circle cx='130' cy='300' r='22' fill='#fff' fill-opacity='1' stroke='#2980b9' stroke-width='1.8'/><text x='130' y='305' text-anchor='middle' font-size='13' fill='#2980b9' font-weight='bold'>π</text>
+<circle cx='310' cy='300' r='22' fill='#fff' fill-opacity='1' stroke='#2980b9' stroke-width='1.8'/><text x='310' y='305' text-anchor='middle' font-size='13' fill='#2980b9' font-weight='bold'>π</text>
+<rect x='50' y='372' width='60' height='26' fill='#d6eaf8' fill-opacity='1.0' rx='6' stroke='#2980b9' stroke-width='1.2'/>
+<text x='80' y='390' text-anchor='middle' font-size='12' fill='#2c3e50'>part</text>
+<rect x='145' y='372' width='60' height='26' fill='#d5f5e3' fill-opacity='1.0' rx='6' stroke='#27ae60' stroke-width='1.2'/>
+<text x='175' y='390' text-anchor='middle' font-size='12' fill='#2c3e50'>prop</text>
+<rect x='235' y='372' width='60' height='26' fill='#d6eaf8' fill-opacity='1.0' rx='6' stroke='#2980b9' stroke-width='1.2'/>
+<text x='265' y='390' text-anchor='middle' font-size='12' fill='#2c3e50'>part</text>
+<rect x='330' y='372' width='60' height='26' fill='#d5f5e3' fill-opacity='1.0' rx='6' stroke='#27ae60' stroke-width='1.2'/>
+<text x='360' y='390' text-anchor='middle' font-size='12' fill='#2c3e50'>prop</text>
+<text x='262' y='222' text-anchor='start' font-size='11.5' fill='#8e44ad' font-style='italic'>max over cases</text>
+<text x='220' y='344' text-anchor='middle' font-size='11.5' fill='#2980b9' font-style='italic'>min within a case</text>
+<text x='46' y='434' text-anchor='start' font-size='12.5' fill='#2c3e50'>order 0: sigma over pi of memberships in</text>
+<text x='46' y='456' text-anchor='start' font-size='12.5' fill='#2c3e50'>PartSpace parts and WholeSpace properties;</text>
+<text x='46' y='478' text-anchor='start' font-size='12.5' fill='#2c3e50'>each pole reduced independently, with</text>
+<text x='46' y='500' text-anchor='start' font-size='12.5' fill='#2c3e50'>nonnegative exponents; pi only at order 0</text>
+<text x='46' y='522' text-anchor='start' font-size='12.5' fill='#2c3e50'>higher orders: sigma alone over the</text>
+<text x='46' y='544' text-anchor='start' font-size='12.5' fill='#2c3e50'>previous order's symbols, the taxonomy</text>
+<text x='630' y='146' text-anchor='middle' font-size='13.5' fill='#2980b9' font-weight='bold'>code = signed activation × softplus(atom)</text>
+<rect x='462' y='183' width='12' height='33' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='461' y1='216' x2='475' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='477' y='198' width='12' height='18' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='476' y1='216' x2='490' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='492' y='168' width='12' height='48' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='491' y1='216' x2='505' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='507' y='189' width='12' height='27' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='506' y1='216' x2='520' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='522' y='177' width='12' height='39' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='521' y1='216' x2='535' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='537' y='201' width='12' height='15' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='536' y1='216' x2='550' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='552' y='174' width='12' height='42' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='551' y1='216' x2='565' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='567' y='186' width='12' height='30' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='566' y1='216' x2='580' y2='216' stroke='#bbb' stroke-width='1'/>
+<text x='596' y='202' text-anchor='start' font-size='13' fill='#1a7a38' font-weight='bold'>× (+0.8)</text>
+<rect x='676' y='190' width='12' height='26' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='675' y1='216' x2='689' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='691' y='202' width='12' height='14' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='690' y1='216' x2='704' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='706' y='178' width='12' height='38' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='705' y1='216' x2='719' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='721' y='194' width='12' height='22' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='720' y1='216' x2='734' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='736' y='185' width='12' height='31' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='735' y1='216' x2='749' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='751' y='204' width='12' height='12' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='750' y1='216' x2='764' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='766' y='182' width='12' height='34' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='765' y1='216' x2='779' y2='216' stroke='#bbb' stroke-width='1'/>
+<rect x='781' y='192' width='12' height='24' fill='#27ae60' fill-opacity='1.0' rx='2'/>
+<line x1='780' y1='216' x2='794' y2='216' stroke='#bbb' stroke-width='1'/>
+<text x='522' y='236' text-anchor='middle' font-size='11.5' fill='#626567'>softplus(atom) > 0</text>
+<text x='736' y='236' text-anchor='middle' font-size='11.5' fill='#1a7a38'>present</text>
+<rect x='462' y='267' width='12' height='33' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='461' y1='300' x2='475' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='477' y='282' width='12' height='18' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='476' y1='300' x2='490' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='492' y='252' width='12' height='48' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='491' y1='300' x2='505' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='507' y='273' width='12' height='27' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='506' y1='300' x2='520' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='522' y='261' width='12' height='39' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='521' y1='300' x2='535' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='537' y='285' width='12' height='15' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='536' y1='300' x2='550' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='552' y='258' width='12' height='42' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='551' y1='300' x2='565' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='567' y='270' width='12' height='30' fill='#2980b9' fill-opacity='1.0' rx='2'/>
+<line x1='566' y1='300' x2='580' y2='300' stroke='#bbb' stroke-width='1'/>
+<text x='596' y='296' text-anchor='start' font-size='13' fill='#922b21' font-weight='bold'>× (−0.6)</text>
+<rect x='676' y='300' width='12' height='20' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='675' y1='300' x2='689' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='691' y='300' width='12' height='11' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='690' y1='300' x2='704' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='706' y='300' width='12' height='29' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='705' y1='300' x2='719' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='721' y='300' width='12' height='16' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='720' y1='300' x2='734' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='736' y='300' width='12' height='23' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='735' y1='300' x2='749' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='751' y='300' width='12' height='9' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='750' y1='300' x2='764' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='766' y='300' width='12' height='25' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='765' y1='300' x2='779' y2='300' stroke='#bbb' stroke-width='1'/>
+<rect x='781' y='300' width='12' height='18' fill='#c0392b' fill-opacity='1.0' rx='2'/>
+<line x1='780' y1='300' x2='794' y2='300' stroke='#bbb' stroke-width='1'/>
+<text x='736' y='352' text-anchor='middle' font-size='11.5' fill='#922b21'>anti-present</text>
+<rect x='470' y='388' width='33' height='30' fill='#d6eaf8' fill-opacity='1.0' rx='0' stroke='#2980b9' stroke-width='1.2'/>
+<rect x='503' y='388' width='287' height='30' fill='#e8daef' fill-opacity='1.0' rx='0' stroke='#8e44ad' stroke-width='1.2'/>
+<text x='486.5' y='408' text-anchor='middle' font-size='12' fill='#2c3e50' font-weight='bold'>104</text>
+<text x='646.5' y='408' text-anchor='middle' font-size='12' fill='#2c3e50' font-weight='bold'>meaning: 448 pole pairs</text>
+<text x='470' y='436' text-anchor='start' font-size='11.5' fill='#626567'>form 104 + meaning 896 = 1000  (data/BasicModel.xml)</text>
+<text x='456' y='480' text-anchor='start' font-size='12.5' fill='#2c3e50'>the sign of the activation: present or</text>
+<text x='456' y='502' text-anchor='start' font-size='12.5' fill='#2c3e50'>anti-present; its magnitude: certainty</text>
+<text x='456' y='524' text-anchor='start' font-size='12.5' fill='#2c3e50'>two symbols share one stored code</text>
+<text x='1040' y='146' text-anchor='middle' font-size='13.5' fill='#ca6f1e' font-weight='bold'>symbol 2i = +a<tspan baseline-shift='super' font-size='70%'>+</tspan> · code<tspan baseline-shift='sub' font-size='70%'>i</tspan></text>
+<text x='1040' y='170' text-anchor='middle' font-size='13.5' fill='#ca6f1e' font-weight='bold'>symbol 2i+1 = −a<tspan baseline-shift='super' font-size='70%'>−</tspan> · code<tspan baseline-shift='sub' font-size='70%'>i</tspan></text>
+<rect x='930' y='210' width='220' height='220' fill='#fffaf3' fill-opacity='1.0' rx='0' stroke='#ca6f1e' stroke-width='1.2'/>
+<line x1='930' y1='430' x2='1166' y2='430' stroke='#626567' stroke-width='1.4'/>
+<line x1='930' y1='430' x2='930' y2='194' stroke='#626567' stroke-width='1.4'/>
+<text x='1172' y='435' text-anchor='start' font-size='14' fill='#626567' font-weight='bold'>a<tspan baseline-shift='super' font-size='70%'>+</tspan></text>
+<text x='930' y='186' text-anchor='middle' font-size='14' fill='#626567' font-weight='bold'>a<tspan baseline-shift='super' font-size='70%'>−</tspan></text>
+<circle cx='930' cy='430' r='6' fill='#626567' fill-opacity='1' stroke='#626567' stroke-width='1'/>
+<text x='930' y='456' text-anchor='middle' font-size='13' fill='#626567' font-weight='bold'>neither</text>
+<circle cx='1150' cy='430' r='6' fill='#1a7a38' fill-opacity='1' stroke='#1a7a38' stroke-width='1'/>
+<text x='1150' y='456' text-anchor='middle' font-size='13' fill='#1a7a38' font-weight='bold'>true</text>
+<circle cx='930' cy='210' r='6' fill='#922b21' fill-opacity='1' stroke='#922b21' stroke-width='1'/>
+<text x='918' y='215' text-anchor='end' font-size='13' fill='#922b21' font-weight='bold'>false</text>
+<circle cx='1150' cy='210' r='6' fill='#8e44ad' fill-opacity='1' stroke='#8e44ad' stroke-width='1'/>
+<text x='1162' y='215' text-anchor='start' font-size='13' fill='#8e44ad' font-weight='bold'>both</text>
+<text x='866' y='488' text-anchor='start' font-size='12.5' fill='#2c3e50'>truth_plus and truth_minus are two</text>
+<text x='866' y='510' text-anchor='start' font-size='12.5' fill='#2c3e50'>independent positive lanes, not one</text>
+<text x='866' y='532' text-anchor='start' font-size='12.5' fill='#2c3e50'>signed number: both never becomes neither</text>
+<text x='866' y='554' text-anchor='start' font-size='12.5' fill='#2c3e50'>(Interpret.activate_code)</text>
+</svg>

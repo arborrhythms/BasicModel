@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """Generate WikiOracle conceptual diagrams as SVG files.
 
-    python gen_diagrams.py                        # write every diagram
+    python gen_diagrams.py                        # write every diagram, including fig_*.py
     python gen_diagrams.py grammar_operators.svg  # write only the named ones
+    python fig_orders_ladder.py                   # one figure script on its own
+
+This file holds the shared palette and drawing primitives, the figures that
+predate the one-figure scripts, and the grammar operator sheet. Each fig_*.py
+beside it defines FILENAME and make() and imports the primitives from here.
+Every figure is embedded in at least one doc/*.md page.
 """
 import os, math, sys
 from html import escape
@@ -86,569 +92,521 @@ def title_bar(x, y, w, h, label, bg=BLUE_DK, fg="white", fs=15, rx=8):
             rect(x, y + h//2, w, h//2, bg, rx=0) +
             txt(x + w//2, y + h - 7, label, fs=fs, fill=fg, bold=True))
 
+def ortho(points, color=BLUE_DK, mid="arrd", sw=1.8, dash=""):
+    """An arrow along straight segments through ``points``."""
+    d = "M " + " L ".join(f"{px} {py}" for px, py in points)
+    da = f" stroke-dasharray='{dash}'" if dash else ""
+    return (f"<path d='{d}' fill='none' stroke='{color}' stroke-width='{sw}'{da}"
+            f" marker-end='url(#{mid})'/>")
+
+def card(x, y, w, h, title, rows, fill, stroke, title_fs=15, fs=12.5, step=19, center=False, sw=1.8):
+    """A rounded box with a bold title and one text row per entry."""
+    out = [rect(x, y, w, h, fill, stroke=stroke, sw=sw, rx=10)]
+    if center:
+        out.append(txt(x + w/2, y + 24, title, fs=title_fs, fill=stroke, bold=True))
+        out += [txt(x + w/2, y + 48 + k*step, r, fs=fs, fill=BLUE_DK) for k, r in enumerate(rows)]
+    else:
+        out.append(txt(x + 14, y + 24, title, anchor="start", fs=title_fs, fill=stroke, bold=True))
+        out += [txt(x + 14, y + 48 + k*step, r, anchor="start", fs=fs, fill=BLUE_DK) for k, r in enumerate(rows)]
+    return "\n".join(out)
+
+def diamond(cx, cy, w, h, label, fill, stroke, fs=13):
+    pts = f"{cx},{cy - h/2} {cx + w/2},{cy} {cx},{cy + h/2} {cx - w/2},{cy}"
+    return (f"<polygon points='{pts}' fill='{fill}' stroke='{stroke}' stroke-width='1.8'/>" +
+            txt(cx, cy + 5, label, fs=fs, fill=stroke, bold=True))
+
+def figure(W, H, title, subtitle, body, markers=(("arrd", BLUE_DK),)):
+    """The common frame of the architecture figures: title bar, subtitle, body."""
+    defs = "<defs>" + "".join(arrow_marker(m, c) for m, c in markers) + "</defs>"
+    head = [rect(0, 0, W, 44, BLUE_DK, rx=0), txt(W//2, 29, title, fs=18, fill="white", bold=True)]
+    if subtitle:
+        head.append(txt(W//2, 66, subtitle, fs=13, fill=GRY, italic=True))
+    return svg(W, H, "\n".join([defs, *head, *body]))
+
+MARKERS = (("arrd", BLUE_DK), ("arrb", BLUE), ("arrg", GRN), ("arro", ORG),
+           ("arrp", PURP), ("arrr", RED), ("arrt", TEAL))
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIAGRAM 1 – TERNARY TRUTH TABLES
 # ══════════════════════════════════════════════════════════════════════════════
+# The tables are computed, not typed: each function below mirrors one kernel in
+# bin/Layers.py (class Ops) exactly on the three ternary values.
 
-def cell_color(v):
-    m = {"+1": (GRN_L, GRN_DK), "0": (GRY_L, GRY), "−1": (RED_L, RED_DK)}
-    return m.get(v, ("#fff", BLUE_DK))
+TERNARY = ["+1", "0", "−1"]
+_TV = {"+1": 1.0, "0": 0.0, "−1": -1.0}
 
-def truth_cell(x, y, w, h, val, header=False):
-    bg = BLUE_DK if header else cell_color(val)[0]
-    fg = "white" if header else cell_color(val)[1]
+def _sign(v):
+    return (v > 0) - (v < 0)
+
+def ops_intersection(x, y):
+    """Ops.intersection (default): min, a zero coordinate is silent."""
+    return y if x == 0 else x if y == 0 else min(x, y)
+
+def ops_union(x, y):
+    """Ops.union (default, kind='strict'): elementwise max."""
+    return max(x, y)
+
+def ops_radmin(x, y):
+    """Ops._radmin (kind='radial'): same sign -> sign * min |.|, else 0."""
+    return _sign(x) * min(abs(x), abs(y)) if x * y > 0 else 0.0
+
+def ops_radmax(x, y):
+    """Ops._radmax (kind='radial'): same sign -> sign * max |.|; zero passes the other through."""
+    core = _sign(x) * max(abs(x), abs(y)) if x * y > 0 else 0.0
+    return core + (y if x == 0 else 0.0) + (x if y == 0 else 0.0)
+
+def ops_part_scalar(x, y):
+    """Ops._part_kernel(scalar=True): clipped cosine in [0, 1]; part(0, y) = 1, part(x, 0) = 0."""
+    if x == 0:
+        return 1.0
+    if y == 0:
+        return 0.0
+    return max(0.0, x * y) / (abs(x) * abs(y))
+
+def ops_non(x):
+    """Ops._non_kernel (bitonic): the triangular residual 1 - |x|."""
+    return 1.0 - abs(max(-1.0, min(1.0, x)))
+
+def ternary_label(v):
+    return "+1" if v > 0 else "−1" if v < 0 else "0"
+
+def unit_label(v):
+    return "1" if v >= 1 else "0" if v <= 0 else f"{v:.2f}"
+
+SIGNED = {"+1": (GRN_L, GRN_DK), "0": (GRY_L, GRY), "−1": (RED_L, RED_DK)}
+UNIT = {"1": (TEAL_L, TEAL), "0": (GRY_L, GRY)}
+NONMASS = {"1": (PURP_L, PURP), "0": (GRY_L, GRY)}
+
+def cell_color(v, palette=SIGNED):
+    return palette.get(v, ("#fff", BLUE_DK))
+
+def truth_cell(x, y, w, h, val, header=False, palette=SIGNED):
+    bg = BLUE_DK if header else cell_color(val, palette)[0]
+    fg = "white" if header else cell_color(val, palette)[1]
     return (rect(x, y, w, h, bg, stroke="#ccc", sw=1, rx=0) +
             txt(x + w//2, y + h//2 + 5, val, fs=14, fill=fg, bold=not header))
 
-def binary_table(x, y, op_label, rows, cell_w=60, cell_h=36):
-    """Draw a 3×3 binary truth table with header row/col."""
-    vals = ["+1", "0", "−1"]
-    out = []
-    # table title
-    out.append(txt(x + (4*cell_w)//2, y - 8, op_label, fs=13, fill=BLUE_DK, bold=True))
-    # corner cell
-    out.append(truth_cell(x, y, cell_w, cell_h, "a \\ b", header=True))
-    # column headers
-    for j, v in enumerate(vals):
-        bg, fg = cell_color(v)
-        out.append(rect(x + (j+1)*cell_w, y, cell_w, cell_h, BLUE_DK, stroke="#ccc", sw=1, rx=0))
-        out.append(txt(x + (j+1)*cell_w + cell_w//2, y + cell_h//2 + 5, v, fs=14, fill="white", bold=True))
-    # row headers + data
-    for i, rv in enumerate(vals):
+def binary_table(x, y, op_label, op, label=ternary_label, palette=SIGNED, cell_w=60, cell_h=36):
+    """A 3×3 binary truth table computed from ``op`` over the ternary values."""
+    out = [txt(x + (4*cell_w)//2, y - 8, op_label, fs=13, fill=BLUE_DK, bold=True),
+           truth_cell(x, y, cell_w, cell_h, "a \\ b", header=True)]
+    for j, v in enumerate(TERNARY):
+        out.append(truth_cell(x + (j+1)*cell_w, y, cell_w, cell_h, v, header=True))
+    for i, a in enumerate(TERNARY):
         ry = y + (i+1)*cell_h
-        bg, fg = cell_color(rv)
-        out.append(rect(x, ry, cell_w, cell_h, BLUE_DK, stroke="#ccc", sw=1, rx=0))
-        out.append(txt(x + cell_w//2, ry + cell_h//2 + 5, rv, fs=14, fill="white", bold=True))
-        for j, cv in enumerate(vals):
-            v = rows[i][j]
-            out.append(truth_cell(x + (j+1)*cell_w, ry, cell_w, cell_h, v))
+        out.append(truth_cell(x, ry, cell_w, cell_h, a, header=True))
+        for j, b in enumerate(TERNARY):
+            out.append(truth_cell(x + (j+1)*cell_w, ry, cell_w, cell_h,
+                                  label(op(_TV[a], _TV[b])), palette=palette))
     return "\n".join(out)
 
-def unary_table(x, y, op_label, col_label, rows, cell_w=70, cell_h=36):
-    """Unary table: a | op(a) with 3 rows."""
-    out = []
-    out.append(txt(x + cell_w, y - 8, op_label, fs=13, fill=BLUE_DK, bold=True))
-    # headers
-    out.append(rect(x, y, cell_w, cell_h, BLUE_DK, stroke="#ccc", sw=1, rx=0))
-    out.append(txt(x + cell_w//2, y + cell_h//2 + 5, "a", fs=14, fill="white", bold=True))
-    out.append(rect(x + cell_w, y, cell_w, cell_h, BLUE_DK, stroke="#ccc", sw=1, rx=0))
-    out.append(txt(x + cell_w + cell_w//2, y + cell_h//2 + 5, col_label, fs=13, fill="white", bold=True))
-    # rows
-    for i, (av, rv) in enumerate(rows):
+def unary_table(x, y, op_label, col_label, op, label=ternary_label, palette=SIGNED, cell_w=70, cell_h=36):
+    """Unary table: a | op(a), computed from ``op``."""
+    out = [txt(x + cell_w, y - 8, op_label, fs=13, fill=BLUE_DK, bold=True),
+           truth_cell(x, y, cell_w, cell_h, "a", header=True),
+           truth_cell(x + cell_w, y, cell_w, cell_h, col_label, header=True)]
+    for i, a in enumerate(TERNARY):
         ry = y + (i+1)*cell_h
-        out.append(truth_cell(x, ry, cell_w, cell_h, av))
-        # Result cell with special handling for non-T/U/F values
-        rbg, rfg = cell_color(rv)
-        out.append(rect(x + cell_w, ry, cell_w, cell_h, rbg, stroke="#ccc", sw=1, rx=0))
-        out.append(txt(x + cell_w + cell_w//2, ry + cell_h//2 + 5, rv, fs=13, fill=rfg, bold=True))
+        out.append(truth_cell(x, ry, cell_w, cell_h, a))
+        out.append(truth_cell(x + cell_w, ry, cell_w, cell_h, label(op(_TV[a])), palette=palette))
     return "\n".join(out)
 
 def make_ternary():
-    W, H = 970, 530
-    defs = ("<defs>" +
-            arrow_marker("arrd", BLUE_DK) +
-            "</defs>")
-
-    parts = [defs]
-
-    # Title
+    W, H = 1000, 742
+    parts = ["<defs>" + arrow_marker("arrd", BLUE_DK) + "</defs>"]
     parts.append(rect(0, 0, W, 44, BLUE_DK, rx=0))
     parts.append(txt(W//2, 29, "Ternary Logic Operators", fs=18, fill="white", bold=True))
+    parts.append(txt(W//2, 68, "+1 = true  ·  0 = unknown  ·  −1 = false  ·  "
+                     "every cell computed from the Ops kernels in bin/Layers.py", fs=13, fill=GRY))
 
-    # Legend
-    parts.append(txt(W//2, 66, "+1 = true     0 = unknown     −1 = false", fs=13, fill=GRY))
+    # Row 1: the two negations, with the note that separates them.
+    parts.append(unary_table(40, 110, "NOT  ( neg(a) = −a )", "¬a", lambda a: -a))
+    parts.append(unary_table(240, 110, "NON  ( non(a) = 1 − |a| )", "non(a)", ops_non,
+                             label=unit_label, palette=NONMASS))
+    note = ["NOT inverts an assertion; NON withdraws it.",
+            "non(a) is the indeterminate mass, not a truth value:",
+            "true + false + non = 1, so non(0) = 1 and non(±1) = 0.",
+            "The monotonic form is relu(a − τ) when a threshold",
+            "τ is supplied, and 0 otherwise."]
+    parts.append(rect(470, 92, 500, 162, GRY_L, stroke=GRY_MID, sw=1, rx=8))
+    for k, row in enumerate(note):
+        parts.append(txt(490, 122 + k*27, row, anchor="start", fs=13, fill=BLUE_DK))
 
-    # ── Row 1: Unary operators ─────────────────────────────────────
+    # Row 2: the binary operators as built.
+    parts.append(line(0, 274, W, 274, stroke="#ddd", sw=1.5))
+    parts.append(txt(30, 298, "As built: the default kernels behind Ops.intersection, "
+                     "Ops.union and Ops.part", anchor="start", fs=13, fill=GRY, italic=True))
+    parts.append(binary_table(30, 330, "Intersection  ( min; a 0 is silent )", ops_intersection))
+    parts.append(binary_table(330, 330, "Union  ( elementwise max )", ops_union))
+    parts.append(binary_table(630, 330, "PART  ( scalar form, range [0, 1] )", ops_part_scalar,
+                              label=unit_label, palette=UNIT))
+    parts.append(txt(750, 494, "1 when a ⊆ b; 0 is part of everything; opposite signs → 0",
+                     fs=11, fill=GRY, italic=True))
 
-    # NOT / neg(a) = −a
-    parts.append(unary_table(40, 100, "NOT  ( neg(a) = −a )",  "¬a",
-        [("+1","−1"),("0","0"),("−1","+1")]))
-
-    # NON / non(a) = 0  (bitonic: complete withdrawal of assertion)
-    parts.append(unary_table(230, 100, "NON  ( non(a) = 0 )",  "non(a)",
-        [("+1","0"),("0","0"),("−1","0")]))
-
-    # Separator
-    parts.append(line(0, 255, W, 255, stroke="#ddd", sw=1.5))
-
-    # ── Row 2: Binary operators ────────────────────────────────────
-
-    # Intersection: sign-aware min magnitude (Basis.conjunction, bitonic)
-    and_rows = [
-        ["+1","0","0"],
-        ["0","0","0"],
-        ["0","0","−1"],
-    ]
-    parts.append(binary_table(30, 287, "Intersection  ( agree → min|a,b| )", and_rows))
-
-    # Union: sign-aware max magnitude + absorb zeros (Basis.disjunction, bitonic)
-    or_rows = [
-        ["+1","+1","0"],
-        ["+1","0","−1"],
-        ["0","−1","−1"],
-    ]
-    parts.append(binary_table(330, 287, "Union  ( agree → max|a,b|; 0 absorbs )", or_rows))
-
-    # PART: mereological containment score [0, 1]  — Basis.part(a, b)
-    part_rows = [
-        ["+1","0","0"],
-        ["+1","+1","+1"],
-        ["0","0","+1"],
-    ]
-    parts.append(binary_table(630, 287, "PART  ( mereological, range [0, 1] )", part_rows))
-
-    # Footer note on PART
-    parts.append(txt(630 + 120, 487,
-        "PART(a,b): 1 when a ⊆ b; 0 is part of everything; opposite signs → 0",
-        fs=11, fill=GRY, anchor="middle", italic=True))
-
+    # Row 3: the radial forms, which survive only under kind='radial'.
+    parts.append(line(0, 512, W, 512, stroke="#ddd", sw=1.5))
+    parts.append(txt(30, 536, "kind='radial' only: the hard radial forms of Logic.md §7",
+                     anchor="start", fs=13, fill=GRY, italic=True))
+    parts.append(binary_table(30, 568, "RadMin  ( agree → min|a, b|; 0 absorbs )", ops_radmin))
+    parts.append(binary_table(330, 568, "RadMax  ( agree → max|a, b|; 0 passes )", ops_radmax))
+    radial = ["Both collapse to 0 when the signs disagree.",
+              "Their LogSumExp forms, under kind='soft',",
+              "approach these as τ → 0 and give both",
+              "operands gradient. Neither is the default."]
+    parts.append(rect(630, 568, 340, 144, GRY_L, stroke=GRY_MID, sw=1, rx=8))
+    for k, row in enumerate(radial):
+        parts.append(txt(648, 600 + k*28, row, anchor="start", fs=13, fill=BLUE_DK))
     return svg(W, H, "\n".join(parts))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIAGRAM 2 – LUMINOSITY
 # ══════════════════════════════════════════════════════════════════════════════
+# TruthLayer.luminosity (bin/Layers.py), the catuṣkoṭi coverage measure:
+#     T_k = max_i relu(+t_ik),  F_k = max_i relu(-t_ik)
+#     L   = mean_k [ (T_k - F_k) - min(T_k, F_k) ]   clamped to [-1, 1]
 
-def bar_vector(x, y, values, bar_w, bar_h, spacing, colors=None, label=""):
+def bar_vector(x, y, values, bar_w, bar_h, spacing, colors=None, neg_color=RED, label=""):
     """Draw a row of vertical bars representing a vector."""
     out = []
     for i, v in enumerate(values):
         bx = x + i * (bar_w + spacing)
-        h_pos = max(0, v)
-        h_neg = min(0, v)
-        # positive part (up from baseline)
-        if h_pos > 0:
-            ph = int(h_pos * bar_h)
-            col = colors[i] if colors else GRN
-            out.append(rect(bx, y - ph, bar_w, ph, col, rx=2))
-        # negative part (down from baseline)
-        if h_neg < 0:
-            nh = int(abs(h_neg) * bar_h)
-            out.append(rect(bx, y, bar_w, nh, RED, rx=2))
-        # baseline tick
+        if v > 0:
+            ph = int(round(v * bar_h))
+            out.append(rect(bx, y - ph, bar_w, ph, colors[i] if colors else GRN, rx=2))
+        if v < 0:
+            out.append(rect(bx, y, bar_w, int(round(-v * bar_h)), neg_color, rx=2))
         out.append(line(bx - 1, y, bx + bar_w + 1, y, stroke="#bbb", sw=1))
     if label:
-        cx = x + len(values) * (bar_w + spacing) / 2
-        out.append(txt(cx, y + 18, label, fs=11, fill=GRY))
+        out.append(txt(x + len(values) * (bar_w + spacing) / 2, y + bar_h + 16, label, fs=11, fill=GRY))
     return "\n".join(out)
 
-def make_luminosity():
-    W, H = 900, 600
-    defs = "<defs>" + arrow_marker("arrd", BLUE_DK) + arrow_marker("arrt", TEAL, 7) + "</defs>"
-    parts = [defs]
+def coverage(truths):
+    D = len(truths[0])
+    T = [max(max(t[k], 0.0) for t in truths) for k in range(D)]
+    F = [max(max(-t[k], 0.0) for t in truths) for k in range(D)]
+    corner = [(T[k] - F[k]) - min(T[k], F[k]) for k in range(D)]
+    return T, F, corner, max(-1.0, min(1.0, sum(corner) / D))
 
-    # Title bar
+def sub(s):
+    return f"<tspan baseline-shift='sub' font-size='70%'>{s}</tspan>"
+
+def make_luminosity():
+    W, H = 960, 742
+    parts = ["<defs>" + arrow_marker("arrt", TEAL, 7) + arrow_marker("arrr", RED, 7) + "</defs>"]
     parts.append(rect(0, 0, W, 44, BLUE_DK, rx=0))
     parts.append(txt(W//2, 29, "Luminosity: Truth Coherence Measure", fs=18, fill="white", bold=True))
 
-    # Formula box
-    parts.append(rect(220, 52, 460, 38, TEAL_L, stroke=TEAL, sw=1.5, rx=8))
-    parts.append(txt(W//2, 77, "L  =  ‖ [min(truths)]⁺ ‖", fs=16, fill=TEAL, bold=True))
+    parts.append(rect(170, 54, 620, 60, TEAL_L, stroke=TEAL, sw=1.5, rx=8))
+    parts.append(txt(W//2, 78, f"L  =  mean{sub('k')} [ (T{sub('k')} − F{sub('k')}) − "
+                     f"min(T{sub('k')}, F{sub('k')}) ]  ∈  [−1, 1]", fs=16, fill=TEAL, bold=True))
+    parts.append(txt(W//2, 102, f"T{sub('k')} = max{sub('i')} relu(+t{sub('ik')})  ·  "
+                     f"F{sub('k')} = max{sub('i')} relu(−t{sub('ik')})  ·  coverage, not mass",
+                     fs=13, fill=TEAL))
 
-    # ── LEFT CASE: Consistent truths ──────────────────────────────
-    CASE_W = 380
-    parts.append(rect(20, 105, CASE_W, 460, "#f8fffe", stroke=TEAL, sw=1.5, rx=10))
-    parts.append(title_bar(20, 105, CASE_W, 32, "Consistent Truths  →  High Luminosity", bg=TEAL, fs=13))
+    D, BH = 7, 46
+    cases = [
+        (20, TEAL, "#f8fffe", "Consistent truths  →  high luminosity", "arrt",
+         [[0.8, 0.6, 0.9, 0.7, 0.5, 0.8, 0.6],
+          [0.7, 0.8, 0.7, 0.9, 0.6, 0.6, 0.7],
+          [0.9, 0.7, 0.8, 0.6, 0.8, 0.7, 0.8]], ["t₁", "t₂", "t₃"], "high: the truths agree"),
+        (490, RED, "#fff8f8", "Contradictory truths  →  negative luminosity", "arrr",
+         [[0.8, 0.7, 0.9, -0.7, 0.6, 0.8, -0.5],
+          [-0.6, -0.8, 0.5, 0.9, -0.7, -0.6, 0.7]], ["t₄", "t₅"], "negative: contradiction"),
+    ]
+    PW = 450
+    for x0, col, bg, title, mid, truths, names, verdict in cases:
+        parts.append(rect(x0, 126, PW, 548, bg, stroke=col, sw=1.5, rx=10))
+        parts.append(title_bar(x0, 126, PW, 32, title, bg=col, fs=13))
+        cx = x0 + PW // 2
+        T, F, corner, L = coverage(truths)
 
-    # Three consistent truth vectors (all positive)
-    D = 7
-    t1 = [0.8, 0.6, 0.9, 0.7, 0.5, 0.8, 0.6]
-    t2 = [0.7, 0.8, 0.7, 0.9, 0.6, 0.6, 0.7]
-    t3 = [0.9, 0.7, 0.8, 0.6, 0.8, 0.7, 0.8]
+        parts.append(txt(cx, 180, "Stored truths  (signed references)", fs=12, fill=GRY))
+        bw, sp, gap = 12, 3, 18
+        width = len(truths) * D * (bw + sp) + (len(truths) - 1) * gap
+        for i, (t, name) in enumerate(zip(truths, names)):
+            parts.append(bar_vector(cx - width // 2 + i * (D * (bw + sp) + gap), 240,
+                                    t, bw, BH, sp, label=name))
 
-    BW, BH, SP = 12, 60, 3
-    base_y = 230
+        bw, sp = 20, 6
+        vx = cx - D * (bw + sp) // 2
+        parts.append(f"<line x1='{cx}' y1='312' x2='{cx}' y2='334' stroke='{col}' stroke-width='1.8' marker-end='url(#{mid})'/>")
+        parts.append(txt(cx, 352, f"per dimension: T{sub('k')} up (green), F{sub('k')} down (red)",
+                         fs=12, fill=col))
+        parts.append(bar_vector(vx, 412, T, bw, BH, sp))
+        parts.append(bar_vector(vx, 412, [-f for f in F], bw, BH, sp))
 
-    parts.append(txt(210, 155, "Stored truths  (activation × DoT):", fs=12, fill=GRY))
+        parts.append(f"<line x1='{cx}' y1='466' x2='{cx}' y2='488' stroke='{col}' stroke-width='1.8' marker-end='url(#{mid})'/>")
+        parts.append(txt(cx, 506, f"corner c{sub('k')} = (T{sub('k')} − F{sub('k')}) − "
+                         f"min(T{sub('k')}, F{sub('k')})", fs=12, fill=col))
+        parts.append(bar_vector(vx, 566, corner, bw, BH, sp, colors=[TEAL] * D))
 
-    for idx, (tvec, lbl) in enumerate([(t1, "t₁"), (t2, "t₂"), (t3, "t₃")]):
-        bx = 35 + idx * (D*(BW+SP) + 15)
-        parts.append(bar_vector(bx, base_y, tvec, BW, BH, SP, label=lbl))
+        good = L > 0.5
+        parts.append(rect(x0 + 25, 624, PW - 50, 34, GRN_L if good else RED_L,
+                          stroke=GRN if good else RED, sw=1.5, rx=6))
+        parts.append(txt(cx, 646, f"L = mean c ≈ {L:+.2f}  ({verdict})".replace("-", "−"), fs=13,
+                         fill=GRN_DK if good else RED_DK, bold=True))
 
-    # Conjunction = min
-    conj = [min(t1[i], t2[i], t3[i]) for i in range(D)]
-    parts.append(arrow(210, base_y + 28, 210, base_y + 60, color=TEAL, mid="arrt"))
-    parts.append(txt(210, base_y + 76, "min( t₁, t₂, t₃ )", fs=12, fill=TEAL))
-    parts.append(bar_vector(35 + D*(BW+SP)//2 - D*(BW+SP)//2, base_y + 90,
-                            conj, BW, BH, SP, label="conjunction"))
-
-    # positive part = keep positive, zero out negatives
-    relu_conj = [max(0, v) for v in conj]
-    parts.append(arrow(210, base_y + 168, 210, base_y + 198, color=TEAL, mid="arrt"))
-    parts.append(txt(210, base_y + 214, "[conjunction]⁺  (positive part)", fs=12, fill=TEAL))
-    parts.append(bar_vector(35 + D*(BW+SP)//2 - D*(BW+SP)//2, base_y + 228,
-                            relu_conj, BW, BH, SP, colors=[GRN]*D, label="positive part"))
-
-    # Luminosity value
-    L_val = math.sqrt(sum(v*v for v in relu_conj))
-    parts.append(rect(35, base_y + 320, CASE_W - 50, 34, GRN_L, stroke=GRN, sw=1.5, rx=6))
-    parts.append(txt(35 + (CASE_W-50)//2, base_y + 342,
-                     f"Luminosity  L ≈ {L_val:.2f}   (high — truths agree)",
-                     fs=13, fill=GRN_DK, bold=True))
-
-    # ── RIGHT CASE: Contradictory truths ──────────────────────────
-    parts.append(rect(W - CASE_W - 20, 105, CASE_W, 460, "#fff8f8", stroke=RED, sw=1.5, rx=10))
-    parts.append(title_bar(W - CASE_W - 20, 105, CASE_W, 32,
-                           "Contradictory Truths  →  Low Luminosity", bg=RED, fs=13))
-
-    # Two contradictory truth vectors
-    t4 = [ 0.8,  0.7,  0.9, -0.7,  0.6,  0.8, -0.5]  # mixed
-    t5 = [-0.6, -0.8,  0.5,  0.9, -0.7, -0.6,  0.7]  # opposite
-
-    XR = W - CASE_W - 20 + 30
-    for idx, (tvec, lbl) in enumerate([(t4, "t₄  (pos/neg mixed)"), (t5, "t₅  (neg dominant)")]):
-        bx = XR + idx * (D*(BW+SP) + 15)
-        parts.append(bar_vector(bx, base_y, tvec, BW, BH, SP, label=lbl))
-
-    # conjunction
-    conj2 = [min(t4[i], t5[i]) for i in range(D)]
-    parts.append(arrow(XR + D*(BW+SP)*1 - 10, base_y + 28,
-                       XR + D*(BW+SP)*1 - 10, base_y + 60, color=RED, mid="arrd"))
-    parts.append(txt(XR + D*(BW+SP) + 10, base_y + 76, "min( t₄, t₅ )", fs=12, fill=RED))
-    conj2_x = XR + 20
-    parts.append(bar_vector(conj2_x, base_y + 90, conj2, BW, BH, SP, label="conjunction (many negative)"))
-
-    relu_conj2 = [max(0, v) for v in conj2]
-    parts.append(arrow(XR + D*(BW+SP)//2, base_y + 168,
-                       XR + D*(BW+SP)//2, base_y + 198, color=RED, mid="arrd"))
-    parts.append(txt(XR + D*(BW+SP)//2, base_y + 214, "[conjunction]⁺  (positive part)", fs=12, fill=RED))
-    parts.append(bar_vector(conj2_x, base_y + 228, relu_conj2,
-                            BW, BH, SP, colors=[GRN if v > 0 else GRY_L for v in relu_conj2],
-                            label="positive part (most dims zeroed)"))
-
-    L_val2 = math.sqrt(sum(v*v for v in relu_conj2))
-    parts.append(rect(XR - 15, base_y + 320, CASE_W - 50, 34, RED_L, stroke=RED, sw=1.5, rx=6))
-    parts.append(txt(XR - 15 + (CASE_W-50)//2, base_y + 342,
-                     f"Luminosity  L ≈ {L_val2:.2f}   (low — contradiction)",
-                     fs=13, fill=RED_DK, bold=True))
-
+    parts.append(txt(W//2, 698, "Corners per dimension: T only → +T · F only → −F · "
+                     "both → −min(T, F) · neither → 0.", fs=12, fill=GRY, italic=True))
+    parts.append(txt(W//2, 720, "The meet form ‖relu(min truths)‖ survives only as the "
+                     "orthogonalization criterion (TruthLayer._luminosity_without).",
+                     fs=12, fill=GRY, italic=True))
     return svg(W, H, "\n".join(parts))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # DIAGRAM 3 – VECTOR SPACES
 # ══════════════════════════════════════════════════════════════════════════════
+# Content follows doc/Spaces.md (Overview; "Perceptual and conceptual
+# ownership"; the space sections) and the Spaces table in doc/Architecture.md.
 
 def make_vector_spaces():
-    W, H = 1440, 780
-    defs = (
-        "<defs>"
-        + arrow_marker("arrd", BLUE_DK)
-        + arrow_marker("arrb", BLUE)
-        + arrow_marker("arrg", GRN)
-        + arrow_marker("arro", ORG)
-        + arrow_marker("arrp", PURP)
-        + "</defs>"
-    )
+    W, H = 1440, 876
+    SANS = "Helvetica, Arial, sans-serif"
+    defs = ("<defs>" + arrow_marker("arrd", BLUE_DK) + arrow_marker("arrb", BLUE)
+            + arrow_marker("arrg", GRN) + arrow_marker("arro", ORG)
+            + arrow_marker("arrp", PURP) + "</defs>")
     parts = [defs]
+    parts.append(txt(W//2, 40, "BasicModel Space Hierarchy", fs=30, fill="#222222", bold=True, ff=SANS))
+    parts.append(txt(W//2, 66, "Forward (ownership): IS → {PS, WS, SS, LS} → CS → OS  ·  "
+                     "Reverse: OS → SS → CS → {PS, WS} → IS  ·  "
+                     "CS is the sole reducer and owner of every commit", fs=14, fill=GRY))
 
-    parts.append(txt(W//2, 38, "BasicModel Space Hierarchy", fs=30, fill="#222222", bold=True,
-                     ff="Helvetica, Arial, sans-serif"))
+    def bullets(x, y, rows, fs=14.2, step=24, fill=BLUE_DK):
+        return [txt(x, y + i*step, "• " + r, anchor="start", fs=fs, fill=fill) for i, r in enumerate(rows)]
 
-    def bullet_list(x, y, rows, fill=BLUE_DK, fs=9.4, step=17):
-        out = []
-        for i, row in enumerate(rows):
-            out.append(txt(x, y + i*step, "• " + row, anchor="start", fs=fs, fill=fill))
-        return out
-
-    def feedback_path(d, marker=True):
-        marker_attr = " marker-end='url(#arrp)'" if marker else ""
-        return (
-            f"<path d='{d}' fill='none' stroke='{PURP}' stroke-width='2.3'"
-            f" stroke-dasharray='8,5'{marker_attr}/>"
-        )
-
-    def ortho_arrow(points, color=BLUE_DK, sw=1.8, mid="arrd", dash=""):
-        d = "M " + " L ".join(f"{x} {y}" for x, y in points)
+    def ortho(points, color=BLUE_DK, mid="arrd", sw=1.8, dash=""):
+        d = "M " + " L ".join(f"{px} {py}" for px, py in points)
         da = f" stroke-dasharray='{dash}'" if dash else ""
-        return (
-            f"<path d='{d}' fill='none' stroke='{color}' stroke-width='{sw}'"
-            f"{da} marker-end='url(#{mid})'/>"
-        )
+        return (f"<path d='{d}' fill='none' stroke='{color}' stroke-width='{sw}'{da}"
+                f" marker-end='url(#{mid})'/>")
 
-    # Small boundary spaces sit above and below the main hierarchy.
-    input_box = (620, 64, 200, 48)
-    output_box = (620, 718, 200, 48)
-    parts.append(rect(*input_box, BLUE_L, stroke=BLUE, sw=2, rx=10))
-    parts.append(txt(input_box[0] + input_box[2]//2, input_box[1] + 31, "InputSpace (IS)", fs=18, fill=BLUE_DK, bold=True))
-    parts.append(rect(*output_box, ORG_L, stroke=ORG, sw=2, rx=10))
-    parts.append(txt(output_box[0] + output_box[2]//2, output_box[1] + 31, "OutputSpace (OS)", fs=18, fill=ORG, bold=True))
+    def space(x, y, w, h, code, label, rows, fill, stroke_col, step=24):
+        out = [rect(x, y, w, h, fill, stroke=stroke_col, sw=1.8, rx=10),
+               txt(x + 20, y + 36, code, anchor="start", fs=28, fill=stroke_col, bold=True),
+               txt(x + 22 + 26 * len(code), y + 36, label, anchor="start", fs=20, fill=BLUE_DK, bold=True)]
+        return out + bullets(x + 18, y + 70, rows, step=step)
 
-    # Perceptual container with three horizontal internal spaces.
-    pc_x, pc_y, pc_w, pc_h = 40, 150, 1360, 285
-    parts.append(rect(pc_x, pc_y, pc_w, pc_h, "#eef6fb", stroke=BLUE, sw=2, rx=14))
-    child_y, child_h = 200, 210
-    child_w, gap = 330, 145
-    children = [
-        ("PS", "Part Space", [
-            "synthesizes atoms into part-percepts",
-            "atom-view stem from InputSpace",
-            "Sigma synthesis fold",
-            "MPHF + index table",
-            "Lexicon: surface rows",
-            "part codebook: part-percepts",
-        ], pc_x + 40, BLUE_L, BLUE),
-        ("WS", "Whole Space", [
-            "analyzes properties, regions and wholes",
-            "unity / property view",
-            "Pi analysis fold",
-            "property basis: regions",
-            "whole-percept codebook",
-            "paired orth / semantic rows",
-        ], pc_x + 40 + child_w + gap, GRN_L, GRN),
-        ("SS", "Symbolic Space", [
-            "zero-dimensional references",
-            "symbol codebook",
-            "grammar / signal router",
-            "operators live in codebook",
-            "TruthLayer stores DoT propositions",
-            "TruthLayer: record / query / field",
-        ], pc_x + 40 + 2*(child_w + gap), ORG_L, ORG),
-    ]
-    for code, label, rows, cx, fill, stroke_col in children:
-        parts.append(rect(cx, child_y, child_w, child_h, fill, stroke=stroke_col, sw=1.8, rx=10))
-        parts.append(txt(cx + 22, child_y + 38, code, anchor="start", fs=30, fill=stroke_col, bold=True))
-        parts.append(txt(cx + 82, child_y + 38, label, anchor="start", fs=20, fill=BLUE_DK, bold=True))
-        parts.extend(bullet_list(cx + 18, child_y + 80, rows, fs=14.2, step=24))
+    # InputSpace above the perceptual towers.
+    ix, iy, iw, ih = 380, 88, 200, 48
+    parts.append(rect(ix, iy, iw, ih, BLUE_L, stroke=BLUE, sw=2, rx=10))
+    parts.append(txt(ix + iw//2, iy + 31, "InputSpace (IS)", fs=18, fill=BLUE_DK, bold=True))
 
-    # Conceptual space receives perceptual and symbolic streams.
-    cs_x, cs_y, cs_w, cs_h = 190, 485, 1060, 190
-    parts.append(rect(cs_x, cs_y, cs_w, cs_h, "#f5eef8", stroke=PURP, sw=2, rx=14))
-    parts.append(txt(cs_x + 24, cs_y + 38, "Conceptual Space (CS)", anchor="start", fs=22, fill=PURP, bold=True))
-    cs_rows = [
-        "STM plus concept relations",
-        "ties part-percepts to whole-percepts",
-        "Concept codebook: relation rows",
-        "ConceptualAttentionLayer: symbolic wave over concept inventory",
-        "ConceptAllocator: ids, ordered records, relation pool",
-        "Truth-gated acceptance and reasoning hooks",
-    ]
-    parts.extend(bullet_list(cs_x + 24, cs_y + 72, cs_rows, fs=14.2, step=20))
+    # Perceptual container: two peer towers, no PS -> WS edge.
+    px0, py0, pw, ph = 40, 176, 880, 318
+    parts.append(rect(px0, py0, pw, ph, "#eef6fb", stroke=BLUE, sw=2, rx=14))
+    parts.append(txt(px0 + pw//2, py0 + 32, "Perceptual Spaces", fs=18, fill=BLUE_DK, bold=True))
+    parts.append(txt(px0 + pw//2, py0 + ph - 10, "peers: the input fans to both towers; no PS → WS edge",
+                     fs=12.5, fill=BLUE_DK, italic=True))
+    ps = (70, 228, 400, 230)
+    ws = (490, 228, 400, 230)
+    parts += space(*ps, "PS", "Part Space", [
+        "bottom-up synthesis of ordered parts",
+        "native radix ids and ordered witnesses",
+        "code = max of constituent codes",
+        "one percept store; ids decide presence",
+        "no learned fold inside the tower",
+        "the ordered witness gives the exact reverse",
+    ], BLUE_L, BLUE)
+    parts += space(*ws, "WS", "Whole Space", [
+        "top-down division by primitive properties",
+        "one property codebook (ASCII classes)",
+        "max over allowed primitives per position",
+        "min pervasion over a run",
+        "no perceptual pi layer",
+        "reads conceptual context as its input",
+    ], GRN_L, GRN)
 
-    # Flow arrows.
-    ps_mid = (pc_x + 40 + child_w//2, child_y + child_h)
-    ws_mid = (pc_x + 40 + child_w + gap + child_w//2, child_y + child_h)
-    ss_mid = (pc_x + 40 + 2*(child_w + gap) + child_w//2, child_y + child_h)
-    cs_top = cs_y
-    input_bottom = input_box[1] + input_box[3]
-    input_join_y = pc_y + 20
-    ps_input_entry = (pc_x + 40 + 210, child_y)
-    ws_input_entry = (pc_x + 40 + child_w + gap + 125, child_y)
-    parts.append(ortho_arrow(
-        [(input_box[0] + 50, input_bottom), (input_box[0] + 50, input_join_y),
-         (ps_input_entry[0], input_join_y), ps_input_entry],
-        color=BLUE,
-        mid="arrb",
-    ))
-    parts.append(ortho_arrow(
-        [(input_box[0] + 150, input_bottom), (input_box[0] + 150, input_join_y),
-         (ws_input_entry[0], input_join_y), ws_input_entry],
-        color=GRN,
-        mid="arrg",
-    ))
-    parts.append(ortho_arrow(
-        [(ps_mid[0], ps_mid[1]), (ps_mid[0], cs_top - 20), (cs_x + 220, cs_top - 20), (cs_x + 220, cs_top)],
-        color=BLUE,
-        mid="arrb",
-    ))
-    parts.append(ortho_arrow(
-        [(ws_mid[0], ws_mid[1]), (ws_mid[0], cs_top)],
-        color=GRN,
-        mid="arrg",
-    ))
-    parts.append(ortho_arrow(
-        [(ss_mid[0], ss_mid[1]), (ss_mid[0], cs_top - 20), (cs_x + cs_w - 220, cs_top - 20), (cs_x + cs_w - 220, cs_top)],
-        color=ORG,
-        mid="arro",
-    ))
-    parts.append(ortho_arrow(
-        [(cs_x + cs_w//2, cs_y + cs_h), (cs_x + cs_w//2, output_box[1])],
-        color=ORG,
-        mid="arro",
-    ))
+    # Symbol and language: references, grammar and its scheduling.
+    sx0, sy0, sw0, sh0 = 950, 176, 450, 318
+    parts.append(rect(sx0, sy0, sw0, sh0, "#fdf5ec", stroke=ORG, sw=2, rx=14))
+    parts.append(txt(sx0 + sw0//2, sy0 + 32, "Symbol and Language", fs=18, fill=BLUE_DK, bold=True))
+    ls = (970, 216, 410, 96)
+    ss = (970, 326, 410, 136)
+    parts.append(rect(*ls, "#fff", stroke=ORG, sw=1.5, rx=10))
+    parts.append(txt(ls[0] + 18, ls[1] + 30, "LS", anchor="start", fs=22, fill=ORG, bold=True))
+    parts.append(txt(ls[0] + 58, ls[1] + 30, "LanguageSpace", anchor="start", fs=18, fill=BLUE_DK, bold=True))
+    parts += bullets(ls[0] + 18, ls[1] + 58, [
+        "scheduling: chooses grammar operations",
+        "returns choice tensors; CS applies them",
+    ], fs=13.5, step=22)
+    parts.append(rect(*ss, ORG_L, stroke=ORG, sw=1.5, rx=10))
+    parts.append(txt(ss[0] + 18, ss[1] + 30, "SS", anchor="start", fs=22, fill=ORG, bold=True))
+    parts.append(txt(ss[0] + 58, ss[1] + 30, "SymbolSpace", anchor="start", fs=18, fill=BLUE_DK, bold=True))
+    parts += bullets(ss[0] + 18, ss[1] + 58, [
+        "zero-dimensional references to CS concepts",
+        "LanguageLayer: compose, thought, generate",
+        "TruthLayer; LTM0, the occurrence store",
+        "no percept codebook, no atomic forward",
+    ], fs=13.5, step=21)
 
-    # Recurrent paths from the CS output back into perceptual and symbolic entry points.
-    cs_out_y = cs_y + cs_h
-    ps_entry = (pc_x + 40 + 70, child_y)
-    ws_entry = (pc_x + 40 + child_w + gap + child_w - 45, child_y)
-    ss_entry = (pc_x + 40 + 2*(child_w + gap) + child_w//2, child_y)
-    parts.append(feedback_path(
-        f"M {cs_x + 400} {cs_out_y} L {cs_x + 400} {output_box[1] - 18} "
-        f"L 20 {output_box[1] - 18} L 20 {pc_y - 18} "
-        f"L {ps_entry[0]} {pc_y - 18} L {ps_entry[0]} {ps_entry[1]}"
-    ))
-    parts.append(feedback_path(
-        f"M {cs_x + 640} {cs_out_y} L {cs_x + 640} {output_box[1] - 28} "
-        f"L {W - 52} {output_box[1] - 28} L {W - 52} {pc_y - 18} "
-        f"L {ws_entry[0]} {pc_y - 18} L {ws_entry[0]} {ws_entry[1]}"
-    ))
-    parts.append(feedback_path(
-        f"M {cs_x + 780} {cs_out_y} L {cs_x + 780} {output_box[1] - 10} "
-        f"L {W - 20} {output_box[1] - 10} L {W - 20} {pc_y + 34} "
-        f"L {ss_entry[0]} {pc_y + 34} L {ss_entry[0]} {ss_entry[1]}"
-    ))
-    parts.append(rect(pc_x + pc_w//2 - 180, pc_y + 14, 360, 34, "#eef6fb", rx=0))
-    parts.append(txt(pc_x + pc_w//2, pc_y + 38, "Perceptual Spaces", fs=22, fill=BLUE_DK, bold=True))
+    # ConceptualSpace: the sole reducer.
+    cx0, cy0, cw0, ch0 = 190, 556, 1060, 200
+    parts.append(rect(cx0, cy0, cw0, ch0, "#f5eef8", stroke=PURP, sw=2, rx=14))
+    parts.append(txt(cx0 + 24, cy0 + 36, "Conceptual Space (CS)", anchor="start", fs=22, fill=PURP, bold=True))
+    parts += bullets(cx0 + 24, cy0 + 70, [
+        "sole reducer: commits concepts, STM and grammar transactions (CSsub, CSsym, CSLang)",
+        "concept dictionary: code = signed activation × softplus(atom); two symbols per concept",
+        "definitions: pi (conjunctive) only at order 0, sigma (disjunctive) at every order",
+        "ConceptAllocator: ids and ordered records; ConceptualAttentionLayer relation store; LTM1",
+        "STM (8 chunks) · MTM (tokens, familiar tier) · ActivationPredictor (expectation)",
+    ], step=26)
 
+    # OutputSpace below.
+    ox, oy, ow, oh = 620, 790, 200, 48
+    parts.append(rect(ox, oy, ow, oh, ORG_L, stroke=ORG, sw=2, rx=10))
+    parts.append(txt(ox + ow//2, oy + 31, "OutputSpace (OS)", fs=18, fill=ORG, bold=True))
+
+    # Forward arrows.
+    ps_c, ws_c = ps[0] + ps[2]//2, ws[0] + ws[2]//2
+    parts.append(ortho([(ix + 50, iy + ih), (ix + 50, 156), (ps_c, 156), (ps_c, ps[1])], BLUE, "arrb"))
+    parts.append(ortho([(ix + 150, iy + ih), (ix + 150, 156), (ws_c, 156), (ws_c, ws[1])], GRN, "arrg"))
+    parts.append(ortho([(ps_c, ps[1] + ps[3]), (ps_c, cy0)], BLUE, "arrb"))
+    parts.append(ortho([(ws_c, ws[1] + ws[3]), (ws_c, cy0)], GRN, "arrg"))
+    parts.append(ortho([(cx0 + cw0//2, cy0 + ch0), (cx0 + cw0//2, oy)], ORG, "arro"))
+    # CS <-> SS: symbolicOrder reads CS -> SS -> CS; SS hands its result to LS.
+    up_x, down_x = 1080, 1160
+    parts.append(ortho([(up_x, cy0), (up_x, ss[1] + ss[3])], PURP, "arrp"))
+    parts.append(ortho([(down_x, ss[1] + ss[3]), (down_x, cy0)], ORG, "arro"))
+    parts.append(txt(down_x + 10, 524, "symbolicOrder × (CS → SS → CS)", anchor="start", fs=12.5, fill=BLUE_DK, italic=True))
+    parts.append(ortho([(1300, ss[1]), (1300, ls[1] + ls[3])], ORG, "arro"))
+    # LS returns choices; CS applies them (the CSLang transaction).
+    parts.append(ortho([(ls[0] + ls[2], ls[1] + ls[3]//2), (1418, ls[1] + ls[3]//2),
+                        (1418, cy0 + 120), (cx0 + cw0, cy0 + 120)], ORG, "arro"))
+    parts.append(txt(1334, cy0 + 112, "choices (CSLang)", fs=12.5, fill=BLUE_DK, italic=True))
+    # Conceptual pass-back: attention to PS (positive floor), context to WS.
+    parts.append(ortho([(ps_c - 60, cy0), (ps_c - 60, ps[1] + ps[3])], PURP, "arrp", sw=2.2, dash="8,5"))
+    parts.append(ortho([(ws_c + 90, cy0), (ws_c + 90, ws[1] + ws[3])], PURP, "arrp", sw=2.2, dash="8,5"))
+    parts.append(txt(ps_c - 70, 524, "attention (positive floor)", anchor="end", fs=12.5, fill=PURP, italic=True))
+    parts.append(txt(ws_c + 100, 524, "conceptual context", anchor="start", fs=12.5, fill=PURP, italic=True))
+
+    parts.append(txt(40, H - 12, "solid: forward · dashed: conceptual pass-back · "
+                     "sources: Spaces.md (Overview, ownership), Architecture.md (Spaces)",
+                     anchor="start", fs=12, fill=GRY, italic=True))
     return svg(W, H, "\n".join(parts))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# DIAGRAM 4 – MM_5M ARCHITECTURE
+# DIAGRAM 4 – REFERENCE CONFIGURATION (read from data/BasicModel.xml)
 # ══════════════════════════════════════════════════════════════════════════════
+# Replaces the retired MM_5M "progressive bottleneck" figure. Every number is
+# read from the model file at generation time, so regenerating keeps it current.
 
-def lerp_color(c1, c2, t):
-    """Linearly interpolate two hex colors."""
-    r1, g1, b1 = int(c1[1:3],16), int(c1[3:5],16), int(c1[5:7],16)
-    r2, g2, b2 = int(c2[1:3],16), int(c2[3:5],16), int(c2[5:7],16)
-    r = int(r1 + (r2-r1)*t); g = int(g1 + (g2-g1)*t); b = int(b1 + (b2-b1)*t)
-    return f"#{r:02x}{g:02x}{b:02x}"
+REFERENCE_MODEL = os.path.join(DIR, os.pardir, os.pardir, "data", "BasicModel.xml")
+EVENT_BAND = 8    # .where 4 + .when 4 (Spaces.md, InputSpace)
 
-def make_mm5m():
-    W, H = 980, 760
-    defs = "<defs>" + arrow_marker("arrd", BLUE_DK) + arrow_marker("arrg", GRN) + "</defs>"
-    parts = [defs]
+def model_reader(path):
+    import xml.etree.ElementTree as ET
+    root = ET.parse(path).getroot()
+    def get(section, key, default="—"):
+        node = root.find(f"{section}/{key}")
+        return node.text.strip() if node is not None and node.text else default
+    return get
 
-    # Title
+def make_reference_architecture():
+    get = model_reader(REFERENCE_MODEL)
+    num = lambda s: f"{int(s):,}" if str(s).isdigit() else s
+    W, H = 1180, 744
+    parts = ["<defs>" + arrow_marker("arrd", BLUE_DK) + arrow_marker("arrb", BLUE)
+             + arrow_marker("arrg", GRN) + arrow_marker("arro", ORG) + arrow_marker("arrp", PURP) + "</defs>"]
     parts.append(rect(0, 0, W, 44, BLUE_DK, rx=0))
-    parts.append(txt(W//2, 29, "MM_5M: Hierarchical Progressive Bottleneck  (N×D = 4096 = const)", fs=17, fill="white", bold=True))
+    parts.append(txt(W//2, 29, "BasicModel reference configuration  (data/BasicModel.xml)",
+                     fs=18, fill="white", bold=True))
+    parts.append(txt(W//2, 68, "read from the model file when the figure is generated  ·  "
+                     "rows × width of each dictionary; live locations × event width",
+                     fs=13, fill=GRY, italic=True))
 
-    # Constants
-    LEVELS = 8
-    # (N, D) per level
-    level_shapes = [(1024 >> t, 4 << t) for t in range(LEVELS)]  # perceptual + 8 concept levels
-    # But first entry is Perceptual [1024×4], levels are [512×8], [256×16], ...
-    concept_shapes = [(512 >> t, 8 << t) for t in range(LEVELS)]
+    def box(x, y, w, h, title, rows, fill, stroke_col):
+        out = [rect(x, y, w, h, fill, stroke=stroke_col, sw=2, rx=10),
+               txt(x + w//2, y + 26, title, fs=16, fill=stroke_col, bold=True)]
+        for k, r in enumerate(rows):
+            out.append(txt(x + w//2, y + 52 + k*22, r, fs=13, fill=BLUE_DK))
+        return out
 
-    BOX_H = 36
-    GAP   = 12
-    CW    = 260  # conceptual box width
-    SW_BOX = 100  # symbolic box width
-    ARROW_W = 24
-    LEFT_X  = 60
-    SYM_X   = LEFT_X + CW + ARROW_W
-    LABEL_X = SYM_X + SW_BOX + 16
-    FIRST_Y = 150
+    def ortho(points, color, mid, dash=""):
+        d = "M " + " L ".join(f"{px} {py}" for px, py in points)
+        da = f" stroke-dasharray='{dash}'" if dash else ""
+        return f"<path d='{d}' fill='none' stroke='{color}' stroke-width='1.8'{da} marker-end='url(#{mid})'/>"
 
-    # Color gradient: BLUE → PURP → ORG across levels
-    def level_color(t):
-        if t < LEVELS//2:
-            return lerp_color(BLUE, PURP, t / (LEVELS//2))
-        else:
-            return lerp_color(PURP, ORG, (t - LEVELS//2) / (LEVELS//2))
+    I = lambda k: get("InputSpace", k)
+    P = lambda k: get("PartSpace", k)
+    Wh = lambda k: get("WholeSpace", k)
+    C = lambda k: get("ConceptualSpace", k)
+    O = lambda k: get("OutputSpace", k)
+    A = lambda k: get("architecture", k)
 
-    # Input box
-    parts.append(rect(LEFT_X, 55, CW, 32, GRY_L, stroke=GRY_MID, sw=1.5, rx=6))
-    parts.append(txt(LEFT_X + CW//2, 77, "Input: byte tokens  (vocab 4096)", fs=13, fill=GRY))
+    ib = (390, 86, 400, 98)
+    parts += box(*ib, "InputSpace", [
+        f"byte surface, ceiling {num(I('nOutput'))}",
+        f"lift {num(I('nVectors'))} × {num(I('nDim'))}",
+    ], BLUE_L, BLUE)
 
-    # Arrow to Perceptual
-    parts.append(arrow(LEFT_X + CW//2, 87, LEFT_X + CW//2, 103, color=BLUE, mid="arrd"))
+    pdim = int(P("nDim"))
+    pb = (40, 236, 340, 164)
+    parts += box(*pb, "PartSpace", [
+        f"percept dictionary {num(P('nVectors'))} × {pdim}",
+        f"event {pdim} = what {pdim - EVENT_BAND} + where/when {EVENT_BAND}",
+        f"{P('nOutput')} live locations × {P('nOutputDim')}",
+        f"synthesis: {P('synthesis')}; {A('bindingDepth')} native passes",
+        f"chunk promotion at {P('chunkPromotionThreshold')} uses",
+    ], BLUE_L, BLUE)
 
-    # Perceptual box
-    parts.append(rect(LEFT_X, 103, CW, BOX_H, BLUE_L, stroke=BLUE, sw=2, rx=6))
-    parts.append(txt(LEFT_X + CW//2, 127, "Perceptual Space  [1024 × 4]   N×D = 4096", fs=12, fill=BLUE_DK, bold=True))
+    wb = (420, 236, 340, 164)
+    parts += box(*wb, "WholeSpace", [
+        f"property basis {num(Wh('nVectors'))} × {Wh('nDim')}",
+        f"input {Wh('nInput')} × {num(Wh('nInputDim'))}: conceptual context",
+        f"{Wh('nOutput')} live locations × {Wh('nOutputDim')}",
+        f"analysis: {Wh('analysis')}; butterfly: {Wh('butterfly')}",
+        "",
+    ], GRN_L, GRN)
 
-    # Arrow to first level
-    parts.append(arrow(LEFT_X + CW//2, 139, LEFT_X + CW//2, FIRST_Y - 2, color=BLUE, mid="arrd"))
+    sb = (800, 236, 340, 164)
+    lang = get("SymbolSpace", "language/grammar")
+    parts += box(*sb, "SymbolSpace + LanguageSpace", [
+        f"grammar: {lang}",
+        f"LTM0 occurrence store: {num(get('SymbolSpace', 'ltmCapacity'))} rows",
+        "references to CS concepts",
+        "no percept codebook",
+        "",
+    ], ORG_L, ORG)
 
-    # Level boxes
-    for t in range(LEVELS):
-        N, D = concept_shapes[t]
-        sy = FIRST_Y + t * (BOX_H + GAP)
-        col = level_color(t)
-        col_l = lerp_color(col, "#ffffff", 0.6)
+    cdim, mw = int(C("nDim")), int(C("meaningWidth"))
+    layers = int(A("conceptLayers"))
+    cb = (190, 460, 800, 164)
+    parts += box(*cb, "ConceptualSpace", [
+        f"concept dictionary {num(C('nVectors'))} rows ({num(C('activeVectors'))} active) × {num(cdim)}",
+        f"code {num(cdim)} = form {cdim - mw} + meaning {mw}  ({mw // 2} pole pairs)",
+        f"input {C('nInput')} × {num(C('nInputDim'))}; output {C('nOutput')} × {num(C('nOutputDim'))}",
+        f"orders 0 to {layers - 1} (conceptLayers {layers}); STM {C('stmCapacity')} ideas; "
+        f"binding: {A('conceptBinding')}",
+        f"sigma/pi: {A('sigmaPi')}; word axis capacity {num(A('serialWordCapacity'))} (storage, not length)",
+    ], "#f5eef8", PURP)
 
-        # Conceptual box (width proportional to D on log scale, max CW)
-        log_scale = (math.log2(D) - 3) / (math.log2(1024) - 3)  # 0 at D=8, 1 at D=1024
-        box_w = int(180 + log_scale * (CW - 180))
+    ob = (440, 664, 300, 64)
+    parts += box(*ob, "OutputSpace", [
+        f"{O('nInput')} × {num(O('nInputDim'))}  →  {O('nOutput')} × {O('nOutputDim')}",
+    ], ORG_L, ORG)
 
-        parts.append(rect(LEFT_X + (CW - box_w)//2, sy, box_w, BOX_H, col_l, stroke=col, sw=2, rx=4))
-        parts.append(txt(LEFT_X + CW//2, sy + BOX_H//2 + 5,
-                         f"L{t}  Conceptual  [{N} × {D}]", fs=12, fill=BLUE_DK, bold=True))
+    # Arrows: input fans to the two towers; both feed CS; CS and SS exchange;
+    # CS passes context back to WS; CS feeds the output head.
+    parts.append(ortho([(ib[0] + 80, ib[1] + ib[3]), (ib[0] + 80, 212), (pb[0] + pb[2]//2, 212),
+                        (pb[0] + pb[2]//2, pb[1])], BLUE, "arrb"))
+    parts.append(ortho([(ib[0] + 200, ib[1] + ib[3]), (ib[0] + 200, wb[1])], GRN, "arrg"))
+    parts.append(ortho([(pb[0] + pb[2]//2, pb[1] + pb[3]), (pb[0] + pb[2]//2, 430),
+                        (cb[0] + 120, 430), (cb[0] + 120, cb[1])], BLUE, "arrb"))
+    parts.append(ortho([(wb[0] + 120, wb[1] + wb[3]), (wb[0] + 120, cb[1])], GRN, "arrg"))
+    parts.append(ortho([(wb[0] + 220, cb[1]), (wb[0] + 220, wb[1] + wb[3])], PURP, "arrp", dash="8,5"))
+    parts.append(txt(wb[0] + 230, 436, "context", anchor="start", fs=12, fill=PURP, italic=True))
+    parts.append(ortho([(cb[0] + cb[2] - 60, cb[1]), (cb[0] + cb[2] - 60, sb[1] + sb[3])], PURP, "arrp"))
+    parts.append(ortho([(sb[0] + sb[2] - 60, sb[1] + sb[3]), (sb[0] + sb[2] - 60, 520),
+                        (cb[0] + cb[2], 520)], ORG, "arro"))
+    parts.append(ortho([(cb[0] + cb[2]//2 - 50, cb[1] + cb[3]), (cb[0] + cb[2]//2 - 50, ob[1])], ORG, "arro"))
 
-        # Arrow to symbolic
-        parts.append(arrow(LEFT_X + CW + 4, sy + BOX_H//2,
-                           SYM_X - 4, sy + BOX_H//2, color=col, mid="arrd"))
-
-        # Symbolic box (fixed width)
-        parts.append(rect(SYM_X, sy, SW_BOX, BOX_H, col_l, stroke=col, sw=1.5, rx=4))
-        parts.append(txt(SYM_X + SW_BOX//2, sy + BOX_H//2 + 5,
-                         f"[{N}×4]", fs=12, fill=BLUE_DK, bold=True))
-
-
-
-    # Down arrow from last level
-    last_y = FIRST_Y + (LEVELS - 1) * (BOX_H + GAP)
-    parts.append(arrow(LEFT_X + CW//2, last_y + BOX_H + 2,
-                       LEFT_X + CW//2, last_y + BOX_H + 30, color=ORG, mid="arrd"))
-
-    # Output box
-    out_y = last_y + BOX_H + 30
-    parts.append(rect(LEFT_X, out_y, CW, 32, ORG_L, stroke=ORG, sw=2, rx=6))
-    parts.append(txt(LEFT_X + CW//2, out_y + 22, "Output  [1 × 4]  logits", fs=12, fill=ORG, bold=True))
-
-    # ── Right panel: N×D = const visualization ─────────────────────
-    PLOT_X = SYM_X + SW_BOX + 50
-    PLOT_W = W - PLOT_X - 30
-    PLOT_Y = 80
-    PLOT_H = 500
-
-    parts.append(rect(PLOT_X, PLOT_Y, PLOT_W, PLOT_H, "#f8f9fa", stroke="#ddd", sw=1, rx=10))
-    parts.append(txt(PLOT_X + PLOT_W//2, PLOT_Y + 22, "Information Density", fs=14, fill=BLUE_DK, bold=True))
-    parts.append(txt(PLOT_X + PLOT_W//2, PLOT_Y + 40, "N × D = 4096 (constant)", fs=12, fill=GRY, italic=True))
-
-    # Draw a log-log plot: x=log2(D), y=log2(N)
-    AXIS_X = PLOT_X + 50
-    AXIS_Y = PLOT_Y + PLOT_H - 60
-    AXIS_W = PLOT_W - 80
-    AXIS_H = PLOT_H - 120
-
-    # Axes
-    parts.append(line(AXIS_X, AXIS_Y, AXIS_X + AXIS_W, AXIS_Y, stroke=GRY_MID, sw=1.5))  # x
-    parts.append(line(AXIS_X, AXIS_Y, AXIS_X, AXIS_Y - AXIS_H, stroke=GRY_MID, sw=1.5))  # y
-
-    # Axis labels
-    parts.append(txt(AXIS_X + AXIS_W//2, AXIS_Y + 28, "D  (dimension)", fs=12, fill=GRY))
-    parts.append(txt(AXIS_X - 38, AXIS_Y - AXIS_H//2, "N", fs=12, fill=GRY))
-    parts.append(txt(AXIS_X - 28, AXIS_Y - AXIS_H//2 + 14, "(tokens)", fs=11, fill=GRY))
-
-    # Map (D, N) to plot coords
-    # x range: log2(4)=2 to log2(1024)=10 → D: 4..1024
-    # y range: log2(4)=2 to log2(1024)=10 → N: 4..1024
-    def px(D_val):
-        return AXIS_X + (math.log2(D_val) - 2) / 8 * AXIS_W
-    def py(N_val):
-        return AXIS_Y - (math.log2(N_val) - 2) / 8 * AXIS_H
-
-    # Grid lines
-    for v in [4, 8, 16, 32, 64, 128, 256, 512, 1024]:
-        xg = px(v); yg = py(v)
-        parts.append(line(xg, AXIS_Y, xg, AXIS_Y + 5, stroke=GRY_MID, sw=1))
-        parts.append(txt(xg, AXIS_Y + 18, str(v), fs=10, fill=GRY))
-        parts.append(line(AXIS_X - 5, yg, AXIS_X, yg, stroke=GRY_MID, sw=1))
-        parts.append(txt(AXIS_X - 8, yg + 4, str(v), fs=10, fill=GRY, anchor="end"))
-
-    # Diagonal line N*D = 4096 → log2(N) = 12 - log2(D)
-    d1, d2 = 4, 1024
-    parts.append(line(px(d1), py(d2), px(d2), py(d1), stroke=TEAL, sw=1.5, dash="6,3"))
-
-    # Points: Perceptual + 8 levels
-    all_points = [(4, 1024, "P")] + [(D, N, f"L{t}") for t, (N, D) in enumerate(concept_shapes)]
-    for i, (D_val, N_val, lbl) in enumerate(all_points):
-        col = BLUE if i == 0 else level_color(i - 1)
-        ppx = px(D_val); ppy = py(N_val)
-        parts.append(circle(ppx, ppy, 7, col, BLUE_DK, sw=1.5))
-        offset_x = 12 if D_val <= 256 else -14
-        anchor = "start" if D_val <= 256 else "end"
-        parts.append(txt(ppx + offset_x, ppy + 4, lbl, fs=11, fill=col, anchor=anchor, bold=True))
-
-    # Annotation
-    parts.append(txt(PLOT_X + PLOT_W//2, PLOT_Y + PLOT_H - 18,
-        "Each step: N ÷ 2, D × 2  (same area = same information)",
-        fs=11, fill=GRY, italic=True))
-
-
+    run = get("architecture", "training/batchSize")
+    parts.append(txt(W - 20, H - 14, f"batch {run}  ·  max sentence {get('architecture', 'data/maxSentenceWords')} words"
+                     f"  ·  grammar {lang}", anchor="end", fs=12, fill=GRY, italic=True))
     return svg(W, H, "\n".join(parts))
 
 
@@ -959,22 +917,40 @@ DIAGRAMS = {
     "ternary_logic.svg":     make_ternary,
     "luminosity.svg":        make_luminosity,
     "vector_spaces.svg":     make_vector_spaces,
-    "mm5m_architecture.svg": make_mm5m,
+    "basicmodel_reference.svg": make_reference_architecture,
     "grammar_operators.svg": make_grammar_operators,
 }
 
 
+def write(fname, content):
+    """Write one generated figure next to this script."""
+    fp = os.path.join(DIR, fname)
+    with open(fp, "w") as f:
+        f.write(content)
+    print(f"✓  {fp}")
+
+
+def figure_modules():
+    """The one-figure scripts beside this one (fig_*.py): FILENAME and make()."""
+    import glob, importlib.util
+    mods = {}
+    for path in sorted(glob.glob(os.path.join(DIR, "fig_*.py"))):
+        spec = importlib.util.spec_from_file_location(os.path.basename(path)[:-3], path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mods[mod.FILENAME] = mod.make
+    return mods
+
+
 def main(argv):
-    names = argv[1:] or list(DIAGRAMS)
-    unknown = [n for n in names if n not in DIAGRAMS]
+    makers = {**DIAGRAMS, **figure_modules()}
+    names = argv[1:] or list(makers)
+    unknown = [n for n in names if n not in makers]
     if unknown:
-        sys.exit(f"unknown diagram(s): {', '.join(unknown)}; known: {', '.join(DIAGRAMS)}")
+        sys.exit(f"unknown diagram(s): {', '.join(unknown)}; known: {', '.join(makers)}")
     for fname in names:
-        fp = os.path.join(DIR, fname)
-        content = DIAGRAMS[fname]()      # generate first: a width error must not truncate
-        with open(fp, "w") as f:
-            f.write(content)
-        print(f"✓  {fp}")
+        content = makers[fname]()        # generate first: a width error must not truncate
+        write(fname, content)
 
 
 if __name__ == "__main__":

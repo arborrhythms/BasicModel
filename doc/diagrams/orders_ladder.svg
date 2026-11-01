@@ -1,0 +1,64 @@
+<svg width='1180' height='670' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1180' height='670' fill='#fafafa'/>
+<defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker><marker id='arrr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#c0392b'/></marker><marker id='arrt' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#16a085'/></marker></defs>
+<rect x='0' y='0' width='1180' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='590' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>Orders are learned: definitions raise, NP + VP lowers</text>
+<text x='590' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Orders.md §10 · orders live in the concepts, not the grammar; parts of speech stay order-free</text>
+<rect x='330' y='96' width='560' height='100' fill='#fdebd0' fill-opacity='1.0' rx='12' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='346' y='122' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>order 2 · kinds</text>
+<rect x='346' y='146' width='43' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#ca6f1e' stroke-width='1.4'/><text x='367.5' y='166' text-anchor='middle' font-size='13' fill='#2c3e50'>cat</text>
+<rect x='401' y='146' width='51' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#ca6f1e' stroke-width='1.4'/><text x='426.5' y='166' text-anchor='middle' font-size='13' fill='#2c3e50'>dodo</text>
+<rect x='464' y='146' width='65' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#ca6f1e' stroke-width='1.4'/><text x='496.5' y='166' text-anchor='middle' font-size='13' fill='#2c3e50'>animal</text>
+<rect x='330' y='222' width='560' height='100' fill='#f5eef8' fill-opacity='1.0' rx='12' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='346' y='248' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>order 1 · individuals</text>
+<rect x='346' y='272' width='58' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#8e44ad' stroke-width='1.4'/><text x='375.0' y='292' text-anchor='middle' font-size='13' fill='#2c3e50'>Felix</text>
+<rect x='416' y='272' width='51' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#8e44ad' stroke-width='1.4'/><text x='441.5' y='292' text-anchor='middle' font-size='13' fill='#2c3e50'>Ciao</text>
+<rect x='479' y='272' width='225' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#8e44ad' stroke-width='1.4'/><text x='591.5' y='292' text-anchor='middle' font-size='13' fill='#2c3e50'>word types, by form sameness</text>
+<rect x='330' y='348' width='560' height='100' fill='#d6eaf8' fill-opacity='1.0' rx='12' stroke='#2980b9' stroke-width='1.8'/>
+<text x='346' y='374' text-anchor='start' font-size='15' fill='#2980b9' font-weight='bold'>order 0 · occurrences</text>
+<rect x='346' y='398' width='211' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#2980b9' stroke-width='1.4'/><text x='451.5' y='418' text-anchor='middle' font-size='13' fill='#2c3e50'>the event 'this' points at</text>
+<rect x='569' y='398' width='109' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#2980b9' stroke-width='1.4'/><text x='623.5' y='418' text-anchor='middle' font-size='13' fill='#2c3e50'>'Felix runs'</text>
+<rect x='690' y='398' width='174' height='30' fill='#fff' fill-opacity='1.0' rx='15' stroke='#2980b9' stroke-width='1.4'/><text x='777.0' y='418' text-anchor='middle' font-size='13' fill='#2c3e50'>sign and no-op tokens</text>
+<path d='M 310 362 L 310 290' fill='none' stroke='#8e44ad' stroke-width='2.4' marker-end='url(#arrp)'/>
+<path d='M 310 236 L 310 164' fill='none' stroke='#ca6f1e' stroke-width='2.4' marker-end='url(#arro)'/>
+<text x='296' y='310' text-anchor='end' font-size='13' fill='#2c3e50' font-style='italic'>“This is Felix.</text>
+<text x='296' y='328' text-anchor='end' font-size='13' fill='#2c3e50' font-style='italic'>That is Felix.”</text>
+<text x='296' y='346' text-anchor='end' font-size='11.5' fill='#626567'>Felix: the class of his occurrences</text>
+<text x='296' y='184' text-anchor='end' font-size='13' fill='#2c3e50' font-style='italic'>“Felix is a cat.</text>
+<text x='296' y='202' text-anchor='end' font-size='13' fill='#2c3e50' font-style='italic'>Ciao is a cat.”</text>
+<text x='296' y='220' text-anchor='end' font-size='11.5' fill='#626567'>cat: a kind</text>
+<text x='196' y='122' text-anchor='middle' font-size='14' fill='#8e44ad' font-weight='bold'>DEFINITIONS RAISE</text>
+<path d='M 910 164 L 910 236' fill='none' stroke='#c0392b' stroke-width='2.4' marker-end='url(#arrr)'/>
+<path d='M 910 290 L 910 362' fill='none' stroke='#c0392b' stroke-width='2.4' marker-end='url(#arrr)'/>
+<text x='924' y='184' text-anchor='start' font-size='13' fill='#2c3e50' font-style='italic'>“Dodos died out.”</text>
+<text x='924' y='202' text-anchor='start' font-size='11.5' fill='#626567'>a change across the kind's</text>
+<text x='924' y='218' text-anchor='start' font-size='11.5' fill='#626567'>members, at order 1</text>
+<text x='924' y='310' text-anchor='start' font-size='13' fill='#2c3e50' font-style='italic'>“Felix runs.”</text>
+<text x='924' y='328' text-anchor='start' font-size='11.5' fill='#626567'>an occurrence of Felix,</text>
+<text x='924' y='344' text-anchor='start' font-size='11.5' fill='#626567'>at order 0</text>
+<text x='1010' y='122' text-anchor='middle' font-size='14' fill='#c0392b' font-weight='bold'>NP + VP LOWERS</text>
+<rect x='30' y='476' width='360' height='164' fill='#f5eef8' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='44' y='500' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>The raise</text>
+<text x='44' y='524' text-anchor='start' font-size='12.5' fill='#2c3e50'>an IS row whose shared side gathers</text>
+<text x='44' y='543' text-anchor='start' font-size='12.5' fill='#2c3e50'>raiseCount distinct members (different</text>
+<text x='44' y='562' text-anchor='start' font-size='12.5' fill='#2c3e50'>tokens or values; events at different</text>
+<text x='44' y='581' text-anchor='start' font-size='12.5' fill='#2c3e50'>places or times), with evidence above</text>
+<text x='44' y='600' text-anchor='start' font-size='12.5' fill='#2c3e50'>raiseEvidence, makes a class one order</text>
+<text x='44' y='619' text-anchor='start' font-size='12.5' fill='#2c3e50'>above its members; the word denotes it</text>
+<rect x='410' y='476' width='360' height='164' fill='#f2f3f4' fill-opacity='1.0' rx='10' stroke='#2c3e50' stroke-width='1.8'/>
+<text x='424' y='500' text-anchor='start' font-size='15' fill='#2c3e50' font-weight='bold'>Selection, not lowering</text>
+<text x='424' y='524' text-anchor='start' font-size='12.5' fill='#2c3e50'>the determiner selects: the phrase takes</text>
+<text x='424' y='543' text-anchor='start' font-size='12.5' fill='#2c3e50'>the order of what it picks ('the cat' is</text>
+<text x='424' y='562' text-anchor='start' font-size='12.5' fill='#2c3e50'>an individual)</text>
+<text x='424' y='581' text-anchor='start' font-size='12.5' fill='#2c3e50'>the modal withholds the lowering: the</text>
+<text x='424' y='600' text-anchor='start' font-size='12.5' fill='#2c3e50'>clause stays above order 0, extending an</text>
+<text x='424' y='619' text-anchor='start' font-size='12.5' fill='#2c3e50'>alternative timeline of the one identity</text>
+<rect x='790' y='476' width='360' height='164' fill='#f2f3f4' fill-opacity='1.0' rx='10' stroke='#2c3e50' stroke-width='1.8'/>
+<text x='804' y='500' text-anchor='start' font-size='15' fill='#2c3e50' font-weight='bold'>Raises nothing</text>
+<text x='804' y='524' text-anchor='start' font-size='12.5' fill='#2c3e50'>identity: 'Paris is the capital of</text>
+<text x='804' y='543' text-anchor='start' font-size='12.5' fill='#2c3e50'>France'; 'y is three. x is three.'</text>
+<text x='804' y='562' text-anchor='start' font-size='12.5' fill='#2c3e50'>sign and no-op tokens are occurrences</text>
+<text x='804' y='581' text-anchor='start' font-size='12.5' fill='#2c3e50'>at order 0 and never raise</text>
+<text x='804' y='600' text-anchor='start' font-size='12.5' fill='#2c3e50'>the null-concept has no order</text>
+<text x='804' y='619' text-anchor='start' font-size='12.5' fill='#2c3e50'></text>
+</svg>

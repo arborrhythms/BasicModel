@@ -212,6 +212,8 @@ are retired. Forward representations and numerical operator hosts remain shared.
 
 ## The training step (October 3)
 
+![One sentence, two readings: the trial comparison and the parameter owners](diagrams/sentence_trials.svg)
+
 A sentence has a greedy and an explore derivation. Both are composed and
 costed at identical parameters before either trains. Each trial then takes
 its own restricted backward and optimizer step, including its own perception

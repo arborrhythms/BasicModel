@@ -1,56 +1,68 @@
-<svg width='1440' height='780' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
-  <rect width='1440' height='780' fill='#fafafa'/>
+<svg width='1440' height='876' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1440' height='876' fill='#fafafa'/>
 <defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker></defs>
-<text x='720' y='38' text-anchor='middle' font-size='30' fill='#222222' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>BasicModel Space Hierarchy</text>
-<rect x='620' y='64' width='200' height='48' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='2'/>
-<text x='720' y='95' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>InputSpace (IS)</text>
-<rect x='620' y='718' width='200' height='48' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
-<text x='720' y='749' text-anchor='middle' font-size='18' fill='#ca6f1e' font-weight='bold'>OutputSpace (OS)</text>
-<rect x='40' y='150' width='1360' height='285' fill='#eef6fb' fill-opacity='1.0' rx='14' stroke='#2980b9' stroke-width='2'/>
-<rect x='80' y='200' width='330' height='210' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
-<text x='102' y='238' text-anchor='start' font-size='30' fill='#2980b9' font-weight='bold'>PS</text>
-<text x='162' y='238' text-anchor='start' font-size='20' fill='#2c3e50' font-weight='bold'>Part Space</text>
-<text x='98' y='280' text-anchor='start' font-size='14.2' fill='#2c3e50'>• synthesizes atoms into part-percepts</text>
-<text x='98' y='304' text-anchor='start' font-size='14.2' fill='#2c3e50'>• atom-view stem from InputSpace</text>
-<text x='98' y='328' text-anchor='start' font-size='14.2' fill='#2c3e50'>• Sigma synthesis fold</text>
-<text x='98' y='352' text-anchor='start' font-size='14.2' fill='#2c3e50'>• MPHF + index table</text>
-<text x='98' y='376' text-anchor='start' font-size='14.2' fill='#2c3e50'>• Lexicon: surface rows</text>
-<text x='98' y='400' text-anchor='start' font-size='14.2' fill='#2c3e50'>• part codebook: part-percepts</text>
-<rect x='555' y='200' width='330' height='210' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#27ae60' stroke-width='1.8'/>
-<text x='577' y='238' text-anchor='start' font-size='30' fill='#27ae60' font-weight='bold'>WS</text>
-<text x='637' y='238' text-anchor='start' font-size='20' fill='#2c3e50' font-weight='bold'>Whole Space</text>
-<text x='573' y='280' text-anchor='start' font-size='14.2' fill='#2c3e50'>• analyzes properties, regions and wholes</text>
-<text x='573' y='304' text-anchor='start' font-size='14.2' fill='#2c3e50'>• unity / property view</text>
-<text x='573' y='328' text-anchor='start' font-size='14.2' fill='#2c3e50'>• Pi analysis fold</text>
-<text x='573' y='352' text-anchor='start' font-size='14.2' fill='#2c3e50'>• property basis: regions</text>
-<text x='573' y='376' text-anchor='start' font-size='14.2' fill='#2c3e50'>• whole-percept codebook</text>
-<text x='573' y='400' text-anchor='start' font-size='14.2' fill='#2c3e50'>• paired orth / semantic rows</text>
-<rect x='1030' y='200' width='330' height='210' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
-<text x='1052' y='238' text-anchor='start' font-size='30' fill='#ca6f1e' font-weight='bold'>SS</text>
-<text x='1112' y='238' text-anchor='start' font-size='20' fill='#2c3e50' font-weight='bold'>Symbolic Space</text>
-<text x='1048' y='280' text-anchor='start' font-size='14.2' fill='#2c3e50'>• zero-dimensional references</text>
-<text x='1048' y='304' text-anchor='start' font-size='14.2' fill='#2c3e50'>• symbol codebook</text>
-<text x='1048' y='328' text-anchor='start' font-size='14.2' fill='#2c3e50'>• grammar / signal router</text>
-<text x='1048' y='352' text-anchor='start' font-size='14.2' fill='#2c3e50'>• operators live in codebook</text>
-<text x='1048' y='376' text-anchor='start' font-size='14.2' fill='#2c3e50'>• TruthLayer stores DoT propositions</text>
-<text x='1048' y='400' text-anchor='start' font-size='14.2' fill='#2c3e50'>• TruthLayer: record / query / field</text>
-<rect x='190' y='485' width='1060' height='190' fill='#f5eef8' fill-opacity='1.0' rx='14' stroke='#8e44ad' stroke-width='2'/>
-<text x='214' y='523' text-anchor='start' font-size='22' fill='#8e44ad' font-weight='bold'>Conceptual Space (CS)</text>
-<text x='214' y='557' text-anchor='start' font-size='14.2' fill='#2c3e50'>• STM plus concept relations</text>
-<text x='214' y='577' text-anchor='start' font-size='14.2' fill='#2c3e50'>• ties part-percepts to whole-percepts</text>
-<text x='214' y='597' text-anchor='start' font-size='14.2' fill='#2c3e50'>• Concept codebook: relation rows</text>
-<text x='214' y='617' text-anchor='start' font-size='14.2' fill='#2c3e50'>• AttentionLayer: symbolic wave over concept inventory</text>
-<text x='214' y='637' text-anchor='start' font-size='14.2' fill='#2c3e50'>• ConceptAllocator: ids, ordered records, relation pool</text>
-<text x='214' y='657' text-anchor='start' font-size='14.2' fill='#2c3e50'>• Truth-gated acceptance and reasoning hooks</text>
-<path d='M 670 112 L 670 170 L 290 170 L 290 200' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
-<path d='M 770 112 L 770 170 L 680 170 L 680 200' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
-<path d='M 245 410 L 245 465 L 410 465 L 410 485' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
-<path d='M 720 410 L 720 485' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
-<path d='M 1195 410 L 1195 465 L 1030 465 L 1030 485' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
-<path d='M 720 675 L 720 718' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
-<path d='M 590 675 L 590 700 L 20 700 L 20 132 L 150 132 L 150 200' fill='none' stroke='#8e44ad' stroke-width='2.3' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
-<path d='M 830 675 L 830 690 L 1388 690 L 1388 132 L 840 132 L 840 200' fill='none' stroke='#8e44ad' stroke-width='2.3' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
-<path d='M 970 675 L 970 708 L 1420 708 L 1420 184 L 1195 184 L 1195 200' fill='none' stroke='#8e44ad' stroke-width='2.3' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
-<rect x='540' y='164' width='360' height='34' fill='#eef6fb' fill-opacity='1.0' rx='0'/>
-<text x='720' y='188' text-anchor='middle' font-size='22' fill='#2c3e50' font-weight='bold'>Perceptual Spaces</text>
+<text x='720' y='40' text-anchor='middle' font-size='30' fill='#222222' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>BasicModel Space Hierarchy</text>
+<text x='720' y='66' text-anchor='middle' font-size='14' fill='#626567'>Forward (ownership): IS → {PS, WS, SS, LS} → CS → OS  ·  Reverse: OS → SS → CS → {PS, WS} → IS  ·  CS is the sole reducer and owner of every commit</text>
+<rect x='380' y='88' width='200' height='48' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='2'/>
+<text x='480' y='119' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>InputSpace (IS)</text>
+<rect x='40' y='176' width='880' height='318' fill='#eef6fb' fill-opacity='1.0' rx='14' stroke='#2980b9' stroke-width='2'/>
+<text x='480' y='208' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>Perceptual Spaces</text>
+<text x='480' y='484' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-style='italic'>peers: the input fans to both towers; no PS → WS edge</text>
+<rect x='70' y='228' width='400' height='230' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='90' y='264' text-anchor='start' font-size='28' fill='#2980b9' font-weight='bold'>PS</text>
+<text x='144' y='264' text-anchor='start' font-size='20' fill='#2c3e50' font-weight='bold'>Part Space</text>
+<text x='88' y='298' text-anchor='start' font-size='14.2' fill='#2c3e50'>• bottom-up synthesis of ordered parts</text>
+<text x='88' y='322' text-anchor='start' font-size='14.2' fill='#2c3e50'>• native radix ids and ordered witnesses</text>
+<text x='88' y='346' text-anchor='start' font-size='14.2' fill='#2c3e50'>• code = max of constituent codes</text>
+<text x='88' y='370' text-anchor='start' font-size='14.2' fill='#2c3e50'>• one percept store; ids decide presence</text>
+<text x='88' y='394' text-anchor='start' font-size='14.2' fill='#2c3e50'>• no learned fold inside the tower</text>
+<text x='88' y='418' text-anchor='start' font-size='14.2' fill='#2c3e50'>• the ordered witness gives the exact reverse</text>
+<rect x='490' y='228' width='400' height='230' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#27ae60' stroke-width='1.8'/>
+<text x='510' y='264' text-anchor='start' font-size='28' fill='#27ae60' font-weight='bold'>WS</text>
+<text x='564' y='264' text-anchor='start' font-size='20' fill='#2c3e50' font-weight='bold'>Whole Space</text>
+<text x='508' y='298' text-anchor='start' font-size='14.2' fill='#2c3e50'>• top-down division by primitive properties</text>
+<text x='508' y='322' text-anchor='start' font-size='14.2' fill='#2c3e50'>• one property codebook (ASCII classes)</text>
+<text x='508' y='346' text-anchor='start' font-size='14.2' fill='#2c3e50'>• max over allowed primitives per position</text>
+<text x='508' y='370' text-anchor='start' font-size='14.2' fill='#2c3e50'>• min pervasion over a run</text>
+<text x='508' y='394' text-anchor='start' font-size='14.2' fill='#2c3e50'>• no perceptual pi layer</text>
+<text x='508' y='418' text-anchor='start' font-size='14.2' fill='#2c3e50'>• reads conceptual context as its input</text>
+<rect x='950' y='176' width='450' height='318' fill='#fdf5ec' fill-opacity='1.0' rx='14' stroke='#ca6f1e' stroke-width='2'/>
+<text x='1175' y='208' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>Symbol and Language</text>
+<rect x='970' y='216' width='410' height='96' fill='#fff' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.5'/>
+<text x='988' y='246' text-anchor='start' font-size='22' fill='#ca6f1e' font-weight='bold'>LS</text>
+<text x='1028' y='246' text-anchor='start' font-size='18' fill='#2c3e50' font-weight='bold'>LanguageSpace</text>
+<text x='988' y='274' text-anchor='start' font-size='13.5' fill='#2c3e50'>• scheduling: chooses grammar operations</text>
+<text x='988' y='296' text-anchor='start' font-size='13.5' fill='#2c3e50'>• returns choice tensors; CS applies them</text>
+<rect x='970' y='326' width='410' height='136' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.5'/>
+<text x='988' y='356' text-anchor='start' font-size='22' fill='#ca6f1e' font-weight='bold'>SS</text>
+<text x='1028' y='356' text-anchor='start' font-size='18' fill='#2c3e50' font-weight='bold'>SymbolSpace</text>
+<text x='988' y='384' text-anchor='start' font-size='13.5' fill='#2c3e50'>• zero-dimensional references to CS concepts</text>
+<text x='988' y='405' text-anchor='start' font-size='13.5' fill='#2c3e50'>• LanguageLayer: compose, thought, generate</text>
+<text x='988' y='426' text-anchor='start' font-size='13.5' fill='#2c3e50'>• TruthLayer; LTM0, the occurrence store</text>
+<text x='988' y='447' text-anchor='start' font-size='13.5' fill='#2c3e50'>• no percept codebook, no atomic forward</text>
+<rect x='190' y='556' width='1060' height='200' fill='#f5eef8' fill-opacity='1.0' rx='14' stroke='#8e44ad' stroke-width='2'/>
+<text x='214' y='592' text-anchor='start' font-size='22' fill='#8e44ad' font-weight='bold'>Conceptual Space (CS)</text>
+<text x='214' y='626' text-anchor='start' font-size='14.2' fill='#2c3e50'>• sole reducer: commits concepts, STM and grammar transactions (CSsub, CSsym, CSLang)</text>
+<text x='214' y='652' text-anchor='start' font-size='14.2' fill='#2c3e50'>• concept dictionary: code = signed activation × softplus(atom); two symbols per concept</text>
+<text x='214' y='678' text-anchor='start' font-size='14.2' fill='#2c3e50'>• definitions: pi (conjunctive) only at order 0, sigma (disjunctive) at every order</text>
+<text x='214' y='704' text-anchor='start' font-size='14.2' fill='#2c3e50'>• ConceptAllocator: ids and ordered records; ConceptualAttentionLayer relation store; LTM1</text>
+<text x='214' y='730' text-anchor='start' font-size='14.2' fill='#2c3e50'>• STM (8 chunks) · MTM (tokens, familiar tier) · ActivationPredictor (expectation)</text>
+<rect x='620' y='790' width='200' height='48' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='2'/>
+<text x='720' y='821' text-anchor='middle' font-size='18' fill='#ca6f1e' font-weight='bold'>OutputSpace (OS)</text>
+<path d='M 430 136 L 430 156 L 270 156 L 270 228' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
+<path d='M 530 136 L 530 156 L 690 156 L 690 228' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
+<path d='M 270 458 L 270 556' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
+<path d='M 690 458 L 690 556' fill='none' stroke='#27ae60' stroke-width='1.8' marker-end='url(#arrg)'/>
+<path d='M 720 756 L 720 790' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<path d='M 1080 556 L 1080 462' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
+<path d='M 1160 462 L 1160 556' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='1170' y='524' text-anchor='start' font-size='12.5' fill='#2c3e50' font-style='italic'>symbolicOrder × (CS → SS → CS)</text>
+<path d='M 1300 326 L 1300 312' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<path d='M 1380 264 L 1418 264 L 1418 676 L 1250 676' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='1334' y='668' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-style='italic'>choices (CSLang)</text>
+<path d='M 210 556 L 210 458' fill='none' stroke='#8e44ad' stroke-width='2.2' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
+<path d='M 780 556 L 780 458' fill='none' stroke='#8e44ad' stroke-width='2.2' stroke-dasharray='8,5' marker-end='url(#arrp)'/>
+<text x='200' y='524' text-anchor='end' font-size='12.5' fill='#8e44ad' font-style='italic'>attention (positive floor)</text>
+<text x='790' y='524' text-anchor='start' font-size='12.5' fill='#8e44ad' font-style='italic'>conceptual context</text>
+<text x='40' y='864' text-anchor='start' font-size='12' fill='#626567' font-style='italic'>solid: forward · dashed: conceptual pass-back · sources: Spaces.md (Overview, ownership), Architecture.md (Spaces)</text>
 </svg>

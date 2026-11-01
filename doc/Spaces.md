@@ -1154,6 +1154,8 @@ with the concept), not from a stored signed unit direction. (The legacy
 "named unit-norm direction + `argmax` retrieval" view is retired on the
 forward path.)
 
+![A concept: sigma over pi, one signed code, two evidence lanes](diagrams/concept_geometry.svg)
+
 **Owned definitions and carrier.** The conceptual inventory owns sparse
 feature references, order-0 conjunctive and disjunctive edges, and higher-order
 disjunctive edges. The clean-stack STM retains the incoming event and its

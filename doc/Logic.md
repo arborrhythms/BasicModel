@@ -389,6 +389,8 @@ nearest-truth lookups.
 
 ![Ternary Logic Operators](diagrams/ternary_logic.svg)
 
+*The figure is computed from the kernels in `bin/Layers.py` (regenerated 2026-11-01). As built, union is the elementwise max and intersection the minimum with a zero coordinate silent (audit 2026-10-30, Sections 1 and 3). RadMin and RadMax apply under `kind='radial'`, and their LogSumExp forms under `kind='soft'`; the note below that calls the soft forms the default predates the audit.*
+
 RadMin, RadMax, NOT, and NON operate over signed magnitude space `[-1, +1]`.
 Sign = direction of assertion; magnitude = strength; zero = **unknown**.
 $+1$ = True; $0$ = Unknown (no assertion); $-1$ = False. Magnitude ordering:
@@ -435,7 +437,7 @@ disagreement.
 > (no decode pullback) and is order-independent. The meet/GLB form
 > below survives only as the **orthogonalization criterion**
 > (`TruthLayer._luminosity_without`) and `darkness()`'s mirror — it is
-> no longer the truth-set measure. (The diagram shows the meet form.)
+> no longer the truth-set measure. (The diagram shows this coverage measure; the meet form is noted beneath it.)
 
 The meet-form coherence scalar (orthogonalization criterion):
 

@@ -33,6 +33,8 @@ sentence boundary. This chapter is the single reference for what the STM
 is, how it fills, what reads it, and how its end-states chain into
 long-term memory.
 
+![Memory: in focus, familiar, known, and the long-term strata](diagrams/memory_strata.svg)
+
 Two cadences write the STM, selected by `<serial>` (legacy configs derive
 it from `symbolicOrder > 0`; see
 [Architecture.md](Architecture.md#modes-of-operation)):

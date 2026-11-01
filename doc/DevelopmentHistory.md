@@ -6011,3 +6011,23 @@ historical values are retained; they are not a passing learning claim for the
 new index. The small probe
 is also not a corpus estimate, multi-seed study or causal-utility comparison.
 [Probe](../test/test_mind_generativity.py), [receipts](Testing.md).
+
+## Retired figures (2026-11-01)
+
+These figures describe designs that are no longer built. They are kept as
+the record and are no longer generated; the current figures are produced by
+`doc/diagrams/gen_diagrams.py` and the `fig_*.py` scripts beside it.
+
+![MM_5M, the hierarchical progressive bottleneck (retired)](diagrams/mm5m_architecture.svg)
+
+MM_5M held $N \times D = 4096$ constant across eight conceptual levels. It
+was the reference figure of [Architecture](Architecture.md) and
+[BasicModel](BasicModel.md) until 2026-11-01. No configuration defines it
+now: the 2026-10-02 configuration review deleted its last variants
+([configuration review](plans/2026-10-02-configuration-review.md)). The
+reference figure is now generated from `data/BasicModel.xml`.
+
+![MM_5M_bivector architecture (retired)](diagrams/mm5m_bivector_architecture.svg)
+
+The bivector variant of MM_5M, drawn in May 2026. Its generator was never
+committed, and no configuration defines the model.
