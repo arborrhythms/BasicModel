@@ -62,13 +62,13 @@ behaviour of each order follows from its evidence, not from set-hood.
 | --- | --- | --- | --- |
 | 1 | occurrences → an **individual** | continuity (`.where`/`.when` trajectory); witnesses are the degrees | identity and counting begin; persistence and change — verbs, tense, reference (names, pronouns, definites) apply here |
 | 1 | tokens → a **word** | form sameness (exact; typos and variants are the fuzzy fringe) | the symbol table's META rows |
-| 2 | individuals → a **kind** | explanation by the kind's pi | inclusion (cats ⊂ animals), quantification, generic truth; kinds do not change, their members do |
+| 2 | individuals → a **kind** | explanation by the kind's pi | inclusion (cats $\subset$ animals), quantification, generic truth; kinds do not change, their members do |
 | 2 | individuals → a **collection** | adjacency / plurality | location (the sum of members) without an identity criterion beyond membership |
 | 2 | words → a **part of speech** | participation in operand positions | the learned grammar's classes |
 
 Identity is per order: a generalization over occurrences (an individual,
 which keeps its history) is never identified with a generalization over
-individuals (a kind). Same point, different order stamp ⇒ different thing.
+individuals (a kind). Same point, different order stamp $\Rightarrow$ different thing.
 
 ## 4. What an order increase abstracts
 

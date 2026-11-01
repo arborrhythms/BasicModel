@@ -733,7 +733,7 @@ Decided in the 6.8 §14–§15 rounds
   the score-function term at the sampled departure, with the greedy trial's
   cost as the paired baseline (self-critical sequence training): surrogate
   `K · R_walk · W · p_θ(a_dep | state) · (C_explore − C_greedy)`, costs detached, one term per
-  sentence with a departure, reconstruction-owned; `∇p` rather than `∇log p`
+  sentence with a departure, reconstruction-owned; $\nabla p$ rather than $\nabla \log p$
   because the departure is drawn uniformly over the value-distinct eligible
   alternatives (the coverage floor) and the importance weight cancels the
   `1/p`. Here K counts the value-distinct eligible alternatives at the sampled
@@ -783,8 +783,8 @@ Decided in the 6.8 §14–§15 rounds
   choices by the score-function estimator below. Reconstruction remains
   the shared chooser's sole gradient owner.
 - **The binding kernels take magnitude from the activation**, codes entering
-  as directions: conjunction `a·b·unit(u∘v)`, disjunction
-  `(a + b − ab)·unit(u + v − u∘v)` with `u, v` unit codes and `a, b` the operand
+  as directions: conjunction $a \cdot b \cdot \mathrm{unit}(u \circ v)$, disjunction
+  $(a + b - ab) \cdot \mathrm{unit}(u + v - u \circ v)$ with $u, v$ unit codes and $a, b$ the operand
   activations (1 for a present word). Roots carry unit certainty; identity is
   in the direction. The code's norm is no longer read as certainty (the
   reading retired 2026-10-04); at full presence the old `a + b − ab` on norms
