@@ -2089,6 +2089,27 @@ no privileged identity, joined to a witness that conceptualizes nothing,
 is the mirror wisdom holding what occurred without grasping it. A
 representation of it would be the obscuration.
 
+**The null-concept, and two questions (Alec, 2026-10-31, night).** Alec
+decided the stand-in: "witnessing is an alternative to interpreting that
+gives a perceptual identity a null-concept, a concept that is not limiting
+because it is unknowing. It must be a frozen concept, and it must be
+exempt from 'normal' conceptual operations that rely on conceptual
+definition. But it does give something for MTM to temporarily identify;
+there is a perceptual referent when Jesus says 'what am I like?', or when
+the zen master asks of an orange, 'what is this?'." The two questions are
+the test of the design. In the Gospel of Thomas (13) Jesus asks the
+disciples to compare him to something and say what he is like; Peter and
+Matthew answer with concepts, an angel, a philosopher, and Thomas answers
+that his mouth cannot say what Jesus is like. The master holding up the
+orange asks for a name and accepts none; the fitting answer is the orange.
+In both, the perceptual referent is present and identified, a token the
+question's "I" or "this" binds to, and the question invites the concept
+that would limit it. The null-concept is the model's Thomas: the token has
+an identity MTM can hold and follow, and its concept says nothing, because
+it is unknowing rather than unknown. The design is in
+[Orders §11](Orders.md), "Witnessing gives a perceptual identity a
+null-concept".
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |
