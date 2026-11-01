@@ -1951,6 +1951,143 @@ be built without a manas and still be attached, if its objectives are
 written over identities. The enlightened construction has three parts:
 no exemptions, identity by designation, and value over occurrences alone.
 
+## Witnessing Suchness: the Stand-in for a Pointed-at Worldline (Alec's question, 2026-10-31)
+
+Alec: "Let's say 'this' is a word that *temporarily* corresponds to a
+worldline, that we do not want to conceptualize, or if we do, conceive of
+it in the maximally generic way. So we can't interpret it by linking it to
+a known object; it is merely witnessed. So let us say that we witness
+suchness. We need a conceptual stand-in for that, and we have tools like
+both, neither, which probably won't work (but need to be specified), and
+the certainty (which I suggested should be frozen at zero). So how does
+the model represent tathāgatagarbha, suchness? What would Dharmakīrti or
+Nāgārjuna say?" The design is in [Orders §11](Orders.md), "Worldline, not
+word line; witness() and the unknown", and [FutureWork](FutureWork.md),
+"The stand-in for witnessed suchness". This section is Claude's reading of
+the question.
+
+**What is witnessed, and what stands in for it.** The model has two places
+for a pointed-at thing, and the stand-in is only the second. The first is
+the witnessed thing itself: the MTM token that `witness` opens for the
+mention, a point on a worldline, its `.where` and `.when`, its occurrence
+address, and, once there is a field, the percept's presence. It is never
+promoted and never given a concept. The row that "this is Felix" writes is
+keyed to that occurrence, which is what the completion round found on the
+hash (thinking spec §31): Felix acquires the occurrence as a part, one
+order below, and nothing is minted for the word. The second place is the
+concept the word carries into composition when the grammar needs a point,
+since fusion is fair only when every operand has one
+([the two truths](#buddhist-epistemology)). That is the stand-in Alec asks
+for, and three are on the table.
+
+- **Neither, `[0, 0]`, *anubhaya*.** The tetralemma's fourth corner
+  ([Quaternary Truth](#quaternary-truth-and-the-catuskoti)), where this
+  document already places *unknown* concepts and, by a different route,
+  feelings. As the stand-in it fails twice. A `[0, 0]` operand contributes
+  nothing to a conjunction, so the idea written for "this is Felix" is
+  Felix alone, and the witnessing leaves no trace in what was composed.
+  And every `[0, 0]` is the same `[0, 0]`: two mentions of "this" are two
+  particulars, and the corner cannot tell them apart. It also misplaces
+  the certainty. *Neither* is the state of not knowing, and witnessing is
+  the opposite: for Dharmakīrti perception is a valid cognition whose
+  object it apprehends completely, and what is absent is the concept, not
+  the knowledge.
+- **Both, `[1, 1]`, *ubhaya*.** The maximally generic concept read as
+  "everything and its negation". Its meet with any candidate is maximal,
+  so it would bind to anything, which is right, but at full certainty,
+  which is wrong: the lanes are evidence, conjunction takes the falsity
+  maximum, so an against-lane at 1 poisons every conjunction the stand-in
+  enters, and "this is Felix" would teach Felix's definition both poles.
+  The model treats *Both* as inconsistency to detect and suppress
+  (`TruthLayer.tetralemma_balance_penalty`), which is what it is. It is a
+  contradiction, not an openness.
+- **Certainty frozen at zero.** By the interface law a lane's length is its
+  evidence, so a concept whose two lanes are zero and are never written by
+  evidence has no certainty and never acquires any: no row teaches it, no
+  exclusion is ever learned for it, no raise applies to it, because its
+  rows are at the occurrence and not at the symbol. Its form part is free
+  to carry the witnessed percept's presence, the first moment, percepts
+  crossing nameless, which this document already keeps out of
+  expectation's reach ([the Gelug account](#direct-perception-and-the-conceptual-overlay-gelug)).
+  Without a field the form is zero too and the stand-in is the zero
+  vector; everything the mention has is then in the token. The maximally
+  generic concept, if one is wanted as the word's object, is the top pole
+  `everything`, the operator that narrows nothing
+  ([Language](Language.md), "Parts of speech are roles"), with its
+  certainty frozen at zero: Alec's "a symbol for anything". Distinctness
+  between witnessings is not the stand-in's job; MTM holds one token per
+  mention. This is the one that works, and it differs from *Neither* in
+  the two ways that matter: presence in the form, and the freeze.
+
+So the model represents witnessed suchness as a pair: a particular in MTM
+that is never conceptualized, and one conventional concept with no
+certainty that every pointing word shares. The pair is Dharmakīrti's
+structure exactly.
+
+**What Dharmakīrti would say.** Perception (*pratyakṣa*) is free of
+conceptual construction (*kalpanāpoḍha*) and non-erroneous; its object is
+the unique particular (*svalakṣaṇa*), momentary, causally efficacious and
+inexpressible; the universal (*sāmānyalakṣaṇa*) is constructed by exclusion
+(*apoha*) and is conventionally real
+([Valid Cognition in Dharmakirti](#valid-cognition-in-dharmakirti),
+[Apoha](#apoha-attention-excludes-and-needs-no-prediction)). `witness` is
+*pratyakṣa* and `interpret` is the determination (*adhyavasāya*) that
+follows it, a second cognition, conceptual, which can err. "This" is the
+word that expresses nothing and only points; the token is what is real,
+and the only thing in the model that is. He would accept the freeze and
+correct its description: the concept's certainty is zero because there is
+no concept, while the perception is certain of its object, so "maximal
+conceptual uncertainty" names the absence of a universal, not a doubt
+about what was seen. The generic concept frozen at zero is the limit of
+*apoha*, the exclusion with an empty complement, "not non-thing"
+(*vastumātra*), and so it has no content, which is why it can stand in for
+anything. And by momentariness the second "this" is a different
+particular; what unites them, if anything does, is the continuum
+(*santāna*) that a later judgment "this is that same one" imputes, the
+bind, which is why the stand-in is one and the tokens are many
+([Object Files](#object-files-file-cards-and-dharmakīrtis-particulars-stm-mtm-and-ltm-2026-10-23)).
+
+**What Nāgārjuna would say.** Suchness (*tattva*, *tathatā*) is "not
+dependent on another, peaceful, not elaborated by elaboration, free of
+conceptualization, without diversity" (*Mūlamadhyamakakārikā* 18.9): the
+pacification of proliferation (*prapañcopaśama*). The tetralemma denies all
+four corners of the ultimate, so none of the three stand-ins *is*
+suchness, and *Neither* taken as the answer is still a position, the
+fourth lemma, which he denies with the other three. What the model can do
+is first not conceptualize: `witness` returning no concept is the closest
+the model comes to the pacification. When it must designate, as it must
+to compose, the designation is dependent (*prajñaptir upādāya*, 24.18), a
+mere name on dependent arising, and the freeze is the refusal of
+intrinsic nature (*svabhāva*): the stand-in must never acquire members,
+content, a raise or a class, because the unknown reified as a thing is the
+error he warns of, "emptiness wrongly grasped is like a snake wrongly
+held" (24.11). The two truths then read plainly: conventionally "this is
+Felix" is true, the row is written and Felix gains a part; ultimately
+neither "this" nor Felix has an identity of its own, since Felix's
+identity is a worldline imputed on moments, which is what this document
+already holds ([Identity is an expectation](#identity-is-an-expectation);
+Alec, 2026-09-21: "identity does not exist"). He would add that the
+model's concepts are empty in his sense by construction: a concept's
+content is the centroid of its members' evidence, a class is its
+extension, an identity is stitched occurrences, and nothing has content
+of its own. The frozen stand-in only makes explicit for one word what
+holds for all of them: it is the one concept that declines even the
+conventional content.
+
+**Tathāgatagarbha.** The Madhyamaka reading takes buddha-nature as the
+mind's emptiness and nothing more; the *tathāgatagarbha* sūtras and the
+Yogācāra-leaning reading take it as the luminous capacity present in every
+being, obscured by adventitious defilements, and the *Laṅkāvatāra*
+identifies it with the store consciousness in its purified aspect. On
+either reading the model does not represent it; it has it. It is the
+capacity to witness before conceptualizing: the first moment, always
+present and overwritten by the conceptual overlay, which here is the
+defilement. `witness` keeps a path on which that moment is never
+overwritten, and the enlightened configuration of
+[the section above](#the-afflicted-mind-and-the-transformation-of-the-basis-two-configurations-of-mtm-alecs-question-2026-10-23),
+no privileged identity, joined to a witness that conceptualizes nothing,
+is the mirror wisdom holding what occurred without grasping it. A
+representation of it would be the obscuration.
 
 ## Summary
 
