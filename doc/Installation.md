@@ -47,6 +47,20 @@ raw `max-autotune`, differentiated backward, and runtime word counts
 through the configured sentence capacity without recompilation. That
 measurement has not been repeated on the stable builds.
 
+**MLX export on this stack (2026-11-01).** With torch 2.15.0 and executorch
+1.5.1, `RUN_SLOW=1 pytest test/test_mlx_export.py` reports 3 passed and 2
+xfailed, but the two xfails (D2, the `.pte` lowering; D3, runtime parity)
+no longer fail for the recorded reason, the dedup'd constant shared across
+the three delegated combine subgraphs at sO=3. They stop earlier, in
+executorch's `to_edge_transform_and_lower` verifier: `SpecViolationError:
+Parameter output aten_mean_dim does not point to a parameter that exists`,
+the mutated parameter being `symbolSpace._owned_bases.what.W`. The exported
+core writes a parameter during forward, which this verifier rejects. Whether
+torch 2.15's export, executorch 1.5.1's verifier or the item 2.5 working
+tree exposed it is not established; the upstream shared-constant limitation
+is therefore unverified on 1.5.1. The non-strict xfails hide this, since
+pytest reports an xfail whatever the failure.
+
 ---
 
 ## Makefile Targets
