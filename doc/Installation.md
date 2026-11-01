@@ -25,21 +25,27 @@ Makefile targets invoke the project virtual environment (`.venv/bin/python` on
 Unix, `.venv/Scripts/python.exe` on Windows), so no manual activation is
 required.
 
-For the currently tested PyTorch 2.14 Apple-MPS compiler path, install the
-matching official nightly pair after `make install`:
+**Tested build (Alec, 2026-11-01): the latest stable releases, unpinned.**
+`requirements.txt` names packages without versions, and `make install`
+takes whatever PyPI serves as stable; what an upgrade breaks is fixed in
+the code rather than pinned around. The suite is the criterion, and it
+last ran on torch 2.15.0, torchvision 0.29.2, executorch 1.5.1 and pytest
+9.2.0 on Python 3.12. Verify an environment with
+`.venv/bin/python -m pip check`. The parent WikiOracle checkout's
+`requirements.txt` includes this file, so one `pip install --upgrade -r
+requirements.txt` there brings both to the same releases.
 
-```bash
-uv pip install --python .venv/bin/python --pre \
-  torchvision==0.29.0.dev20260723 \
-  --index-url https://download.pytorch.org/whl/nightly/cpu
-```
+Note that `make test` depends on the venv stamp
+(`.venv/.installed-bin`): when `requirements.txt` is newer than the stamp,
+the target rebuilds `.venv` from scratch before testing, which upgrades
+every unpinned package. Run `make -n test` first if that is not wanted.
 
-That torchvision build selects its compatible
-`torch==2.14.0.dev20260722`. Verify the environment with
-`uv pip check --python .venv/bin/python`. The paired builds compile the complete
-W=512 tensor peer loop with raw `max-autotune`, differentiated backward, and
-runtime word counts through the configured sentence capacity without
-recompilation.
+The earlier tested path, the PyTorch 2.14 nightly pair
+(`torch==2.14.0.dev20260722` with `torchvision==0.29.0.dev20260723` from
+the nightly CPU index), compiled the complete W=512 tensor peer loop with
+raw `max-autotune`, differentiated backward, and runtime word counts
+through the configured sentence capacity without recompilation. That
+measurement has not been repeated on the stable builds.
 
 ---
 
