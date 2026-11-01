@@ -14410,6 +14410,25 @@ class SymbolSpace(Space):
                 return
         super().__setattr__(name, value)
 
+    def __delattr__(self, name):
+        # The mirror of __setattr__'s forwarding. A plain attribute the
+        # coordinator owns is deleted there, so a write that was forwarded to
+        # it can be undone the same way; pytest's monkeypatch restores a
+        # patched attribute by deleting it when this instance's own dict never
+        # held it. Submodules, parameters and buffers registered here, and
+        # names SymbolSpace itself defines, are deleted here as before.
+        own = (name in self.__dict__ or name in self._parameters
+               or name in self._buffers or name in self._modules)
+        sub = self.__dict__.get('_modules', {}).get('subspace')
+        if (not own and sub is not None and name != 'subspace'
+                and not hasattr(type(self), name)):
+            try:
+                delattr(sub, name)
+                return
+            except AttributeError:
+                pass
+        super().__delattr__(name)
+
     # -- Space-method OVERLAP: explicit overrides delegating to the subspace --
     # These 8 members are defined on BOTH ``Space`` and the SymbolSubSpace; the
     # inherited ``Space`` versions would shadow the subspace's (``__getattr__``

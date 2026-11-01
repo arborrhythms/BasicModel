@@ -16,19 +16,22 @@ def test_reconstruction_brick_accepts_more_than_default_eight_shapes(monkeypatch
 
     torch._dynamo.reset()
     monkeypatch.setattr(util, 'TheCompileBackend', 'eager')
-    monkeypatch.setattr(torch._dynamo.config, 'recompile_limit', 8)
-    model = Probe()
-    compiled = model._compiled_reconstruct()
-    assert model._compiled_reconstruct() is compiled
-    # Nine distinct fixed shapes cross the default cache limit once. This
-    # is a compile-capacity probe, not a model-size or learning-budget port.
-    inputs = [torch.arange(width, dtype=torch.float32).requires_grad_()
-              for width in range(1, 10)]
-    try:
-        for value in inputs:
-            actual = compiled(value)
-            torch.testing.assert_close(actual, value.square().sum(), rtol=0, atol=0)
-            actual.backward()
-            torch.testing.assert_close(value.grad, 2*value, rtol=0, atol=0)
-    finally:
-        torch._dynamo.reset()
+    # The config module serves its keys through __getattr__, so pytest's
+    # monkeypatch (9.x) would undo a patch here by deleting the key for the
+    # rest of the process; torch's own patch restores it.
+    with torch._dynamo.config.patch(recompile_limit=8):
+        model = Probe()
+        compiled = model._compiled_reconstruct()
+        assert model._compiled_reconstruct() is compiled
+        # Nine distinct fixed shapes cross the default cache limit once. This
+        # is a compile-capacity probe, not a model-size or learning-budget port.
+        inputs = [torch.arange(width, dtype=torch.float32).requires_grad_()
+                  for width in range(1, 10)]
+        try:
+            for value in inputs:
+                actual = compiled(value)
+                torch.testing.assert_close(actual, value.square().sum(), rtol=0, atol=0)
+                actual.backward()
+                torch.testing.assert_close(value.grad, 2*value, rtol=0, atol=0)
+        finally:
+            torch._dynamo.reset()
