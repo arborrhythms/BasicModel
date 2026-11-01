@@ -1,8 +1,8 @@
-<svg width='2100' height='1656' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
-  <rect width='2100' height='1656' fill='#fafafa'/>
-<rect x='0' y='0' width='2100' height='1656' fill='#fff' fill-opacity='1.0' rx='0'/>
+<svg width='2100' height='2232' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='2100' height='2232' fill='#fafafa'/>
+<rect x='0' y='0' width='2100' height='2232' fill='#fff' fill-opacity='1.0' rx='0'/>
 <text x='40' y='44' text-anchor='start' font-size='22' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>BasicModel — the three grammars, their operators, their inverses, and what each face may touch</text>
-<text x='40' y='68' text-anchor='start' font-size='13' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>Draft for annotation · 2026-10-03 (operators candidate; awaiting review) · operators have no return values, only effects: a signature is roles × faces × read (R) / write (W) over the accessible mind</text>
+<text x='40' y='68' text-anchor='start' font-size='13' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>Draft for annotation · 2026-11-01 (current as built; decided-not-built marked &gt;) · operators have no return values, only effects: a signature is roles × faces × read (R) / write (W) over the accessible mind</text>
 <text x='40' y='100' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>A.  The accessible mind — ten subsystems (dashed = reducible or derived; every access is bounded)</text>
 <rect x='40' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='48' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>1</text>
@@ -13,97 +13,97 @@
 <rect x='242' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='250' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>2</text>
 <text x='270' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Conceptual · order 0</text>
-<text x='250' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>FIELD: whole 0-order codebook at</text>
-<text x='250' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>once; TWO symbols per concept,</text>
-<text x='250' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>c+/c−; memberships over bytes</text>
+<text x='250' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>FIELD: the whole order-0 codebook</text>
+<text x='250' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>at once; two lanes per concept,</text>
+<text x='250' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>for / against; read via definitions</text>
 <rect x='444' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='452' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>3</text>
 <text x='472' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Conceptual · higher</text>
 <text x='452' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>FIELD over higher-order symbols;</text>
-<text x='452' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>one point = a REGION of order 0,</text>
-<text x='452' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>possibly discontinuous (rows as in 2)</text>
+<text x='452' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>one point = a REGION of order 0;</text>
+<text x='452' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>raised by definitions (Orders §10)</text>
 <rect x='646' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
 <text x='654' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>4</text>
 <text x='674' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Serial thinking</text>
 <text x='654' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>CODES enter projected; operators</text>
 <text x='654' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>move / extend them into one IDEA,</text>
 <text x='654' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>an off-codebook, generative vector</text>
-<rect x='848' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
+<rect x='848' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
 <text x='856' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>5</text>
 <text x='876' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Priming</text>
-<text x='856' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>spreading activation over the</text>
-<text x='856' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>concept store's edges; lives with</text>
-<text x='856' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>the codebook; decays</text>
+<text x='856' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>the predicted next concept state,</text>
+<text x='856' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>frozen per sentence; read by attention,</text>
+<text x='856' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>chooser, retrieval; diffusion retired</text>
 <rect x='1050' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
 <text x='1058' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>6</text>
 <text x='1078' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Expectation</text>
-<text x='1058' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>NEGATIVE IMAGE: predicted idea,</text>
-<text x='1058' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>sign-reversed, added at the closing;</text>
-<text x='1058' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>learns o − ê. &gt; per bracket at 6.8</text>
+<text x='1058' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>GAIN FIELD, residual in two lanes;</text>
+<text x='1058' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>percepts: expected + residual; it</text>
+<text x='1058' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>SELECTS, never calls an operator</text>
 <rect x='1252' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='1260' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>7</text>
-<text x='1280' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>LTM</text>
-<text x='1260' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>serial form ONLY: ideas, any order;</text>
-<text x='1260' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>&gt; one row per S with (c+, c−) at 7;</text>
-<text x='1260' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>reached by CUE only (no last-N)</text>
+<text x='1280' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>LTM0 / LTM1</text>
+<text x='1260' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>LTM0: occurrences (slot, .when, two</text>
+<text x='1260' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>lanes, access, surprise); LTM1: rows of</text>
+<text x='1260' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>two tagged refs; cued recency window</text>
 <rect x='1454' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='1462' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>8</text>
 <text x='1482' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Budget</text>
 <text x='1462' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>remaining work + closure pressure;</text>
-<text x='1462' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>READ to know cutoff is near,</text>
-<text x='1462' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>CHARGED by every thought op</text>
+<text x='1462' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>READ to know cutoff is near, CHARGED</text>
+<text x='1462' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>by thought ops and the generate walk</text>
 <rect x='1656' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2' stroke-dasharray='5,4'/>
 <text x='1664' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>9</text>
 <text x='1684' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Meronymic access</text>
 <text x='1664' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>residual of part(x,y)=x·(y/|y|),</text>
 <text x='1664' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>left as an idea VECTOR (serial, 4),</text>
-<text x='1664' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>not a 1/0); order 0; no store</text>
+<text x='1664' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>not a 1/0; order 0; no store</text>
 <rect x='1858' y='114' width='194' height='98' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.2'/>
 <text x='1866' y='132' text-anchor='start' font-size='12' fill='#666' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>10</text>
 <text x='1886' y='132' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>Taxonomic access</text>
 <text x='1866' y='152' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>relations over higher-order symbols;</text>
 <text x='1866' y='167' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>emits a SYMBOLIC value (graded);</text>
-<text x='1866' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>&gt; at 7 it is the store's sigma rows</text>
-<text x='40' y='228' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → operators compose an IDEA: one off-codebook vector that must regenerate its codes + operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   resource: budget   ·   relation: taxonomy   ·   &gt; = decided and specified, not yet landed</text>
+<text x='1866' y='182' text-anchor='start' font-size='9.1' fill='#333' font-family='Helvetica, Arial, sans-serif'>classes raised from LTM1 rows</text>
+<text x='40' y='228' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → operators compose an IDEA that must regenerate its codes + operations (generativity)   ·   stores: perceptual, conceptual, LTM0 / LTM1 (MTM is not one of the ten)   ·   predictions: priming, expectation   ·   resource: budget   ·   relation: taxonomy   ·   cells = declared effects per face   ·   &gt; = decided and specified, not yet built</text>
 <text x='40' y='254' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>B.  The three grammars (faces) and their contexts</text>
 <rect x='40' y='268' width='660' height='204' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
 <text x='50' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;compose&gt;  ·  understanding</text>
-<text x='50' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9</text>
-<text x='50' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never 6: PURITY — the composed idea o is the same whatever was predicted</text>
-<text x='50' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 4 (push / fold), 2/3 (the composed idea); never 7, 10, 8</text>
-<text x='50' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>7.5 ONE operation per round: one softmax over every operator × every location;</text>
-<text x='50' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>binary shortens the sequence by one, unary does not; a fixed round budget;</text>
-<text x='50' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>STOP is a candidate only once the sequence fits its LTM row; no DP of any kind</text>
-<text x='50' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>two hard derivations: exploit (tempered argmax, item 8's tie rule on logits)</text>
-<text x='50' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>and one distinct sampled explore, which trains and is not recorded</text>
-<text x='50' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live — straight-through, weighted by the chooser's own softmax</text>
+<text x='50' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9; never 6, 7, 8, 10</text>
+<text x='50' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 4 (push / fold); 2/3 are permitted and declared only by part and ask</text>
+<text x='50' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>7.5 ONE operation per round: one softmax over every operator × every location, with</text>
+<text x='50' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>the field brackets and bind's locations + a zero-logit dummy; a binary fold shortens by one</text>
+<text x='50' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>STOP is eligible once the stack fits its slots; a fixed round budget, reduction pressure; no DP</text>
+<text x='50' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>two trials, greedy (argmax, item 8's tie rule) and one sampled departure; both train</text>
+<text x='50' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>the face never reads 6; the chooser takes expectation's detached prime as a logit bias</text>
+<text x='50' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser credit: score function on the trials' detached R + A difference</text>
+<text x='50' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live through the chosen operator's value; separateChooser=true detaches features</text>
 <rect x='720' y='268' width='660' height='204' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
 <text x='730' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;thought&gt;  ·  thinking  (per-model allow-list)</text>
-<text x='730' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: 4 the completed idea + recency buffer, 2/3, 6 (what is conceived), 8, 9, 10,</text>
-<text x='730' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>and 7 only as frames a what() brought into STM by cue</text>
-<text x='730' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: effects on 2/3 and 4; the controller alone records / writes 7</text>
-<text x='730' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser: the SAME selection layer as compose and generate (7.5) —</text>
-<text x='730' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>(operator, operands, open roles, level) | conclude</text>
-<text x='730' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: none through effects; chooser on policy credit only</text>
-<text x='730' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: every choice / execute / descend / return charges 8</text>
-<text x='730' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>&gt; 6.8 adds the bracket candidates and 6.5 identity binding to this same</text>
-<text x='730' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>softmax, credited the same way; neither is a separate policy</text>
+<text x='730' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: every subsystem but 1; 7 only through bounded readers (query, ask, isTrue,</text>
+<text x='730' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>isPart, isEqual, infer, intuit, bind); 5: query, ask, intuit; 6: bind, gain; 10: isPart, infer</text>
+<text x='730' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 4 and 8 (every rule), 2/3 (part, ask; intuit writes 2), 6 (gain); none declares 7</text>
+<text x='730' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>only &lt;thought&gt; declarations authorize a boundary action; executors run at a completed row</text>
+<text x='730' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>chooser: the SAME selection layer as compose (thought_logits) — operation | conclude</text>
+<text x='730' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: none through effects; chooser features detached; credit by departure</text>
+<text x='730' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>intuit's sparse Sigma-over-Pi weights are output-owned; infer accepts a pair from evidence</text>
+<text x='730' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: every choice / execute / descend / return charges 8 (attentionBudget units)</text>
+<text x='730' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>bracket candidates and bind's choice live in the compose softmax, not in this one</text>
 <rect x='1400' y='268' width='660' height='204' fill='#fff' fill-opacity='1.0' rx='6' stroke='#333' stroke-width='1.4'/>
 <text x='1410' y='290' text-anchor='start' font-size='14' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>&lt;generate&gt;  ·  speech production</text>
-<text x='1410' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,</text>
-<text x='1410' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>its OWN emitted prefix — never the input stream or a parse trace</text>
-<text x='1410' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 1 the output stream (words via the reverse chain)</text>
-<text x='1410' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never: 7, 10, thought execution</text>
-<text x='1410' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>policy: the same selection layer once more; the serial STM reducer is</text>
-<text x='1410' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>that layer with a two-slot window, not a second mechanism</text>
-<text x='1410' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live in generate; stops at the concluded idea</text>
-<text x='1410' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>cost: output walk budget (not 8)</text>
-<text x='1410' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'></text>
+<text x='1410' y='312' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3, 8, its OWN emitted prefix —</text>
+<text x='1410' y='329' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never the input stream or a parse trace</text>
+<text x='1410' y='346' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>writes: 1 the output stream (words via the reverse chain) and 8, the walk's work meter</text>
+<text x='1410' y='363' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>never: 5, 6, 7, 9, 10, thought execution</text>
+<text x='1410' y='380' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>policy: GeneratePolicy, a separate reconstruction-owned head over the top slot (input</text>
+<text x='1410' y='397' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>detached) + menu features; cross-entropy to the recorded choice; untrained, it stops</text>
+<text x='1410' y='414' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>decoding: the declared generate faces; a binary without its witness takes one bounded search</text>
+<text x='1410' y='431' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>residual: absolute MSE per lane (form, for, against), exact below RMS 1e-4</text>
+<text x='1410' y='448' text-anchor='start' font-size='11.3' fill='#222' font-family='Helvetica, Arial, sans-serif'>gradient: live in generate; stops at the concluded idea</text>
 <line x1='702' y1='370.0' x2='713' y2='370.0' stroke='#333' stroke-width='1.5'/>
 <path d='M712,365.0 L719,370.0 L712,375.0 z' fill='#333' stroke='#333' stroke-width='1'/>
 <line x1='1382' y1='370.0' x2='1393' y2='370.0' stroke='#333' stroke-width='1.5'/>
 <path d='M1392,365.0 L1399,370.0 L1392,375.0 z' fill='#333' stroke='#333' stroke-width='1'/>
-<text x='40' y='486' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>one vocabulary of operator identities; shared operators are the ONE gradient coupling between objectives (dissonance = per-operator gradient cosine); a compose face alone grants no thought permission   ·   the ENDING (not an operator) adds the negative image and, per sentence, commits the better of the two derivations</text>
+<text x='40' y='486' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>one vocabulary of operator identities; a compose face alone grants no thought permission; operators are reconstruction-owned (separateChooser=true keeps the answer's gradient out; per-operator dissonance is a read-only diagnostic)   ·   the CLOSING (not an operator) reads 4 and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the strictly better trial by R + A</text>
 <text x='40' y='514' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>C.  Operator signatures — roles × faces × subsystem access</text>
 <rect x='40' y='526' width='2014' height='26' fill='#eee' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='1'/>
 <text x='46' y='543' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>operator</text>
@@ -122,243 +122,504 @@
 <text x='1048' y='543' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>10</text>
 <text x='1090' y='543' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>note</text>
 <rect x='40' y='552' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='568' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>concept and symbol folds — declarations specify operand kinds and all effects</text>
+<text x='46' y='568' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>field operations — the typed bracket table; field operands only; one compose softmax (6.8)</text>
 <rect x='40' y='576' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not</text>
-<text x='316' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
-<text x='374' y='592' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F/S</text>
-<text x='420' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
-<text x='796' y='592' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exchange evidence poles; self-inverse; trust is unchanged</text>
+<text x='46' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>divide / descend / gloss</text>
+<text x='316' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – –</text>
+<text x='374' y='592' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F</text>
+<text x='420' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket→bracket / symbol</text>
+<text x='670' y='592' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1090' y='592' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket actions 0-2; the declaration reads percepts only and writes nothing; no generate face (reverse raises)</text>
 <rect x='40' y='600' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>non</text>
+<text x='46' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>and / or  (field)</text>
 <text x='316' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – –</text>
-<text x='374' y='616' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F/S</text>
-<text x='420' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
-<text x='796' y='616' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exclude the expressed pole; no affirmation and no inverse</text>
+<text x='374' y='616' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F</text>
+<text x='420' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket→bracket</text>
+<text x='670' y='616' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1090' y='616' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket actions 3-4, field_reduce over the bracket: and = (min for, max against), or = (max for, min against)</text>
 <rect x='40' y='624' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intersection / union</text>
-<text x='316' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
-<text x='374' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='46' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not</text>
+<text x='316' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F</text>
+<text x='420' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='670' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
 <text x='712' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intersection: signed coordinate minimum, zero is silent; union: log-odds sum</text>
-<rect x='40' y='648' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>conjunction / disjunction</text>
-<text x='316' y='664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
-<text x='374' y='664' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
-<text x='754' y='664' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
-<text x='796' y='664' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>product binding / mean bundling of symbol codes; inverse searches primed operands</text>
+<text x='838' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='640' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exchange the two lanes; self-inverse; trust is unchanged; compose takes a field operand only (field action 5); thought negates a meaning</text>
+<rect x='40' y='648' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='664' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>leaf readings — interpret is forced at the word transaction; the chooser takes the second reading</text>
 <rect x='40' y='672' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum / chunk / product</text>
-<text x='316' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='46' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>interpret</text>
+<text x='316' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='420' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>word→object</text>
+<text x='670' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum is the mean; chunk is additive; product is coordinate multiplication</text>
+<text x='838' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>mandatory in reading mode (the eager word transaction admits the form, reads its object); a field makes it a chooser option; DEF rows are written at the close</text>
 <rect x='40' y='696' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compound</text>
-<text x='316' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='46' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness</text>
+<text x='316' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>modifier,head→O1</text>
+<text x='420' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='670' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
 <text x='712' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='754' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>reverse the head's sigma, select cases by modifier, refold; no new parameters</text>
+<text x='838' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the chooser's alternative on a pending leaf; identity on the word; the kept close opens an MTM token kinded by the null-concept; &gt; renamed sign</text>
 <rect x='40' y='720' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>verb / adverb</text>
-<text x='316' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
-<text x='374' y='736' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
-<text x='796' y='736' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>verb head is I1; multiplicative spectral gain; the right operand witnesses the inverse</text>
-<rect x='40' y='744' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lift / lower / generic</text>
-<text x='316' y='760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
-<text x='374' y='760' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declared roles</text>
-<text x='796' y='760' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declared order and head properties; generic is independent of retired exist</text>
+<text x='46' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>(no-op leaf)</text>
+<text x='316' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='374' y='736' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>leaf→leaf</text>
+<text x='1090' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>a field can already leave a leaf uninterpreted; &gt; the icon (§32.4): at the kept close the leaf opens its own MTM token holding its word-concept code</text>
+<rect x='40' y='744' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='760' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>concept and symbol folds — meaning: the declared rule, else a learned lane kernel on the head; form: the leaf-weighted centroid</text>
 <rect x='40' y='768' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface / preposition / bind</text>
-<text x='316' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='46' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>non</text>
+<text x='316' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='420' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='670' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declared witness and reference policies; surface renames are deferred</text>
+<text x='838' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='784' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>clear the for lane; the journal retains the operand as a marked witness; the declared generate rule is unavailable (reverse raises)</text>
 <rect x='40' y='792' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>tense / morphology / aspect / null</text>
-<text x='316' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='46' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intersection / union</text>
+<text x='316' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='420' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface carriers; their planned dimensional rewrite remains future work</text>
+<text x='838' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='808' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>Ops: elementwise min, a zero coordinate silent / elementwise max; meaning block: the bilattice rule, for (min / max), against (max / min)</text>
 <rect x='40' y='816' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>interpret</text>
-<text x='316' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C G</text>
+<text x='46' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>conjunction / disjunction</text>
+<text x='316' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>word→object</text>
-<text x='712' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='754' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='420' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>native definition replaces the word; admission uses the existing owner</text>
-<rect x='40' y='840' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='856' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>checked thought — permission masks the same exhaustive effect declaration</text>
+<text x='838' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='832' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='832' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>Ops: product binding of unit directions × activations / probabilistic sum a+b−ab; meaning block: the same rules as intersection / union</text>
+<rect x='40' y='840' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum / product</text>
+<text x='316' y='856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='856' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum is the mean (meaning rule); product multiplies coordinates (Ops) and is a lane kernel on meaning; chunk is now synthesize, below</text>
 <rect x='40' y='864' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>part / whole</text>
-<text x='316' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='46' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compound / compound_unary</text>
+<text x='316' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1; open sides</text>
+<text x='420' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>modifier,head→O1</text>
+<text x='670' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1006' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
-<text x='1048' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
-<text x='1090' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>full conceptual content and paired evidence; native taxonomy at higher order</text>
+<text x='838' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='880' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>select the head's native sigma cases by the modifier (a learned lane-kernel test on meaning); the unary face takes the unfiltered head as object</text>
 <rect x='40' y='888' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>equal</text>
-<text x='316' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='46' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>verb / adverb</text>
+<text x='316' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
 <text x='420' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>stable question-formula identity; closing still writes two part rows</text>
+<text x='838' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='904' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>verb head is I1, subtyped by its object (lane kernel); adverb: a multiplicative group action; the right operand witnesses both inverses</text>
 <rect x='40' y='912' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>what (query content)</text>
-<text x='316' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='46' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lift</text>
+<text x='316' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>description→content</text>
+<text x='420' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>NP,VP→S (clause S)</text>
+<text x='670' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='796' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='922' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
-<text x='1090' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>one retrieval for what, where and when cues; lookup is retired; rename is deferred</text>
+<text x='838' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='928' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the sentence fold: the VP acts on the NP as a diagonal verb-group action; NP + VP lowers one order, a chosen adverb withholds it</text>
 <rect x='40' y='936' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>quantize / arma</text>
-<text x='316' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='46' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lower / definite / universal (+ unary)</text>
+<text x='316' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
-<text x='420' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
-<text x='754' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='880' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>codebook projection / expectation content; structural identity carriers retired</text>
-<rect x='40' y='960' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='976' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>retired / pending</text>
+<text x='420' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>marker,description→O1</text>
+<text x='670' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='952' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='952' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>a determiner selects; referent mint / bind / kind (universal: compose only); the marker adds no content; the inverse needs the marker</text>
+<rect x='40' y='960' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>generic</text>
+<text x='316' y='976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
+<text x='670' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='976' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>nominal type marker with reference mode generic; numeric models pass the value; independent of the retired exist carrier</text>
 <rect x='40' y='984' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exist / true / binary symbolize</text>
-<text x='316' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
-<text x='374' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
-<text x='420' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
-<text x='1090' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no scalar truth output, no unused binary carrier</text>
+<text x='46' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface / transpose (+ surface_unary)</text>
+<text x='316' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>marker,content→O1 | 2→2</text>
+<text x='670' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1000' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface absorbs a marker, projecting its right operand (numeric); transpose swaps the newest pair exactly; surface = absorb + transpose only</text>
 <rect x='40' y='1008' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>legacy query / queryPart / queryEqual</text>
-<text x='316' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
-<text x='374' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
-<text x='420' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
-<text x='1090' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>geometric scalar experiments retired; the content operator above remains</text>
+<text x='46' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>preposition (+ unary)</text>
+<text x='316' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>marker,phrase→O1</text>
+<text x='670' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1024' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>numeric: the phrase passes; meaning: the marker heads the kernel, the phrase its context; inverse needs the marker; &gt; one position op (2026-10-20)</text>
 <rect x='40' y='1032' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>divide / descend / gloss (6.8)</text>
-<text x='316' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – –</text>
-<text x='374' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>F</text>
-<text x='420' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket→brackets/symbol</text>
-<text x='964' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
-<text x='1090' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>same candidate softmax; typed bracket and shared perceptual budget</text>
-<rect x='40' y='1056' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1072' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>STOP / closing</text>
-<text x='316' y='1072' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
-<text x='374' y='1072' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
-<text x='420' y='1072' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>eligible stop / commit</text>
-<text x='922' y='1072' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
-<text x='1090' y='1072' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>cost greedy and one-departure paths before training; strict improvement selects explore</text>
-<line x1='40' y1='526' x2='40' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='310' y1='526' x2='310' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='368' y1='526' x2='368' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='414' y1='526' x2='414' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='664' y1='526' x2='664' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='706' y1='526' x2='706' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='748' y1='526' x2='748' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='790' y1='526' x2='790' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='832' y1='526' x2='832' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='874' y1='526' x2='874' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='916' y1='526' x2='916' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='958' y1='526' x2='958' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='1000' y1='526' x2='1000' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='1042' y1='526' x2='1042' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<line x1='1084' y1='526' x2='1084' y2='1080' stroke='#bbb' stroke-width='0.6'/>
-<text x='40' y='1106' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>D.  Operators and their inverses — the reverse program that replays a recorded derivation backward</text>
-<rect x='40' y='1118' width='2016' height='26' fill='#eee' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='1'/>
-<text x='46' y='1135' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>operator</text>
-<text x='346' y='1135' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>form</text>
-<text x='442' y='1135' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>what the reverse step does</text>
-<text x='1262' y='1135' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>what it needs · what is lost</text>
-<rect x='40' y='1144' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='1160' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>exact with the declared witness</text>
-<rect x='40' y='1168' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1184' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not</text>
-<text x='346' y='1184' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>self</text>
-<text x='442' y='1184' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exchange the poles again</text>
-<text x='1262' y='1184' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no witness; evidence only</text>
-<rect x='40' y='1192' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1208' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum / chunk</text>
-<text x='346' y='1208' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>residual</text>
-<text x='442' y='1208' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>2 × parent − witness / parent − witness</text>
-<text x='1262' y='1208' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>free decoding searches the primed bank</text>
-<rect x='40' y='1216' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1232' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>verb / adverb</text>
-<text x='346' y='1232' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>gain</text>
-<text x='442' y='1232' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>divide by the same positive multiplicative gain</text>
-<text x='1262' y='1232' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>right operand witness; no iterative inverse</text>
-<rect x='40' y='1240' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1256' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface / product / part / whole</text>
-<text x='346' y='1256' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declared</text>
-<text x='442' y='1256' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>use the declared witness and inverse contract</text>
-<text x='1262' y='1256' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>missing witnesses mask unavailable candidates</text>
-<rect x='40' y='1264' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='1280' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>bounded search through the same forward face</text>
-<rect x='40' y='1288' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1304' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compound</text>
-<text x='346' y='1304' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>case search</text>
-<text x='442' y='1304' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>primed native modifier/head pairs, conditioned sigma cases</text>
-<text x='1262' y='1304' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>both poles retained; no occurrence trace or fabricated split</text>
-<rect x='40' y='1312' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1328' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>conjunction / disjunction / intersection / union / equal</text>
-<text x='346' y='1328' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>search</text>
-<text x='442' y='1328' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>cost the recomposed primed pairs</text>
-<text x='1262' y='1328' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>shared fixed reconstruction basis limit</text>
-<rect x='40' y='1336' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1352' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lift / lower</text>
-<text x='346' y='1352' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>tied + search</text>
-<text x='442' y='1352' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the forward map's own inverse and bounded operands</text>
-<text x='1262' y='1352' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no stored derivation is replayed</text>
-<rect x='40' y='1360' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
-<text x='46' y='1376' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>identity or unavailable</text>
-<rect x='40' y='1384' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1400' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>non</text>
-<text x='346' y='1400' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>unavailable</text>
-<text x='442' y='1400' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the expressed evidence was discarded</text>
-<text x='1262' y='1400' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>never presented as its own inverse</text>
-<rect x='40' y='1408' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1424' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>generic / tense / morphology / aspect / null</text>
-<text x='346' y='1424' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>identity</text>
-<text x='442' y='1424' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the declared carrier preserves the conceptual value</text>
-<text x='1262' y='1424' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>surface revisions remain future work</text>
-<rect x='40' y='1432' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1448' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>interpret</text>
-<text x='346' y='1448' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>native index</text>
-<text x='442' y='1448' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>read the existing definition's word</text>
-<text x='1262' y='1448' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>same symbol/concept owner</text>
-<rect x='40' y='1456' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1472' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>quantize / arma</text>
-<text x='346' y='1472' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no generate face</text>
-<text x='442' y='1472' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>thought-only content</text>
-<text x='1262' y='1472' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no identity pseudo-operator</text>
-<line x1='40' y1='1118' x2='40' y2='1480' stroke='#bbb' stroke-width='0.6'/>
-<line x1='340' y1='1118' x2='340' y2='1480' stroke='#bbb' stroke-width='0.6'/>
-<line x1='436' y1='1118' x2='436' y2='1480' stroke='#bbb' stroke-width='0.6'/>
-<line x1='1256' y1='1118' x2='1256' y2='1480' stroke='#bbb' stroke-width='0.6'/>
-<text x='40' y='1500' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>every reverse step reports availability, and a missing inverse is explicit: the traversal never substitutes an identity pseudo-inverse   ·   the reverse loop is a bounded while_loop over the recorded derivation, so only recorded operators execute, and the lossy folds share one candidate search</text>
-<text x='40' y='1516' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>WITNESS = the retained constituent reference, the dictionary row the word was pushed with. It belongs to its own occurrence, so it is present for reconstruction and absent in free generation — which is why the same operator has two inverses here</text>
-<text x='40' y='1552' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>Open questions for the pen:  (1) is priming read by thought, or only as a retrieval cue and by compose?   (2) lookup without a generate face — intended?   (3) which structural operators may a model think with — `not`, to conclude absences?</text>
-<text x='40' y='1568' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(4) why / how as walks over implies / operator rows — wait for two truths (item 7)?   (5) 7.5 deferred two levers: a nonzero training temperature, and a parsimony / work term against the round budget — take either up after the conference?</text>
-<text x='40' y='1584' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, feature groups — has no rule (item 5 or FutureWork?)   (7) item 8's propertyBasis: port it to XOR_grammar, or leave that gate as written?</text>
-<text x='40' y='1600' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>On the inverses (D):  (8) the lossy folds are the only operators with no closed form — should compose PREFER an invertible fold where both fit, the way item 8 prefers the structural face at equal fit?   (9) lift / lower reference-free recovery is item 6's blocker: is clean-up decoding through the forward kernel — the search the lossy folds already use — the intended answer?</text>
-<text x='40' y='1616' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(10) adverb: keep the eight-step iterative inverse, or declare it non-invertible and let it fall to the same candidate search?   (11) surface's free-generation prior is a guess about the word rather than a recovery — is that the right division between reconstruction and generation, or should generation also search?</text>
+<text x='46' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bind</text>
+<text x='316' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T –</text>
+<text x='374' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>mention,location→O1</text>
+<text x='670' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='712' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='880' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1048' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compose: one action per frame-accessible or trial-local location + a zero-logit dummy; thought: resolve a selected open site; no generate rule</text>
+<rect x='40' y='1056' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1072' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>relations and checked thought — permission masks the same exhaustive declaration; only &lt;thought&gt; authorizes execution</text>
+<rect x='40' y='1080' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1096' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>part / whole</text>
+<text x='316' y='1096' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1096' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='754' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='796' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1006' y='1096' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1090' y='1096' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compose: numeric passes the whole (part: right, whole: left); thought part leaves the residual x·(y/|y|) and its support; whole = part(argin2, argin1)</text>
+<rect x='40' y='1104' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1120' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>isPart / isEqual</text>
+<text x='316' y='1120' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1120' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>ref,ref→O1; one open side</text>
+<text x='712' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1048' y='1120' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1090' y='1120' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>symbolic faces: LTM1 relation evidence first, then the taxonomy's bounded path (isPart, 10; open side = neighbours); isEqual reads LTM1 only</text>
+<rect x='40' y='1128' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1144' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>equal</text>
+<text x='316' y='1144' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1144' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1</text>
+<text x='670' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1144' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1144' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compose: mutual parthood (numeric); thought: the conceptual identity score; a kept close writes an LTM1 row; raiseCount relata raise a class</text>
+<rect x='40' y='1152' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1168' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>implies</text>
+<text x='316' y='1168' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1168' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1,I2→O1 (clause implies)</text>
+<text x='670' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1168' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1168' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>structural carrier on sum; the clause close keeps both operands; thought implies is part's containment; default.grammar: thought face only</text>
+<rect x='40' y='1176' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1192' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>ask</text>
+<text x='316' y='1192' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1192' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>description→subgoal</text>
+<text x='670' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='712' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='754' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='796' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1192' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1192' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>fill a row's open references as a subgoal (continuation), else the LTM best match; compose / generate faces are carriers; was what</text>
+<rect x='40' y='1200' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1216' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>query</text>
+<text x='316' y='1216' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1216' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>description→content</text>
+<text x='712' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1216' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1216' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the bounded LTM read: the best match with content, pair and witnessing occurrence; was lookup</text>
+<rect x='40' y='1224' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1240' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>isTrue / exist</text>
+<text x='316' y='1240' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1240' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>description | concept→pair</text>
+<text x='712' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1240' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1240' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>isTrue: an ended row's pair, trust and witnesses by reference (7); exist: conceptual presence as a pair; no scalar truth</text>
+<rect x='40' y='1248' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1264' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>infer / inferBackward</text>
+<text x='316' y='1264' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1264' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>ref,ref→O1</text>
+<text x='712' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1048' y='1264' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='1090' y='1264' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>one symbolic derivation in two directions over LTM1 and the taxonomy; accepts a pair from evidence, independent of intuit's proposal</text>
+<rect x='40' y='1272' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1288' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intuit</text>
+<text x='316' y='1288' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1288' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>meaning→knowing</text>
+<text x='712' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='754' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='922' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='964' y='1288' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1288' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the order-0 Sigma-over-Pi DNF over LTM1 rules, in an addressed STM slot; output-owned sparse weights (intuitionCapacity); writes 2</text>
+<rect x='40' y='1296' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1312' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>gain</text>
+<text x='316' y='1312' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– T –</text>
+<text x='374' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
+<text x='420' y='1312' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>concept→gain</text>
+<text x='712' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='754' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='796' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='838' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='880' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='964' y='1312' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='1090' y='1312' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>set expectation's gain from the concept's magnitude; replaces arma / expect</text>
+<rect x='40' y='1320' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1336' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>perceptual cover — &lt;PartSpace&gt;: Synthesize is compose, Analyze is generate (tier P)</text>
+<rect x='40' y='1344' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1360' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>stop / boundary / uniform</text>
+<text x='316' y='1360' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='1360' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1360' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>U→U | U,U→U</text>
+<text x='1090' y='1360' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the marker-free structural cover of the PartSpace analyzer; no OperatorEffects declaration, so no cells</text>
+<rect x='40' y='1368' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1384' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>synthesize</text>
+<text x='316' y='1384' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
+<text x='374' y='1384' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1384' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>U,U→U</text>
+<text x='1090' y='1384' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>complete.grammar only: the residual-bearing additive sum, ex-chunk (catalogue §3.1); no OperatorEffects declaration</text>
+<rect x='40' y='1392' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1408' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>retired, registered only, and not operators</text>
+<rect x='40' y='1416' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1432' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>what / lookup / true / queryPart / queryEqual</text>
+<text x='316' y='1432' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='374' y='1432' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1432' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='1090' y='1432' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>raise at load with their replacements: ask or query, query, isTrue, isPart, isEqual</text>
+<rect x='40' y='1440' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1456' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>chunk / quantize / arma / expect / symbolize</text>
+<text x='316' y='1456' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='374' y='1456' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1456' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='1090' y='1456' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>raise at load: synthesize; all concepts are symbolized; sentenceExpectation and gain; symbolize stays future work</text>
+<rect x='40' y='1464' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1480' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>tense / aspect / morphology</text>
+<text x='316' y='1480' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='374' y='1480' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1480' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='1090' y='1480' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>neither registered nor declared; &gt; tense, aspect, preposition and modal become one position operation (2026-10-20)</text>
+<rect x='40' y='1488' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1504' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>min / max / null / assertPart</text>
+<text x='316' y='1504' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
+<text x='374' y='1504' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1504' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='1090' y='1504' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>registered layers no shipped grammar declares: coordinate min / max, the null identity, assertPart as an alias of part</text>
+<rect x='40' y='1512' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1528' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>STOP / the closing</text>
+<text x='316' y='1528' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C T G</text>
+<text x='374' y='1528' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
+<text x='420' y='1528' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>eligible stop | commit</text>
+<text x='796' y='1528' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
+<text x='880' y='1528' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
+<text x='922' y='1528' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>W</text>
+<text x='1090' y='1528' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not operators: STOP ends a walk; the closing reads 4 and 6, writes the LTM rows and expectation's residual, and keeps the better trial</text>
+<line x1='40' y1='526' x2='40' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='310' y1='526' x2='310' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='368' y1='526' x2='368' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='414' y1='526' x2='414' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='664' y1='526' x2='664' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='706' y1='526' x2='706' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='748' y1='526' x2='748' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='790' y1='526' x2='790' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='832' y1='526' x2='832' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='874' y1='526' x2='874' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='916' y1='526' x2='916' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='958' y1='526' x2='958' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='1000' y1='526' x2='1000' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='1042' y1='526' x2='1042' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<line x1='1084' y1='526' x2='1084' y2='1536' stroke='#bbb' stroke-width='0.6'/>
+<text x='40' y='1562' text-anchor='start' font-size='16' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>D.  Operators and their inverses — the reverse program that replays a recorded derivation backward</text>
+<rect x='40' y='1574' width='2016' height='26' fill='#eee' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='1'/>
+<text x='46' y='1591' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>operator</text>
+<text x='346' y='1591' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>form</text>
+<text x='442' y='1591' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>what the reverse step does</text>
+<text x='1262' y='1591' text-anchor='start' font-size='11' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>what it needs · what is lost</text>
+<rect x='40' y='1600' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1616' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>exact with this occurrence's retained operand (the recorded replay; meaning-block models)</text>
+<rect x='40' y='1624' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>not</text>
+<text x='346' y='1640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>self</text>
+<text x='442' y='1640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exchange the two lanes again</text>
+<text x='1262' y='1640' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>nothing; evidence only</text>
+<rect x='40' y='1648' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sum</text>
+<text x='346' y='1664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>residual</text>
+<text x='442' y='1664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>meaning: 2 × parent − witness; form: split the leaf-weighted centroid</text>
+<text x='1262' y='1664' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the other operand; free decoding searches the primed bank</text>
+<rect x='40' y='1672' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>product / verb / lower / preposition / surface</text>
+<text x='346' y='1688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lane kernel</text>
+<text x='442' y='1688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>invert the chart-affine kernel (positive diagonal) given the other operand; split the form centroid</text>
+<text x='1262' y='1688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the operand the head role leaves known (lower: the marker); an out-of-cube result is unavailable</text>
+<rect x='40' y='1696' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>part / whole / equal / implies</text>
+<text x='346' y='1712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lane kernel</text>
+<text x='442' y='1712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the same kernel inverse, given the right operand</text>
+<text x='1262' y='1712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>numeric models instead: part / whole pass the whole, equal searches, implies is residual</text>
+<rect x='40' y='1720' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>lift / adverb</text>
+<text x='346' y='1736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>group action</text>
+<text x='442' y='1736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>undo the diagonal action by its restricted SPD solve</text>
+<text x='1262' y='1736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the right operand: the verb phrase / the adverb</text>
+<rect x='40' y='1744' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>transpose</text>
+<text x='346' y='1760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>self</text>
+<text x='442' y='1760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>swap the pair back</text>
+<text x='1262' y='1760' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>nothing; excluded from the generate menu as a pair rewrite</text>
+<rect x='40' y='1768' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>interpret</text>
+<text x='346' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>native index</text>
+<text x='442' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the derived index's word for the object (a tensor re-activates the word bank)</text>
+<text x='1262' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exactly one word, else a lexical selection; declares no inverse_kind</text>
+<rect x='40' y='1792' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness</text>
+<text x='346' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>identity</text>
+<text x='442' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>return the word it was applied to</text>
+<text x='1262' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declares no inverse_kind (reverse_unary_step treats that as unavailable); &gt; renamed sign</text>
+<rect x='40' y='1816' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1832' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>bounded search, or the occurrence's witness only</text>
+<rect x='40' y='1840' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>intersection / union / conjunction / disjunction</text>
+<text x='346' y='1856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>search</text>
+<text x='442' y='1856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>recorded replay: none (child undefined, no operand invented); free: a K × K pair search through the same compose face</text>
+<text x='1262' y='1856' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the primed bank, K = reconstructionBasisLimit (16); lane magnitudes read back after the forms</text>
+<rect x='40' y='1864' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>compound / compound_unary</text>
+<text x='346' y='1880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>case search</text>
+<text x='442' y='1880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>recorded replay: keep the witness, split the form, meaning undefined; free: search the primed native cases</text>
+<text x='1262' y='1880' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>both poles retained; no occurrence trace or fabricated split</text>
+<rect x='40' y='1888' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>non</text>
+<text x='346' y='1904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness only</text>
+<text x='442' y='1904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the journal returns the operand it retained</text>
+<text x='1262' y='1904' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the expressed evidence; no free inverse, never its own inverse</text>
+<rect x='40' y='1912' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bind</text>
+<text x='346' y='1928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness only</text>
+<text x='442' y='1928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the location operand is an identity: the mention returns as an occurrence witness</text>
+<text x='1262' y='1928' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no generate rule; thought bind's reverse re-emits the request leaves</text>
+<rect x='40' y='1936' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
+<text x='46' y='1952' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>identity, or no generate face</text>
+<rect x='40' y='1960' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='1976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>generic / ask</text>
+<text x='346' y='1976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>identity</text>
+<text x='442' y='1976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>recorded replay keeps the value; free generation inverts the meaning lane kernel</text>
+<text x='1262' y='1976' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declared identity carriers</text>
+<rect x='40' y='1984' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='2000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>divide / descend / gloss / and / or</text>
+<text x='346' y='2000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>none</text>
+<text x='442' y='2000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>bracket operations raise on reverse</text>
+<text x='1262' y='2000' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the typed bracket table only</text>
+<rect x='40' y='2008' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='2024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the thought-only operators</text>
+<text x='346' y='2024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no generate face</text>
+<text x='442' y='2024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>query, isTrue, exist, isPart, isEqual, infer, inferBackward, intuit, gain: boundary executors, nothing to replay</text>
+<text x='1262' y='2024' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>no identity pseudo-operator</text>
+<rect x='40' y='2032' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
+<text x='46' y='2048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>synthesize  (PartSpace)</text>
+<text x='346' y='2048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>residual</text>
+<text x='442' y='2048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exact: parent − witness; PEEL with a basis; the empty split (parent, 0) without one</text>
+<text x='1262' y='2048' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>chunk's residual contract under its new name</text>
+<line x1='40' y1='1574' x2='40' y2='2056' stroke='#bbb' stroke-width='0.6'/>
+<line x1='340' y1='1574' x2='340' y2='2056' stroke='#bbb' stroke-width='0.6'/>
+<line x1='436' y1='1574' x2='436' y2='2056' stroke='#bbb' stroke-width='0.6'/>
+<line x1='1256' y1='1574' x2='1256' y2='2056' stroke='#bbb' stroke-width='0.6'/>
+<text x='40' y='2076' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>every reverse step reports availability, and a missing inverse is explicit: the traversal never substitutes an identity pseudo-inverse   ·   the recorded replay (DerivationReconstruction) inverts only recorded operators and leaves the search folds undefined rather than inventing operands; free generation decodes through GeneratePolicy and one bounded pair search</text>
+<text x='40' y='2092' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>WITNESS here = the retained constituent of this occurrence, its journal frame (not the witness operator). It is present for reconstruction and absent in free generation — which is why one operator can have two inverses here</text>
+<text x='40' y='2128' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>Open questions for the pen (numbers kept from 2026-10-03; answered ones dropped):  (4) why / how as walks over implies / operator rows — wait for two truths (item 7)?</text>
+<text x='40' y='2144' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(5) 7.5 deferred two levers: a nonzero training temperature, and a parsimony / work term against the round budget (a lesson-owned reduction pressure now exists) — take either up?</text>
+<text x='40' y='2160' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, feature groups — has no rule (item 5 or FutureWork?); DEF rows already share the store's retention</text>
+<text x='40' y='2176' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>On the inverses (D):  (8) the search folds (and compound's case search) are the only operators with no closed form — should compose PREFER an invertible fold where both fit, the way item 8 prefers the structural face at equal fit?</text>
+<text x='40' y='2192' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(11) surface's free-generation marker prior survives only in numeric models; on the meaning block free generation searches — retire the prior, or keep it as the guess about the word?</text>
 </svg>

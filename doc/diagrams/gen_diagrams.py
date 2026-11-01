@@ -614,161 +614,187 @@ def make_reference_architecture():
 # Data for doc/specs/2026-09-20-accessible-mind-subsystems.md. Monochrome and
 # sans-serif so the sheet prints and takes ink; the blank rows are for the pen.
 
-GO_REV = "2026-10-03 (operators candidate; awaiting review)"
+GO_REV = "2026-11-01 (current as built; decided-not-built marked >)"
 
 # (id, title, three body lines, dashed = reducible or derived)
 GO_SUBSYSTEMS = [
     ("1", "Perceptual knowing",
      ["activation of the two meronymic", "towers (PartSpace, WholeSpace);", "the word stream, read by bracket"], False),
     ("2", "Conceptual · order 0",
-     ["FIELD: whole 0-order codebook at", "once; TWO symbols per concept,", "c+/c−; memberships over bytes"], False),
+     ["FIELD: the whole order-0 codebook", "at once; two lanes per concept,", "for / against; read via definitions"], False),
     ("3", "Conceptual · higher",
-     ["FIELD over higher-order symbols;", "one point = a REGION of order 0,", "possibly discontinuous (rows as in 2)"], False),
+     ["FIELD over higher-order symbols;", "one point = a REGION of order 0;", "raised by definitions (Orders §10)"], False),
     ("4", "Serial thinking",
      ["CODES enter projected; operators", "move / extend them into one IDEA,", "an off-codebook, generative vector"], True),
     ("5", "Priming",
-     ["spreading activation over the", "concept store's edges; lives with", "the codebook; decays"], False),
+     ["the predicted next concept state,", "frozen per sentence; read by attention,", "chooser, retrieval; diffusion retired"], True),
     ("6", "Expectation",
-     ["NEGATIVE IMAGE: predicted idea,", "sign-reversed, added at the closing;", "learns o − ê. > per bracket at 6.8"], True),
-    ("7", "LTM",
-     ["serial form ONLY: ideas, any order;", "> one row per S with (c+, c−) at 7;", "reached by CUE only (no last-N)"], False),
+     ["GAIN FIELD, residual in two lanes;", "percepts: expected + residual; it", "SELECTS, never calls an operator"], True),
+    ("7", "LTM0 / LTM1",
+     ["LTM0: occurrences (slot, .when, two", "lanes, access, surprise); LTM1: rows of", "two tagged refs; cued recency window"], False),
     ("8", "Budget",
-     ["remaining work + closure pressure;", "READ to know cutoff is near,", "CHARGED by every thought op"], False),
+     ["remaining work + closure pressure;", "READ to know cutoff is near, CHARGED", "by thought ops and the generate walk"], False),
     ("9", "Meronymic access",
-     ["residual of part(x,y)=x·(y/|y|),", "left as an idea VECTOR (serial, 4),", "not a 1/0); order 0; no store"], True),
+     ["residual of part(x,y)=x·(y/|y|),", "left as an idea VECTOR (serial, 4),", "not a 1/0; order 0; no store"], True),
     ("10", "Taxonomic access",
-     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "> at 7 it is the store's sigma rows"], False),
+     ["relations over higher-order symbols;", "emits a SYMBOLIC value (graded);", "classes raised from LTM1 rows"], False),
 ]
 
 GO_SUBSYSTEM_NOTE = (
     "field (parallel, graded) → CODE = nearest-row projection; words arrive as codes → "
-    "operators compose an IDEA: one off-codebook vector that must regenerate its codes + "
-    "operations (generativity)   ·   stores: perceptual, conceptual, priming, LTM   ·   "
-    "resource: budget   ·   relation: taxonomy   ·   > = decided and specified, not yet landed")
+    "operators compose an IDEA that must regenerate its codes + operations (generativity)   ·   "
+    "stores: perceptual, conceptual, LTM0 / LTM1 (MTM is not one of the ten)   ·   "
+    "predictions: priming, expectation   ·   resource: budget   ·   relation: taxonomy   ·   "
+    "cells = declared effects per face   ·   > = decided and specified, not yet built")
 
 GO_GRAMMARS = [
     ("<compose>  ·  understanding", [
-        "reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9",
-        "never 6: PURITY — the composed idea o is the same whatever was predicted",
-        "writes: 4 (push / fold), 2/3 (the composed idea); never 7, 10, 8",
-        "7.5 ONE operation per round: one softmax over every operator × every location;",
-        "binary shortens the sequence by one, unary does not; a fixed round budget;",
-        "STOP is a candidate only once the sequence fits its LTM row; no DP of any kind",
-        "two hard derivations: exploit (tempered argmax, item 8's tie rule on logits)",
-        "and one distinct sampled explore, which trains and is not recorded",
-        "gradient: live — straight-through, weighted by the chooser's own softmax"]),
+        "reads: 1 perceptual knowing (word stream, row-owned), 2/3, 4, 5, 9; never 6, 7, 8, 10",
+        "writes: 4 (push / fold); 2/3 are permitted and declared only by part and ask",
+        "7.5 ONE operation per round: one softmax over every operator × every location, with",
+        "the field brackets and bind's locations + a zero-logit dummy; a binary fold shortens by one",
+        "STOP is eligible once the stack fits its slots; a fixed round budget, reduction pressure; no DP",
+        "two trials, greedy (argmax, item 8's tie rule) and one sampled departure; both train",
+        "the face never reads 6; the chooser takes expectation's detached prime as a logit bias",
+        "chooser credit: score function on the trials' detached R + A difference",
+        "gradient: live through the chosen operator's value; separateChooser=true detaches features"]),
     ("<thought>  ·  thinking  (per-model allow-list)", [
-        "reads: 4 the completed idea + recency buffer, 2/3, 6 (what is conceived), 8, 9, 10,",
-        "and 7 only as frames a what() brought into STM by cue",
-        "writes: effects on 2/3 and 4; the controller alone records / writes 7",
-        "chooser: the SAME selection layer as compose and generate (7.5) —",
-        "(operator, operands, open roles, level) | conclude",
-        "gradient: none through effects; chooser on policy credit only",
-        "cost: every choice / execute / descend / return charges 8",
-        "> 6.8 adds the bracket candidates and 6.5 identity binding to this same",
-        "softmax, credited the same way; neither is a separate policy"]),
+        "reads: every subsystem but 1; 7 only through bounded readers (query, ask, isTrue,",
+        "isPart, isEqual, infer, intuit, bind); 5: query, ask, intuit; 6: bind, gain; 10: isPart, infer",
+        "writes: 4 and 8 (every rule), 2/3 (part, ask; intuit writes 2), 6 (gain); none declares 7",
+        "only <thought> declarations authorize a boundary action; executors run at a completed row",
+        "chooser: the SAME selection layer as compose (thought_logits) — operation | conclude",
+        "gradient: none through effects; chooser features detached; credit by departure",
+        "intuit's sparse Sigma-over-Pi weights are output-owned; infer accepts a pair from evidence",
+        "cost: every choice / execute / descend / return charges 8 (attentionBudget units)",
+        "bracket candidates and bind's choice live in the compose softmax, not in this one"]),
     ("<generate>  ·  speech production", [
-        "reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3,",
-        "its OWN emitted prefix — never the input stream or a parse trace",
-        "writes: 1 the output stream (words via the reverse chain)",
-        "never: 7, 10, thought execution",
-        "policy: the same selection layer once more; the serial STM reducer is",
-        "that layer with a two-slot window, not a second mechanism",
-        "gradient: live in generate; stops at the concluded idea",
-        "cost: output walk budget (not 8)",
-        ""]),
+        "reads: the concluded idea in 4 (GIVEN, on-manifold), 2/3, 8, its OWN emitted prefix —",
+        "never the input stream or a parse trace",
+        "writes: 1 the output stream (words via the reverse chain) and 8, the walk's work meter",
+        "never: 5, 6, 7, 9, 10, thought execution",
+        "policy: GeneratePolicy, a separate reconstruction-owned head over the top slot (input",
+        "detached) + menu features; cross-entropy to the recorded choice; untrained, it stops",
+        "decoding: the declared generate faces; a binary without its witness takes one bounded search",
+        "residual: absolute MSE per lane (form, for, against), exact below RMS 1e-4",
+        "gradient: live in generate; stops at the concluded idea"]),
 ]
 
 GO_GRAMMAR_NOTE = (
-    "one vocabulary of operator identities; shared operators are the ONE gradient "
-    "coupling between objectives (dissonance = per-operator gradient cosine); a compose face "
-    "alone grants no thought permission   ·   the ENDING (not an operator) adds the negative "
-    "image and, per sentence, commits the better of the two derivations")
+    "one vocabulary of operator identities; a compose face alone grants no thought permission; "
+    "operators are reconstruction-owned (separateChooser=true keeps the answer's gradient out; "
+    "per-operator dissonance is a read-only diagnostic)   ·   the CLOSING (not an operator) reads 4 "
+    "and 6, writes 7 and 6 (the rows and expectation's two-lane residual), and keeps the strictly "
+    "better trial by R + A")
 
 # group -> rows of (operator, faces, operand kind, roles, {subsystem id: access}, note)
-# kind: F = a pooled reading over a bracket, S = one identified concept (6.8, 6a).
-# W* = FutureWork §7; > = decided and specified, not yet landed.
-# Section D's inverses are read from Language.reverse_binary_step /
-# reverse_unary_step and Layers._binary_op_inverse_impl, not from the prose.
+# kind: F = a field (pooled reading over a bracket), S = one identified concept.
+# faces: union over data/default.grammar and data/complete.grammar.
+# access: AccessibleMind.OperatorEffects of the loaded rule, masked per declared
+# face (compose, thought, generate) and unioned; > = decided and specified, not built.
+# Section D's inverses are read from DerivationReconstruction (the recorded
+# replay), Language.reverse_binary_step / reverse_unary_step / generate_unary_step
+# and GrammarLayer.reverse_blocks, not from the prose.
 GO_OPERATORS = [
-    ("concept and symbol folds — declarations specify operand kinds and all effects", [
-        ("not", "C T G", "F/S", "I1→O1", {"4": "RW"}, "exchange evidence poles; self-inverse; trust is unchanged"),
-        ("non", "C – –", "F/S", "I1→O1", {"4": "RW"}, "exclude the expressed pole; no affirmation and no inverse"),
-        ("intersection / union", "C G", "S", "I1,I2→O1", {"2": "R", "4": "RW"}, "intersection: signed coordinate minimum, zero is silent; union: log-odds sum"),
-        ("conjunction / disjunction", "C G", "S", "I1,I2→O1", {"3": "R", "4": "RW"}, "product binding / mean bundling of symbol codes; inverse searches primed operands"),
-        ("sum / chunk / product", "C G", "S", "I1,I2→O1", {"4": "RW"}, "sum is the mean; chunk is additive; product is coordinate multiplication"),
-        ("compound", "C G", "S", "modifier,head→O1", {"2": "R", "3": "R", "4": "RW"}, "reverse the head's sigma, select cases by modifier, refold; no new parameters"),
-        ("verb / adverb", "C G", "S", "I1,I2→O1", {"4": "RW"}, "verb head is I1; multiplicative spectral gain; the right operand witnesses the inverse"),
-        ("lift / lower / generic", "C G", "S", "declared roles", {"4": "RW"}, "declared order and head properties; generic is independent of retired exist"),
-        ("surface / preposition / bind", "C G", "S", "I1,I2→O1", {"4": "RW"}, "declared witness and reference policies; surface renames are deferred"),
-        ("tense / morphology / aspect / null", "C G", "S", "I1→O1", {"4": "RW"}, "surface carriers; their planned dimensional rewrite remains future work"),
-        ("interpret", "C G", "S", "word→object", {"2": "RW", "3": "RW", "4": "RW"}, "native definition replaces the word; admission uses the existing owner"),
+    ("field operations — the typed bracket table; field operands only; one compose softmax (6.8)", [
+        ("divide / descend / gloss", "C – –", "F", "bracket→bracket / symbol", {"1": "R"}, "bracket actions 0-2; the declaration reads percepts only and writes nothing; no generate face (reverse raises)"),
+        ("and / or  (field)", "C – –", "F", "bracket→bracket", {"1": "R"}, "bracket actions 3-4, field_reduce over the bracket: and = (min for, max against), or = (max for, min against)"),
+        ("not", "C T G", "F", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "exchange the two lanes; self-inverse; trust is unchanged; compose takes a field operand only (field action 5); thought negates a meaning"),
     ]),
-    ("checked thought — permission masks the same exhaustive effect declaration", [
-        ("part / whole", "C T G", "S", "I1,I2→O1; open sides", {"4": "RW", "9": "R", "10": "R"}, "full conceptual content and paired evidence; native taxonomy at higher order"),
-        ("equal", "C T G", "S", "I1,I2→O1", {"4": "RW"}, "stable question-formula identity; closing still writes two part rows"),
-        ("what (query content)", "C T G", "S", "description→content", {"4": "RW", "7": "R"}, "one retrieval for what, where and when cues; lookup is retired; rename is deferred"),
-        ("quantize / arma", "– T –", "S", "I1→O1", {"3": "RW", "6": "RW"}, "codebook projection / expectation content; structural identity carriers retired"),
+    ("leaf readings — interpret is forced at the word transaction; the chooser takes the second reading", [
+        ("interpret", "C – G", "S", "word→object", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "mandatory in reading mode (the eager word transaction admits the form, reads its object); a field makes it a chooser option; DEF rows are written at the close"),
+        ("witness", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "the chooser's alternative on a pending leaf; identity on the word; the kept close opens an MTM token kinded by the null-concept; > renamed sign"),
+        ("(no-op leaf)", "– – –", "—", "leaf→leaf", {}, "a field can already leave a leaf uninterpreted; > the icon (§32.4): at the kept close the leaf opens its own MTM token holding its word-concept code"),
     ]),
-    ("retired / pending", [
-        ("exist / true / binary symbolize", "– – –", "—", "—", {}, "no scalar truth output, no unused binary carrier"),
-        ("legacy query / queryPart / queryEqual", "– – –", "—", "—", {}, "geometric scalar experiments retired; the content operator above remains"),
-        ("divide / descend / gloss (6.8)", "C – –", "F", "bracket→brackets/symbol", {"8": "W"}, "same candidate softmax; typed bracket and shared perceptual budget"),
-        ("STOP / closing", "C T G", "—", "eligible stop / commit", {"7": "W"}, "cost greedy and one-departure paths before training; strict improvement selects explore"),
+    ("concept and symbol folds — meaning: the declared rule, else a learned lane kernel on the head; form: the leaf-weighted centroid", [
+        ("non", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "clear the for lane; the journal retains the operand as a marked witness; the declared generate rule is unavailable (reverse raises)"),
+        ("intersection / union", "C – G", "S", "I1,I2→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "Ops: elementwise min, a zero coordinate silent / elementwise max; meaning block: the bilattice rule, for (min / max), against (max / min)"),
+        ("conjunction / disjunction", "C – G", "S", "I1,I2→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "Ops: product binding of unit directions × activations / probabilistic sum a+b−ab; meaning block: the same rules as intersection / union"),
+        ("sum / product", "C – G", "S", "I1,I2→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "sum is the mean (meaning rule); product multiplies coordinates (Ops) and is a lane kernel on meaning; chunk is now synthesize, below"),
+        ("compound / compound_unary", "C – G", "S", "modifier,head→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "select the head's native sigma cases by the modifier (a learned lane-kernel test on meaning); the unary face takes the unfiltered head as object"),
+        ("verb / adverb", "C – G", "S", "I1,I2→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "verb head is I1, subtyped by its object (lane kernel); adverb: a multiplicative group action; the right operand witnesses both inverses"),
+        ("lift", "C – G", "S", "NP,VP→S (clause S)", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "the sentence fold: the VP acts on the NP as a diagonal verb-group action; NP + VP lowers one order, a chosen adverb withholds it"),
+        ("lower / definite / universal (+ unary)", "C – G", "S", "marker,description→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "a determiner selects; referent mint / bind / kind (universal: compose only); the marker adds no content; the inverse needs the marker"),
+        ("generic", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "nominal type marker with reference mode generic; numeric models pass the value; independent of the retired exist carrier"),
+        ("surface / transpose (+ surface_unary)", "C – G", "S", "marker,content→O1 | 2→2", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "surface absorbs a marker, projecting its right operand (numeric); transpose swaps the newest pair exactly; surface = absorb + transpose only"),
+        ("preposition (+ unary)", "C – G", "S", "marker,phrase→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "numeric: the phrase passes; meaning: the marker heads the kernel, the phrase its context; inverse needs the marker; > one position op (2026-10-20)"),
+        ("bind", "C T –", "S", "mention,location→O1", {"1": "R", "2": "R", "3": "R", "4": "RW", "5": "R", "6": "R", "7": "R", "8": "RW"}, "compose: one action per frame-accessible or trial-local location + a zero-logit dummy; thought: resolve a selected open site; no generate rule"),
+    ]),
+    ("relations and checked thought — permission masks the same exhaustive declaration; only <thought> authorizes execution", [
+        ("part / whole", "C T G", "S", "I1,I2→O1", {"1": "RW", "2": "RW", "3": "RW", "4": "RW", "5": "R", "8": "RW", "9": "R"}, "compose: numeric passes the whole (part: right, whole: left); thought part leaves the residual x·(y/|y|) and its support; whole = part(argin2, argin1)"),
+        ("isPart / isEqual", "– T –", "S", "ref,ref→O1; one open side", {"2": "R", "3": "R", "4": "RW", "5": "R", "7": "R", "8": "RW", "10": "R"}, "symbolic faces: LTM1 relation evidence first, then the taxonomy's bounded path (isPart, 10; open side = neighbours); isEqual reads LTM1 only"),
+        ("equal", "C T G", "S", "I1,I2→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "compose: mutual parthood (numeric); thought: the conceptual identity score; a kept close writes an LTM1 row; raiseCount relata raise a class"),
+        ("implies", "C T G", "S", "I1,I2→O1 (clause implies)", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "structural carrier on sum; the clause close keeps both operands; thought implies is part's containment; default.grammar: thought face only"),
+        ("ask", "C T G", "S", "description→subgoal", {"1": "RW", "2": "RW", "3": "RW", "4": "RW", "5": "R", "7": "R", "8": "RW"}, "fill a row's open references as a subgoal (continuation), else the LTM best match; compose / generate faces are carriers; was what"),
+        ("query", "– T –", "S", "description→content", {"2": "R", "3": "R", "4": "RW", "5": "R", "7": "R", "8": "RW"}, "the bounded LTM read: the best match with content, pair and witnessing occurrence; was lookup"),
+        ("isTrue / exist", "– T –", "S", "description | concept→pair", {"2": "R", "3": "R", "4": "RW", "5": "R", "7": "R", "8": "RW"}, "isTrue: an ended row's pair, trust and witnesses by reference (7); exist: conceptual presence as a pair; no scalar truth"),
+        ("infer / inferBackward", "– T –", "S", "ref,ref→O1", {"2": "R", "3": "R", "4": "RW", "5": "R", "7": "R", "8": "RW", "10": "R"}, "one symbolic derivation in two directions over LTM1 and the taxonomy; accepts a pair from evidence, independent of intuit's proposal"),
+        ("intuit", "– T –", "S", "meaning→knowing", {"2": "RW", "3": "R", "4": "RW", "5": "R", "7": "R", "8": "RW"}, "the order-0 Sigma-over-Pi DNF over LTM1 rules, in an addressed STM slot; output-owned sparse weights (intuitionCapacity); writes 2"),
+        ("gain", "– T –", "S", "concept→gain", {"2": "R", "3": "R", "4": "RW", "5": "R", "6": "RW", "8": "RW"}, "set expectation's gain from the concept's magnitude; replaces arma / expect"),
+    ]),
+    ("perceptual cover — <PartSpace>: Synthesize is compose, Analyze is generate (tier P)", [
+        ("stop / boundary / uniform", "C – G", "—", "U→U | U,U→U", {}, "the marker-free structural cover of the PartSpace analyzer; no OperatorEffects declaration, so no cells"),
+        ("synthesize", "C – G", "—", "U,U→U", {}, "complete.grammar only: the residual-bearing additive sum, ex-chunk (catalogue §3.1); no OperatorEffects declaration"),
+    ]),
+    ("retired, registered only, and not operators", [
+        ("what / lookup / true / queryPart / queryEqual", "– – –", "—", "—", {}, "raise at load with their replacements: ask or query, query, isTrue, isPart, isEqual"),
+        ("chunk / quantize / arma / expect / symbolize", "– – –", "—", "—", {}, "raise at load: synthesize; all concepts are symbolized; sentenceExpectation and gain; symbolize stays future work"),
+        ("tense / aspect / morphology", "– – –", "—", "—", {}, "neither registered nor declared; > tense, aspect, preposition and modal become one position operation (2026-10-20)"),
+        ("min / max / null / assertPart", "– – –", "—", "—", {}, "registered layers no shipped grammar declares: coordinate min / max, the null identity, assertPart as an alias of part"),
+        ("STOP / the closing", "C T G", "—", "eligible stop | commit", {"4": "R", "6": "RW", "7": "W"}, "not operators: STOP ends a walk; the closing reads 4 and 6, writes the LTM rows and expectation's residual, and keeps the better trial"),
     ]),
 ]
 
 # group -> rows of (operator, form, what the reverse program does, what it needs / loses)
 GO_INVERSES = [
-    ("exact with the declared witness", [
-        ("not", "self", "exchange the poles again", "no witness; evidence only"),
-        ("sum / chunk", "residual", "2 × parent − witness / parent − witness", "free decoding searches the primed bank"),
-        ("verb / adverb", "gain", "divide by the same positive multiplicative gain", "right operand witness; no iterative inverse"),
-        ("surface / product / part / whole", "declared", "use the declared witness and inverse contract", "missing witnesses mask unavailable candidates"),
+    ("exact with this occurrence's retained operand (the recorded replay; meaning-block models)", [
+        ("not", "self", "exchange the two lanes again", "nothing; evidence only"),
+        ("sum", "residual", "meaning: 2 × parent − witness; form: split the leaf-weighted centroid", "the other operand; free decoding searches the primed bank"),
+        ("product / verb / lower / preposition / surface", "lane kernel", "invert the chart-affine kernel (positive diagonal) given the other operand; split the form centroid", "the operand the head role leaves known (lower: the marker); an out-of-cube result is unavailable"),
+        ("part / whole / equal / implies", "lane kernel", "the same kernel inverse, given the right operand", "numeric models instead: part / whole pass the whole, equal searches, implies is residual"),
+        ("lift / adverb", "group action", "undo the diagonal action by its restricted SPD solve", "the right operand: the verb phrase / the adverb"),
+        ("transpose", "self", "swap the pair back", "nothing; excluded from the generate menu as a pair rewrite"),
+        ("interpret", "native index", "the derived index's word for the object (a tensor re-activates the word bank)", "exactly one word, else a lexical selection; declares no inverse_kind"),
+        ("witness", "identity", "return the word it was applied to", "declares no inverse_kind (reverse_unary_step treats that as unavailable); > renamed sign"),
     ]),
-    ("bounded search through the same forward face", [
-        ("compound", "case search", "primed native modifier/head pairs, conditioned sigma cases", "both poles retained; no occurrence trace or fabricated split"),
-        ("conjunction / disjunction / intersection / union / equal", "search", "cost the recomposed primed pairs", "shared fixed reconstruction basis limit"),
-        ("lift / lower", "tied + search", "the forward map's own inverse and bounded operands", "no stored derivation is replayed"),
+    ("bounded search, or the occurrence's witness only", [
+        ("intersection / union / conjunction / disjunction", "search", "recorded replay: none (child undefined, no operand invented); free: a K × K pair search through the same compose face", "the primed bank, K = reconstructionBasisLimit (16); lane magnitudes read back after the forms"),
+        ("compound / compound_unary", "case search", "recorded replay: keep the witness, split the form, meaning undefined; free: search the primed native cases", "both poles retained; no occurrence trace or fabricated split"),
+        ("non", "witness only", "the journal returns the operand it retained", "the expressed evidence; no free inverse, never its own inverse"),
+        ("bind", "witness only", "the location operand is an identity: the mention returns as an occurrence witness", "no generate rule; thought bind's reverse re-emits the request leaves"),
     ]),
-    ("identity or unavailable", [
-        ("non", "unavailable", "the expressed evidence was discarded", "never presented as its own inverse"),
-        ("generic / tense / morphology / aspect / null", "identity", "the declared carrier preserves the conceptual value", "surface revisions remain future work"),
-        ("interpret", "native index", "read the existing definition's word", "same symbol/concept owner"),
-        ("quantize / arma", "no generate face", "thought-only content", "no identity pseudo-operator"),
+    ("identity, or no generate face", [
+        ("generic / ask", "identity", "recorded replay keeps the value; free generation inverts the meaning lane kernel", "declared identity carriers"),
+        ("divide / descend / gloss / and / or", "none", "bracket operations raise on reverse", "the typed bracket table only"),
+        ("the thought-only operators", "no generate face", "query, isTrue, exist, isPart, isEqual, infer, inferBackward, intuit, gain: boundary executors, nothing to replay", "no identity pseudo-operator"),
+        ("synthesize  (PartSpace)", "residual", "exact: parent − witness; PEEL with a basis; the empty split (parent, 0) without one", "chunk's residual contract under its new name"),
     ]),
 ]
 
 
 GO_INVERSE_NOTE = [
     "every reverse step reports availability, and a missing inverse is explicit: the "
-    "traversal never substitutes an identity pseudo-inverse   ·   the reverse loop is a "
-    "bounded while_loop over the recorded derivation, so only recorded operators execute, "
-    "and the lossy folds share one candidate search",
-    "WITNESS = the retained constituent reference, the dictionary row the word was pushed "
-    "with. It belongs to its own occurrence, so it is present for reconstruction and absent "
-    "in free generation — which is why the same operator has two inverses here",
+    "traversal never substitutes an identity pseudo-inverse   ·   the recorded replay "
+    "(DerivationReconstruction) inverts only recorded operators and leaves the search folds "
+    "undefined rather than inventing operands; free generation decodes through GeneratePolicy "
+    "and one bounded pair search",
+    "WITNESS here = the retained constituent of this occurrence, its journal frame (not the witness "
+    "operator). It is present for reconstruction and absent in free generation — which is why one "
+    "operator can have two inverses here",
 ]
 
 GO_QUESTIONS = [
-    "Open questions for the pen:  (1) is priming read by thought, or only as a retrieval cue "
-    "and by compose?   (2) lookup without a generate face — intended?   (3) which structural "
-    "operators may a model think with — `not`, to conclude absences?",
-    "(4) why / how as walks over implies / operator rows — wait for two truths (item 7)?   "
+    "Open questions for the pen (numbers kept from 2026-10-03; answered ones dropped):  "
+    "(4) why / how as walks over implies / operator rows — wait for two truths (item 7)?",
     "(5) 7.5 deferred two levers: a nonzero training temperature, and a parsimony / work term "
-    "against the round budget — take either up after the conference?",
-    "(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, "
-    "feature groups — has no rule (item 5 or FutureWork?)   (7) item 8's propertyBasis: port "
-    "it to XOR_grammar, or leave that gate as written?",
-    "On the inverses (D):  (8) the lossy folds are the only operators with no closed form — "
+    "against the round budget (a lesson-owned reduction pressure now exists) — take either up?",
+    "(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, feature "
+    "groups — has no rule (item 5 or FutureWork?); DEF rows already share the store's retention",
+    "On the inverses (D):  (8) the search folds (and compound's case search) are the only operators with no closed form — "
     "should compose PREFER an invertible fold where both fit, the way item 8 prefers the "
-    "structural face at equal fit?   (9) lift / lower reference-free recovery is item 6's "
-    "blocker: is clean-up decoding through the forward kernel — the search the lossy folds "
-    "already use — the intended answer?",
-    "(10) adverb: keep the eight-step iterative inverse, or declare it non-invertible and "
-    "let it fall to the same candidate search?   (11) surface's free-generation prior is a "
-    "guess about the word rather than a recovery — is that the right division between "
-    "reconstruction and generation, or should generation also search?",
+    "structural face at equal fit?",
+    "(11) surface's free-generation marker prior survives only in numeric models; on the meaning "
+    "block free generation searches — retire the prior, or keep it as the guess about the word?",
 ]
 
 
