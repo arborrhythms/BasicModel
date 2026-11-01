@@ -305,6 +305,10 @@ declares any of them. None is planned: orders are learned, not declared
 
 ### GrammarLayer forward / reverse inventory
 
+![Operators: their arguments and outputs, read from data/complete.grammar](diagrams/operator_signatures.svg)
+
+*The figure is generated from `data/complete.grammar` (2026-11-01) and fails to generate when an operator is missing from it. The table below is the 2026-07-14 record; for the current operators see the figure and the [operator sheet](diagrams/grammar_operators.svg).*
+
 The per-operator contracts, as implemented (2026-07-14; every op's
 `forward` is what `<compose>` fires and its `reverse` is what
 `<generate>` fires — see the section pairing above). "Recommender"
