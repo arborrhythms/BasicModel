@@ -51,6 +51,6 @@
 <text x='30' y='566' text-anchor='start' font-size='12' fill='#626567'>the no-op at 'woof' opens a token that</text>
 <text x='30' y='582' text-anchor='start' font-size='12' fill='#626567'>'that' binds and the definition kinds bark</text>
 <rect x='30' y='620' width='1120' height='52' fill='#f2f3f4' fill-opacity='1.0' rx='8' stroke='#aab7b8' stroke-width='1'/>
-<text x='46' y='641' text-anchor='start' font-size='12' fill='#2c3e50'>Built: interpret is mandatory in reading mode, the sign operation is declared as witness and valid at an open handle, and with a field the chooser may leave a percept alone.</text>
-<text x='46' y='661' text-anchor='start' font-size='12' fill='#2c3e50'>Decided 2026-11-01, not built (item 22): the rename to sign, sign at every interpreted leaf, and the no-op's token, reached in reading mode only with the forcing lifted.</text>
+<text x='46' y='641' text-anchor='start' font-size='12' fill='#2c3e50'>Built (item 22, Codex, 2026-11-01): interpret mandatory in reading mode; sign at every interpreted leaf; the no-op's own-occurrence token when the forcing is lifted on the layer instance; no parameter.</text>
+<text x='46' y='661' text-anchor='start' font-size='12' fill='#2c3e50'>The forcing stays on outside certificate (v). Lifting it in production is a later decision, with a field (FutureWork, "Renamed sign").</text>
 </svg>

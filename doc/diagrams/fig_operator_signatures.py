@@ -23,7 +23,7 @@ SANS = "Helvetica, Arial, sans-serif"
 # group key -> (title, subtitle, accent, light fill)
 GROUPS = {
     "field": ("Field operations", "attention over a bracketed field; operands are field brackets, not symbols", BLUE, BLUE_L),
-    "leaf": ("Leaf readings", "applied to a word at a leaf; interpret is forced at the word transaction in reading mode", TEAL, TEAL_L),
+    "leaf": ("Leaf readings", "interpret is initially forced in reading mode; the chooser then takes sign or leaves the symbol; lifting the forcing admits the no-op", TEAL, TEAL_L),
     "fold": ("Evidence folds", "on the meaning block each pole is reduced by the declared rule; numeric models use the Ops kernels", GRN_DK, GRN_L),
     "phrase": ("Phrase structure", "the filled argument heads the result; marker-headed operators also have a unary face", PURP, PURP_L),
     "relation": ("Relations", "structural carriers in compose and generate; checked thought faces run only at a completed boundary", ORG, ORG_L),
@@ -40,7 +40,7 @@ SIGNATURES = {
     "or": ("field", ["field bracket"], 0, "reduced bracket", "for: max over positions; against: min"),
 
     "interpret": ("leaf", ["word (its form)"], 0, "its object", "a pending word is minted at its first kept definition"),
-    "witness": ("leaf", ["word handle"], 0, "MTM token, null kind", "reading mode: valid at an open handle; > renamed sign (thinking spec §32.4)"),
+    "sign": ("leaf", ["interpreted leaf"], 0, "MTM token, null kind", "Peirce's index at every interpreted leaf; token: the pointed-at occurrence; was witness"),
 
     "not": ("fold", ["meaning"], 0, "lanes exchanged", "self-inverse; a field operand in compose, a meaning in thought"),
     "non": ("fold", ["meaning"], 0, "for lane cleared", "the operand is kept as a marked witness; no inverse"),
@@ -191,7 +191,7 @@ def make():
 
     b.append(t(X0, 40, "Operators: their arguments and outputs", fs=24, bold=True, fill="#222"))
     b.append(t(X0, 64, "read from data/complete.grammar when generated  ·  filled argument: the head  ·  "
-               "faces: C compose, T thought, G generate (lit when declared)  ·  > decided, not built",
+               "faces: C compose, T thought, G generate (lit when declared)",
                fs=12.5, fill=GRY, italic=True))
     y = 86
     order = list(GROUPS)

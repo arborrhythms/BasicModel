@@ -164,7 +164,7 @@
 <text x='964' y='688' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
 <text x='1090' y='688' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>mandatory in reading mode (the eager word transaction admits the form, reads its object); a field makes it a chooser option; DEF rows are written at the close</text>
 <rect x='40' y='696' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness</text>
+<text x='46' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sign</text>
 <text x='316' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>C – G</text>
 <text x='374' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>S</text>
 <text x='420' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>I1→O1</text>
@@ -174,13 +174,13 @@
 <text x='796' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
 <text x='838' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>R</text>
 <text x='964' y='712' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>RW</text>
-<text x='1090' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the chooser's alternative on a pending leaf; identity on the word; the kept close opens an MTM token kinded by the null-concept; &gt; renamed sign</text>
+<text x='1090' y='712' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>Peirce's index at every interpreted leaf, a known word included; identity on the word; the kept close opens the pointed-at occurrence's MTM token, null kind; was witness (2026-11-01)</text>
 <rect x='40' y='720' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
 <text x='46' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>(no-op leaf)</text>
 <text x='316' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>– – –</text>
 <text x='374' y='736' text-anchor='start' font-size='11.5' fill='#111' font-weight='bold' font-family='Helvetica, Arial, sans-serif'>—</text>
 <text x='420' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>leaf→leaf</text>
-<text x='1090' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>a field can already leave a leaf uninterpreted; &gt; the icon (§32.4): at the kept close the leaf opens its own MTM token holding its word-concept code</text>
+<text x='1090' y='736' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the icon (§32.4), reached only with the forcing lifted on the layer instance (certificate v): the leaf keeps its form, and the kept close opens its own occurrence's token holding it, null kind</text>
 <rect x='40' y='744' width='2014' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
 <text x='46' y='760' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>concept and symbol folds — meaning: the declared rule, else a learned lane kernel on the head; form: the leaf-weighted centroid</text>
 <rect x='40' y='768' width='2014' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
@@ -563,10 +563,10 @@
 <text x='442' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>the derived index's word for the object (a tensor re-activates the word bank)</text>
 <text x='1262' y='1784' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>exactly one word, else a lexical selection; declares no inverse_kind</text>
 <rect x='40' y='1792' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
-<text x='46' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>witness</text>
+<text x='46' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>sign</text>
 <text x='346' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>identity</text>
 <text x='442' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>return the word it was applied to</text>
-<text x='1262' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declares no inverse_kind (reverse_unary_step treats that as unavailable); &gt; renamed sign</text>
+<text x='1262' y='1808' text-anchor='start' font-size='10.8' fill='#111' font-family='Helvetica, Arial, sans-serif'>declares no inverse_kind (reverse_unary_step treats that as unavailable); was witness until 2026-11-01</text>
 <rect x='40' y='1816' width='2016' height='24' fill='#f7f7f7' fill-opacity='1.0' rx='0' stroke='#333' stroke-width='0.8'/>
 <text x='46' y='1832' text-anchor='start' font-size='11.5' fill='#333' font-weight='bold' font-style='italic' font-family='Helvetica, Arial, sans-serif'>bounded search, or the occurrence's witness only</text>
 <rect x='40' y='1840' width='2016' height='24' fill='#fff' fill-opacity='1.0' rx='0' stroke='#999' stroke-width='0.6'/>
@@ -616,7 +616,7 @@
 <line x1='436' y1='1574' x2='436' y2='2056' stroke='#bbb' stroke-width='0.6'/>
 <line x1='1256' y1='1574' x2='1256' y2='2056' stroke='#bbb' stroke-width='0.6'/>
 <text x='40' y='2076' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>every reverse step reports availability, and a missing inverse is explicit: the traversal never substitutes an identity pseudo-inverse   ·   the recorded replay (DerivationReconstruction) inverts only recorded operators and leaves the search folds undefined rather than inventing operands; free generation decodes through GeneratePolicy and one bounded pair search</text>
-<text x='40' y='2092' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>WITNESS here = the retained constituent of this occurrence, its journal frame (not the witness operator). It is present for reconstruction and absent in free generation — which is why one operator can have two inverses here</text>
+<text x='40' y='2092' text-anchor='start' font-size='11' fill='#444' font-style='italic' font-family='Helvetica, Arial, sans-serif'>WITNESS here = the retained constituent of this occurrence, its journal frame (not the sign operator). It is present for reconstruction and absent in free generation — which is why one operator can have two inverses here</text>
 <text x='40' y='2128' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>Open questions for the pen (numbers kept from 2026-10-03; answered ones dropped):  (4) why / how as walks over implies / operator rows — wait for two truths (item 7)?</text>
 <text x='40' y='2144' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(5) 7.5 deferred two levers: a nonzero training temperature, and a parsimony / work term against the round budget (a lesson-owned reduction pressure now exists) — take either up?</text>
 <text x='40' y='2160' text-anchor='start' font-size='11' fill='#444' font-family='Helvetica, Arial, sans-serif'>(6) forgetting of the concept inventory itself — order-0 definitions, alternatives, feature groups — has no rule (item 5 or FutureWork?); DEF rows already share the store's retention</text>

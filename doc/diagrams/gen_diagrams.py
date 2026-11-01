@@ -703,8 +703,8 @@ GO_OPERATORS = [
     ]),
     ("leaf readings — interpret is forced at the word transaction; the chooser takes the second reading", [
         ("interpret", "C – G", "S", "word→object", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "mandatory in reading mode (the eager word transaction admits the form, reads its object); a field makes it a chooser option; DEF rows are written at the close"),
-        ("witness", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "the chooser's alternative on a pending leaf; identity on the word; the kept close opens an MTM token kinded by the null-concept; > renamed sign"),
-        ("(no-op leaf)", "– – –", "—", "leaf→leaf", {}, "a field can already leave a leaf uninterpreted; > the icon (§32.4): at the kept close the leaf opens its own MTM token holding its word-concept code"),
+        ("sign", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "Peirce's index at every interpreted leaf, a known word included; identity on the word; the kept close opens the pointed-at occurrence's MTM token, null kind; was witness (2026-11-01)"),
+        ("(no-op leaf)", "– – –", "—", "leaf→leaf", {}, "the icon (§32.4), reached only with the forcing lifted on the layer instance (certificate v): the leaf keeps its form, and the kept close opens its own occurrence's token holding it, null kind"),
     ]),
     ("concept and symbol folds — meaning: the declared rule, else a learned lane kernel on the head; form: the leaf-weighted centroid", [
         ("non", "C – G", "S", "I1→O1", {"1": "RW", "2": "R", "3": "R", "4": "RW", "5": "R", "8": "RW"}, "clear the for lane; the journal retains the operand as a marked witness; the declared generate rule is unavailable (reverse raises)"),
@@ -755,7 +755,7 @@ GO_INVERSES = [
         ("lift / adverb", "group action", "undo the diagonal action by its restricted SPD solve", "the right operand: the verb phrase / the adverb"),
         ("transpose", "self", "swap the pair back", "nothing; excluded from the generate menu as a pair rewrite"),
         ("interpret", "native index", "the derived index's word for the object (a tensor re-activates the word bank)", "exactly one word, else a lexical selection; declares no inverse_kind"),
-        ("witness", "identity", "return the word it was applied to", "declares no inverse_kind (reverse_unary_step treats that as unavailable); > renamed sign"),
+        ("sign", "identity", "return the word it was applied to", "declares no inverse_kind (reverse_unary_step treats that as unavailable); was witness until 2026-11-01"),
     ]),
     ("bounded search, or the occurrence's witness only", [
         ("intersection / union / conjunction / disjunction", "search", "recorded replay: none (child undefined, no operand invented); free: a K × K pair search through the same compose face", "the primed bank, K = reconstructionBasisLimit (16); lane magnitudes read back after the forms"),
@@ -778,7 +778,7 @@ GO_INVERSE_NOTE = [
     "(DerivationReconstruction) inverts only recorded operators and leaves the search folds "
     "undefined rather than inventing operands; free generation decodes through GeneratePolicy "
     "and one bounded pair search",
-    "WITNESS here = the retained constituent of this occurrence, its journal frame (not the witness "
+    "WITNESS here = the retained constituent of this occurrence, its journal frame (not the sign "
     "operator). It is present for reconstruction and absent in free generation — which is why one "
     "operator can have two inverses here",
 ]

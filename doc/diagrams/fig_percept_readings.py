@@ -63,11 +63,11 @@ def make():
     b.append(txt(30, 582, "'that' binds and the definition kinds bark", anchor="start", fs=12, fill=GRY))
 
     b.append(rect(30, 620, W - 60, 52, GRY_L, stroke=GRY_MID, sw=1, rx=8))
-    b.append(txt(46, 641, "Built: interpret is mandatory in reading mode, the sign operation is declared as witness "
-                 "and valid at an open handle, and with a field the chooser may leave a percept alone.",
+    b.append(txt(46, 641, "Built (item 22, Codex, 2026-11-01): interpret mandatory in reading mode; sign at every "
+                 "interpreted leaf; the no-op's own-occurrence token when the forcing is lifted on the layer instance; no parameter.",
                  anchor="start", fs=12, fill=BLUE_DK))
-    b.append(txt(46, 661, "Decided 2026-11-01, not built (item 22): the rename to sign, sign at every interpreted "
-                 "leaf, and the no-op's token, reached in reading mode only with the forcing lifted.",
+    b.append(txt(46, 661, "The forcing stays on outside certificate (v). Lifting it in production is a later decision, "
+                 "with a field (FutureWork, \"Renamed sign\").",
                  anchor="start", fs=12, fill=BLUE_DK))
     return figure(W, H, "The readings of a percept: interpret or not; if so, a sign or a symbol",
                   "Orders.md §11 · Language.md, interpret · thinking spec §32.3–§32.4, item 22 (Alec, 2026-11-01)",
