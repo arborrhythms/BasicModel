@@ -389,25 +389,30 @@ nearest-truth lookups.
 
 ![Ternary Logic Operators](diagrams/ternary_logic.svg)
 
-*The figure is computed from the kernels in `bin/Layers.py` (regenerated 2026-11-01). As built, union is the elementwise max and intersection the minimum with a zero coordinate silent (audit 2026-10-30, Sections 1 and 3). RadMin and RadMax apply under `kind='radial'`, and their LogSumExp forms under `kind='soft'`; the note below that calls the soft forms the default predates the audit.*
+*The figure is computed from the kernels in `bin/Layers.py` (regenerated 2026-11-01). As built, union is the elementwise max and intersection the minimum with a zero coordinate silent (audit 2026-10-30, Sections 1 and 3). RadMin and RadMax apply under `kind='radial'`, and their LogSumExp forms under `kind='soft'`.*
 
 RadMin, RadMax, NOT, and NON operate over signed magnitude space `[-1, +1]`.
 Sign = direction of assertion; magnitude = strength; zero = **unknown**.
 $+1$ = True; $0$ = Unknown (no assertion); $-1$ = False. Magnitude ordering:
 $x \subset y$ iff $|x| < |y|$.
 
-> **Soft defaults (2026-05-29).** The DEFAULT bitonic kernels behind
-> `Ops.union` / `Ops.intersection` are the LSE-smoothed soft forms
-> (`kind='soft'`: `Ops._soft_radmax` / `Ops._soft_radmin`), so both
-> operands receive softmax-weighted gradient per cell (hard RadMax routed
-> gradient only to the winning operand, zeroing the loser's `.grad`). The
-> hard bodies survive as `kind='radial'`; the table below gives the hard
-> (radial) semantics, which the soft forms approach as $\tau \to 0$.
+> **Kernel kinds (2026-05-29; corrected 2026-11-01).** As built,
+> `Ops.union` is the elementwise max and `Ops.intersection` the minimum in
+> which a zero coordinate is silent (Sections 1 and 3, audit 2026-10-30);
+> neither is RadMin or RadMax. The `kind` argument of the lift and lower
+> kernels selects the radial forms, and its default is `kind='strict'`.
+> `kind='radial'` gives the hard forms in the table below. `kind='soft'`
+> gives their LogSumExp forms (`Ops._soft_radmax` / `Ops._soft_radmin`),
+> in which both operands receive softmax-weighted gradient per cell (hard
+> RadMax routes gradient only to the winning operand) and which approach
+> the hard forms as $\tau \to 0$. The 2026-05-29 statement that the soft
+> forms are the default kernels behind `Ops.union` / `Ops.intersection` is
+> withdrawn.
 
 | Op | Behavior | Ternary truth table |
 |----|----------|---------------------|
-| **RadMin** (AND) | Sign disagree $\to$ 0; else $\mathrm{sign}(x) \cdot \min(|x|, |y|)$. Zero absorbing. | `[+1,0,0; 0,0,0; 0,0,-1]` |
-| **RadMax** (OR) | Sign disagree $\to$ 0; else $\mathrm{sign}(x) \cdot \max(|x|, |y|)$. Zero transparent ($\mathrm{RadMax}(x,0) = x$). | `[+1,+1,0; +1,0,-1; 0,-1,-1]` |
+| **RadMin** (`kind='radial'`) | Sign disagree $\to$ 0; else $\mathrm{sign}(x) \cdot \min(|x|, |y|)$. Zero absorbing. | `[+1,0,0; 0,0,0; 0,0,-1]` |
+| **RadMax** (`kind='radial'`) | Sign disagree $\to$ 0; else $\mathrm{sign}(x) \cdot \max(|x|, |y|)$. Zero transparent ($\mathrm{RadMax}(x,0) = x$). | `[+1,+1,0; +1,0,-1; 0,-1,-1]` |
 | **NOT** | $-x$. Involutive; preserves magnitude; $\mathrm{NOT}(0) = 0$. | input $\to$ -input |
 | **NON** | $1 - |x|$ (triangular residual). Full indeterminacy at $x = 0$, zero at $x = \pm 1$; completes the partition of unity $\mathrm{true} + \mathrm{false} + \mathrm{non} = 1$. Withdraws assertion (vs. NOT which inverts). | input $\to 1 - |\mathrm{input}|$ |
 
@@ -508,8 +513,10 @@ in `bin/Language.py`.
 
 | Operator | Type | Role | Behavior on Contradiction |
 |----------|------|------|---------------------------|
-| RadMin | Binary | Conjunction (AND) | Collapses to zero |
-| RadMax | Binary | Disjunction (OR) | Collapses to zero |
+| Intersection | Binary | Meet, the as-built default | Keeps the lower value; a zero coordinate is silent |
+| Union | Binary | Join, the as-built default | Keeps the higher value |
+| RadMin | Binary | Radial meet (`kind='radial'`) | Collapses to zero |
+| RadMax | Binary | Radial join (`kind='radial'`) | Collapses to zero |
 | NOT | Unary | Sign-flipping negation | N/A |
 | NON | Unary | Non-affirming negation | N/A |
 
