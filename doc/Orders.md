@@ -154,6 +154,16 @@ the name of the quotient. A definite with nothing accessible to bind to
 writes its occurrence and stays **unbound** until a referent appears
 (presupposition accommodation); it never asserts novelty.
 
+*Amended (Alec, 2026-11-01, resolving audit deviation 5 of 2026-10-30):
+"Water is a count noun with an elided form/shape in some contexts, so it's
+not a good example of a mass noun. Water would be order-1 at lowest, since
+it is an abstraction of an event." So the bare term "water" is not an
+order-0 mass term; it is order 1 at lowest, and "the water" selects a
+shaped portion, an individual at order 1, as the paragraph above and §10's
+2026-10-22 passage already have it. The build, which lowers only from
+order 2 and leaves an order-1 term at order 1, agrees; the deviation was
+the example, not the mechanism ([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 19).*
+
 *Worked example (Alec, 2026-10-16): "The water froze. It became ice," ice
 never perceived.* `the water` lowers a mass description to a portion and
 stays unbound; `it` binds to it; `ice` is a bare NP at order 2 with a

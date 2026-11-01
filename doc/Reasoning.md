@@ -91,10 +91,14 @@ these deletion certificates. A removed conclusion pins a complete surviving
 proof; losing a proof raises an unselected candidate's utility. This pass does
 not recursively prove claims or change stored evidence.
 
-*Not in the code at `3718d9d0dc` (audit 2026-10-30): `Forgetting.retention_values`
-uses the recorded surprise, the same-scope dissonance flag and the optional
-coverage term; no deducibility pass or deletion certificate exists. Whether
-to build it or retire the statement is Alec's call.*
+*Deleted as a requirement (Alec, 2026-11-01, resolving audit deviation 4 of
+2026-10-30): "Forgetting had been checking if rows were easily deductible;
+let's delete that requirement." Retention reads the recorded surprise, the
+same-scope dissonance flag and the optional coverage term
+(`Forgetting.retention_values`); there is no deducibility pass and no
+deletion certificate, and none is to be built. The paragraph above stays as
+the record; the forgetting spec keeps its text with this note
+([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 18).*
 
 Idea utility uses the recorded expectation discrepancy, treating missing
 surprise as unknown/high utility. Cheap dissonance compares opposing sources
