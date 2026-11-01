@@ -604,3 +604,17 @@ configuration. The development search was interrupted before choosing a final
 size; its partial results remain in the item 2.7 final-round receipt. No slow
 run was performed to register this test. The ordinary scoped and lesson gates
 remain in the current round.
+
+
+## Item 2.5 freeze: xfail what fails on an unresolved deviation (Alec, 2026-11-01)
+
+Alec: "You can implement everything and xfail what tests you need to, let's
+lock down what is working going forward." For item 2.5's stage 2 freeze
+([thinking spec §32.2](plans/2026-10-27-item2-5-thinking.md), item 14): a
+standing test or certificate that fails on a deviation the round does not
+resolve is marked `pytest.mark.xfail(strict=True, reason=...)` with the
+reason naming the deviation, listed in the return, and the round proceeds to
+the freeze; the receipts record the xfails. The round stops only for a
+source-hash mismatch or a numerical divergence, which stays fail-loud. `make
+test` remains the criterion: a strict xfail that starts passing fails the
+suite, and is removed together with the deviation it named.
