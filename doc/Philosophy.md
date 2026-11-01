@@ -2110,6 +2110,44 @@ it is unknowing rather than unknown. The design is in
 [Orders §11](Orders.md), "Witnessing gives a perceptual identity a
 null-concept".
 
+**Peirce's three signs, and a correction (Alec, 2026-11-01).** Alec, after
+Claude's reading that `witness` as built is called on a word's handle and
+never reaches a percept: "let's force a three way decision of an object
+(no op, sign(), or interpret() are the icon, sign, and symbol), so that
+the confusing term witness is replaced with pierces SIGN." The design is
+in [Orders §11](Orders.md), "The three readings forced". In this section's
+terms the correction is this. The model has perception in reading mode: of
+words, as forms. A word heard as a sound, a quoted word, an onomatopoeia,
+which is a sound rendered in letters, are percepts taken as what they are,
+and that reading is the no-op, Peirce's icon, the limit of resemblance
+where the thing stands for itself. It is *pratyakṣa*: the sound of the
+word (*śabda*) is a perceptible, and its meaning is not. What this section
+called `witness` is now `sign`, Peirce's index, and it is not the
+perception but the determination that a percept is pointed at, whose
+object a text cannot supply, so its token's content is zero; with a field
+it will be the pointed-at percept. `interpret` is the symbol, the
+determination of the word's meaning, which for Dharmakīrti is always
+*apoha*, conventional. So the sentence above that `witness` is
+*pratyakṣa* reads: the no-op is *pratyakṣa*, and `sign` and `interpret`
+are two determinations (*adhyavasāya*) that may follow it. Nothing before
+vision changes in [The witness and the testimony](#the-witness-and-the-testimony):
+objects still have no wheres the mind sees. What is added is that words
+do, and the no-op is how a word is seen without being read. Dharmakīrti
+would add that the onomatopoeia's resemblance to the bark is a fact about
+the percept and not the word's meaning, which is why the no-op is the
+right reading of the sound and `interpret` of the kind. The three readings
+are a forced choice at every leaf, by credit, and the configuration in
+which every leaf is the no-op is a real one. Jill Bolte Taylor's account
+of her stroke in *My Stroke of Insight* (2008) describes it: a colleague's
+words heard as the sounds of a golden retriever, digits matched by shape
+against a keypad with no meaning read from them, the inner chatter silent
+and the bounded self gone with it. In the model that is every leaf read as
+itself, nothing composed, the thought loop quiet, and the privileged MTM
+identity of
+[the afflicted mind](#the-afflicted-mind-and-the-transformation-of-the-basis-two-configurations-of-mtm-alecs-question-2026-10-23)
+unsupported: the enlightened column of that table, entered by a reading
+rather than a lesion.
+
 ## Summary
 
 | WikiOracle | Category | Buddhist Epistemology | Sanskrit |

@@ -428,6 +428,21 @@ fixed `.when`; re-reading refreshes its recency timestamp. It can be
 forgotten, after which the word is interpreted afresh. It has ordinary
 row provenance and does not inherit the sentence's source trust.
 
+**Amended (Alec, 2026-11-01): `interpret` is one of three forced readings.**
+"Every arriving word is interpreted under every binding" above is
+superseded. The compose chooser gives every percept at a leaf exactly one
+of three readings: the no-op, Peirce's icon, where the percept stands for
+itself and the leaf value is `interpret_I1`, the word-concept code; `sign`,
+Peirce's index, the operation first declared as `witness`, which opens the
+pointed-at occurrence's MTM token with the null-concept as its kind; and
+`interpret`, the symbol, the object above. The eager word transaction
+remains the admission of the form and the lookup of an existing
+association, mints nothing, and is not the reading; the derived index and
+the DEF rows are unchanged. The decision is forced in every mode and chosen
+by credit, with no word anchored to any reading
+([Orders §11](Orders.md), "The three readings forced";
+[thinking spec §32.3](plans/2026-10-27-item2-5-thinking.md), item 22).
+
 #### Tensor reverses for the compiled loops (2026-09-13)
 
 `LanguageSpace.reverse_binary_step(parent, op_local, valid, reference,
