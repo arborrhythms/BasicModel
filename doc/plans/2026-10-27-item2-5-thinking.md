@@ -2896,7 +2896,7 @@ Fit 5 therefore fails because its read-back decodes a root that the moved dictio
 ### 46.1 Text for Codex (2026-11-04, evening)
 
 ~~~
-Read §46. Items 82 to 91 come first, in this order: 90 (records), 85, 82, 86, 87, 88 and 89 (source), 83 and 84 (fit 5 and its peers), 91; then §44.1's items 71 to 73 on the repaired source. Approved as built: items 65, 67, 74's forward, 75, 76, 77, 78, 79, 80 and 81, except where §46 names a finding and the items below repair it.
+Read §46. Items 82 to 91 come first, in this order: 90 (records), 85, 82, 86, 87, 88 and 89 (source), 83 and 84 (fit 5 and its peers), 91; then §44.1's items 71 to 73 on the repaired source. Approved as built: items 65, 67, 74's forward, 75, 76, 77, 78, 79, 80 and 81, except where §46 names a finding and the items below repair it. Claude's receipts are in doc/benchmarks/2026-11-04-item2-5-claude-review45, called claude-review45 below.
 
 82. The presence read's inverse keeps the rails (item 74).
 - MeaningKernels.uncenter computes its forward from the carrier. Where the parts and every member are 1 it returns 2 - sum(w_r/t), which can be an ulp off 1, and FormCentroids.unary's in-chart test then rejects the right candidate. In float32, test_form_centroid_numerics' mixture (t = 1.0001624, so p = 1) decodes through the free unary step to the parent's own form on cf32ffd84391 (error .1) and to 6e-8 on 855dc08150d8 (claude-review45/presence/free_unary_step.py).
