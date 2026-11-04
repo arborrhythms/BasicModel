@@ -2579,3 +2579,19 @@ Read §42. Items 59, 62 and 63 are approved as built; item 61 is measured and it
 ### 42.1 Alec's answers (2026-11-03, late)
 
 On §42's decisions (a) and (b), the `XOR_grammar.xml` gate and the uniform fraction: "Please refine after more feedback from the run." Item 65 therefore waits; Codex proceeds with items 66 to 73, and the gate and the fraction are decided on item 71's receipts. Decisions (c) and (d) stand open. On the item 2.0 side the same evening: the behavioral chains are re-specified as one memory file and one linking function ([item 2.0 spec §9](2026-11-03-gradient-projection.md)), and no learning-rate ordering is built, the ratio living in the model file.
+
+### 42.2 Text for Codex, revised after Alec's answers (2026-11-03, late)
+
+Alec deferred §42's decisions (a), the `XOR_grammar.xml` gate, and (b), the uniform fraction, until he has the feedback of a run; (c) and (d) stand open. The run therefore comes before those decisions and the freeze after them. This block replaces §42's.
+
+~~~
+Read §42 and §42.1; this block replaces §42's text. Items 59, 62 and 63 are approved as built; item 61 is measured and its cause is to be restated; item 60 is measured and its decision is Alec's; item 64 is not offered. Alec has deferred §42's decisions (a), the XOR_grammar gate, and (b), the uniform fraction, until he has the feedback of a run; (c) and (d) stand open. The order:
+
+Now: §42's items 66, 68, 69 and 70 as written, and from item 67 the certificate for the unstarted-baseline branch and the sentence on the reserve-only handle rule.
+
+Then item 71, revised: on the candidate source that results, which is not yet a freeze, item 64's four arms and the discriminator, with the per-epoch maximum kept R + A of all four arms, each run's largest loss and gradient norm, and item 66's count of steps absorbed by the projection; and the maintained XOR_grammar gate unseeded five times, with the read-back texts of every run. Write the candidate's ports.json and ports.patch. Report all of it in §43 and stop for Alec's decisions.
+
+After Alec's decisions: item 65 if he chooses the retirement for (a); the rest of item 67 after (c); item 72 after (b), recording the uniform fraction that results; then item 73, revised: the freeze, one hash with ports.json and ports.patch, the default make test and make test_all green on it, item 71's runs repeated on the freeze hash if the source changed after them, and forced_configuration_passed. Then the round closes.
+
+Work on main. No seed pinning beyond Alec's recorded 41001, no resize, no language named in code, fail loud on construction errors; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
+~~~

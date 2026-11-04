@@ -44,7 +44,10 @@ and the remaining work is in items 2.0, 2, 1.5, 1 and 0, each marked
 [thinking spec §42](doc/plans/2026-10-27-item2-5-thinking.md).
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
-when item 2.5 completes, everything is on main, committed and pushed.
+when item 2.5 completes, everything is on main, committed and pushed, then
+each sub-repository is synced and the WikiOracle pointers are bumped and
+pushed (on 2026-11-03 `nanochat` had diverged from its origin, 103 commits
+ahead and 2 behind, so its sync needs Alec's merge or rebase choice).
 
 **History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
