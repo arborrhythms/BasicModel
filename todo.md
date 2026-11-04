@@ -50,8 +50,9 @@ pushed. `nanochat` carries no changes of ours (Alec, 2026-11-03): its fork
 is upstream of 2026-02-19 plus Alec's two commits (the subpath `API_URL` fix
 and the training-artifacts ignore), the recorded pointer `7be4dc3`; the local
 checkout carries upstream to 2026-07-03 with the ignore re-applied and lacks
-the `API_URL` fix, so its sync is a reset to the fork's commit unless Alec
-wants the July upstream merged into the fork.
+the `API_URL` fix, so its sync is a reset of the local checkout to the
+fork's commit `7be4dc3` (Alec, 2026-11-03), with nothing pushed and the
+pointer unchanged.
 
 **History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
