@@ -282,6 +282,18 @@ Alec settled the three open points of §7 in a parallel conversation ("Thinking 
 - Thought's last step must land on the order-0 codebook. A free vector off that manifold decodes to nothing useful.
 - Output is a sequence of order-0 points. The decoder is applied per item, and the ordering comes from thought.
 
+**Confirmed (Alec, 2026-11-03, late).** "It's basically what we have, but I think the gradient splitting gets cleaner, because reconstruction ceases to involve the grammar (although the generative grammar is still necessary for output)." The two chains under the loop are therefore:
+
+| Chain | Parameters |
+|---|---|
+| Shared | perception, input to order 0; the order-0 decoder, concept to form |
+| Reconstruction only | nothing |
+| Output only | thought: the compose grammar and its choosers, STM, MTM, LTM, the higher orders; and the generative grammar, the generate walk and its policy, which output still needs |
+
+The projection acts on the shared row only. Every grammar parameter has one writer, output. Today's reconstruction decoder is a generate walk, so the generate policy, the decoder's walk residual and the decoder walk's credit (§2, §3) are interim bookings on the reconstruction side; under the loop they all move to output.
+
+One thing to measure when the loop is built: on unlabelled text, grammar is trained today by reconstruction. Under the loop it is trained by the next sentence's order 0 alone, plus work. Acquisition on FineWeb then rests on next-sentence prediction, and the item 60 metrics should show whether that signal is enough.
+
 **Sequencing.** This is an architecture change, not this round's work. In this round:
 - §1 (projection), §3 (generate under one mechanism), §4 (decomposition teacher retired) and §5 (verb and modal teachers retired, the re-read, the assigner kept) are built as written.
 - Choice rewards go on the output side whole, with no split. That is where the loop puts them, and it needs no new machinery.
