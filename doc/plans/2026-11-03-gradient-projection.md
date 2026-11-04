@@ -239,7 +239,7 @@ Answered (Alec, 2026-11-03, late):
 
 Carried into the same round:
 - `separateChooser` false as the default (§1);
-- the item 60 metrics, which also judge this change. They drop chooser variance as a criterion and use instead:
+- the item 60 metrics, which also judge this change (the held-out set behind held-out cost is decided at the start of item 0, Alec, 2026-11-03; until then the round reports the other three). They drop chooser variance as a criterion and use instead:
   - held-out cost;
   - acquisition;
   - answers;

@@ -434,9 +434,12 @@ generation is expected at this stage and is recorded, not tuned away.
    recommended for repair by the decomposition teacher's retirement in 2.5's
    item 65) is run before and after that retirement with the chooser at the
    residual argmin; its class-accuracy sibling passes; no seed or budget
-   change. Output typing (parts-of-speech §4, carried from 3.5 line 7): the
-   `argout` prototypes, updated by occupation today, become a read of the
-   chooser's score when the one choice mechanism lands; until then unread.
+   change. Output typing (carried from 3.5 line 7; decided, Alec, 2026-11-03):
+   output types are per formal argument (`PartsOfSpeech.formal_arguments`,
+   the `argout` faces beside the `argin` faces) and collapse to parts of
+   speech as already described ([Language](doc/Language.md), "Distributional
+   parts of speech"); the `argout` prototypes are kept per formal argument
+   and read by the same occupation measure as the inputs.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or
@@ -820,6 +823,13 @@ generation is expected at this stage and is recorded, not tuned away.
 
 Everything that is decided in direction but not on this path is in
 [FutureWork](doc/FutureWork.md).
+
+   **Decisions collected at the start of item 0 (Alec, 2026-11-03):** the
+   evaluation harnesses below, declared before the run: item 8's causal
+   study (its 256-task held-out generator, the arms and the thresholds),
+   6.5's six learning gates (no harness yet), and the held-out set behind
+   the held-out cost metric of item 2.0's round; until then item 2.0
+   reports acquisition, answers and each chooser's departure win rate.
 
    **Carried into item 0 on 2026-11-03, from the items above 2.5 (audit):**
    - *From 9.* At the trained checkpoint, once `checkpoint_readiness` reads
