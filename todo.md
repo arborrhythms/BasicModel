@@ -415,7 +415,8 @@ generation is expected at this stage and is recorded, not tuned away.
    action only; `intuit()` within a step and expectation across steps are
    the order-0 operations. Reconstruction then ceases to involve the
    grammar; its build, reconstruction from order 0 with the two acceptance
-   checks of spec §8, is the item's last part. **Behavioral chains in MTM
+   checks of spec §8, is the item's last part
+   ([loop spec](doc/plans/2026-11-04-item2-0-order-zero-loop.md)). **Behavioral chains in MTM
    at order zero** (spec §9): MTM holds sequences of order-0 states beside
    its identities, threads occurrences into one event by gestalt properties
    as it threads mentions into one identity, and promotes a recurring chain

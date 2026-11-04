@@ -311,7 +311,7 @@ One thing to measure when the loop is built: on unlabelled text, grammar is trai
 - Choice rewards go on the output side whole, with no split. That is where the loop puts them, and it needs no new machinery.
 - Nothing moves reconstruction yet. The §6 terms stay, as decided.
 
-The loop itself is the next design item, for Alec to place. It needs its own plan: the order-0 decoder, MTM timelines with more than one state per identity, the state-of-affairs training of verbs and modals, and the two acceptance checks.
+The loop is item 2.0's last part. Its design in code names, after Alec's refinement (the decoder is the existing `reverse`, with the higher-order reverse involving symbols separated out; reconstruction keeps its place with the parallel conceptual field as intermediate state; output turns order-0 concepts into order-0 concepts and calls the same `reverse`), is [2026-11-04-item2-0-order-zero-loop.md](2026-11-04-item2-0-order-zero-loop.md), with six decisions for Alec in its §5.
 
 ## 9. Memory: one file, and MTM as one linking function across time (Claude, 2026-11-03, re-specified)
 
