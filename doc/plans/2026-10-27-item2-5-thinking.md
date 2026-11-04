@@ -2575,3 +2575,7 @@ Read §42. Items 59, 62 and 63 are approved as built; item 61 is measured and it
 72. Item 60's decision is Alec's (b). Record it in §43 with the uniform fraction that results; no further pairs. The receipts' per-kind `departure_acceptance` is the win rate; held-out cost belongs to item 2.0, which defines its set.
 73. The freeze, after item 65 and Alec's (a) to (d): one hash, with `ports.json` and `ports.patch` written for the round; the default `make test` and `make test_all` green on it; item 71's runs; `forced_configuration_passed`. Then the round closes, and item 2.0's Codex text follows from the commit of that tree.
 ~~~
+
+### 42.1 Alec's answers (2026-11-03, late)
+
+On §42's decisions (a) and (b), the `XOR_grammar.xml` gate and the uniform fraction: "Please refine after more feedback from the run." Item 65 therefore waits; Codex proceeds with items 66 to 73, and the gate and the fraction are decided on item 71's receipts. Decisions (c) and (d) stand open. On the item 2.0 side the same evening: the behavioral chains are re-specified as one memory file and one linking function ([item 2.0 spec §9](2026-11-03-gradient-projection.md)), and no learning-rate ordering is built, the ratio living in the model file.

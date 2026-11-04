@@ -229,11 +229,13 @@ Closed by the "Thinking is optional" loop (§8, Alec, 2026-11-03, evening):
 2. **The assigner.** It compares against the state of affairs, which later input sets. It stays.
 3. **Rates.** The loop orders the levels structurally. Proposed: measure, build no rates.
 
-For Alec's yes, from §8:
-- `compose_lesson` on the output side, since compose is thought under the loop;
-- thought's judge on unlabelled text is the next sentence's order 0;
-- no $\kappa$ rates, measurement only;
-- the loop as the next design item, with its own plan.
+Answered (Alec, 2026-11-03, late):
+- **Rates:** "Sure, keep in model file." No rate ordering is built; the ratio $\kappa$ is a parameter of the model file, default 1, so the ordering can be set if the receipts show it violated; the realized relative step per level is reported.
+- **The compose lesson's side:** Alec answered "If this is just learning MTM, and we have since resolved that it should operate on order zero also, then it should go in conceptual space as a method called from forward(), and probably ramsified." That is taken as the placement of MTM's linking (§9); the lesson owners follow their grammars, as §8 says. *Alec corrects the reading if it was meant otherwise.*
+- **D7, the residual split:** closed by the loop, "except as the grammar influences current symbolic activation state": System 2's activations are what expectation learns to predict.
+- **The `XOR_grammar.xml` gate and the uniform fraction:** "Please refine after more feedback from the run." Both decisions wait for item 64's reruns ([thinking spec §42](2026-10-27-item2-5-thinking.md)).
+- **The loop** is item 2.0's last part, not a separate item.
+- **The supplied `yes` admission** is carried into item 2.0 pending Alec's confirmation of that home over item 0.
 
 Carried into the same round:
 - `separateChooser` false as the default (§1);
@@ -311,15 +313,15 @@ One thing to measure when the loop is built: on unlabelled text, grammar is trai
 
 The loop itself is the next design item, for Alec to place. It needs its own plan: the order-0 decoder, MTM timelines with more than one state per identity, the state-of-affairs training of verbs and modals, and the two acceptance checks.
 
-## 9. Behavioral chains in MTM at order zero (Claude, 2026-11-03)
+## 9. Memory: one file, and MTM as one linking function across time (Claude, 2026-11-03, re-specified)
 
-The design is its own file, [2026-11-03-item2-0-behavioral-chains.md](2026-11-03-item2-0-behavioral-chains.md), written in code names with nine decisions for Alec (its §5) and its Codex text held until they are taken. In short:
+The design is its own file, [2026-11-03-item2-0-behavioral-chains.md](2026-11-03-item2-0-behavioral-chains.md). A first version with a separate chain entry, its own continuity rule, gestalt matcher, promotion branch and forgetting roots was withdrawn by Alec the same evening as too complex. Alec: "Placement should be a single file called memory that contains STM, MTM, and LTM. Note that MTM is just linking things across time; causality for events, identity for nouns, processes for verbs. It's the same function in each case." The re-specification:
 
-- **The entry.** A behavioral chain is an MTM `Token` keyed `('chain', n)` with a `states` field: a sequence of the kept sentences' own order-0 ideas, each with its sentence entry's `.when` stamp and its clause's `.where`. Chains share the pool's capacity, horizon and transient ids; no new knob. The names are *behavioral chain* (MTM) and *chained event concept* (LTM), never the bare word "chain", which already names an LTM1 reference tree.
-- **Continuity.** One open chain per stream, extended by the next kept close within the same document cover when the where bands overlap or abut; an unextended chain expires by the horizon.
-- **The same event.** A state that is not a continuation may be a stored chain happening again. The match is the bind's shape: a feature row per accessible chain (content meet, where overlap, tick adjacency, equal first difference, which is common fate) through a small policy with a dummy, chosen at the kept close in thought and credited like every other choice. Each matched state is one recurrence reading.
-- **Promotion.** At `conceptMintCount` recurrences of a chain of two or more states, `promote_candidates` writes LTM1 link rows `(OCCURRENCE, OCCURRENCE)` with bands, membership rows to the new concept, and one concept row at order 1, the class of the chain's recurrences, derived by `_part_order` from its `('occ', ...)` parts. No LTM0 row is written; the states are ideas already.
-- **Nouns.** An identity bound through `conceptMintCount` consecutive states of one chain receives one mention witness per state, the count `promote_candidates` already reads, and mints through `promote_identity` with no new count.
-- **Constraints kept.** No order-0 identity is ever opened, certified; chains are never prepended, so MTM stays out of reconstruction and the loop's acceptance check holds; every MTM write stays detached; chain decisions take the output-side credit of §2.
+- **One file.** `bin/Memory.py` holds `STMChunks`, `MediumTermMemory` with `Token`, `Timeline` and `Event`, `LTM0` (out of `Layers.py`) and `LTM1`, names and behaviour unchanged, the old modules removed.
+- **One function.** `ConceptualSpace.link(kind, occurrence, ...)`, called from `forward()` at the kept close, links occurrences across time in three kinds: identity (mentions of one thing, order 1 and above, today's bind), process (the events of one identity, today's timelines), causality (consecutive order-0 states of one course of events, new). It is written once, with no store-specific names inside it: a kind, the accessible entries of that kind, one feature row per candidate (content meet, continuity in the where and when bands, and for the ordered kinds the first difference, which is common fate), one small policy per kind with the withhold dummy, the chooser's choice, the ordinary credit.
+- **The entry** is the existing `Token` with a `link` field naming the kind; a causality entry's occurrences are the kept sentences' order-0 ideas in time order. No new entry type, no new knob; the pool's capacity, horizon and ids are shared.
+- **Promotion** is one rule for every kind: `conceptMintCount` recurrences promote the entry to a concept of its occurrences through `promote_identity`'s path, writing membership rows and, for the ordered kinds, successor rows between consecutive states. A promoted causality entry is the chained event concept.
+- **Nouns.** An identity linked through `conceptMintCount` consecutive states of one causality entry receives a mention witness per state and mints with no new count.
+- **Constraints kept.** No order-0 identity is opened; causality entries are never prepended, so MTM stays out of reconstruction; every write stays detached; the credit is the output-side credit of §2.
 
-Not in this round: state-of-affairs training of verbs from chain pairs (the loop's part of item 2.0), chain expectation, re-identification, branching chains.
+Three decisions remain in its §5: the move, one policy per kind, and process entries not promoted on their own.
