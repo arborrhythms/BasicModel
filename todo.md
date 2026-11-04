@@ -422,19 +422,22 @@ generation is expected at this stage and is recorded, not tuned away.
    with no thinking step and the order-zero reconstruction after
    understanding, in which symbols take part. **Behavioral chains in MTM
    at order zero** (spec §9, [memory spec](doc/plans/2026-11-03-item2-0-behavioral-chains.md)):
-   STM, MTM and LTM in one file, `bin/Memory.py`; MTM's one link function
-   makes an extended event (a sequence) when it links order-0 concepts and
-   an extended noun (an identity) when it links order-1 concepts, the
-   precursor of concepts and taxonomic relations; a recurring chain
-   promotes to a chained event concept; a thing that persists through a
-   chain is a noun candidate. **Basic percepts** (Alec, 2026-11-04,
+   STM, MTM and LTM in one file, `bin/Memory.py`; MTM's one link function,
+   with no branch on order, joins occurrences into collections whose intent
+   is a connected path (a time window and likeness enforced, place and
+   continuity scored): an extended event when it joins states, an extended
+   noun when it joins mentions, the precursor of concepts and taxonomic
+   relations; promotion writes the path (membership and successor rows); a
+   recurring chain promotes to a chained event concept; a thing that
+   persists through a chain is a noun candidate. **Basic percepts** (Alec, 2026-11-04,
    [spec](doc/plans/2026-11-04-item2-0-basic-percepts.md)): the last
    perceptual layer, a preallocated table sized in `data/model.xml`,
    whose percepts tie parts and wholes at their centroid, taking over that
    role from the first symbolic layer; order-0 concepts collect basic
    percepts as higher concepts collect symbols, order-0 symbols represent
    them, and symbolic space has no mereological read; the order-0 reverse
-   runs through basic percepts to bytes. Metrics for the round (thinking spec item 60): held-out
+   runs through basic percepts to bytes; one WholeSpace replaces the
+   per-stage copies left from the 2026-04-22 refactor. Metrics for the round (thinking spec item 60): held-out
    cost, acquisition, answers and each chooser's departure win rate, no
    chooser variance. Gates: the projection receipts per unit (cosine before
    projection, fraction of steps projected, fraction of output's gradient
@@ -507,6 +510,19 @@ generation is expected at this stage and is recorded, not tuned away.
    5.5" (FutureWork has it); the [catalogue](doc/specs/2026-09-29-operator-catalogue.md)
    §12 headings still say "(uncommitted)" and its table lists `bind` as
    open (decided, thought-loop plan §3–§4).
+   *Added 2026-11-04 (Alec: "I would prefer powers of two for all
+   constants"):* every constant set by hand becomes a power of two, and a
+   width made by adding such constants stays a sum. One pass over
+   `data/*.xml`, `data/model.xsd`, [Params](doc/Params.md) and the
+   `TheXMLConfig` defaults, from the
+   [audit](doc/plans/2026-11-04-powers-of-two-audit.md):
+   - round the free sizes of its §3; a fixture whose tests depend on a
+     value keeps it with a comment;
+   - remove the 152 declared widths that `resolve_identity_layout`
+     overwrites at load, so no configuration states a width the code does
+     not run, and correct `data/BasicModel.xml`'s header;
+   - delete the unread `timeout`; fix the side findings of its §6.
+   The measured values of its §4 are item 0's decisions.
    **Carried into item 2 on 2026-11-03 (audit of the items above 2.5):**
    D5 (2.8 spec §5 and §7; 2.7 record §38.6): regenerate the two
    decomposition snapshots under `output/item3-5-identity-initial/` from
@@ -860,6 +876,15 @@ Everything that is decided in direction but not on this path is in
    6.5's six learning gates (no harness yet), and the held-out set behind
    the held-out cost metric of item 2.0's round; until then item 2.0
    reports acquisition, answers and each chooser's departure win rate.
+   Added 2026-11-04, under Alec's powers-of-two rule
+   ([audit §4](doc/plans/2026-11-04-powers-of-two-audit.md)), the measured
+   constants:
+   - `batchSize` 28, the memory operating point: 16 or 32;
+   - `maxDocs` 11,207, chosen for 1,000,014 sentences: 8,192 or 16,384;
+   - the concept width 1256 (`meaningWidth` 896);
+   - `conceptLayers` 5: 4 or 8;
+   - the thresholds at 3 (`conceptMintCount`, `raiseCount`,
+     `mereologyRefinePatience`): 2 or 4.
 
    **Carried into item 0 on 2026-11-03, from the items above 2.5 (audit):**
    - *From 9.* At the trained checkpoint, once `checkpoint_readiness` reads

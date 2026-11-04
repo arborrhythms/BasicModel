@@ -143,3 +143,10 @@ After the review of the §41 return, inside item 2.0's one Codex text, on main, 
 
 Alec answered D4 and D6 "Good", asked about D1, D2 and D5, and answered D3 with "Order 0 concepts are a part of System 1" (§1, 7-10). D3 is consistent with that: expectation learns in System 1's space from System 2's activation of it; the same answer led to basic percepts. The revision: §3.1's decode runs through [basic percepts](2026-11-04-item2-0-basic-percepts.md), which corrects the first version's claim that the decode takes no perception; §3.3 records the stages and the two reconstructions; D1 becomes the order-zero reconstruction; D2 moves the reference term to memory's link; D5 becomes the check of thoughts as ideas and relations; gates 2-4 and 10 follow. D3, D4 and D6 stand as written; D1, D2 and D5 are open again in their revised form.
 
+
+## 8. Decided (Alec, 2026-11-04, second answers)
+
+- **D1** the order-zero reconstruction replaces `reconstruction.content`: "yes".
+- **D2** `reconstruction.reference` becomes memory's `memory.link_coverage`, one term for links of both orders: "good, nicely generic".
+- **D5** thoughts as ideas and relations: "when to do the implementation is your decision". Claude's decision: in the loop's own round, in item 2.0's one Codex text. The round rewrites `write_knowing`, `apply_thought_effect` and output's order 0' anyway, and building output on the appended columns only to remove them afterwards would port the same readers twice.
+- D3, D4 and D6 as recorded in §7. Every decision of §5 is now closed; the Codex text joins item 2.0's.
