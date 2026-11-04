@@ -422,9 +422,11 @@ generation is expected at this stage and is recorded, not tuned away.
    with no thinking step and the order-zero reconstruction after
    understanding, in which symbols take part. **Behavioral chains in MTM
    at order zero** (spec §9, [memory spec](doc/plans/2026-11-03-item2-0-behavioral-chains.md)):
-   STM, MTM and LTM in one file, `bin/Memory.py`; MTM's one link function,
-   with no branch on order, joins occurrences into collections whose intent
-   is a connected path (a time window and likeness enforced, place and
+   STM, MTM and LTM in one file, `bin/Memory.py`; STM a buffer of eight
+   ideas and relations; MTM, over its time horizon, knits STM's and LTM's
+   entries into per-order identities that maintain a state of affairs, by
+   one link function with no branch on order, each collection meant as a
+   connected path (a time window and likeness enforced, place and
    continuity scored): an extended event when it joins states, an extended
    noun when it joins mentions, the precursor of concepts and taxonomic
    relations; promotion writes the path (membership and successor rows); a
