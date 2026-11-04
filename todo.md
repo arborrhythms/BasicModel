@@ -31,6 +31,10 @@ output, `ActivationPredictor`'s prediction the bottom-up spread replacing
 location diffusion, D7 to future work, the cautious §16 package. Hand-off for a new conversation:
 [2026-10-29](doc/plans/2026-10-29-handoff-2-5.md). No `RUN_SLOW` before
 November.
+**Update 2026-11-03:** item 2.5's completion round is in review
+([thinking spec §41](doc/plans/2026-10-27-item2-5-thinking.md)). Item 2.0
+below, from the 2026-11-03 decisions
+([spec](doc/plans/2026-11-03-gradient-projection.md)), follows it.
 
 **History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
@@ -1801,6 +1805,45 @@ not by a passing identity lesson.
    wholes in order-0 space, judged together with the explicit chain
    (notes §9). Rounds sized at spec time. Exit: the spec's gates green and
    one thought episode's records replaying a derivation with its pair.
+- **2.0. One gradient, one choice mechanism, memory as the state of
+   affairs, and behavioral chains** (Alec, 2026-11-03;
+   [spec](doc/plans/2026-11-03-gradient-projection.md)). After item 2.5's
+   completion round, before item 2, and before item 0: the gradient
+   discussions Alec asked to settle "before step 0 large training", with
+   the chains he placed "before step 0". Decided 2026-11-03 (spec §§1–8):
+   `separateChooser` false by default, one update per sentence; output's
+   gradient projected one-sidedly against reconstruction's on every shared
+   unit (concept rows, definition edges, operator tensors), in place of
+   jitter, which stays at 0 as an optional annealing; generate's proposal
+   and credit made the same as compose's, and `walk_policy` retired; the
+   decomposition teacher retired, its chooser at the residual argmin; the
+   verb and modal teachers retired, verbs and modals trained by their
+   participation, credit crossing sentences through MTM by the re-read,
+   the verb-group assigner kept; every choice reward whole on the output
+   side; the answer walk's residual rebooked to output; the derivation
+   inverse given the forward's action context; the five terms evaluated on
+   the model's internals kept, recorded in
+   [GradientFlow](doc/GradientFlow.md#terms-on-internals). The order-zero
+   loop (spec §8, "thinking is optional"): reconstruction from order-0
+   concepts, understanding a thought process from order 0 to order 0,
+   output the same decoder on the result; compose, think and generate are
+   System 2 on System 1; MTM is the state of affairs, for thought and
+   action only; `intuit()` within a step and expectation across steps are
+   the order-0 operations. Reconstruction then ceases to involve the
+   grammar; its build, reconstruction from order 0 with the two acceptance
+   checks of spec §8, is the item's last part. **Behavioral chains in MTM
+   at order zero** (spec §9): MTM holds sequences of order-0 states beside
+   its identities, threads occurrences into one event by gestalt properties
+   as it threads mentions into one identity, and promotes a recurring chain
+   to a chained event concept; a thing that persists through a chain is a
+   noun candidate. Metrics for the round (thinking spec item 60): held-out
+   cost, acquisition, answers and each chooser's departure win rate, no
+   chooser variance. Gates: the projection receipts per unit (cosine before
+   projection, fraction of steps projected, fraction of output's gradient
+   removed), the realized relative step per level (codes, verbs, modals),
+   the tests named in spec §§3–5 ported with before/after, the chains
+   certificates of spec §9, `make test`. One Codex text, written after the
+   review of the §41 return.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or

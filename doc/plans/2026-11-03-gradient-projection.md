@@ -1,6 +1,6 @@
-# Gradient projection and one choice mechanism
+# Item 2.0: one gradient, one choice mechanism, the order-zero loop and behavioral chains
 
-2026-11-03. Alec's decisions and Claude's proposals from the gradient-factoring discussion that followed the review of the §39 return (`doc/plans/2026-10-27-item2-5-thinking.md` §40). None of this is in a Codex addendum yet. These items join the next round, after the review of the §41 return, once Alec confirms the points in §7.
+2026-11-03. The specification of item 2.0 (`todo.md`), which follows item 2.5's completion round: Alec's decisions and Claude's proposals from the gradient-factoring discussion that followed the review of the §39 return (`doc/plans/2026-10-27-item2-5-thinking.md` §40), the order-zero loop of the "Thinking is Optional" conversation (§8), and behavioral chains in MTM at order zero (§9). The Codex text for the round is written after the review of the §41 return.
 
 ## 1. Projection replaces jitter (Alec, 2026-11-03)
 
