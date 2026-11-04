@@ -549,7 +549,8 @@ mechanism gate under §12.1; its class and reconstruction bars remain unchanged.
 *A superseded passage beginning "The eager training audit additionally records the first deco" moved to [DevelopmentHistory](DevelopmentHistory.md) (2026-10-30).*
 
 
-The compose chooser retains its straight-through estimator. Target spellings,
+The compose chooser has no straight-through estimator: its choice is a hard
+argmax, trained by the score-function credit at a sampled departure. Target spellings,
 priming weights and selection addresses are detached. Durable LTM writes,
 finished episodes and retained expectations detach; they cannot reopen an old
 graph. Query masks, reference matching and work accounting remain hard
@@ -587,7 +588,9 @@ A zero-weight term does not require its source registry.
 The inventory below gives each active term's definition. “Origin” means the
 detached target mean square over exactly the error's active entries. R is the
 input reading and tied inverse; A is the answer reading map; E is the
-expectation predictor. Every A term stops at the understanding, in a trial and at batch end.
+expectation predictor. While `separateChooser` is true (the configured value), every A term
+stops at the understanding, in a trial and at batch end. With it false, the answer reads
+the understanding live and shares the trunk with R ([gradient projection §1](plans/2026-11-03-gradient-projection.md)).
 Every E term detaches both its source and target. Restricted backward also
 prevents generation or lessons from writing an operator.
 
@@ -597,7 +600,7 @@ Trained terms it does not list: `reconstruction.field`, `.content`,
 `.free_percept`, `.walk_residual`, `.decomposition`, `.walk_policy`,
 `.walk_credit`, `.compose_score_function`; `expectation.equal`, `.components`,
 `.bind_score_function`, `.reference_mentions`; `attention.reading_lesson`,
-`.candidate_departure`; `<owner>.definition_fold`;
+`.candidate_departure`; `<category>.definition_fold`;
 `<category>.thought_score_function`. The listed `reading_attention` and
 `expectation_policy` have no writer. The current mapping is
 `ObjectiveOwnership.registry_costs`.*
@@ -639,6 +642,29 @@ counts are reporting-only entries. The old `ws_codebook_recon` and
 `ws_semantic_arrangement` stash consumers have no production writer.
 Standalone embedding pretraining is separate from these costs. Contextual
 sphere rotation is retired; it is not an additional dictionary optimizer.
+
+<a id="terms-on-internals"></a>
+### Terms evaluated on the model's own internals (Alec, 2026-11-03)
+
+*Kept this round by Alec's decision (2026-11-03: "keeping them for this round seems fine"). What to revisit is in [Future work](FutureWork.md), "Terms evaluated on the model's own internals: kept this round", and the plan is [gradient projection §6](plans/2026-11-03-gradient-projection.md).*
+
+Alec ruled (2026-11-03) that a teacher should not reach into the model's internals. The plan therefore retires four teachers:
+- `reconstruction.walk_policy`;
+- `reconstruction.decomposition`;
+- `verb_teacher`;
+- `modal_teacher`.
+
+Five more trained terms are evaluated on the model's own states rather than on the input or a supplied answer. None of them supplies a target to a choice, so they stay:
+
+| Term | What it constrains | Weight and gradient |
+|---|---|---|
+| `reconstruction.walk_residual.{form,for,against}` | Operator round trip: the selected inverse's children, recomposed, against the walk's own parent, plus the energy left on an unresolved frontier | Weight 1, baseline 1. Fed by the decoder's kept walk and by the answer walk, so today the answer walk's residual is also booked as R |
+| `reconstruction.forward_discard` | Meaning that a forward compose step's output loses at coordinates where the step's inverse is undefined, along the kept derivation | `reconstructionScale`; zero unless the sentence field is on |
+| `<category>.definition_fold` | A class's sigma read covering the members the model itself minted or read as witnessed; a one-sided target $\max(q, \min(a, e))$ of the member's activation $a$ and stored evidence $e$ | Weight 1; category output when `outputSpace.concept_ids` is non-empty, otherwise reconstruction |
+| `reconstruction.reference` | $1 - \mathrm{covered}/\mathrm{mass}$ over the selected non-mint binds, measured against the record of the model's own bind choice | Weight .1. Both sides are detached, so it has no gradient and acts only as a value inside R and the choice credits |
+| `reconstruction.field` | The main reconstruction: a training-only reader follows the committed compose tree back to the model's own codebook atoms of the input words | `reconstructionScale`. While it is on, `reconstruction.free_bytes` is not trained |
+
+Every trained reconstruction writer therefore targets the model's own encodings or its self-consistency, not the raw input.
 
 <a id="per-operator-agreement"></a>
 

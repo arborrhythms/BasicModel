@@ -2387,3 +2387,29 @@ section is scheduled for the November round.
 **Sent (Alec, 2026-10-31, night).** The null-concept and `witness` go to Codex in the current item 2.5 round as addendum 4 ([thinking spec §32](plans/2026-10-27-item2-5-thinking.md)); "not yet sent" above is superseded. What stays future work here is the field itself: with vision, the token's value is the witnessed percept's content and its location the percept's, as "Indexicals under multimodal input" says.
 
 **Renamed `sign`; the icon is the no-op; interpretation initially forced (Alec, 2026-11-01).** Alec: "let's force a three way decision of an object (no op, sign(), or interpret() are the icon, sign, and symbol), so that the confusing term witness is replaced with pierces SIGN"; and, refining it the same day: "the better way to implement this is for interpret() to be optional, and if it happens, then the interpretation may be a sign or a symbol. Again, interpretation can be initially forced since words are so often meaningful beyond themselves." The operation of the paragraphs above is `sign`, Peirce's index, with the same token and the same null-concept, now one of the two readings an interpretation can have, the other being the symbol, the word's conventional object; the reading in which the percept stands for itself, Peirce's icon, is the no-op, a leaf not interpreted at all, and it has content, the word's own code, since the text is the field ([Orders §11](Orders.md), "The three readings forced"; [thinking spec §32.3 and §32.4](plans/2026-10-27-item2-5-thinking.md), item 22). What is future work is now exact: the forcing. In reading mode `interpret` stays mandatory, so the no-op is built but reached only inside a certificate; the field is where the chooser may leave a percept alone, as "Indexicals under multimodal input" and [thinking spec §32.1](plans/2026-10-27-item2-5-thinking.md) already say, and lifting the forcing for text, by a parameter or by the field's arrival, is a decision for then. With vision, a `sign` token's content is the pointed-at percept, found among the field's occurrences at the mention's `.where` and `.when`, and a no-op token's content is the percept itself, which the built close already gives a native percept. A sound field would make the icon literal: today the model's only sounds are onomatopoeia, sounds rendered in letters, and a bark heard would be a percept read as itself, with no word between.
+
+## Terms evaluated on the model's own internals: kept this round (Alec, 2026-11-03)
+
+*Kept for item 2.5's next round by Alec's decision; to be revisited. Their definitions are in [Gradient flow](GradientFlow.md#terms-on-internals), and the plan is [gradient projection §6](plans/2026-11-03-gradient-projection.md).*
+
+Alec ruled that "the teacher should not be reaching into the internals of the model". The plan therefore retires four teachers:
+- the walk teacher, which forced the generate policy onto the compose tree;
+- the decomposition teacher;
+- the verb teacher;
+- the modal teacher.
+
+A sweep of every trained term then found five more that are evaluated on the model's own states rather than on the input or a supplied answer. None of them supplies a target to a choice. Alec: "keeping them for this round seems fine". The five:
+
+- **Walk residual.** Recomposing a decoded parent's children should give the parent back.
+- **Forward discard.** A charge for meaning that a compose step throws away where its inverse cannot recover it.
+- **Definition fold.** A class's definition should cover the members the model itself minted or read.
+- **Reference.** A value, with no gradient, that rewards recovering the referent the model bound.
+- **Field reconstruction.** The main reconstruction, which decodes back along the reading's own tree to the model's codebook atoms of the input words.
+
+What remains is future work:
+
+1. **Revisit each term under the same principle.** Replace it by a target outside the model (the input, a supplied answer) or by the term's functional participation, as the verbs and modals now learn ([gradient projection §5](plans/2026-11-03-gradient-projection.md)). Otherwise, record why it stays.
+2. **Move reconstruction onto the free decoder.** Reconstruct with the free decoder, which chooses its own tree, against the input's bytes and percepts. While the field is on, byte-level reconstruction (`reconstruction.free_bytes`) is not trained, so every trained reconstruction writer today targets the model's own encodings or its self-consistency. This move would remove the last training-only path through the compose tree's internals. Its natural companion is "Expectation by inversion and the reconstruction audit" above.
+3. **Rebook the answer walk's residual.** Book it on the answer side. It is booked as reconstruction today, so under one summed backward, reconstruction's gradient runs down the answer path.
+
+Not scheduled.

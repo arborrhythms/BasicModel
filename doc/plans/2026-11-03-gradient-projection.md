@@ -27,24 +27,29 @@ The existing dissonance and understanding norms of `SentenceTraining.gradient_re
 
 The per-owner path remains for comparison. That is `separateChooser` true and `ObjectiveOwnership.backward_owned`, whose docstring reads "no gradient projection". Tests that assume the per-owner backward need repair when the default changes.
 
-## 2. Which side each term is on
+## 2. Two chains, and which side each term is on
 
-| Side | Terms |
+Alec (2026-11-03) described two complete gradient chains, input to reconstruction and input to output. Both share the gradient from the input up to the understanding and are separate after it. The code, traced 2026-11-03:
+
+- **Today, with `separateChooser` true, there is no shared trunk.** The answer reads a cut copy of the understanding, so A trains only its readers.
+- **With `separateChooser` false (§1), the trunk is shared.** Perception codes, definitions and the compose operators are reached by both chains.
+- **After the understanding, the two configurations differ.**
+  - In `data/model.xml`, answers are read directly from the end slots, so the chains are separate after the understanding, as Alec described.
+  - In `data/BasicModel.xml`, answers are generated (`answerSynthesis` true). Both chains run back out through the same operators and the same generate policy: the reconstruction decoder and the answer walk are one `_output_generate_walk`. The projection therefore also acts on those shared parts.
+
+| Chain | Terms |
 |---|---|
-| R | the reconstruction owner (field, part, iterations, walk residual, forward discard, content, reference), `compose_lesson`, expectation, attention, the penalty (once), the decoder walk's credit |
-| A | output (answer, prediction and the readers), `generate_lesson`, the output walk's credit, and every credit judged by R + A |
+| R | the reconstruction owner (field, part, iterations, the decoder's walk residual, forward discard, content, reference), `compose_lesson`, expectation, attention, the penalty (once), the decoder walk's credit, and the R part of each choice reward |
+| A | output (answer, prediction and the readers), `generate_lesson`, the answer walk's residual, the output walk's credit, and the A part of each choice reward |
 
-The credits judged by R + A are:
-- `reconstruction.compose_score_function`;
-- `expectation.bind_score_function`;
-- `attention.candidate_departure`;
-- the thought score function.
+**Each choice reward splits by chain.** This follows from Alec's picture.
+- **The rewards.** They are `reconstruction.compose_score_function`, `expectation.bind_score_function`, `attention.candidate_departure` and the thought score function.
+- **The split is exact.** Each reward is $\pi(a)\,\Delta C/q(a)$ with $\Delta C = \Delta R + \Delta A$. Because a reward is linear in $\Delta C$, it divides into $\pi(a)\,\Delta R/q(a)$ in the R chain and $\pi(a)\,\Delta A/q(a)$ in the A chain. `SentenceCredit.components` already keeps R and the answer apart.
+- **Effect on the chooser.** Suppose a departure helps the answer but hurts reconstruction. The projection then removes the answer part on the chooser, so the chooser is not trained toward that departure. Where reconstruction is indifferent, the answer part acts in full.
+- **Implementation note.** The two parts must share the combined tie mask, $\Delta C \ne 0$. Otherwise an exact tie with $\Delta R = -\Delta A \ne 0$ would leave a net update after projection.
+- **Keep rule.** Which trial is kept is still decided by R + A together. The receipts count the departures whose $\Delta R$ and $\Delta A$ disagree in sign, which is where the keep rule and the projected credit part.
 
-They go on the A side whole (proposed, §7):
-
-- Their judge is the keep rule's R + A cost. Kept whole, a chooser is trained toward what the keep rule keeps.
-- Splitting $\Delta C = \Delta R + \Delta A$ across the sides would remove the A part wherever the two parts disagree in sign. The chooser would then be trained away from departures the keep rule kept.
-- With compose features live, the compose credit writes the concepts it reads, so the chooser can use semantic information (Alec, 2026-11-03). On the A side those writes are subordinate to reconstruction. On weights that only credits write, the credit applies in full.
+**The answer walk's residual moves to A.** It is booked as `reconstruction.walk_residual` today (`Models.reverseOutput`), so under one summed backward, reconstruction's gradient runs down the answer path.
 
 Compose is part of reconstruction and generate is part of output (Alec, 2026-11-03), so `compose_lesson` is on the R side and `generate_lesson` on the A side.
 
@@ -134,7 +139,13 @@ The verb teacher trains the `lift` operator's `MeaningAction` (`Language.verb_ac
 - **The compose chooser's credit, through its live features.** This moves the action's outputs in the chooser's feature space. It says nothing about change.
 - **Reconstruction.** The inverse undoes each action exactly, so for intransitive verbs and adverbs it contributes nothing. For transitive verbs it contributes a defect (below).
 
-Nothing from a later sentence reaches them. Each sentence's graph is cut at its close, and prediction trains only the predictor.
+Nothing from a later sentence reaches them. Medium-term memory (MTM) carries state across sentences, but no gradient goes with it:
+- every MTM write is detached;
+- each close cuts the graph;
+- seats re-read stored values detached;
+- prediction trains only the predictor.
+
+Before this plan, the only training that used MTM across sentences was the verb teacher itself.
 
 Under `separateChooser` true, the value still configured, only reconstruction writes the actions. The teachers therefore go off together with the switch to `separateChooser` false (§1). Otherwise the actions would be trained by the defect alone.
 
@@ -154,7 +165,7 @@ Under `separateChooser` true, the value still configured, only reconstruction wr
 
 The teachers were bridging that gap.
 
-**Proposed: a cross-sentence re-read with no target.** When a later sentence seats a referent, its stored value $v$ is presented as $v + A_\theta(b) - \mathrm{sg}(A_\theta(b))$:
+**Credit crosses sentences through MTM: a re-read with no target.** Alec (2026-11-03): "Credit should cross sentences in virtue of training over MTM, which does maintain state across sentences." The re-read is how. When a later sentence seats a referent, its stored value $v$ is presented as $v + A_\theta(b) - \mathrm{sg}(A_\theta(b))$:
 - $b$ is the recorded input of the value's latest event: the before-state, the basis and the modifiers. The verb-phrase meaning would need to be recorded in place of the verb symbol.
 - $\mathrm{sg}$ stops the gradient.
 
@@ -166,11 +177,22 @@ Limits of the re-read:
 - truth and existence answers about modality stay symbolic;
 - a referent that is never read again under gradient teaches nothing.
 
-**Verb groups.** Group assignment happens inside the verb teacher: `VerbLearning.observe` calls `groups.observe` on the teacher's residuals. With the teacher retired, no group is ever assigned. Intransitive verbs stay in the identity basis, and the group reflections are dead. That conflicts with "Keep verb groups for intransitives" (Alec, 2026-10-23; `doc/plans/2026-10-23-verb-and-modal.md` §3). Two options:
-- make the group assignment a choice under the one mechanism (§3), where a departure tries another group and the same R + A comparison credits it (proposed);
-- drop the groups, so intransitive verbs act in the identity basis.
+**Verb groups keep their assigner, through MTM.** The assigner is `VerbGroups.observe` (`MeaningKernels`), and its only caller is `VerbLearning.observe`.
+- **How it works.** It runs on the host and moves no weight. On a verb's third distinct failed fit (residual above `verbGroupFit`, .1), it joins the best existing group or opens a new one. Its residuals are no-gradient evaluations of the action under each group against the referent's later MTM value: a cross-sentence comparison over MTM.
+- **What is kept.** `VerbLearning.observe` keeps the pairing, the residuals, `groups.observe` and the taught marking. Only its loss (`errors.add('verb_teacher', ...)`) and the `register` calls at the close go. "Keep verb groups for intransitives" (Alec, 2026-10-23; `doc/plans/2026-10-23-verb-and-modal.md` §3) then still holds.
+- **Who shapes the bases.** Every group starts as the identity, and no fit moves its basis toward the observed change. An assigned group is used by the forward `lift`, so the same sentence's readers write it, and with the re-read, so do later reads of the referent. Participation shapes the bases; the assigner chooses among them.
 
-**A defect to fix in any case.** The derivation inverse calls `reverse_blocks` without the forward's action context (`DerivationReconstruction.inverse_step`). A transitive `lift` acts in its object's basis going forward but is undone in the identity basis. Reconstruction then pushes transitive verbs' object bases toward the identity. The fix is to pass the recorded object value and group into `reverse_blocks`, which already accepts them.
+Caveats on the assigner:
+- **It is still a comparison on the model's internals,** used only to choose a group and moving no weight. Alec to confirm this is acceptable (§7).
+- **It evaluates the verb word's own code,** while the forward `lift` receives the composed verb-phrase meaning. It should read the recorded verb-phrase meaning, which the re-read records anyway.
+- **It also runs during evaluation.** It is not gated by training, so evaluation can assign groups.
+
+**A defect to fix in any case.** The derivation inverse calls `reverse_blocks` without the forward's action context (`DerivationReconstruction.inverse_step`). The walks' recomposition (`Generative.native_recompose`) also passes none.
+- **Transitive verbs.** A transitive `lift` acts in its object's basis going forward but is undone in the identity basis, so reconstruction pushes transitive verbs' object bases toward the identity.
+- **Grouped intransitive verbs.** An intransitive verb with a group is affected the same way.
+- **Adverbs.** The `adverb` action always uses its one basis, forward and inverse, so it is unaffected.
+
+The fix is to pass the recorded object value and group into `reverse_blocks`, which already accepts them.
 
 **Rate.** Alec's ordering still applies to the actions themselves: codes first, then verbs, then modals. With no teacher term left to slow down, optimizer parameter groups set it: $\kappa\eta$ for the `lift` action and $\kappa^2\eta$ for the `adverb` action, with $\eta$ the base learning rate (0.001) and $\kappa = .1$ proposed. Wherever one objective is the main writer of a coordinate, Adam divides out a loss weight, so the rate must sit on the step. The receipt reports each action's realized relative step $\|\Delta\theta\|/\|\theta\|$ per epoch beside the codes'.
 
@@ -199,13 +221,13 @@ Confirmed (Alec, 2026-11-03):
 - **Generate.** Its proposal and credit are made the same as compose's, and `walk_policy` is retired (§3).
 - **Decomposition teacher.** It is retired, and the chooser stays at the residual argmin (§4).
 - **Verbs and modals.** They learn by participation, and their teachers are retired (§5).
+- **Credit across sentences.** Credit crosses sentences through MTM (§5), which the re-read implements.
+- **The §6 terms.** They are kept this round. They are recorded in [Gradient flow](../GradientFlow.md#terms-on-internals) and in [Future work](../FutureWork.md), "Terms evaluated on the model's own internals: kept this round".
 
 Open:
-1. Credits judged by R + A kept whole on the A side, with the decoder walk's credit on R (§2).
-2. The cross-sentence re-read (§5).
-3. Verb groups: assigned as a credited choice, or dropped (§5).
-4. The rate ordering by parameter groups (§5).
-5. The terms in §6 kept this round.
+1. Choice rewards split by chain (§2).
+2. Verb groups keep their MTM assigner, with only the teacher's loss removed. To confirm: a comparison on internals used only to choose a group (§5).
+3. The rate ordering by parameter groups (§5).
 
 Carried into the same round:
 - `separateChooser` false as the default (§1);
