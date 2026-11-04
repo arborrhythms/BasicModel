@@ -52,7 +52,7 @@ The generate policy also decodes the understanding for reconstruction (`Models._
 
 Code to change: `backward_owned` reads `compose_lesson`, `generate_lesson` and `chooser` as reconstruction. `GrammarLessons` already books `generate.choice` with objective output.
 
-The two retired teachers (§3, §4) leave the table, and the verb and modal teachers leave both sums (§5).
+The retired teachers leave the table: `walk_policy` (§3), the decomposition teacher (§4), and the verb and modal teachers (§5).
 
 ## 3. One mechanism for every choice (Alec's point 2)
 
@@ -121,36 +121,63 @@ Tests:
 - Tests of the static `DecompositionChooser.teacher_loss` go if that method is deleted.
 - Tests of the chooser's initial behaviour stay. `::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order` would then describe a state production no longer reaches.
 
-## 5. Verb and modal teachers (Alec's concern, saved)
+## 5. Verbs and modals learn by participation (Alec, 2026-11-03)
 
-- The verb teacher trains the `lift` operator's `MeaningAction` (`Language.verb_action`). The modal teacher trains the `adverb` operator's (`Language.modifier_action`).
-- Both detach their inputs (`MeaningAction.teacher`, `ModalLearning.teacher`). Each therefore writes only its action's readout, group reflections and object vectors.
-- Compose uses the same action when reading (the `Layers` forward) and when inverting (`reverse_blocks`). Reconstruction therefore writes it too, and under the single backward so does output.
-- Both are registered at the close with weight .1, in the reconstruction owner, so jitter scales them with reconstruction.
+Alec ruled that by default, verbs and modals are trained by their functional participation in the sentence. The verb and modal teachers (`VerbLearning`, `ModalLearning`) are retired. Like `walk_policy`, both take their targets from the model's own derivation:
+- **Verb teacher.** Its input is the recorded `lift` operand state. Its target is the referent's medium-term value, which the model's own compose transaction set.
+- **Modal teacher.** It pairs two compose frames from the same tick.
 
-**Both also take their targets from the model's own derivation (inventory, 2026-11-03).** That bears on §3's ruling:
-- **Verb.** Its input is the operand state of the recorded `lift` action in the compose frames. Its target is the referent's medium-term value, which the model's own compose transaction set, joined with the re-mention's composed value at the later close.
-- **Modal.** Its target and input are two compose frames from the same tick: the alternative timeline's result and the actual timeline's result, paired by the model's identity handle. It is a commutation constraint between two outputs of the same adverb action.
+The verb teacher trains the `lift` operator's `MeaningAction` (`Language.verb_action`), and the modal teacher trains the `adverb` operator's (`Language.modifier_action`). Only the embedding configurations build these actions (`data/BasicModel.xml`, `data/BasicModel_corpus.xml`). `data/model.xml` is numeric and builds none.
 
-Neither teaches a choice, and neither is an external observation. Alec to rule whether they stay (§7). If they stay, the rate method below applies.
+**What trains them without the teachers** (traced 2026-11-03, read-only, with one update per sentence):
+- **The same sentence's answer, where it has one.** Both configurations set `answerSynthesis` true, and the answer reads the clause's state through question conditioning and the output walk.
+- **The compose chooser's credit, through its live features.** This moves the action's outputs in the chooser's feature space. It says nothing about change.
+- **Reconstruction.** The inverse undoes each action exactly, so for intransitive verbs and adverbs it contributes nothing. For transitive verbs it contributes a defect (below).
 
-Alec's principle (2026-11-03) is that their rate of adaptation must be less than that of their underlying constituents:
-- the verb action's constituents are the concept codes it maps (the state before and after, the verb, the object);
-- the modal action's constituents are events the verb action produced, plus modifiers.
+Nothing from a later sentence reaches them. Each sentence's graph is cut at its close, and prediction trains only the predictor.
 
-The order is therefore: codes, then the first difference (the verb), then the second difference (the modal).
+Under `separateChooser` true, the value still configured, only reconstruction writes the actions. The teachers therefore go off together with the switch to `separateChooser` false (§1). Otherwise the actions would be trained by the defect alone.
 
-Proposed method:
+**The first difference.**
+- A `lift`'s output becomes the subject's new state in its identity seat (`ChunkJournal`).
+- Whatever reads that state with gradient tells the verb what the state should have become. The verb therefore learns the change that makes later reads of its referent right, rather than a fitted ratio of after to before.
+- It also learns on the input it actually receives, the composed verb-phrase meaning. The teacher used the verb word's own code.
 
-- **The rate lives on the step, not on the loss weight.** Wherever a teacher is the main writer of a coordinate, Adam divides out its weight, and the step is about $\eta$ whatever the weight is.
-- **The teachers get their own step.**
-  - A third gradient call computes the teacher terms alone. It is cheap, because their inputs are detached: the graph is just the action applied to a few stored vectors.
-  - Its own Adam state applies the result, at $\kappa\eta$ for the verb teacher and $\kappa^2\eta$ for the modal teacher.
-  - $\eta$ is the base learning rate (0.001) and $\kappa$ a configured ratio (.1 proposed).
-- **Each order of difference then adapts a factor $\kappa$ slower than what it is built on.** Reconstruction's own writes to the actions keep the full rate, and the teacher terms leave the R and A sums.
-- **The ordering is measured.** The receipt reports the realized relative step $\|\Delta\theta\|/\|\theta\|$ per epoch for the codes, the verb action and the modal action.
+**The second difference.**
+- An adverb makes its clause modal, which moves the clause to the alternative timeline (`ChunkJournal`: a modal clause forces timeline 1).
+- Its result is written only to the subject's alternative-timeline seat. The actual seat keeps the verb's result.
+- The modifier therefore learns what readers of the alternative seat need beyond what readers of the actual seat need. The second difference is the gap between what the two seats must carry, with no comparison term.
 
-A simpler alternative is optimizer parameter groups at $\kappa\eta$ and $\kappa^2\eta$ for the two actions. That saves the third call. But it also slows reconstruction's writes to the actions, and it leaves the teacher-to-reconstruction mix on them unchanged.
+**The gap.** Today the only reader with gradient is the same sentence:
+- a story verb ("Felix went to the park") receives no credit from a later question about Felix;
+- later questions read a modal's alternative state only symbolically (`TimelineRead`).
+
+The teachers were bridging that gap.
+
+**Proposed: a cross-sentence re-read with no target.** When a later sentence seats a referent, its stored value $v$ is presented as $v + A_\theta(b) - \mathrm{sg}(A_\theta(b))$:
+- $b$ is the recorded input of the value's latest event: the before-state, the basis and the modifiers. The verb-phrase meaning would need to be recorded in place of the verb symbol.
+- $\mathrm{sg}$ stops the gradient.
+
+The presented value equals $v$, so the next sentence still sees state. But the later sentence's own answer and chooser now credit the action $A_\theta$ that made it. Nothing is compared with a target; the later sentence's external objectives are the judge. The verb is credited by later reads of its referent, and the modifier by later reads of the alternative seat.
+
+Limits of the re-read:
+- it credits only the latest event on each seat;
+- it takes the gradient at the current parameters, for a value made with older ones;
+- truth and existence answers about modality stay symbolic;
+- a referent that is never read again under gradient teaches nothing.
+
+**Verb groups.** Group assignment happens inside the verb teacher: `VerbLearning.observe` calls `groups.observe` on the teacher's residuals. With the teacher retired, no group is ever assigned. Intransitive verbs stay in the identity basis, and the group reflections are dead. That conflicts with "Keep verb groups for intransitives" (Alec, 2026-10-23; `doc/plans/2026-10-23-verb-and-modal.md` §3). Two options:
+- make the group assignment a choice under the one mechanism (§3), where a departure tries another group and the same R + A comparison credits it (proposed);
+- drop the groups, so intransitive verbs act in the identity basis.
+
+**A defect to fix in any case.** The derivation inverse calls `reverse_blocks` without the forward's action context (`DerivationReconstruction.inverse_step`). A transitive `lift` acts in its object's basis going forward but is undone in the identity basis. Reconstruction then pushes transitive verbs' object bases toward the identity. The fix is to pass the recorded object value and group into `reverse_blocks`, which already accepts them.
+
+**Rate.** Alec's ordering still applies to the actions themselves: codes first, then verbs, then modals. With no teacher term left to slow down, optimizer parameter groups set it: $\kappa\eta$ for the `lift` action and $\kappa^2\eta$ for the `adverb` action, with $\eta$ the base learning rate (0.001) and $\kappa = .1$ proposed. Wherever one objective is the main writer of a coordinate, Adam divides out a loss weight, so the rate must sit on the step. The receipt reports each action's realized relative step $\|\Delta\theta\|/\|\theta\|$ per epoch beside the codes'.
+
+**Tests that go with the teachers:**
+- the four tests of `test_verb_learning.py`;
+- `test_modal_timelines.py::test_a_modifier_without_an_equal_time_alternative_teaches_nothing`;
+- `test_modal_timelines.py::test_equal_time_teacher_uses_only_defined_coordinates_once_and_defers_its_graph`.
 
 ## 6. Other trained terms evaluated on the model's internals
 
@@ -166,12 +193,18 @@ A sweep of every trained registration in `bin/` (2026-11-03, read-only) found no
 
 **Note on `reconstruction.field`.** While the field is on, byte-level reconstruction (`free_bytes`) is not trained. Every reconstruction writer therefore targets the model's own encodings or its self-consistency, not raw input. A later round could move reconstruction onto the free decoder, which chooses its own tree, against bytes and percepts. That would remove the last training-only path through compose internals. It is not proposed now.
 
-## 7. For Alec to confirm
+## 7. Decisions and open points
 
-1. Credits judged by R + A whole on the A side, with the decoder walk's credit split out onto R (§2).
-2. Generate's proposal and credit made the same as compose's; `walk_policy` retired (§3; the retirement is Alec's ruling).
-3. The decomposition teacher retired, and the chooser kept at the residual argmin (§4).
-4. Whether the verb and modal teachers stay, given that they constrain the model's own states (§5). If they stay: their own step at $\kappa\eta$ and $\kappa^2\eta$ with $\kappa = .1$, or the parameter-group alternative.
+Confirmed (Alec, 2026-11-03):
+- **Generate.** Its proposal and credit are made the same as compose's, and `walk_policy` is retired (§3).
+- **Decomposition teacher.** It is retired, and the chooser stays at the residual argmin (§4).
+- **Verbs and modals.** They learn by participation, and their teachers are retired (§5).
+
+Open:
+1. Credits judged by R + A kept whole on the A side, with the decoder walk's credit on R (§2).
+2. The cross-sentence re-read (§5).
+3. Verb groups: assigned as a credited choice, or dropped (§5).
+4. The rate ordering by parameter groups (§5).
 5. The terms in §6 kept this round.
 
 Carried into the same round:
