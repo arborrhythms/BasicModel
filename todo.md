@@ -42,6 +42,9 @@ blocks as they stood are in
 and the remaining work is in items 2.0, 2, 1.5, 1 and 0, each marked
 "Carried ... 2026-11-03". The §41 return is reviewed in
 [thinking spec §42](doc/plans/2026-10-27-item2-5-thinking.md).
+**Order and branches (Alec, 2026-11-03):** work happens on main, with no
+sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
+when item 2.5 completes, everything is on main, committed and pushed.
 
 **History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
@@ -567,6 +570,11 @@ generation is expected at this stage and is recorded, not tuned away.
    characters without the marker byte, and gives length and mint atoms a
    fill of ones (`bin/WordIdentity.py` still passes `bytes_of(atom[1])`);
    a certificate on `refresh_property_fills`, `containment_audit` unchanged.
+   **Order (Alec, 2026-11-03):** item 1.5 follows items 2.0 and 2 and is built
+   on main. The 2026-10-30 sandbox branch `item1-5-lookups-and-folds`
+   (`9151b6f10b`, about 1,400 lines over `EntryRead`, `LTM1`, `Layers`,
+   `MediumTermMemory` and `Spaces`) is a reference, ported onto main after
+   2.0's move of the three stores into `bin/Memory.py`, not merged.
 - **1. Compiler work.** *Added 2026-10-20:* the generated math suite under
    `RUN_SLOW` (item 3, moved from 3.5 on 2026-10-21) is the compiler test at scale — compiled and eager
    runs of the identical corpus, seed and budget agree in actions,
