@@ -42,7 +42,7 @@ Alec (2026-11-03) described two complete gradient chains, input to reconstructio
 | R | the reconstruction owner (field, part, iterations, the decoder's walk residual, forward discard, content, reference), `compose_lesson`, expectation, attention, the penalty (once), the decoder walk's credit, and the R part of each choice reward |
 | A | output (answer, prediction and the readers), `generate_lesson`, the answer walk's residual, the output walk's credit, and the A part of each choice reward |
 
-**Each choice reward splits by chain.** This follows from Alec's picture.
+**Each choice reward splits by chain.** *Superseded the same evening by §8: under the loop, reconstruction precedes thought, so every choice reward is on the output side whole. The split below is kept as the record.* This follows from Alec's picture.
 - **The rewards.** They are `reconstruction.compose_score_function`, `expectation.bind_score_function`, `attention.candidate_departure` and the thought score function.
 - **The split is exact.** Each reward is $\pi(a)\,\Delta C/q(a)$ with $\Delta C = \Delta R + \Delta A$. Because a reward is linear in $\Delta C$, it divides into $\pi(a)\,\Delta R/q(a)$ in the R chain and $\pi(a)\,\Delta A/q(a)$ in the A chain. `SentenceCredit.components` already keeps R and the answer apart.
 - **Effect on the chooser.** Suppose a departure helps the answer but hurts reconstruction. The projection then removes the answer part on the chooser, so the chooser is not trained toward that departure. Where reconstruction is indifferent, the answer part acts in full.
@@ -183,7 +183,7 @@ Limits of the re-read:
 - **Who shapes the bases.** Every group starts as the identity, and no fit moves its basis toward the observed change. An assigned group is used by the forward `lift`, so the same sentence's readers write it, and with the re-read, so do later reads of the referent. Participation shapes the bases; the assigner chooses among them.
 
 Caveats on the assigner:
-- **It is still a comparison on the model's internals,** used only to choose a group and moving no weight. Alec to confirm this is acceptable (§7).
+- **It compares against MTM.** Under §8, MTM is the state of affairs that later input sets, so the comparison is against the world as read, not against the model's choices. Settled.
 - **It evaluates the verb word's own code,** while the forward `lift` receives the composed verb-phrase meaning. It should read the recorded verb-phrase meaning, which the re-read records anyway.
 - **It also runs during evaluation.** It is not gated by training, so evaluation can assign groups.
 
@@ -213,7 +213,7 @@ A sweep of every trained registration in `bin/` (2026-11-03, read-only) found no
 | `reconstruction.reference` | reward only: the record of the model's own bind choice | on, weight .1 |
 | `reconstruction.field` | the core reconstruction: a training-only reader follows the committed compose tree to the model's own codebook atoms of the input words | on |
 
-**Note on `reconstruction.field`.** While the field is on, byte-level reconstruction (`free_bytes`) is not trained. Every reconstruction writer therefore targets the model's own encodings or its self-consistency, not raw input. A later round could move reconstruction onto the free decoder, which chooses its own tree, against bytes and percepts. That would remove the last training-only path through compose internals. It is not proposed now.
+**Note on `reconstruction.field`.** While the field is on, byte-level reconstruction (`free_bytes`) is not trained. Every reconstruction writer therefore targets the model's own encodings or its self-consistency, not raw input. The remedy is decided in §8: reconstruction from order 0, without grammar. It is not this round's work.
 
 ## 7. Decisions and open points
 
@@ -224,10 +224,16 @@ Confirmed (Alec, 2026-11-03):
 - **Credit across sentences.** Credit crosses sentences through MTM (§5), which the re-read implements.
 - **The §6 terms.** They are kept this round. They are recorded in [Gradient flow](../GradientFlow.md#terms-on-internals) and in [Future work](../FutureWork.md), "Terms evaluated on the model's own internals: kept this round".
 
-Open:
-1. Choice rewards split by chain (§2).
-2. Verb groups keep their MTM assigner, with only the teacher's loss removed. To confirm: a comparison on internals used only to choose a group (§5).
-3. The rate ordering by parameter groups (§5).
+Closed by the "Thinking is optional" loop (§8, Alec, 2026-11-03, evening):
+1. **Choice rewards.** Whole on the output side; no split (§8 supersedes the split in §2).
+2. **The assigner.** It compares against the state of affairs, which later input sets. It stays.
+3. **Rates.** The loop orders the levels structurally. Proposed: measure, build no rates.
+
+For Alec's yes, from §8:
+- `compose_lesson` on the output side, since compose is thought under the loop;
+- thought's judge on unlabelled text is the next sentence's order 0;
+- no $\kappa$ rates, measurement only;
+- the loop as the next design item, with its own plan.
 
 Carried into the same round:
 - `separateChooser` false as the default (§1);
@@ -238,3 +244,47 @@ Carried into the same round:
   - each chooser's departure win rate.
 
 Their per-epoch traces for the generate policy and the decoder's identity cost show whether retiring `walk_policy` costs acquisition.
+
+## 8. Thinking is optional: the loop that closes the open points (Alec, 2026-11-03, evening)
+
+Alec settled the three open points of §7 in a parallel conversation ("Thinking is Optional", 2026-11-03, 17:11 and 17:31). His statements, in his words:
+
+1. **MTM is a state of affairs.** "We might want to use it as a state of affairs of the world, something that is not entirely permanent or transitory. It would be used to track changes in objects, and could thus be used to train verbs and modal operators." And: "MTM is needed to support a state of affairs, in which static concepts are combined with dynamic verbs."
+2. **MTM is for thought and action only.** "Is it possible that MTM is not involved in perception/reconstruction, but only involved in thought and action? That means the perception and imagination are entirely free of grammar, which is the only mechanism that needs an identity store. It also implies that the identity store operates only on concepts of order-1 and higher."
+3. **Reconstruction from order zero; thought from order zero to order zero.** "Reconstruction should be initiated from order-zero concepts rather than explicit understanding (STM0 and STM1). Understanding is a thought process that transforms order-zero to a novel order-zero. Output, on that model, can be the same as reconstruction (except that it uses a transformed understanding). In this architecture, there would be one input to order-0 concepts, one reconstruction at that point, one thought process from order-0 back to order-0, and an output at that point."
+
+**The loop.** Input $\to$ order 0 $\to$ decode is reconstruction. Order 0 $\to$ thought $\to$ order $0'$ $\to$ the same decode is output. Thought holds everything with grammar: compose, STM0 and STM1, MTM, LTM and the higher orders. Perception and the decoder hold none of it. The loop closes without thought, which is why thinking is optional.
+
+**What it closes.**
+
+*Open point 1, the chains.* Perception (input to order 0) is shared by both chains. The decoder is shared too, by design: every reconstruction step trains the decoder that output uses. Thought is in the output chain only. Grammar is thought, so every choice is in the output chain only, and reconstruction does not depend on any choice. Consequences:
+- A choice's $\Delta R$ is zero by construction. Each choice reward is on the output side whole, and the split of §2 is not needed.
+- The projection acts on perception and the decoder only. Thought's parameters have one writer.
+- The keep rule compares the trials by their output cost and work. Reconstruction is the same for both trials, since it precedes thought.
+- "Compose is part of reconstruction" (§2) held while reconstruction ran back through the understanding. Under the loop, compose is thought, so `compose_lesson` is also on the output side. *For Alec's yes.*
+- Thought's judge on a sentence with no supplied answer is the next sentence: the production answer objective is next-sentence prediction (`bad0ae6894`, `d541c94a78`), so order $0'$ is compared with the next input's order 0. Reconstruction's judge is the current input. Both judges are outside the model. *Claude's reading, for Alec's yes.*
+
+*Open point 2, the verbs, the modals and the assigner.* MTM holds the state of affairs: an identity's static concepts at order 0, and the verbs that change them, with more than one state per identity. A verb is the difference between two states of one identity over time, and a modal is the difference between two states that cannot both be actual. The after-state is the later sentence's reading of the identity, so it is set by input. Training over MTM therefore compares a verb with the world as read, not with the model's own choices:
+- The group assigner's residuals compare the verb under each group with the identity's later state. That is the design's own definition of a verb, so the assigner stays as it is (§5), reading order-0 states.
+- The verb and modal teachers are retired in their present form (§5), where the states were compose frames. They return as training over the state of affairs: the verb is trained to map the identity's earlier order-0 state to its later one, and the modal to map the actual state to the alternative state at equal time. Both states are readings of input. The re-read of §5 stays beside this, so that later answers also credit the verb.
+
+*Open point 3, the rate ordering.* The conversation does not speak to rates. The loop orders the three levels structurally: order 0 is trained by reconstruction on every sentence, a verb only on pairs of sentences about one identity, and a modal only on actual and alternative pairs. Each level therefore gets fewer updates than the one below it. Proposal: build no $\kappa$ rates, report the realized relative step of each level per epoch, and add rates only if the receipt shows the ordering violated. *For Alec's yes.*
+
+*The §6 terms.* Reconstruction from order 0 removes `reconstruction.field`'s path through the compose tree, `forward_discard` along the kept derivation, and the decoder's walk residual from reconstruction. The grammar walk belongs to thought, so word order in output comes from thought. This supersedes the future-work item "Move reconstruction onto the free decoder": the decision is stronger, reconstruction from order 0 without grammar.
+
+**Acceptance checks** (from the conversation):
+- Feed an input's own order 0 through the decoder as if it were thought's output. The result must equal the reconstruction exactly.
+- Ablate STM and MTM. Reconstruction must be unchanged.
+
+**Tensions noted in the conversation.**
+- Kahneman's object files are perceptual (tracking through occlusion and motion). With MTM out of perception, that persistence is carried without identity, by STM chunks or priming. The grounding of MTM in object files is then revised: MTM is the discourse referent and file card, at order 1 and above.
+- Imagination renders grammar-free, but choosing which particular to imagine draws on MTM or LTM. The hand-off is one way: thought passes forms down, and the percept side never addresses MTM.
+- Thought's last step must land on the order-0 codebook. A free vector off that manifold decodes to nothing useful.
+- Output is a sequence of order-0 points. The decoder is applied per item, and the ordering comes from thought.
+
+**Sequencing.** This is an architecture change, not this round's work. In this round:
+- §1 (projection), §3 (generate under one mechanism), §4 (decomposition teacher retired) and §5 (verb and modal teachers retired, the re-read, the assigner kept) are built as written.
+- Choice rewards go on the output side whole, with no split. That is where the loop puts them, and it needs no new machinery.
+- Nothing moves reconstruction yet. The §6 terms stay, as decided.
+
+The loop itself is the next design item, for Alec to place. It needs its own plan: the order-0 decoder, MTM timelines with more than one state per identity, the state-of-affairs training of verbs and modals, and the two acceptance checks.
