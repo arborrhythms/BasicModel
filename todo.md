@@ -46,8 +46,12 @@ and the remaining work is in items 2.0, 2, 1.5, 1 and 0, each marked
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
 each sub-repository is synced and the WikiOracle pointers are bumped and
-pushed (on 2026-11-03 `nanochat` had diverged from its origin, 103 commits
-ahead and 2 behind, so its sync needs Alec's merge or rebase choice).
+pushed. `nanochat` carries no changes of ours (Alec, 2026-11-03): its fork
+is upstream of 2026-02-19 plus Alec's two commits (the subpath `API_URL` fix
+and the training-artifacts ignore), the recorded pointer `7be4dc3`; the local
+checkout carries upstream to 2026-07-03 with the ignore re-applied and lacks
+the `API_URL` fix, so its sync is a reset to the fork's commit unless Alec
+wants the July upstream merged into the fork.
 
 **History (2026-10-24):** Item 3.5 is LANDED. Iteration 1 published at BasicModel
 `f306fc28aa`, WikiOracle `319a793`; iteration 2 landed 2026-10-24 at
