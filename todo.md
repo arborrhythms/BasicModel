@@ -42,6 +42,14 @@ blocks as they stood are in
 and the remaining work is in items 2.0, 2, 1.5, 1 and 0, each marked
 "Carried ... 2026-11-03". The §41 return is reviewed in
 [thinking spec §42](doc/plans/2026-10-27-item2-5-thinking.md).
+**Update 2026-11-04:** the §43 return is reviewed in
+[thinking spec §44](doc/plans/2026-10-27-item2-5-thinking.md). Alec decided
+§42's (a) to (d): the decomposition teacher retires in 2.5 with the chooser
+at the fixed residual argmin; the uniform fraction stays .5; a whole is read
+at its presence; and, with (c), one rule for evidence, "evidence belongs to
+its source" ([Architecture](doc/Architecture.md); the alternatives in
+[FutureWork](doc/FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary)).
+The Codex text is §44.1: items 65 to 81, then the freeze.
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
@@ -445,8 +453,11 @@ generation is expected at this stage and is recorded, not tuned away.
    projection, fraction of steps projected, fraction of output's gradient
    removed), the realized relative step per level (codes, verbs, modals),
    the tests named in spec §§3–5 ported with before/after, the gates of
-   the loop, memory and basic-percepts specs, `make test`. One Codex text, written after the
-   review of the §41 return.
+   the loop, memory and basic-percepts specs, `make test`. Prerequisite
+   (2026-11-04): the gradient spikes item 2.5's arms showed with
+   `separateChooser` false, item 2.0's default (thinking spec §44, finding 6),
+   attributed by 2.5's item 75 and repaired before item 2.0's measurements.
+   One Codex text, written after the review of the §41 return.
    **Carried into item 2.0 on 2026-11-03 (audit of items 2.7, 8 and 3.5):**
    the supplied `yes` admission defect (2.7 record §47: 31 of 32 lesson-13
    absences are "yes" missing from the terminal bank): §38.1's three-stage

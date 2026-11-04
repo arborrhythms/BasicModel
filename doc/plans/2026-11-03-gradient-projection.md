@@ -16,7 +16,9 @@ Reconstruction's gradient is never altered. Output keeps every component that do
 
 **Jitter.** `reconstructionJitter` stays, with default 0 as now. It can be retrofitted as an annealing of reconstruction's strength if rich input does not supply the slack; rich input is the preferred method. The projection is invariant to the scale of $g_R$, so jitter would only reweight the final sum.
 
-**Adam.** The projection guarantees that output's gradient adds no first-order increase of $L_R$. Adam rescales each coordinate afterwards, so the guarantee holds for the gradient but not exactly for the step. If the receipts show reconstruction rising where output was projected, take the inner product in Adam's metric instead: weight each coordinate by $1/(\sqrt{\hat v}+\epsilon)$ from the optimizer's second moment.
+**The step** (corrected 2026-11-04, thinking spec §44). Reconstruction-owned parameters are stepped by SGD with momentum .9 and no variance normalization (`Models.py` about 2882 to 2889), not Adam; this covers the concept rows, the definition edges, the primitive memberships and the operator tensors. The projection guarantees that output's gradient adds no first-order increase of $L_R$. The step also carries .9 of the previous velocity, so the guarantee holds for the gradient and not exactly for the step. If the receipts show reconstruction rising where output was projected, project the momentum-carried step instead of the gradient. A unit stepped by Adam rescales each coordinate after the projection; there the inner product can be taken in Adam's metric, weighting each coordinate by $1/(\sqrt{\hat v}+\epsilon)$.
+
+**Prerequisite (2026-11-04).** Item 2.5's arms with `separateChooser` false showed optimizer gradient norms of $1.05 \times 10^{11}$ on the primitive memberships, $9.9 \times 10^{9}$ on a lift operator and $2.1 \times 10^{8}$ from the chooser objective; the default arm peaked at 916,140 (thinking spec §44, finding 6). Item 2.0 makes `separateChooser` false the default, so its measurements wait until those producers are attributed (item 2.5's item 75) and repaired.
 
 **Receipts.** Per unit and per epoch, report:
 - the cosine of $g_R$ and $g_A$ before projection;
@@ -115,16 +117,16 @@ Every choice then has one proposal family, one comparison, one judge and one cre
 `reconstruction.decomposition` (`Models._decomposition_teacher_loss`) has the character of `walk_policy`. It teaches the `DecompositionChooser` which operand pair the compose tree used at each node, evaluated on the tree's own parent states. It is on in default training.
 
 - **Sole writer.** It is the only writer of the chooser's five weights. The features are detached, the choice is a hard argmax, and no credit reaches the pair choice.
-- **Without it.** The weights stay at their initial $[1,0,0,0,0]$, which is exactly the residual argmin. That is the fix the 6.9 plan §24.4 recommended for the read-back collapse, and `doc/Architecture.md` already expects the chooser to become a lookup once inverses are exact.
+- **Without it.** The weights stay at their initial $[1,0,0,0,0]$, which is exactly the residual argmin. It gives priming no weight, as the 6.9 plan §24.4 did for the word read-back, and `doc/Architecture.md` already expects the chooser to become a lookup once inverses are exact.
 - **Measured benefit.** Ordered pair picks went from 2/4 to 4/4 (6.8 §17, §18). Reconstruction is scored by multiset, which was 40/40 either way.
 - **Measured harms.** The 6.8 §23 run-10 miss, where the argmin would have been right. The §41.3 divergence, where one step took the chooser's weight norm from 1.0 to $3.74\times10^8$; float32 seed 2 later reached a loss of $7.78\times10^{21}$.
 
-Proposal: retire the teacher and keep the chooser at the residual argmin. If ordered-pair accuracy later shows a need, bring the pair choice under the one mechanism (§3) rather than restoring the teacher. Pair alternatives would then be departures in the decoder's comparison, credited by identity cost.
+Decided (Alec, 2026-11-03; moved into item 2.5 on 2026-11-04, thinking spec §44, decision (a)). The teacher retires in item 2.5's completion round. The chooser is the fixed joint residual argmin over form and both meaning lanes, out of every optimizer group. It is a chooser of the generate grammar, System 2, whose one writer is output (§8).
+- *A learned policy later.* If answers later show errors of pair orientation, or near-ties among approximate inverses, the pair choice joins output's comparison (`WalkTrials.output_pair`, answer cost plus residual) under §3's proposal and credit. It keeps the joint residual in the score, takes no feature from the derivation's operand order, and uses a fixed score scale, never a division by the parent's energy (thinking spec §41.3). It is not credited by the decoder's identity cost, which the loop removes from reconstruction ([loop spec](2026-11-04-item2-0-order-zero-loop.md) §3.2).
+- *Two dependences remain for that round.* The pair shortlist is by form cosine times priming, so meaning arbitrates only among the K form-nearest words per side (`Language.py` about 13711). Alec: meaning matters, particularly with large lexicons. Also, the decoder's basis includes a bounded snapshot of the forward's own activations (`Models.py` about 20186 to 20197).
+- *The XOR gate after the loop.* The `XOR_grammar.xml` gate keeps decoding the composed root through generate, with its contract unchanged: four of four multisets, transpositions allowed. It does not move to the input reconstruction from the order-0 field, which never reads the root.
 
-Tests:
-- `test_decomposition_chooser.py::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent` and `test_native_attention_field.py::test_decomposition_targets_follow_actual_reversed_candidate_reads` test the teacher and go with it.
-- Tests of the static `DecompositionChooser.teacher_loss` go if that method is deleted.
-- Tests of the chooser's initial behaviour stay. `::test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order` would then describe a state production no longer reaches.
+Tests: ported in item 2.5 (thinking spec §44.1, item 65).
 
 ## 5. Verbs and modals learn by participation (Alec, 2026-11-03)
 
@@ -194,7 +196,7 @@ Caveats on the assigner:
 
 The fix is to pass the recorded object value and group into `reverse_blocks`, which already accepts them.
 
-**Rate.** Alec's ordering still applies to the actions themselves: codes first, then verbs, then modals. With no teacher term left to slow down, optimizer parameter groups set it: $\kappa\eta$ for the `lift` action and $\kappa^2\eta$ for the `adverb` action, with $\eta$ the base learning rate (0.001) and $\kappa = .1$ proposed. Wherever one objective is the main writer of a coordinate, Adam divides out a loss weight, so the rate must sit on the step. The receipt reports each action's realized relative step $\|\Delta\theta\|/\|\theta\|$ per epoch beside the codes'.
+**Rate.** Alec's ordering still applies to the actions themselves: codes first, then verbs, then modals. With no teacher term left to slow down, optimizer parameter groups set it: $\kappa\eta$ for the `lift` action and $\kappa^2\eta$ for the `adverb` action, with $\eta$ the base learning rate (0.001) and $\kappa = .1$ proposed. These actions are reconstruction-owned and stepped by SGD with momentum, not Adam (thinking spec §44). The rate therefore sits on the step, in the optimizer's parameter groups, rather than on a loss weight, so that it orders the actions without changing what their objectives measure. The receipt reports each action's realized relative step $\|\Delta\theta\|/\|\theta\|$ per epoch beside the codes'.
 
 **Tests that go with the teachers:**
 - the four tests of `test_verb_learning.py`;

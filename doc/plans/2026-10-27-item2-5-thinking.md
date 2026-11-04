@@ -2595,3 +2595,190 @@ After Alec's decisions: item 65 if he chooses the retirement for (a); the rest o
 
 Work on main. No seed pinning beyond Alec's recorded 41001, no resize, no language named in code, fail loud on construction errors; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
 ~~~
+
+## 44. Review of the §43 return (Claude, 2026-11-04): the measurements exact; the three repairs approved; eight maintained tests broken; the whole memberships held at the cube's faces by momentum; Alec's decisions (a) to (d) and one rule for evidence
+
+The return was checked on the live tree, which equals candidate `855dc08150d8` in all 978 files of `return-candidate-source.json`'s snapshot, and against immutable copies of `3c0416a6d8f9`, `7e84661d7eca`, `8533ae0d7aa5` and `855dc08150d8`, each of which reproduces its manifest. Every number in §43.7, §43.9 and §43.11 to §43.15 was recomputed from the raw archives and matches. `ports.json` and `ports.patch` for `855dc08150d8` are exact against `6bafd5191962`: the patch applied to the base reproduces all 32 after-hashes. The source changed in three steps since §42: `7e84661d7eca` (the MTM restore after LTM0 and LTM1, and the unstarted-baseline certificate), `8533ae0d7aa5` (`generateBudget`, the structural trace capacity and `CompileGuard`) and `855dc08150d8` (the nested return). Every changed test hunk adds; none loosens an assertion, widens a tolerance, adds a skip, xfail or seed, or narrows an input.
+
+**Approved as built.** Items 66, 68, 69 and 70, with the records of §44.1's item 81. From item 67, the unstarted-baseline certificate (red at `test_epoch_start.py` about 273 on `3c0416a6d8f9`'s `PresentationMemory.py`, 41 cases green after) and the reserve-only sentence. The generation budget of §43.8: read once at construction, it feeds the three free-walk sites, and a recorded derivation keeps its full structural capacity and raises on truncation. The compile guard of §43.8: every `torch.compile` in `bin/` now goes through `CompileGuard.guarded_compile`. The nested-return repair of §43.10, red and green in both dtypes. The projection observer only reads.
+
+**What the return missed.**
+1. *Eight maintained cases fail.* They are in three unchanged files on `855dc08150d8`, and no selection ran them. `test_compose_records.py` fails five: its stubs set `_walk_budget`, and `_derivation_program` now calls `_derivation_trace_capacity` (`Models.py` about 12952). `test_sweep_compile_repair.py::test_reconstruction_brick_accepts_more_than_default_eight_shapes` passes nine widths through one phase; the guard now raises at the second, as `test_compile_guard.py` certifies, so Alec's no-recompile instruction reverses this test's contract. `test_util_device.py` fails two, because `util.compile` returns the guard's wrapper. Two comments contradict the guard (`util.py` about 811 to 816, `Models.py` about 12269 to 12271), and `doc/Params.md`'s `generateBudget` row was added without a before-and-after port.
+2. *The guard has not met a compiled lesson.* The arms and the discriminator pass `--eager`, so item 73's `make test` is its first broad exposure. Two same-phase variations are visible. `FailOnRecompileLimitHit` is not wrapped. A silent construction-time `except` remains in `_compiled_output_walk`.
+3. *Returns without a result.* The nested-return branch also changes every return from a child with no result. `completion_result` returns None for one, so the returned meaning now keeps the child's own pair and incomplete reason, where `materialize` wrote (0, 0) with `('open_reference',)`. This follows the ownership rule, and neither pinned trajectory changed; it is undocumented and uncertified.
+4. *The hash seed.* Unseeded runs neither pin nor record `PYTHONHASHSEED`: `run-candidate.py` (about 52 to 63) removes it except for the seed-47 default and the discriminator. The failed `8533ae0d7aa5` jitter run's hash seed was therefore never recorded, and §43.10's restoration covered the torch, NumPy and Python random streams only. Sentence 1's loss is identical in the replay (21.800628662109375), while its gradient norm already differs (43.13696249526144 against 43.13696249515101).
+5. *Momentum.* Reconstruction-owned parameters, the primitive memberships among them, are stepped by SGD with momentum .9 and no variance normalization (`Models.py` about 2882 to 2889, learning rate .001). `PrimitiveProperties.project` (`PerceptProperties.py` about 246 to 249) clamps the tensor and leaves the velocity, which reapplies a spike at .9 per update:
+   - (true, 0): both trial steps of sentence 4 apply its gradient of about 916,140 (optimizer steps 10 and 11, raw 916.14 then 1,740.67). The velocity then clips all 1,609 coordinates on 96 updates through sentence 52, and 1,606 on 122 more through sentence 113.
+   - (false, 0): sentence 70's spike clips 886 to 1,607 coordinates on all 91 remaining updates; the last raw update is 7,986.5.
+   - (false, .5): sentence 7's spike clips 119 to 890 coordinates on all 154 remaining updates.
+   Most of §43.12's "projection changed" counts are these echoes. Single steps at ordinary gradients also flip memberships from 0 to 1 (32 at (false, .5) step 4, 7 at (true, 0) step 440). In separate-chooser mode both trials are trained, and in 59 of the (true, 0) arm's 160 sentences the two trial losses are bit-identical, so the same derivation is trained twice.
+6. *Two more spikes.* (false, 0) sentence 104 carries 9,899,375,078.97 on `compose_binary_ops.8.LiftLayer`, from the reconstruction objective: dense SGD with no projection, a raw step of about $9.9 \times 10^6$, then carried by momentum. (false, .5)'s $2.14 \times 10^8$ at sentence 7 belongs to the chooser objective (`reconstruction.compose_score_function`: chooser norm 214,053,611 against reconstruction 230,697), not to reconstruction. Every event at or above $10^8$ is in a float32 arm with `separateChooser` false; (true, 0) peaks at 916,140 and float64 at 17,479. `separateChooser` false is item 2.0's default.
+7. *Provenance.* (true, 0) and the float64 discriminator are bitwise repeats of §43.9's runs: all 480 and 160 losses, gradient norms and projection norms are equal. The (false, 0) and uniform pair is a fresh unseeded construction (paired-start model `f493054e` against `e992366b` on `8533ae0d7aa5`), so its differences from §43.9, the $1.05 \times 10^{11}$ included, cannot be attributed to the repair.
+8. *An instrument's scale.* `xor-rate.py` (about 85 to 89) subtracts the echoic bank's score at unit weight, but the bank reaches the prediction at about one half. In the misses, `effective_grammar_xor_contrast` is therefore minus half the echoic contrast. `routes.json`'s `positive_absolute_grammar_contrast_epochs` and `final_grammar_xor_contrast` for the misses measure the echoic bank, not the grammar. §41.7's "nonzero effective grammar-score spread ... in every epoch" is an artifact for 41014, whose grammar-score spread is exactly zero in all 900 epochs.
+9. *Roots found by reference.* Every LTM1 relation that references a supplied occurrence becomes a root with its boundary-time evidence (`PresentationMemory.py` about 216 to 221). A history relation written after the supply that references the supplied occurrence, such as a familiar-tier membership (`FamiliarTier.py` about 639 to 645), would survive as given knowledge. This bears on (c).
+
+**Corrections to §42 (Claude).**
+- *"Never more than two distinct roots"* is wrong for one epoch: 41002 has three at epoch 302 (contrast .000421, MSE .249994). The inference stands and is sharper than §42 put it. `grammar_feature_contrast` is exactly zero in 2,698 of the misses' 2,700 epochs and at least .144 at every passing seed's last epoch. In the misses the heads' only XOR direction is the echoic bank's:
+  - `jacobian_xor_contrast` is .000188 to .0015, against .0883 to .923 in the passes;
+  - the Jacobian's third singular value is .00047 to .00285, against .116 to .297;
+  - head norm times `jacobian_xor_contrast` is .00012 to .0021, against .232 to .677, where an MSE below .20 needs an XOR output above .211.
+  §43.2's "near-zero-error affine solutions" are minimum-norm interpolations on a rank-4 Jacobian, whose norms do not separate the groups (up to 837 in the passes). §42 also called §41.7's effective figures exact and missed finding 8.
+- *"The Adam moment decaying over the next five sentences"* is wrong; finding 5 gives the optimizer and the tails. The momentum has been SGD since `bfe6a0d76f` (2026-10-03).
+- *"The exact slope 1/total of a whole read at mass $1.23 \times 10^{-7}$"* is a magnitude match. The pullback was never captured: the two captured at that mass have weight derivative exactly zero.
+- *"Agree ... for the first 4 to 10 sentences"*: 4, 4, 6 and 8, to a float32 ulp.
+- *Item 68's "900 epochs" for `test_mm_xor.py`'s docstring* was Claude's error. The module's bars are MM_xor to .20 within 200 epochs, MM_xor to the .25 floor (threshold .26) within 600, and the seeded MM_grammar readout to .20 within 900.
+- *The item 2.0 gradient spec's two Adam statements* assumed Adam for reconstruction-owned units. They are corrected there the same day.
+
+**Alec's decisions (2026-11-04).**
+
+- **(a) Retire the decomposition teacher now.** The inverse chooser stays the fixed joint residual argmin over form and both meaning lanes; there is no precedence or tolerance change and no replacement learning rule in 2.5. A learned top-down policy, if one is wanted later, is item 2.0's, credited only by output.
+  - *§43.17 settled.* Supervision by the bottom-up operand identities ends. Selection is top-down by the joint residual, independent of the derivation's operand order, with meaning in the score.
+  - *Why the teacher failed.* Its target could not be met. Conjunction and disjunction are commutative, so every target ties its transpose exactly and the cross-entropy never reaches zero. The weights drift onto the form-only activations (2.37 on fit against 4.85 and 7.81), whose additive score peaks at the repeated top word ("there there"). Of fifteen receipted unseeded runs, 8 passed, and their final weights fall into two clusters that separate passes from failures exactly.
+  - *Two dependences remain*, noted for item 2.0. The pair shortlist is by form cosine times priming, so meaning arbitrates only among the K form-nearest words per side. The decoder's basis includes a bounded snapshot of the forward's own activations.
+  - Alec had confirmed this retirement for item 2.0 on 2026-11-03 ([item 2.0 spec](2026-11-03-gradient-projection.md) §7); it now lands in 2.5.
+- **(b) The uniform fraction stays .5.** Seven matched first-epoch pairs give no basis to change it. On the six from sources without the §39.7 divergence:
+  - .5 has the lower mean in four, and the signed ranks split 11 to 10;
+  - the pooled means are 8.53 and 8.16;
+  - the spread between initializations exceeds every difference within a pair.
+  All seven ran with `separateChooser` false. .5 is item 4's designed default, and item 2.0 extends $\varphi$ to generation, where 1 would make the walks uniform over large menus.
+- **(c), and one rule for evidence.** Alec asked whether withdrawing evidence is psychologically consistent, and decided one rule for every place evidence is lost: **evidence belongs to the source that produced it, and lasts as long as that source is held.**
+  - *Within an epoch* the history is held. Forgetting removes whole memories by retention (trust, surprise, use and age) and never zeroes a belief, so a belief outlives the loss of its episode.
+  - *Testimony* carries its teller's authority on the outer relation only. Content embedded in a supply enters unverified, and belief in it comes from inference over the claim.
+  - *At an epoch boundary* the history is released, so everything it produced goes, in LTM0 and LTM1 alike. A row kept only because given knowledge refers to it keeps what it is: its endpoints or slots, tags and place and time bands. Both its evidence lanes are zero, and its access count and surprise return to their values at the epoch's start. Given knowledge keeps its supply's evidence. The epoch's start, intentional setup included, is not part of the history it re-presents.
+  - *After the last epoch* nothing resets.
+  So the conversational relation child of a supplied fact keeps its address and loses its evidence. §41.1's sentence stands, and §42's contradiction is resolved in its favour. The LTM0 dependencies' access counts and surprise, which `withdraw_origin` keeps today, go too, and so does finding 9's leak. The psychological reading: the boundary is not a psychological event but the re-presentation of one history to the weights. Its counterpart is amnesia with semantic memory intact, where what one was told survives and what one concluded from the lost episode does not. The rule is recorded in [Architecture](../Architecture.md) ("Evidence belongs to its source"). The alternative, belief persistence at the boundary, is in [Future work](../FutureWork.md), to revisit if necessary.
+- **(d) A whole is read at its presence** $p = \min(1, t)$, the convention WholeSpace already uses for the same memberships (`Spaces.py` about 20268 to 20272 and 20345 to 20348). There is no floor and no new constant.
+  - *What happens today.* Any whole with $t > 0$ enters `MeaningKernels.centroid` and `split_centroid` at full weight one half (`MeaningKernels.py` about 28 and 34). So a nearly absent whole moves a form halfway to its property code, the forward jumps at $t = 0$, and the weight pullback $(\mathrm{code}_r - \mathrm{mean})/t$ grows as presence vanishes (`FormCentroids.py` about 60).
+  - *Why not Codex's argument.* The scale-invariance argument of §43.4 treats the memberships as proportions; they are absolute conjunctive membership degrees in $[0, 1]$.
+
+**For item 2.0** (Claude's specs, corrected the same day):
+- the gradient spec's Adam statements;
+- its §4, where a learned pair policy is now credited only by output's comparison;
+- finding 6's spikes under `separateChooser` false, now a prerequisite of item 2.0's measurements;
+- the memory spec's promotion rows, which are history at the epoch boundary (§38.2 and the evidence rule);
+- the basic-percepts spec's one WholeSpace, which carries the presence read and must not inherit `PerceptProperties.reverse`'s and `reverse_poles`'s division by a byte sum.
+
+### 44.1 Text for Codex (2026-11-04)
+
+~~~
+Read §44. Alec decided §42's (a) to (d) on 2026-11-04 and, with (c), one rule for evidence: evidence belongs to the source that produced it, and lasts as long as that source is held. This block replaces §42.2's paragraph "After Alec's decisions". Approved as built: items 66, 68, 69 and 70; item 67's unstarted-baseline certificate and reserve-only sentence; the generation budget, the compile guard and the nested-return repair. The order: item 81 (records); items 65, 67, 74 and 77 to 80 (source); items 75 and 76 (instruments); item 71's runs; item 72's record; item 73.
+
+65. The XOR_grammar gate, by retiring the decomposition teacher (Alec's (a)). The chooser stays the fixed joint residual argmin over form and both meaning lanes. There is no precedence or tolerance change and no replacement learning rule.
+a. Retire reconstruction.decomposition: BasicModel._decomposition_teacher_loss, its call in _sentence_path_cost, its registration in train_trial and DecompositionChooser.teacher_loss go. reconstruction.walk_policy stays until item 2.0.
+b. The chooser weight is the constant [1, 0, 0, 0, 0]. It leaves every optimizer group (the extend in SymbolSpace.__init__ goes), and no objective writes it. A checkpoint that carries other chooser values loads with the key dropped and reported; those values are never installed. In _bounded_binary_reconstruction the shortlist, the eligibility masks, the joint residual and the exact-pair branch stay.
+c. Correct by exact replacement every text that describes the teacher: DecompositionChooser's module docstring, _bounded_binary_reconstruction's docstring ("initially least residual"), the comments above candidate_features and the exact-pair branch, and test_decomposition_chooser.py's module docstring. In GradientFlow.md: the reconstruction owner row, the list of retired teachers, and the bullet "The decomposition chooser learns the true pair", which becomes a dated note of this retirement.
+d. Tests, each with before and after text in the return.
+   - The teacher's own cases go: test_decomposition_chooser.py::test_teacher_recovers_true_shortlisted_pair_despite_misleading_priming, ::test_absent_target_is_counted_and_has_no_training_gradient and ::test_teacher_uses_resolved_input_rows_when_the_legacy_word_lane_is_absent.
+   - Elsewhere only the teacher's lines go:
+     - test_native_attention_field.py::test_decomposition_targets_follow_actual_reversed_candidate_reads keeps its field-read assertion in a teacher-free case;
+     - the two pair cases of test_reconstruction_magnitudes.py keep their pair_residual assertions;
+     - test_operators_final_b.py::test_one_signless_form_per_word_and_two_independent_recovered_lanes keeps its recovery, recomposition and zero-residual assertions;
+     - test_free_reconstruction.py drops the term from its registry set;
+     - test_generation_catalog.py and observer_probe.py follow the weight out of the optimizer, and the probe computes its shortlist coverage from the compose program;
+     - test/operators_run_audit.py (about 229 and 252, run through test_review14_contracts.py about 166) and fixtures/2026-10-03-operators-attention/review17_decomposition_probe.py stop patching the teacher.
+   - test_initial_choice_is_exactly_the_residual_argmin_without_rng stays.
+   - test_learned_orientation_wins_among_roundoff_exact_pairs_in_any_bank_order and test_operators_round1.py::test_saved_review22_miss_has_exact_argmin_precedence describe a learned state that production no longer reaches. Say for each whether it stays as a property of the mechanism or goes, and why.
+   - New certificate: after native training batches of data/XOR_grammar.xml, the chooser weight is exactly [1, 0, 0, 0, 0], it is in no optimizer group, and reconstruction.decomposition is absent from the registry.
+e. On item 71's source, run the maintained XOR_grammar fit eight times: unseeded, independent, 400 epochs each, each recording its hash seed (item 80). From each run record:
+   - both cases of the shared training: TestXorGrammarLearnsXor::test_xor_class_accuracy and the TestXorGrammarReconstruction case that the addendum-11 driver ran;
+   - every read-back text and the chooser weight;
+   - the number of read-backs in input order, as an observation only (conjunction and disjunction are commutative, and the contract counts multisets);
+   - per epoch, reconstruction.free_percept and reconstruction.free_bytes, which compare decoded leaves by position.
+   The contract is unchanged: four of four multisets in 400 epochs, unseeded, and no retry replaces a failure. If a run fails either case, record its read-backs with each operation's selected and best true pair residuals, as pair_diagnostics does, and stop for review.
+
+67. The evidence rule at the epoch boundary (Alec's (c)). At model_boundary(epoch_boundary=True) the history is released, so everything it produced goes, in LTM0 and LTM1 alike. The epoch's start, intentional setup included, is not part of the history it re-presents.
+- A row the history wrote that nothing given refers to is withdrawn, as now.
+- A row kept only because given knowledge refers to it keeps what it is: its endpoints or slots, context, source text, tags and percept bands. Both its evidence lanes are zero, and its access count and surprise return to their values at the epoch's start, or to a newly written row's values if the history wrote it during the epoch. This covers an LTM0 occurrence through clear_origin and an LTM1 relation that the supply did not write in a supplied fact's closure. Today withdraw_origin zeroes the lanes but keeps the history's access count and surprise, and retain_given copies the child's evidence (LTM1.py about 77 to 79).
+- Given knowledge keeps the evidence its supply gave it. A re-assertion is a supply, so it still raises a row already in the start by the per-lane maximum (LTM1.py about 84 to 90; test_epoch_start.py about 102 to 117). A given row's access count and surprise return to their epoch-start values, or a newly written row's, like every other product of the history.
+- A relation carries a supply's authority only if the supply wrote it. Record which relations a supply's closing created, when it writes them, under clause_assertions, on the symbol-root path (ClauseRow.write_clause about 548 to 549) and on the occurrence path (today collected at the boundary, PresentationMemory.py about 64). A root found by reference to a supplied occurrence (PresentationMemory.py about 216 to 221) keeps its evidence only if its supply wrote it. A history relation that references a supplied occurrence, such as a familiar-tier membership (FamiliarTier.py about 639 to 645), is history: withdrawn, or kept as an address with zero evidence if given knowledge refers to it. If recording on the occurrence path needs a choice this rule does not settle, stop and report it.
+Certificates, each red on 855dc08150d8 and green on the repair:
+(i) test_new_given_knowledge_retains_its_relation_and_transitive_dependencies writes its claim as its supply writes it, so that it is given. The child stays a history write. After each of two boundaries the test asserts:
+   - the child's endpoints, tags and percept equal to the saved row, both its evidence lanes zero, and its access count and surprise at a new row's values;
+   - the claim equal to its saved row;
+   - the LTM0 dependency's lanes zero, with its access count and surprise at its epoch-start values;
+   - a bank.add that re-asserts the child's pair during the epoch is back at zero after the next boundary.
+(ii) A write_clause supply whose outer relation names an existing history relation enters that relation with both lanes zero.
+(iii) A history relation written after a supply that references the supplied occurrence is withdrawn at the boundary.
+Native controls, green on both: a relation asserted by its own supply and later embedded by another supply keeps its asserted pair across two boundaries; an embedded relation the closing creates enters at (0, 0). The epoch-start, epoch-history, presentation-memory, assertion-provenance and nested-retention selections pass. In doc/Architecture.md, Claude has appended "Evidence belongs to its source (Alec, 2026-11-04)" at the end. Move it, by exact replacement, to follow "Epoch start and supplied relations", and change nothing in it but its cross-references. §41.1 stands.
+
+74. The whole read at its presence (Alec's (d)).
+- For a whole of total membership t (weighted_mean's second value), presence is p = min(1, t). WholeSpace.compute_word_property_event and compute_stage0_carrier already weight the same memberships this way (Spaces.py about 20268 to 20272 and 20345 to 20348).
+- MeaningKernels.centroid moves the parts toward the whole's mean by p/2, computed as a lerp so that its rails stay exact under assert_cube (Layers.py about 101 and 2525). split_centroid inverts the same equation, (parent - (p/2) mean) / (1 - p/2), before the count split. FormCentroids.unary and fit score their candidates by the same two equations.
+- At t = 0 nothing changes: no contribution and no gradient through the consumer.
+- Compute p times the mean as WholeSpace does, sum_r w_r code_r / max(1, t), so nothing divides by a small mass. The exact pullbacks are bounded: to weight r, (code_r - parts)/2 for 0 < t < 1 and (code_r - mean)/(2t) for t >= 1; to code r, w_r / (2 max(1, t)). Keep _WholeMean's exact-rail forward where the rails need it.
+- No floor, clamp, guard or new constant.
+Certificates, in float32 and float64: gradcheck, jvp and the compiled pullback. Use the captured sentence-4 whole (addendum-10/native-mean/whole-pullback-1.pt, t = 1.23037e-7) and a whole at the smallest positive normal mass. For each, the composed form is within t/2 of the parts in every coordinate, and the weight pullback is no larger than |code_r - parts| |g| / 2. Red on 855dc08150d8, green on the repair. A test whose expected form changes at 0 < t < 1 is re-derived from this contract and named in §45 with its old and new values; none is loosened. GradientFlow.md and Architecture.md describe the presence read by exact replacement where they describe the whole mean.
+
+75. Attribution of the large gradients, before and after 74.
+- What to observe, at every update that brings new gradient to wholeSpaces.2._owned_bases.what.primitive_properties.members or to compose_binary_ops.8.LiftLayer's parameters:
+  - the tensor's gradient norm, split by objective (reconstruction, chooser, output, expectation);
+  - for each whole read: t, its weight- and code-pullback norms, the cotangent norm arriving at its mean, its consumer (compose centroid, inverse split, candidate search) and the inverse steps above it;
+  - the largest per-coordinate gradient, with its row, byte and read.
+- What to run, on 855dc08150d8 and on the source with 74:
+  - the seed-47 (true, 0) diagnostic to sentence 4, which reproduces exactly (§43.4);
+  - (false, 0) to sentence 104 and (false, .5) to sentence 7, from their archived streams under a recorded hash seed (item 80). A replay that departs from its receipt's losses says where, and reports its own largest inflows instead.
+- State which reads and objectives produced 916,140, 1.04842e11, 9,899,375,078.97 and 2.14189e8, and whether 74 removes each.
+- A spike that 74 does not remove is named with its read, its formula and its objective. It is not repaired or guarded in this round: every event at or above 1e8 occurred under separateChooser false, item 2.0's default, and item 2.0 takes these up first. If one occurs under separateChooser true, stop for review.
+
+76. The optimizer record; no optimizer change.
+- Reconstruction-owned parameters, the primitive memberships among them, are stepped by SGD with momentum .9 and no variance normalization (Models.py about 2882 to 2889). PrimitiveProperties.project clamps the tensor but leaves its momentum buffer, and the read's straight-through rail keeps passing the outward gradient.
+- Each projection summary adds, at every update, the tensor's gradient norm before the step and its momentum-buffer norm after. It counts updates with new inflow apart from those changed only by carried velocity, and gives the coordinates still re-clamped at the last update.
+- On 855dc08150d8: (true, 0) re-clamps 1,606 coordinates through sentence 113; (false, 0) still re-clamps 886 coordinates at its last update; (false, .5) re-clamps 119 to 890 through its last.
+- In §43.4 and §43.12, replace the account with this: the projection bounds the parameter, not the velocity, with these tails. §43.4's proposal for (d) is superseded by Alec's decision.
+- Report after item 71's runs whether tails remain with 74. As a proposal only, say whether the velocity of the coordinates the projection clips should also be projected.
+
+77. The maintained tests the budget and the guard broke, with before and after text, each red on 855dc08150d8 and green after.
+- test_compose_records.py: its two stubs set _derivation_trace_capacity with the values they gave _walk_budget (five cases).
+- test_sweep_compile_repair.py::test_reconstruction_brick_accepts_more_than_default_eight_shapes passes nine widths through one phase, which Alec's no-recompile rule now refuses. Rewrite it to assert the guard's RuntimeError naming the callable at the second width, recorded as a reversed contract.
+- test_util_device.py::test_compile_tries_successive_backends and ::test_compile_raises_dynamo_recompile_limit_for_codebook_growth port to the guard's wrapper. State whether the 64-specialization limit contract still serves a purpose.
+- Correct the two comments the guard contradicts (util.py about 811 to 816, Models.py about 12269 to 12271).
+- Record doc/Params.md's generateBudget row as an edited document in the ports, with before and after.
+
+78. The compile guard's first compiled lesson.
+- The arms and the discriminator pass --eager, which sets TheCompileBackend to none. Item 73's make test, with MODEL_COMPILE unset (auto), is therefore the guard's first broad exposure. If it raises "Unexpected model recompilation", repair the producer with a width fixed at construction or a declared phase; never admit a shape.
+- Two candidates are visible:
+  - The answer walk passes basis, constituents, case_bank and whole_bank as either None or tensors. Its walk_bank width is limit without a structural bank and primed plus limit with one. output_walk_phase keys none of these (CompileGuard.py about 25 to 31; Models.py about 9784 to 9797; Generative.py about 256 to 268).
+  - percept_arrival_brick has no owner, so its phase omits training, yet it takes training as a Python bool (Expectation.py about 402; ModelAttention.py about 367 to 370).
+- Raise a recompile-limit hit (torch's FailOnRecompileLimitHit) as the guard's RuntimeError, naming the callable and the phase.
+- Remove the silent construction-time except in _compiled_output_walk (Models.py about 13472 to 13476), so a failed construction raises.
+- At Layers.py about 6442, report util.compile's fallback instead of silencing it with verbose=False.
+
+79. Returns without a result. completion_result returns None for a child with no result (ThoughtStream.py about 182 to 184), so every exhausted or concluded child (Models.py about 6224 to 6236, 6322 to 6333 and 6527 to 6531) now takes §43.10's new branch. Its returned meaning keeps the child's own pair and incomplete reason, where materialize used to write (0, 0) with ('open_reference',). This follows the ownership rule. State it in §43.10. Add a control to test_thought_intuition.py: an exhausted child under ask whose meaning has a nonzero pair. Assert the return record's meaning pair and incomplete reason, and that strict replay accepts the episode. Red on 8533ae0d7aa5, green on 855dc08150d8.
+
+80. The hash seed.
+- Every run records its PYTHONHASHSEED. A run with none pinned draws one, records it in its command record and passes it to its process; nothing is selected.
+- Establish whether training depends on it. On the restored jitter construction stream, run two sentences under two different recorded hash seeds, and twice under one. Report the first differing loss and gradient norm in §45.
+- If training depends on the hash seed, name the hash-ordered iteration that feeds a computation and make its order explicit at the producer. No seed is pinned to hide it.
+
+81. Records from existing receipts; no rerun.
+- §43.2. Replace the sentence beginning "Sampled frozen full-reader features" with what xor-ad9bc4c9e8c1's epochs.jsonl establish:
+  - grammar_feature_contrast is exactly zero in 2,698 of the misses' 2,700 epochs. It is nonzero only at 41002's epoch 302 (.000421) and 41014's epoch 1 (.413, before its collapse to one root), and at least .144 at every passing seed's last epoch.
+  - In the misses the heads' only XOR direction is the echoic bank's. jacobian_xor_contrast is .000188 to .0015, against .0883 to .923 in the passes. The Jacobian's third singular value is .00047 to .00285, against .116 to .297.
+  - Head norm times jacobian_xor_contrast is .00012 to .0021, against .232 to .677, where an MSE below .20 needs an XOR output above .211.
+  - The exact affine fits are minimum-norm interpolations on a rank-4 Jacobian. Their norms (1,528 to 11,600 in the misses, up to 837 in the passes) do not separate the groups.
+- The XOR instrument. xor-rate.py (about 85 to 89) subtracts the bank score at unit weight, but the bank reaches the prediction at about one half, so in the misses effective_grammar_xor_contrast is minus half the echoic contrast. Relabel or recompute routes.json's positive_absolute_grammar_contrast_epochs and final_grammar_xor_contrast for the misses. Correct §41.7's "nonzero effective grammar-score spread ... in every epoch": 41014's grammar-score spread is exactly zero in all 900 epochs.
+- Provenance, in §43.11 and §43.12:
+  - (true, 0) and the float64 discriminator are bitwise repeats of §43.9's runs.
+  - The (false, 0) and uniform pair is a fresh unseeded construction (paired-start model f493054e against e992366b on 8533ae0d7aa5), so its differences from §43.9, the 1.05e11 included, cannot be attributed to the repair.
+  - Name the second (false, 0) spike: sentence 104, 9,899,375,078.97, on compose_binary_ops.8.LiftLayer, from the reconstruction objective.
+  - Name (false, .5)'s sentence-7 spike as the chooser objective's (reconstruction.compose_score_function: chooser 214,053,611 against reconstruction 230,697).
+  - Every event at or above 1e8 is in a float32 arm with separateChooser false.
+- Separate-chooser mode trains both trials (Models.py about 21786 and 15204). In 59 of the (true, 0) arm's 160 sentences the two trial losses are bit-identical, so the same derivation is trained twice. Record it; item 2.0's single update per sentence removes it.
+- §43.10. The jitter replay's PYTHONHASHSEED was unset in both runs, so the failed run's hash seed was never recorded. The restoration covered only the torch, NumPy and Python random streams. Sentence 1's loss is identical, while its gradient norm already differs (43.13696249526144 against 43.13696249515101).
+- test_mm_xor.py's docstring states all three bars: MM_xor to .20 within 200 epochs (test_convergence); MM_xor to the .25 floor, threshold .26, within 600 (test_learns_xor_signal); and the seeded MM_grammar readout to .20 within 900. The 900 asked for in item 68 was Claude's error.
+
+71. The runs, on the source with items 65, 67, 74 and 77 to 80:
+- the three lesson-13 arms (true, 0), (false, 0) and (false, .5), and the float64 discriminator, each recording its hash seed. Record the per-epoch maximum kept R + A, each run's largest loss and gradient norm by objective, item 75's attribution, item 76's counts, and the bound and exact answers;
+- item 65's eight XOR_grammar fits.
+No uniform-fraction control (item 72). Report in §45. Stop for review if a run fails, if an XOR fit fails either case, or if a spike of item 75 survives under separateChooser true.
+
+72. The uniform fraction stays .5 (explorationUniformFraction, item 4's B3 default); no source or configuration change. Record in §45 the seven matched first-epoch pairs: §39.7 on the rejected 6bafd5191962; §41.10's 42001 to 42004 on 9e22f09939e3; §43.9 on 8533ae0d7aa5; §43.14 on 855dc08150d8.
+- For each pair give its mean, median and maximum kept R + A, its compose departures kept/eligible, and the first sentence at which its arms differ.
+- State that the §43.9 and §43.14 pairs are different initializations, so their opposite signs cannot be attributed to the repair.
+- State that all seven ran with separateChooser false.
+No further pairs.
+
+73. Then the freeze: one hash, with ports.json and ports.patch, documents included; the default make test and make test_all green on it; item 71's runs on the freeze hash, repeated if the source changed after them; forced_configuration_passed. Return for Claude's review. The round closes when Claude accepts the freeze, and item 2.0's Codex text follows from the commit of that tree.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams, no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
+~~~

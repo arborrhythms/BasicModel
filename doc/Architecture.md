@@ -2406,3 +2406,19 @@ Trailing columns with zero extent in every stream are omitted before crossing
 events with features and attention brackets. Interior gaps remain, preserving
 canonical tile adjacency. The reading axis,
 B28/W256 carriers and constructed inventories keep their configured sizes.
+
+### Evidence belongs to its source (Alec, 2026-11-04)
+
+Evidence belongs to the source that produced it, and lasts as long as that source is held.
+
+- **Within an epoch** the history is held. Forgetting removes whole memories whose retention (trust, surprise, use and age) is low. It never zeroes a belief, so a belief outlives the loss of its episode. [Forgetting](../bin/Forgetting.py)
+- **Testimony** carries its teller's authority on the outer relation only. Content embedded in a supply enters unverified, with both evidence lanes at zero, and belief in it comes from inference over the claim. [Assertion provenance](../test/test_assertion_provenance.py)
+- **At an epoch boundary** the history is released, so everything it produced goes, in LTM0 and LTM1 alike.
+  - A row the history wrote is withdrawn.
+  - A row kept only because given knowledge refers to it keeps what it is: its endpoints or slots, tags, and place and time bands. Both its evidence lanes are zero, and its access count and surprise return to their values at the epoch's start.
+  - A relation carries a supply's authority only if the supply wrote it.
+  - Given knowledge keeps the evidence its supply gave it, and after the boundary it is the only source of belief in what it mentions.
+  - The epoch's start, intentional setup included, is not part of the history it re-presents. The learned weights, the optimizer's state and the minted concepts are not memory of the history, and they stay.
+- **After the last epoch** nothing resets, so a trained model follows only the first two rules.
+
+The epoch boundary is not a psychological event but the re-presentation of one history to the weights. Its psychological counterpart is amnesia with semantic memory intact (McClelland, McNaughton and O'Reilly 1995): what one was told survives, and what one concluded from the lost episode does not. The alternative, belief persistence at the boundary, is in [Future work](FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary), to revisit if necessary. It is implemented in item 2.5's completion round ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)).
