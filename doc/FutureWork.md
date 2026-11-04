@@ -2398,6 +2398,8 @@ Alec ruled that "the teacher should not be reaching into the internals of the mo
 - the verb teacher;
 - the modal teacher.
 
+*Update (2026-11-04).* The decomposition teacher retired early, in item 2.5, by Alec's decision (a) ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)); the pair chooser is the fixed joint residual argmin. The walk teacher stays until item 2.0. It trains the generate policy only at roots that recompose exactly. At the read-back that failed XOR_grammar's fit 5, a root no longer recomposed exactly after the final update, and there the policy chose STOP ([thinking spec §46](plans/2026-10-27-item2-5-thinking.md)).
+
 A sweep of every trained term then found five more that are evaluated on the model's own states rather than on the input or a supplied answer. None of them supplies a target to a choice. Alec: "keeping them for this round seems fine". The five:
 
 - **Walk residual.** Recomposing a decoded parent's children should give the parent back.

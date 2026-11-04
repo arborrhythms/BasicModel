@@ -50,6 +50,13 @@ at its presence; and, with (c), one rule for evidence, "evidence belongs to
 its source" ([Architecture](doc/Architecture.md); the alternatives in
 [FutureWork](doc/FutureWork.md#belief-across-the-epoch-boundary-perseverance-and-testimony-alec-2026-11-04-revisit-if-necessary)).
 The Codex text is §44.1: items 65 to 81, then the freeze.
+**Update 2026-11-04 (evening):** the §45 return is reviewed in
+[thinking spec §46](doc/plans/2026-10-27-item2-5-thinking.md). The repairs are
+built, with a regression in the presence read's inverse, three gaps in the
+evidence rule and a byte axis sized for a sentence rather than a word.
+XOR_grammar fit 5 failed because its read-back decodes the last training root
+against a dictionary that moved in the final update, where the walk policy was
+never trained. The Codex text is §46.1: items 82 to 91, then §44.1's 71 to 73.
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
