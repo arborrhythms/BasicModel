@@ -390,7 +390,8 @@ generation is expected at this stage and is recorded, not tuned away.
    (notes §9). Rounds sized at spec time. Exit: the spec's gates green and
    one thought episode's records replaying a derivation with its pair.
 - **2.0. One gradient, one choice mechanism, memory as the state of
-   affairs, and behavioral chains** (Alec, 2026-11-03;
+   affairs, behavioral chains and basic percepts** (Alec, 2026-11-03 and
+   2026-11-04;
    [spec](doc/plans/2026-11-03-gradient-projection.md)). After item 2.5's
    completion round, before item 2, and before item 0: the gradient
    discussions Alec asked to settle "before step 0 large training", with
@@ -416,18 +417,30 @@ generation is expected at this stage and is recorded, not tuned away.
    the order-0 operations. Reconstruction then ceases to involve the
    grammar; its build, reconstruction from order 0 with the two acceptance
    checks of spec §8, is the item's last part
-   ([loop spec](doc/plans/2026-11-04-item2-0-order-zero-loop.md)). **Behavioral chains in MTM
-   at order zero** (spec §9): MTM holds sequences of order-0 states beside
-   its identities, threads occurrences into one event by gestalt properties
-   as it threads mentions into one identity, and promotes a recurring chain
-   to a chained event concept; a thing that persists through a chain is a
-   noun candidate. Metrics for the round (thinking spec item 60): held-out
+   ([loop spec](doc/plans/2026-11-04-item2-0-order-zero-loop.md)):
+   reconstruction is input (thinking)* output, the input reconstruction
+   with no thinking step and the order-zero reconstruction after
+   understanding, in which symbols take part. **Behavioral chains in MTM
+   at order zero** (spec §9, [memory spec](doc/plans/2026-11-03-item2-0-behavioral-chains.md)):
+   STM, MTM and LTM in one file, `bin/Memory.py`; MTM's one link function
+   makes an extended event (a sequence) when it links order-0 concepts and
+   an extended noun (an identity) when it links order-1 concepts, the
+   precursor of concepts and taxonomic relations; a recurring chain
+   promotes to a chained event concept; a thing that persists through a
+   chain is a noun candidate. **Basic percepts** (Alec, 2026-11-04,
+   [spec](doc/plans/2026-11-04-item2-0-basic-percepts.md)): the last
+   perceptual layer, a preallocated table sized in `data/model.xml`,
+   whose percepts tie parts and wholes at their centroid, taking over that
+   role from the first symbolic layer; order-0 concepts collect basic
+   percepts as higher concepts collect symbols, order-0 symbols represent
+   them, and symbolic space has no mereological read; the order-0 reverse
+   runs through basic percepts to bytes. Metrics for the round (thinking spec item 60): held-out
    cost, acquisition, answers and each chooser's departure win rate, no
    chooser variance. Gates: the projection receipts per unit (cosine before
    projection, fraction of steps projected, fraction of output's gradient
    removed), the realized relative step per level (codes, verbs, modals),
-   the tests named in spec §§3–5 ported with before/after, the chains
-   certificates of spec §9, `make test`. One Codex text, written after the
+   the tests named in spec §§3–5 ported with before/after, the gates of
+   the loop, memory and basic-percepts specs, `make test`. One Codex text, written after the
    review of the §41 return.
    **Carried into item 2.0 on 2026-11-03 (audit of items 2.7, 8 and 3.5):**
    the supplied `yes` admission defect (2.7 record §47: 31 of 32 lesson-13
