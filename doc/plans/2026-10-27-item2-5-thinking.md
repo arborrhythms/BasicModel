@@ -3145,3 +3145,196 @@ Then come §44.1's item 71, item 72's record and item 73's freeze, on the source
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
 ~~~
+
+## 50. Review of the §49 return (Claude, 2026-11-05): items 92 to 96 built; the suite, last run on 3 November, fails 56 cases from four rounds; Alec's decisions on the slow tier, the memory ceiling, guard raises, what an identity refers to and when MTM associates; the freeze not offered
+
+The return was checked on the live tree, which equals candidate `d56a8955def9` in all 987 files of its source snapshot. Against `9a82e07d458e`, 12 files changed: 8 in `bin/` and 4 in `test/`. Two review workflows ran, with every finding checked by independent skeptics. The first reviewed items 93 to 96 and the round's readiness (35 agents). The second triaged every failure of the suite below by cause (44 agents). Each reproduced its cases in scratch copies of the immutable trees `8c6f4c51da75`, `855dc08150d8`, `cf32ffd84391`, `9a82e07d458e` and `d56a8955def9`. Their receipts are in Claude's scratchpad; their findings are below.
+
+**The suite.** Item 97's stop was a documentation fault outside Codex's work. Alec's commit `e0c5795695` had moved the todo items above 2.5 into `doc/DevelopmentHistory.md` with their root-relative `doc/` and `bin/` links. Claude rebased the 146 links (`4502b1c566`); the link test passes. Claude then ran `make test` on `d56a8955def9`:
+- ten workers: the 28 GiB aggregate ceiling stopped the run at 5,507 of 7,492 cases (peak 30,284,958,976 bytes), with 5,222 passed, 46 failed and 2 skipped;
+- six workers: one worker crossed its 8 GiB limit at 3,446 cases;
+- the 1,984 cases not yet run: 1,893 passed, 10 failed, 1 permitted XPASS, 1 skipped.
+
+So 56 cases fail. One certificate crosses the worker limit, and one of its cases has not run to completion. The suite had not run since `8c6f4c51da75` (§41), so the failures come from four rounds:
+- 35 from item 96 (§49);
+- 6 from item 86 (§47): 2 from its byte axis, still marked dynamic, and 4 from its tables in a test fixture;
+- 7 from items 65 and 78 (§45);
+- 2 compile-guard exposures that predate this round;
+- 6 from a configuration leaking between test modules.
+
+**Approved as built.**
+- *Item 92*, the record corrections.
+- *Item 93*, the absent-cotangent record. The replay's 48,873 sentence 1–6 records match byte for byte. The stopped run's partial sentence-7 records are an exact prefix of the replay's. The four absences are on reads whose objective had zero cost, as expected.
+- *Item 94*. A plain headless binary's chunk carries identity -1, which every reader skips. Exception: its certificates' operands carry no identity, so they would also pass an implementation that inherits the left operand's identity (item 103).
+- *Item 95*, except finding 2.
+- *Item 96*'s certificates and the fit 5 and fit 6 observations: all eight disjunction roots have residual exactly (0, 0, 0), and both fits read back four of four. The rule itself needed Alec's decisions below, and its implementation has the defects of finding 1.
+
+**Findings.**
+1. *Item 96 in the suite: 35 cases.*
+   - *1 case.* The meaning band starts at 0 whenever a chart has no meaning pairs (`MediumTermMemory.py` about 315). In `MM_math_chain`'s chart (form 352, location 8, meaning 0) every eventless read therefore replaced form and location with the join of the word rows. The native worked document then charts a parent outside the cube. The fixed rule starts at `percept_event_width` in every mereology chart and keeps the stored value where there is no meaning band.
+   - *2 cases.* A reading is read as a raw codebook row. The reading path instead reads the concept the word denotes now (`Interpret.reading`, about 502 to 546), so a defined word read the wrong row. Both modal-timeline cases fail on this.
+   - *25 cases* name a word whose legacy codebook row is random and signed, or a key with no row.
+   - *1 case*, the pooled description, needed Alec's decision.
+   - *1 case.* A kept thought's write to an eventless identity (`ThoughtStream.py` about 505) was silently lost, and `MediumTermMemory.update` accepted it.
+   - *5 cases* assert the superseded stored-copy contract: identity rows, the native bind, the first bind, review 10's merge and orders-learned's setup.
+   - Further defects found by review:
+     - the ingestion pool (`Models.py` about 7181) has no owner, so the rule silently does not apply during `provision_ltm` and `store_truths`;
+     - concept reclamation does not protect a held name's reading, which now raises;
+     - an alternative timeline's starting state is replaced by the actual's join at the first event;
+     - `accessible` recomputes each token's value once per held use.
+2. *Item 95: a row held in the start only through a supply's closure.* When the supply is withdrawn or compacted, `refresh_supplies` drops the row without recording its start observation. A later supply that reaches it then raises (`PresentationMemory.py` about 264 to 271, 315 to 337). Also:
+   - `import_checkpoint_observations` stamps a missing observation from live counters on every load, not only for older envelopes;
+   - an older envelope's `supplied_rows` are stamped from live values rather than their saved state.
+3. *Item 86: the constructed byte axis is still marked dynamic.* `Models.py` about 14528 to 14536 marks `_ar_target_word_bytes` and its mask with the part range [3, `outputShape[0]`]. The compiled XOR_grammar gate fails at setup with "64 not in range [3, 6]". Item 86's focused selections ran with `MODEL_COMPILE=none`.
+4. *Compile guard exposures, present since `855dc08150d8`, where the guard landed.*
+   - `_stm_set_all_slots` updates STM's host high-water mark inside the compiled whole-sentence body (`Spaces.py` about 13421).
+   - Even with that repaired, the sparse-active whole-sentence body recompiles 249 times inside admitted phases: its sparse store, inventory and percept parse grow at run time. It recompiled silently 446 times on `8c6f4c51da75` and runs three times faster eager on XOR_exact.
+   - The native word bricks `stage_cs_sub` and `stage_cs_sym` recompile on the second word of the default compile mode, because their carried state gains autograd history. `MM_corpus_orders` and `MM_math_chain` reach this under the default backend; the receipted arms ran `--eager`.
+5. *Item 78's constructed candidate axis, and memory.* At `MM_math_chain` geometry the axis is 136 rows, where `855dc08150d8` used 42 to 44. `CandidateWholes._weights` (`FormCentroids.py` about 163) reads it as a dense [8, 136, 4096, 256] float32 masked minimum, 4.25 GiB, 93 to 95 times per test. `test_forced_ordinary_pending_premise_in_both_orders` rose from 4.1 to 7.2 GiB and crossed the worker limit. A blocked read is bitwise identical and brings it to 2.8–3.0 GiB. The time stays at about 110–127 seconds, against 55–71, because the eager read processes every constructed row; accepted this round. The `[False]` case also failed 2 of 13 unseeded runs on sources from `cf32ffd84391`, at its line 461, with streams not recorded. The native worked document cannot be replayed at all, because `MathProblemGenerator(seed=None)` draws OS entropy (`math_chain_corpus.py` 61).
+6. *Tests the earlier rounds should have ported.*
+   - `test_candidate_search_storage` builds SGD over item 65's parameterless chooser.
+   - `test_percept_expectation_final`'s compile stub rejects item 78's `initial_phase`. Its faithful port, through the guard, exposes finding 4's word bricks.
+   - `test_prepared_answer_boundary`'s explicit bank keeps item 86's 112-row tables beside fewer rows, and they broadcast silently.
+7. *Test isolation.* `test/conftest.py` restores the device per module, but not `TheXMLConfig`. Item 89's new certificate and `test_review14_contracts` load the XOR configuration. Bare layers in later modules then take its meaning layout: the heat-reverse cases lose their heat keyword arguments, and the review-20 candidates lose their activations. Production is unaffected.
+8. *Harness and records.*
+   - Codex's suite wrapper stops on the permitted non-strict XPASS.
+   - The item-75 stop reads only the collected objectives.
+   - §49.3's "its clause reference is also -1" describes no change: `ChunkJournal.apply` never outputs `parent[:, :2]`.
+
+**Decided (Alec, 2026-11-04 night to 2026-11-05).**
+- *Slow tier:* "Drop it from 2.5." The freeze gates on the default `make test`; `make test_all` remains the gate of items 0 and 1. It cannot be green under the default runner: its workers are capped at 8 GiB, two slow tests need 24 and 28 GiB (one runs 48 hours), and 98 slow failures are carried to items 0 and 1.
+- *Memory ceiling:* "Allow six workers, recorded." If the ten-worker default still crosses its aggregate ceiling after finding 5's repair, the gate runs at six workers, and both runs are recorded.
+- *Guard raises:* "Repair and continue." A further compile-guard raise in `make test` is repaired at its producer under item 78's rule (a width fixed at construction or a declared phase, never admitting a shape, red before and green after), recorded, and the suite runs again.
+- *Individuals:* "Yes, join the individual." An identity opened for a known individual also refers to that individual; its current meaning joins the mentions' by elementwise maximum, as one more LTM reference the identity holds. Claude reads a promoted identity's symbol the same way, as the concept it holds in LTM. *Alec corrects this reading if it was meant otherwise.*
+- *Thoughts:* "One more reference." A kept thought's written idea joins the references of an identity that has no event of its own, so its meaning joins in.
+- *Descriptions and association:* Alec:
+  > This suggests that the MTM actually needs to check before associating; the overlap between the red ball and the blue ball is zero. The overlap between "alec" and he is a part/whole.
+
+  Asked where that rule lands, Alec chose:
+  > Both now. The object being identified is the noun phrase, so identity may not need to explicitly maintain that representation, since it can be recovered by decoding the references. Although since that decoding is nontrivial for an untrained model, I expect identity (and object permanence) not to function well until the objects themselves have stabilized (which was the problem we ran into before).
+
+  and added: "(So maximal for one of its members)." In this round:
+  - a mention whose reading is a derived kind, not a word, reads its own idea, the noun phrase held in its occurrence row;
+  - only words read the dictionary, a defined word through what it denotes now;
+  - MTM associates a mention with an identity only where their overlap is maximal for one of them, that is, where one meaning contains the other and so one of `IdentityRows.meet_ratios`' two coverages is 1.
+
+  Exact containment gives exactly 1. The witnessed-incompatibility exclusions stay. Weaker binding while objects are unstable is expected, not a fault.
+
+**The freeze is not offered.** The repairs and ports below come first, then a green default `make test`, then item 71's runs, item 72's record and item 73's freeze on one source. Claude's readiness estimate for those gates is 6 to 8 hours of wall time: the suite about 0.3 to 0.5 hours, the four lesson runs 5 to 6.5 hours, and the eight fits up to 0.75 hours.
+
+### 50.1 Text for Codex (2026-11-05)
+
+~~~
+Read §50. This round closes item 2.5. Alec's decisions are in §50: make test_all is not part of 2.5; the default make test may run at six workers, recorded, if ten cross the aggregate ceiling after item 105; compile-guard raises are repaired at their producer under item 78's rule and the round continues; and what an identity refers to and when MTM associates are as items 100 and 101 state. Order: 98 (records), 99 (instruments), 100 to 107 (source and tests), 108 (make test), then §44.1's items 71 to 73 on that one source. Approved as built: items 92 to 96, except where §50 names a finding and the items below repair it. Claude's suite results are output/tests/20261104-172809-b9e8bb, 20261104-173643-b187a2 and 20261104-174206-9df447.
+
+98. Records, by exact replacement.
+- §49.3: "its clause reference is also -1" describes no change (ChunkJournal.apply never outputs parent[:, :2]).
+- §49.6: the stop's 146 links came from Alec's commit e0c5795695, and Claude rebased them in 4502b1c566.
+- Item 71's report and item 72's record go in your return section.
+
+99. Receipt instruments, outside bin/, test/ and data/, each with model-free controls.
+- run_suite.py stops only on 'failed' and records 'xpassed'. A strict XPASS is already 'failed'.
+- lesson.py's item-75 stop also reads the all-parameter pre-step optimizer norm. It stops when that norm, or any collected objective's actual gradient norm, reaches 1e8 under separateChooser true.
+
+100. What an identity refers to (item 96, with Alec's decisions in §50).
+a. A word reading reads the concept the word denotes now.
+   - Add InterpretLayer.referent(word), the frozen resolution of reading() with no write: the first live denotation; else the single remembered object that no recorded raise supersedes (ambiguity raises as reading() does); else the word itself.
+   - It reads no MTM token and no learning mode. reading() resolves through it, so the rule exists once.
+   - In value_of, row = owner._csw_row_of(owner.interpret.referent(reading)), raising with both the reading and the concept.
+b. A reading that is not a word reads its mention's own occurrence row, as a mention without a reading does: its own idea, the noun phrase. This covers a derived kind or a concept that ReferenceClose recorded for a wordless mention (about 1251 and 1260). A word is a symbol the allocator types 'word'.
+c. An identity opened for a known individual (Token.native), or promoted to a symbol (Token.symbol), also refers to that concept. Its current row joins the references.
+d. The meaning band starts at percept_event_width in every mereology chart. Where there is no meaning band (meaning_pairs 0, as in MM_math_chain), value_of returns the stored value.
+e. An alternative timeline keeps the state its producer gave it: value_of returns its stored value, and event() computes only the actual timeline's starting state.
+f. A kept thought's write to an identity with no event (ThoughtStream.py about 505) adds its written row to the identity's references, as a mention without a reading. MediumTermMemory.update raises for an identity with no event.
+g. The ingestion pool (Models.py about 7181) is constructed with its owner reference and the owner's n_vectors and field_width. value_of raises for a pool that holds names or mentions and has no owner; standalone numerical pools keep their explicit value API.
+h. ConceptForgetting.protected_concepts protects every held name's reading.
+i. ReferenceClose.accessible reads each token's value once per call; index names by token.
+Certificates, red on d56a8955def9 and green after:
+- a defined word reads its denotation's current row, including after that row moves, and after an epoch boundary with one remembered object;
+- a description keeps its distinguishing coordinate;
+- a known individual named by a word that does not denote it joins the individual's meaning;
+- a promoted identity joins its symbol's meaning;
+- a chart without a meaning band reads its stored value;
+- an alternative's starting state survives the first event;
+- a kept thought's write joins the identity's meaning;
+- update on an identity with no event raises;
+- the ingestion pool reads current meanings;
+- reclamation keeps a held reading.
+Item 96's ten certificates, test_identity_threading and test_reading_curriculum pass. Fits 5 and 6 on their archived streams again read back four of four with exact roots; these are observations, not item-71 fits.
+Port, with exact before and after text citing §50, the fixtures and assertions these rules supersede:
+- test_reference_arrivals' world() gives its bare word 'x' the native chart's zero meaning;
+- the pending-alias test's dictionary holds the content its named sites carry;
+- test_math_chain_repair's forward name is an admitted concept, not the key 17;
+- orders_learned records an event before its explicit state;
+- every assertion whose expected value changes under a to f (identity_rows, review10's merge, layout_removal's kept thought and others): its new value is derived from the rule, and every other assertion is kept.
+
+101. MTM associates only on maximal overlap (Alec, §50).
+- Wherever a mention is joined to an identity by content, a candidate is offered only when one of the two coverages that IdentityRows.meet_ratios gives for it and the mention, on meaning coordinates, is exactly 1. That is, one meaning contains the other.
+- This covers at least ReferenceClose.score's candidates and STMChunks.bind_menu's identity chunks. Name every other path. Joins by identity (a name's own token, a merge after re-identification, re-entry by stored identity) are not association by content; say so for each.
+- The witnessed-incompatibility exclusions stay. An empty meaning still contains nothing.
+Certificates:
+- 'the red ball' and 'the blue ball', the same kind with exclusive colours and no witnessed exclusion, never associate; red on d56a8955def9 if they do today;
+- 'he', whose meaning is a part of Alec's, associates with Alec;
+- 'the ball' associates with 'the red ball'.
+Alec expects identity and object permanence to work poorly until objects stabilize. A lesson's falling binding counts are an observation, not a stop. Port a maintained test whose association relied on partial overlap, citing §50, with its fixture made part/whole where the test's subject is a correct binding.
+
+102. Item 95's dropped rows (§50 finding 2).
+- refresh_supplies records the start observation of every still-live row and relation it drops from both memories, before replacing either; withdraw_supplies' two special branches then go.
+- import_checkpoint_observations applies only to envelopes that predate the creation-observation map, identified by an explicit marker. On a current envelope, a live row with neither a snapshot entry nor a stamp raises.
+- An older envelope's supplied_rows are stamped from their saved state.
+Certificates, red on d56a8955def9 and green after, in both memories: a dependency held across one boundary only by a supply's closure, the supply withdrawn mid-epoch, then a later supply reaching it, keeps its epoch-start observation across two boundaries; the same for compaction; and the envelope rules.
+
+103. Item 94's certificate: add a case whose left operand carries an identity with an off-stack field entry. Assert identity -1, a refresh to the chunk's own value, and exclusion from bind_menu. It is red on 9a82e07d458e and on an inherit-left variant.
+
+104. Compile (§50 finding 4).
+a. _stm_set_all_slots neither reads nor writes STM's host high-water mark while compiling. _forward_per_stage syncs it from each STM's live depth at the eager boundary, on the whole-sentence path (not word_brackets) only.
+b. Remove _ar_target_word_bytes and _ar_target_word_mask from the part-axis mark_dynamic loop (Models.py about 14528 to 14536). Their axis is the constructed wordSurfaceCapacity. Correct the [B, W, P] docstrings.
+c. When concept_order_limit > 0 and not word_brackets, enable_compiled_step leaves _forward_body and _forward_head eager and says why: the sparse store, inventory and percept parse grow at run time. This is declared host work, not an admitted shape.
+d. CompileGuard.carried_state_phase(args, kwargs) returns any(value.requires_grad for value in args[4]). stage_cs_sub and stage_cs_sym compile with it (Models.py about 22816), and Architecture states the phase.
+   - Certificate: an undeclared brick raises on carried state; the declared brick admits exactly the fresh and the carried graph; a third pattern raises.
+e. Delete test_explicit_dimensions.py:202's MODEL_COMPILE line. It is dead after util fixes the backend at import, and it leaks into later subprocess tests; the compiled gate stays.
+Certificates: XOR_exact's two CLI cases and the two TestXorGrammar cases pass under the default compile mode, red on d56a8955def9.
+
+105. CandidateWholes._weights (FormCentroids.py about 163) reads where(support, properties, 1).amin(-1) in blocks of 256 properties, concatenated. Leave SpanWholes alone.
+- Certificate: bitwise equality with the dense read at P in {0, 9, 256, 4096}, both dtypes, eager and inductor, including inside torch.while_loop, and for every call of a real run.
+- Record the pending-premise case's peak and time before and after. Its remaining time against 855dc08150d8 is accepted this round; record eager reading of available rows only as a proposal.
+
+106. Test harness and ports, each with exact before and after text.
+a. test/conftest.py: a module-scoped _restore_xml_config restores TheXMLConfig's _data, _sources and _requirements, as _restore_process_device restores the device.
+b. test_candidate_search_storage: assert that the chooser has no parameters and that operators have parameters exactly for Product and Adverb. Step only operator parameters, when there are any. Assert that chooser.weight stays [1, 0, 0, 0, 0]. Cite item 65.
+c. test_percept_expectation_final's stub, and its sibling in test_sentence_compose.py, compile through guarded_compile with initial_phase. Every assertion is kept.
+d. test_prepared_answer_boundary's _with_identity_bank carries surface_present and primitive_support for its own rows, sets forms from its codes and form_wholes to None. PrimedSymbols.__post_init__ raises when a candidate table's leading shape differs from rows. form_wholes is exempt: walk_bank rebuilds it after the join.
+
+107. Replayability.
+- MathProblemGenerator(seed=None) (math_chain_corpus.py 61) draws OS entropy, so no recorded stream replays the native worked document. Draw its seed from the process's recorded Python stream instead.
+- Then run test_forced_ordinary_pending_premise_in_both_orders[False] under recorded streams until a failure at its line 461 is captured, or 20 runs pass. Repair a captured failure at its producer. Stop for review if it needs a decision.
+
+108. The default make test on the source with items 98 to 107.
+- If ten workers cross the 28 GiB aggregate ceiling, run six and record both (Alec).
+- For a failed case, repair the producer, or port a test whose contract a recorded decision superseded (cite it; before and after). Record it, then run the suite again.
+- For a compile-guard raise, repair it at its producer under item 78's rule (Alec), certify it, and run the suite again.
+- Wait for the suite lock; never run a suite beside the panel.
+
+Then come §44.1's items 71 to 73, on the source of item 108.
+- Item 71: the three lesson-13 arms and the float64 discriminator, each recording its streams; then eight fresh unseeded XOR_grammar fits.
+- Item 72's record is in your return.
+- Item 73: the freeze, one hash.
+  - ports.json and ports.patch against d56a8955def9 (/private/tmp/item25-review48/source-item96-d56a8955def9), and the cumulative patch against git HEAD.
+  - Every document that differs from HEAD.
+  - make test green on the freeze hash, rerun if the source changed after item 108.
+  - Item 71's runs on the freeze hash, repeated if the source changed after them.
+  - forced_configuration_passed.
+  - test_doc_links after the last document edit.
+  - make test_all is not part of 2.5 (Alec).
+Pre-authorized, not stops:
+- documentation-only fixes;
+- receipt-instrument fixes with model-free controls;
+- keeping the machine awake for the long runs (caffeinate) and freeing disk space first.
+Stops for review:
+- §44.1 item 71's conditions: a run fails, an XOR fit fails either case, or an event at or above 1e8 under separateChooser true (item 99);
+- a failure that the decisions do not settle;
+- item 107's captured failure if it needs a decision;
+- test_epoch_history's ten-epoch case if it fails again, captured with its streams.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
+~~~

@@ -68,6 +68,21 @@ Codex text is §48.1: items 92 to 97, then 71 to 73. For item 2.7: the word
 surface capacity of 64 raises on 144 corpus percept runs (letter runs up to
 126 bytes, high-byte runs up to 453); the corpus round constructs 512 or splits
 such runs.
+**Update 2026-11-05:** the §49 return is reviewed in
+[thinking spec §50](doc/plans/2026-10-27-item2-5-thinking.md). Items 92 to 96 are
+built. The default suite, which had not run since 3 November, fails 56 cases from
+four rounds plus one memory regression; each is triaged with its repair. Alec
+decided:
+- `make test_all` leaves 2.5;
+- six workers are allowed, recorded, if ten cross the memory ceiling;
+- compile-guard raises are repaired at their producer;
+- an identity refers to its known individual and to a kept thought's idea;
+- a description reads its own noun phrase;
+- MTM associates only on maximal overlap, now
+  ([memory spec §9](doc/plans/2026-11-03-item2-0-behavioral-chains.md)).
+
+The Codex text is §50.1: items 98 to 108, then 71 to 73, closing 2.5. Claude
+rebased `doc/DevelopmentHistory.md`'s 146 links (`4502b1c566`).
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
