@@ -2428,3 +2428,7 @@ Decided for now: evidence belongs to its source ([Architecture](Architecture.md)
 - **Accepting testimony.** Content embedded in a supply would enter with some belief, instead of unverified with both lanes at zero. People tend to accept what they comprehend before evaluating it (Gilbert 1991). The cost: "Bob said X" would raise belief in X by mention alone.
 
 Revisit if a trained model's answers show given knowledge cut off from the beliefs it depends on, or if a psychological measurement calls for it ([thinking spec §44](plans/2026-10-27-item2-5-thinking.md)).
+
+## Events as mereological neighbours (Alec, 2026-11-05)
+
+Asked how a state is computed from a run of event members ([memory spec §9](plans/2026-11-03-item2-0-behavioral-chains.md)), Alec: "Just as some nouns share an identity, some events are mereological neighbors (in world-space, not .where, although we can infer one from the other for words, if not what they represent). We can defer this to future work." Nouns that share an identity are one identity in MTM; events that are neighbours share a boundary in world-space. For words the two addresses can be inferred from each other, but not for what the words represent. Item 2.0 builds extended events as paths only, with no computed state.

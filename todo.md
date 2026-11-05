@@ -559,10 +559,12 @@ generation is expected at this stage and is recorded, not tuned away.
    5. *Memory as the state of affairs:* MTM's one link function, extended
       events and nouns, promotion of paths and chains, the full reference
       form, credit across sentences by the re-read, verbs over the state of
-      affairs. Its text waits for the memory spec's open question (how a
-      state is computed from a run of event members).
-   6. *Basic percepts*, with the compose-time whole read and the per-word
-      typed slots decided first.
+      affairs. Extended events are paths only: how a state is computed from
+      a run of event members, with events as mereological neighbours in
+      world-space, is future work (Alec, 2026-11-05).
+   6. *Basic percepts.* The compose-time whole read and the per-word typed
+      slots keep their logic and read basic percepts (Alec, 2026-11-05:
+      "Why would this logic change?").
    7. *The order-zero loop*, input reconstruction then output through the
       same reverse.
    The momentum-carried projection and a learned top-down pair policy are

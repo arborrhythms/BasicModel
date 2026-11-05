@@ -87,3 +87,11 @@ Item 2.0, on main, after the gradient changes and the memory file and with the o
     - `PerceptProperties.reverse` and `reverse_poles` divide by a byte sum floored at $10^{-12}$ (about 214 and 222), read today only by `_reverse_field` on copy 0. Basic percepts' reverse (§3.4) replaces that read, and gate 8 certifies that no such division remains on a live path.
     - The compose-time whole read (`FormCentroids`, `MeaningKernels.centroid`) carries item 2.5's presence weighting ($p = \min(1, t)$, Alec's decision (d)). Item 2.0's Codex text settles whether that read retires into basic percepts, as §1, 4 implies ("symbolic space does not need to have a mereological read at any level").
 
+
+## 8. The compose-time whole read and the per-word slots (Alec, 2026-11-05)
+
+Asked whether these two were open, Alec: "Why would this logic change?" It does not. Both are the tying of parts and wholes that basic percepts take over (§1, 4). Each keeps its logic and reads basic percepts in place of the two towers:
+- the compose-time whole read (`FormCentroids`, `MeaningKernels.centroid`), with item 2.5's presence weighting;
+- the per-word readout's typed part and whole slots (`IndexedSigmaConceptsFromPercepts`, filled by `admit_references`), System 1's hand-off to compose, which §3 omitted.
+
+Neither is a decision for the Codex text. `FormCentroids`' read was the route of item 2.5's largest gradient events ([thinking spec §45.8](2026-10-27-item2-5-thinking.md)), so the round re-takes those receipts after the change. *Alec corrects this reading if it was meant otherwise.*
