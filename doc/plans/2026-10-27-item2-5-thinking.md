@@ -3338,3 +3338,147 @@ Stops for review:
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
 ~~~
+
+## 52. Review of the §51 return (Claude, 2026-11-05): items 98 to 106 built; make test completes with 24 failures; item 107 settled by the recorded single-writer contract; trust becomes item 2.3; no freeze offered
+
+The return was checked on the live tree, which equals Codex's `e0fc4a92719e` in all 990 files of its source snapshot. Against `d56a8955def9`, 46 files changed: 15 in `bin/` and 31 in `test/`. Claude read the source diff in full. A review workflow of 20 agents, every finding checked by skeptics, covered:
+- items 100 and 101;
+- item 107;
+- the other repairs and ports;
+- what remains.
+
+Claude then ran `make test` on `e0fc4a92719e` (output/tests/20261105-022039-ff4dd3):
+- all 7,570 cases ran, in 911 seconds at ten workers;
+- the aggregate peak was 19.0 GiB, against the 28 GiB ceiling;
+- 7,222 passed, 323 skipped, 24 failed, and one case gave the permitted XPASS;
+- all 56 failures of `d56a8955def9` now pass;
+- the forced pending-premise case (`test_forced_ordinary_pending_premise_in_both_orders`) passed in both orders, at 129 and 99 seconds.
+
+**Approved as built.**
+- *Items 98 and 99.*
+- *Item 100*, a to i. The referent is the frozen resolution, and `reading()` resolves through it. Non-word readings read their occurrence rows, and a held individual or symbol joins as a reference. Alternatives keep their states, and only the actual's start is frozen at the first event. A kept thought binds its written row, and `update` without an event raises. The ingestion pool has its owner, an ownerless pool with references raises, held readings are protected, and `accessible` reads each token once.
+- *Item 101* in `ReferenceClose.score` (closing, thought and arrival), `STMChunks.bind_menu` and the read-time merge. The other content matches (`match_candidate`, `witnessed_match`, field activation) cluster candidates or refresh access, and associate no mention.
+- *Items 102 to 106*, the replayable problem generator, and item 72's record (§51.6).
+- *Item 107's capture.* Codex stopped exactly where §50.1 required.
+
+**Findings.**
+1. *Item 107: definitions have one recorded writer.*
+   - `Lexicon.md` (lines 64 and 65) and `Interpret.py` (about line 370) record that `InterpretLayer.define` is the only writer of definitions. `DefinitionIndex.add` (`Definitions.py` about 46 to 76) tests only a row's type: it indexes any object→word Part row once the word has a description, whatever the row's evidence or writer. `PartClosing` writes such rows as generic chains, so the close's chain over `' '` became a second denotation.
+   - Separately, `add` marks the index current (line 70), although its rule reads allocator state that the LTM1 revision does not track. The incremental index and its rebuild therefore disagree on the same rows: [75] after `define`, [14, 75] after a rebuild.
+   - The repair restores the recorded contract. A row defines its word only when `define` named its pair (`ConceptAllocator.named_identities`, already saved in checkpoints), and only a rebuild marks the index current.
+   - This is not a new semantic choice. It is also the narrowest case of Alec's trust proposal below: structure over a word not yet learned does not become what the word means.
+2. *A description with a lexical head reads its head word.* Every close member that is not determined records its head leaf's word as its reading (`ClauseJournal.py` line 617; `ReferenceClose.py` lines 1228 and 1229). So the identity of "a red ball" reads "ball" (or "red", under a headless parse), and item 101 cannot tell the red ball from the blue one. Completing Alec's decision ("the object being identified is the noun phrase") means only a mention of one leaf records its word; a longer description reads its own occurrence. §50.1's item 100b covered only descriptions with no word.
+3. *24 maintained cases fail on the return.* They are in 8 modules outside Codex's 20-module selection, and each passed on `d56a8955def9`:
+   - 20 follow item 101's containment;
+   - 3 follow item 100g's owner checks (a standalone test pool, and an owner stub in both parametrizations);
+   - 1, `test_reverse_traversal`, has no producer found yet.
+
+   Also not ported:
+   - the arrival frame-scope test now passes through the containment gate rather than through its frame filter;
+   - a weekly certificate cannot pass under item 101, because distinct unit vectors never contain each other.
+4. *A chart without a meaning band associates by identity only.* In `MM_math_chain` (form 352, location 8, meaning 0) every coverage is 0, so item 101 offers no candidate by content, and permanently. Names still join through their own tokens, and the default suite passes. The phase certificate `test_live_pending_premise_closes_in_both_orders` (skipped: no lesson produces its `pending_premise_learning` artifact) cannot pass on that chart. Recorded, and carried to item 0 with the choice of giving that lesson a meaning band.
+5. *The aligned serial reader admits whitespace and punctuation as lexical words* (`Models.py` about 11587 to 11615). This contradicts `Architecture.md` lines 921 to 923 and `Params.md` line 636 (`whitespaceUnits`, false by default). In attempt 11, `' '` became identity 75 and `'.'` identity 77. It predates this round and does not cause item 107. Recorded for item 2.3, which decides what a learned word is.
+6. *Smaller.*
+   - The witnessed exclusions are subsumed once one meaning contains the other; record that, and certify their remaining uses.
+   - Codex's suite wrapper stops at the first failure and misreads the runner's compile-cache retry.
+   - The suite and the panel can race for the lock.
+   - Both baselines live under `/private/tmp`, which a restart clears.
+   - `_stm_shift_and_push` still reads the host depth mirror while compiling.
+
+**Decided (Alec, 2026-11-05).** On item 107, Alec:
+> It seems like we are learning relations over words, the words are not fixed, and the relations come to encode false statements.
+> My guess is that we need a trust value in words, and a trust value in the relations over them ( using trust here is a misnomer, but we already have that value for relations learned from external sources). So first of all, our words will have a low trust until they are learned, which prevents a relation over them from having a high composite degree of trust (which requires that both operands and operator have a high degree of trust, so maybe multiply).
+> That would prevent this situation, and perhaps also ensure the learning order that we proposed making a part of the data, so that we could lean words, then operations one by one (we just need to specify the order of the gates and the criteria for trusting in an operation).
+> This will make testing difficult, since it requires a trained model, so probably we need a run_trained flag in edition to the run-slow flag
+
+On its scope: "Trust in 2.3, but it will move many of the grammar tests to the gate I mentioned." Then, refining it:
+> Actually, wait. Conceptual trust is already measure by their magnitude, so only operators need a certainty or trust value.
+>
+> Unless those operators exist somewhere as vectors also, in which case we can use their magnitude.
+
+What the code has ([item 2.3 notes](2026-11-05-item2-3-trust.md) §3):
+- a word used as an operator is a concept, so its magnitude serves;
+- the fixed relations `part` and `implies` are constant hashed codes, whose length records nothing;
+- the grammar operations are `GrammarLayer` weights, with no concept vector.
+
+So the operations need their own trust value. The trained-model tier exists in part as the phase certificates: all 16 skip, because no lesson produces their artifacts.
+
+Trust is item 2.3, after 2.5 in the countdown and before 2.0. Claude reads the answers as closing 2.5 with finding 1's repair, the recorded writer contract, which is trust's narrowest case for definitions. Finding 4 stays as recorded, and finding 5 goes to 2.3. *Alec corrects this reading if it was meant otherwise.*
+
+**No freeze was offered.** Codex stopped at item 107's capture, as §50.1 required. The text below closes 2.5. It runs the eight fits before the lesson arms, so that a failing fit stops the round before the long runs.
+
+### 52.1 Text for Codex (2026-11-05)
+
+~~~
+Read §52. This round closes item 2.5. Alec placed trust in a new item 2.3, after 2.5 (§52: a concept's trust is its magnitude, and operators need their own); this round adds no trust and no new test gate. Order: 109 (definitions), 110 (descriptions), 111 (the 24 failures and other ports), 112 (records), 113 (instruments and baselines), 114 (make test until green), 115 (item 107's twenty runs), then §44.1's items 71 and 73 as amended below. Approved as built: items 98 to 106 and item 72's record, except where §52 names a finding and the items below repair it. Claude's suite on e0fc4a92719e is output/tests/20261105-022039-ff4dd3: ten workers, 911 s, peak 19.0 GiB, 24 failures, one permitted XPASS.
+
+109. Definitions have one writer (item 107; §52 finding 1). Lexicon.md lines 64 and 65 and Interpret.py about line 370 record that InterpretLayer.define is the only writer of definitions.
+- DefinitionIndex.add (Definitions.py about 46 to 76) indexes a row only when define named its pair: obj in allocator.named_identities.get(word, ()), beside the existing type test.
+- add no longer marks the index current (delete self._revision = store.revision, line 70). Only rebuild does, so the index always equals its rebuild.
+- Interpret.define records named_identities before it writes and adds its row.
+- A checkpoint whose word descriptions predate named_identities raises in _restore_allocator_extras, before anything changes.
+- The load's backfill of named_identities from the rebuilt index (Models.py about 4487) is retired, recorded.
+Certificates. The first three are red on e0fc4a92719e and green after:
+- for every write order, the incremental index equals a fresh DefinitionIndex over the same rows;
+- the three late-descriptor lanes, (0,0), (0,1) and (1,0), give only the genuine object, before and after a rebuild;
+- attempt 11's archived stream (pending107-11, PYTHONHASHSEED 277256384) gets past the ambiguity raise;
+- test_part_closing's nested-unknown case stays green.
+
+110. A description reads its noun phrase (Alec, §50; §52 finding 2).
+- ReferenceClose.py line 1228: a mention records its head word as its reading only when it has one leaf, `and len(item['leaves']) == 1`: a name, a pronoun or a bare noun. A description of more than one leaf records no reading and reads its own occurrence row.
+- FamiliarTier.promote_identity (line 496) names a token by its reading only when that reading is a word.
+- Certificate, red on e0fc4a92719e, through the ordinary closing: 'a red ball' opens an identity whose value keeps its red coordinate; 'the blue ball' is not offered against it at ReferenceClose.score; a mention contained in it is.
+
+111. Claude's 24 failures, each green on d56a8955def9. Port each with exact before and after text, citing §50; keep every other assertion; where the test's subject is a correct binding, make its fixture part/whole.
+- Item 101 (20 cases): test_bind_thought's G2 (12 cases) and G3[k-True] (4 cases); test_item25_completion::test_sign_question_reads_the_latest_named_token_and_no_concept_for_an_unnamed_token; test_live_references::test_public_reading_fuses_the_reference_before_capture_and_write; test_reference_mentions::test_later_fill_releases_the_menu_without_an_expectation_loss; test_reference_reconstruction::test_unpriced_endings_and_covering_candidates_have_zero_reference_cost[empty].
+- Item 100g (3 cases): test_reading_round::test_named_alias_follows_merge_restore_and_horizon_expiry (its standalone pool), and test_step2b_storage::test_truth_ingestion_restores_caller_recall_and_isolates_each_source[False] and [True] (its owner stub).
+- test_reverse_traversal::test_free_walk_reports_missing_leaves_without_underflow: find its producer. Repair the producer, or port the test under a recorded decision, with the evidence.
+- test_reference_arrival_review::test_new_document_cannot_refine_a_same_stream_site_outside_its_frames now passes through the containment gate. Port it so that only its frame filter prevents the refinement: world(pending_atom=0), described(atoms[0], x), equality(..., subject=atoms[0]).
+- The weekly test_math_chain_section14::test_ordinary_initial_binding_distribution_includes_every_retained_candidate cannot pass under item 101, because distinct unit vectors never contain each other. Port its fixture so that each retained identity is a part of the mention: parts = eye(width)[:count]; the mention is their sum.
+Where your reading of a case differs, give the evidence. Another recorded rule or a certified producer repair settles it without a stop.
+
+112. Records, by append to Architecture.
+- In a chart without a meaning band (meaning_pairs 0, as MM_math_chain) no coverage can be 1. MTM there associates by identity only: a name's own token, reading_identity, kept definitions and promotion. The phase certificate test_live_pending_premise_closes_in_both_orders cannot pass on that chart and is carried to item 0 with this record.
+- The witnessed-incompatibility exclusions are subsumed for a mention's own meaning once one meaning contains the other. Certify their remaining uses: an asserted constraint and the grouping pass.
+- The aligned serial reader admits whitespace and punctuation as lexical words (Models.py about 11587 to 11615), contrary to Architecture lines 921 to 923 and Params.md line 636. It is a known defect for item 2.3, not repaired here.
+
+113. Receipt instruments and baselines, outside bin/, test/ and data/, each with model-free controls.
+- run_suite.py runs the suite to completion and classifies outcomes from the native result.json after the runner's compile-cache retry; a compile_cache_retry is not a failure. It records every failure with its streams.
+- run_panel.py refuses to start without a green run_suite result for its own source_sha256. Suites and the panel launch strictly in sequence.
+- Pass the identify_source record explicitly to both. Keep durable copies of the d56a8955def9 and e0fc4a92719e baselines outside /private/tmp. Run the gates with ~/.cache writable and at least 10 GiB free.
+
+114. make test through run_suite.py at ten workers, repeated until green. Claude's e0fc4a92719e run peaked at 19.0 GiB. If a ten-worker run crosses the memory ceiling, record the crossing and use six workers (Alec, §50).
+- Repair or port every failure under a recorded decision, then run again. Nothing is retried.
+- A compile-guard raise is repaired at its producer under item 78's rule (Alec). _stm_shift_and_push's host depth read under compile is a known candidate.
+- Stop, with the case captured with its streams, if:
+  - a failure has no recorded decision that settles it;
+  - an unseeded learning certificate fails (TestXorGrammar, MM_xor, the constituent lesson, exploration coverage, surface grammar);
+  - the forced pending-premise case (test_forced_ordinary_pending_premise_in_both_orders) fails;
+  - test_epoch_history's ten-epoch case fails.
+
+115. Item 107's twenty runs, on the source of item 109, counted from zero (the earlier ten do not count): run until a failure is captured or twenty pass. Repair a captured failure at its producer under a recorded decision, or stop. Repeat the series only if bin/ or data/ change afterwards.
+
+Then, on the green source of item 114, identified:
+- Item 71:
+  - first, the eight fresh unseeded XOR_grammar fits: four workers, MODEL_COMPILE=none, as in §45.9;
+  - then the three lesson-13 arms and the float64 discriminator, in sequence, each recording its streams;
+  - report, beyond §44.1: the projection tails and the velocity proposal, and every event at or above 1e8 under separateChooser false, named by read, formula and objective.
+- Item 72's record stands as returned in §51.6.
+- Item 73: the freeze, one hash.
+  - ports.json and ports.patch against e0fc4a92719e and against d56a8955def9, and the cumulative patch against git HEAD;
+  - every document that differs from HEAD;
+  - make test green on the freeze hash, and item 71's runs on that hash; repeat both if the source changes after them;
+  - forced_configuration_passed, from report_runs.py with --require-panel, the green suite's result and its certificate directory;
+  - test_doc_links after the last document edit.
+Pre-authorized, not stops:
+- documentation-only fixes;
+- receipt-instrument fixes with model-free controls;
+- a run that fails only in a receipt instrument is repaired and replayed from its archived streams and hash seed, and the failed attempt is kept. Replaying a recorded stream is not a retry. A failure in the model stops.
+- caffeinate, and disk cleanup.
+Stops for review:
+- §44.1 item 71's conditions: a run fails in the model; an XOR fit fails either case (recorded with pair diagnostics); an event at or above 1e8 under separateChooser true;
+- item 114's stops;
+- item 115's captured failure, if it needs a decision.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
+~~~

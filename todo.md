@@ -83,6 +83,18 @@ decided:
 
 The Codex text is §50.1: items 98 to 108, then 71 to 73, closing 2.5. Claude
 rebased `doc/DevelopmentHistory.md`'s 146 links (`4502b1c566`).
+
+**Update 2026-11-05 (evening):** the §51 return is reviewed in
+[thinking spec §52](doc/plans/2026-10-27-item2-5-thinking.md). Items 98 to 106 are
+built. Claude's suite on `e0fc4a92719e` completes with 24 failures, each ported or
+repaired in the next text. Item 107, a structural chain over a word not yet learned
+read as that word's definition, closes 2.5 with the recorded single-writer contract
+for definitions. Alec placed trust in a new item 2.3: a concept's trust is its
+magnitude, and operators need their own
+([notes](doc/plans/2026-11-05-item2-3-trust.md)). By the countdown, 2.3 comes after
+2.5 and before 2.0. The Codex text is §52.1: items 109 to 115, then 71 and 73,
+closing 2.5.
+
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
@@ -430,6 +442,13 @@ generation is expected at this stage and is recorded, not tuned away.
    wholes in order-0 space, judged together with the explicit chain
    (notes §9). Rounds sized at spec time. Exit: the spec's gates green and
    one thought episode's records replaying a derivation with its pair.
+- **2.3. Trust in operations** (Alec, 2026-11-05;
+   [notes](doc/plans/2026-11-05-item2-3-trust.md)). A concept's trust is its
+   magnitude. Operators need a trust value of their own, unless they exist as
+   vectors, and a relation's trust composes its operands' and its operator's.
+   Gates open in an order the data specifies: words first, then operations one
+   at a time. A trained-model test tier (`RUN_TRAINED`) takes many grammar
+   tests. Specified after 2.5 closes; nothing is built.
 - **2.0. One gradient, one choice mechanism, memory as the state of
    affairs, behavioral chains and basic percepts** (Alec, 2026-11-03 and
    2026-11-04;
