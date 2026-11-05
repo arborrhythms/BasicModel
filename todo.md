@@ -533,6 +533,40 @@ generation is expected at this stage and is recorded, not tuned away.
    speech as already described ([Language](doc/Language.md), "Distributional
    parts of speech"); the `argout` prototypes are kept per formal argument
    and read by the same occupation measure as the inputs.
+   **Rounds (Alec, 2026-11-05: "after 2.5, 2.3 then 2.0, nothing else";
+   "Just divide the work").** 2.0 stays one item, built in rounds, each with
+   its own freeze; the loop is the last, as recorded. Already done in 2.5,
+   struck from 2.0: the decomposition teacher's retirement (2.5 item 65), the
+   `XOR_grammar.xml` fits around it (2.5 §52.1 item 71; 2.0 still runs the
+   gate once after `walk_policy`'s retirement), and the spike attribution
+   (2.5 items 74–75). Held-out cost waits for item 0's start; the five terms
+   on internals stay recorded. The rounds, in order:
+   1. *Behaviour-neutral moves:* STM, MTM, LTM0 and LTM1 into `bin/Memory.py`
+      (whether `ShortTermMemory` moves too is decided in the text); thought
+      ideas stamped and found by `.when`.
+   2. *Repairs and the measured "before":* any event at or above 1e8 under
+      `separateChooser` false that 2.5's item 71 reports, repaired at its
+      producer; fail loud in the reverse and `runBatch`; the derivation
+      inverse given the forward's action context; one WholeSpace; the
+      supplied `yes` admission; the item 60 metrics and receipts recorded as
+      the baseline. The sentence-82 rejection is a capture rule on every
+      lesson-13 run.
+   3. *One gradient:* `separateChooser` false with the one-sided projection
+      and the sides (spec §§1–2).
+   4. *One choice mechanism:* generate under compose's proposal and credit,
+      `walk_policy` retired and the XOR gate run; the verb and modal teachers
+      retired (participation, $\kappa$ in the model file); output typing.
+   5. *Memory as the state of affairs:* MTM's one link function, extended
+      events and nouns, promotion of paths and chains, the full reference
+      form, credit across sentences by the re-read, verbs over the state of
+      affairs. Its text waits for the memory spec's open question (how a
+      state is computed from a run of event members).
+   6. *Basic percepts*, with the compose-time whole read and the per-word
+      typed slots decided first.
+   7. *The order-zero loop*, input reconstruction then output through the
+      same reverse.
+   The momentum-carried projection and a learned top-down pair policy are
+   built only if the receipts call for them.
 - **2. Housekeeping.** Restore safe, faster bounded-test batching: the default
    256-case/16-file and 32-case/4-file workers exceeded the 8 GiB cap, and
    eight-case/one-file batches pass the same selection; do not raise caps or
