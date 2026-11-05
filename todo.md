@@ -561,9 +561,10 @@ generation is expected at this stage and is recorded, not tuned away.
       parts and wholes)"). MTM's one link function, extended events and
       nouns, promotion of paths and chains, the full reference form, credit
       across sentences by the re-read, verbs over the state of affairs.
-      Extended events are paths only: how a state is computed from a run of
-      event members, with events as mereological neighbours in world-space,
-      is future work. MTM's link also runs over basic-level percepts, never
+      Runs form concepts at every level (Alec, 2026-11-05): an event run's
+      state is computed from its members as an identity's value is from its
+      references, one order lower; events as mereological neighbours in
+      world-space stay future work. MTM's link also runs over basic-level percepts, never
       over parts or wholes alone, and a recurring one promotes to a basic
       percept, which word admission creates today. The compose-time whole
       read and the per-word typed slots keep their logic and read basic
