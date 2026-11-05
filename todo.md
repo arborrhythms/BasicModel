@@ -95,6 +95,15 @@ magnitude, and operators need their own
 2.5 and before 2.0. The Codex text is §52.1: items 109 to 115, then 71 and 73,
 closing 2.5.
 
+**Update 2026-11-05 (night):** the §53 return is reviewed in
+[thinking spec §54](doc/plans/2026-10-27-item2-5-thinking.md). Items 109 to 115 are
+built, and item 71 reports no event at or above 1e8. Claude's suite on the offered
+freeze `8e9fe2634709` fails the forced pending-premise case in its `[True]` order: a
+forward reference is read as its own mention. The defect is older than this round
+and reproduces exactly from its captured stream. The freeze is not accepted. The
+Codex text is §54.1: items 116 and 117, then the suite, item 71's runs and the
+freeze.
+
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
@@ -543,7 +552,9 @@ generation is expected at this stage and is recorded, not tuned away.
    on internals stay recorded. The rounds, in order:
    1. *Behaviour-neutral moves:* STM, MTM, LTM0 and LTM1 into `bin/Memory.py`
       (whether `ShortTermMemory` moves too is decided in the text); thought
-      ideas stamped and found by `.when`.
+      ideas stamped and found by `.when`; `ReferenceClose.commit`'s
+      word-occurrence substitution and its `word_occurrences` argument
+      retired, which no closing reaches since 2.5's item 110 (2.5 §54).
    2. *Repairs and the measured "before":* any event at or above 1e8 under
       `separateChooser` false that 2.5's item 71 reports, repaired at its
       producer; fail loud in the reverse and `runBatch`; the derivation
@@ -552,15 +563,21 @@ generation is expected at this stage and is recorded, not tuned away.
       the baseline. The sentence-82 rejection is a capture rule on every
       lesson-13 run.
    3. *One gradient:* `separateChooser` false with the one-sided projection
-      and the sides (spec §§1–2).
+      and the sides (spec §§1–2). It starts from 2.5's receipts (§54): under
+      the shared backward the output gradient reaches the percept-to-word
+      readout and the answer readers, and none of the codes, operators and
+      definitions; the projection leaves a momentum-driven tail (Codex's
+      proposal: project outward momentum at clipped coordinates).
    4. *One choice mechanism:* generate under compose's proposal and credit,
       `walk_policy` retired and the XOR gate run; the verb and modal teachers
       retired (participation, $\kappa$ in the model file); output typing.
    5. *Memory and basic percepts, one round* (Alec, 2026-11-05: "In 2.0, 5
       and 6 merged, but MTM only operative for basic level percepts (not
       parts and wholes)"). MTM's one link function, extended events and
-      nouns, promotion of paths and chains, the full reference form, credit
-      across sentences by the re-read, verbs over the state of affairs.
+      nouns, promotion of paths and chains, the full reference form (with an
+      elided role's content: under containment an elided role binds nothing,
+      2.5 §54), credit across sentences by the re-read, verbs over the state
+      of affairs.
       Runs form concepts at every level (Alec, 2026-11-05): an event run's
       state is computed from its members as an identity's value is from its
       references, one order lower; events as mereological neighbours in

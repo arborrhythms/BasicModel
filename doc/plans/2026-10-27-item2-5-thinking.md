@@ -3482,3 +3482,91 @@ Stops for review:
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
 ~~~
+
+## 54. Review of the §53 return (Claude, 2026-11-05, night): items 109 to 115 built; Claude's suite on the freeze catches an older defect in the forced pending-premise case, a forward reference read as its own mention; the freeze not accepted
+
+The return was checked on the live tree, which equals the offered freeze `8e9fe263470939dea6a30c66800b1d142ce8c1825c9628ad174178c5f13c1237` in all 994 source files and in the 8 documents of its manifest. Against `e0fc4a92719e`, 8 files changed in `bin/` (about 90 lines) and 22 in `test/` (4 of them new). Claude read all of it, and the receipts behind each claim of §53.
+
+Claude then ran `make test` on the freeze (output/tests/20261105-135927-c0b82a):
+- all 7,626 cases ran, in 907 seconds at ten workers, with a peak of 19.0 GiB; the 16 cases beyond Codex's 7,610 are document links that §53 added;
+- 7,304 passed, 323 skipped, and one case gave the permitted XPASS;
+- one failed: `test_forced_ordinary_pending_premise_in_both_orders[True]`, at line 461 ("x must bind to three or retain its named open referent"), one of §52.1 item 114's stops.
+
+The source was unchanged before and after. The capture and Claude's replays are in `doc/benchmarks/2026-11-05-item2-5-review54/claude-capture/` (local).
+
+**Finding 1: a forward reference read as its own mention.** This stops the freeze.
+- *The capture.* The failing case's streams have SHA-256 `ff2a73b6a91d`, with `PYTHONHASHSEED` 460798160. The worker's initial stream has the same hash, so collection consumes no randomness, and a replay from process start (`replay_check.py`) is exact.
+- *It reproduces on both sources.* It fails at line 461 on `8e9fe2634709`, and on `e0fc4a92719e` from Codex's durable baseline tree, on the same row with identical dumps. So the defect is older than this round. Item 115's twenty runs covered only the `[False]` order (as item 107 named it), and the earlier suites drew passing initializations.
+- *What the read does.* Row 32 (`('ltm', 'address-v1', 3339473413110316094)`, kind `question`) holds x's forward reference `(0, 13)` open.
+  - `ClauseRow.read_reference_bindings` (about lines 717 to 755) reads that reference through the MTM token at the row's own occurrence, which is the row's own mention of x. The token has kind `None`, symbol 14 (x's named object) and is not pending.
+  - The guard there, "A forward word names the missing referent. Its lexical form cannot fill that role merely because it now has a DEF row" (about line 737), tests only the token's kind.
+  - So the row's referent becomes its own mention, and the forward reference is dropped.
+  - The test's strict-xfail classifier does not fire, because the token's symbol is one of x's names. This is not the recorded deviation, which `UnsupportedReversePremiseBinding` restricts to a retained kind that is not x's (§34).
+- *Also:* `read_reference_bindings` accepts `exclude` and never reads it, at HEAD, at round A's landing and at item 2.7's close. `ThoughtClosing` (about line 28) passes `exclude=(index,)` for "The row now closing cannot use its own complement".
+- *Recorded rules settle the repair; no new decision is needed.*
+  - A state update "does not alone discharge a named open referent; selected binding and kept thought remain the owners of that transition". The pending-premise assertions keep their "bind-correctly-or-stay-open condition" ([layout and removal](2026-10-23-layout-and-removal.md) §7, item 2).
+  - The rule the guard states, which `ReferenceClose.finish_thought_bind` also records (about lines 575 and 576): a name "does not supply the missing referent merely by being read".
+
+**Approved as built.**
+- *Item 109.* `DefinitionIndex.add` indexes a row only when `define` named its pair, and only `rebuild` marks the index current. `define` records the pair before it writes. A checkpoint with word descriptions and no `named_identities` raises before anything changes, and the load's backfill is retired. A named pair stays indexed whatever its evidence: the index gains no evidence filter, which would be trust (item 2.3).
+- *Item 110.* A head word is a reading only for a one-leaf mention, and promotion names a token by its reading only when that reading is a word. The red-ball certificate runs the native journal and the ordinary closing under both head parses.
+- *Item 114's closing repair.* After item 110, a multi-leaf sentence root that closed as an open relation no longer borrowed its first word's occurrence, so its relation handle became its MTM mention address. The closing now gives such a root's mention an occurrence of its own:
+  - untimed, with zero evidence, and counted in the capacity preflight;
+  - written by `PartClosing._write_occurrence`, extracted unchanged from `PartClosing._write`.
+
+  A root closes as a relation only when it has two or more children, so only multi-leaf descriptions get the extra row. One-leaf roots and embedded mentions keep the occurrences they had, and Architecture records the rule. This is item 110's "a longer description reads its own occurrence row", and needs no new decision.
+- *Item 114's compile repair.* `_stm_shift_and_push` no longer advances the host depth mirror while compiling. This matches the per-word body's own pushes (`Models.py` about 19577 and 19694), which already skip it. The eager whole-sentence boundary re-pins the mirror from tensor depth (`Models.py` about 24741).
+- *Item 111.* The 24 ports, each with its evidence. The reverse-traversal failure's producer was the test's own assumption, that a bias towards STOP makes STOP legal; semantic eligibility (§11) can forbid it. Claude's archived stream shows this, and the existing walk-control oracle isolates the test. Approved with finding 2 below.
+- *Items 112, 113 and 115*, the last with twenty fresh passes counted from zero.
+- *Item 71.*
+  - The eight fresh XOR_grammar fits pass both cases.
+  - The three lesson-13 arms and the float64 discriminator complete, with no event at or above 1e8 in any audited class, and `forced_configuration_passed` is true.
+  - One sentence of the jitter arm was not admitted ("Who is here?", with no derivation within its budget). The Reader's repair for it is a receipt fix: certificate (vi) covers kept derivations (§32.4).
+- *Item 73's manifest and ports*, against `e0fc4a92719e`, `d56a8955def9` and HEAD, and the document links (928 passed).
+
+**Recorded and carried.** None of these stops the freeze.
+
+2. *An elided role binds nothing under containment.* A missing role carries no content, so item 101 offers it no candidate. G3's port supplies the intended individual's description at the site (`test_bind_thought.py` about 232 to 238), and the native closing produces no such content. So G3 now certifies binding when the content is given. Carried to 2.0 round 5 with the full reference form: an elided role needs content, for example from the expected role its witnesses established.
+3. *A substitution that no closing reaches.* `ReferenceClose.commit` substitutes a one-leaf mention's word occurrence when the mention's address is a symbol (about line 1216), and `Models` passes `word_occurrences` for it (about line 21002).
+   - Its one production caller passes the rows of `write_clause`, where every mention now has an occurrence of its own.
+   - Before item 110, only the defective multi-leaf root reached the substitution.
+   - The substitution and the argument are retired in 2.0 round 1, with a record. `commit_read_words` stays.
+4. *The output gradient does not reach understanding under the shared backward.* In both `separateChooser` false arms and the discriminator, in every epoch, the output gradient reaches the percept-to-word readout (`conceptualSpaces.0.layers.4.coefficients`, up to 6.8 an epoch) and the answer readers. It reaches none of the codes, grammar operators and definitions, as §34 recorded. Round 3 (one gradient) starts from this.
+5. *The projection's tail.* Primitive memberships are re-clamped on 318 of 320 updates in the separate arm, and on 159, 157 and 156 of 160 in the others. The last updates move by momentum alone (gradient norm 0 in three arms). Codex proposes projecting outward momentum at clipped coordinates. Round 3 decides on it with the momentum-carried projection, which the 2.0 text builds "only if the receipts call for them".
+6. *The lesson's answers.* In any arm, at most 1 of 80 is bound or exact. Item 71's gate is numerical; learning the lesson is not 2.5's criterion.
+7. The runner warns that the weekly slow record is 34.9 days old. `make test_all` is the gate of items 0 and 1 (Alec, §50).
+
+**The freeze is not accepted.** The text below repairs finding 1 and offers the freeze again. The repair changes `bin/`, so make test and item 71's runs are repeated on the new hash, as §52.1 requires.
+
+### 54.1 Text for Codex (2026-11-05)
+
+~~~
+Read §54. The freeze 8e9fe2634709 is not accepted. Claude's make test on it (output/tests/20261105-135927-c0b82a: ten workers, 907 s, peak 19.0 GiB) fails test_forced_ordinary_pending_premise_in_both_orders[True] at line 461, one of §52.1 item 114's stops. Everything else in §53 is approved as built (§54). Order: 116, 117, then make test, item 71's runs and the freeze. Write receipts to doc/benchmarks/2026-11-05-item2-5-review54/, where Claude's capture is in claude-capture/.
+
+116. A forward reference read as its own mention (§54 finding 1).
+- The capture: claude-capture/worker-061-c96357c9fd39f1f8-streams.pt (SHA-256 ff2a73b6a91db658a554cde1bae002e302dad5cb14db2a48d761a0b115ad1b82), PYTHONHASHSEED 460798160, the runner's one-thread environment. Collection consumes no randomness, so replay_check.py from process start reproduces it exactly, on 8e9fe2634709 and on e0fc4a92719e; the command is in claude-capture/README.md.
+- What it shows. Row 32 (kind question) holds x's forward reference (0, 13) open.
+  - ClauseRow.read_reference_bindings (about 717 to 755) reads it through the MTM token at the row's own occurrence, the row's own mention of x: kind None, symbol 14 (x's named object), not pending.
+  - The guard "A forward word names the missing referent" (about 737) tests only the token's kind.
+  - So the referent becomes the row's own mention, and the forward reference is dropped.
+- Also: read_reference_bindings accepts exclude and never reads it. ThoughtClosing (about 28) passes exclude=(index,) for "The row now closing cannot use its own complement".
+- Repair at the producer under the recorded rules:
+  - a read does not alone discharge a named open referent; selected binding and kept thought own that transition, and the pending-premise assertions keep bind-correctly-or-stay-open (doc/plans/2026-10-23-layout-and-removal.md §7, item 2);
+  - a forward word's name does not supply its referent merely by being read (the guard; ReferenceClose.finish_thought_bind about 575).
+- Make exclude do what its caller records, or retire it, recorded. Certify that finish_thought_bind cannot select the same token, or repair it under the same rule. Record the repair in Architecture.
+- Certificates:
+  - the captured stream, red on 8e9fe2634709 and green after;
+  - a direct case: a forward reference whose only candidate is its own mention's token, named by the word's object, keeps its referent open.
+- Where your reading of the producer differs, give the evidence. A certified producer repair under these rules settles it without a stop.
+
+117. Twenty runs of each order, counted from zero, on the source of 116: test_forced_ordinary_pending_premise_in_both_orders[True], then [False] (bin/ changes after item 115). Run each until a failure is captured or twenty pass. Repair a captured failure at its producer under a recorded decision, or stop.
+
+Then, on the green source, as §52.1 states them:
+- make test at ten workers until green (item 114, with its stops);
+- item 71's runs: the eight XOR_grammar fits first, then the three lesson-13 arms and the float64 discriminator;
+- item 73's freeze, with ports against 8e9fe2634709, e0fc4a92719e and HEAD.
+
+Pre-authorized steps and stops are as in §52.1.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review of the freeze; no commit or publication.
+~~~
