@@ -3002,3 +3002,146 @@ Then come §44.1's item 71, item 72's record in your return, and item 73's freez
 
 Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
 ~~~
+
+## 48. Review of the §47 return (Claude, 2026-11-04, night): the repairs built; item 83 decided by Alec, an MTM identity is computed from its references; the panel stopped on an observer defect; a headless composition takes identity 0; the freeze not offered
+
+The return was checked on the live tree, which equals candidate `9a82e07d458e` in all 984 files of its source snapshot. Against `cf32ffd84391`, 53 files changed: 16 in `bin/` (`WordSurfaces.py` new), the two model files in `data/`, and 35 in `test/` (four new). Claude read the source diff in full and reran two selections on the live tree under `PYTHONHASHSEED=0`, torch 2.15.0:
+- items 82, 86, 88 and 89: `test_whole_presence`, `test_form_centroid_numerics`, `test_word_surface_capacity`, the ninth case `test_runtime_split_ingestion.py::TestRuntimeSplitIngestion::test_store_truths_records_truths`, `test_hash_order_producers`, `test_compile_guard`, `test_decomposition_chooser`, `test_objective_optimizer_resume` and `test_observer_identity`: 92 passed in 63 seconds;
+- item 87: `test_epoch_start`, `test_epoch_history`, `test_presentation_memory`, `test_assertion_provenance`, both nested-retention files, `test_forgetting` and `test_ternary_truth_store`: 135 passed in 82 seconds.
+
+The source hash was unchanged after both.
+
+**Approved as built.**
+- *Item 82.* `uncenter`'s forward is $(parent - (p/2)\,mean)/(1 - p/2)$ from the detached exact mean and presence, plus the carrier expression's derivative (`MeaningKernels.py` about 38 to 49), as specified. `native_recompose`'s unary path reads `read_presence` (`Generative.py` about 68). GradientFlow carries both contracts again.
+- *Item 84*, as observations. Fit 6's walk was checked against its summary (finding 1).
+- *Item 85.* The recorder installs no state, refuses to overwrite, and requires a recorded hash seed. The default runner draws and passes each worker's hash seed (`bounded_tests.py` about 489), so a failed case's setup-entry streams replay exactly.
+- *Item 86.* One capacity, $64 = 2^6$, with a separate EOS position: 130 bytes of `uint8` and mask per candidate, against 36,873. The target table no longer follows the longest word, so the ninth case passes unchanged. The bank's byte table no longer truncates a long surface silently (it cut at `raw[:n]` before; it raises now). Two observations, with no change now:
+  - The capacity is read twice, in `Models.py` about 2163 and `Spaces.py` about 13119.
+  - Item 2.7's corpus will raise at 64. Across `data/corpus/assembly-01` and the other text fixtures in `data/`, 144 percept runs exceed 64 bytes:
+    - 10 ASCII letter runs, the longest 126 bytes;
+    - 134 punctuation or high-byte runs, the longest 453 bytes (UTF-8 CJK text, one primitive run under `Meronomy.percept_spans`).
+
+    Digit runs reach 41. The corpus round either constructs 512 or splits such runs. This is recorded in todo for item 2.7.
+- *Item 87*, except finding 3. The supply ledger rebuilds both memories from the base and the held sources, and the five clauses hold:
+  - (a) withdrawal and compaction revoke a supply in both copies (`Layers.py` about 10204 and 10306);
+  - (b) only the outer root takes the asserted pair;
+  - (c) access and surprise roll back only at the boundary;
+  - (d) a shared document grants no authority;
+  - (e) a raw `('sym', h)` reference keeps the relation at zero evidence.
+
+  `set_origin` has one production caller, which passes its pair, so the required `asserted` is safe. The 49 fixture ports pass the live pair explicitly, which is what those tests asserted before. The given-role case asserts the decided retention. The `SymbolSubSpace` deferral fix is right. One cost note: each given closing copies every relation row (`ClauseRow.py` about 461), and each supply rebuilds both memories (`refresh_supplies`). That is negligible at today's fixtures, which supply at most three truths each. It is to be measured when item 2.7 supplies a corpus's truths.
+- *Item 88.* Read in the diff:
+  - the observer's identity check restored;
+  - the six bank orders;
+  - the sentinel backend;
+  - the cache account;
+  - `compose_choice_phase` declaring the closing;
+  - the capacity error naming its limit.
+
+  The other ports are as §47.6 lists them, and their selection passes. On the accumulated limit, see finding 5.
+- *Item 89.* `WordIdentity.admit` queues in admission order, and `grammar_S_methods` keeps declaration order (`dict.fromkeys`).
+- *Item 90.* Spot checks against §46.1's list match: §41.7's three passes, §45.6's index 258, §45.9's eligible pairs and timing caveat, and §43's tails and keys.
+- *Item 91*, on its receipts' neutrality controls. Claude did not rerun them.
+
+**Findings.**
+
+1. *Item 83: Codex took the right branch, with the wrong citations.* The pending-name operand contract is §37.4's `test_reading_curriculum` case, approved in §38 ("the pending-name case, which the STM plan's bind contract supports"). §40 withdrew item 46, which concerned §37.7's jitter wording, not this. Evaluation keeps the last epoch's memory by Alec's confirmation in §41: "The last epoch remains available at the end of training."
+
+   The mechanism, read in the code:
+   - The epoch boundary restores MTM to its setup (`PresentationMemory.py` about 513).
+   - `MediumTermMemory.named` (about 292) gives a name its token at its first sight in the epoch. The token holds the value it is given then. Afterwards `named` returns the token without changing its value.
+   - Each kept close moves the dictionary through `MereologicalCodes.place_rows`.
+
+   Evaluation follows epoch 400 with no boundary, so it composes from epoch 400's first-sight values. By the same mechanism, a name's later mentions inside any epoch compose from its first-sight value.
+
+   The residuals belong to the fixture. Fit 6 also chose disjunction, and its walk has fit 5's four residuals bit for bit. It reads back only because its policy margins are positive: .378 and .592, against fit 5's -.079 and .142. The policy decides at roots it never trained on: the teacher's 3,200 states were all exact (§46). As built, a fresh fit that chooses disjunction passes or fails on that margin.
+2. *A headless composition takes identity 0.*
+   - `ChunkJournal.apply` builds the parent record as `torch.where(unary or headed, head, 0)` (about 181). A headless binary's record therefore holds identity 0, and about 252 writes the record's identity into the composed chunk.
+   - STMChunks reads any identity of at least 0 as an identity: `refresh` (about 185) and `bind_menu` (about 204).
+   - Codex's deep trace of fit 5 shows the effect after every root composition, in both trials of the last training epoch and in evaluation ([trace](../benchmarks/2026-11-04-item2-5-review46/fit5-producer/deep/raw/deep-summary.json)). Before the disjunction, the composed chunk held identity 18; after it, it holds identity 0. `refresh` then returns off-stack chunk 4 in its place: identity 0, a RELATION reference, the previous headless root. Between 6 and 14 columns differ, by up to 1.0.
+   - In XOR only the STOP choices after the root read the substituted value. In a longer sentence, a later composition or bind can read the previous root instead of its own operand, and `bind_menu` offers that root as an antecedent.
+
+   Codex recorded the observation and, rightly, left it outside item 83. It is item 94.
+3. *Fallbacks where a raise belongs.*
+   - `PresentationMemory.initial_observation` (about 68) used to raise for a row that lacks its creation observation. It now returns the row's live access and surprise. The new `_initial_relation` (about 119) does the same for a relation. A live count includes the history's reads, which the rule excludes.
+   - In almost every case the stamp exists. Creation stamps a new row while the start exists (`Layers.py` about 9769, `LTM1.py` about 273). The capture holds every earlier row. `import_checkpoint_observations` stamps an older envelope's rows at load (`Models.py` about 4480).
+   - One path can still lack a stamp: a live row that `withdraw_supplies` drops from the base and that a later supply refers to. Record its start observation where it is dropped, and raise for a missing one (item 95).
+   - Codex added the third fallback in `LTM1.retain_given` (about 57). That method has had no caller since item 87 replaced its two ClauseRow calls. Retire it, recorded.
+4. *The panel stopped on an observer defect, as §46.1 required.* The carrier hook reads `gradient.dtype` (`attribution.py` about 158). Autograd calls a tensor hook with `None` when the node runs but that output's gradient is absent. Sentence 7's output cost was 0. Codex's proposed repair is approved, with the node and output index recorded (item 93). The partial record shows no spike: the largest pre-step optimizer norm in six sentences is 20.9, at sentence 1.
+5. *The full suite has not run since `8c6f4c51da75`* (§41), before item 77's compile guard and every repair since. Codex confirms that one worker can reach `accumulated_recompile_limit` (256 per code object) inside a module, since Dynamo is reset only at module boundaries (`conftest.py` about 74). `make test` therefore runs next, before the panel (item 97), and not only at the freeze.
+
+**Decided (Alec, 2026-11-04, night).** On item 83:
+
+> The MediumTermMemory maintains a set of references to STM and LTM. Identity can be computed from those references (e.g. "Alec went shopping and then he ate dinner" creates one identity in MTM that has two references to STM0 sentences/clauses with subjects "alec" and "he". it probably makes sense for each reference from MTM to have both the STM0/LTM0 .when for addressing as well as the concept that is referenced within that idea (to disambguate subject/object, etc), which in this case are "alec" and "he".
+
+On its scope, Alec chose the first of three options:
+- In this round, an identity with no event of its own computes its meaning from its referenced concepts each time it is read, with today's join. This repairs fit 5.
+- The full reference form goes to item 2.0's memory spec ([its §9](2026-11-03-item2-0-behavioral-chains.md)).
+
+The options declined were the full form in this round, and leaving everything to item 2.0. Under the rule, a held name reads its concept's current meaning. Fit 5's sentences are then composed from current meanings and decode exactly against the current dictionary. Like §44's evidence rule, it makes what MTM holds depend on its source rather than on a copy taken from it.
+
+**The freeze is not offered.** Items 92 to 97 come first, then item 71's runs on that source.
+
+### 48.1 Text for Codex (2026-11-04, night)
+
+~~~
+Read §48. Alec decided item 83: MTM holds references to STM and LTM, and an identity is computed from them; this round applies that to identities without an event of their own (item 96), and the full form is item 2.0's. Your receipts are in doc/benchmarks/2026-11-04-item2-5-review46, called review46 below. Items 92 to 97 come first, in this order: 92 (records), 93 (the observer), 94 (identity 0), 95 (raises), 96 (item 83), 97 (make test); then §44.1's items 71 to 73 on that source. Approved as built: items 82, 84, 85, 86, 87, 88, 89, 90 and 91, except where §48 names a finding and the items below repair it.
+
+92. Records, by exact replacement in §47.8, review46/readings.md, review46/fit5-producer/readings.md and review46/work-state.json:
+- The pending-name operand contract is §37.4's test_reading_curriculum case, approved in §38. §40's withdrawal of item 46 concerned §37.7's jitter wording; remove it from the argument.
+- Evaluation keeps the last epoch's memory by Alec's confirmation in §41: "The last epoch remains available at the end of training."
+
+93. The attribution observer's absent cotangent (§47.11). Your proposed repair is approved.
+- tensor_hook's carrier branch (attribution.py about 158) records an absent cotangent as absent, with its read ID, its objective, the hooked tensor's grad_fn and output index, and that objective's cost at the call. It makes no zero vector and no effective mean for it. The tensor branch and its return are unchanged.
+- Certificates:
+  - the old callback raises on None;
+  - the repaired one records the absence;
+  - finite tensor callbacks give the same records and native gradients as before;
+  - a native control in which a node runs with one output's gradient absent.
+- Before items 94 to 96, on 9a82e07d458e with the repaired instrument, (true, 0)'s archived streams under hash 0 reproduce the stopped run's records for sentences 1 to 6 byte for byte and complete sentence 7. Report each absence's read and node. If the replay differs, stop for review. This replay checks the instrument; it is not a run of item 71.
+
+94. A headless composition takes identity 0 (§48 finding 2).
+- ChunkJournal.apply builds a headless binary's parent record as zeros (about 181), and about 252 writes its identity, 0, into the composed chunk. STMChunks.refresh (about 185) and bind_menu (about 204) read any identity of at least 0 as an identity.
+- In fit 5's deep trace (review46/fit5-producer/deep/raw/deep-summary.json), refresh returns the previous headless root, chunk 4 with identity 0, in place of the composed chunk. This happens after every root composition, in both training trials and in evaluation, with 6 to 14 columns differing by up to 1.0.
+- Give a headless record the journal's own empty values at that producer: -1 for identity, and the journal's empty value for every other field whose empty value is not 0 (name them).
+- Certificates, red on 9a82e07d458e and green after:
+  - a headless composition's chunk carries no identity;
+  - refresh of a newly composed headless chunk returns its own value;
+  - in a sentence of at least three words whose headless result is a later operand, the later composition reads that result;
+  - bind_menu does not offer a headless root as an antecedent.
+- If a specified rule gives a headless composition an identity, cite it, leave the code, and stop for review. Port any test that relied on the alias, with before and after.
+
+95. Raises for a missing creation observation (§48 finding 3).
+- PresentationMemory.initial_observation (about 68) and _initial_relation (about 119) raise for a row that lacks its creation observation, instead of using its live access and surprise.
+- Where withdraw_supplies drops a still-live row from the base, it first records that row's start observation in initial_observations. import_checkpoint_observations at load stays the one path for older envelopes.
+- LTM1.retain_given (about 57) has had no caller since item 87: retire it, recorded.
+- Certificates:
+  - a row without its creation observation raises, red on 9a82e07d458e and green after;
+  - a row withdrawn mid-epoch and referred to by a later supply keeps its start observation;
+  - both legacy checkpoint certificates pass.
+
+96. Item 83, Alec's decision (§48, Decided).
+- An identity with no event of its own computes its meaning each time it is read, from the concepts it refers to:
+  - for each of its names and mentions with a reading (MediumTermMemory.names), that concept's current meaning in the dictionary;
+  - for a mention without a reading, the meaning its occurrence row holds.
+  They are joined as MediumTermMemory.open and bind join today (elementwise maximum). No copy of an earlier reading stands in for that meaning.
+- An identity with an event keeps its timeline's stored state. Item 2.0 replaces stored states with references.
+- Name every reader of an identity's value, at least PrependedSymbols.symbolize's meaning block, the deposited chunk, STMChunks.refresh and bind's identity value, and state which of them now read the computed meaning.
+- Certificates:
+  - red on 9a82e07d458e and green after: a name read in two sentences of one epoch, with a kept close's placement moving its word between them, composes the second sentence from the word's current meaning;
+  - red on 9a82e07d458e and green after: a bound identity with two references (for example "alec" and "he") computes the join of both current meanings;
+  - a control, green on both: an identity with an event keeps its state.
+- On fit 5's and fit 6's archived streams and hashes, all four read-back roots are exact by the walk's rule and all four sentences read back. These are observations of recorded initializations whose trajectories now change, not fits of item 71. If either fit does not read back all four, stop for review.
+- Port test_reading_curriculum's pending-name case if it changes, with before and after. MTM's state layout is unchanged.
+- Architecture.md, by append: before its first event, an MTM identity's meaning is computed from its references.
+
+97. The default make test on the source with items 93 to 96, before the panel. The suite last ran on 8c6f4c51da75, before item 77's guard and every repair since. Stop for review if a case fails, with its recorded streams, or if the guard raises.
+
+Then come §44.1's item 71, item 72's record and item 73's freeze, on the source of item 97.
+- Item 71 is the three lesson arms and the float64 discriminator, each recording its streams, then eight fresh unseeded XOR_grammar fits.
+- Item 73 runs make test again if the source changed after item 97, then make test_all and forced_configuration_passed.
+- If test_epoch_history.py::test_native_train_keeps_last_grounding_and_recognizes_it_across_ten_epochs fails again, capture it with its streams and stop.
+- Stop for review on §44.1 item 71's conditions and on those of items 93, 94, 96 and 97.
+
+Work on main. No seed pinning beyond Alec's recorded 41001 and the approved diagnostic streams (replaying a recorded stream is one), no resize, no language named in code; fail loud; nothing retired silently. Return through Alec for Claude's review; no commit or publication.
+~~~

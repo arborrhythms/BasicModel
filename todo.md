@@ -57,6 +57,17 @@ evidence rule and a byte axis sized for a sentence rather than a word.
 XOR_grammar fit 5 failed because its read-back decodes the last training root
 against a dictionary that moved in the final update, where the walk policy was
 never trained. The Codex text is §46.1: items 82 to 91, then §44.1's 71 to 73.
+**Update 2026-11-04 (night):** the §47 return is reviewed in
+[thinking spec §48](doc/plans/2026-10-27-item2-5-thinking.md). The repairs are
+built. Fit 5's held names keep their first-sight meanings while the dictionary
+moves. Alec decided that MTM holds references to STM and LTM and computes
+identity from them: names now (item 96), the full form in item 2.0
+([memory spec §9](doc/plans/2026-11-03-item2-0-behavioral-chains.md)). A
+headless composition's identity-0 alias was found in passing (item 94). The
+Codex text is §48.1: items 92 to 97, then 71 to 73. For item 2.7: the word
+surface capacity of 64 raises on 144 corpus percept runs (letter runs up to
+126 bytes, high-byte runs up to 453); the corpus round constructs 512 or splits
+such runs.
 **Order and branches (Alec, 2026-11-03):** work happens on main, with no
 sandbox branches; the countdown order stands, 2.5, 2.0, 2, then 1.5, 1 and 0;
 when item 2.5 completes, everything is on main, committed and pushed, then
