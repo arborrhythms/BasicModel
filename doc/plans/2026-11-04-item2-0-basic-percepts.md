@@ -95,3 +95,12 @@ Asked whether these two were open, Alec: "Why would this logic change?" It does 
 - the per-word readout's typed part and whole slots (`IndexedSigmaConceptsFromPercepts`, filled by `admit_references`), System 1's hand-off to compose, which §3 omitted.
 
 Neither is a decision for the Codex text. `FormCentroids`' read was the route of item 2.5's largest gradient events ([thinking spec §45.8](2026-10-27-item2-5-thinking.md)), so the round re-takes those receipts after the change. *Alec corrects this reading if it was meant otherwise.*
+
+## 9. MTM creates basic percepts (Alec, 2026-11-05)
+
+Alec: "MTM can be used at the perceptual level to create basic percepts." Asked where, he placed it in item 2.0, with the memory round and this one merged: "In 2.0, 5 and 6 merged, but MTM only operative for basic level percepts (not parts and wholes)." Read as follows; *Alec corrects this reading if it was meant otherwise.*
+- **What MTM links.** An occurrence of a basic-level percept, one with both parts and wholes (today a word that `Interpret.lookup_word` admits), is an MTM member at the perceptual level. Its parts and its wholes are never members on their own. `link`'s window and likeness (containment) apply as at every other level, and identities at different levels are never joined.
+- **Promotion creates the row.** A collection that recurs `concept_mint_count` times within `horizon` promotes to a `BasicPercepts` row (§3.1), by the one promotion rule ([memory spec §3.4](2026-11-03-item2-0-behavioral-chains.md)). Promotion replaces admission as the writer of basic percepts.
+- **Before promotion.** An occurrence not yet promoted reads and reverses through its own parts and wholes, as a mention with no word reads its own occurrence. This is Claude's proposal for the spec revision.
+- **The loop's checks still hold.** Acceptance check 2 empties STM and MTM before the open. Promoted rows persist in the table, so the input reconstruction reads no MTM state.
+- **Revises** the record of 2026-11-03 that MTM serves thought and action only and that the percept side never addresses MTM ([memory spec §1](2026-11-03-item2-0-behavioral-chains.md), 5): MTM now also links basic-level percepts. How a state is computed from a run of event members stays future work.

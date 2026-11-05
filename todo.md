@@ -556,16 +556,19 @@ generation is expected at this stage and is recorded, not tuned away.
    4. *One choice mechanism:* generate under compose's proposal and credit,
       `walk_policy` retired and the XOR gate run; the verb and modal teachers
       retired (participation, $\kappa$ in the model file); output typing.
-   5. *Memory as the state of affairs:* MTM's one link function, extended
-      events and nouns, promotion of paths and chains, the full reference
-      form, credit across sentences by the re-read, verbs over the state of
-      affairs. Extended events are paths only: how a state is computed from
-      a run of event members, with events as mereological neighbours in
-      world-space, is future work (Alec, 2026-11-05).
-   6. *Basic percepts.* The compose-time whole read and the per-word typed
-      slots keep their logic and read basic percepts (Alec, 2026-11-05:
-      "Why would this logic change?").
-   7. *The order-zero loop*, input reconstruction then output through the
+   5. *Memory and basic percepts, one round* (Alec, 2026-11-05: "In 2.0, 5
+      and 6 merged, but MTM only operative for basic level percepts (not
+      parts and wholes)"). MTM's one link function, extended events and
+      nouns, promotion of paths and chains, the full reference form, credit
+      across sentences by the re-read, verbs over the state of affairs.
+      Extended events are paths only: how a state is computed from a run of
+      event members, with events as mereological neighbours in world-space,
+      is future work. MTM's link also runs over basic-level percepts, never
+      over parts or wholes alone, and a recurring one promotes to a basic
+      percept, which word admission creates today. The compose-time whole
+      read and the per-word typed slots keep their logic and read basic
+      percepts ("Why would this logic change?").
+   6. *The order-zero loop*, input reconstruction then output through the
       same reverse.
    The momentum-carried projection and a learned top-down pair policy are
    built only if the receipts call for them.
